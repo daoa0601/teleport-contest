@@ -486,7 +486,7 @@ class JSExec:
             return [(path, V('str', n.text.decode()[1:-1]))]
         if t in ('true', 'false'):
             return [(path, V('bool', z3.BoolVal(t == 'true')))]
-        if t == 'identifier':
+        if t in ('identifier', 'shorthand_property_identifier'):
             value = self.lookup(path, n.text.decode())
             return self._choices(path, value.v) if value.kind == 'choice' else [(path, value)]
         if t == 'member_expression':
@@ -500,14 +500,18 @@ class JSExec:
         if t == 'object':
             results = [(path, {})]
             for pair in n.named_children:
-                if pair.type != 'pair':
+                if pair.type == 'shorthand_property_identifier':
+                    key, value_node = pair, pair
+                elif pair.type == 'pair':
+                    key = pair.child_by_field_name('key')
+                    value_node = pair.child_by_field_name('value')
+                else:
                     raise Unsupported('JavaScript object spread or method')
-                key = pair.child_by_field_name('key')
-                if key.type not in ('property_identifier', 'string'):
+                if key.type not in ('property_identifier', 'shorthand_property_identifier', 'string'):
                     raise Unsupported('computed JavaScript object key')
-                name = key.text.decode() if key.type == 'property_identifier' else key.text.decode()[1:-1]
+                name = key.text.decode()[1:-1] if key.type == 'string' else key.text.decode()
                 results = [(q, {**fields, name: value}) for p, fields in results
-                           for q, value in self.eval(p, pair.child_by_field_name('value'))]
+                           for q, value in self.eval(p, value_node)]
             return [(p, V('record', fields)) for p, fields in results]
         if t == 'array':
             elements = n.named_children

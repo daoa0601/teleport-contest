@@ -109,13 +109,36 @@ def _d_loops():
             ('js', 'd', 0): LoopSpec(js_inv, lambda v, e: e['n'] - v['i'], js_facts)}
 
 
-LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
+def luck_partitions(front):
+    """Exhaustively split the rnl luck sum into magnitude intervals.
 
+    Both luck fields are signed chars, so u.uluck + u.moreluck lies in
+    [-256, 254]; the 17 intervals |sum| in [0,15], [16,31], ..., {256} cover
+    every value exactly once. Narrowing the magnitude keeps the
+    luck-dependent rn2(37 + abs(adjustment)) divisor within a 16-value window
+    (and, for x <= 15, the (abs(sum) + 1) / 3 adjustment within six values),
+    so every obligation is decided quickly and deterministically, where the
+    fully symbolic query coupled both symbolic divisors and z3 proved or gave
+    up on it depending on the seed and process memory layout. One magnitude
+    per partition (257 partitions) is also deterministic but costs 168 s and
+    timed out the CI job; width-16 intervals prove the whole claim in under
+    20 s for every seed tried.
+    """
+    return [(f'luck sum magnitude {lo}-{min(lo + 15, 256)}',
+             lambda s, _lo=lo, _hi=min(lo + 15, 256):
+                 [z3.Or(z3.And(s['u.uluck'] + s['u.moreluck'] >= _lo,
+                               s['u.uluck'] + s['u.moreluck'] <= _hi),
+                        z3.And(s['u.uluck'] + s['u.moreluck'] >= -_hi,
+                               s['u.uluck'] + s['u.moreluck'] <= -_lo))])
+            for lo in range(0, 257, 16)]
+
+
+LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
 ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
 HACKLIB = 'js/hacklib.js'
 
-C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c')
+C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
 JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
             'js/hero_attack_accuracy.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js')
 
@@ -130,7 +153,7 @@ SPECS = [
     Spec('rn1', 'rn1_macro', 'rn1', [('x', INT), ('y', INT)],
          pre=lambda s: [s['x'] >= 1, s['y'] + s['x'] - 1 <= INT_MAX],
          probes=[('any y', lambda s: [s['x'] >= 1])]),
-    Spec('rnl', 'rnl', 'rnl', [('x', INT)], state=LUCK,
+    Spec('rnl', 'rnl', 'rnl', [('x', INT)], state=LUCK, partitions=luck_partitions,
          pre=lambda s: [s['x'] >= 1, s['x'] <= INT_MAX - 256],
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0]),
                  ('x near INT_MAX', lambda s: [s['x'] > INT_MAX - 256])],
@@ -173,6 +196,26 @@ SPECS = [
                   # a block-local binding must not escape or overwrite the outer one
                   (HACKLIB, 'return (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2);',
                    'let r = 0; { let r = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2); } return r;')]),
+]
+
+
+def coordinate_domain(s, names):
+    return [z3.And(s[name] >= -32768, s[name] <= 32767) for name in names]
+
+
+SPECS += [
+    Spec('isok', 'isok', 'isok', [('x', INT), ('y', INT)],
+         require_counterexamples=True, js_file=HACKLIB,
+         pre=lambda s: coordinate_domain(s, ('x', 'y')),
+         probes=[('x narrows to coordxy', lambda s: [s['x'] == 65537, s['y'] == 0])],
+         mutants=[(HACKLIB, 'return x >= 1 && x <= COLNO - 1',
+                   'return x >= 0 && x <= COLNO - 1')]),
+    Spec('online2', 'online2', 'pointsOnline', [(name, INT) for name in ('x0', 'y0', 'x1', 'y1')],
+         require_counterexamples=True, js_file=HACKLIB,
+         pre=lambda s: coordinate_domain(s, ('x0', 'y0', 'x1', 'y1')),
+         probes=[('x0 narrows to coordxy', lambda s: [s['x0'] == 65536, s['y0'] == 1,
+                                                     s['x1'] == 0, s['y1'] == 0])],
+         mutants=[(HACKLIB, 'dy === -dx;', 'dy === dx;')]),
 ]
 
 # Stage 2: the global attribute arrays have six signed-char elements

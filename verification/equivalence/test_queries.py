@@ -3,8 +3,46 @@ import unittest
 
 import z3
 
+import prove
+import queries
 from core import Machine, World
 from queries import QueryContext
+from specs import SPECS, Spec
+
+
+class LuckSplitTests(unittest.TestCase):
+    FRAGILE_INTERVALS = (0, 1, 8, 16)
+
+    def test_rnl_split_queries_hold_under_every_solver_seed(self):
+        # The unsplit rnl obligation coupled the luck-dependent rn2 draw
+        # modulus with the RND(x) draw, and z3 proved or gave up on that
+        # nonlinear query depending on the random seed and process memory
+        # layout (CI failed twice before a solver retry and once, at seed
+        # 10, through it). specs.luck_partitions narrows the luck-sum
+        # magnitude to a 16-value window, which every seed decides quickly;
+        # the 257-single-magnitude split also worked but cost 168 s and
+        # timed out the CI job. Sweep 21 seeds over selected intervals as a
+        # regression check: every seed must prove all of them.
+        spec = next(s for s in SPECS if s.name == 'rnl')
+        recorder = prove.recorder_dir()
+        front = prove.CFront(recorder, [recorder / 'src' / file for file in prove.C_FILES]
+                             + list((prove.HERE / 'harness').glob('*.c')))
+        modules = prove.load_modules()
+        fragile = [entry for index, entry in enumerate(spec.partitions(front))
+                   if index in self.FRAGILE_INTERVALS]
+        split_spec = Spec(spec.name, spec.c, spec.js, spec.params, pre=spec.pre,
+                          state=spec.state, partitions=lambda front: fragile,
+                          js_file=spec.js_file)
+        previous_seed = z3.get_param('smt.random_seed')
+        try:
+            for seed in range(21):
+                with self.subTest(seed=seed):
+                    z3.set_param('smt.random_seed', seed)
+                    queries._UNSAT.clear()
+                    proved, report = prove.check(split_spec, front, modules, split_spec.pre)
+                    self.assertTrue(proved, report)
+        finally:
+            z3.set_param('smt.random_seed', previous_seed)
 
 
 class QueryTests(unittest.TestCase):

@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 33 scoped C/JavaScript claims,
+`verification/equivalence/` now proves 41 scoped C/JavaScript claims,
 including hero equipment, forms, initial monster tables, and eight ISAAC64
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
@@ -43,8 +43,8 @@ over rank 4.
 ## The proof of concept
 
 `cd verification/equivalence && uv run prove.py` (clang and uv).
-`--skip-slow` excludes the two table claims and their negative checks, with
-an explicit `SKIPPED` line for each. The default includes all 33 claims.
+`--skip-slow` excludes the two slow table claims and their negative checks, with
+an explicit `SKIPPED` line for each. The default includes all 41 claims.
 In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
 **Claim.** For every input in the domain, every random sequence (core and
@@ -59,20 +59,30 @@ fields after each call. Generator claims read **`frozen/isaac64.js`**:
 `frozen/score.sh` installs it over `js/isaac64.js` before scoring. The emitted
 ISAAC64 copy is outside these claims. Wrapper seed packing reads emitted
 `js/rng.js`. Times below exclude probes and mutants. Path counts are C×JS for
-each logging setting; ISAAC64 rows state their loop proof instead.
+each logging setting; ISAAC64 rows state their loop proof instead. Existing
+rows retain the earlier measurements; the eight geometry/species rows and the
+split `rnl` row use this batch's complete runs.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
 | `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.4 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
 | `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.9 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 1.6 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude intervals | 17 intervals of ≤13×18 | 15.3 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.4 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
 | `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.5 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
 | `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.1 s |
 | `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.5 s |
+| `isok` | `cmd.c:isok` ↔ `hacklib.js:isok` | Both coordinates in [-32768, 32767] | 2×4 | 0.4 s |
+| `online2` | `hacklib.c:online2` ↔ `hacklib.js:pointsOnline` | All four coordinates in [-32768, 32767] | 2×4 | 0.1 s |
+| `mindless:tables` | `mondata.h:mindless` ↔ `monster_data.js:monsterIsMindless` | Valid species; non-null native species pointer; initial native/emitted flags | 1×1 | 1.2 s |
+| `nohands:tables` | `mondata.h:nohands` ↔ `monster_data.js:monsterHasNoHands` | Same initial-species domain | 1×1 | 1.3 s |
+| `humanoid:tables` | `mondata.h:humanoid` ↔ `monster_data.js:monsterIsHumanoid` | Same initial-species domain | 1×1 | 1.2 s |
+| `ceiling_hider:tables` | `mondata.h:ceiling_hider` ↔ `monster_data.js:monsterSpeciesHidesOnCeiling` | Same domain; initial flags and monster classes | 383×(1×1) | 3.3 s |
+| `sliparm:tables` | `mondata.c:sliparm` ↔ `monster_data.js:monsterSlipsArmor` | Same domain; initial sizes, classes and species identities | 383×(1×1) | 4.0 s |
+| `breakarm:tables` | `mondata.c:breakarm` ↔ `monster_data.js:monsterBreaksArmor` | Same domain; initial flags, sizes, classes and species identities | 383×(1×1) | 8.7 s |
 | `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 3.1 s |
 | `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 0.9 s |
 | `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.2 s |
@@ -87,7 +97,7 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 | `dbon:all` | `weapon.c:dbon` ↔ `weapon.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
 | `abon:forms` | `weapon.c:abon` ↔ `hero_attack_accuracy.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 43.6 s |
 | `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 415.6 s |
-| `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `monster_speed.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 175.5 s |
+| `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `mon.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 175.5 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -96,6 +106,55 @@ each logging setting; ISAAC64 rows state their loop proof instead.
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
 | `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
+
+**Geometry and species batch.** The eight added claims execute the real
+emitted functions. Four C harness functions expand the actual `mondata.h`
+macros; `isok`, `online2`, `sliparm` and `breakarm` execute the native function
+bodies. Boolean JS returns correspond exactly to native 0/1; native 2 does
+not correspond to JS true. The language executor also accepts object
+shorthand, which the armor helpers already use. Three new language tests
+failed before these extensions; a fourth checks that non-Boolean native
+integers remain distinguishable.
+
+The geometry inputs span every `coordxy` value, including off-map squares.
+Their probes leave that representation domain: x=65537 narrows to 1 in
+`isok`, and x0=65536 narrows to 0 in `online2`. Each produces a concrete
+return difference. Each of the six species claims assumes a non-null
+`&mons[species]` and `0 <= species < NUMMONS`, with NUMMONS read through
+clang. Native fields retain `mons_init` values and emitted table fields
+retain their initial values. The two tables are read independently, without
+assuming equal field values. These claims exclude live table changes and do
+not prove that initialization or callers establish the entry relation.
+Their probes remove pointer validity and produce concrete null-dereference
+obligations. Those are safety failures, not defined return differences.
+All eight claims also kill an emitted-JS mutant with a concrete return
+difference. Unsupported syntax and solver timeouts cannot satisfy these checks.
+
+Three simple flag predicates keep the species symbolic over all valid indices.
+Ceiling hiding and armor fit check every one of the 383 species as a separate,
+satisfiable domain in both logging modes. The initial combined ceiling-hider
+query was stopped without a result; exhaustive partitions preserve the whole
+domain and finish promptly. The batch changes no game source or behavior.
+
+The selection follows common movement and body checks: `isok` and `online2`
+are used by `hack`, `mon` and pet movement; minds and hands affect monster
+actions; ceiling hiding and armor fit affect movement and polymorphs. The RNG
+ledgers record 226,931 eval and 28,208 public random calls under `m_move`,
+which uses the mind/hand predicates; these are random-call counts, not counts
+of predicate invocations. Carrying capacity was deferred because
+`weight_cap` temporarily changes property state and `calc_capacity` reaches
+inventory chains. `dmgtype` needs attack-pointer traversal and JS callbacks;
+`sgn` has no standalone emitted counterpart. No port fidelity bug was found
+within the eight stated domains.
+
+The complete 41-claim run exited 0 in **704.66 s**, including **45 domain
+probes** and **49 mutant checks**, and wrote the reviewed equivalence ledger
+only after all checks passed. The eight new claims each have one concrete
+probe and one killed mutant. The four new executor tests bring the focused
+executor/query/selection suite to **62 passing tests** (8.594 s). All **37
+ledger CLI tests** passed in 129.197 s, including a complete fast-claim run
+against the new ledger. `npm run compile` passed. No game source or session
+corpus was changed.
 
 **Runtime and CI split.** A `cProfile` run of species 0 found 552
 feasibility checks plus 266 arithmetic implication checks for experience;
@@ -111,6 +170,36 @@ do not escape, cached contradictions do not cross domains, and changing an
 entry constraint changes feasibility. No proof domain, logging mode, safety
 obligation, probe or mutant was removed.
 
+**Solver robustness.** `rnl`'s per-path-pair output-equality obligations
+coupled two symbolic divisors -- `RND(x)` drawn through `mod (R_core 0) x`
+and the luck-dependent `rn2(37 + abs(adjustment))` modulus -- and z3 proved
+or gave up on that nonlinear query depending only on the random seed,
+accumulated AST state, or process memory layout. Linux CI hit the 120-second
+timeout three times: twice under the plain solver and once at seed 10 through
+a two-configuration retry, while macOS proved the byte-identical propositions
+in about a second (a query dump confirmed the branch and the integration
+base construct identical `rnl` queries, so the port edits were not the
+cause). Retrying between incomplete configurations only moved the failing
+seed around, so `specs.luck_partitions` instead reduces the query complexity
+by splitting the domain exhaustively into luck-sum magnitude intervals. Both
+fields are `schar`, so `u.uluck + u.moreluck` lies in [-256, 254] and every
+value belongs to exactly one of 17 intervals `[0,15], [16,31], ..., {256}`.
+Each interval keeps the `rn2(37 + abs(adjustment))` divisor within a
+16-value window and, for `x <= 15`, the `(abs(luck) + 1) / 3` adjustment
+within six values; the initial `RND(x)` draw keeps its symbolic modulus `x`,
+so the queries remain nonlinear but small, and every seed tried decides them
+quickly. One magnitude per partition (257 partitions) is equally decisive
+but took 168.2 s locally and 319.7 s on the CI runner, timing out the
+30-minute job; the interval split proves the claim in 15.3 s locally. The
+domain, outputs, stream positions and log entries are unchanged, and every
+partition must be satisfiable. Probes and mutants still short-circuit on the
+first failing interval with concrete witnesses. A regression test sweeps
+seeds 0 through 20 over selected intervals (0-15, 16-31, 128-143 and 256);
+all 21 seeds proved, with a worst whole-scheme time of 18.8 s per seed when
+all 17 intervals run. These runs are stability evidence for the tested seeds,
+not a guarantee for every solver seed. `queries.py` is back to a single
+default solver configuration.
+
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.
 Counterexample searches now check the same output conditions separately for
@@ -118,11 +207,11 @@ each path pair; the experience mutant then produced a concrete C 135 / JS 136
 witness in 3.25 s. Equivalence proofs retain the grouped table query. A
 regression test covers both branches and a mismatch in a later partition.
 
-The final full command exited 0 in **688.98 s**, with all **33 claims**, **37
+The earlier 33-claim full command exited 0 in **688.98 s**, with all **33 claims**, **37
 domain probes**, and **41 mutant checks** behaving as specified. Of the mutant
 checks, 39 have concrete counterexamples, one is the retained unsupported
-shadowing-language rejection, and one is proved equivalent. The full table
-above reports that run's per-claim times, excluding probes and mutants.
+shadowing-language rejection, and one is proved equivalent. The original rows
+above retain that run's per-claim times, excluding probes and mutants.
 Experience took **415.6 s** (previously 1212.9 s); movement took **175.5 s**
 (previously 341.8 s). Neither met the approximately 120-second target, so both
 remain `slow`. The final fast command exited 0 in **97.92 s**, proving 31 claims
@@ -203,8 +292,8 @@ counterexample: native `(int)x` returns `-2145336166`, while emitted JavaScript
 returns `2149631130`. The positive `abs(i) <= 1e8` domain is unchanged. A language
 test also checks the long-to-int return conversion directly.
 
-**Non-vacuity.** The 25 leaf specs have 29 domain probes and 31 mutant
-checks: 29 concrete mutant counterexamples, one retained language-rejection
+**Non-vacuity.** The 33 leaf specs have 37 domain probes and 39 mutant
+checks: 37 concrete mutant counterexamples, one retained language-rejection
 check (the shadowing declaration mutant), and one equivalent mutant.
 Every fv-leaves2 claim has both a failing domain probe with a concrete model
 and a killed JavaScript mutant; rejection or timeout cannot satisfy those
@@ -216,8 +305,8 @@ shift, mask and memory-index changes. They also require solver counterexamples.
 One existing mutant is genuinely equivalent (`ulevel < 15` →
 `ulevel < 16`, since 15/3 = 5), and the tool proves it.
 The existing prototype lacks dedicated mutants for `rn2` and `rn1`, and
-dedicated domain probes for `d` and `rne`. This CI work adds no claims and does
-not fill those gaps. New claims still require both a counterexample probe and
+dedicated domain probes for `d` and `rne`. This batch leaves those gaps open.
+New claims still require both a counterexample probe and
 a killed mutant; the current CLI runs every check supplied by the specs.
 
 | New leaf claim | Domain probe | Killed mutant |
@@ -240,6 +329,17 @@ a killed mutant; the current CLI runs every check supplied by the specs.
 | `abon:forms` | remove base Dexterity correspondence | form bonus offset -3 → -2; Wizard counter reads next species |
 | `experience:tables` | remove monster-level correspondence | initial award 1 → 2 |
 | `mcalcmove:tables` | remove speed correspondence; allow gallop -1 | rounding threshold `<` → `<=` |
+
+| Geometry/species claim | Domain probe | Killed mutant |
+|---|---|---|
+| `isok` | x=65537 narrows to coordxy 1 | allow column zero |
+| `online2` | x0=65536 narrows to coordxy 0 | remove the opposite diagonal |
+| `mindless:tables` | null native species pointer | mindless mask → animal mask |
+| `nohands:tables` | null native species pointer | hand mask → head mask |
+| `humanoid:tables` | null native species pointer | humanoid mask → animal mask |
+| `ceiling_hider:tables` | null native species pointer | include mimics instead of excluding them |
+| `sliparm:tables` | null native species pointer | small-size endpoint inclusive → exclusive |
+| `breakarm:tables` | null native species pointer | invert the sliding-body exclusion |
 
 The mask probe is a counterexample to the numeric input obligation, not an
 observed C/JS result difference. The model accepts only exact integer Numbers;
@@ -334,7 +434,7 @@ that a negative `rounddiv` denominator can be reached through a debug option:
   in their defining module. Module table reads assume their initial values
   have not been mutated. The two new game-table claims assume the native and
   emitted fields still have their initial values, including Erinys.
-  The 48 language tests cover these operations and rejection boundaries using
+  The 52 language tests cover these operations and rejection boundaries using
   small C and JS programs, rather than copies of game functions.
 - C pointer access in global state requires an explicit `references` entry
   or `CPtr` in `c_globals`. A flattened state field such as `worn.value` models
@@ -666,7 +766,7 @@ actual enclosing function; none combines distinct callbacks. A regression
 test swaps valid and invalid widths between callbacks in different functions.
 The lost claim passed before scoped names and is rejected afterward.
 The ledger covers the lower-bound/integer classification above; upper bounds
-remain reported separately. The proof ledger records 33 claim names, the
+remain reported separately. The proof ledger records 41 claim names, the
 C function and JS function/file being compared, their domain summaries
 (including state correspondence, role mappings, nullable item aliases,
 state/argument/partition constructor identities, and explicit native assumptions), supplied JS argument kinds and values in order, their probe/mutant counts, and a `fast`/`slow` runtime marker. It also records each annotated loop's key, streams, facts,
@@ -716,13 +816,14 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    covers all random sequences under initialized field/cache correspondence.
    Remaining work: discharge `abon`'s dungeon-difficulty contract, equipped
    monster AC, live table mutations, missing-field initialization and preservation
-   of those relations by state-changing callers. `sgn`, `isqrt`, `online2`,
-   and `rank_to_xlev` still have no matching standalone emitted function in the
-   inspected modules; no function was invented for a claim.
+   of those relations by state-changing callers. `online2` now pairs with
+   `hacklib.js:pointsOnline`; `sgn`, `isqrt`, and `rank_to_xlev` still have no
+   matching standalone emitted function in the inspected modules; no function
+   was invented for a claim.
 3. **ISAAC64 (done for the stated domains).** The frozen BigInt generator
    and C uint64 generator have equal outputs and successor states for init,
    reseed, mix, update, and next; wrapper seed packing also proves. The full
-   command includes twenty-five leaf claims and eight ISAAC64 claims, with domain probes,
+   command includes thirty-three leaf claims and eight ISAAC64 claims, with domain probes,
    shift/mask/index mutants, and a compiled-C/Node cross-check. Caller state
    correspondence and context routing remain outside these proofs.
 4. **Call-site domains (strengthened analyzer and CI implemented).** Stable
