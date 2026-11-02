@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { objectMaterial } from './o_init.js';
 import { rnd } from './rng.js';

@@ -7,7 +7,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { deleteFloorTrap } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';

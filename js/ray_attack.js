@@ -5,7 +5,7 @@ import { finishMonsterKilled, healMonster, wakeMonster } from './mon.js';
 import { adjustSpellDamage, objectResistsDestruction } from './zap.js';
 import { explode } from './explosion.js';
 import { revealMonsterAppearance } from './mon.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';

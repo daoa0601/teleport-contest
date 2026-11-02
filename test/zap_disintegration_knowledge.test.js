@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { M_SEEN_DISINT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { useHeroBreath } from '../js/hero_breath_command.js';
+import { useHeroBreath } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

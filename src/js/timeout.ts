@@ -41,7 +41,7 @@ import { monsterName } from './do_name.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
 import { currentAttribute } from './attrib.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';

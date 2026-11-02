@@ -4,7 +4,7 @@ import { armorSimpleName } from './do_wear.js';
 
 import { monsterLegName } from './body_parts.js';
 import { MGIVENNAME, M_ATTK_MISS, W_ARM, W_ARMC, W_ARMH, W_ARMU } from './const.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { specialAttackNegated } from './uhitm.js';
 import { AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
 import {

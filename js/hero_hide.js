@@ -10,7 +10,7 @@ import { CORPSE } from './object_data.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { corpseName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroFormClings, heroFormHidesUnderObjects, heroFormHidesWithoutCover, heroIsFlying, heroMonsterForm, } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { touchPetrifies } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { isPoolAt } from './dbridge.js';

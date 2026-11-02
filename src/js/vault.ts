@@ -47,7 +47,7 @@ import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import { impossible } from './diagnostics.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { deleteObject } from './shk.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';

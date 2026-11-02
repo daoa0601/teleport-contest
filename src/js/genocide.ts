@@ -7,10 +7,8 @@ import { plineWithContinuation } from './pline.js';
 import { listGenocided, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame } from './gstate.js';
-import {
-    feelingAfterSelfGenocide, genocideDeathOptions, rememberPolymorphGenocide,
-} from './hero_genocide.js';
-import { heroSpecies } from './hero_species.js';
+import { feelingAfterSelfGenocide, genocideDeathOptions, rememberPolymorphGenocide } from './polyself.js';
+import { heroSpecies } from './polyself.js';
 import { killGenocidedMonsters, removeMonsterFromGame } from './mon.js';
 import { MONSTER_CLASS_SYMBOLS, nameToMonster, nameToMonsterClass } from './mondata.js';
 import { makemonNear } from './mklev.js';
@@ -28,7 +26,7 @@ import { rn1 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import type { DeathHandler } from './end.js';
 import { upstart } from './hacklib.js';
-import type { HeroGenocideCause } from './hero_genocide.js';
+import type { HeroGenocideCause } from './polyself.js';
 import type { MonsterVital } from './monster_types.js';
 
 interface GenocideOptions { finishHeroDeath?: DeathHandler | undefined }

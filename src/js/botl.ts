@@ -49,7 +49,7 @@ import { rankOf } from './quest_pager.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsSick } from './hero_illness.js';
 import { heroIsUnconscious } from './hero_sleep.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

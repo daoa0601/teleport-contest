@@ -33,7 +33,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
 import { revealMonsterAppearance } from './mon.js';

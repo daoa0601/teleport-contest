@@ -13,7 +13,7 @@ import { pline, plineWithContinuation, verbalize } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION, monsterHasNoLimbs, MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
-import { heroSpecies, heroPolyGender, heroPassesWalls } from './hero_species.js';
+import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';

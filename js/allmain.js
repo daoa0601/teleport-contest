@@ -50,7 +50,7 @@ import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, apply
 import { isBeingTakenOff } from './do_wear.js';
 import { OBJECT_DELAY, ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { heroSpecies, setHeroSpecies } from './hero_species.js';
+import { heroSpecies, setHeroSpecies } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { openHoldingTrap, erodeArmor, erodeAttackingWeapon } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK, } from './monster_attack_types.js';
@@ -97,7 +97,7 @@ import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
-import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './hero_genocide.js';
+import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './polyself.js';
 import { finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster, } from './muse.js';
 import { fumaroles } from './mkmaze.js';
 import { petrifyMonsterImmediately, resumeDeferredMonsterTrap, burnHeroArmorByFire } from './trap.js';

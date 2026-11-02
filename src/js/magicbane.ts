@@ -7,7 +7,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
 import { makeConfused, makeStunned } from './potion.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';

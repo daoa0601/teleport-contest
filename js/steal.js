@@ -24,7 +24,7 @@ import { rn2 } from './rng.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dist2 } from './hacklib.js';
 import { randomMonsterRelocation, relocateObjectRandomly } from './teleport.js';

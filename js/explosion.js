@@ -10,7 +10,7 @@ import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { igniteItems } from './light.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster } from './mon.js';

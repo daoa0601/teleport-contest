@@ -12,7 +12,7 @@ import { game } from './gstate.js';
 import { objectWearMessage } from './do_wear.js';
 
 import { BLINDFOLD, LENSES, TOWEL } from './object_data.js';
-import { heroHasNoHead } from './hero_species.js';
+import { heroHasNoHead } from './polyself.js';
 import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';

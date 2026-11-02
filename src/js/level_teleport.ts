@@ -12,7 +12,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Dungeon, DungeonLocation } from './dungeon_types.js';
 import { depth } from './hacklib.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { propertyIsActive } from './properties.js';

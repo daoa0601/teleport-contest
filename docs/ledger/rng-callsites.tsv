@@ -504,10 +504,6 @@ src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""3""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""30""]"	constant
 src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""6""]"	constant
-src/js/hero_gaze.ts	applyFieryGaze	random	"[""20""]"	constant
-src/js/hero_gaze.ts	applyFieryGaze	rollDice	"[""2"", ""6""]"	constant
-src/js/hero_gaze.ts	floatingEyeFreezeDuration	random	"[""4""]"	constant
-src/js/hero_gaze.ts	floatingEyeFreezeDuration	rollDice	"[""(monster.m_lev ?? 0) + 1"", ""attack[3] ?? 1""]"	unproved
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
 src/js/hero_hit_aftermath.ts	finishHeroHitAftermath	random	"[""2""]"	constant
@@ -528,9 +524,6 @@ src/js/hero_melee.ts	attackHostileMonster	rn2	"[""7""]"	constant
 src/js/hero_melee.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/hero_melee.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/hero_melee.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
-src/js/hero_mind_blast.ts	mindBlastSense	random	"[""10""]"	constant
-src/js/hero_mind_blast.ts	mindBlastSense	random	"[""2""]"	constant
-src/js/hero_mind_blast.ts	useHeroMindBlast	rollDamage	"[""15""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
 src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
@@ -1892,6 +1885,8 @@ src/js/poison.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unpro
 src/js/poison.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
 src/js/poison.ts	poisonHero	rollDice	"[""4"", ""6""]"	constant
 src/js/poison.ts	poisonHero	rollOne	"[""6""]"	constant
+src/js/polyself.ts	applyFieryGaze	random	"[""20""]"	constant
+src/js/polyself.ts	applyFieryGaze	rollDice	"[""2"", ""6""]"	constant
 src/js/polyself.ts	beginMonsterForm	d	"[""monsterLevel"", ""4""]"	invariant
 src/js/polyself.ts	beginMonsterForm	d	"[""monsterLevel"", ""8""]"	guarded
 src/js/polyself.ts	beginMonsterForm	rn1	"[""500"", ""500""]"	constant
@@ -1907,6 +1902,10 @@ src/js/polyself.ts	changeVampireForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	chooseHeroForm	rn2	"[""3""]"	constant
 src/js/polyself.ts	chooseHeroForm	rn2	"[""3""]"	constant
 src/js/polyself.ts	finishHumanFormChange	rn1	"[""6"", ""2""]"	constant
+src/js/polyself.ts	floatingEyeFreezeDuration	random	"[""4""]"	constant
+src/js/polyself.ts	floatingEyeFreezeDuration	rollDice	"[""(monster.m_lev ?? 0) + 1"", ""attack[3] ?? 1""]"	unproved
+src/js/polyself.ts	mindBlastSense	random	"[""10""]"	constant
+src/js/polyself.ts	mindBlastSense	random	"[""2""]"	constant
 src/js/polyself.ts	newmanHpIncrement	rnd	"[""race.inrnd""]"	unproved
 src/js/polyself.ts	newmanHpIncrement	rnd	"[""race[randomKey]""]"	unproved
 src/js/polyself.ts	newmanHpIncrement	rnd	"[""role.inrnd""]"	unproved
@@ -1923,6 +1922,7 @@ src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""5""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""500""]"	constant
+src/js/polyself.ts	useHeroMindBlast	rollDamage	"[""15""]"	constant
 src/js/potion.ts	drinkAcid	d	"[""source.cursed ? 2 : 1"", ""source.blessed ? 4 : 8""]"	constant
 src/js/potion.ts	drinkOil	d	"[""vulnerable ? 4 : 2"", ""4""]"	constant
 src/js/potion.ts	drinkPolymorph	rn2	"[""15""]"	constant

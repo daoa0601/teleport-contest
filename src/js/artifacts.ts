@@ -90,7 +90,7 @@ import {
 } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { roles } from './roles.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
 import type { WornPropertySlot } from './property_types.js';

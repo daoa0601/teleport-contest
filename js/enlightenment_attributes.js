@@ -10,7 +10,7 @@ import { confersLuck } from './hero_inventory.js';
 import { fromWhat, extrinsicPropertyMask, intrinsicPropertyMask, veryFast } from './attribute_provenance.js';
 import { hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked, propertyTimeout } from './properties.js';
 import { blindnessBlocked, blindfolded, heroIsBlind, permanentBlind } from './senses.js';
-import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } from './hero_species.js';
+import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } from './polyself.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';

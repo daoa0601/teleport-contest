@@ -8,7 +8,7 @@ import { landFloorObject } from './floor_effects.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { finishHeroDeath as defaultHeroDeath } from './end.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mkobj.js';
 import { MONSTER_FLAGS1, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsUnsolid, requireMonsterData, } from './monster_data.js';

@@ -22,7 +22,7 @@ import { zapHeroInvisible } from './hero_invisibility.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
 import { speedUpHero } from './potion.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { heroStatusLine } from './hero_status.js';
 import { hitObjectWithWand } from './immediate_zap.js';
 import { lightDamage, igniteItems } from './light.js';

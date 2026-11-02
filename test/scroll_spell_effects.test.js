@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { CORR, SCORR, SDOOR, W_ARM } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

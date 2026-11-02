@@ -6,7 +6,7 @@ import { CLUB } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterName } from '../js/do_name.js';
 import { redrawMap, transientMonsterGlyph, transientObjectGlyph } from '../js/display.js';
-import { heroSpecies } from '../js/hero_species.js';
+import { heroSpecies } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { lookInsideSwallower } from '../js/swallowed_inventory.js';
 import { knownObject } from './support/game-objects.js';

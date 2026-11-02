@@ -18,7 +18,7 @@ import { possessiveName } from './hacklib.js';
 import { monsterDigests, monsterTypeName } from './monster_data.js';
 import { GOLD_PIECE } from './object_data.js';
 import { heroIsPolymorphed } from './polyself.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { visibleRegionAt } from './regions.js';

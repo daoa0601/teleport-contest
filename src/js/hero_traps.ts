@@ -109,7 +109,7 @@ import {
 import { isBimanualObject } from './object_properties.js';
 import { unlinkObject } from './mkobj.js';
 import { impactDrop } from './dokick.js';
-import { heroPassesWalls } from './hero_species.js';
+import { heroPassesWalls } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 
 import {

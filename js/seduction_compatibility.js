@@ -1,7 +1,7 @@
 // C mhitu.c:could_seduce(). Cancellation belongs to each attack caller.
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { heroPolyGender, heroSpecies } from './hero_species.js';
+import { heroPolyGender, heroSpecies } from './polyself.js';
 import { AD_PHYS, AD_SEDU, AD_SITM, AD_SSEX } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAnimal, } from './monster_data.js';
 import { propertyIsActive } from './properties.js';

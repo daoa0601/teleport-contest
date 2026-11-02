@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { LADDER, PIT, POOL, ROOM, STAIRS, STONE, WEB } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { useHeroWeb } from '../js/hero_web.js';
+import { useHeroWeb } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
 import { DART, ROCK } from '../js/object_data.js';
 import { runMonsterAbilityCommand } from './support/commands.js';

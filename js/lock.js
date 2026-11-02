@@ -19,7 +19,7 @@ import { findDrawbridgeAt } from './dbridge.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { heroPassesWalls } from './hero_species.js';
+import { heroPassesWalls } from './polyself.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { isContainer } from './container.js';
 import { rnl, rn2 } from './rng.js';

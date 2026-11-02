@@ -10,7 +10,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
+import { heroSpitAttack, useHeroSpit } from '../js/polyself.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createDungeon } from './support/topology.js';

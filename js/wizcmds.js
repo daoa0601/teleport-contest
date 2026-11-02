@@ -78,7 +78,7 @@ import { vision_reset_new_level } from './vision.js';
 import { collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from './dog.js';
 import { makemonAt, rndmonstAdj } from './makemon.js';
 import { heroArmName } from './body_parts.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { heroHasOlfaction } from './polyself.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';

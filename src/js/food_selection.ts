@@ -9,7 +9,7 @@ import { veganCorpse } from './food_traits.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroFormClings, heroIsFlying } from './polyself.js';
-import { heroIsBreathless, heroSpecies } from './hero_species.js';
+import { heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { clearHeroTrap } from './hero_traps.js';
 import { inventoryItemDescription } from './invent.js';

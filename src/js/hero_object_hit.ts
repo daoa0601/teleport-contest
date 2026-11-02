@@ -11,7 +11,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';

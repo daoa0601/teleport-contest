@@ -5,7 +5,7 @@ import { M_AP_TYPE, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd } from './const.js
 import { game, requirePlayingGame } from './gstate.js';
 import { heroIsSick, heroIsVomiting } from './hero_illness.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { piousness } from './insight.js';
 import { MONSTER_LEVEL, monsterDigests } from './monster_data.js';

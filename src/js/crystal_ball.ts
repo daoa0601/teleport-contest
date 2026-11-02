@@ -23,7 +23,7 @@ import { depth } from './hacklib.js';
 
 import { useUpInventoryStack } from './hero_inventory.js';
 import { makeConfused, makeHallucinated } from './potion.js';
-import { heroPolyGender } from './hero_species.js';
+import { heroPolyGender } from './polyself.js';
 import {
     browseDetectionMap, detectMonsters, detectObjects, redisplayDetectionMap, unconstrainMap,
 } from './detect.js';

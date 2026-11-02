@@ -110,7 +110,7 @@ import { isPoolAt } from './dbridge.js';
 import { observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName } from './objnam.js';
 
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
 import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';

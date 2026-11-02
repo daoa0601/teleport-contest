@@ -4,7 +4,7 @@
 import { commandResultCancelled, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { monsterStagger } from './mondata.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 

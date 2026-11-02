@@ -7,7 +7,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './hero_attack_conduct.js';
 import { heroSeductionCompatibility } from './hero_form_contact.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { AT_CLAW, AT_KICK, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';

@@ -18,7 +18,7 @@ import {
     showHeroPhysicalHit, showHeroPhysicalLight, showHeroPhysicalPoisonWoreOff, showHeroPhysicalSilver,
     showHeroShadeMiss,
 } from './hero_physical_messages.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { prepareHeroWeaponContact } from './hero_weapon_contact.js';
 import { resolveHeroJoust, rollHeroJoust, tryHeroPuddingSplit } from './hero_weapon_impact.js';
 import { resolveHeroWeaponPoison } from './hero_weapon_poison.js';

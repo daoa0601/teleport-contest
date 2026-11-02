@@ -16,7 +16,7 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { scheduleLevelChange } from './level_change.js';
 import { nhgetch } from './input.js';

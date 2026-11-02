@@ -6,8 +6,8 @@ import { IRONBARS, ROOM, ROOMOFFSET, W_ARMH, W_ARMS, W_WEP } from '../js/const.j
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { heroBreathAttack } from '../js/hero_breath.js';
-import type { HeroBreathOptions } from '../js/hero_breath_command.js';
-import { useHeroBreath } from '../js/hero_breath_command.js';
+import type { HeroBreathOptions } from '../js/polyself.js';
+import { useHeroBreath } from '../js/polyself.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import {
     BLACK_DRAGON_SCALES, HELMET, LONG_SWORD, SMALL_SHIELD,

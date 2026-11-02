@@ -17,7 +17,7 @@ import { applyLightScrollEffect } from './light.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused } from './potion.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
 import { consumeInventoryItem, identifyPack } from './invent.js';

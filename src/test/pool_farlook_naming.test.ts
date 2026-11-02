@@ -6,7 +6,7 @@ import { farlookLocationDescription } from '../js/pager.js';
 import { feel_location, glyphAt, newsym } from '../js/display.js';
 import { NO_MINVENT, POOL, ROOM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';

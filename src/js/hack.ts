@@ -19,7 +19,7 @@ import {
 import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
-import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './hero_species.js';
+import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { clearCannedCommands, currentMulti, setMulti } from './cmd.js';
 import { resetHeroTrap } from './terrain_movement.js';
@@ -162,7 +162,7 @@ import { buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
-import { heroIsAmphibious } from './hero_species.js';
+import { heroIsAmphibious } from './polyself.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
 import { applyWaterFriction } from './mkmaze.js';

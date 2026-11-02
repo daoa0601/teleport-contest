@@ -7,7 +7,7 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_DEX, GENOCIDED, G_GENOD, M_AP_MONSTER, PLNMSG_OK_DONT_DIE, TIMEOUT, TURNED_SLIME, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { displayColorName, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_SYMBOL } from './monster_data.js';

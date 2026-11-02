@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, W_ARM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CHAIN_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

@@ -10,7 +10,7 @@ import { currency } from './currency.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { resetHeroFaint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';

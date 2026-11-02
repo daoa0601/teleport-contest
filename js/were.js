@@ -3,10 +3,9 @@
 // mondata.c set_mon_data().
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
-import { exerciseAttribute } from './attrib.js';
-import { A_WIS, PARANOID_WERECHANGE } from './const.js';
+import { PARANOID_WERECHANGE } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { setHeroSpecies } from './hero_species.js';
+import { setHeroSpecies } from './polyself.js';
 import { splitHeroMonsterForm } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
@@ -91,24 +90,6 @@ export function wereBeastForSpecies(mnum) {
 export function heroCanSummonWerePack(state = game) {
     const form = heroMonsterForm(state);
     return form != null && isWereMonster({ mnum: form });
-}
-export async function useHeroWereSummon({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
-    requirePlayingGame(state);
-    if (!heroCanSummonWerePack(state))
-        return { used: false, spentTime: false, reason: 'not-were' };
-    if ((state.u?.uen ?? 0) < 10) {
-        await publish('You lack the energy to send forth a call for help!');
-        return { used: false, spentTime: false, reason: 'energy' };
-    }
-    state.u.uen -= 10;
-    state.context.botl = true;
-    await publish('You call upon your brethren for help!');
-    await exerciseAttribute(A_WIS, true, state);
-    const form = heroMonsterForm(state);
-    const helpers = form === null ? [] : await summonWerePack(form, true, state, random, rollOne);
-    if (!helpers.length)
-        await publish('But none arrive.');
-    return { used: true, spentTime: true, helpers };
 }
 function lycanthropeBeastMnum(state) {
     const mnum = state.u?.ulycn;
@@ -254,7 +235,7 @@ function werePackName(mnum) {
     return form.replace(/^were/u, '') || 'creature';
 }
 // C were.c:were_summon(), shared by monster attacks and #monster.
-async function summonWerePack(form, yours, state, random = rn2, rollOne = rnd) {
+export async function summonWerePack(form, yours, state, random = rn2, rollOne = rnd) {
     if (!yours && heroHasProtectionFromShapeChangers(state))
         return [];
     const helpers = [];

@@ -84,7 +84,7 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { rewardMonsterRescue } from './untrap.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { hasCarriedProperty, hasWornProperty } from './properties.js';
 import { ordinalSuffix, possessiveName } from './hacklib.js';
 import { objectWeight } from './mkobj.js';

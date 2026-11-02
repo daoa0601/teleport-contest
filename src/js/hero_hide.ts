@@ -26,7 +26,7 @@ import {
     heroFormHidesWithoutCover, heroIsFlying,
     heroMonsterForm,
 } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { touchPetrifies } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { isPoolAt } from './dbridge.js';

@@ -17,7 +17,7 @@ import {
     prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack,
 } from './hero_inventory.js';
 import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
-import { setHeroSpecies } from './hero_species.js';
+import { setHeroSpecies } from './polyself.js';
 import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './do_name.js';
 import { impossible } from './diagnostics.js';

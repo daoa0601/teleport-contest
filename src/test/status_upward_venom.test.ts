@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { useHeroSpit } from '../js/hero_spit.js';
+import { useHeroSpit } from '../js/polyself.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { requireScreenRow } from './support/screen.js';
 

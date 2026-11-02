@@ -10,7 +10,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makeDeaf } from './potion.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { showInvisibilityMessage } from './potion.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { makemonAt } from './makemon.js';
 import { MONSTER_FLAGS2 } from './monster_data.js';

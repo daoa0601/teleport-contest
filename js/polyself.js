@@ -1,20 +1,24 @@
 // Hero form changes and equipment.
-// C refs: polyself.c polyself(), polymon(), break_armor(), drop_weapon().
+// C refs: polyself.c polyself(), polymon(), set_uasmon(), polysense(),
+// newman(), break_armor(), drop_weapon(), the #monster abilities
+// (dobreathe, dospit, doremove, dospinweb, dosummon, dogaze, dopoly,
+// domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
+// ugenocided(), udeadinside().
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { monsterEmitsLight } from './vision.js';
+import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
-import { P_SHORT_SWORD, P_SABER } from './const.js';
+import { BOLT_LIM, P_SHORT_SWORD, P_SABER } from './const.js';
 import { verbForSubject, makePlural, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-import { OBJECT_SUBTYPE } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE } from './object_data.js';
+import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { pendingArmorAction } from './do_wear.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { heroHasFreeAction, pendingArmorAction } from './do_wear.js';
+import { endVoluntaryMultiTurn, nomul, roomsAt } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
-import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } from './hero_genocide.js';
 import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded } from './potion.js';
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
@@ -22,34 +26,52 @@ import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { game, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { removeEyewear } from './eyewear.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { adjustLevelAbilities, experienceRankIndex, randomExperience } from './exper.js';
 import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
+import { dist2, possessiveName } from './hacklib.js';
+import { heroCanSeeInvisible } from './mcastu.js';
+import { breatheInDirection } from './breath_ray.js';
+import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
+import { promptDirection } from './tty_prompts.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
+import { hurtleHero } from './hero_hurtle.js';
+import { placeCreatedObject, stack_object } from './floor_object.js';
+import { mksobj } from './mkobj.js';
+import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
+import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
+import { tossObjectUp } from './toss_up.js';
+import { deleteTrap, feelTrap } from './trap.js';
+import { buryFloorObjectsAt } from './dig.js';
+import { maketrap } from './mklev.js';
+import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
-import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
-import { canSpotMonster, newsym, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { deleteObject } from './shk.js';
+import { addShopDamage, deleteObject } from './shk.js';
 import { cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName } from './do_wear.js';
 import { isFlimsyObject } from './object_properties.js';
-import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius } from './light.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
+import { grantIntrinsicProperty, refreshMovementProperties, revokeIntrinsicProperty } from './properties.js';
+import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
+import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, igniteItems, objectLightRadius } from './light.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
-import { nameToMonster, resolveMonsterClass } from './mondata.js';
-import { counterWereSpecies, isWereMonster, wereBeastForSpecies } from './were.js';
-import { getLine, promptYesNo } from './query.js';
+import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
+import { nameToMonster, resolveMonsterClass, speciesCanBlow } from './mondata.js';
+import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
+import { getLine, promptYesNo, yn_function } from './query.js';
 import { setSlipperyHands } from './potion.js';
 import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
-import { changeHeroSex, heroFormSticks, heroHasNoHead, heroPolyGender, setHeroSpecies, heroLikesLava } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
@@ -57,13 +79,12 @@ import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
 import { isBeingTakenOff } from './do_wear.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
-import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
+import { clearHeroTrap, freeHeroFromBuriedBall, triggerHeroTrap } from './hero_traps.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { handleRidingAfterFormChange } from './steed.js';
-import { hideHeroUnder } from './mon.js';
+import { angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster } from './mon.js';
 import { learnEggType } from './invent.js';
-import { heroCanSpinWeb } from './hero_web.js';
-import { expelHero, releaseHeroGrip } from './hero_expulsion.js';
+import { expelHero } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { restartAmuletStrangulation, stopStrangulationInImmuneForm } from './hero_strangulation.js';
 import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown } from './slime.js';
@@ -225,6 +246,203 @@ export function heroHasOlfaction(state = game) {
         return true;
     const symbol = MONSTER_SYMBOL[form];
     return symbol === undefined || !OLFACTIONLESS_SYMBOLS.has(symbol);
+}
+const PM_FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
+const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
+// C mondata.c:can_blow(). Silent or buzzing bodies need enough size, a
+// head, and breath; bodies which can make other sounds can blow too.
+export function heroCanBlow(state = game) {
+    if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0)
+        return false;
+    return speciesCanBlow(heroSpecies(state));
+}
+const RESISTANCE_BITS = [
+    ['fireResistance', 0x01],
+    ['coldResistance', 0x02],
+    ['sleepResistance', 0x04],
+    ['disintegrationResistance', 0x08],
+    ['shockResistance', 0x10],
+    ['poisonResistance', 0x20],
+    ['acidResistance', 0x40],
+    ['stoneResistance', 0x80],
+];
+const TELEPATHIC_SPECIES = new Set([
+    'floating eye', 'mind flayer', 'master mind flayer',
+].map(name => MONSTER_NAME.indexOf(name)));
+// C ref: mondata.c sticks().
+export function heroFormSticks(state = game) {
+    return Upolyd(state.u) && monsterSpeciesSticks(heroSpecies(state));
+}
+// C set_uasmon(): install the body and replace only its property sources.
+export function setHeroSpecies(mnum, state = game) {
+    const hero = state.u;
+    const oldSpeed = hero.umonnum === undefined ? 12
+        : speciesEntry(MONSTER_MOVE, hero.umonnum);
+    const newSpeed = speciesEntry(MONSTER_MOVE, mnum);
+    if (hero.umovement && newSpeed < oldSpeed && oldSpeed > 0)
+        hero.umovement = Math.trunc(hero.umovement * newSpeed / oldSpeed);
+    hero.umonnum = mnum;
+    // Native set_uasmon() calls float_vs_flight(), which requests bot().
+    if (!state.program_state.restoring)
+        state.context.botl = true;
+    if (hero.protectionFromShapeChangers || state.protectionFromShapeChangers)
+        hero.mcham = -1;
+    else if (monsterIsVampire(mnum))
+        hero.mcham = mnum;
+    else if (!validVampireShiftForm(hero.mcham ?? -1, mnum))
+        hero.mcham = -1;
+    if (Upolyd(hero))
+        hero.formArmorClass = speciesEntry(MONSTER_EXPERIENCE_META, mnum)[0];
+    else
+        delete hero.formArmorClass;
+    const flags1 = speciesEntry(MONSTER_FLAGS1, mnum);
+    const flags2 = speciesEntry(MONSTER_FLAGS2, mnum);
+    const symbol = speciesEntry(MONSTER_SYMBOL, mnum);
+    const name = speciesEntry(MONSTER_NAME, mnum);
+    const attacks = speciesEntry(MONSTER_ATTACKS, mnum);
+    const inflicts = (damage) => attacks.some(attack => attack[1] === damage);
+    const floater = symbol === 5 || symbol === 25; // S_EYE, S_LIGHT
+    const sightSpecies = Upolyd(hero) ? mnum : state.urace?.mnum;
+    const firstDragon = MONSTER_NAME.indexOf('gray dragon');
+    const lastDragon = MONSTER_NAME.indexOf('yellow dragon');
+    const dragonDefense = mnum >= firstDragon && mnum <= lastDragon
+        ? mnum : dragonFormForArmor(state.uarm || hero.uarm);
+    const properties = [
+        ['drainResistance', !!(flags2 & (0x02 | 0x04 | 0x100))
+                || (hero.ulycn ?? -1) >= 0 || name === 'Death'
+                || validVampireShiftForm(hero.mcham ?? -1, mnum)
+                || dragonDefense === MONSTER_NAME.indexOf('black dragon')],
+        ['antimagic', inflicts(AD_MAGM) || inflicts(AD_RBRE)
+                || name === 'baby gray dragon'],
+        ['sicknessResistance', symbol === 32 || name === 'ghoul'],
+        ['stunned', name === 'stalker' || monsterIsBat(mnum)],
+        ['hallucinationResistance', inflicts(AD_HALU)],
+        ['seeInvisible', !!(flags1 & 0x01000000)],
+        ['telepathy', TELEPATHIC_SPECIES.has(mnum)],
+        ['infravision', !!((sightSpecies === undefined ? 0 : speciesEntry(MONSTER_FLAGS3, sightSpecies)) & 0x0100)],
+        ['invisible', name === 'stalker' || name === 'black light'],
+        ['teleportation', !!(flags1 & 0x02000000)],
+        ['teleportControl', !!(flags1 & 0x04000000)],
+        ['levitation', floater],
+        ['flying', !!(flags1 & 0x01) && !floater],
+        ['swimming', !!(flags1 & 0x02)],
+        ['passesWalls', !!(flags1 & 0x08)],
+        ['regeneration', !!(flags1 & 0x00800000)],
+        ['reflection', name === 'silver dragon'],
+        ['blinded', !!(flags1 & 0x00001000)],
+        ['blindResistance', attacks.some(([type, damage]) => damage === AD_BLND
+                && (type === AT_EXPL || type === AT_GAZE))],
+    ];
+    for (const [property, bit] of RESISTANCE_BITS)
+        properties.push([property, !!(speciesEntry(MONSTER_RESISTS, mnum) & bit)]);
+    for (const [property, active] of properties) {
+        if (active)
+            grantIntrinsicProperty(property, 'form', state);
+        else
+            revokeIntrinsicProperty(property, 'form', state);
+    }
+    syncBlindness(state);
+    syncHeroInvisibility(state);
+    refreshMovementProperties(state);
+    setFormSenses(mnum, state);
+    // set_uasmon() reassesses status fields when the hero's body changes.
+    reassessStatusFields(state);
+    state.were_changes = 0;
+}
+export function heroWarnsOfMonster(monster, state = game) {
+    if (!state.u.warnOfMonster || !monster)
+        return false;
+    const warning = state.context.warntype;
+    if (!warning)
+        throw new Error('Monster warning sources are not initialized');
+    const types = (warning.obj || 0) | (warning.polyd || 0);
+    return !!(types & speciesEntry(MONSTER_FLAGS2, monster.mnum))
+        || warning.speciesidx === monster.mnum;
+}
+// C polyself.c:polysense().
+function setFormSenses(mnum, state) {
+    const name = speciesEntry(MONSTER_NAME, mnum);
+    const speciesidx = ['purple worm', 'baby purple worm'].includes(name)
+        ? MONSTER_NAME.indexOf('shrieker') : -1;
+    const polyd = ['vampire', 'vampire leader'].includes(name)
+        ? 0x08 | 0x10 : 0; // M2_HUMAN | M2_ELF
+    const warning = state.context.warntype ||= { speciesidx, polyd };
+    warning.speciesidx = speciesidx;
+    warning.polyd = polyd;
+    if (warning.speciesidx >= 0 || warning.polyd)
+        grantIntrinsicProperty('warnOfMonster', 'form', state);
+    else
+        revokeIntrinsicProperty('warnOfMonster', 'form', state);
+}
+// C youmonst.data always describes u.umonnum, including the unpolymorphed
+// role body. Racial rules use urace separately; a human Monk is herbivorous.
+export function heroSpecies(state = game) {
+    const species = state.u.umonnum;
+    if (species === undefined)
+        throw new Error('Hero species is not initialized');
+    return species;
+}
+// C polyself.c:poly_gender(): non-humanoid and neuter forms use neuter prose.
+export function heroPolyGender(state = game) {
+    const species = heroSpecies(state);
+    if ((speciesEntry(MONSTER_FLAGS2, species) & 0x00040000)
+        || !(speciesEntry(MONSTER_FLAGS1, species) & 0x00020000))
+        return 2;
+    return state.flags.female ? 1 : 0;
+}
+// C polyself.c:change_sex(). Fixed-sex forms retain their visible sex;
+// a polymorphed hero still changes the saved sex used on rehumanization.
+export function changeHeroSex(state = game) {
+    const polymorphed = Upolyd(state.u);
+    const species = heroSpecies(state);
+    const fixedSex = speciesEntry(MONSTER_FLAGS2, species) & 0x00070000;
+    if (!polymorphed || !fixedSex)
+        state.flags.female = !state.flags.female;
+    if (polymorphed)
+        state.u.mfemale = !state.u.mfemale;
+    if (!polymorphed) {
+        if (state.u.umonster === undefined)
+            throw new Error('Hero role species is not initialized');
+        state.u.umonnum = state.u.umonster;
+    }
+    else if (species === MONSTER_NAME.indexOf('amorous demon')) {
+        state.flags.female = !state.flags.female;
+        setHeroSpecies(species, state);
+    }
+}
+export function heroHatesSilver(state) {
+    if ((state.u.ulycn ?? -1) >= 0)
+        return true;
+    return monsterSpeciesHatesSilver(heroSpecies(state));
+}
+export function heroHasNoHead(state) {
+    return Upolyd(state.u)
+        && !monsterHasHead({ mnum: heroSpecies(state) });
+}
+export function heroIsBreathless(state = game) {
+    return !!state.u.magicalBreathing
+        || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x00000400);
+}
+// C youprop.h:Amphibious. Breathless bodies alone do not qualify.
+export function heroIsAmphibious(state = game) {
+    return !!state.u.magicalBreathing
+        || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x00000200);
+}
+export function heroPassesWalls(state = game) {
+    return !!state.u.passesWalls || !!(speciesEntry(MONSTER_FLAGS1, heroSpecies(state)) & 0x08);
+}
+export function heroLikesLava(state = game) {
+    const hero = state.u;
+    if (!Upolyd(hero))
+        return false;
+    return hero.umonnum === PM_FIRE_ELEMENTAL
+        || hero.umonnum === PM_SALAMANDER;
+}
+function speciesEntry(table, species) {
+    const value = table[species];
+    if (value === undefined)
+        throw new RangeError(`No monster species data for ${species}`);
+    return value;
 }
 async function restoreHumanBody(state, publish = plineWithContinuation) {
     const u = state.u;
@@ -1392,6 +1610,603 @@ async function changeVampireForm(mnum, controlled) {
     }
     return polymonHero(mnum);
 }
+// C polyself.c:dobreathe().
+export async function useHeroBreath({ state = game, attack = heroBreathAttack(state), publish = plineWithContinuation, readDirection = promptDirection, finishMonsterKill = finishHeroMonsterKill, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
+    if (!attack)
+        return { used: false, spentTime: false, reason: 'no-breath' };
+    const hero = state.u;
+    if (hero.strangled || (hero.strangledTurns ?? 0) > 0) {
+        await publish("You can't breathe.  Sorry.");
+        return { used: false, spentTime: false, reason: 'strangled' };
+    }
+    const energy = hero.uen ?? 0;
+    if (energy < 15) {
+        await publish("You don't have enough energy to breathe!");
+        return { used: false, spentTime: false, reason: 'energy' };
+    }
+    hero.uen = energy - 15;
+    state.context.botl = true;
+    const direction = await readDirection();
+    if (direction === null)
+        return { used: false, spentTime: false, reason: 'cancelled' };
+    const result = direction.key === '.'
+        ? await hitHeroWithRay({
+            state, attack, publish, random, rollDice, rollOne,
+        })
+        : await breatheInDirection(direction.key, {
+            state, attack, publish, finishMonsterKill,
+            random, rollDice, rollOne,
+        });
+    return { ...result, spentTime: true };
+}
+export function heroSpitAttack(state = game) {
+    const form = heroMonsterForm(state);
+    if (form == null)
+        return null;
+    return (MONSTER_ATTACKS[form] || []).find(([attackType]) => attackType === AT_SPIT) || null;
+}
+function venomTypeForAttack(attack) {
+    const damageType = attack?.[1];
+    return damageType === AD_BLND || damageType === AD_DRST
+        ? BLINDING_VENOM : ACID_VENOM;
+}
+async function settleVenom(venom, x, y, state) {
+    placeCreatedObject(venom, x, y);
+    await stack_object(venom, state);
+    await newsym(x, y);
+}
+async function breakVenomAtEndpoint(venom, x, y, state, publish, random) {
+    venom.ox = x;
+    venom.oy = y;
+    const location = state.level?.at?.(x, y);
+    if (location && !IS_SOFT(location.typ))
+        objectBreaksOnImpact(venom, random);
+    return breakObjectAtLocation(venom, {
+        x, y, fromInventory: true, inView: cansee(x, y), state, publish, random,
+    });
+}
+async function dropVenomAtHero(venom, state, publish, random, verbose) {
+    const x = state.u.ux;
+    const y = state.u.uy;
+    const location = state.level?.at?.(x, y);
+    const underwater = state.underwater || state.u?.uinwater;
+    if (!location || IS_SOFT(location.typ) || underwater) {
+        await settleVenom(venom, x, y, state);
+        return { destroyed: false };
+    }
+    venom.ox = x;
+    venom.oy = y;
+    if (verbose) {
+        await publish(`A ${venom.name || 'splash of venom'} hits the ${surfaceName(x, y, state)}.`);
+    }
+    const result = await breakFloorObject(venom, {
+        x, y, fromInventory: true, state, publish, random,
+    });
+    if (!result.destroyed)
+        await settleVenom(venom, x, y, state);
+    return result;
+}
+async function hitMonsterWithVenom({ monster, target, venom, state, publish, random, rollOne, swallowed, finishMonsterKill, }) {
+    const impact = await hitMonsterWithThrownEggPieOrVenom(monster, venom, {
+        state,
+        target,
+        guaranteedHit: swallowed,
+        publish,
+        random,
+        rollOne,
+        finishMonsterKill: (victim, options) => finishMonsterKill(victim, victim.mx, victim.my, swallowed
+            ? { ...options, deathContext: { kind: 'swallowed-venom' } }
+            : options),
+    });
+    if (!impact)
+        throw new Error(`Spitting requires a venom object, received object type ${venom.otyp}`);
+    return impact;
+}
+async function spitHorizontally({ venom, direction, state, publish, random, rollOne, captureFlight, recoilHero, finishMonsterKill, }) {
+    if (state.u?.uswallow && state.u?.ustuck) {
+        const impact = await hitMonsterWithVenom({
+            monster: state.u.ustuck, venom, state, publish, random, rollOne,
+            target: { x: state.u.ux, y: state.u.uy },
+            swallowed: true, finishMonsterKill,
+        });
+        return { ...impact, destroyed: true };
+    }
+    const underwater = state.underwater || state.u?.uinwater;
+    const trajectory = underwater
+        ? { range: 1, recoil: 0 }
+        : heroThrowTrajectory(venom, state);
+    const flight = await flyHeroThrownObject({
+        state, object: venom,
+        dx: direction.dx, dy: direction.dy,
+        range: trajectory.range,
+        captureFlight, publish, random,
+    });
+    if (trajectory.recoil) {
+        await recoilHero(-direction.dx, -direction.dy, trajectory.recoil, { verbose: true });
+        // C throwit() recoils after bhit() (dothrow.c:1682); a fatal hurtle
+        // ends in done(), which never returns, so the venom never reaches
+        // its target or breaks afterwards.
+        if (state.program_state.gameover)
+            return { heroDied: true };
+    }
+    if (flight.destroyed)
+        return flight;
+    if (flight.contact) {
+        const impact = await hitMonsterWithVenom({
+            monster: flight.contact, venom, state, publish, random, rollOne,
+            target: { x: flight.x, y: flight.y },
+            swallowed: false, finishMonsterKill,
+        });
+        if (impact.heroDied)
+            return impact;
+        if (impact.consumed)
+            return { ...flight, destroyed: true };
+    }
+    const broken = await breakVenomAtEndpoint(venom, flight.x, flight.y, state, publish, random);
+    return { ...flight, destroyed: broken.destroyed };
+}
+// C polyself.c:dospit().
+export async function useHeroSpit({ state = game, attack = heroSpitAttack(state), readDirection = promptDirection, publish = plineWithContinuation, random = rn2, rollOne = rnd, captureFlight = captureThrownObjectFlight, recoilHero = hurtleHero, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
+    if (!attack)
+        return { used: false, spentTime: false, reason: 'no-spit' };
+    const direction = await readDirection();
+    if (direction === null)
+        return { used: false, spentTime: false, reason: 'cancelled' };
+    const hero = state.u;
+    hero.dx = direction.dx;
+    hero.dy = direction.dy;
+    hero.dz = direction.dz;
+    const venom = await mksobj(venomTypeForAttack(attack), true, false);
+    venom.spe = 1;
+    venom.where = 'free';
+    venom.how_lost = LOST_THROWN;
+    let result;
+    if (state.u?.uswallow) {
+        result = await spitHorizontally({
+            venom, direction, state, publish, random, rollOne,
+            captureFlight, recoilHero, finishMonsterKill,
+        });
+    }
+    else if (direction.dz < 0) {
+        const landed = await tossObjectUp(venom, { state, publish, random, rollOne });
+        result = { destroyed: landed === null };
+    }
+    else if (direction.dz > 0) {
+        result = await dropVenomAtHero(venom, state, publish, random, true);
+    }
+    else {
+        result = await spitHorizontally({
+            venom, direction, state, publish, random, rollOne,
+            captureFlight, recoilHero, finishMonsterKill,
+        });
+    }
+    return { ...result, venom, used: true, spentTime: true };
+}
+export function heroCanRemovePunishment(state = game) {
+    return heroIsPolymorphed(state) && state.u.umonnum !== undefined
+        && MONSTER_SYMBOL[state.u.umonnum] === S_NYMPH;
+}
+export async function useHeroNymphAbility({ state = game, publish = plineWithContinuation, } = {}) {
+    if (!heroCanRemovePunishment(state))
+        return { used: false, spentTime: false, reason: 'not-nymph' };
+    const ball = state.uball || state.u?.uball;
+    if (!ball) {
+        if (state.u?.utrap && state.u.utraptype === TT_BURIEDBALL) {
+            await publish(`The ball and chain are buried firmly in the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
+            return { used: true, spentTime: false, reason: 'buried' };
+        }
+        await publish('You are not chained to anything!');
+        return { used: true, spentTime: false, reason: 'not-punished' };
+    }
+    await unpunishHero(state);
+    return { used: true, spentTime: true };
+}
+const PM_CAVE_SPIDER = MONSTER_NAME.indexOf('cave spider');
+const PM_GIANT_SPIDER = MONSTER_NAME.indexOf('giant spider');
+const TRAPS_TRIGGERED_BY_WEBBING = new Set([
+    ARROW_TRAP, DART_TRAP, BEAR_TRAP, ROCKTRAP, FIRE_TRAP, LANDMINE,
+    SLP_GAS_TRAP, RUST_TRAP, MAGIC_TRAP, ANTI_MAGIC, POLY_TRAP,
+]);
+function webMaker(form) {
+    return form === PM_CAVE_SPIDER || form === PM_GIANT_SPIDER;
+}
+export function heroCanSpinWeb(state = game) {
+    return webMaker(heroMonsterForm(state));
+}
+export async function chooseSpiderAbility() {
+    const { answer } = await yn_function('Hide [h] or spin a web [s]?', 'hsq', 'q', true, { menuable: true });
+    return answer === 'h' ? 'hide' : answer === 's' ? 'spin' : null;
+}
+function trapAtHero(state) {
+    return state.level?.traps?.find(trap => trap.tx === state.u.ux && trap.ty === state.u.uy) || null;
+}
+function heroIsOnStairway(state) {
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === state.u.ux && stair.sy === state.u.uy)
+            return true;
+    }
+    return false;
+}
+function engulfingAttack(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum] || []).find(([attackType]) => attackType === AT_ENGL);
+}
+function whirlyWebMessage(monster) {
+    const damageType = engulfingAttack(monster)?.[1];
+    let action = '';
+    if (damageType === AD_FIRE)
+        action = 'ignites and ';
+    else if (damageType === AD_ELEC)
+        action = 'fries and ';
+    else if (damageType === AD_COLD)
+        action = 'freezes, shatters and ';
+    return `The web ${action}is swept away!`;
+}
+async function spinWhileSwallowed(state, publish, refresh) {
+    const monster = state.u.ustuck;
+    if (!monster)
+        throw new Error('A swallowed hero must have an engulfing monster');
+    await publish(`You release web fluid inside ${monsterName(monster, { state })}.`);
+    if (monsterIsAnimal(monster)) {
+        await expelHero(monster, { state, publish, refresh });
+    }
+    else if (monsterIsWhirly(monster)) {
+        await publish(whirlyWebMessage(monster));
+    }
+    else {
+        await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
+    }
+}
+export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = triggerHeroTrap, } = {}) {
+    if (!heroCanSpinWeb(state))
+        return { used: false, spentTime: false };
+    const x = state.u.ux;
+    const y = state.u.uy;
+    const location = state.level?.at?.(x, y);
+    const rejectsWeb = isPoolAt(x, y, state) || isLavaAt(x, y, state)
+        || (location !== null && location !== undefined && IS_AIR(location.typ));
+    if (state.u.levitating || state.u.levitation || state.levitating
+        || rejectsWeb) {
+        await publish(`You must be on ${rejectsWeb ? 'solid' : 'the'} ground to spin a web.`);
+        return { used: true, spentTime: false, reason: 'terrain' };
+    }
+    if (state.u.uswallow) {
+        await spinWhileSwallowed(state, publish, refresh);
+        return { used: true, spentTime: false };
+    }
+    if (state.u.utrap) {
+        await publish('You cannot spin webs while stuck in a trap.');
+        return { used: true, spentTime: false, reason: 'trapped' };
+    }
+    await exerciseAttribute(A_DEX, true, state);
+    const trap = trapAtHero(state);
+    if (trap) {
+        if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
+            await publish('You spin a web, covering up the pit.');
+            deleteTrap(trap, state);
+            await buryFloorObjectsAt(x, y, state, { publish });
+            await refresh(x, y);
+            return { used: true, spentTime: true };
+        }
+        if (trap.ttyp === SQKY_BOARD) {
+            await publish('The squeaky board is muffled.');
+            deleteTrap(trap, state);
+            await refresh(x, y);
+            return { used: true, spentTime: true };
+        }
+        if ([
+            TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL, VIBRATING_SQUARE,
+        ].includes(trap.ttyp)) {
+            await publish('Your webbing vanishes!');
+            return { used: true, spentTime: false };
+        }
+        if (trap.ttyp === WEB) {
+            await publish('You make the web thicker.');
+            return { used: true, spentTime: true };
+        }
+        if (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) {
+            await publish(`You web over the ${trap.ttyp === TRAPDOOR ? 'trap door' : 'hole'}.`);
+            deleteTrap(trap, state);
+            await refresh(x, y);
+            return { used: true, spentTime: true };
+        }
+        if (trap.ttyp === ROLLING_BOULDER_TRAP) {
+            await publish('You spin a web, jamming the trigger.');
+            deleteTrap(trap, state);
+            await refresh(x, y);
+            return { used: true, spentTime: true };
+        }
+        if (TRAPS_TRIGGERED_BY_WEBBING.has(trap.ttyp)) {
+            await publish('You have triggered a trap!');
+            await activateTrap(trap);
+            return { used: true, spentTime: true };
+        }
+        return { used: true, spentTime: false, reason: 'unknown-trap' };
+    }
+    // C On_stairs() uses the stairway chain even after terrain changes.
+    if (heroIsOnStairway(state)) {
+        await publish(`Your web fails to impede access to the ${location?.typ === STAIRS ? 'stairs' : 'ladder'}.`);
+        return { used: true, spentTime: true };
+    }
+    const web = await createTrap(x, y, WEB);
+    if (web) {
+        await publish('You spin a web.');
+        web.madeby_u = 1;
+        await feelTrap(web, state);
+        if (roomsAt(state.level, x, y, SHOPBASE).length)
+            addShopDamage(x, y, SHOP_WEB_COST, state);
+    }
+    return { used: true, spentTime: true, trap: web };
+}
+// C polyself.c:dosummon().
+export async function useHeroWereSummon({ state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    requirePlayingGame(state);
+    if (!heroCanSummonWerePack(state))
+        return { used: false, spentTime: false, reason: 'not-were' };
+    if ((state.u?.uen ?? 0) < 10) {
+        await publish('You lack the energy to send forth a call for help!');
+        return { used: false, spentTime: false, reason: 'energy' };
+    }
+    state.u.uen -= 10;
+    state.context.botl = true;
+    await publish('You call upon your brethren for help!');
+    await exerciseAttribute(A_WIS, true, state);
+    const form = heroMonsterForm(state);
+    const helpers = form === null ? [] : await summonWerePack(form, true, state, random, rollOne);
+    if (!helpers.length)
+        await publish('But none arrive.');
+    return { used: true, spentTime: true, helpers };
+}
+const M1_NOEYES = 0x00001000;
+const M1_SEE_INVIS = 0x01000000;
+const MR_FIRE = 0x01;
+const PM_FLOATING_EYE = 28;
+const PM_MEDUSA = 284;
+export function heroGazeAttack(state = game) {
+    const form = heroMonsterForm(state);
+    if (form == null)
+        return null;
+    return (MONSTER_ATTACKS[form] || []).find(([attackType]) => attackType === AT_GAZE) || null;
+}
+function heroIsConfused(state) {
+    return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);
+}
+function gazeCannotAffect(monster) {
+    const helpless = monster.msleeping || monster.mcanmove === 0
+        || monster.mcanmove === false
+        || (monster.mfrozen ?? 0) > 0;
+    const blind = !monster.mcansee;
+    const eyeless = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
+    return helpless || monster.mstun || blind || eyeless;
+}
+function floatingEyeFreezeDuration(monster, state, random, rollDice) {
+    if ((state.u?.ulevel ?? 1) <= 6 && random(4) === 0)
+        return 200;
+    const attack = MONSTER_ATTACKS[monster.mnum]?.[0] || [];
+    return rollDice((monster.m_lev ?? 0) + 1, attack[3] ?? 1);
+}
+async function applyGazePassive(monster, state, publish, random, rollDice, die) {
+    if (monster.mnum === PM_FLOATING_EYE && !monster.mcan) {
+        const owner = possessiveName(monsterName(monster, { state }));
+        if (heroHasFreeAction(state)) {
+            await publish(`You stiffen momentarily under ${owner} gaze.`);
+            return { heroDied: false };
+        }
+        await publish(`You are frozen by ${owner} gaze!`);
+        state._occupation = null;
+        nomul(-floatingEyeFreezeDuration(monster, state, random, rollDice), state);
+        state._helplessReason = "frozen by a monster's gaze";
+        state._helplessDoneMessage = null;
+        return { heroDied: false, stopped: true };
+    }
+    if (monster.mnum !== PM_MEDUSA || monster.mcan)
+        return { heroDied: false };
+    const name = monsterName(monster, { state, article: 'none' });
+    await publish(`Gazing at the awake ${name} is not a very good idea.`);
+    await publish('You turn to stone...');
+    const heroDied = await die({
+        killer: "deliberately meeting Medusa's gaze",
+        killerFormat: KILLED_BY,
+        deathVerb: 'turned to stone',
+        deathLineShown: true,
+        deathType: STONING,
+    });
+    return { heroDied, stopped: heroDied };
+}
+async function applyConfusingGaze(monster, state, publish) {
+    if (!monster.mconf)
+        await publish(`Your gaze confuses ${monsterName(monster, { state })}!`);
+    else
+        await publish(`${monsterName(monster, { state, capitalized: true })} is getting more and more confused.`);
+    monster.mconf = 1;
+}
+async function applyFieryGaze({ monster, state, publish, random, rollDice, finishMonsterKill, }) {
+    const name = monsterName(monster, { state });
+    const originalDamage = rollDice(2, 6);
+    let damage = originalDamage;
+    await publish(`You attack ${name} with a fiery gaze!`);
+    if (monsterHasElementalResistance(monster, MR_FIRE)) {
+        await publish(`The fire doesn't burn ${name}!`);
+        damage = 0;
+    }
+    if ((state.u?.ulevel ?? 1) > random(20)) {
+        damage += await destroyFireMonsterInventory(monster, originalDamage, {
+            publish,
+            random,
+            visible: canSeeMonster(monster),
+        });
+        await igniteItems(monster.minvent || monster.inventory, {
+            state,
+            publish,
+            random,
+            visible: canSeeMonster(monster),
+        });
+    }
+    monster.mhp -= damage;
+    if (monster.mhp > 0)
+        return false;
+    await finishMonsterKill(monster, monster.mx, monster.my);
+    return monster.mhp <= 0 || !!monster.dead;
+}
+async function confirmPeacefulGaze(monster, damageType, state) {
+    const action = damageType === AD_CONF ? 'confuse' : 'attack';
+    return await promptYesNo(`Really ${action} ${monsterName(monster, { state })}?`) === 'y';
+}
+// C polyself.c:dogaze().
+export async function useHeroGaze({ state = game, attack = heroGazeAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, finishMonsterKill = finishHeroMonsterKill, die = finishHeroDeath, } = {}) {
+    if (!attack)
+        return { used: false, spentTime: false, reason: 'no-gaze' };
+    const damageType = attack[1];
+    if (damageType !== AD_CONF && damageType !== AD_FIRE)
+        return { used: false, spentTime: false, reason: 'unsupported-gaze' };
+    if (heroIsBlind(state)) {
+        await publish("You can't see anything to gaze at.");
+        return { used: false, spentTime: false, reason: 'blind' };
+    }
+    if (heroIsHallucinating(state)) {
+        await publish("You can't gaze at anything you can see.");
+        return { used: false, spentTime: false, reason: 'hallucinating' };
+    }
+    const energy = state.u.uen ?? 0;
+    if (energy < 15) {
+        await publish('You lack the energy to use your special gaze!');
+        return { used: false, spentTime: false, reason: 'energy' };
+    }
+    state.u.uen = energy - 15;
+    state.context.botl = true;
+    let looked = 0;
+    // polyself.c:dogaze() walks fmon, newest monster first.
+    for (const monster of monstersInFmonOrder(state.level?.monsters || [])) {
+        if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
+            || !canSeeMonster(monster)
+            || !couldsee(monster.mx, monster.my))
+            continue;
+        looked++;
+        if (heroIsInvisible(state)
+            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} seems not to notice your gaze.`);
+            continue;
+        }
+        if (monster.minvis && !heroCanSeeInvisible(state)) {
+            await publish(`You can't see where to gaze at ${monsterName(monster, { state, capitalized: true })}.`);
+            continue;
+        }
+        if (M_AP_TYPE(monster) === M_AP_FURNITURE
+            || M_AP_TYPE(monster) === M_AP_OBJECT) {
+            looked--;
+            continue;
+        }
+        if ((state.flags?.safe_dog ?? true) && monster.mtame && !heroIsConfused(state)) {
+            const target = monsterName(monster, { state, article: 'your' });
+            await publish(`You avoid gazing at ${target}.`);
+            continue;
+        }
+        if (state.flags?.confirm && monster.mpeaceful
+            && !heroIsConfused(state)
+            && !await confirmPeacefulGaze(monster, damageType, state))
+            continue;
+        await angerAttackedMonster(monster);
+        if (gazeCannotAffect(monster)) {
+            looked--;
+            continue;
+        }
+        let killed = false;
+        if (damageType === AD_CONF)
+            await applyConfusingGaze(monster, state, publish);
+        else {
+            killed = await applyFieryGaze({
+                monster, state, publish, random, rollDice,
+                finishMonsterKill,
+            });
+        }
+        if (killed)
+            continue;
+        const passive = await applyGazePassive(monster, state, publish, random, rollDice, die);
+        if (passive.stopped)
+            return { used: true, spentTime: true, looked, ...passive };
+    }
+    if (!looked)
+        await publish('You gaze at no place in particular.');
+    return { used: true, spentTime: true, looked, heroDied: false };
+}
+export async function useHeroVampireShift() {
+    const previous = game.u.umonnum;
+    if (heroCanChangeVampireShape(game)) {
+        const result = await polymorphHero(POLY_MONSTER);
+        if (result.died)
+            return { spentTime: true, died: true };
+        if (previous !== game.u.umonnum) {
+            const currentForm = game.u.umonnum;
+            if (currentForm === undefined)
+                throw new Error('vampire shape change did not install a body');
+            const name = monsterTypeName(currentForm, !!game.u.mfemale);
+            await plineWithContinuation(`You transform into ${withIndefiniteArticle(name)}.`);
+            await newsym(game.u.ux, game.u.uy);
+        }
+    }
+    return { spentTime: true, changed: previous !== game.u.umonnum };
+}
+export function heroCanMindBlast(state = game) {
+    const form = state.u.umonnum;
+    return (state.u.mtimedone ?? 0) > 0
+        && form !== undefined && monsterIsMindFlayer(form);
+}
+export async function useHeroMindBlast({ state = game, publish = plineWithContinuation, random = rn2, rollDamage = rnd, wake = wakeMonster, finishMonsterKill = finishHeroMonsterKill, } = {}) {
+    const hero = state.u;
+    const energy = hero.uen ?? 0;
+    if (energy < 10) {
+        await publish('You concentrate but lack the energy to maintain doing so.');
+        return { spentTime: false, hitCount: 0 };
+    }
+    hero.uen = energy - 10;
+    state.context.botl = true;
+    await publish('You concentrate.');
+    await publish('A wave of psychic energy pours out.');
+    let hitCount = 0;
+    // C walks fmon, which lists the newest monster first.
+    for (const monster of monstersInFmonOrder(state.level?.monsters || [])) {
+        if (!canReachMonsterMind(monster, hero))
+            continue;
+        const sense = mindBlastSense(monster, random);
+        if (!sense)
+            continue;
+        const damage = rollDamage(15);
+        await wake(monster, { attacked: damage > monster.mhp });
+        await publish(`You lock in on ${possessiveName(monsterName(monster, { state }))} ${sense}.`);
+        monster.mhp -= damage;
+        hitCount++;
+        if (monster.mhp <= 0) {
+            await finishMonsterKill(monster, monster.mx, monster.my);
+        }
+    }
+    return { spentTime: true, hitCount };
+}
+function canReachMonsterMind(monster, hero) {
+    if (!monster || monster.dead || (monster.mhp ?? 0) <= 0)
+        return false;
+    if (monster.mpeaceful || monsterIsMindless(monster.mnum))
+        return false;
+    return dist2(hero.ux, hero.uy, monster.mx, monster.my)
+        <= BOLT_LIM * BOLT_LIM;
+}
+function mindBlastSense(monster, random) {
+    const telepathic = monsterIsTelepathic(monster.mnum);
+    const blind = monster.mcansee === 0 || monster.mcansee === false;
+    if (telepathic && blind)
+        return 'telepathy';
+    if (telepathic && random(2) !== 0)
+        return 'latent telepathy';
+    if (random(10) === 0)
+        return telepathic ? 'latent telepathy' : 'mind';
+    return null;
+}
+// C polyself.c:uunstick().
+export async function releaseHeroGrip(state = game, publish = plineWithContinuation) {
+    const holder = state.u.ustuck;
+    if (!holder)
+        throw new Error('Releasing the hero grip requires a held monster.');
+    setHeroGrip(null, state);
+    await publish(`${monsterName(holder, { state, capitalized: true })} is no longer in your clutches.`);
+}
 async function mergeDragonArmor(armor, mnum) {
     if (!armor)
         throw new Error('Merging with a dragon form requires worn dragon armor');
@@ -1444,5 +2259,54 @@ export function dragonFormForArmor(object) {
     if (type >= GRAY_DRAGON_SCALES && type <= YELLOW_DRAGON_SCALES)
         return firstDragon + type - GRAY_DRAGON_SCALES;
     return null;
+}
+export function rememberPolymorphGenocide(cause, state = game) {
+    state._polymorphGenocideCause = cause;
+}
+// Native polyman removes the delayed killer before done(), which can return
+// when a wizard refuses death. A later reversion then uses self-genocide.
+export function takePolymorphGenocide(state = game) {
+    const cause = state._polymorphGenocideCause ?? null;
+    delete state._polymorphGenocideCause;
+    return cause;
+}
+// C polyself.c:ugenocided().
+export function heroHasBeenGenocided(state = game) {
+    const { u, urace } = requireInitializedGame(state);
+    // This port's role.mnum is a role-table index; u.umonster stores its
+    // initialized monster species, equivalent to native urole.mnum.
+    const roleVital = state.mvitals?.[u.umonster];
+    const raceVital = state.mvitals?.[urace.mnum];
+    if (!roleVital || !raceVital)
+        throw new Error('Hero genocide requires initialized species population state');
+    return !!((roleVital.mvflags | raceVital.mvflags) & G_GENOD);
+}
+// C polyself.c:udeadinside().
+export function feelingAfterSelfGenocide(state = game) {
+    const species = heroSpecies(state);
+    if (!monsterIsNonliving(species))
+        return 'dead';
+    return monsterIsWeirdNonliving(species) ? 'empty' : 'condemned';
+}
+export function genocideDeathOptions(cause) {
+    let killer;
+    let description;
+    switch (cause) {
+        case 'scroll':
+            killer = 'scroll of genocide';
+            description = 'a scroll of genocide';
+            break;
+        case 'throne':
+            killer = 'imperious order';
+            description = 'an imperious order';
+            break;
+        case 'confusion':
+            killer = description = 'genocidal confusion';
+            break;
+        case 'self':
+            killer = description = 'self-genocide';
+            break;
+    }
+    return { killer, deathCause: `killed by ${description}`, deathType: GENOCIDED, deathLineShown: true };
 }
 //# sourceMappingURL=polyself.js.map

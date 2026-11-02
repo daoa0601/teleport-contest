@@ -58,7 +58,7 @@ import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
 import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsStrangled } from './hero_strangulation.js';
 import { updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';

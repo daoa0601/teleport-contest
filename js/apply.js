@@ -58,7 +58,7 @@ import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, } from './hero_species.js';
+import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine } from './hero_status.js';
 import { freeHeroFromBuriedBall, triggerHeroTrap } from './hero_traps.js';

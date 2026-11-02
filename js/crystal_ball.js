@@ -13,7 +13,7 @@ import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './hacklib.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { makeConfused, makeHallucinated } from './potion.js';
-import { heroPolyGender } from './hero_species.js';
+import { heroPolyGender } from './polyself.js';
 import { browseDetectionMap, detectMonsters, detectObjects, redisplayDetectionMap, unconstrainMap, } from './detect.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_SYMBOLS } from './mondata.js';

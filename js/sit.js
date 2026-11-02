@@ -24,7 +24,7 @@ import { monsterPossessive } from './mondata.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { waterDamageObject } from './trap.js';

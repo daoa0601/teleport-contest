@@ -11,7 +11,7 @@ import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroPassesWalls, heroSpecies } from './polyself.js';
 import { applyMonsterGolemEffects, changeMonsterForm, resolveMonsterCorpseChance } from './mon.js';
 import { wornMonsterLifeSaver } from './mondeath.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';

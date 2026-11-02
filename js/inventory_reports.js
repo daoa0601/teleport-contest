@@ -22,7 +22,7 @@ import { currentShopResident, shopkeeperInOwnShop, unpaidObjectCost, reportShopF
 import { objectsInTimerGraph } from './timeout.js';
 import { MENU_FULL, MENU_PARTIAL, PICK_ONE, SORTLOOT_INUSE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, W_WEAPONS, } from './const.js';
 import { LEASH } from './object_data.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import { heroGoldAmount } from './hack.js';
 const BUC_CHOICES = ['B', 'C', 'U', 'X'];

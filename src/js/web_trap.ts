@@ -11,7 +11,7 @@ import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterName } from './do_name.js';
 import {
     MONSTER_FLAGS1,

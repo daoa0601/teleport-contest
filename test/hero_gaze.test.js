@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { finishHeroHelplessness } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
-import { heroGazeAttack, useHeroGaze } from '../js/hero_gaze.js';
+import { heroGazeAttack, useHeroGaze } from '../js/polyself.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

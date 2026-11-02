@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero, polymorphHero } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
-import { useHeroVampireShift } from '../js/vampire_shift.js';
+import { useHeroVampireShift } from '../js/polyself.js';
 import { runMonsterAbilityCommand, } from './support/commands.js';
 import { freshHeroConditionRoom, freshMonsterAbilityRoom, wearPolymorphControlRing, } from './support/hero-state.js';
 const PM_WOLF = MONSTER_NAME.indexOf('wolf');

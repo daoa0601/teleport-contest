@@ -12,7 +12,7 @@ import { pushKey } from '../js/input.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX, NON_PM } from '../js/const.js';
-import { heroSpecies, setHeroSpecies } from '../js/hero_species.js';
+import { heroSpecies, setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { races } from '../js/roles.js';
 import { healHeroLegs, woundHeroLegs } from '../js/hero_legs.js';

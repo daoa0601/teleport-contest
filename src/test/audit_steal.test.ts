@@ -9,7 +9,7 @@ import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';

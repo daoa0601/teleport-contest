@@ -99,30 +99,23 @@ import {
 import { bucAdjectiveForName, ddoinv, dolook } from './invent.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './hero_breath.js';
-import { useHeroBreath } from './hero_breath_command.js';
+import { useHeroBreath } from './polyself.js';
 import { monsterBreathAttack } from './dogmove.js';
-import { heroSpitAttack, useHeroSpit } from './hero_spit.js';
-import { heroGazeAttack, useHeroGaze } from './hero_gaze.js';
+import { heroSpitAttack, useHeroSpit } from './polyself.js';
+import { heroGazeAttack, useHeroGaze } from './polyself.js';
 import {
     heroCanSplitLikeGremlin, useHeroGremlinSplit,
 } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
-import {
-    heroCanSummonWerePack, useHeroWereSummon,
-} from './were.js';
+import { heroCanSummonWerePack } from './were.js';
+import { useHeroWereSummon } from './polyself.js';
 import { heroHasHidingAbility, useHeroHide } from './hero_hide.js';
-import {
-    chooseSpiderAbility, heroCanSpinWeb, useHeroWeb,
-} from './hero_web.js';
-import {
-    heroCanMindBlast, useHeroMindBlast,
-} from './hero_mind_blast.js';
-import {
-    heroCanRemovePunishment, useHeroNymphAbility,
-} from './hero_nymph_ability.js';
+import { chooseSpiderAbility, heroCanSpinWeb, useHeroWeb } from './polyself.js';
+import { heroCanMindBlast, useHeroMindBlast } from './polyself.js';
+import { heroCanRemovePunishment, useHeroNymphAbility } from './polyself.js';
 import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { useUnicornHorn } from './apply.js';
-import { useHeroVampireShift } from './vampire_shift.js';
+import { useHeroVampireShift } from './polyself.js';
 import { doread } from './read.js';
 import { continueFoodMeal, doeat, continueTinOpening } from './eat.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
@@ -139,7 +132,7 @@ import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY } from './object_data.js';
 import { NO_COLOR } from './terminal.js';
 import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling } from './monster_data.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { autopickupAtHero } from './pickup.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 

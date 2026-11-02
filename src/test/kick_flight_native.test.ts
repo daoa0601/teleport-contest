@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, HWALL, STONE, TREE_LOOTED, TREE_SWARM } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { kickDirection } from './support/commands.js';

@@ -8,7 +8,7 @@ import { displayColorName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
-import { heroHasNoHead, heroIsBreathless } from './hero_species.js';
+import { heroHasNoHead, heroIsBreathless } from './polyself.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { AMULET_OF_STRANGULATION } from './object_data.js';
 import { deleteObject } from './shk.js';

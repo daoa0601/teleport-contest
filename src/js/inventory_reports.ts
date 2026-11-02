@@ -35,7 +35,7 @@ import {
     W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, W_WEAPONS,
 } from './const.js';
 import { LEASH } from './object_data.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import { heroGoldAmount } from './hack.js';
 

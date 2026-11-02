@@ -25,7 +25,7 @@ import { learnObjectType } from './o_init.js';
 import { consumeObjectCharge } from './invent.js';
 import { definiteObjectAction, definiteName, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { askForTune, playTune } from './passtune.js';
-import { heroCanBlow, heroFormSticks } from './hero_species.js';
+import { heroCanBlow, heroFormSticks } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { promptDirection } from './tty_prompts.js';

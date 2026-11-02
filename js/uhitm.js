@@ -37,7 +37,7 @@ import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } fro
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { makeConfused, makeStunned } from './potion.js';
-import { heroFormSticks, heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroHatesSilver, heroSpecies } from './polyself.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';

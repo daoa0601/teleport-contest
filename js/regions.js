@@ -9,7 +9,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';
-import { heroIsBreathless } from './hero_species.js';
+import { heroIsBreathless } from './polyself.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
 import { makePlural } from './objnam.js';
 import { refreshProperty } from './properties.js';

@@ -20,7 +20,7 @@ import {
     monsterIsUnicorn,
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { heroIsAmphibious } from './hero_species.js';
+import { heroIsAmphibious } from './polyself.js';
 import { landFloorObject } from './floor_effects.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { Monster } from './monster_types.js';
