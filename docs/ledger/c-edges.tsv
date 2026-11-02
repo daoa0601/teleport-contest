@@ -52,6 +52,8 @@ accessory_or_armor_on	yn_function
 acurrstr	acurr
 add_damage	shop_keeper
 add_menu	get_menu_coloring
+add_region	isok
+add_region	newsym
 add_room	do_room_or_subroom
 addinv_core0	picked_container
 addinv_core0	setuqwep
@@ -137,6 +139,8 @@ basics_enlightenment	costly_spot
 basics_enlightenment	currency
 basics_enlightenment	hidden_gold
 beautiful	acurr
+beehive_mon_sound	mon_in_room
+beehive_mon_sound	rn2
 bestow_artifact	align_gname
 bestow_artifact	discover_artifact
 bestow_artifact	exercise
@@ -303,6 +307,8 @@ costly_tin	costly_spot
 could_move_onto_boulder	inv_weight
 could_pole_mon	calc_pole_range
 count_contents	costly_spot
+count_feat_lastseentyp	is_drawbridge_wall
+count_feat_lastseentyp	isok
 count_surround_traps	glyph_at
 count_surround_traps	isok
 courtmon	level_difficulty
@@ -1377,6 +1383,7 @@ generate_way_out_method	selection_rndcoord
 get_adjacent_loc	getdir
 get_adjacent_loc	isok
 get_count	readchar
+get_hilite	critically_low_hp
 get_location	is_ok_location
 get_location	isok
 get_location	rn2
@@ -1555,11 +1562,18 @@ ini_inv_use_obj	setuqwep
 ini_inv_use_obj	setuswapwep
 ini_inv_use_obj	setuwep
 ini_inv_use_obj	setworn
+init_castle_tune	rn2
+init_dungeon_dungeons	rn2
 init_fill	rn2
 init_fill	rnd
 init_objects	rn2
 init_objects	setgemprobs
 init_uhunger	encumber_msg
+inside_gas_cloud	losehp
+inside_gas_cloud	make_blinded
+inside_gas_cloud	monstseesu
+inside_gas_cloud	monstunseesu
+inside_gas_cloud	rnd
 instapetrify	done
 insufficient_funds	hidden_gold
 intemple	d
@@ -1763,13 +1777,18 @@ litter_scatter	rn2
 litter_scatter	unplacebc
 llord	lminion
 logdeadmon	record_achievement
+look_all	glyph_at
+look_all	look_at_monster
 look_at_monster	trapname
 look_at_monster	visible_region_at
+look_engrs	glyph_at
 look_here	is_lava
 look_here	is_pool
 look_here	surface
 look_here	trapname
 look_here	visible_region_at
+look_traps	glyph_at
+look_traps	trapname
 lookaround	isok
 lookaround	nomul
 lookaround	set_msg_xy
@@ -1880,6 +1899,10 @@ makelevel	place_branch
 makelevel	rn2
 makelevel	rnd_rect
 makelevel	sort_rooms
+makemap_prepost	check_special_room
+makemap_prepost	flush_screen
+makemap_prepost	maybe_reset_pick
+makemap_prepost	unplacebc
 makemon	can_saddle
 makemon	isok
 makemon	mkobj_at
@@ -2169,6 +2192,7 @@ mnearto	mon_leaving_level
 mon_beside	isok
 mon_consume_unstone	rnd
 mon_has_friends	isok
+mon_is_gecko	glyph_at
 mon_leaving_level	fill_pit
 mon_leaving_level	isok
 mon_leaving_level	newsym
@@ -2181,6 +2205,8 @@ monster_detect	cls
 monster_detect	strange_feeling
 monster_detect	unconstrain_map
 monster_nearby	isok
+morgue_mon_sound	mon_in_room
+morgue_mon_sound	rn2
 morguemon	level_difficulty
 morguemon	mkclass
 morguemon	ndemon
@@ -2456,6 +2482,7 @@ openone	open_drawbridge
 openone	openholdingtrap
 openone	wake_nearto
 opentin	consume_tin
+oracle_sound	rn2
 out_container	costly_spot
 out_container	fatal_corpse_mistake
 out_container	lift_object
@@ -2467,6 +2494,8 @@ overexertion	gethungry
 overexertion	near_capacity
 overexertion	overexert_hp
 paranoid_ynq	yn_function
+parent_dlevel	level_range
+parent_dlevel	rn2
 parkguard	newsym
 parse_condition	splitsubfields
 parse_condition	str2conditionbitmask
@@ -2739,6 +2768,7 @@ precheck	makemon
 precheck	rn2
 precheck	rndmonnam
 premap_detect	map_background
+prev_level	done
 prisoner_speaks	adjalign
 prisoner_speaks	angry_guards
 process_menu_window	tty_getlin
@@ -3304,6 +3334,8 @@ thitu	losehp
 thitu	monstseesu
 thitu	monstunseesu
 thitu	rnd
+throne_mon_sound	mon_in_room
+throne_mon_sound	rn2
 throne_sit_effect	adjattrib
 throne_sit_effect	aggravate
 throne_sit_effect	courtmon
@@ -3765,3 +3797,5 @@ zhitu	monstseesu
 zhitu	monstunseesu
 zhitu	rn2
 zhitu	shieldeff
+zoo_mon_sound	mon_in_room
+zoo_mon_sound	rn2

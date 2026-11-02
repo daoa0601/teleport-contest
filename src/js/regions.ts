@@ -129,6 +129,14 @@ export async function createGasCloudSelection(
     return await makeGasCloud(state, cells, ttl, damage, false, publish);
 }
 
+// C region.c:create_region(): the region record with its defaults; and
+// add_rect_to_reg(): the rect list became the cell array, each cloud cell
+// a 1x1 rect whose bounds are the cell itself.
+// C region.c:add_region(): activation — join the level's region list,
+// scan the founding cells for members, set hero-inside, and note the
+// blocker change before redrawing what is visible.
+// C region.c:is_hero_inside_gas_cloud(): the hero already standing in a
+// cloud suppresses the envelopment message for this one.
 async function makeGasCloud(
     state: GameState | null | undefined, cells: readonly Position[], ttl: number, damage: number,
     silent: boolean, publish: MessagePublisher,
@@ -137,6 +145,7 @@ async function makeGasCloud(
     const inside = state.level.regions.some(region => region.heroInside);
     const orderedCells = uniqueXMajorCells(cells);
     const monsterIds = new Set<number>();
+        // C add_mon_to_reg(): a founding monster joins the membership scan.
     for (const cell of orderedCells) {
         if (!isok(cell.x, cell.y)) continue;
         const monster = monsterAtPosition(state.level, cell.x, cell.y);
@@ -259,6 +268,8 @@ export async function createPoisonGasCloud(
 }
 
 // C region.c:inside_region().
+// C region.c:inside_rect(): every cloud cell is its own rectangle, so the
+// per-rect bounds test is the cell comparison itself.
 function regionContains(region: GasCloud, x: number, y: number): boolean {
     return region.cells?.some(cell => cell.x === x && cell.y === y);
 }
@@ -273,6 +284,9 @@ export function updateHeroRegions(state: GameState = game,
 
 // C m_in_out_region()/update_monster_region(). Membership changes at the
 // movement boundary; swapping with the hero does not cross this boundary.
+// C region.c:mon_in_region(): membership test against the id list.
+// C region.c:add_mon_to_reg(): join the list once; C's impossible()
+// duplicate report is the index test.
 export function updateMonsterRegions(monster: Monster, state: GameState = game,
     position: Position = { x: monster.mx, y: monster.my }): void {
     for (const region of requireGameLevel(state).regions) {
@@ -285,6 +299,8 @@ export function updateMonsterRegions(monster: Monster, state: GameState = game,
     }
 }
 
+// C region.c:remove_mon_from_reg(): drop the id by overwriting its slot
+// with the last member of the list.
 function removeRegionMonster(region: GasCloud, index: number): void {
     const lastId = region.monsterIds.pop();
     if (lastId !== undefined && index < region.monsterIds.length)
@@ -405,6 +421,7 @@ function halfHeroGasDamage(damage: number, state: GameState): number {
     return damage;
 }
 
+// C wake_nearto(): coughing wakes nearby sleepers.
 async function wakeNearGas(
     x: number, y: number, state: GameState,
     publish: MessagePublisher, wake: WakeNearGas,
@@ -412,6 +429,8 @@ async function wakeNearGas(
     await wake(x, y, 2, state, publish);
 }
 
+// C region.c:inside_gas_cloud(), hero branch: fog-cloud maintenance, eyes
+// that sting and blind, and the cough plus poison damage for a breather.
 async function affectHeroWithGas(
     region: GasCloud, state: GameState,
     { publish, rollOne, wake, die }: RegionTurnHandlers,
@@ -444,6 +463,8 @@ async function affectHeroWithGas(
     return event;
 }
 
+// C region.c:inside_gas_cloud(), monster branch: the cough, anger at the
+// hero's cloud, blindness, and the poison that can kill.
 async function affectMonsterWithGas(
     region: GasCloud, monster: Monster, state: GameState,
     { publish, rollOne, wake, onAnger, onMonsterDeath }: RegionTurnHandlers,
@@ -453,6 +474,7 @@ async function affectMonsterWithGas(
     if (monsterGasTolerance(monster, state) === GAS_OK) return null;
 
     const nearHero = (monster.mx - state.u.ux) ** 2
+    // C dist2(): the cough carries eight squares, squared.
         + (monster.my - state.u.uy) ** 2 < 8;
     const visible = canSeeMonster(monster);
     if ((MONSTER_SOUND[monster.mnum] ?? 0) !== 0) {
@@ -530,6 +552,9 @@ export async function restoreLevelRegions(state: GameState, elapsed: number): Pr
     }
 }
 
+// C region.c:expire_gas_cloud(): a thick cloud halves its damage and
+// resets its ttl instead of dying; expiry counts the visible spots it
+// covered before the removal redraw.
 async function expireRegions(state: GameState): Promise<{ aroundHero: boolean; inSight: number }> {
     let dissipatedAroundHero = false;
     let dissipatedInSight = 0;
@@ -537,6 +562,7 @@ async function expireRegions(state: GameState): Promise<{ aroundHero: boolean; i
     // Native expiry scans backward; removal fills the hole with the last
     // surviving region, which has already had its expiry check.
     for (const region of [...level.regions].reverse()) {
+        // C inside_region(): every cell of the cloud is checked.
         if (region.ttl !== 0) continue;
         if (region.kind === 'gas-cloud' && region.damage >= 5) {
             region.damage = Math.trunc(region.damage / 2);

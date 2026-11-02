@@ -27,6 +27,9 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 
 const STRANGE_OBJECT = 0;
 
+// C pager.c:look_at_object(): the displayed object's name (distant_name over
+// doname_with_price) plus its placement suffix — buried, tree, stone, wall,
+// door, water, lava.
 export async function objectAtMapDescription(
     x: number, y: number, glyph: GlyphMetadata | null,
     state: GameState = game, style: 'hidden' | 'farlook' = 'farlook',
@@ -114,6 +117,7 @@ function placementSuffix(object: GameObject | null, x: number, y: number, state:
     if (location.typ === STONE || location.typ === SCORR) return ' embedded in stone';
     if (IS_WALL(location.typ) || location.typ === SDOOR) return ' embedded in a wall';
     if (location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)))
+    // C closed_door(): a closed or locked door holds the embedded object.
         return ' embedded in a door';
     if (isPoolAt(x, y, state)) return ' in water';
     if (isLavaAt(x, y, state)) return ' in molten lava';

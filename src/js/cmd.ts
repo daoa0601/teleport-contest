@@ -842,6 +842,10 @@ async function monsterPreventsStairTravel(up: boolean): Promise<boolean> {
     return false;
 }
 
+// Stair traversal shared by up and down: mark the stairway traversed, then
+// hand the destination to goto_level().
+// C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
+// including prev_level()'s escape ending from dungeon 0 level 1.
 export async function travelStairs(up: boolean) {
     const level = requireGameLevel();
     requireInitializedHero(game.u);

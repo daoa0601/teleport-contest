@@ -296,11 +296,16 @@ export function monsterHasWarningProjection(monster: Monster | null | undefined)
     if (!monster || !game.u?.warning || monster.mpeaceful) return null;
     const dx = monster.mx - game.u.ux, dy = monster.my - game.u.uy;
     if (dx * dx + dy * dy >= 100) return null;
+    // C dist2(): the warning radius is a squared distance (ten squares).
     const level = Math.min(def_warnsyms.length - 1,
         Math.trunc((monster.m_lev ?? 0) / 4));
     return level >= (game.context?.warnlevel ?? 1);
 }
 
+// C display.c:display_warning(): the ordinary-warning glyph — warning_of()'s
+// m_lev/4, rerolled on the display RNG while hallucinating — which newsym()'s
+// warning branch (C show_mon_or_warn()) shows over an otherwise-unshown
+// monster.
 function warningProjection(monster: Monster | null | undefined) {
     if (!monster || !monsterHasWarningProjection(monster)) return null;
     const level = heroIsHallucinating()
@@ -2520,6 +2525,8 @@ let lastSwallowedY = 0;
 // the first draw clears the map, then eight stomach cells surround the hero.
 // When hallucinating, every stomach cell independently chooses a display-only
 // monster color.
+// C display.c:swallow_to_glyph(): each border cell is monster<<3 | position,
+// with the hallucinated species picked here instead of through what_mon().
 export async function swallowed(first = false) {
     if (!game.level || !game.u?.uswallow || !game.u?.ustuck) return;
     if (first) {
@@ -2750,6 +2757,8 @@ export async function flush_screen(mode?: number) {
 }
 
 // ── cls ──
+// C display.c:clear_glyph_buffer(): every cell returns to unexplored, a
+// buffer reset rather than a discovered glyph change.
 export async function cls() {
     await flushPendingTopline();
     game.context.botl = true;
