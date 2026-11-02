@@ -1,5 +1,5 @@
 // Polymorph traps triggered by monsters.
-// C ref: trap.c:trapeffect_poly().
+// C ref: trap.c:trapeffect_poly_trap(), monster branch.
 
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -9,6 +9,8 @@ import type { MessagePublisher } from './pline.js';
 import { changeMonsterForm } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
 import { monsterHasMagicResistance, monsterWornIronShoes } from './anti_magic_trap.js';
+import { shieldeff } from './display.js';
+import { monsterName } from './do_name.js';
 import { W_ARMF } from './const.js';
 import { game } from './gstate.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
@@ -39,9 +41,21 @@ export interface MonsterPolymorphChangeEvent extends PolymorphTrapBase {
     killed?: boolean;
 }
 
+// C trap.c:trapeffect_poly_trap(): resists_magm() stages only mon.c
+// shieldeff_mon()'s shield effect and its "<mon> resists!" report; the
+// monster keeps its form and the trap stays hidden.
+export interface ShieldedPolymorphTrap extends PolymorphTrapBase {
+    monster: Monster;
+    changed: false;
+    shielded: true;
+    finished: boolean;
+    inSight: boolean;
+    seeSquare: boolean;
+}
+
 export type MonsterPolymorphTrapEvent =
     | (ResolvedPolymorphTrap & { replacementShoes: GameObject })
-    | (ResolvedPolymorphTrap & { shielded: true; inSight: boolean; seeSquare: boolean })
+    | ShieldedPolymorphTrap
     | (ResolvedPolymorphTrap & { resisted: true; inSight: boolean; seeSquare: boolean })
     | MonsterPolymorphChangeEvent;
 
@@ -86,10 +100,11 @@ export async function applyMonsterPolymorphTrap(
     if (monsterHasMagicResistance(monster)) {
         return {
             kind: 'polymorph-trap',
+            monster,
             trap,
             changed: false,
             shielded: true,
-            finished: true,
+            finished: false,
             ...visibility,
         };
     }
@@ -122,7 +137,21 @@ export async function finishMonsterPolymorphTrap(
         state = game,
     }: PolymorphTrapOptions = {},
 ) {
-    if (!event || event.finished) return event;
+    if (!event) return event;
+
+    if ('shielded' in event) {
+        // C trap.c:trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
+        // shield effect runs whenever the monster's square is visible, and a
+        // visible square reports "<mon> resists!".  C reveals the trap only
+        // after an actual shape change, so it stays hidden here.
+        await shieldeff(event.monster.mx, event.monster.my, state);
+        if (event.seeSquare) {
+            await publish(`${monsterName(event.monster, { state, capitalized: true })} resists!`);
+        }
+        event.finished = true;
+        return event;
+    }
+    if (event.finished) return event;
 
     const change = await changeMonsterForm(event.monster, null, state, {
         showMessage: true,
