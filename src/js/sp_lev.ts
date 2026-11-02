@@ -631,6 +631,7 @@ export async function flipSpecialLevel(flp: number, extras = false): Promise<voi
         coordinate.x = flipped.x;
         coordinate.y = flipped.y;
     };
+    // C sp_lev.c:flip_vault_guard(): the guard's goal, origin, and corridor.
     const flipGuard = (monster: Monster): void => {
         const guard = monster._egd;
         if (!guard) return;
@@ -766,6 +767,7 @@ export async function flipSpecialLevel(flp: number, extras = false): Promise<voi
     level._flip = { flp, minx, miny, maxx, maxy };
 }
 
+// C sp_lev.c:flip_dbridge_horizontal()/flip_dbridge_vertical().
 function flipDrawbridgeDirection(location: MapLocation, horizontal: boolean): void {
     if (location.typ !== DRAWBRIDGE_UP && location.typ !== DRAWBRIDGE_DOWN) return;
     const mask = location.drawbridgemask ?? location.flags;
@@ -777,11 +779,13 @@ function flipDrawbridgeDirection(location: MapLocation, horizontal: boolean): vo
         | (direction === first ? second : first);
 }
 
+// Bit-pair swap; C hacklib.c:swapbits().
 function swapDirectionBits(value: number, first: number, second: number): number {
     const different = ((value >> first) ^ (value >> second)) & 1;
     return value ^ ((different << first) | (different << second));
 }
 
+// C sp_lev.c:flip_encoded_dir_bits().
 function flipEncodedDirections(flp: number, value: number): number {
     if (flp & 1) {
         value = swapDirectionBits(value, 1, 7);
@@ -2487,6 +2491,8 @@ function floodAccessibleArea(selection: SpecialSelection, x: number, y: number):
     selection.floodFill(x, y, true, accessibleSpecialTerrain);
 }
 
+// C sp_lev.c:generate_way_out_method(). Secret door, hole or trapdoor, or
+// an escape item, in that order.
 async function addWayOut(x: number, y: number, reachable: SpecialSelection): Promise<void> {
     const level = requireGameLevel();
     const component = new SpecialSelection();

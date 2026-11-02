@@ -107,8 +107,8 @@ function objectAt(x, y, otyp, state) {
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;
 }
-function closedDoorAt(location) {
-    // C dokick.c closed_door(): DOOR terrain with a closed or locked mask.
+// C monmove.c:closed_door(): DOOR terrain with a closed or locked mask.
+function closedDoor(location) {
     return location?.typ === DOOR
         && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
 }
@@ -139,14 +139,14 @@ export function diggingTarget(tool, x, y, state = game) {
         return DIGTYP_UNDIGGABLE;
     const typ = location.typ;
     if (isAxe(tool))
-        return closedDoorAt(location) ? DIGTYP_DOOR
+        return closedDoor(location) ? DIGTYP_DOOR
             : IS_TREE(typ) ? DIGTYP_TREE
                 : DIGTYP_UNDIGGABLE;
     return objectAt(x, y, STATUE, state) && pickCanReach(tool, x, y, state)
         ? DIGTYP_STATUE
         : objectAt(x, y, BOULDER, state) && pickCanReach(tool, x, y, state)
             ? DIGTYP_BOULDER
-            : closedDoorAt(location) ? DIGTYP_DOOR
+            : closedDoor(location) ? DIGTYP_DOOR
                 : IS_TREE(typ) ? DIGTYP_UNDIGGABLE
                     : IS_OBSTRUCTED(typ)
                         && (!level.flags?.arboreal || IS_WALL(typ))
@@ -606,7 +606,7 @@ export async function continueHeroDigging(state = game) {
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;
         }
-        else if (closedDoorAt(location)) {
+        else if (closedDoor(location)) {
             digtxt = `You break through the door with your ${simpleObjectName(uwep, state)}.`;
             if (shopedge) {
                 await addShopDamage(dpx, dpy, SHOP_DOOR_COST, state);
@@ -1428,6 +1428,7 @@ export async function zapDigWithObject(_object, { state = game } = {}) {
                 await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0, { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
+            // C trap.c:conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
                 let adjacentPit = trapAt(x, y, state);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
@@ -1453,7 +1454,7 @@ export async function zapDigWithObject(_object, { state = game } = {}) {
                     break;
                 }
             }
-            else if (closedDoorAt(location) || location.typ === SDOOR) {
+            else if (closedDoor(location) || location.typ === SDOOR) {
                 if (roomsAt(level, x, y, SHOPBASE).length) {
                     addShopDamage(x, y, SHOP_DOOR_COST, state);
                     shopDoor = true;
@@ -1579,7 +1580,8 @@ async function digVertically(state, direction) {
     await stack_object(rock, state);
     await newsym(hero.ux, hero.uy);
 }
-// null permits digging; an empty string rejects it without a message.
+// C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
+// to reject silently, or the rejection message.
 function adjacentPitRejection(x, y, state) {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;
@@ -1588,7 +1590,7 @@ function adjacentPitRejection(x, y, state) {
     clearTerrainFlags(location);
     if (isPoolAt(x, y, state) || isLavaAt(x, y, state))
         return '';
-    if (closedDoorAt(location) || type === SDOOR || IS_WALL(type))
+    if (closedDoor(location) || type === SDOOR || IS_WALL(type))
         return 'The foundation is too hard to dig through from this angle.';
     if (IS_TREE(type))
         return "The tree's roots glow then fade.";
@@ -1597,13 +1599,17 @@ function adjacentPitRejection(x, y, state) {
     if (type === SINK)
         return 'A tangled mass of plumbing remains below the sink.';
     const stairs = stairwayAt(x, y, state);
+    // C stairs.c:On_ladder().
     if (stairs?.isladder)
         return 'The ladder is unaffected.';
+    // C stairs.c:On_stairs() names the stairs as the supporting structure;
+    // stairs.c:On_ladder() is handled above.
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
         : type === ALTAR ? 'altar' : stairs ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;
     return support ? `The ${possessiveName(support)} supporting structures remain intact.` : null;
 }
+// C dig.c:pit_flow(). Floods a linked pit and its neighbors with the liquid.
 async function floodConnectedPits(trap, liquid, state) {
     if (!trap || !is_pit(trap.ttyp))
         return;

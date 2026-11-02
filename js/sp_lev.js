@@ -600,6 +600,7 @@ export async function flipSpecialLevel(flp, extras = false) {
         coordinate.x = flipped.x;
         coordinate.y = flipped.y;
     };
+    // C sp_lev.c:flip_vault_guard(): the guard's goal, origin, and corridor.
     const flipGuard = (monster) => {
         const guard = monster._egd;
         if (!guard)
@@ -760,6 +761,7 @@ export async function flipSpecialLevel(flp, extras = false) {
     game.vision_full_recalc = 1;
     level._flip = { flp, minx, miny, maxx, maxy };
 }
+// C sp_lev.c:flip_dbridge_horizontal()/flip_dbridge_vertical().
 function flipDrawbridgeDirection(location, horizontal) {
     if (location.typ !== DRAWBRIDGE_UP && location.typ !== DRAWBRIDGE_DOWN)
         return;
@@ -772,10 +774,12 @@ function flipDrawbridgeDirection(location, horizontal) {
     location.flags = location.drawbridgemask = (mask & ~DB_DIR)
         | (direction === first ? second : first);
 }
+// Bit-pair swap; C hacklib.c:swapbits().
 function swapDirectionBits(value, first, second) {
     const different = ((value >> first) ^ (value >> second)) & 1;
     return value ^ ((different << first) | (different << second));
 }
+// C sp_lev.c:flip_encoded_dir_bits().
 function flipEncodedDirections(flp, value) {
     if (flp & 1) {
         value = swapDirectionBits(value, 1, 7);
@@ -2423,6 +2427,8 @@ function accessibleSpecialTerrain(x, y) {
 function floodAccessibleArea(selection, x, y) {
     selection.floodFill(x, y, true, accessibleSpecialTerrain);
 }
+// C sp_lev.c:generate_way_out_method(). Secret door, hole or trapdoor, or
+// an escape item, in that order.
 async function addWayOut(x, y, reachable) {
     const level = requireGameLevel();
     const component = new SpecialSelection();

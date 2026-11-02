@@ -361,6 +361,7 @@ export async function whatDoesCommand(): Promise<void> {
     if (description === null)
         await pline(`No such command '${visibleCommandKey(key)}', char code ${key} (0${key.toString(8).padStart(3, '0')} or 0x${key.toString(16).padStart(2, '0')}).`);
     else {
+        // pager.c:whatdoes_help(): the keyhelp text (keyhelp_data.ts).
         if (key === 38 || key === 63) {
             await showTextWindow(KEY_HELP);
             await restoreCommandMap();

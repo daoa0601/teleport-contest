@@ -2937,6 +2937,9 @@ export async function paymentObjectDescription(object, quantity, { state = game,
             state.iflags.suppress_price = suppress_price;
     }
 }
+// C objnam.c:doname_base(). Inventory and floor feedback share the same
+// knowledge, quantities, physical state, equipment annotations, and prices.
+// Callers observe the object separately before formatting it.
 export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
     let noun = objectName(object, state);
     const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
