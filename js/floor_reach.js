@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
 import { heroHidesOnCeiling, heroIsFlying, heroMonsterForm, } from './polyself.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 const MZ_HUGE = 4;
 function holderHugs(holder) {
     return (MONSTER_ATTACKS[holder?.mnum] || [])

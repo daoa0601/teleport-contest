@@ -41,7 +41,7 @@ import { makePlural } from './objnam.js';
 import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { surfaceName } from './terrain_name.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious } from './hero_species.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './ambient_sounds.js';
 import { currentAttribute } from './attrib.js';

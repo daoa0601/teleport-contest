@@ -9,7 +9,7 @@ import { levelAtDepth, specialDisplayName } from './dungeon.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { propertyIsActive } from './properties.js';

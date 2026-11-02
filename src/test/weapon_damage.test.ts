@@ -18,7 +18,7 @@ import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { game } from '../js/gstate.js';
 import { artifactDamageBonus } from '../js/artifacts.js';
-import { heroSpecies } from '../js/hero_species.js';
+import { heroSpecies } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 

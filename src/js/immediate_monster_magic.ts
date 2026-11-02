@@ -15,7 +15,7 @@ import { hitMonsterWithForce } from './force_bolt.js';
 import { impossible } from './diagnostics.js';
 import { releaseHold, releaseHeroFromMonster } from './hero_expulsion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { isSteadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './mimic.js';

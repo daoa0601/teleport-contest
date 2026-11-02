@@ -7,7 +7,7 @@ import { CORR, D_CLOSED, DOOR, PIT, P_DAGGER, STONE, W_ARMH } from '../js/const.
 import { game } from '../js/gstate.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { glyphAt } from '../js/display.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, HELMET, ROCK, SCR_AMNESIA, SCR_EARTH, SCR_FIRE, SCR_STINKING_CLOUD, SPE_FORCE_BOLT, SPE_HEALING } from '../js/object_data.js';

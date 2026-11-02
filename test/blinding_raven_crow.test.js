@@ -8,7 +8,7 @@ import { polymonHero } from '../js/polyself.js';
 import { createMonsterAt } from './support/monsters.js';
 import { NO_MINVENT } from '../js/const.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { heroSpecies } from '../js/hero_species.js';
+import { heroSpecies } from '../js/polyself.js';
 // C mondata.c:can_blnd(): "a crow will not pluck out the eye of another
 // crow" — a raven aggressor cannot blind a raven defender. uhitm.c and
 // dothrow.c pass &gy.youmonst as the aggressor, so a raven hero neither

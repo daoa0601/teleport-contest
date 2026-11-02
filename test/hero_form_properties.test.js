@@ -7,7 +7,7 @@ import { NO_MINVENT, PIT, STONE, WEB } from '../js/const.js';
 import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { createFireExplosion } from '../js/fire_explosion.js';
 import { game } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';

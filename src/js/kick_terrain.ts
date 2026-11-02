@@ -13,7 +13,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { placeCreatedObject } from './floor_object.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dungeonDepth } from './hacklib.js';
-import { heroPolyGender, heroSpecies } from './hero_species.js';
+import { heroPolyGender, heroSpecies } from './polyself.js';
 import { scheduleLevelChange } from './level_change.js';
 import { canFallThrough, findMonsterNearPosition } from './mklev.js';
 import { makemonAt } from './makemon.js';

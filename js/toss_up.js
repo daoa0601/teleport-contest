@@ -9,7 +9,7 @@ import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterHatesBlessings } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import { BLINDING_VENOM, CORPSE, CREAM_PIE, EGG } from './object_data.js';

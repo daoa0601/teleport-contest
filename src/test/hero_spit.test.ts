@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { heroSpitAttack, useHeroSpit } from '../js/hero_spit.js';
+import { heroSpitAttack, useHeroSpit } from '../js/polyself.js';
 import { A_DEX } from '../js/const.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';

@@ -11,7 +11,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender } from './hero_attack_accuracy.js';
 import { attackHeroInMonsterForm } from './hero_form_combat.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, monsterHasNoHands, monsterIsVerySmall, requireMonsterData, } from './monster_data.js';

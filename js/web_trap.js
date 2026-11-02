@@ -5,7 +5,7 @@ import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, } from './monster_data.js';
 const FLAMING = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander'].map((name) => MONSTER_NAME.indexOf(name)));

@@ -4,7 +4,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit, } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroIsBreathless, heroPassesWalls, heroSpecies } from './polyself.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS, } from './monster_attack_types.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
 import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';

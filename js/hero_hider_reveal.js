@@ -14,7 +14,7 @@ import { game } from './gstate.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { setHeroGrip } from './hero_grip.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';

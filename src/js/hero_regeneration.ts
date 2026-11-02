@@ -2,7 +2,7 @@
 import { currentAttribute } from './attrib.js';
 import { A_CON, Is_waterlevel, MOD_ENCUMBER, Upolyd } from './const.js';
 import { requireInitializedGame } from './gstate.js';
-import { heroIsBreathless, heroSpecies } from './hero_species.js';
+import { heroIsBreathless, heroSpecies } from './polyself.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';

@@ -14,13 +14,13 @@ import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeM
 import { resolveHeroCombatEngulf } from './hero_combat_engulf.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
 
-import { releaseHeroGrip } from './hero_expulsion.js';
+import { releaseHeroGrip } from './polyself.js';
 import {
     heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact,
 } from './hero_form_contact.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { resolveHeroNaturalDamage } from './hero_natural_damage.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { resolveHeroWeaponHit } from './hero_weapon_hit.js';
 import { tryKnockback, applyHeroContactPassive } from './uhitm.js';
 import {

@@ -21,7 +21,7 @@ import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY,
 import { isBimanualObject, isSword } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName } from './body_parts.js';
 import { recordRandom } from './monster_action_types.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender } from './polyself.js';
 import { heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging } from './polyself.js';
 import { armorWearDecision } from './armor_wear.js';
 import { isEyewear, removeEyewear, wearEyewear } from './eyewear.js';

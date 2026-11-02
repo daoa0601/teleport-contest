@@ -11,7 +11,7 @@ import type { MessagePublisher } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { RLOC_NOMSG } from './const.js';
 import {
@@ -74,14 +74,6 @@ export function holdingMonsterName(monster: Monster, state: GameState = game): s
 export function holdingMonsterSubject(monster: Monster, state: GameState = game): string {
     const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-// C polyself.c:uunstick().
-export async function releaseHeroGrip(state: GameState = game, publish: MessagePublisher = plineWithContinuation): Promise<void> {
-    const holder = state.u.ustuck;
-    if (!holder) throw new Error('Releasing the hero grip requires a held monster.');
-    setHeroGrip(null, state);
-    await publish(`${monsterName(holder, { state, capitalized: true })} is no longer in your clutches.`);
 }
 
 // C zap.c:release_hold(). Magical opening releases either creature's grip,

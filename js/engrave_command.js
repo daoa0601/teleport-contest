@@ -25,7 +25,7 @@ import { heroHasFreeHand } from './engrave.js';
 import { isBlade, isWetTowel } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsVerySmall, monsterIsWhirly, } from './monster_data.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './recharge.js';

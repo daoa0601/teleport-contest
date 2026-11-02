@@ -44,7 +44,7 @@ import { levelFollower } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';

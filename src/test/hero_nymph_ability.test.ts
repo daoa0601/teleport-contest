@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { TT_BURIEDBALL } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { useHeroNymphAbility } from '../js/hero_nymph_ability.js';
+import { useHeroNymphAbility } from '../js/polyself.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import {
     freshRoomWithPolymorphedHero, installPunishedHero,

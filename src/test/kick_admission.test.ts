@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { pushKeys, queueCommandKeys } from '../js/input.js';
 import { BOULDER, CLUB } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { kickDirection } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';

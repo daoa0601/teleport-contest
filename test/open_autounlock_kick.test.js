@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { AUTOUNLOCK_KICK, DOOR, D_BROKEN, D_LOCKED } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroSpecies } from '../js/hero_species.js';
+import { setHeroSpecies } from '../js/polyself.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { answerPrompts } from './support/input-boundaries.js';

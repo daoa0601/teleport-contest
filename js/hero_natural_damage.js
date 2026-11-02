@@ -16,7 +16,7 @@ import { applyHeroNaturalGrip } from './hero_natural_grip.js';
 import { applyHeroNaturalPolymorph } from './hero_natural_polymorph.js';
 import { applyHeroNaturalSliming } from './hero_natural_sliming.js';
 import { applyHeroNaturalTheft } from './hero_natural_theft.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { normalDemon } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { paralyzeMonster } from './mon.js';

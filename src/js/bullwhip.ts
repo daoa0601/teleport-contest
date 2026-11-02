@@ -23,7 +23,7 @@ import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 
 import { unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon, monsterWieldedWeapon } from './weapon.js';

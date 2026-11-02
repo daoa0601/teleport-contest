@@ -12,7 +12,7 @@ import {
 } from './const.js';
 import { LENSES, LOADSTONE, OBJECT_NAMES } from './object_data.js';
 import { monsterIsHumanoid } from './monster_data.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { armorUsesPairGrammar, makePlural } from './objnam.js';

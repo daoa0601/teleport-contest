@@ -1,7 +1,7 @@
 // Native weapon.c:special_dmgval(): blessed armor and silver contact.
 import { W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR, } from './const.js';
 import { game } from './gstate.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { objectMaterial } from './o_init.js';
 import { rnd } from './rng.js';

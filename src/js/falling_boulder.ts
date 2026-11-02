@@ -14,7 +14,7 @@ import type { Monster } from './monster_types.js';
 import type { ScrollEffectOptions } from './read.js';
 
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { mksobj } from './mkobj.js';
 import {

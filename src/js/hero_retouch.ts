@@ -20,7 +20,7 @@ import type { DeathHandler } from './end.js';
 import type { ARTIFACTS } from './artifacts.js';
 
 import { removeWornHeroItem } from './hero_equipment.js';
-import { heroHatesSilver } from './hero_species.js';
+import { heroHatesSilver } from './polyself.js';
 
 import { BELL_OF_OPENING, LEASH } from './object_data.js';
 import { objectMaterial } from './o_init.js';

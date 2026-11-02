@@ -68,7 +68,7 @@ import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
 import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
-import { changeHeroSex, heroIsBreathless, heroSpecies } from './hero_species.js';
+import { changeHeroSex, heroIsBreathless, heroSpecies } from './polyself.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { meltIce } from './ice.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';

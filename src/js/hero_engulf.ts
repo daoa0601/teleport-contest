@@ -14,7 +14,7 @@ import type { MessagePublisher } from './pline.js';
 import type { HeroContactAttack } from './monster_action_types.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { finishMonsterAttackDeath } from './end.js';
-import { heroIsBreathless, heroPassesWalls, heroSpecies } from './hero_species.js';
+import { heroIsBreathless, heroPassesWalls, heroSpecies } from './polyself.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS,
 } from './monster_attack_types.js';

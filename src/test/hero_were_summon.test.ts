@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { useHeroWereSummon } from '../js/were.js';
+import { useHeroWereSummon } from '../js/polyself.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';
 

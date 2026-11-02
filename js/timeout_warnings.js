@@ -2,7 +2,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { heroIsBreathless } from './hero_species.js';
+import { heroIsBreathless } from './polyself.js';
 import { heroIsSurroundedByRock } from './pray.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from './properties.js';
 import { heroIsInDangerousRegion } from './regions.js';

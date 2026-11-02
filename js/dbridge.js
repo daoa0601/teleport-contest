@@ -27,7 +27,7 @@ import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_
 import { heroLiquidEffects } from './hack.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';
-import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './hero_species.js';
+import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroHasWaterWalking } from './do_wear.js';
 import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';

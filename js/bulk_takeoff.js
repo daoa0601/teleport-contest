@@ -11,7 +11,7 @@ import { game } from './gstate.js';
 import { BATTLE_AXE, CORPSE, LENSES, OBJECT_DELAY, OBJECT_NAMES, OBJECT_SUBTYPE, } from './object_data.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { makePlural } from './objnam.js';
 import { objectMonsterName, objectName } from './objnam.js';
 import { heroHasNoLimbs } from './polyself.js';

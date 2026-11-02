@@ -9,7 +9,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { consumeInventoryItem } from './invent.js';

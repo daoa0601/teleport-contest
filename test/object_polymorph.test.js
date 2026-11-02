@@ -26,7 +26,7 @@ import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/regions.js';
 import { startHeroSliming, heroIsSliming } from '../js/slime.js';
-import { heroPolyGender, setHeroSpecies } from '../js/hero_species.js';
+import { heroPolyGender, setHeroSpecies } from '../js/polyself.js';
 import { objectWeight } from '../js/mkobj.js';
 const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
 void test('explicit transformation preserves a wielded stack and its inventory letter', async () => {

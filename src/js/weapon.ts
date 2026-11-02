@@ -69,7 +69,7 @@ import { isMissileObject, isWeaponTool } from './object_properties.js';
 import { artifactDamageBonus, artifactStrikesShade } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { A_STR, Upolyd, WT_IRON_BALL_INCR } from './const.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import {
     GAUNTLETS_OF_POWER,
     OBJECT_LARGE_DAMAGE,

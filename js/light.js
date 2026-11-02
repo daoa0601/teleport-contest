@@ -4,7 +4,7 @@ import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { definiteObjectAction, minimalObjectName } from './objnam.js';
 import { game, requireGameLevel } from './gstate.js';

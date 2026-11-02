@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { useHeroMindBlast } from '../js/hero_mind_blast.js';
+import { useHeroMindBlast } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom } from './support/hero-state.js';

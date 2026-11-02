@@ -6,7 +6,7 @@ import { heroHandName } from './body_parts.js';
 import { A_DEX, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';

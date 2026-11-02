@@ -26,7 +26,7 @@ import type { PlayingGameState, GameState } from './game_state.js';
 import type { ArmorCompletion } from './cmd.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender } from './polyself.js';
 import { heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging } from './polyself.js';
 import { armorWearDecision } from './armor_wear.js';
 import { isEyewear, removeEyewear, wearEyewear } from './eyewear.js';

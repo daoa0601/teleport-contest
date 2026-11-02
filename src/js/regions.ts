@@ -22,7 +22,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { GasCloud, Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 
-import { heroIsBreathless } from './hero_species.js';
+import { heroIsBreathless } from './polyself.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
 import { makePlural } from './objnam.js';
 

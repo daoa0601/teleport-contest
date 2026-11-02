@@ -32,7 +32,7 @@ import { monsterInAir } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasWaterWalking } from './do_wear.js';
 
-import { heroLikesLava } from './hero_species.js';
+import { heroLikesLava } from './polyself.js';
 
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_SWIM = 0x00000002;

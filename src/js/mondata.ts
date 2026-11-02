@@ -38,7 +38,7 @@ import { heroIsHallucinating } from './senses.js';
 import type { GameObject } from './object_types.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES } from './object_data.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { questMonsterFlags2 } from './role_monsters.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';

@@ -5,7 +5,7 @@ import { A_CON, A_STR } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { heroHatesSilver, heroSpecies } from './hero_species.js';
+import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';

@@ -6,7 +6,7 @@ import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_RINGL } from '../js/const.js';
 import { specialContactDamage } from '../js/contact_damage.js';
 import { canSpotMonster, flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { releaseHeroGrip } from '../js/hero_expulsion.js';
+import { releaseHeroGrip } from '../js/polyself.js';
 import { heroGrabMisses, showHeroSilverContact } from '../js/hero_form_contact.js';
 import { resetInputState } from '../js/input.js';
 import { AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';

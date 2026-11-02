@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss, } from './hero_attack_accuracy.js';
 import { resolveHeroNaturalDamage } from './hero_natural_damage.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterIsShade, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';

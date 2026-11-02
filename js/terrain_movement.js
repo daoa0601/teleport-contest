@@ -18,7 +18,7 @@ import { makePlural } from './objnam.js';
 import { heroIsHallucinating } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks } from './polyself.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, requireMonsterData, } from './monster_data.js';
 import { dismountHero, steedIsGrounded } from './steed.js';
 import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';

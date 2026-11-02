@@ -36,7 +36,7 @@ import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { cansee, couldsee } from './vision.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { heroFormSticks, heroSpecies } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './polyself.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
 import { promptDirection, promptKey, readDirectionKey, restoreCommandMap } from './tty_prompts.js';

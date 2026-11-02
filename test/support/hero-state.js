@@ -1,7 +1,7 @@
 import { roles, races } from '../../js/roles.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/do_wear.js';
-import { setHeroSpecies } from '../../js/hero_species.js';
+import { setHeroSpecies } from '../../js/polyself.js';
 import { addBuriedObject } from '../../js/dig.js';
 import { unplaceBallAndChain } from '../../js/ball.js';
 import { swallowed } from '../../js/display.js';

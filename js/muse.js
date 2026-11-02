@@ -89,7 +89,7 @@ import { isAccessibleAt } from './monmove.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { monsterIsHelpless } from './mondata.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';

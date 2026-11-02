@@ -32,7 +32,7 @@ import {
 import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { heroSpecies } from './hero_species.js';
+import { heroSpecies } from './polyself.js';
 import { captureHeroProjectileName } from './hero_physical_messages.js';
 import {
     angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster,
