@@ -478,7 +478,7 @@ steed.c	mount_steed	are already riding	dead	The only caller doride() dismounts w
 symbols.c	do_symset	Unable to access "	out-of-scope	Requires read_sym_file() to fail opening the host symbols data file; bundled symbol sets do not depend on a mutable native file.
 symbols.c	do_symset	symbol sets available.	dead	The pinned dat/symbols always supplies appropriate unrestricted sets (plain, Blank and IBMgraphics) for both primary and rogue pickers, so setcount cannot be zero.
 symbols.c	do_symset	were no symbol sets found in "	out-of-scope	Requires the host symbols file to be empty or contain no start entries; the bundled pinned symbols resource contains named sets.
-timeout.c	burn_object	flicker low!	composed	src/js/light.ts:announceCandleBurn; Composes ownership, candle count, possessive and flicker agreement for carried and floor candles and candelabra.
+timeout.c	burn_object	flicker low!	composed	src/js/timeout.ts:announceCandleBurn; Composes ownership, candle count, possessive and flicker agreement for carried and floor candles and candelabra.
 timeout.c	restore_timers	timer-timer_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:restore_timers(); serialized metadata, not displayed text. The port validates its own storage format.
 timeout.c	restore_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:restore_timers(); serialized metadata, not displayed text. The port validates its own storage format.
 timeout.c	save_timers	timer-timer_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
