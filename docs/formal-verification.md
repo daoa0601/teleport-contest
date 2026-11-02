@@ -60,18 +60,18 @@ fields after each call. Generator claims read **`frozen/isaac64.js`**:
 ISAAC64 copy is outside these claims. Wrapper seed packing reads emitted
 `js/rng.js`. Times below exclude probes and mutants. Path counts are C×JS for
 each logging setting; ISAAC64 rows state their loop proof instead. Existing
-rows retain the earlier measurements; the eight geometry/species rows use
-this batch's complete run.
+rows retain the earlier measurements; the eight geometry/species rows and the
+split `rnl` row use this batch's complete runs.
 
 | Claim | C ↔ JavaScript | Domain | Paths / loop proof | Time |
 |---|---|---|---|---|
 | `rn2` | `rnd.c:rn2` ↔ `rng.js:rn2` | `x >= 1` | 1×1 | 0.4 s |
 | `rnd` | `rnd.c:rnd` ↔ `rng.js:rnd` | `x >= 1` | 1×1 | 0.1 s |
 | `rn1` | `hack.h:rn1` macro ↔ `rng.js:rn1` | `x >= 1`, `y + x - 1 <= INT_MAX` | 1×1 | 0.9 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 1.6 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude partitions | 257 partitions of ≤13×18 | 168.2 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.4 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
-| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude partitions | 257 partitions of ≤13×18 | 168.2 s |
+| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.5 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
 | `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.1 s |
 | `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.5 s |
