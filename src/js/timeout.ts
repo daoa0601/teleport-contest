@@ -909,6 +909,7 @@ export async function finishBreathingTimeout(state = game): Promise<void> {
 }
 
 // C timeout.c:588-948 nh_timeout().
+// C timeout.c:sleep_dialogue(): the "You yawn." at four turns of drowsiness.
 export async function nhTimeout(): Promise<void> {
     const game = requireInitializedGame();
     // C timeout.c:595-620: luck drifts toward its calendar baseline every
@@ -1287,6 +1288,8 @@ export function scheduleLevelTimer(
     return timer;
 }
 // C timeout.c:spot_stop_timers().
+// C timeout.c:remove_timer(): the splice that pulls the matching timers
+// out of the level's list.
 export function stopLevelTimer(
     x: number, y: number, kind: LevelTimer['kind'], state: GameState = game,
 ): LevelTimer[] {
@@ -1300,6 +1303,8 @@ export function stopLevelTimer(
     }
     return removed;
 }
+// C timeout.c:stop_timer(), the object variant; C timeout.c:remove_timer():
+// the find-and-splice that pulls one timer out of its object's list.
 export function stopObjectTimer(
     object: GameObject | null | undefined, kind: ObjectTimerKind | null,
 ): ObjectTimer | null {
@@ -2053,6 +2058,9 @@ function timerQueueLines(state: GameState): string[] {
     return rows;
 }
 
+// The #timeout listing's timed-property rows.
+// C timeout.c:property_by_index(): the PROPERTY_NAMES iteration; its
+// bounds guard is the typed table itself.
 function timedPropertyLines(state: GameState): string[] {
     const timed = PROPERTY_NAMES
         .map((entry, index) => ({ ...entry, index, timeout: propertyTimeout(entry.property, state) }))

@@ -4,6 +4,7 @@ import { nativeRoleChoices, validCharacterAlignment, validCharacterGender, valid
 import { withIndefiniteArticle } from './objnam.js';
 import { aligns, findAlignment, findGender, findRace, findRole, genders, races } from './roles.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+// C role.c:reset_role_filtering(): the empty filter state.
 export function createCharacterFilters() {
     return { roles: new Set(), races: new Set(), genders: new Set(), alignments: new Set() };
 }
@@ -35,6 +36,7 @@ export function setCharacterFilter(filters, value) {
     }
     return false;
 }
+// C role.c:clearrolefilter(): clear one facet's filter mask.
 export function clearCharacterFilter(filters, facet) {
     switch (facet) {
         case 'role':
@@ -72,6 +74,11 @@ export function characterAlignmentAllowed(filters, choices) {
     const { role, race, alignment } = choices;
     return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validCharacterAlignment(role, race, candidate));
 }
+// C role.c:reset_role_filtering(): the reset choice clears every facet
+// mask (C role.c:clearrolefilter() is the per-facet clear of a toggle);
+// C role.c:gotrolefilter(): its title reflects the masks.
+// C role.c:setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
+// setup_algnmenu(): the four filter-reset loops below.
 export async function editCharacterFilters(filters) {
     const window = tty_create_nhwindow(NHW_MENU);
     try {

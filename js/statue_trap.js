@@ -153,6 +153,8 @@ function revealHeroWithoutCover(x, y, state) {
         && pile.length === 0)
         state.u.uundetected = 0;
 }
+// C trap.c:animate_statue(): release the statue's monster, named from the
+// statue, awake and hostile unless the animation is magical.
 export async function animateStatue(statue, x, y, { state = game, shatter = false, magic = false, } = {}) {
     requireStatueSpecies(statue);
     const monster = await createStatueMonster(statue, x, y, state, magic);
@@ -193,6 +195,8 @@ export async function animateStatue(statue, x, y, { state = game, shatter = fals
     revealHeroWithoutCover(x, y, state);
     return { monster, unique: false };
 }
+// C trap.c:activate_statue_trap(): consume the trap and animate a statue
+// on the square, skipping genocided-uniques until a real candidate.
 export async function activateStatueTrapAt(x, y, { state = game, shatter = false } = {}) {
     const trap = state.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y
         && candidate.ttyp === STATUE_TRAP);

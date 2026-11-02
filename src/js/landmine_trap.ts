@@ -110,6 +110,10 @@ async function resolveMineLiquid(
     });
 }
 
+// C trap.c:trapeffect_landmine(): the monster branch — a monster lighter
+// than the trigger weight never sets it off, airborne ones rarely do, and
+// the blast stages the pit and the kill; an unconscious hero is awakened
+// by the explosion (C hack.c:unconscious()).
 export function beginMonsterLandMine(
     monster: Monster,
     trap: Trap,

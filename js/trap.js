@@ -760,6 +760,15 @@ export function monsterTrapIsHarmless(monster, trap, state) {
 }
 // C trap.c:mintrap(). Called from m_move()/postmov() after a monster steps
 // onto a square, and from the source effects below via the immediate entry.
+// C trap.c:trapeffect_selector(): the monster side of the dispatch; each
+// case runs the monster branch of the named trapeffect_ function, in its
+// owner module or inline below. C trap.c:trapeffect_hole(): the grounded,
+// size, and worm checks and the Sokoban yank sit inline before the fall.
+// C trap.c:trapeffect_level_telep(): the fall itself is the level-teleport
+// owner's monster move. C trap.c:trapeffect_magic_trap(): the monster
+// branch replicates a fire trap 1 time in 21 through beginMonsterFireTrap
+// (trapeffect_fire_trap()'s monster branch). C trap.c:trapeffect_telep_trap():
+// the monster branch hands the move to the teleport owner's mtele path.
 export async function triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls, publish = plineWithContinuation) {
     const trap = trapAt(state, monster.mx, monster.my);
     if (!trap || monster.mtrapped)
@@ -1458,6 +1467,9 @@ function monsterIsUngrounded(monster, state) {
     return !!(flags & M1_FLY) || clingsToCeiling || symbol === S_EYE || symbol === S_LIGHT
         || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
+// C trap.c:trapeffect_pit(): the monster branch — grounded, size, and worm
+// checks decide whether the monster falls, spiked damage is staged, and
+// mtrapped is set for non-wallwalkers.
 export function beginMonsterPitTrap(monster, trap, state = game, { forced = false } = {}) {
     if (!trap)
         return null;
@@ -1485,6 +1497,8 @@ export function beginMonsterPitTrap(monster, trap, state = game, { forced = fals
         dragged: ungrounded && falls,
     };
 }
+// C trap.c:trapeffect_pit(): the monster branch's completion — the fall
+// message, the hit, and the pit's trap result.
 export async function finishMonsterPitTrap(monster, event, { publish = plineWithContinuation, random, rollOne = rnd, state = game, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
     if (!event || event.finished)
         return event;
@@ -1539,6 +1553,10 @@ export async function finishMonsterPitTrap(monster, event, { publish = plineWith
 // ---------------------------------------------------------------------------
 const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;
+// C trap.c:mintrap(): the already-trapped escape roll — noticing an unseen
+// trap under a trapped monster, the 1-in-40 (or easy-pit) escape, the
+// boulder that fills the pit, and the metallivore's snack.
+// C trap.c:m_easy_escape_pit(): climbsEasily — a pit fiend or a huge body.
 export async function tryMonsterTrapEscape(monster, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
     const { mx: x, my: y } = monster;
     const level = requireGameLevel(state);
@@ -2121,13 +2139,14 @@ function objectSubject(view, state, capitalized = true) {
     }
     return `${capitalized ? 'The' : 'the'} ${view.name}`;
 }
-// C trap.c:trapnote(): the squeaky board's musical note, with its article
-// (an()).
+// tnnames[]: the twelve squeaky-board notes, indexed by tnote.
 const SQUEAKY_BOARD_NOTES = [
     'C note', 'D flat', 'D note', 'E flat',
     'E note', 'F note', 'F sharp', 'G note',
     'G sharp', 'A note', 'B flat', 'B note',
 ];
+// C trap.c:trapnote(): the squeaky board's musical note, prefixed with its
+// article (an()).
 export function squeakyBoardNoteWithArticle(index) {
     const note = SQUEAKY_BOARD_NOTES[index];
     if (!note)
@@ -2193,6 +2212,8 @@ function pitDirection(from, to) {
     const dy = Math.sign(to.ty - from.ty);
     return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
 }
+// C trap.c:conjoined_pits(): both squares isok(), both pits, and the
+// conjoined direction bits found through sgn()/xytodir() in pitDirection.
 export function pitsAreConjoined(first, second) {
     if (!first || !second || !is_pit(first.ttyp) || !is_pit(second.ttyp)
         || !isok(first.tx, first.ty) || !isok(second.tx, second.ty))
@@ -2452,6 +2473,10 @@ export function beginMonsterFireTrap(monster, trap, state, { rollDice = d } = {}
         visible: visibility.inSight,
     };
 }
+// C trap.c:trapeffect_fire_trap(): the monster branch — the flame under a
+// monster, golem immolation, item destruction, and the maximum-HP scorch.
+// The hero branch is the fire-trap case of triggerHeroTrap: it reveals the
+// trap and runs dofiretrap() (triggerHeroFireTrap below).
 export async function finishMonsterFireTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, rollOne = rnd, describeMonster = monster => perceivedMonsterName(monster, { state, capitalized: true }), } = {}) {
     if (event.finished)
         return event;
@@ -2546,6 +2571,10 @@ export async function finishMonsterFireTrap(monster, event, state = game, { publ
     event.finished = true;
     return event;
 }
+// C trap.c:dofiretrap(): the flame effect shared by floor fire traps and
+// trapped containers — steam under water, the tower of flame, resistance,
+// and the burning of the hero, possessions, floor objects, and ice; the
+// maximum-HP burn is C trap.c:minuhpmax() (reduceHeroMaximumHitPoints).
 export async function triggerHeroFireTrap(box = null, { publish = plineWithContinuation } = {}) {
     const hero = game.u;
     requireInitializedHero(hero);
@@ -2606,6 +2635,10 @@ async function placeMissile(missile, trap, state) {
     }
     return await stack_object(missile, state);
 }
+// C trap.c:trapeffect_arrow_trap(): the monster branch — the missile's
+// to-hit and material message against the trapped monster.
+// C trap.c:trapeffect_dart_trap(): the same flow with a 1-in-6 poisoned
+// dart and its sickness outcome.
 export async function beginMonsterProjectileTrap(monster, trap, state = game, { random = rn2, rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     if (trap.once && trap.tseen && random(15) === 0) {
@@ -2844,6 +2877,9 @@ function weldedTwoHandedWeapon(state) {
     const weapon = state.uwep || state.u?.uwep;
     return isWeldedPrimary(weapon, state) && isBimanualObject(weapon);
 }
+// C trap.c:could_untrap(): why the hero cannot attempt an untrap —
+// encumbrance, no usable hands, holding a stuck victim, welded hands, or
+// an unreachable floor.
 export function untrapAbilityProblem(state = game, { checkFloor = false } = {}) {
     if (nearCapacity(state) >= HVY_ENCUMBER)
         return "You're too strained to do that.";
@@ -3130,6 +3166,8 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
             if (entered?.died)
                 return 1;
             if (!entered?.entered) {
+                // C trap.c:into_vs_onto(): "into" for the trap types that
+                // catch; only the disarmable subset reaches here.
                 const preposition = [BEAR_TRAP, PIT, SPIKED_PIT, WEB]
                     .includes(trap.ttyp) ? 'into' : 'onto';
                 await publish(`Fortunately, you don't move ${preposition} it.`);
@@ -3638,6 +3676,11 @@ function heroIronShoes() {
 function heroWearsIronShoes() {
     return !!heroIronShoes();
 }
+// C trap.c:trapeffect_pit(): the hero branch — refusal while flying or
+// clinging, the fall and spike messages with iron-shoe protection,
+// set_utrap, and the ridden steed's hit. C trap.c:t_at(): the previousPit
+// find over the level's traps. C trap.c:adj_nonconjoined_pit(): the
+// adjacent branch (hero.dx || hero.dy) below.
 async function triggerPit(trap, { viaSitting = false, tookPlunge = false, recursiveTrap = false } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -3797,6 +3840,8 @@ function webTrapDuration(strength) {
         return 1;
     return 0;
 }
+// C trap.c:trapeffect_web(): the hero branch — webmakers pass through, the
+// destroyers tear it, and everyone else is caught with the struggle.
 async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forceTrap = false, noWebMessage = false } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -3882,6 +3927,9 @@ export async function keepSaddleWithSteedcorpse(steedMid, saddle) {
                 return;
     }
 }
+// C trap.c:trapeffect_landmine(): the hero branch — the blast, blown-off
+// footwear, the pit left behind, and the C trap.c:sobj_at() saddle check
+// that keeps the saddle with a dying steed.
 async function triggerLandmine(trap, { failedUntrap = false, forceTrap = false, forceBungle = false, } = {}) {
     const hero = game.u;
     let damage = rnd(16);
@@ -4059,6 +4107,8 @@ export async function climbOutOfPit() {
         await plineWithContinuation(message, { noRepeat: true });
     }
 }
+// C trap.c:trapeffect_telep_trap(): the hero branch — reveal the trap and
+// jump; the monster branch is the TELEP_TRAP case of triggerMonsterTrap.
 async function triggerTeleportTrap(trap, finishTeleport) {
     await seeTrap(trap);
     if (game._inTeleportTrap)
@@ -4120,6 +4170,11 @@ async function triggerTeleportTrap(trap, finishTeleport) {
         game._inTeleportTrap = false;
     }
 }
+// C trap.c:trapeffect_magic_trap(): the hero branch — a 1-in-30 magical
+// explosion consumes the trap, otherwise domagictrap() runs and the steed
+// takes its own hit; the steed's steedintrap() call is a no-op (its switch
+// has no MAGIC_TRAP case). The monster branch is inline in
+// triggerMonsterTrap.
 async function triggerMagicTrap(trap) {
     await seeTrap(trap);
     if (rn2(30) === 0) {
@@ -4136,6 +4191,10 @@ async function triggerMagicTrap(trap) {
     }
     await triggerHeroMagicTrapEffect();
 }
+// C trap.c:trapeffect_arrow_trap(): the hero branch — the 1-in-15
+// exhausted-trap click, the shot at the hero, and the steed's chance to
+// take it. C trap.c:trapeffect_dart_trap(): the dart twin, with a 1-in-6
+// poisoned missile; the monster branches are beginMonsterProjectileTrap.
 async function triggerProjectileTrap(trap) {
     const hero = game.u;
     const blind = !!game.blind || heroIsBlind(game);
@@ -4193,6 +4252,8 @@ async function triggerProjectileTrap(trap) {
     await stack_object(missile, game);
     await newsym(trap.tx, trap.ty);
 }
+// C trap.c:trapeffect_sqky_board(): the hero branch — a flying hero
+// notices the board, otherwise it squeaks trapnote()'s note.
 async function triggerSqueakyBoard(trap, { viaSitting = false, failedUntrap = false, forceTrap = false } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -4221,6 +4282,9 @@ function heroPassesRocks() {
     const flags = heroFormFlags();
     return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
 }
+// C trap.c:trapeffect_rocktrap(): the hero branch — the 1-in-15 empty
+// chute, the falling rock, helmet and passes-rocks handling, and the
+// damage; the monster branch is beginMonsterRockTrap.
 async function triggerFallingRockTrap(trap) {
     const hero = game.u;
     const ceiling = ceilingName(hero.ux, hero.uy, game);
@@ -4266,6 +4330,10 @@ async function triggerFallingRockTrap(trap) {
         await exerciseAttribute(A_STR, false);
     }
 }
+// C trap.c:trapeffect_slp_gas_trap(): the hero branch — resistors stay
+// awake inside the cloud, others fall asleep, and the steed's
+// steedintrap() sleep follows; the monster branch is
+// beginMonsterSleepGasTrap.
 async function triggerSleepingGasTrap(trap) {
     const hero = game.u;
     await seeTrap(trap);
@@ -4309,6 +4377,9 @@ export async function animateRollingBoulderCell(boulder, glyph, x, y, previous) 
     }
     return { x, y };
 }
+// C trap.c:trapeffect_rolling_boulder_trap(): the hero branch — the click
+// and the boulder released from the launch square; the monster branch is
+// the ROLLING_BOULDER_TRAP case of triggerMonsterTrap.
 async function triggerRollingBoulderTrap(trap) {
     const wasKnown = !!trap.tseen;
     await feelTrap(trap);
@@ -4322,6 +4393,8 @@ async function triggerRollingBoulderTrap(trap) {
         await plineWithContinuation(wasKnown
             ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
+// C trap.c:trapeffect_bear_trap(): the hero branch — harmless close over
+// amorphous or tiny forms, the leg damage, and the TT_BEARTRAP snag.
 async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, viaSitting = false, } = {}) {
     requirePlayingGame(game);
     const hero = game.u;
@@ -4402,6 +4475,8 @@ async function rustIronGolemHero() {
     }
     await finishHeroDeath({ killer: 'rusting away' });
 }
+// C trap.c:trapeffect_rust_trap(): the hero branch — the rust or water jet
+// over worn armor, the gremlin split, and the iron-golem hero's rust.
 async function triggerRustTrap(trap) {
     const hero = game.u;
     await seeTrap(trap);
@@ -4464,6 +4539,9 @@ async function triggerRustTrap(trap) {
             await plineWithContinuation('You multiply!');
     }
 }
+// C trap.c:trapeffect_hole(): the hero branch — the fall refusal on levels
+// without a bottom, the trap-door or hole message, and the destination
+// draw; the monster branch is inline in triggerMonsterTrap.
 export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
     if (!trap || (trap.ttyp !== HOLE && trap.ttyp !== TRAPDOOR))
         return null;
@@ -4524,8 +4602,20 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
             + `${distance > 2 ? 'deep ' : ''}shaft!`);
     return { destination, arrival: flying ? 'random' : 'falling' };
 }
+// C trap.c:trapeffect_selector(): the hero-side dispatch over trap type;
+// dotrap()'s prelude above the switch runs the Sokoban air currents, the
+// check_in_air() fly-over and the 1-in-5 seen-trap escape.
+// C trap.c:adj_nonconjoined_pit(): fromPit && (hero.dx || hero.dy) inlines
+// its xytodir() != DIR_ERR test; the other pit check belongs to
+// pitsAreConjoined. C trap.c:trapeffect_statue_trap(): the hero case
+// animates the statue; monsters never trigger one.
+// C trap.c:trapeffect_magic_portal(): feelTrap plus the buried-ball
+// reattachment before the portal owner runs; monsters fall through to
+// C trap.c:trapeffect_level_telep()'s monster move. C trap.c:trapeffect_vibrating_square(): the hero
+// branch only feels the trap; its symbol just marks the square.
+// C trap.c:trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap
+// and runs dofiretrap() through triggerHeroFireTrap.
 // shortCircuited stops remaining spot effects; died stops the whole action.
-// C trap.c:adj_nonconjoined_pit().
 export async function triggerHeroTrap(trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     if (!trap)
         return { died: false, shortCircuited: false };
@@ -5110,10 +5200,12 @@ export function heroTeetersAtPit(state, trap) {
         && trap.tx === state.u.ux && trap.ty === state.u.uy
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
+// C trap.c:uescaped_shaft(): a seen hole or trap door underfoot.
 export function heroEscapedShaft(trap) {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
 }
-// C trap.c:uescaped_shaft().
+// C trap.c:uescaped_shaft() keeps this module's ownership line; the port
+// itself is heroEscapedShaft above.
 // C engrave.c:can_reach_floor(): the shared floor-reach test; heroCanReachFloor()
 // below is the boolean wrapper, and pickup_checks() calls this directly.
 export function floorReachProblem(state = game, { checkPit = false } = {}) {
@@ -5160,8 +5252,14 @@ function trapAtHeroInState(state) {
     return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 // ── moved from src/js/mklev.ts ──
-// C trap.c:hole_destination().
-// C trap.c:choose_trapnote().
+// C trap.c:maketrap(): construct a trap at (x, y), reusing a replaceable
+// trap already on the square; the per-type construction follows.
+// C trap.c:hole_destination(): the destination draw for a new hole.
+// C trap.c:choose_trapnote(): an unused note for a new squeaky board.
+// C trap.c:mkroll_launch(): the rolling-boulder launcher places its
+// boulder and records launch and launch2.
+// C trap.c:find_random_launch_coord(): the search for a launch square with
+// a clear path on both sides of the trigger, neither pool nor lava.
 export async function maketrap(x, y, typ) {
     // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
     // as failed constructions.  They describe trapped furniture rather than

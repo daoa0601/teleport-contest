@@ -83,6 +83,8 @@ async function presentRustTrap(
     }
 }
 
+// C trap.c:trapeffect_rust_trap(): the monster branch — the rust or water
+// jet over the monster's armor, or the iron-golem victim's fall.
 export async function beginMonsterRustTrap(
     monster: Monster,
     trap: Trap,

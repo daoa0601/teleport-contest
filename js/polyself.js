@@ -737,6 +737,8 @@ async function beginMonsterForm(mnum, { sexChangeAllowed = false, announceForm =
 }
 // C polyself.c:uasmon_maxStr(). Racial limits also apply to undead relatives,
 // but living giants are stronger than giant zombies and mummies.
+// C role.c:character_race(): the races.find() species match that maps a
+// polymorph form to its hero race.
 export function formMaximumStrength(mnum) {
     const flags = MONSTER_FLAGS2[mnum] ?? 0;
     let race;

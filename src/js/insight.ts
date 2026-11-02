@@ -89,6 +89,10 @@ function plural(n: number, singular: string, pluralForm = `${singular}s`) {
 // C ref: insight.c status_enlightenment().  These rows are a projection of
 // live trouble/nutrition/load state; their optional length determines every
 // section that follows on the second attributes page.
+// C insight.c:cause_known(): knownCause below — a worn, discovered item of
+// that type is a definite cause. C insight.c:walking_on_water(): the active
+// water-walking test at the swimming branch (C hack.c:is_pool_or_lava() is
+// the isPoolAt/isLavaAt pair).
 function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, killer = ''): string[] {
     const u = game.u;
     const wizard = !!game.flags.debug;
@@ -202,6 +206,8 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, 
     }
     if ((u.glibTurns ?? 0) > 0)
         have(`slippery ${fingersOrGloves()}${wizard ? ` (${u.glibTurns})` : ''}`);
+    // C insight.c:cause_known(): a worn, seen, type-discovered item confers
+    // a definitely-known cause.
     const knownCause = (property: PropertyName) => (u._propertySources?.[property]?.worn ?? [])
         .some(source => {
             const object = game[source.slot];
@@ -424,6 +430,7 @@ export async function doEnlightenmentEffect() {
 
 // C insight.c:enlightenment() "Miscellaneous" section.  The recorder's
 // fixed clock leaves urealtime.realtime at zero, so elapsed time is " none".
+// C insight.c:fmt_elapsed_time(): the zero elapsed-time line it would build.
 function miscellaneousLines(basic: boolean, final: EnlightenmentFinal = 0): string[] {
     const lines = ['', ' Miscellaneous:'];
     const wizard = !!game.flags.debug, discover = !!game.flags.explore;
@@ -481,6 +488,9 @@ export async function showFinalAttributes(options: FinalAttributeOptions) {
     });
 }
 
+// Voluntary challenges, present tense.
+// C insight.c:sokoban_in_play(): the Sokoban-rules conduct appears only
+// once the entered-Sokoban achievement is on record.
 export function currentConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
@@ -562,6 +572,9 @@ export async function doconduct() {
     game.context.move = 0;
 }
 
+// Voluntary challenges, past tense, for the end-of-game disclosure.
+// C insight.c:sokoban_in_play(): the Sokoban-rules conduct appears only
+// once the entered-Sokoban achievement is on record.
 export function finalConductLines() {
     const conduct = game.u?.uconduct || {};
     const lines = ['Voluntary challenges:'];
@@ -632,6 +645,9 @@ function wishConductLines(final: boolean): string[] {
 // C insight.c:show_achievements().  Achievements are displayed in the order
 // they were recorded, except that an ascension defers the Amulet and the
 // win itself to the end of the list; 'final' selects past-tense wording.
+// C insight.c:count_achievements(): the empty-list early out.
+// C insight.c:remove_achievement(): the ascension reordering below pulls
+// ACH_UWIN (and ACH_AMUL with it) out of the list before re-appending.
 function achievementLines(final: boolean): string[] {
     let entries = achievementEntries(game);
     if (!entries.length) return [];
@@ -749,6 +765,8 @@ interface StatusLineOptions {
     y?: number;
 }
 
+// One-line monster feedback for a stethoscope or probing hit.
+// C insight.c:size_str(): SIZE_NAMES holds the size word of the status line.
 export async function monsterStatusLine(monster: Monster, {
     state = game, x = monster.mx, y = monster.my,
 }: StatusLineOptions = {}): Promise<string> {

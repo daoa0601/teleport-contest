@@ -2039,6 +2039,8 @@ async function runCovetousHarassTactics(
 }
 
 // C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
+// C trap.c:count_traps(): existingWebs is count_traps(WEB), the web count
+// that lowers the spinning probability.
 async function maybeSpinMonsterWeb(
     monster: Monster,
     movement: MonsterMovement,

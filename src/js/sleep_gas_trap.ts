@@ -27,6 +27,8 @@ interface FinishTrapOptions {
     describeMonster?: (monster: Monster) => string;
 }
 
+// C trap.c:trapeffect_slp_gas_trap(): the monster branch — susceptible
+// monsters fall asleep and are seen to do so.
 export async function beginMonsterSleepGasTrap(
     monster: Monster,
     trap: Trap,

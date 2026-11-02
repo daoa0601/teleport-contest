@@ -110,6 +110,12 @@ function restoredLevelArrival(type) {
         return 'falling';
     return type & UTOTYPE_ATSTAIRS ? 'stairs' : 'random';
 }
+// C do.c:goto_level(): departure, destination creation or restoration, and
+// arrival. C do.c:maybe_lvltport_feedback(): the deferred "You materialize"
+// line ahead of every arrival message. C do.c:familiar_level_msg(): the
+// bones deja-vu choice, the arrival's first random call.
+// C do.c:temperature_change_msg(): the hot/cold arrival transition;
+// C do.c:hellish_smoke_mesg(): its heat and smoke lines.
 export async function gotoLevel(targetDepth, { arrival = 'random', ladder = false, postMessage = '', } = {}) {
     requirePlayingGame(game);
     const oldDepth = { ...game.u.uz };

@@ -32,6 +32,8 @@ async function placeRock(rock, trap, state) {
     }
     return await stack_object(rock, state);
 }
+// C trap.c:trapeffect_rocktrap(): the monster branch — the spent-trap
+// chance, then the falling rock's thitm() hit.
 export async function beginMonsterRockTrap(monster, trap, state = game, { random = rn2, rollDice = d } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     if (trap.once && trap.tseen && random(15) === 0) {

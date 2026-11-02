@@ -40,6 +40,17 @@ export function piousness(record: number, { showNegative = true, suffix = '' }: 
         ? `${description}${record === 3 ? '' : ' '}${suffix}` : description;
 }
 
+// C insight.c:attributes_enlightenment(): the intrinsics and capability
+// rows. C insight.c:enlght_halfdmg(): the half/reduced physical and spell
+// damage lines. C insight.c:walking_on_water(): the active water-walking
+// test before the "can walk on water" capability. C insight.c:enlght_out():
+// the window sink is this string array. C insight.c:enlght_line(): the
+// sentence assembly is each row's template, its contraction pass is
+// contractEnlightenment below. C insight.c:N_times(): the "N times"
+// phrasing is times(). C invent.c:carrying(): the luckstone inventory
+// scan. C pray.c:u_gname(): the god's name is deityName().
+// C hack.c:is_pool_or_lava(): the water-or-lava test under a water
+// walker.
 export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): string[] {
     const u = game.u;
     const wizard = !!game.flags.debug;
@@ -259,6 +270,10 @@ function warningPeople(mask: number, form: boolean): string {
     return form ? 'certain monsters' : 'something';
 }
 
+// C insight.c:item_resistance_message(): the "Your items are protected"
+// row, "somewhat" while the coverage is partial; the inventory coverage is
+// C zap.c:u_adtyp_resistance_obj() (the property-source mask) and the
+// sentence is enlght_line()'s assembly.
 function itemResistanceLines(property: PropertyName, damage: string, final: EnlightenmentFinal): string[] {
     const mask = extrinsicPropertyMask(property);
     const extrinsic = !!(mask & (W_ARMOR | W_ACCESSORY | W_WEP | W_ART));
@@ -288,6 +303,9 @@ function itemResistanceCause(property: PropertyName): string {
     return '';
 }
 
+// C insight.c:enlght_combatinc(): the size word for a to-hit, damage, or
+// defense modifier; defense shrinks by a third to stretch the ranges, and
+// the exact amount shows only when final or in wizard mode.
 export function combatIncrement(kind: 'to hit' | 'damage' | 'defense', amount: number, final: EnlightenmentFinal): string {
     const magnitude = kind === 'defense' ? Math.trunc(Math.abs(amount) * 2 / 3) : Math.abs(amount);
     const size = magnitude <= 3 ? 'small' : magnitude <= 6 ? 'moderate' : magnitude <= 12 ? 'large' : 'huge';
@@ -301,6 +319,8 @@ function times(count: number): string {
 }
 
 
+// C insight.c:enlght_line(): the contraction pass of the sentence builder
+// ("are not" becomes "aren't" and friends).
 export function contractEnlightenment(line: string): string {
     return line.replace(' are not ', " aren't ").replace(' were not ', " weren't ")
         .replace(' have not ', " haven't ").replace(' had not ', " hadn't ")

@@ -38,6 +38,9 @@ function canAlmostSee(state: GameState, x: number, y: number) {
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }
 
+// C trap.c:trapeffect_sqky_board(): the monster branch — the squeak of
+// trapnote()'s note, heard by the hero, waking nearby sleepers
+// (C hack.c:wake_nearby() runs at the finish).
 export function beginMonsterSqueakyBoard(
     monster: Monster,
     trap: Trap,

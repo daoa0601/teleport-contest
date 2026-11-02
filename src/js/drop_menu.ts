@@ -33,6 +33,10 @@ interface TraditionalDropSelection {
     requireUnpaid: boolean;
 }
 
+// C do.c:doddrop(): the multiple-drop command. C do.c:menu_drop(): the
+// menu-driven drop pass. C do.c:menudrop_split(): splitting a counted
+// stack before dropping its share. C do.c:count_justpicked() and
+// C do.c:find_justpicked(): the justPicked drop path.
 export async function dropMultipleObjects(): Promise<number> {
     if (!game.inventory.length) {
         await pline('You have nothing to drop.');

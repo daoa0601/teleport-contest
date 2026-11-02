@@ -42,6 +42,9 @@ const TITLES: Record<Facet, string> = {
 };
 const EMPTY_CHOICES: Choices = { role: null, race: null, gender: null, alignment: null };
 
+// C role.c:genl_player_selection(): run the selection once and quit the
+// game when the player cancels it; genl_player_setup(): its menu loop is
+// the CharacterSelection class below.
 export async function selectCharacter(options: CharacterOptions,
     readName: () => Promise<ParsedCharacterName | null>): Promise<SelectedCharacter | null> {
     return new CharacterSelection(options, readName).choose();
@@ -69,6 +72,8 @@ class CharacterSelection {
         }
     }
 
+    // C role.c:genl_player_setup(): the selection loop's guts — the
+    // pick-for-you question, the facet menus, and the confirmation.
     async choose(): Promise<SelectedCharacter | null> {
         const pickSomething = FACETS.some(facet => !this.choices[facet] && !this.random.has(facet));
         if (FACETS.some(facet => !this.choices[facet])) game._characterPickerUsed = true;
@@ -209,6 +214,11 @@ class CharacterSelection {
         if (this.choices[facet]) this.random.delete(facet);
     }
 
+    // C role.c:rigid_role_checks(): resolve ROLE_RANDOM facets before the
+    // rigid picks. pick_role(), pick_race(), pick_gend(), and pick_align()
+    // are the per-facet PICK_RANDOM/PICK_RIGID draws through pickRandom()
+    // and the sole-candidate branch below; randrole_filtered() is the
+    // honor-the-filters role fallback, whose tail is randrole().
     private rigidChecks(): void {
         // role.c resolves explicitly random facets before its rigid picks.
         for (const facet of ['role', 'race', 'alignment', 'gender'] satisfies Facet[]) {
@@ -238,6 +248,12 @@ class CharacterSelection {
         }
     }
 
+    // C role.c:pick_role(): the PICK_RANDOM draw over candidates(), whose
+    // filter loop is the ok_role()/ok_race()/ok_gend()/ok_align()
+    // conjunction; pick_race(), pick_gend(), and pick_align() share it.
+    // randrole(), randrace(), randgend(), and randalign() are the same
+    // draw with no constraints (randrace() scales only the fallback), and
+    // randrole_filtered() honors the filter masks first.
     private pickRandom(facet: Facet): void {
         let candidates = this.candidates(facet);
         const fallback = candidates.length === 0;
@@ -322,6 +338,10 @@ class CharacterSelection {
             alignment?.name ?? '<alignment>'].map(short).join(' ');
     }
 
+    // C role.c:plsel_startmenu(): open the facet menu with the header line
+    // of aspects chosen so far; summary() is that line, after
+    // C role.c:rigid_role_checks() has narrowed the forced facets, and the
+    // second C role.c:maybe_skip_seps() call drops the header separator.
     private startMenu(excess = 0): TtyMenuWindow<string> {
         const window = tty_create_nhwindow<string>(NHW_MENU);
         addText(window, this.summary());
@@ -329,12 +349,18 @@ class CharacterSelection {
         return window;
     }
 
+    // C role.c:maybe_skip_seps(): the excess-line count (four header lines,
+    // one per permitted role, random plus separator, five footers) whose
+    // one-or-two surplus drops the menu separators.
     private roleMenuExcess(): number {
         const count = this.candidates('role').length + 12;
         const rows = game.nhDisplay?.rows ?? 24;
         return Math.max(0, count - rows);
     }
 
+    // C role.c:role_menu_extra(): the forced-value line naming what
+    // constrains the facet, and the RS_menu_let routes offered as
+    // "pick <facet> first"; ROUTE_KEYS holds those letters.
     private async facetMenu(facet: Facet, excess: number): Promise<string> {
         // plsel_startmenu() measures after rigid checks; the Random separator
         // below uses the role count from before those checks.
@@ -354,6 +380,9 @@ class CharacterSelection {
         return finishMenu(window, TITLES[facet], 'random');
     }
 
+    // C role.c:setup_rolemenu(), setup_racemenu(), setup_gendmenu(), and
+    // setup_algnmenu(): the selection-menu variant; the filter-reset
+    // variant is editCharacterFilters.
     private addFacetChoices(window: TtyMenuWindow<string>, facet: Facet): void {
         let previous = '';
         for (const key of this.candidates(facet, true)) {

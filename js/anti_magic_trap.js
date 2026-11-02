@@ -28,6 +28,11 @@ const MAGIC_RESISTANCE_ARMOR = new Set([
     GRAY_DRAGON_SCALE_MAIL,
     GRAY_DRAGON_SCALES,
 ]);
+// C trap.c:trapeffect_anti_magic(): the hero branch — positively-enchanted
+// iron shoes shed the drain onto their enchantment; otherwise the
+// anti-magic field hits the protected hero (a carried artifact's
+// C zap.c:defends_when_carried() bonus included) and drains power; the
+// C trap.c:wearing_iron_shoes() test is ironShoes().
 export async function triggerHeroAntiMagicTrap(trap) {
     const hero = game.u;
     const shoes = ironShoes();
@@ -67,6 +72,10 @@ export async function triggerHeroAntiMagicTrap(trap) {
         maximumAlreadyDrained,
     }));
 }
+// C trap.c:trapeffect_anti_magic(): the monster branch — iron shoes shed
+// the drain silently (C trap.c:wearing_iron_shoes() is
+// monsterWornIronShoes), magic resistance shields, and the drained monster
+// loses power and maximum hit points.
 export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne = rnd, trap, state = game } = {}) {
     const shoes = monsterWornIronShoes(monster);
     if (shoes && (shoes.spe ?? 0) > 0) {

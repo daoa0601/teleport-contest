@@ -33,6 +33,11 @@ export function enlightenmentRoleName(): string {
     return female && game.urole?.name.f ? game.urole.name.f : game.urole?.name.m ?? 'Adventurer';
 }
 
+// C insight.c:background_enlightenment(): name, role, race, and alignment
+// rows of the attributes page. C insight.c:align_str(): alignmentName.
+// C botl.c:rank_of(): the rank title from the experience level.
+// C pray.c:u_gname(): deityName. C insight.c:enlght_line(): each row's
+// sentence assembly; C insight.c:enlght_out(): the string-array sink.
 export function backgroundEnlightenmentLines(final: EnlightenmentFinal = 0): string[] {
     const { u, urole, urace } = requireInitializedGame();
     const female = Upolyd(u) ? u.mfemale : game.flags.female;

@@ -36,6 +36,8 @@ function possessive(subject: string) {
     return /s$/iu.test(subject) ? `${subject}'` : `${subject}'s`;
 }
 
+// C trap.c:trapeffect_vibrating_square(): the monster branch — the hero
+// sees or hears the ground vibrate under the monster, near or far.
 export function beginMonsterVibratingSquare(
     monster: Monster,
     trap: Trap,

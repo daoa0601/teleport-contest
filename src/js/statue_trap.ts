@@ -177,6 +177,8 @@ function revealHeroWithoutCover(x: number, y: number, state: GameState): void {
         state.u.uundetected = 0;
 }
 
+// C trap.c:animate_statue(): release the statue's monster, named from the
+// statue, awake and hostile unless the animation is magical.
 export async function animateStatue(statue: GameObject, x: number, y: number, {
     state = game, shatter = false, magic = false,
 }: StatueAnimationOptions = {}): Promise<StatueAnimationResult> {
@@ -219,6 +221,8 @@ export async function animateStatue(statue: GameObject, x: number, y: number, {
     return { monster, unique: false };
 }
 
+// C trap.c:activate_statue_trap(): consume the trap and animate a statue
+// on the square, skipping genocided-uniques until a real candidate.
 export async function activateStatueTrapAt(
     x: number, y: number, { state = game, shatter = false }: Omit<StatueAnimationOptions, 'magic'> = {},
 ): Promise<Monster | null> {

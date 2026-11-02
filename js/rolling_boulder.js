@@ -51,6 +51,10 @@ export function restoreLaunchedObjectForBones(state) {
     launch.object.otrapped = false;
     placeObjectSynchronously(launch.object, launch.origin.x, launch.origin.y, state);
 }
+// C trap.c:launch_obj(): roll an object (the boulder) from one square to
+// another, resolving each square's occupants, traps and floor effects
+// before the final placement; C trap.c:sobj_at(): boulderAt finds the
+// missile at either end. C trap.c:launch_drop_spot(): activeLaunches
 export async function launchRollingBoulder(start, endpoint, { state = requireInitializedGame(), unseen = false, known = false, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, } = {}) {
     requirePlayingGame(state);
     const level = state.level;

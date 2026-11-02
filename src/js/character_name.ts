@@ -9,6 +9,8 @@ export interface ParsedCharacterName {
     align: string | null;
 }
 
+// C role.c:plnamesuffix(): split a dash-suffixed name into character
+// facets; commas become spaces for the record file.
 export function parseCharacterName(raw: string): ParsedCharacterName {
     const [name = '', ...tokens] = raw.split('-');
     const result: ParsedCharacterName = {

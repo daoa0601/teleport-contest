@@ -2674,6 +2674,10 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
             activeSpot = null;
     }
 }
+// The Warning intrinsic alerts the hero to melting ice underfoot.
+// C timeout.c:spot_time_left(): the remaining melt time read off the
+// level timer's deadline; C timeout.c:spot_time_expires(): its expiry
+// lookup is the levelTimers find.
 async function warnAboutMeltingIce(publish) {
     const { ux: x, uy: y } = game.u;
     if (!propertyIsActive('warning', game) || !isIceAt(x, y, game))
@@ -3299,7 +3303,9 @@ export async function announceRunLiquid(x, y, state) {
     }
 }
 // The caller first checks test_move(TEST_MOVE), without opening doors,
-// pushing boulders, or escaping the hero's current trap.
+// pushing boulders, or escaping the hero's current trap. C trap.c:
+// into_vs_onto(): the "into" list below, drawn fresh for a hallucinated
+// trap type.
 export async function confirmHeroStep(x, y, state = game) {
     requirePlayingGame(state);
     const bits = state.flags.paranoia_bits ?? 0;
@@ -3342,6 +3348,9 @@ function cancelStep(state) {
 }
 // Hidden resistance still deserves a warning. Only native CLEARLY_IMMUNE
 // results suppress confirmation; this decision never reveals equipment.
+// C trap.c:immune_to_trap(), hero branch (its only C caller is the
+// paranoid trap confirmation at hack.c:2561): TRUE is TRAP_CLEARLY_IMMUNE
+// — a native body or inventory trait, never a revealed one.
 function trapIsClearlyHarmless(type, state) {
     const species = heroSpecies(state);
     const body = { mnum: species };
