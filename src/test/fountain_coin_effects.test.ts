@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import {
     dippedCoinMessage, resolveDippedCoinFate,
-} from '../js/fountain_effects.js';
+} from '../js/fountain.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mkgold } from '../js/mkobj.js';
 import { GOLD_PIECE } from '../js/object_data.js';

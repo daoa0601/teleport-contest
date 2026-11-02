@@ -17,7 +17,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { drinkSink } from '../js/sink_drinking.js';
+import { drinkSink } from '../js/fountain.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

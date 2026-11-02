@@ -21,7 +21,7 @@ import { plineWithContinuation } from './pline.js';
 import { expelHero } from './hero_expulsion.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { game } from './gstate.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { maketrap } from './mklev.js';
 import {
     MONSTER_ATTACKS, MONSTER_NAME, monsterIsAnimal,

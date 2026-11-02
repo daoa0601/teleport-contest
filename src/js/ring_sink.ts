@@ -21,7 +21,7 @@ import { tryCallObjectType } from './do.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
 import { objectResistsDestruction } from './zap.js';
-import { addBuriedObject } from './buried_object.js';
+import { addBuriedObject } from './dig.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj } from './invent.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { finishInventoryRemoval } from './hero_inventory.js';

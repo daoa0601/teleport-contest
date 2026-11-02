@@ -87,8 +87,7 @@ import { currentAttribute } from './attrib.js';
 import { heroHandName, heroHeadName } from './body_parts.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, A_STR, DIGCHECK_FAILED, DIGCHECK_FAIL_BOULDER, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, HOLE, ICE, IS_DOOR, IS_WALL, NO_KILLER_PREFIX, PARANOID_BREAKWAND, PIT, ROOM, SHOPBASE, isok, xdir, ydir, LEVEL_TIMER_KIND } from './const.js';
-import { digActualHole, digCheck, liquidFlow } from './digging_terrain.js';
-import { watchDigging } from './digging_watch.js';
+import { digActualHole, digCheck, liquidFlow, watchDigging } from './dig.js';
 import { bot } from './botl.js';
 import { explode } from './explosion.js';
 import { loseHeroHp } from './hero_damage.js';
@@ -96,7 +95,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './hero_expulsion.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { liquidForHole } from './hole.js';
+import { liquidForHole } from './dig.js';
 import {
     beginImmediateZap, finishImmediateZap, hitFloorPileWithWand,
     hitMonsterWithWand,

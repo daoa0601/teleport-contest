@@ -18,7 +18,7 @@ import { invokeInventoryObject } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { objectTimers, scheduleObjectTimer } from '../js/timeout.js';
 const DAGGER = OBJECT_NAMES.indexOf('dagger');
 const LOADSTONE = OBJECT_NAMES.indexOf('loadstone');

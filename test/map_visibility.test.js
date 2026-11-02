@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { rhack } from '../js/cmd.js';
 import { NO_MINVENT } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';

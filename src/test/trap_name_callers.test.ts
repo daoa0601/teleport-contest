@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { BEAR_TRAP, HWALL, PIT, ROOM, TER_TRP, TT_PIT, TT_WEB, WEB, W_WEP } from '../js/const.js';
-import { digActualHole } from '../js/digging_terrain.js';
+import { digActualHole } from '../js/dig.js';
 import { map_trap } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { continueHeroDigging, ensureDiggingContext } from '../js/hero_digging.js';
+import { continueHeroDigging, ensureDiggingContext } from '../js/dig.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { resetInputState } from '../js/input.js';
 import { browseDetectionMap } from '../js/detect.js';

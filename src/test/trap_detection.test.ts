@@ -7,7 +7,7 @@ import {
     ARROW_TRAP, DOOR, D_CLOSED, D_TRAPPED, PIT, POOL, ROOM, SDOOR,
     TRAPPED_CHEST, TRAPPED_DOOR,
 } from '../js/const.js';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { glyphAt, map_object } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';

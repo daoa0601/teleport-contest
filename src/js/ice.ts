@@ -1,6 +1,6 @@
 // C zap.c:melt_ice(). Await the complete terrain, object, and occupant effect.
 import { BEAR_TRAP, DB_ICE, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, MAGIC_PORTAL, MOAT, POOL, LANDMINE, VIBRATING_SQUARE, LEVEL_TIMER_KIND } from './const.js';
-import { unearthFloorObjectsAt } from './buried_object.js';
+import { unearthFloorObjectsAt } from './dig.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { impossible } from './diagnostics.js';

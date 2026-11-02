@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROOM, SCORR, CORR, SDOOR, POOL, M_AP_OBJECT } from '../js/const.js';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { glyphAt, map_object } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';

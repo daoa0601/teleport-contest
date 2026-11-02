@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DART_TRAP, ROOM, STONE } from '../js/const.js';
-import { digHole } from '../js/digging_terrain.js';
+import { digHole } from '../js/dig.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';

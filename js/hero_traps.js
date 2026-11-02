@@ -20,7 +20,7 @@ import { squeakyBoardNoteWithArticle } from './trap.js';
 import { displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, shieldeff, show_glyph_cell, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame, requireGameLevel } from './gstate.js';
-import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
+import { buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { makeConfused } from './hero_mental_status.js';

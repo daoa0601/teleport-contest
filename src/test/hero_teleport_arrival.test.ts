@@ -2,7 +2,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { askTeleportDestination } from '../js/teleport.js';
 import { A_STR, HOLE, M_AP_NOTHING, PIT, VIBRATING_SQUARE } from '../js/const.js';

@@ -5,6 +5,7 @@ import type { GameObject, ObjectTimerKind } from './object_types.js';
 import type { Monster, PetData, SavedMonsterTraits, ShopkeeperData } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION } from './object_data.js';
+import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
 import { novelTitle } from './novel_titles.js';
@@ -1399,4 +1400,17 @@ export async function absorbGlob(
     unlinkObject(incoming, state);
     deallocateObject(incoming, state);
     return survivor;
+}
+
+const TREE_FRUITS = [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF];
+
+// C mkobj.c:rnd_treefruit_at(): mksobj_at(ROLL_FROM(treefruits), ...).
+// Moved from hero_digging.js (pure move); dig.c and dokick.c call this.
+export async function placeTreeFruit(
+    x: number, y: number, state: GameState = game, random: typeof rn2 = rn2,
+): Promise<void> {
+    const fruitType = TREE_FRUITS[random(TREE_FRUITS.length)];
+    if (fruitType === undefined) throw new RangeError('Tree fruit selection is outside the fruit table.');
+    const fruit = await mksobj(fruitType, true, false);
+    placeCreatedObject(fruit, x, y, state);
 }

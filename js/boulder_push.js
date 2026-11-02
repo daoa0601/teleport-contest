@@ -1,7 +1,7 @@
 // Hero boulder pushes. C hack.c:moverock(), moverock_core(), and dopush().
 import { exerciseAttribute } from './attrib.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IN_SIGHT, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, ROLLING_BOULDER_TRAP, SHOPBASE, STONE, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, W_NONDIGGABLE, is_pit, isok, } from './const.js';
 import { canSpotMonster, feel_location, glyphAt, map_invisible, map_object, newsym, unmap_invisible, } from './display.js';

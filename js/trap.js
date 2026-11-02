@@ -61,7 +61,7 @@ import { clearPitConnections } from './pit_connections.js';
 import { experienceRankIndex } from './exper.js';
 import { mksobj } from './mkobj.js';
 import { objectWeight } from './weight.js';
-import { buryObject } from './buried_object.js';
+import { buryObject } from './dig.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { monsterAtPosition } from './steed.js';
 import { resetHeroTrap } from './terrain_movement.js';

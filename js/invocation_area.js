@@ -1,7 +1,7 @@
 // C mklev.c:mkinvokearea()/mkinvpos(). The rings are deliberately visited
 // in native order: actors encounter the changed terrain before the next ring.
 import { COLNO, ROWNO, COULD_SEE, IN_SIGHT, FIRE_TRAP, IRONBARS, IS_STWALL, MOAT, ROOM, TT_BURIEDBALL, } from './const.js';
-import { buriedBallToPunishment } from './buried_object.js';
+import { buriedBallToPunishment } from './dig.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { flush_screen, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';

@@ -27,8 +27,8 @@ cmd.c	there_cmd_menu_self	Go down the	composed	src/js/context_menu.ts:selfEntrie
 decl.c	hexdd	00112233445566778899aAbBcCdDeEfF	diagnostic	Hex-digit lookup table, not a message; used by hex parsing helpers.
 dig.c	adj_pit_checks	The rock glows then fades.	dead	adj_pit_checks() zeroes rm.flags (wall_info aliases flags, rm.h:211) at its top, so the STONE/SCORR W_NONDIGGABLE re-test can never be true; the port's clearTerrainFlags models the same clearing.
 dig.c	use_pick_axe2	merely scratches the	composed	src/js/pick_axe.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.
-dig.c	zap_dig	rock glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
-dig.c	zap_dig	wall glows then fades.	composed	src/js/digging_magic.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
+dig.c	zap_dig	rock glows then fades.	composed	src/js/dig.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
+dig.c	zap_dig	wall glows then fades.	composed	src/js/dig.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
 display.c	show_glyph	body at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
 display.c	show_glyph	dark explosion	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
 display.c	show_glyph	detected female monster	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
@@ -347,9 +347,9 @@ potion.c	potion_dip	Something happens.	dead	The whole message block is guarded b
 potion.c	potion_dip	with an oily sheen.	composed	src/js/potion.ts:dipInOil; Visible undamaged gear selects gleam or gleams with an oily sheen.
 potion.c	potionhit	propelled potion	composed	src/js/hero_potion_hit.ts:hitHeroWithThrownPotion; src/js/hero_object_hit.ts:hitHeroWithObject passes source propelled for scattered potions; the hit helper formats the killer as `${source} potion`.
 potion.c	split_mon	mon->mhpmax >= mon->mhp	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-pray.c	god_zaps_you	disintegrates into a pile of dust!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
-pray.c	god_zaps_you	fries to a crisp!	composed	src/js/divine_wrath.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
-pray.c	offer_real_amulet	ascend to the status of Demigod	composed	src/js/sacrifice.ts:offerAmulet; The winning altar branch appends dess for a female hero to Demigod before the ellipsis.
+pray.c	god_zaps_you	disintegrates into a pile of dust!	composed	src/js/pray.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
+pray.c	god_zaps_you	fries to a crisp!	composed	src/js/pray.ts:strikeSwallower; Selects fries to a crisp or disintegrates into a pile of dust after the swallower name.
+pray.c	offer_real_amulet	ascend to the status of Demigod	composed	src/js/pray.ts:offerAmulet; The winning altar branch appends dess for a female hero to Demigod before the ellipsis.
 priest.c	angry_priest	has_emin(priest)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 priest.c	priest_talk	Begone!  Thou desecratest this holy place with thy presence.	dead	The earlier !inhistemple(priest) branch returns, and inhistemple() requires has_shrine(); the later !has_shrine branch cannot run.
 priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.

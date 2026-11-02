@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { D_CLOSED, DOOR, MAGIC_TRAP, MM_ANGRY, MM_NOGRP, NO_MINVENT, SDOOR } from '../js/const.js';
-import { digHole } from '../js/digging_terrain.js';
+import { digHole } from '../js/dig.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addTrap } from './support/level-state.js';

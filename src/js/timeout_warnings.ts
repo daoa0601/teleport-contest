@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsBreathless } from './hero_species.js';
-import { heroIsSurroundedByRock } from './prayer_trouble.js';
+import { heroIsSurroundedByRock } from './pray.js';
 import {
     hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty,
     hasWornProperty, propertyIsActive, propertyTimeout, setPropertyTimeout,

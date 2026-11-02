@@ -6,7 +6,7 @@ import { SINK } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { wearHeroArmor } from '../js/armor.js';
-import { fallIntoSink } from '../js/sink_fall.js';
+import { fallIntoSink } from '../js/hack.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, LEVITATION_BOOTS, OBJECT_NAMES } from '../js/object_data.js';

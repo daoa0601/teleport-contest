@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { finishEnvironmentalMonsterDeath, killGenocidedMonster, removeMonsterFromGame } from '../js/mon.js';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';
 import { addShopObjectToBill, checkSpecialRoom, addShopDamage, itemizedShopBill, deleteObject } from '../js/shk.js';

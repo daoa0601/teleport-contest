@@ -1,6 +1,6 @@
 // C do.c:boulder_hits_pool(), for both free and pushed floor boulders.
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, Is_waterlevel, ROOM, WATER } from './const.js';
 import { impossible } from './diagnostics.js';
 import { displayLiquidName, docrt, newsym } from './display.js';

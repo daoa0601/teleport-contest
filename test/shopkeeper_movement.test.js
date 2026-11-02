@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { D_ISOPEN, DOOR, STONE } from '../js/const.js';
 import { cls } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { startHeroDigging } from '../js/hero_digging.js';
+import { startHeroDigging } from '../js/dig.js';
 import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKey, pushKeys } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';

@@ -2,7 +2,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BEAR_TRAP, DBWALL, DB_ICE, DB_MOAT, DB_FLOOR, DB_NORTH, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, ICE, ICED_POOL, POOL, TT_BEARTRAP, LEVEL_TIMER_KIND } from '../js/const.js';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';

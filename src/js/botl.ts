@@ -7,7 +7,7 @@ import { currentHungerState } from './hunger.js';
 import { renderStatusLine2, writeStatusLines, hitpointBar, conditionStyle } from './wintty.js';
 import type { StatusLine2Layout } from './wintty.js';
 import { statusVersion } from './version.js';
-import { criticallyLowHp } from './prayer_trouble.js';
+import { criticallyLowHp } from './pray.js';
 import {
     A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
     BL_AC, BL_ALIGN, BL_ARMOR, BL_ATTCLR_MAX, BL_CAP, BL_CH, BL_CHARACTERISTICS,

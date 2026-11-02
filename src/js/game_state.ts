@@ -23,7 +23,7 @@ import type { Artifact, ArtifactOrigin } from './artifacts.js';
 import type { LuaVariables } from './lua/runtime.js';
 import type { LuaAlignmentName } from './lua/lifecycle.js';
 import type { SpellCategory } from './data_types.js';
-import type { PrayerTrouble } from './prayer_trouble.js';
+import type { PrayerTrouble } from './pray.js';
 import type { HeroGenocideCause } from './hero_genocide.js';
 import type { ScheduledLevelChange } from './level_change.js';
 

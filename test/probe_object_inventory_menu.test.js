@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buryFloorObjectsAt } from '../js/buried_object.js';
+import { buryFloorObjectsAt } from '../js/dig.js';
 import { placeObject } from '../js/floor_object.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { probeObject } from '../js/zap.js';

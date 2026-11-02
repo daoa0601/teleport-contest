@@ -12,7 +12,7 @@ import { applyHeroLiquidEffects } from './hack.js';
 import { floatHeroDown, switchHeroTerrain } from './terrain_movement.js';
 import { levitationIsPurelyTimed, propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
-import { fallIntoSink } from './sink_fall.js';
+import { fallIntoSink } from './hack.js';
 import { triggerHeroTrapAt } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';

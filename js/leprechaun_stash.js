@@ -1,5 +1,5 @@
 // C monmove.c:leppie_stash(), after a successful fleeing teleport.
-import { buryObject } from './buried_object.js';
+import { buryObject } from './dig.js';
 import { ROOM, SHOPBASE } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';

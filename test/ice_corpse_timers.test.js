@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { DB_ICE, DB_MOAT, DB_UNDER, DRAWBRIDGE_UP, ICE, POOL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';

@@ -5,7 +5,7 @@ import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM, } f
 import { displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
-import { liquidForHole } from './hole.js';
+import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { rn2, rnd } from './rng.js';
@@ -14,11 +14,10 @@ import { seeTrap, waterDamageChain } from './trap.js';
 import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { spotChecks } from './digging_terrain.js';
+import { spotChecks } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { unlinkObject } from './mkobj.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
-import { unearthFloorObjectsAt } from './buried_object.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 function levelHasNoPits(state) {
     return Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz);

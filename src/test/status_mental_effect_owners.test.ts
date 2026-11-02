@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
-import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
+import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { throneSitEffect } from '../js/throne.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -42,7 +42,7 @@ import { exceedsActionCapacity, nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { heroIsUnaware, heroIsUnconscious } from './hero_sleep.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns } from './senses.js';
-import { buriedBallToPunishment } from './buried_object.js';
+import { buriedBallToPunishment } from './dig.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearHeroTrap, triggerLevelTeleportTrap } from './hero_traps.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';

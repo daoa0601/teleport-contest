@@ -2,10 +2,9 @@ import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buryObject } from '../js/buried_object.js';
+import { buryObject, digHole } from '../js/dig.js';
 import { rhack } from '../js/cmd.js';
 import { CORPSTAT_INIT, ICE, ICED_POOL, POOL, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from '../js/const.js';
-import { digHole } from '../js/digging_terrain.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';

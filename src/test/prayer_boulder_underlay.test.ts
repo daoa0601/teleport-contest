@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_FLOOR, DB_ICE, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, HWALL } from '../js/const.js';
 import { BOULDER } from '../js/object_data.js';
-import { heroIsSurroundedByRock } from '../js/prayer_trouble.js';
+import { heroIsSurroundedByRock } from '../js/pray.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

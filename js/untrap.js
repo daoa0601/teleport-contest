@@ -36,7 +36,7 @@ import { dismountHero } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectTypeKnown, addShopDamage, deleteObject } from './shk.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { setMonsterMalign } from './makemon.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SYMBOL, monsterIsMindless, monsterTypeName, } from './monster_data.js';

@@ -7,7 +7,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { breakSinkAt } from '../js/sink_terrain.js';
+import { breakSinkAt } from '../js/fountain.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 
 void test('a broken sink stops making sink sounds even after mksink counted it twice', async () => {

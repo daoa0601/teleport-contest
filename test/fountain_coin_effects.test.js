@@ -2,7 +2,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dippedCoinMessage, resolveDippedCoinFate, } from '../js/fountain_effects.js';
+import { dippedCoinMessage, resolveDippedCoinFate, } from '../js/fountain.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mkgold } from '../js/mkobj.js';
 import { GOLD_PIECE } from '../js/object_data.js';

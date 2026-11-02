@@ -34,7 +34,7 @@ import { finishHeroDeath, scoreDeathCause } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { nextIdent } from './ident.js';
 import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
-import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './buried_object.js';
+import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { GameMap } from './game.js';

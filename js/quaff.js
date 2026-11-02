@@ -18,7 +18,7 @@ import { releasePotionOccupant } from './potion.js';
 import { promptYesNo } from './query.js';
 import { heroIsHallucinating } from './senses.js';
 import { drinkFountain } from './fountain.js';
-import { drinkSink } from './sink_drinking.js';
+import { drinkSink } from './fountain.js';
 // C potion.c:drink_ok().
 // C potion.c:dodrink().
 export async function quaff({ state = game } = {}) {

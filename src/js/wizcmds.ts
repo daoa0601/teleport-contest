@@ -119,7 +119,7 @@ import { heroSpecies } from './hero_species.js';
 import { heroHasOlfaction } from './polyself.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { mayDig } from './hero_digging.js';
+import { mayDig } from './hack.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
