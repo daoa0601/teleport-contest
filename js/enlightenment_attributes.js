@@ -1,5 +1,6 @@
 // C insight.c:attributes_enlightenment(). Property order is the native order.
 import { objectMaterial } from './o_init.js';
+import { ordinalSuffix } from './hacklib.js';
 import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
@@ -347,11 +348,6 @@ export function combatIncrement(kind, amount, final) {
 }
 function times(count) {
     return count === 1 ? 'once' : count === 2 ? 'twice' : count === 3 ? 'thrice' : `${count} times`;
-}
-function ordinalSuffix(count) {
-    if (count % 100 >= 11 && count % 100 <= 13)
-        return 'th';
-    return count % 10 === 1 ? 'st' : count % 10 === 2 ? 'nd' : count % 10 === 3 ? 'rd' : 'th';
 }
 export function contractEnlightenment(line) {
     return line.replace(' are not ', " aren't ").replace(' were not ', " weren't ")

@@ -33,6 +33,7 @@ import {
     TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
     Is_waterlevel, is_hole, is_pit,
 } from './const.js';
+import { dist2, distmin } from './hacklib.js';
 import { nearCapacity, SLT_ENCUMBER, weightCapacity } from './weight.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -288,15 +289,6 @@ export async function restoreBallAndChainPlacement(
     state._ballChainRestriction = 0;
 }
 
-function dist2(x1: number, y1: number, x2: number, y2: number): number {
-    const dx = x1 - x2;
-    const dy = y1 - y2;
-    return dx * dx + dy * dy;
-}
-
-function distmin(x1: number, y1: number, x2: number, y2: number): number {
-    return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
-}
 
 function carried(object: GameObject | null | undefined, state: GameState = game): boolean {
     return !!object && (object.where === 'inventory' || state.inventory.includes(object));

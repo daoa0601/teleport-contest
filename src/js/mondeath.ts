@@ -22,7 +22,7 @@ import {
 } from './monster_data.js';
 import { changeMonsterForm } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
-import { triggerMonsterDoorTrap } from './monmove.js';
+import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 
@@ -215,20 +215,14 @@ function vampireRiseAction(monster: Monster, disintegrated: boolean, unaware: bo
     return description.charAt(0).toUpperCase() + description.slice(1);
 }
 
-function closedDoorAt(state: GameState, x: number, y: number) {
-    const location = state.level?.at?.(x, y);
-    if (location?.typ !== DOOR) return null;
-    return (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)
-        ? location : null;
-}
 
 async function smashDoorUnderVampire(
     monster: Monster, x: number, y: number, {
         visible, spotted, unaware, state, publish, rollOne, random,
     }: Omit<VampireRevivalContext, 'disintegrated'> & { unaware: boolean },
 ): Promise<MonsterDeathRecovery> {
-    const door = closedDoorAt(state, x, y);
-    if (!door) {
+    const door = state.level?.at?.(x, y);
+    if (!door || !closedDoor(state, x, y)) {
         return { monster, survived: true, messageShown: false, completedDeath: null };
     }
 

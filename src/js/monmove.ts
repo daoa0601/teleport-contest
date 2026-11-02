@@ -269,6 +269,14 @@ const PM_GREMLIN = MONSTER_NAME.indexOf('gremlin');
 const PM_VROCK = MONSTER_NAME.indexOf('vrock');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 
+// C monmove.c:closed_door(). IS_DOOR() is exactly `typ === DOOR`; the
+// shared form keeps the native (x, y) signature with the owning level.
+export function closedDoor(state: GameState, x: number, y: number): boolean {
+    const location = state.level?.at?.(x, y);
+    return location?.typ === DOOR
+        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
+}
+
 // C monmove.c:mb_trapped(). A remotely struck door has the same effect as
 // a door opened by its occupant; the explosion precedes damage and death.
 export async function triggerMonsterDoorTrap(monster: Monster, visible: boolean, {

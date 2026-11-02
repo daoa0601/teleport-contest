@@ -40,7 +40,7 @@ import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from
 import { lootSortMode, sortObjects } from './invent.js';
 import { definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { deepestLevelReached, depth } from './hacklib.js';
+import { deepestLevelReached, depth, upstart } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './vault.js';
 import { heroGoldAmount } from './hero_gold.js';
@@ -341,10 +341,6 @@ function vanquishedEntries() {
 }
 function vanquishedTypeCount() {
     return (game.mvitals || []).filter(vital => (vital?.died ?? 0) > 0).length;
-}
-// C upstart(): capitalize the first letter of a class header.
-function upstart(text) {
-    return text ? text.charAt(0).toUpperCase() + text.slice(1) : text;
 }
 // C N_times(): "once", "twice", "thrice", then "N times".
 function timesText(count) {

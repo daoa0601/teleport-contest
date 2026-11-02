@@ -1,4 +1,4 @@
-import { seeTrap } from './trap.js';
+import { seeTrap, trapAt } from './trap.js';
 // C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
 
 import { monsterHasMapPosition } from './steed.js';
@@ -98,9 +98,6 @@ function diggingLocation(x: number, y: number, state: GameState) {
     return location;
 }
 
-function trapAt(x: number, y: number, state: GameState) {
-    return requireGameLevel(state).traps.find((trap) => trap.tx === x && trap.ty === y);
-}
 
 function impaired(state: GameState) {
     const hero = state.u;
@@ -229,7 +226,7 @@ async function wakeNearby(state: GameState) {
 async function strikeUndiggable(tool: GameObject, x: number, y: number, state: GameState) {
     const hero = state.u;
     const location = diggingLocation(x, y, state);
-    const trap = trapAt(x, y, state);
+    const trap = trapAt(state, x, y);
     const pile = requireGameLevel(state).objects[x]?.[y] || [];
     const boulder = pile.find((object) => object.otyp === BOULDER);
     const statue = pile.find((object) => object.otyp === STATUE);
@@ -271,7 +268,7 @@ async function strikeUndiggable(tool: GameObject, x: number, y: number, state: G
             await wakeNearby(state);
         }
     } else {
-        const here = trapAt(hero.ux, hero.uy, state);
+        const here = trapAt(state, hero.ux, hero.uy);
         if (hero.utrap && hero.utraptype === TT_PIT && here) {
             if (trap && is_pit(trap.ttyp) && connectPits(here, trap)) {
                 await plineWithContinuation('You clear some debris from between the pits.');
@@ -383,7 +380,7 @@ export async function applyPickAxeDirection(
             } long enough.`,
         );
     } else {
-        const trap = trapAt(hero.ux, hero.uy, state);
+        const trap = trapAt(state, hero.ux, hero.uy);
         const seenTrap = trap?.tseen ? trap : null;
         const pitEdge =
             seenTrap && is_pit(seenTrap.ttyp) && !(hero.utrap && hero.utraptype === TT_PIT);

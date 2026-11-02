@@ -68,6 +68,7 @@ import { splitObjectStack } from './mkobj.js';
 import { withIndefiniteArticle } from './objnam.js';
 
 import { objectIsVulnerableToErosion } from './trap.js';
+import { closedDoor } from './monmove.js';
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
@@ -142,10 +143,6 @@ function objectClass(object: GameObject): number {
     return object?.oclass || objectClassForType(object?.otyp);
 }
 
-function closedDoor(location: MapLocation): boolean {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
-}
 
 function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
     if (!state.level) return null;
@@ -520,7 +517,7 @@ async function flyPhysicalObject({
                 break;
             }
 
-            if (!ZAP_POS(location.typ) || closedDoor(location)) {
+            if (!ZAP_POS(location.typ) || closedDoor(state, x, y)) {
                 x = previousX;
                 y = previousY;
                 stoppedBy = 'terrain';

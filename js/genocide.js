@@ -19,6 +19,7 @@ import { heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyse
 import { getLine } from './query.js';
 import { rn1 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { upstart } from './hacklib.js';
 const GENOCIDE_REALLY = 1, GENOCIDE_PLAYER = 2;
 export const GENOCIDE_ON_THRONE = 4;
 const G_GENO = 0x0020, G_UNIQ = 0x1000;
@@ -138,7 +139,7 @@ export async function doClassGenocide({ finishHeroDeath = finishNativeHeroDeath,
             }
         }
         else if (!doomed && speciesWasGenocided(species)) {
-            await plineWithContinuation(`${capitalize(plural)} are already nonexistent.`);
+            await plineWithContinuation(`${upstart(plural)} are already nonexistent.`);
         }
         else if (!doomed && canAnnounceImmuneSpecies(species)) {
             const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
@@ -350,8 +351,5 @@ function canAnnounceImmuneSpecies(species) {
         && (sound !== MS_NEMESIS || species === role.neminum)
         && (sound !== MS_GUARDIAN || species === role.guardnum)
         && (species !== PM_NINJA || role.key === 'samurai');
-}
-function capitalize(text) {
-    return text.charAt(0).toUpperCase() + text.slice(1);
 }
 //# sourceMappingURL=genocide.js.map

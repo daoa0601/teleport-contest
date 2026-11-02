@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { possessiveName } from './hacklib.js';
+import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 
 import { heroIsBlind } from './senses.js';
@@ -184,9 +184,6 @@ function godTitleOf(alignment: AlignmentName, g: GameState): string {
     return g.urole?.goddessAlignments?.includes(alignment) ? 'goddess' : 'god';
 }
 
-function capitalize(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-}
 
 // C hacklib.c:s_suffix(); %S/%s name formatting uses the shared port in
 // monster_name.ts.
@@ -218,7 +215,7 @@ function questPronoun(
                 ? (kind === 'h' ? 'she' : kind === 'i' ? 'her' : 'her')
                 : (kind === 'h' ? 'it' : kind === 'i' ? 'it' : 'its');
     }
-    return which !== kind ? capitalize(pronoun) : pronoun;
+    return which !== kind ? upstart(pronoun) : pronoun;
 }
 
 // C questpgr.c:convert_arg().
@@ -274,7 +271,7 @@ export function convertQuestLine(line: string, g: GameState = game): string {
         const modifier = i + 1 < line.length ? line[i + 1] ?? '' : '';
         switch (modifier) {
         case 'A':
-            out += capitalize(withIndefiniteArticle(value));
+            out += upstart(withIndefiniteArticle(value));
             i++;
             continue;
         case 'a':
@@ -282,7 +279,7 @@ export function convertQuestLine(line: string, g: GameState = game): string {
             i++;
             continue;
         case 'C':
-            value = capitalize(value);
+            value = upstart(value);
             i++;
             break;
         case 'h': case 'H': case 'i': case 'I': case 'j': case 'J':
@@ -294,7 +291,7 @@ export function convertQuestLine(line: string, g: GameState = game): string {
             out += value;
             continue;
         case 'P':
-            value = capitalize(makePlural(value));
+            value = upstart(makePlural(value));
             i++;
             break;
         case 'p':
@@ -302,7 +299,7 @@ export function convertQuestLine(line: string, g: GameState = game): string {
             i++;
             break;
         case 'S':
-            value = capitalize(possessiveName(value));
+            value = upstart(possessiveName(value));
             i++;
             break;
         case 's':

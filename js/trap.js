@@ -72,7 +72,7 @@ import { gotoLevel } from './level_change.js';
 import { rewardMonsterRescue } from './untrap.js';
 import { heroSpecies } from './hero_species.js';
 import { hasCarriedProperty, hasWornProperty } from './properties.js';
-import { possessiveName } from './hacklib.js';
+import { ordinalSuffix, possessiveName } from './hacklib.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export async function seeTrap(trap, state = game) {
     if (trap.tseen)
@@ -1590,13 +1590,6 @@ export function finishSokobanIfSolved(state = game) {
         state,
         flags: LL_MINORAC | LL_DUMP,
     });
-}
-// C hacklib.c:ordin().
-function ordinalSuffix(number) {
-    const digit = number % 10;
-    if (digit === 0 || digit > 3 || Math.trunc((number % 100) / 10) === 1)
-        return 'th';
-    return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
 }
 // C trap.c:trapname(). Cosmetic trap choices use the display RNG.
 const HALLUCINATED_TRAPS = [

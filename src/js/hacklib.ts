@@ -2,13 +2,8 @@
 // C ref: hacklib.c, dungeon.c helpers
 
 import { game } from './gstate.js';
-import { COLNO, ROWNO } from './const.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GameState } from './game_state.js';
-
-export function isok(x: number, y: number) {
-    return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
-}
 
 export function distmin(x1: number, y1: number, x2: number, y2: number) {
     return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));

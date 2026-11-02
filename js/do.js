@@ -3,6 +3,7 @@
 //         hack.c monster_nearby().
 import { heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
 import { game, requireLiveGame } from './gstate.js';
+import { monsterIsHelpless } from './mondata.js';
 import { canSpotMonster } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
@@ -22,10 +23,6 @@ const M1_HIDE = 0x00000100;
 function monsterHasActiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
-}
-function monsterIsHelpless(monster) {
-    return !!(monster.msleeping
-        || !monster.mcanmove || (monster?.mfrozen ?? 0) > 0);
 }
 // C hack.c:monster_nearby().  This is the shared threat predicate used by
 // both safe waiting and safe searching; it is intentionally stricter than

@@ -31,6 +31,7 @@ import { objectClassForType } from './o_init.js';
 import { splitObjectStack } from './mkobj.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { objectIsVulnerableToErosion } from './trap.js';
+import { closedDoor } from './monmove.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { shipObject } from './dokick.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
@@ -48,10 +49,6 @@ const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
-}
-function closedDoor(location) {
-    return location?.typ === DOOR
-        && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
 }
 function liveMonsterAt(state, x, y) {
     if (!state.level)
@@ -382,7 +379,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 stoppedBy = 'passage';
                 break;
             }
-            if (!ZAP_POS(location.typ) || closedDoor(location)) {
+            if (!ZAP_POS(location.typ) || closedDoor(state, x, y)) {
                 x = previousX;
                 y = previousY;
                 stoppedBy = 'terrain';

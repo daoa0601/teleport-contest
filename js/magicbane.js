@@ -1,6 +1,7 @@
 // Magicbane's probe, stun, scare, and cancellation attacks.
 // C ref: artifact.c Mb_hit().
 import { setHeroGrip } from './hero_grip.js';
+import { upstart } from './hacklib.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
@@ -170,7 +171,7 @@ export async function applyMagicbaneHit(object, defender, damage, bonusApplied, 
             defender.mconf = 1;
     }
     if (showEffects) {
-        const target = capitalized(targetName);
+        const target = upstart(targetName);
         if (resisted) {
             await publish(`${target} ${defender === 'hero' ? 'resist' : 'resists'}!`);
             await shieldeff(defender === 'hero' ? state.u.ux : defender.mx, defender === 'hero' ? state.u.uy : defender.my, state);
@@ -184,11 +185,6 @@ export async function applyMagicbaneHit(object, defender, damage, bonusApplied, 
 }
 function magicbaneEnchantment(object) {
     return object.spe ?? object.enchantment ?? 0;
-}
-function capitalized(value) {
-    if (!value)
-        return value;
-    return `${value.charAt(0).toUpperCase()}${value.slice(1)}`;
 }
 function monsterCastsSpells(monster) {
     return (MONSTER_ATTACKS[monster.mnum] || []).some(([attackType]) => attackType === AT_MAGC);

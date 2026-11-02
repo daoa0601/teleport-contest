@@ -709,7 +709,7 @@ export function applyHeroSpellDamage(
     attack.heroDied = hpKey === 'uhp' && state.u.uhp < 1;
 }
 
-export function heroCanSeeInvisible(state: PlayingGameState) {
+export function heroCanSeeInvisible(state: GameState) {
     return !!(state?.u?.seeInvisible || (state?.u?.seeInvisibleTurns ?? 0) > 0);
 }
 

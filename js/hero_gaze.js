@@ -1,6 +1,7 @@
 // The #monster gaze command for a polymorphed hero.
 // C ref: polyself.c dogaze().
 import { heroIsHallucinating } from './senses.js';
+import { heroCanSeeInvisible } from './mcastu.js';
 import { nomul } from './hack.js';
 import { heroHasFreeAction } from './do_wear.js';
 import { KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING, } from './const.js';
@@ -32,10 +33,6 @@ export function heroGazeAttack(state = game) {
     if (form == null)
         return null;
     return (MONSTER_ATTACKS[form] || []).find(([attackType]) => attackType === AT_GAZE) || null;
-}
-function heroCanSeeInvisible(state) {
-    return !!(state.u?.seeInvisible
-        || (state.u?.seeInvisibleTurns ?? 0) > 0);
 }
 function heroIsConfused(state) {
     return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);

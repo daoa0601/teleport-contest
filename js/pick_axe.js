@@ -1,4 +1,4 @@
-import { seeTrap } from './trap.js';
+import { seeTrap, trapAt } from './trap.js';
 // C dig.c:use_pick_axe()/use_pick_axe2(). Digging effort lives in hero_digging.
 import { monsterHasMapPosition } from './steed.js';
 import { heroIsHallucinating } from './senses.js';
@@ -43,9 +43,6 @@ function diggingLocation(x, y, state) {
     if (!location)
         throw new Error(`Digging target (${x}, ${y}) is outside the map.`);
     return location;
-}
-function trapAt(x, y, state) {
-    return requireGameLevel(state).traps.find((trap) => trap.tx === x && trap.ty === y);
 }
 function impaired(state) {
     const hero = state.u;
@@ -155,7 +152,7 @@ async function wakeNearby(state) {
 async function strikeUndiggable(tool, x, y, state) {
     const hero = state.u;
     const location = diggingLocation(x, y, state);
-    const trap = trapAt(x, y, state);
+    const trap = trapAt(state, x, y);
     const pile = requireGameLevel(state).objects[x]?.[y] || [];
     const boulder = pile.find((object) => object.otyp === BOULDER);
     const statue = pile.find((object) => object.otyp === STATUE);
@@ -199,7 +196,7 @@ async function strikeUndiggable(tool, x, y, state) {
         }
     }
     else {
-        const here = trapAt(hero.ux, hero.uy, state);
+        const here = trapAt(state, hero.ux, hero.uy);
         if (hero.utrap && hero.utraptype === TT_PIT && here) {
             if (trap && is_pit(trap.ttyp) && connectPits(here, trap)) {
                 await plineWithContinuation('You clear some debris from between the pits.');
@@ -284,7 +281,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
         await plineWithContinuation(`You cannot stay under${isPoolAt(hero.ux, hero.uy, state) ? 'water' : ' the lava'} long enough.`);
     }
     else {
-        const trap = trapAt(hero.ux, hero.uy, state);
+        const trap = trapAt(state, hero.ux, hero.uy);
         const seenTrap = trap?.tseen ? trap : null;
         const pitEdge = seenTrap && is_pit(seenTrap.ttyp) && !(hero.utrap && hero.utraptype === TT_PIT);
         if (seenTrap && (pitEdge || is_hole(seenTrap.ttyp))) {

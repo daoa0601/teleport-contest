@@ -2,6 +2,7 @@
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
 import { pline_xy } from './pline.js';
+import { engravingAt } from './engrave.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
@@ -1693,10 +1694,6 @@ export async function map_engraving(engraving: Engraving | null | undefined, sho
         await show_glyph_cell(engraving.x, engraving.y, ch, CLR_BRIGHT_BLUE, false, 0, glyph);
 }
 
-function engravingAt(x: number, y: number) {
-    return game.level?.engravings?.find(engraving =>
-        engraving.x === x && engraving.y === y);
-}
 
 function monsterAtMapCell(x: number, y: number) {
     // Native m_at() retains a dying actor until remove_monster(), including
