@@ -187,8 +187,8 @@ function objectAt(x: number, y: number, otyp: number, state: GameState): GameObj
         .find(object => object.otyp === otyp) || null;
 }
 
-function closedDoorAt(location: MapLocation | null | undefined): boolean {
-    // C dokick.c closed_door(): DOOR terrain with a closed or locked mask.
+// C monmove.c:closed_door(): DOOR terrain with a closed or locked mask.
+function closedDoor(location: MapLocation | null | undefined): boolean {
     return location?.typ === DOOR
         && !!((location.doormask ?? 0) & (D_CLOSED | D_LOCKED));
 }
@@ -220,14 +220,14 @@ export function diggingTarget(tool: GameObject | null | undefined, x: number, y:
     const typ = location.typ;
 
     if (isAxe(tool))
-        return closedDoorAt(location) ? DIGTYP_DOOR
+        return closedDoor(location) ? DIGTYP_DOOR
             : IS_TREE(typ) ? DIGTYP_TREE
                 : DIGTYP_UNDIGGABLE;
     return objectAt(x, y, STATUE, state) && pickCanReach(tool, x, y, state)
         ? DIGTYP_STATUE
         : objectAt(x, y, BOULDER, state) && pickCanReach(tool, x, y, state)
             ? DIGTYP_BOULDER
-            : closedDoorAt(location) ? DIGTYP_DOOR
+            : closedDoor(location) ? DIGTYP_DOOR
                 : IS_TREE(typ) ? DIGTYP_UNDIGGABLE
                     : IS_OBSTRUCTED(typ)
                       && (!level.flags?.arboreal || IS_WALL(typ))
@@ -717,7 +717,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
             digtxt = 'You break through a secret door!';
             if (!((location.doormask ?? 0) & D_TRAPPED))
                 location.doormask = D_BROKEN;
-        } else if (closedDoorAt(location)) {
+        } else if (closedDoor(location)) {
             digtxt = `You break through the door with your ${
                 simpleObjectName(uwep, state)
             }.`;
@@ -1621,7 +1621,7 @@ export async function zapDigWithObject(
                         flowingPit = { x: x - dx, y: y - dy };
                     break;
                 }
-            } else if (closedDoorAt(location) || location.typ === SDOOR) {
+            } else if (closedDoor(location) || location.typ === SDOOR) {
                 if (roomsAt(level, x, y, SHOPBASE).length) {
                     addShopDamage(x, y, SHOP_DOOR_COST, state);
                     shopDoor = true;
@@ -1749,7 +1749,7 @@ function adjacentPitRejection(x: number, y: number, state: GameState): string | 
     // This also clears door locks, ice underlay, and nondiggable rock flags.
     clearTerrainFlags(location);
     if (isPoolAt(x, y, state) || isLavaAt(x, y, state)) return '';
-    if (closedDoorAt(location) || type === SDOOR || IS_WALL(type))
+    if (closedDoor(location) || type === SDOOR || IS_WALL(type))
         return 'The foundation is too hard to dig through from this angle.';
     if (IS_TREE(type)) return "The tree's roots glow then fade.";
     if (type === IRONBARS) return 'The bars go much deeper than your pit.';
