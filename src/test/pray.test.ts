@@ -349,7 +349,7 @@ void test('#pray names known gauntlets when curing slippery fingers before uncur
     await prayerRoom({ hero: { uluck: 10 } });
     requirePlayingGame(game);
     const gloves = await addInventoryObject(GAUNTLETS_OF_FUMBLING, { cursed: true });
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     setPropertyTimeout('glib', 10);
     initRng(1n);
 

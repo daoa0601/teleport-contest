@@ -62,7 +62,7 @@ for (const cursed of [false, true]) {
         const messages: string[] = [];
         input.beforeRead = () => { messages.push(game._pending_message); input.feed(' '); };
         const armor = await addInventoryObject(GOLD_DRAGON_SCALE_MAIL, { blessed: false, cursed: false });
-        wearHeroArmor(armor);
+        await wearHeroArmor(armor);
         await applyArmorOnEffects(armor);
         const scroll = await addInventoryObject(SCR_LIGHT, { cursed, blessed: !cursed, typeKnown: true });
 

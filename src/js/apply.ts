@@ -431,7 +431,8 @@ import { dryTowel } from './weapon.js';
 
 import { wieldTool } from './wield_tool.js';
 import type { WieldToolResult } from './wield_tool.js';
-import { doswapweapon, releaseWeaponSlots } from './wield.js';
+import { doswapweapon } from './wield.js';
+import { setnotworn } from './worn.js';
 import { showPagedPickOneMenu, snapshotMenuUnderlay } from './windows.js';
 import type { MenuUnderlay } from './windows.js';
 import { monsterCarriesAmulet } from './wizard.js';
@@ -2977,7 +2978,7 @@ function splitOnePie(stack: GameObject) {
 async function deletePie(pie: GameObject) {
     // C apply.c:use_cream_pie() clears the wield slot via setnotworn(),
     // which does not arm the "begin bashing" bare-hands notice.
-    await releaseWeaponSlots(pie, game, { keepUnweapon: true });
+    await setnotworn(pie, game);
     await chargeAlteredUnpaidObject(pie, 'splatter');
     unlinkObject(pie, game);
     await delobj(pie, game);
@@ -3059,7 +3060,7 @@ async function putJellyBack(use: JellyUse): Promise<void> {
 async function consumeJelly(jelly: GameObject): Promise<void> {
     // C apply.c:use_royal_jelly() clears slots through setnotworn(), which
     // does not arm the bare-hands notice.
-    await releaseWeaponSlots(jelly, game, { keepUnweapon: true });
+    await setnotworn(jelly, game);
     jelly.owornmask = 0;
     jelly.worn = false;
     await deleteObject(jelly);

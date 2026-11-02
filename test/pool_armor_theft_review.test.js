@@ -53,7 +53,7 @@ for (const blind of [false, true]) {
         const suit = await addInventoryObject(LEATHER_ARMOR, {
             cursed: true, bknown: false, observed: false, spe: 0, enchantment: 0,
         });
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         installPagerInput(resetInputState(), { expected: /nymph|She/, limit: 12 });
         await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -70,7 +70,7 @@ for (const species of ['water nymph', 'monkey']) {
     void test(`${species} attempting delayed armor theft leaves later bite attacks active`, async () => {
         await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
-        wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
+        await wearHeroArmor(await addInventoryObject(LEATHER_ARMOR));
         const thief = await nearbyThief(species);
         const lizard = await createMonsterAt('iguana', 10, 11, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         lizard.mux = game.u.ux;
@@ -90,8 +90,8 @@ void test('a second armor theft waits out the longer removal already in progress
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     const first = await nearbyThief();
     const second = await createMonsterAt('wood nymph', 10, 11, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     second.mux = game.u.ux;
@@ -111,8 +111,8 @@ void test('a second armor theft does not restart an elapsed turn of removal', as
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     const first = await nearbyThief();
     const second = await createMonsterAt('wood nymph', 10, 11, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     second.mux = game.u.ux;
@@ -136,7 +136,7 @@ void test('later sleep keeps delayed armor theft pending until the hero wakes', 
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -155,7 +155,7 @@ void test('a Seer update does not change where the armor thief teleports on reco
         await freshObjectRoom({ gameplaySeed: 17, flags: { female: true } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
         await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -175,7 +175,7 @@ void test('an armor thief dying during sleep replaces wake-up feedback with rest
     await freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -192,7 +192,7 @@ void test('armor seduction replaces an unprotected prayer without punishing the 
         hero: { ublesscnt: 500, uluck: 0 } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /praying|nymph/, limit: 16 });
     await dopray();
@@ -212,7 +212,7 @@ void test('life saving shortens delayed armor theft to the single recovery turn'
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     const input = resetInputState();
     installPagerInput(input, { expected: /nymph|amulet|medallion|But wait|die|feel much better/, limit: 16 });
@@ -235,8 +235,8 @@ void test('armor theft after life saving uses the new recovery delay', async () 
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph|amulet|medallion|But wait|die|feel much better/, limit: 16 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -257,7 +257,7 @@ void test('a nymph stealing another item stays nearby until delayed suit theft f
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const dagger = await addInventoryObject(DAGGER);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph|She/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -292,7 +292,7 @@ for (const female of [true, false]) {
         await freshObjectRoom({ flags: { female, menu_style: MENU_PARTIAL }, hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         pushKeys(`${suit.invlet}\n`);
         await rhack('A'.charCodeAt(0));
         await continueCountedCommand();
@@ -317,7 +317,7 @@ for (const restricted of [false, true]) {
         requirePlayingGame(game);
         level.flags.noteleport = restricted;
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         game._helplessTurns = 4;
         game._helplessReason = 'paralyzed';
@@ -348,7 +348,7 @@ for (const female of [true, false]) {
         level.flags.noteleport = true;
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         thief.mcan = true;
         const input = resetInputState();
@@ -371,7 +371,7 @@ void test('a cancelled nymph can continue with her second claw when she does not
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     thief.mcan = true;
     const input = resetInputState();
@@ -391,7 +391,7 @@ for (const blind of [false, true]) {
         await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10, blindTurns: blind ? 10 : 0 } });
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         thief.mcan = true;
         const input = resetInputState();
@@ -418,7 +418,7 @@ for (const previousLoss of [LOST_NONE, LOST_STOLEN]) {
         requirePlayingGame(game);
         const suit = await addInventoryObject(LEATHER_ARMOR);
         suit.how_lost = previousLoss;
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const thief = await nearbyThief();
         installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
         await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -435,7 +435,7 @@ void test('a visible delayed armor thief reports that teleportation is prevented
     level.flags.noteleport = true;
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -450,7 +450,7 @@ void test('the hero can move again before the nymph announces delayed armor thef
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     installPagerInput(resetInputState(), { expected: /nymph/, limit: 12 });
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });
@@ -464,7 +464,7 @@ void test('seduction temporarily uncurses armor before its message pager and res
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR, { cursed: true });
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const thief = await nearbyThief();
     const priorMessage = 'You examine the worn suit carefully before the water nymph approaches you.';
     await plineWithContinuation(priorMessage);

@@ -18,7 +18,7 @@ void test('Lua end-turn effects still reach a hero removing armor for a nymph', 
     await freshObjectRoom({ flags: { female: true } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;
@@ -46,7 +46,7 @@ void test('crawl mode shows five frames for each unfinished armor-theft turn', a
     await freshObjectRoom({ flags: { female: true, runmode: 'crawl' } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;

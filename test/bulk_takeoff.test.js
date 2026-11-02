@@ -54,7 +54,7 @@ void test('takeoffall reports an unequipped hero without spending a turn', async
 void test('bulk removal starts without a turn and removes a zero-delay shield on its first working turn', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const shield = await addInventoryObject(SMALL_SHIELD);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     await takeOff(`${shield.invlet}\n`);
     assert.equal(game.uarms, shield);
     assert.equal(game.context.move, 0);
@@ -69,7 +69,7 @@ void test('bulk shield removal retains its armor class through the removal pager
     game._moveloopStarted = true;
     game.u.umovement = 12;
     const shield = await addInventoryObject(SMALL_SHIELD);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     findArmorClass();
     assert.equal(game.u.uac, 9);
     await takeOff(`${shield.invlet}\n`);
@@ -96,8 +96,8 @@ void test('bulk removal follows the outer-layer order even when inventory letter
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     await takeOff(`${suit.invlet}${cloak.invlet}\n`);
     await work(1);
     assert.equal(game.uarmc, null);
@@ -112,9 +112,9 @@ void test('removing only a shirt accounts for replacing the suit and cloak while
     const shirt = await addInventoryObject(T_SHIRT);
     const suit = await addInventoryObject(RING_MAIL);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
-    wearHeroArmor(shirt);
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(shirt);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     await takeOff(`${shirt.invlet}\n`);
     await work(10);
     assert.equal(game.uarmu, shirt);
@@ -127,8 +127,8 @@ void test('a cursed outer cloak blocks selecting the suit and reveals its curse'
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
     const cloak = await addInventoryObject(LEATHER_CLOAK, { cursed: true, bknown: false });
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     await takeOff(`${suit.invlet}\n`);
     assert.match(game._pending_message, /cannot remove your cloak to take off/);
     assert.equal(cloak.bknown, true);
@@ -139,7 +139,7 @@ void test('a welded two-handed weapon blocks suit removal and reveals its curse'
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
     const sword = await addInventoryObject(TWO_HANDED_SWORD, { cursed: true, bknown: false });
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await setPrimaryWeapon(sword);
     await takeOff(`${suit.invlet}\n`);
     assert.match(game._pending_message, /cannot release your sword to take off/);
@@ -151,7 +151,7 @@ for (const armorType of [RING_MAIL, T_SHIRT]) {
         await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
         const armor = await addInventoryObject(armorType);
         const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
-        wearHeroArmor(armor);
+        await wearHeroArmor(armor);
         await setPrimaryWeapon(dagger);
         await takeOff(`${armor.invlet}\n`);
         assert.equal(dagger.bknown, true, 'checking the welded weapon reveals its curse during selection');
@@ -166,7 +166,7 @@ for (const wearingGloves of [false, true]) {
         await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL }, hero: { glibTurns: 5 } });
         if (wearingGloves) {
             const gloves = await addInventoryObject(GAUNTLETS_OF_POWER);
-            wearHeroArmor(gloves);
+            await wearHeroArmor(gloves);
         }
         const dagger = await addInventoryObject(DAGGER, { cursed: true, bknown: false });
         await setPrimaryWeapon(dagger);
@@ -181,7 +181,7 @@ for (const wearingGloves of [false, true]) {
 void test('a bear trap blocks taking off boots without spending a turn', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL }, hero: { utrap: 5, utraptype: TT_BEARTRAP } });
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await takeOff(`${boots.invlet}\n`);
     assert.equal(game._pending_message, 'The bear trap prevents you from pulling your foot out.');
     assert.equal(game.uarmf, boots);
@@ -191,7 +191,7 @@ void test('cursed gloves block removing a ring and reveal the glove curse', asyn
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER, { cursed: true, bknown: false });
     const ring = await addInventoryObject(RIN_PROTECTION);
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     await wearHeroAccessory(ring, 'uleft');
     await takeOff(`${ring.invlet}\n`);
     assert.match(game._pending_message, /cannot take off your gauntlets to remove the ring/);
@@ -261,7 +261,7 @@ for (const [slot, equip] of [
 void test('interrupted disrobing resumes the remaining delay without selecting items again', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(2);
     await stopHeroOccupation(game, async () => { });
@@ -278,8 +278,8 @@ void test('a welded-weapon wield refusal discards interrupted disrobing', async 
     const suit = await addInventoryObject(RING_MAIL);
     const boots = await addInventoryObject(LOW_BOOTS);
     const dagger = await addInventoryObject(DAGGER, { cursed: true });
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     await setPrimaryWeapon(dagger);
     await takeOff(`${suit.invlet}${boots.invlet}\n`);
     await work(1);
@@ -298,7 +298,7 @@ void test('a welded-weapon wield refusal discards interrupted disrobing', async 
 void test('bulk displacement cloak removal announces the loss and identifies the cloak', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     await takeOff(`${cloak.invlet}\n`);
     const messages = [];
     resetInputState().display = {
@@ -317,7 +317,7 @@ for (const remainingSource of ['timed', 'permanent']) {
     void test(`bulk cloak removal leaves ${remainingSource} displacement active without feedback`, async () => {
         await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
         const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         if (remainingSource === 'timed')
             setPropertyTimeout('displaced', 10);
         else
@@ -333,7 +333,7 @@ for (const remainingSource of ['timed', 'permanent']) {
 void test('a blind hero senses displacement loss through intrinsic telepathy', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     setPropertyTimeout('blinded', 10);
     grantIntrinsicProperty('telepathy', 'outside');
     await takeOff(`${cloak.invlet}\n`);
@@ -351,7 +351,7 @@ void test('a blind hero senses displacement loss through intrinsic telepathy', a
 void test('a sighted invisible hero cannot notice displacement loss through intrinsic telepathy', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     grantIntrinsicProperty('invisible', 'outside');
     grantIntrinsicProperty('telepathy', 'outside');
     await takeOff(`${cloak.invlet}\n`);
@@ -363,7 +363,7 @@ void test('a sighted invisible hero cannot notice displacement loss through intr
 void test('an invisible hero who sees invisible notices bulk displacement cloak removal', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     grantIntrinsicProperty('invisible', 'outside');
     grantIntrinsicProperty('seeInvisible', 'outside');
     await takeOff(`${cloak.invlet}\n`);
@@ -382,7 +382,7 @@ void test('an invisible hero who sees invisible notices bulk displacement cloak 
 void test('single displacement cloak removal uses the same feedback and discovery', async () => {
     await freshObjectRoom({ flags: { verbose: false } });
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     await rhack('T'.charCodeAt(0));
     assert.equal(game._pending_message, 'You feel that monsters no longer have difficulty pinpointing your location.');
     assert.equal(game.uarmc, null);
@@ -391,7 +391,7 @@ void test('single displacement cloak removal uses the same feedback and discover
 void test('single displacement cloak removal identifies the cloak before naming it in verbose feedback', async () => {
     await freshObjectRoom();
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { typeKnown: false });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     pushKeys(' '.repeat(10));
     await rhack('T'.charCodeAt(0));
     assert.equal(game.uarmc, null);
@@ -404,8 +404,8 @@ for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
         const suit = await addInventoryObject(RING_MAIL);
         const boots = await addInventoryObject(LOW_BOOTS);
         const armor = await addInventoryObject(armorType);
-        wearHeroArmor(suit);
-        wearHeroArmor(boots);
+        await wearHeroArmor(suit);
+        await wearHeroArmor(boots);
         await takeOff(`${suit.invlet}${boots.invlet}\n`);
         await work(1);
         await stopHeroOccupation(game, async () => { });
@@ -423,7 +423,7 @@ for (const armorType of [SMALL_SHIELD, GAUNTLETS_OF_POWER]) {
 void test('trying to wear armor already worn preserves interrupted bulk removal', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(1);
     await stopHeroOccupation(game, async () => { });
@@ -440,7 +440,7 @@ void test('wearing selected quiver contents preserves replacement ammunition dur
     const suit = await addInventoryObject(RING_MAIL);
     const ring = await addInventoryObject(RIN_PROTECTION);
     const ammunition = await addInventoryObject(DAGGER);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await setQuiverObject(ring);
     await takeOff(`${suit.invlet}${ring.invlet}\n`);
     await work(1);
@@ -457,7 +457,7 @@ void test('successfully dropping another item discards interrupted bulk removal'
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
     const dagger = await addInventoryObject(DAGGER);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(1);
     await stopHeroOccupation(game, async () => { });
@@ -475,8 +475,8 @@ void test('the armor class symbol selects armor in the takeoff item menu', async
     const shield = await addInventoryObject(SMALL_SHIELD);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
     const ring = await addInventoryObject(RIN_PROTECTION);
-    wearHeroArmor(shield);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(shield);
+    await wearHeroArmor(cloak);
     await wearHeroAccessory(ring, 'uleft');
     await takeOff('[\n');
     await work(2);
@@ -493,8 +493,8 @@ for (const selector of ['.', '@']) {
             ] });
         const cloak = await addInventoryObject(LEATHER_CLOAK, { blessed: true });
         const ring = await addInventoryObject(RIN_PROTECTION, { bknown: false });
-        wearHeroArmor(shield);
-        wearHeroArmor(cloak);
+        await wearHeroArmor(shield);
+        await wearHeroArmor(cloak);
         await wearHeroAccessory(ring, 'uleft');
         await takeOff(`${selector}\n.\n`);
         await work(3);
@@ -508,8 +508,8 @@ void test('full-menu class and curse filters intersect rather than selecting eit
     const cloak = await addInventoryObject(LEATHER_CLOAK, { blessed: true });
     const shield = await addInventoryObject(SMALL_SHIELD);
     const ring = await addInventoryObject(RIN_PROTECTION, { blessed: true });
-    wearHeroArmor(cloak);
-    wearHeroArmor(shield);
+    await wearHeroArmor(cloak);
+    await wearHeroArmor(shield);
     await wearHeroAccessory(ring, 'uleft');
     // Categories: a=all, b=armor, c=rings; B=known blessed.
     await takeOff(`bB\n${cloak.invlet}\n`);
@@ -522,7 +522,7 @@ void test('the armor class symbol selects only armor in the full takeoff categor
     await freshObjectRoom({ flags: { menu_style: MENU_FULL } });
     const shield = await addInventoryObject(SMALL_SHIELD);
     const ring = await addInventoryObject(RIN_PROTECTION);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     await wearHeroAccessory(ring, 'uleft');
     await takeOff(`[\n${shield.invlet}\n`);
     await work(1);
@@ -535,7 +535,7 @@ for (const style of [MENU_FULL, MENU_TRADITIONAL]) {
         const shield = await addInventoryObject(SMALL_SHIELD);
         const dagger = await addInventoryObject(DAGGER, { cursed: true });
         const gold = await addInventoryObject(GOLD_PIECE);
-        wearHeroArmor(shield);
+        await wearHeroArmor(shield);
         shield.bknown = false;
         dagger.bknown = false;
         gold.bknown = true;
@@ -549,7 +549,7 @@ for (const style of [MENU_FULL, MENU_TRADITIONAL]) {
 void test('armor cursed during bulk removal remains described as being doffed in its off message', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     suit.cursed = true;
     await work(4);
@@ -568,7 +568,7 @@ void test('armor cursed during bulk removal remains described as being doffed in
 void test('traditional takeoff can select a class and accept all its worn items', async () => {
     await freshObjectRoom({ flags: { menu_style: 0 } });
     const shield = await addInventoryObject(SMALL_SHIELD);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     await takeOff('[\na');
     await work(1);
     assert.equal(game.uarms, null);
@@ -576,7 +576,7 @@ void test('traditional takeoff can select a class and accept all its worn items'
 void test('traditional takeoff displays one choice suffix and defaults to keeping the item', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL } });
     const shield = await addInventoryObject(SMALL_SHIELD);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     const input = resetInputState();
     const removal = takeOff('[\n');
     try {
@@ -611,7 +611,7 @@ void test('combination takeoff selects classes by prompt then objects by menu', 
     await freshObjectRoom({ flags: { menu_style: 1 } });
     const shield = await addInventoryObject(SMALL_SHIELD);
     const ring = await addInventoryObject(RIN_PROTECTION);
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     await wearHeroAccessory(ring, 'uleft');
     await takeOff(`[\n${shield.invlet}\n`);
     await work(1);
@@ -623,8 +623,8 @@ for (const categories of ['maP', 'mP', 'maPU']) {
         await freshObjectRoom({ flags: { menu_style: MENU_TRADITIONAL, verbose: false } });
         const cloak = await addInventoryObject(LEATHER_CLOAK, { pickup_prev: true });
         const shield = await addInventoryObject(SMALL_SHIELD, { pickup_prev: false });
-        wearHeroArmor(cloak);
-        wearHeroArmor(shield);
+        await wearHeroArmor(cloak);
+        await wearHeroArmor(shield);
         await takeOff(`${categories}\n.\n`);
         await work(2);
         assert.equal(game.uarmc, null, 'the recently picked cloak can be selected');
@@ -634,7 +634,7 @@ for (const categories of ['maP', 'mP', 'maPU']) {
 void test('changing location discards interrupted bulk removal', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(1);
     assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
@@ -646,7 +646,7 @@ void test('changing location discards interrupted bulk removal', async () => {
 void test('a peaceful monster refusing to swap onto a trap discards interrupted bulk removal', async () => {
     const level = await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const { ux, uy } = game.u;
     const monster = await createMonsterAt('jackal', ux + 1, uy, NO_MINVENT);
     monster.mpeaceful = true;
@@ -672,8 +672,8 @@ void test('losing the current armor cancels its delay while remaining selected e
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     await takeOff(`${suit.invlet}${boots.invlet}\n`);
     await work(1);
     await removeHeroArmor(suit);
@@ -685,7 +685,7 @@ void test('losing the current armor cancels its delay while remaining selected e
 void test('interrupted armor is described as being doffed until its removal finishes', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await stopHeroOccupation(game, async () => { });
     assert.match(await inventoryItemDescription(suit), /\(being doffed\)$/);
@@ -695,7 +695,7 @@ void test('saved bulk removal resumes after restore without losing its remaining
     game.plname = 'Disrobing';
     const storage = memoryStorage();
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     await takeOff(`${suit.invlet}\n`);
     await work(2);
     await stopHeroOccupation(game, async () => { });
@@ -713,7 +713,7 @@ void test('removing gloves asks for confirmation even with stoning resistance wh
     const gloves = await addInventoryObject(GAUNTLETS_OF_POWER);
     await addInventoryObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     grantIntrinsicProperty('stoneResistance', 'outside');
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     await takeOff(`${gloves.invlet}\nno\n`);
     assert.equal(game.uarmg, gloves);
     assert.equal(game._occupation ?? null, null);
@@ -907,7 +907,7 @@ for (const obstacle of ['water-walking boots', 'a holding monster']) {
         level.requireAt(ux, uy).typ = POOL;
         if (obstacle === 'water-walking boots') {
             const boots = await addInventoryObject(WATER_WALKING_BOOTS);
-            wearHeroArmor(boots);
+            await wearHeroArmor(boots);
         }
         else {
             game.u.ustuck = await createMonsterAt('owlbear', ux + 1, uy, NO_MINVENT);
@@ -996,7 +996,7 @@ void test('a wrapped restful-sleep removal message waits with sleepiness already
 void test('the turn scheduler spends exactly the suit removal delay after the free initiating command', async () => {
     const input = freshTurnRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const started = game.moves;
     input.feed(`A${suit.invlet}\n.`);
     await moveloop_core();
@@ -1012,8 +1012,8 @@ void test('a hostile monster arriving next to the hero stops disrobing and A res
     const input = freshTurnRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(suit);
-    wearHeroArmor(boots);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(boots);
     input.feed(`A${boots.invlet}${suit.invlet}\n`);
     await moveloop_core();
     await moveloop_core();
@@ -1059,7 +1059,7 @@ void test('a hostile monster arriving next to the hero stops disrobing and A res
 void test('being engulfed discards interrupted bulk removal', async () => {
     await freshObjectRoom({ flags: { menu_style: MENU_PARTIAL, verbose: false } });
     const suit = await addInventoryObject(RING_MAIL);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const { ux, uy } = game.u;
     const monster = await createMonsterAt('purple worm', ux - 1, uy, NO_MINVENT);
     await takeOff(`${suit.invlet}\n`);

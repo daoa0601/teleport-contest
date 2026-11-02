@@ -42,7 +42,7 @@ function armorEffectInput() {
 }
 async function wornArmor(type, properties = {}) {
     const armor = await addInventoryObject(type, { spe: 0, ...properties });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     await applyArmorOnEffects(armor, game, { initialDon: true });
     findArmorClass();
     return armor;
@@ -341,7 +341,7 @@ void test('destroy armor charges the original price of eroded unpaid armor', asy
     await answerPrompts(flushPendingTopline(), pickupInput, [
         { prompt: /ring mail \(unpaid, \d+ zorkmids\)/, keys: ' ' },
     ]);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const price = await unpaidObjectCost(armor);
     const scroll = await addInventoryObject(SCR_DESTROY_ARMOR);
     armorEffectInput();

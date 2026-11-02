@@ -27,7 +27,7 @@ for (const [footwear, description] of [
         const level = await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requireFixtureGame(game);
         const shoes = await addInventoryObject(footwear);
-        wearHeroArmor(shoes);
+        await wearHeroArmor(shoes);
         addTrap(level, SPIKED_PIT, 11, 10, { tseen: false });
         pushKeys(' '.repeat(20));
 

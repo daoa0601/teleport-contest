@@ -15,7 +15,7 @@ import { addInventoryObject } from './support/game-objects.js';
 void test('lava destroys armor while keeping its cached AC through the death refusal question', async () => {
     const level = await freshObjectRoom({ flags: { debug: true, bones: false } });
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 0 });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     assert.equal(findArmorClass(), 8);
     level.requireAt(10, 10).typ = LAVAPOOL;
     const input = resetInputState();

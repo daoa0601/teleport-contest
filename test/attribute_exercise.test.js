@@ -106,7 +106,7 @@ void test('a worn dunce cap prevents Wisdom exercise gain without an adjustment 
     requirePlayingGame(game);
     assert.ok(game.u._exercise);
     const cap = await addInventoryObject(DUNCE_CAP);
-    wearHeroArmor(cap);
+    await wearHeroArmor(cap);
     game.u.acurr.a[A_WIS] = 10;
     game.u._exercise[A_WIS] = 50;
     await checkAttributeExercise(600);

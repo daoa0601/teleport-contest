@@ -144,7 +144,7 @@ for (const typeKnown of [false, true]) {
     void test(`travel previews ${typeKnown ? 'accept identified' : 'reject unidentified'} water-walking boots`, async () => {
         const level = await freshObjectRoom({ context: { run: 8 } });
         level.requireAt(11, 10).typ = POOL;
-        wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown }));
+        await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { typeKnown }));
 
         assert.equal(heroTestMove(11, 10), typeKnown);
     });
@@ -154,7 +154,7 @@ void test('a travel movement preview permits known lava walking only from lava',
     const level = await freshObjectRoom({ context: { run: 8 } });
     level.requireAt(11, 10).typ = LAVAPOOL;
     grantIntrinsicProperty('fireResistance', 'outside');
-    wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { oerodeproof: true, rknown: true }));
+    await wearHeroArmor(await addInventoryObject(WATER_WALKING_BOOTS, { oerodeproof: true, rknown: true }));
 
     assert.equal(heroTestMove(11, 10), false, 'travel cannot start walking onto lava from dry ground');
     level.requireAt(10, 10).typ = LAVAPOOL;

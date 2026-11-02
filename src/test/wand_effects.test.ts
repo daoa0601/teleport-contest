@@ -234,7 +234,7 @@ void test('a hidden hero zapping up affects only the covering object', async () 
 void test('striking the ceiling leaves its falling rock and a hard helmet limits damage', async () => {
     room();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(HELMET));
     const health = game.u.uhp;
     for (let attempt = 0; attempt < 10 && game.u.uhp === health; attempt++)
         await zap(WAN_STRIKING, [0, 0, -1]);

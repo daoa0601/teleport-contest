@@ -48,7 +48,7 @@ void test('mummy wrapping prevents hidden invisibility from reducing monster acc
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     grantIntrinsicProperty('invisible', 'outside');
-    wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
+    await wearHeroArmor(await addInventoryObject(MUMMY_WRAPPING));
     game.u.uac = 0;
     const jackal = await createMonsterAt('jackal', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     jackal.mux = game.u.ux;

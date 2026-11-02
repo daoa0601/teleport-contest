@@ -64,7 +64,7 @@ void test('the final slime turn changes form before invoking slime death', async
     await freshHeroConditionRoom();
     startHeroSliming({ state: game, turns: 1, killer: 'green slime' });
     const armor = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     pushKeys(' ');

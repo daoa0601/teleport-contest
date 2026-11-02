@@ -17,7 +17,7 @@ for (const breath of [true, false]) {
         requirePlayingGame(game);
         const cloak = breath ? await addInventoryObject(CLOAK_OF_DISPLACEMENT) : null;
         if (cloak)
-            wearHeroArmor(cloak);
+            await wearHeroArmor(cloak);
         const input = resetInputState();
         const messages = [];
         input.display = { async readKey() {

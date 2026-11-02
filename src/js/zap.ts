@@ -2582,7 +2582,7 @@ async function replaceWornItem(
     } else if (mask & W_QUIVER) {
         await setQuiverObject(replacement, state);
     } else if (oldArmorSlot && oldArmorSlot === armorSlotFor(replacement.otyp)) {
-        wearHeroArmor(replacement, state);
+        await wearHeroArmor(replacement, state);
         await applyArmorOnEffects(replacement, state);
         return state[oldArmorSlot] ?? null;
     } else if ((mask & (W_RINGL | W_RINGR))

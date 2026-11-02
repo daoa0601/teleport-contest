@@ -19,7 +19,7 @@ void test('the theft draw can pick a lone unworn item among worn gear', async ()
     requirePlayingGame(game);
     const cloak = await addInventoryObject(ELVEN_CLOAK);
     const dagger = await addInventoryObject(DAGGER);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;
@@ -38,8 +38,8 @@ void test('a nymph after a suited and cloaked hero leaves with the cloak', async
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;

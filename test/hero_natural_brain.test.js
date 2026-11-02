@@ -64,7 +64,7 @@ void test('brain nutrition cannot choke an already overfull hero', async () => {
 });
 void test('brain food repairs base intelligence beneath the hero\'s dunce cap', async () => {
     const { monster, context } = await brainAttack('newt');
-    wearHeroArmor(await addInventoryObject(DUNCE_CAP), context.state);
+    await wearHeroArmor(await addInventoryObject(DUNCE_CAP), context.state);
     context.state.u.acurr.a[A_INT] = 11;
     context.state.u.amax.a[A_INT] = 12;
     await applyHeroNaturalBrain(monster, context);

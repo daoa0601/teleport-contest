@@ -47,7 +47,7 @@ async function wearBoots() {
     const boots = await addInventoryObject(LEVITATION_BOOTS, {
         invlet: 'd', dknown: true,
     });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     return boots;
 }
 

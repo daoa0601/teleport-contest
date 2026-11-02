@@ -13,7 +13,7 @@ void test('magic cancellation reports avoided life drain before a barrow wight c
     await freshObjectRoom();
     requirePlayingGame(game);
     const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const wight = await createMonsterAt('barrow wight', 11, 10, NO_MINVENT);
     wight.mpeaceful = 0;
     wight.mspec_used = 2;

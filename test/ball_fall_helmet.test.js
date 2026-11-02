@@ -21,7 +21,7 @@ void test('a soft helmet keeps its personal name when it fails to protect agains
     input.beforeRead = () => { messages.push(game._pending_message); };
     pushKeys(' '.repeat(30));
     await punishHero();
-    wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM, { oextra: { oname: 'Leafcap' } }));
+    await wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM, { oextra: { oname: 'Leafcap' } }));
     addTrap(source, HOLE, 11, 10);
     initRng(1n);
     await rhack('l'.charCodeAt(0));
@@ -36,7 +36,7 @@ void test('a hard helmet protects a punished hero walking into a hole', async ()
     game.u.uhp = game.u.uhpmax = 100;
     pushKeys(' '.repeat(30));
     await punishHero();
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(HELMET));
     addTrap(source, HOLE, 11, 10);
     initRng(1n);
     await rhack('l'.charCodeAt(0));

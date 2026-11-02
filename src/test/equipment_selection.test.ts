@@ -15,8 +15,8 @@ void test('takeoff automatically chooses the single accessible outer layer', asy
     await freshObjectRoom();
     const suit = await addInventoryObject(RING_MAIL);
     const cloak = await addInventoryObject(LEATHER_CLOAK);
-    wearHeroArmor(suit);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(suit);
+    await wearHeroArmor(cloak);
     resetInputState().feed('\x1b');
 
     await rhack('T'.charCodeAt(0));
@@ -29,7 +29,7 @@ void test('takeoff automatically chooses the single accessible outer layer', asy
 void test('paranoid removal asks for the single armor piece instead of taking it off automatically', async () => {
     await freshObjectRoom({ flags: { paranoia_bits: PARANOID_REMOVE } });
     const cloak = await addInventoryObject(LEATHER_CLOAK);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     resetInputState().feed('\x1b');
 
     await rhack('T'.charCodeAt(0));
@@ -42,7 +42,7 @@ for (const command of ['T', 'R']) {
     void test(`${command} rejects a wielded dagger without taking a turn`, async () => {
         await freshObjectRoom({ flags: { paranoia_bits: PARANOID_REMOVE } });
         const cloak = await addInventoryObject(LEATHER_CLOAK);
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         const dagger = await addInventoryObject(DAGGER);
         await setPrimaryWeapon(dagger);
         resetInputState().feed(`${dagger.invlet} `);

@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 
 void test('fatal disintegration proceeds from cloak loss to the wizard death question', async () => {
     await freshObjectRoom({ flags: { debug: true } });
-    wearHeroArmor(await addInventoryObject(CLOAK_OF_DISPLACEMENT));
+    await wearHeroArmor(await addInventoryObject(CLOAK_OF_DISPLACEMENT));
     const messages: string[] = [];
     const input = resetInputState();
     input.display = {

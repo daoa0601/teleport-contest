@@ -132,7 +132,7 @@ void test('lava admission keeps floating eyes away and requires protected water-
     assert.equal(goodPosition(14, 10, species('orc'), { gpflags: MM_IGNORELAVA }), true);
     grantIntrinsicProperty('fireResistance', 'outside');
     const boots = await addInventoryObject(WATER_WALKING_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     assert.equal(goodPosition(14, 10, hero), false);
     boots.oerodeproof = true;
     assert.equal(goodPosition(14, 10, hero), true);
@@ -218,7 +218,7 @@ for (const terrain of [LAVAPOOL, DRAWBRIDGE_UP]) {
         cell.drawbridgemask = DB_LAVA;
         grantIntrinsicProperty('fireResistance', 'outside');
         const boots = await addInventoryObject(WATER_WALKING_BOOTS, { oerodeproof: true });
-        wearHeroArmor(boots);
+        await wearHeroArmor(boots);
         assert.equal(goodPosition(14, 10, hero), true);
         game.water_level = createSpecialLevel({ ...game.u.uz });
         assert.equal(goodPosition(14, 10, hero), false);

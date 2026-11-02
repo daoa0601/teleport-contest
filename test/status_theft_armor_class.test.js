@@ -18,7 +18,7 @@ void test('a disenchanter hit retains the old armor class through its effectiven
     await freshObjectRoom();
     requirePlayingGame(game);
     const shield = await addInventoryObject(SMALL_SHIELD, { spe: 3 });
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     findArmorClass();
     await bot();
     const disenchanter = await createMonsterAt('disenchanter', 11, 10, MM_ANGRY | NO_MINVENT);
@@ -38,7 +38,7 @@ void test('a nymph stealing an accuracy ring preserves pending shield AC through
     await freshObjectRoom();
     requirePlayingGame(game);
     const shield = await addInventoryObject(SMALL_SHIELD, { spe: 3 });
-    wearHeroArmor(shield);
+    await wearHeroArmor(shield);
     findArmorClass();
     const ring = await addInventoryObject(OBJECT_NAMES.indexOf('increase accuracy'), {
         dknown: true, typeKnown: false, known: false, bknown: false,

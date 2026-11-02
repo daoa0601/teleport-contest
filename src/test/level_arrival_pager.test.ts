@@ -33,7 +33,7 @@ void test('level teleport after delayed boot removal retains the old AC through 
     game.u.umovement = 12;
     destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
     const boots = await addInventoryObject(LEVITATION_BOOTS, { spe: 3 });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     findArmorClass();
     await bot();
     grantIntrinsicProperty('teleportControl', 'outside');

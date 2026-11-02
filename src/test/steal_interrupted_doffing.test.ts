@@ -25,7 +25,7 @@ void test('a monkey can give up on boots the hero is already taking off', async 
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const boots = await addInventoryObject(LOW_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     pushKey(boots.invlet);
     await rhack('T'.charCodeAt(0));
     const thief = await createMonsterAt('monkey', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
@@ -49,7 +49,7 @@ void test('a seduced hero restarts the full delay of a started suit removal', as
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     pushKey(suit.invlet);
     await rhack('T'.charCodeAt(0));
     game._moveloopStarted = true;
@@ -93,7 +93,7 @@ void test('a nymph acting during suit removal restarts the full delay', async ()
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     pushKey(suit.invlet);
     await rhack('T'.charCodeAt(0));
     game._moveloopStarted = true;

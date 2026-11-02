@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 void test('destroying a displacement cloak pages its destruction before announcing lost displacement', async () => {
     await freshObjectRoom();
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT, { oeroded: 3, spe: 3 });
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const armorClass = findArmorClass();
     assert.equal(armorClass, 7);
     game.context.mon_moving = true;

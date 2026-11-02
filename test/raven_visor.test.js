@@ -19,7 +19,7 @@ async function ravenFight(appearance) {
     const descriptions = [...OBJECT_DESCRIPTIONS];
     descriptions[HELMET] = appearance;
     game.objectDescriptions = descriptions;
-    wearHeroArmor(await addInventoryObject(HELMET));
+    await wearHeroArmor(await addInventoryObject(HELMET));
     const raven = await createMonsterAt('raven', 11, 10, NO_MINVENT);
     raven.mpeaceful = false;
     pushKeys('m.'.repeat(12) + ' '.repeat(80));

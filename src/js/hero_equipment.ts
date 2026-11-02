@@ -1,5 +1,6 @@
-// Clear equipment when an item leaves the hero or changes type.
-// C worn.c:setnotworn(). Command messages belong to the caller.
+// Clear every equipment slot an item still occupies when it leaves the hero
+// or changes type (C refs: worn.c:setnotworn(), steal.c:remove_worn_item()).
+// Command messages belong to the caller.
 
 import { clearHeroAccessory, removeHeroAccessory } from './do_wear.js';
 
@@ -11,7 +12,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
-import { releaseWeaponSlots, uqwepgone, uswapwepgone, uwepgone } from './wield.js';
+import { uqwepgone, uswapwepgone, uwepgone } from './wield.js';
+import { setnotworn } from './worn.js';
 import { unpunishHero } from './punishment.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
@@ -27,15 +29,15 @@ export async function removeHeroEquipment(object: GameObject, state: GameState =
         || state.u?.[armorSlot] === object)) {
         await clearHeroArmor(object, state, { deferArmorClass });
     }
-    clearHeroAccessory(object, state, { deferArmorClass });
+    await clearHeroAccessory(object, state, { deferArmorClass });
     if (state.ublindf === object || state.u?.ublindf === object) {
-        unequipEyewear(object, state);
+        await unequipEyewear(object, state);
         syncBlindness(state);
     }
     // C worn.c:setnotworn(): destroyed/used-up wielded items do not arm the
     // "begin bashing with your bare hands" notice (zap.c:maybe_destroy_item,
     // invent.c:useupall, apply.c:use_cream_pie all route through setnotworn).
-    await releaseWeaponSlots(object, state, { keepUnweapon: true });
+    await setnotworn(object, state);
 }
 
 // C steal.c:remove_worn_item(). Landing can otherwise disrobe or burn the
@@ -45,6 +47,10 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
     ...armorOptions
 }: { unchainBall?: boolean; cancelledDon?: boolean } = {}): Promise<void> {
     const wasInUse = object.in_use;
+    // C steal.c:remove_worn_item() branches on the ball/chain bits on
+    // entry: those items take the unpunish branch and skip the
+    // setnotworn() catchall, which clears them.
+    const wasBallOrChain = ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)) !== 0;
     object.in_use = true;
     try {
         const slot = armorSlotFor(object.otyp);
@@ -67,9 +73,11 @@ export async function removeWornHeroItem(object: GameObject, state: GameState = 
             await uswapwepgone(state);
         if (state.uquiver === object || state.u?.uquiver === object)
             await uqwepgone(state);
-        await removeHeroEquipment(object, state);
-        if (unchainBall && ((object.owornmask ?? 0) & (W_BALL | W_CHAIN)))
-            await unpunishHero(state);
+        if (wasBallOrChain) {
+            if (unchainBall) await unpunishHero(state);
+        } else {
+            await removeHeroEquipment(object, state);
+        }
     } finally {
         if (wasInUse === undefined) delete object.in_use;
         else object.in_use = wasInUse;

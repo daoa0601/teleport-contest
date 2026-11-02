@@ -38,7 +38,7 @@ async function wearBoots() {
     const boots = await addInventoryObject(LEVITATION_BOOTS, {
         invlet: 'd', dknown: true,
     });
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     return boots;
 }
 void test('a timeout levitation over a sink crashes and ends levitation', async () => {

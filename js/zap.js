@@ -2437,7 +2437,7 @@ async function replaceWornItem(old, replacement, mask, state) {
         await setQuiverObject(replacement, state);
     }
     else if (oldArmorSlot && oldArmorSlot === armorSlotFor(replacement.otyp)) {
-        wearHeroArmor(replacement, state);
+        await wearHeroArmor(replacement, state);
         await applyArmorOnEffects(replacement, state);
         return state[oldArmorSlot] ?? null;
     }

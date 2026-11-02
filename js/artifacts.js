@@ -80,7 +80,7 @@ import { doBlindingRay } from './flash.js';
 import { lightDamage, lightRoom } from './light.js';
 import { MONSTER_SOUND } from './monster_data.js';
 import { flashBurn } from './sight_change.js';
-import { makeBlinded } from './potion.js';
+import { makeBlinded, makeHallucinated } from './potion.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { depth } from './hacklib.js';
@@ -691,6 +691,19 @@ export function setWornArtifactProperties(object, slot, active, state = game) {
         state.u.xray_range = active ? 3 : -1;
         state.vision_full_recalc = 1;
     }
+}
+// C artifact.c:set_artifact_intrinsic() for the wielded slot: the conferred
+// properties plus the talkative wielded-only SPFX (hallucination, warning).
+export async function setWieldedArtifactProperties(object, active, state) {
+    const artifact = artifactById(object.oartifact, state);
+    setWornArtifactProperties(object, 'uwep', active, state);
+    if (artifact?.flags.includes('SPFX_HALRES')) {
+        await makeHallucinated(Number(!active), {
+            state, talk: !state.program_state?.restoring,
+            resistanceSource: { object, slot: 'uwep' },
+        });
+    }
+    await setArtifactWarningWielded(object, active, state);
 }
 // C artifact.c:set_artifact_intrinsic(), Sting_effects(), glow_verb().
 function glowStrength(count) {

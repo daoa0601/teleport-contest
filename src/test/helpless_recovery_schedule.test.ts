@@ -88,7 +88,7 @@ void test('delayed armor removal finishes on the recovery turn, not earlier', as
     const input = freshTurnRoom();
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const messages: string[] = [];
     recordToplines(input, messages);
     input.feed(`${suit.invlet ?? 'a'}`);

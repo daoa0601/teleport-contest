@@ -329,7 +329,7 @@ async function hardenDragonScales(armor, source, state) {
     if (armor.plural !== undefined)
         armor.plural = makePlural(name);
     armor.owt = objectWeight(armor);
-    wearHeroArmor(armor, state);
+    await wearHeroArmor(armor, state);
     if (armor.unpaid)
         updateUnpaidObjectPrice(armor, state);
     if (wasLit === undefined)

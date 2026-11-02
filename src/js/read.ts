@@ -400,7 +400,7 @@ async function hardenDragonScales(armor: GameObject, source: GameObject, state: 
     if (armor.name !== undefined) armor.name = name;
     if (armor.plural !== undefined) armor.plural = makePlural(name);
     armor.owt = objectWeight(armor);
-    wearHeroArmor(armor, state);
+    await wearHeroArmor(armor, state);
     if (armor.unpaid) updateUnpaidObjectPrice(armor, state);
     if (wasLit === undefined) delete armor.lamplit;
     else armor.lamplit = wasLit;

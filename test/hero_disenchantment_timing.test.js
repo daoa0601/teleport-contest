@@ -14,7 +14,7 @@ void test('a disenchanter waits for its hit message before draining worn armor',
     await freshObjectRoom();
     requirePlayingGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 3 });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const monster = await createMonsterAt('disenchanter', 11, 10, NO_MINVENT);
     monster.mpeaceful = 0;
     monster.msleeping = 0;

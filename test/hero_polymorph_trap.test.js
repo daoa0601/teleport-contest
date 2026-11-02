@@ -53,7 +53,7 @@ void test('wielded Magicbane resists a polymorph trap without consuming it', asy
 void test('a priest recognizes blessed replacement boots when a polymorph trap prints them', async () => {
     const level = await freshObjectRoom({ role: 'priest' });
     const shoes = await addInventoryObject(IRON_SHOES, { blessed: true });
-    wearHeroArmor(shoes);
+    await wearHeroArmor(shoes);
     const trap = addTrap(level, POLY_TRAP, 10, 10);
     installPagerInput(resetInputState(), { expected: /polymorph trap|warps strangely/, limit: 3 });
     await triggerHeroTrap(trap);
@@ -67,7 +67,7 @@ void test('a priest recognizes blessed replacement boots when a polymorph trap p
 void test('a polymorph trap replaces worn iron shoes with kicking boots and vanishes', async () => {
     const level = await freshObjectRoom();
     const shoes = await addInventoryObject(IRON_SHOES, { spe: 2 });
-    wearHeroArmor(shoes);
+    await wearHeroArmor(shoes);
     const originalForm = game.u.umonnum;
     const trap = addTrap(level, POLY_TRAP, 10, 10);
     installPagerInput(resetInputState(), { expected: /polymorph trap|warps strangely/, limit: 3 });
@@ -85,7 +85,7 @@ for (const blind of [false, true]) {
         const shoes = await addInventoryObject(IRON_SHOES, {
             observed: false, dknown: false, oname: 'Buster',
         });
-        wearHeroArmor(shoes);
+        await wearHeroArmor(shoes);
         if (!blind)
             setHeroBlindnessTurns(0);
         const trap = addTrap(level, POLY_TRAP, 10, 10);
@@ -106,7 +106,7 @@ for (const known of [false, true]) {
     void test(`a ${known ? 'known' : 'newly revealed'} polymorph trap keeps the hero visible while changing iron shoes`, async () => {
         const level = await freshObjectRoom();
         const shoes = await addInventoryObject(IRON_SHOES);
-        wearHeroArmor(shoes);
+        await wearHeroArmor(shoes);
         const trap = addTrap(level, POLY_TRAP, game.u.ux, game.u.uy, { tseen: known });
         const input = resetInputState();
         input.beforeRead = () => {

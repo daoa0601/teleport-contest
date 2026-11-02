@@ -21,7 +21,7 @@ for (const worn of [false, true]) {
         requirePlayingGame(game);
         const amulet = await addInventoryObject(AMULET_OF_YENDOR);
         const mitre = await addInventoryItem(await artifactObject('The Mitre of Holiness', { cursed: worn }));
-        if (worn) wearHeroArmor(mitre);
+        if (worn) await wearHeroArmor(mitre);
         const scorpion = await createMonsterAt('Scorpius', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         scorpion.mux = game.u.ux;
         scorpion.muy = game.u.uy;
@@ -52,9 +52,9 @@ for (const removing of [false, true]) {
         await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500, uac: 10, sicknessResistance: true } });
         requirePlayingGame(game);
         const mitre = await addInventoryItem(await artifactObject('The Mitre of Holiness'));
-        wearHeroArmor(mitre);
+        await wearHeroArmor(mitre);
         const armor = await addInventoryObject(RING_MAIL);
-        if (removing) wearHeroArmor(armor);
+        if (removing) await wearHeroArmor(armor);
         assert.ok(armor.invlet);
         resetInputState().feed(armor.invlet);
         await rhack((removing ? 'T' : 'W').charCodeAt(0));

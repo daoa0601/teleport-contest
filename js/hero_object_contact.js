@@ -27,7 +27,7 @@ import { hitMonsterWithSupportedPotion } from './potion.js';
 import { d, rnd, rn2 } from './rng.js';
 import { carriedObjectOwner, deleteObject } from './shk.js';
 import { touchPetrifies } from './stoning.js';
-import { releaseWeaponSlots } from './wield.js';
+import { setPrimaryWeapon } from './wield.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { angerAttackedMonster, wakeAttackedMonster } from './mon.js';
 import { monsterHasAcidResistance, monsterHasStoneResistance } from './mondata.js';
@@ -218,9 +218,11 @@ async function detachContactPotion(object, state) {
         if (!split)
             throw new Error('Potion contact could not separate one bottle');
         potion = split;
+        // C uhitm.c:hmon_hitmon_potion() unwields the last bottle through
+        // setuwep(0) before freeinv().
     }
     else
-        await releaseWeaponSlots(potion, state);
+        await setPrimaryWeapon(null, state);
     if (potion.where === 'inventory')
         await freeInventoryObject(potion, state);
     else

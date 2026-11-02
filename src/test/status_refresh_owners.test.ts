@@ -79,7 +79,7 @@ void test('casting displays its reduced spell power', async () => {
 void test('instant armor removal retains AC during feedback and updates it at the next hero turn', async () => {
     const input = freshTurnRoom();
     const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     findArmorClass();
     await bot();
     input.feed('T.');

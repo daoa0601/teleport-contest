@@ -17,7 +17,7 @@ void test('a monkey announces its hit before taking off a worn hat and runs inst
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const hat = await addInventoryObject(FEDORA);
-    wearHeroArmor(hat);
+    await wearHeroArmor(hat);
     const monkey = await createMonsterAt('monkey', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     monkey.mux = game.u.ux;
     monkey.muy = game.u.uy;
@@ -38,7 +38,7 @@ for (const female of [true, false]) {
         await freshObjectRoom({ flags: { female }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
         requirePlayingGame(game);
         const cloak = await addInventoryObject(LEATHER_CLOAK);
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         nymph.mux = game.u.ux;
         nymph.muy = game.u.uy;
@@ -58,7 +58,7 @@ void test('a nymph waits while the hero removes a suit, then steals it', async (
     await freshObjectRoom({ flags: { female: true }, hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const nymph = await createMonsterAt('water nymph', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;

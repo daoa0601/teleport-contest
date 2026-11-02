@@ -115,7 +115,7 @@ void test('bright armor usually frightens a gremlin but sometimes it stays brave
         gremlin.mux = game.u.ux;
         gremlin.muy = game.u.uy;
         const scales = await addInventoryObject(GOLD_DRAGON_SCALES);
-        wearHeroArmor(scales);
+        await wearHeroArmor(scales);
         pushKeys(' '.repeat(40));
         await applyArmorOnEffects(scales);
         assert.equal(Boolean(scales.lamplit), true);

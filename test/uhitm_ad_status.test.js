@@ -115,7 +115,7 @@ void test('a disenchanter drains worn armor after its hit line', async () => {
     await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100, uac: 10 } });
     requirePlayingGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { spe: 3 });
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     const disenchanter = await hostileAt('disenchanter');
     const { messages } = recordedPager(/disenchanter|hits|effective|armor/, 14);
     await performMonsterHeroAttack(disenchanter, game, {

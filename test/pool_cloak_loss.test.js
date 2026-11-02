@@ -11,7 +11,7 @@ import { installPagerInput } from './support/pager-input.js';
 void test('disintegrating a displacement cloak announces the loss of displacement', async () => {
     await freshObjectRoom();
     const cloak = await addInventoryObject(CLOAK_OF_DISPLACEMENT);
-    wearHeroArmor(cloak);
+    await wearHeroArmor(cloak);
     const input = resetInputState();
     installPagerInput(input, { expected: /cloak|location/, limit: 4 });
     const messages = [];

@@ -338,7 +338,7 @@ void test('gloves keep wielded petrifying flesh safe when temporary resistance e
     refreshProperty('stoneResistance');
     const corpse = await addInventoryObject(CORPSE, { corpsenm: species('cockatrice') });
     await setPrimaryWeapon(corpse);
-    wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
+    await wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
 
     await advanceCorpseResistanceTimeouts();
 
@@ -350,7 +350,7 @@ void test('gloves keep wielded petrifying flesh safe when temporary resistance e
 void test('strength gain stays quiet when gloves already fix effective strength', async () => {
     await room();
     requirePlayingGame(game);
-    wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
+    await wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
     await flushPendingTopline();
     const before = game.u.acurr.a[A_STR];
 

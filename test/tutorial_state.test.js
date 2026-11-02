@@ -129,7 +129,7 @@ void test('entering the tutorial stores equipment and returning restores the sam
     const ring = await addInventoryObject(RIN_PROTECTION);
     const gold = await addInventoryObject(GOLD_PIECE, { quan: 57 });
     await setPrimaryWeapon(sword);
-    wearHeroArmor(armor);
+    await wearHeroArmor(armor);
     await wearHeroAccessory(ring, 'uleft');
     const lifecycle = currentLuaLifecycle();
     await lifecycle.callCore(game, 'enter_tutorial');

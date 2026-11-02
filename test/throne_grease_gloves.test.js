@@ -14,7 +14,7 @@ void test("removing gloves cleans the slippery hands caused by Vlad's throne", a
     level.requireAt(10, 10).typ = THRONE;
     game.dungeons = [createDungeon({ dname: "Vlad's Tower" })];
     const gloves = await addInventoryObject(LEATHER_GLOVES);
-    wearHeroArmor(gloves);
+    await wearHeroArmor(gloves);
     initRng(21n);
     await runExtendedCommand('sit', ' '.repeat(10));
     assert.ok((game.u.glibTurns ?? 0) >= 100, 'The throne must coat the worn gloves.');

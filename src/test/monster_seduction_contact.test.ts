@@ -42,7 +42,7 @@ for (const { description, callName, personalName, expected } of [
             typeKnown: false, oextra: { oname: personalName },
         });
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         incubus.female = false;
         const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
@@ -73,7 +73,7 @@ for (const blind of [false, true]) {
             observed: false, dknown: false, typeKnown: false,
         });
         const suit = await addInventoryObject(LEATHER_ARMOR);
-        wearHeroArmor(suit);
+        await wearHeroArmor(suit);
         const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
         incubus.female = false;
         const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
@@ -103,7 +103,7 @@ void test('a leap-day demand reveals a blind priest\'s carried gloves and their 
         typeKnown: false, oextra: { oname: 'winter mittens' },
     });
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const succubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     succubus.female = true;
     const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
@@ -129,9 +129,9 @@ void test('a leap-day demand names worn gloves before other carried gloves', asy
     game.datetime = '20000229120000';
     await addInventoryObject(LEATHER_GLOVES, { oextra: { oname: 'spare mittens' } });
     const wornGloves = await addInventoryObject(GAUNTLETS_OF_POWER, { oextra: { oname: 'working mittens' } });
-    wearHeroArmor(wornGloves);
+    await wearHeroArmor(wornGloves);
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const succubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     succubus.female = true;
     const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,
@@ -215,7 +215,7 @@ void test('declining an incubus armor-removal prompt keeps the suit and ends sed
     requirePlayingGame(game);
     level.flags.noteleport = true;
     const suit = await addInventoryObject(LEATHER_ARMOR);
-    wearHeroArmor(suit);
+    await wearHeroArmor(suit);
     const incubus = await createMonsterAt('amorous demon', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     incubus.female = false;
     const attack: HeroContactAttack = { kind: 'hero-attack', attackType: AT_BITE,

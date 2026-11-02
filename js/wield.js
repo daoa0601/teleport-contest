@@ -42,13 +42,11 @@ import { corpseName, killerObjectName, objectCombatName } from './objnam.js';
 import { insideShopRoomAt, shopResident } from './shk.js';
 import { statusConditionEnabled } from './botl.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
-import { artifactEmitsLight, setWornArtifactProperties, setArtifactWarningWielded, } from './artifacts.js';
-import { recalculateTelepathyRange } from './worn.js';
-import { makeHallucinated } from './potion.js';
+import { W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { setnotworn, setworn } from './worn.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { heroIsBlind } from './senses.js';
-import { cancelSlotTakeoff } from './do_wear.js';
 const WEAPON_CLASS = 2;
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
@@ -553,11 +551,6 @@ async function readySelectedWeapon(weapon, state) {
     }
     return 'time';
 }
-const WEAPON_SLOTS = [
-    ['uwep', W_WEP, 'wielded'],
-    ['uswapwep', W_SWAPWEP, 'alternate'],
-    ['uquiver', W_QUIVER, 'ready'],
-];
 export function isWeldedPrimary(object, state = game) {
     if (!object || object !== (state.uwep || state.u?.uwep) || !willWeld(object))
         return false;
@@ -576,97 +569,45 @@ export function setTwoWeaponCombat(enabled, state = game) {
 function slotObject(slot, state) {
     return state[slot] || state.u?.[slot] || null;
 }
-function clearSlot(slot, mask, flag, state) {
-    const object = slotObject(slot, state);
-    if (object)
-        cancelSlotTakeoff(slot, state);
-    state[slot] = null;
-    if (state.u)
-        state.u[slot] = null;
-    if (!object)
-        return null;
-    if (slot === 'uwep' && artifactEmitsLight(object) && object.lamplit)
-        endObjectBurn(object, state);
-    object[flag] = false;
-    object.owornmask = (object.owornmask ?? 0) & ~mask;
-    recalculateTelepathyRange(state);
-    return object;
-}
-function installSlot(object, slot, mask, flag, state) {
-    state[slot] = object;
-    if (state.u)
-        state.u[slot] = object;
-    object.wielded = flag === 'wielded';
-    object.alternate = flag === 'alternate';
-    object.ready = flag === 'ready';
-    object.owornmask = (object.owornmask ?? 0) | mask;
-    recalculateTelepathyRange(state);
-}
-async function replaceSlot(object, slot, mask, flag, state) {
-    const oldObject = slotObject(slot, state);
-    if (oldObject !== object || !object)
-        clearSlot(slot, mask, flag, state);
-    if (!object)
-        return oldObject;
-    if (oldObject !== object)
-        await releaseWeaponSlots(object, state);
-    installSlot(object, slot, mask, flag, state);
-    return oldObject;
-}
-export async function setWieldedArtifactProperties(object, active, state) {
-    const artifact = artifactById(object.oartifact, state);
-    setWornArtifactProperties(object, 'uwep', active, state);
-    if (artifact?.flags.includes('SPFX_HALRES')) {
-        await makeHallucinated(Number(!active), {
-            state, talk: !state.program_state?.restoring,
-            resistanceSource: { object, slot: 'uwep' },
-        });
-    }
-    await setArtifactWarningWielded(object, active, state);
-}
+// C wield.c:setuwep().  setworn() carries the slot work: two-weapon
+// cancellation, cancel_doff(), the owornmask/extrinsic bookkeeping and the
+// artifact intrinsics.  The Ogresmasher botl, the Sunsword light and the
+// "begin bashing" notice belong here.
 export async function setPrimaryWeapon(object, state = game) {
     const previous = slotObject('uwep', state);
     if (previous === object)
-        return previous;
-    if (state.flags.weaponstatus)
-        state.context.botl = true;
-    if (previous)
-        cancelSlotTakeoff('uwep', state);
-    // Semantic unwielding retains the old pointer while its warning stops.
-    if (previous) {
-        setTwoWeaponCombat(false, state);
-        previous.wielded = false;
-        previous.owornmask = (previous.owornmask ?? 0) & ~W_WEP;
-        await setWieldedArtifactProperties(previous, false, state);
-    }
-    if (object)
-        await releaseWeaponSlots(object, state);
-    state.uwep = object;
-    if (state.u)
-        state.u.uwep = object;
-    if (object) {
-        installSlot(object, 'uwep', W_WEP, 'wielded', state);
-        await setWieldedArtifactProperties(object, true, state);
-    }
+        return previous; /* necessary to not set gu.unweapon */
+    await setworn(object, W_WEP, state);
+    // handle Ogresmasher before Sunsword; even though they can't be
+    // happening at the same time, botl flag update should come before the
+    // pline message (gaining or losing the Con bonus).
     if (artifactById(previous?.oartifact, state)?.name === 'Ogresmasher'
         || artifactById(object?.oartifact, state)?.name === 'Ogresmasher')
         state.context.botl = true;
-    // setuwep ends the displaced light after setworn's new warning census.
+    // This message is printed *whenever* Sunsword is unwielded, whatever the
+    // cause, so it lives here rather than with the wielding commands.
     if (previous?.lamplit && artifactEmitsLight(previous)) {
         endObjectBurn(previous, state);
         if (!heroIsBlind(state))
             await plineWithContinuation(equipmentLightMessage(previous, false, state));
     }
+    // Note: Explicitly wielding a pick-axe will not give a "bashing"
+    // message.  Wielding one via 'a'pplying it will.
     state._unweapon = weaponNeedsBashingMessage(object, state);
     return previous;
 }
+// C wield.c:setuswapwep(): setworn(obj, W_SWAPWEP), nothing else.
 export async function setSecondaryWeapon(object, state = game) {
-    if (slotObject('uswapwep', state))
-        setTwoWeaponCombat(false, state);
-    return await replaceSlot(object, 'uswapwep', W_SWAPWEP, 'alternate', state);
+    const previous = slotObject('uswapwep', state);
+    await setworn(object, W_SWAPWEP, state);
+    return previous;
 }
+// C wield.c:setuqwep(): setworn(obj, W_QUIVER); no extra handling needed,
+// update_inventory() is already performed by setworn().
 export async function setQuiverObject(object, state = game) {
-    return await replaceSlot(object, 'uquiver', W_QUIVER, 'ready', state);
+    const previous = slotObject('uquiver', state);
+    await setworn(object, W_QUIVER, state);
+    return previous;
 }
 // C wield.c:uwepgone().  The light-source message precedes setworn()'s
 // removal of the warning source, and the bare-hand notice is armed.
@@ -674,115 +615,42 @@ export async function uwepgone(state = game) {
     const object = slotObject('uwep', state);
     if (!object)
         return;
-    if (state.flags.weaponstatus)
-        state.context.botl = true;
-    cancelSlotTakeoff('uwep', state);
     if (object.lamplit && artifactEmitsLight(object)) {
         endObjectBurn(object, state);
         if (!heroIsBlind(state))
             await plineWithContinuation(equipmentLightMessage(object, false, state));
     }
-    setTwoWeaponCombat(false, state);
-    object.wielded = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_WEP;
-    await setWieldedArtifactProperties(object, false, state);
-    state.uwep = null;
-    if (state.u)
-        state.u.uwep = null;
-    state._unweapon = true;
+    await setworn(null, W_WEP, state);
+    state._unweapon = true; /* for "bare hands" message */
 }
 // C wield.c:uswapwepgone().  setworn(0, W_SWAPWEP) plus the redraw.
 export async function uswapwepgone(state = game) {
-    const object = slotObject('uswapwep', state);
-    if (!object)
+    if (!slotObject('uswapwep', state))
         return;
-    setTwoWeaponCombat(false, state);
-    cancelSlotTakeoff('uswapwep', state);
-    object.alternate = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_SWAPWEP;
-    state.uswapwep = null;
-    if (state.u)
-        state.u.uswapwep = null;
-    recalculateTelepathyRange(state);
+    await setworn(null, W_SWAPWEP, state);
 }
 // C wield.c:uqwepgone().  setworn(0, W_QUIVER) plus the redraw.
 export async function uqwepgone(state = game) {
-    const object = slotObject('uquiver', state);
-    if (!object)
+    if (!slotObject('uquiver', state))
         return;
-    cancelSlotTakeoff('uquiver', state);
-    object.ready = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_QUIVER;
-    state.uquiver = null;
-    if (state.u)
-        state.u.uquiver = null;
-    recalculateTelepathyRange(state);
+    await setworn(null, W_QUIVER, state);
 }
-// The weapon-slot part of C worn.c:setnotworn() (item destroyed or leaving
-// the hero) and of setworn()'s replacement step inside the setuwep()/
-// setuswapwep()/setuqwep() ports above: every weapon slot holding the
-// object is emptied at once.  setnotworn() never arms the "begin bashing"
-// notice, so its callers pass keepUnweapon; callers whose C counterpart
-// reaches the gone() functions leave it off (uwepgone arms the notice).
-export async function releaseWeaponSlots(object, state = game, { keepUnweapon = false } = {}) {
-    if (!object)
-        return;
-    const primary = state.uwep === object || state.u?.uwep === object;
-    const secondary = state.uswapwep === object
-        || state.u?.uswapwep === object;
-    const quivered = state.uquiver === object || state.u?.uquiver === object;
-    if (primary && state.flags.weaponstatus)
-        state.context.botl = true;
-    if (primary)
-        cancelSlotTakeoff('uwep', state);
-    if (secondary)
-        cancelSlotTakeoff('uswapwep', state);
-    if (quivered)
-        cancelSlotTakeoff('uquiver', state);
-    if (primary || secondary)
-        setTwoWeaponCombat(false, state);
-    if (primary && artifactEmitsLight(object) && object.lamplit)
-        endObjectBurn(object, state);
-    if (state.uwep === object)
-        state.uwep = null;
-    if (state.u?.uwep === object)
-        state.u.uwep = null;
-    if (state.uswapwep === object)
-        state.uswapwep = null;
-    if (state.u?.uswapwep === object)
-        state.u.uswapwep = null;
-    if (state.uquiver === object)
-        state.uquiver = null;
-    if (state.u?.uquiver === object)
-        state.u.uquiver = null;
-    if (primary && !keepUnweapon)
-        state._unweapon = true;
-    object.wielded = false;
-    object.alternate = false;
-    object.ready = false;
-    object.owornmask = (object.owornmask ?? 0) & ~W_WEAPONS;
-    recalculateTelepathyRange(state);
-    // Direct setnotworn clears the pointer before warning feedback.
-    if (primary)
-        await setWieldedArtifactProperties(object, false, state);
-}
-// C merged() uses raw setworn/setnotworn, not wield commands or uwepgone.
-export function mergeHeroWeaponSlots(survivor, incoming, state = game) {
+// C invent.c:merged() `#adjust' fixup for merging wielded darts, daggers,
+// &c: both stacks might be worn in competing slots; merger preference
+// (regardless of which is which) is primary weapon, then alternate, then
+// quiver, all through raw setworn()/setnotworn().
+export async function mergeHeroWeaponSlots(survivor, incoming, state = game) {
     if (!incoming.owornmask || survivor.where !== 'inventory')
         return;
-    const combined = (survivor.owornmask || 0) | incoming.owornmask;
-    const target = combined & W_WEP ? ['uwep', W_WEP, 'wielded']
-        : combined & W_SWAPWEP ? ['uswapwep', W_SWAPWEP, 'alternate']
-            : combined & W_QUIVER ? ['uquiver', W_QUIVER, 'ready'] : null;
-    if (!target)
+    const combined = (survivor.owornmask ?? 0) | incoming.owornmask;
+    const wmask = combined & W_WEP ? W_WEP
+        : combined & W_SWAPWEP ? W_SWAPWEP
+            : combined & W_QUIVER ? W_QUIVER : 0;
+    if (!wmask)
         throw new Error('merging objects in non-weapon slots');
-    if (target[1] !== W_QUIVER)
-        setTwoWeaponCombat(false, state);
-    for (const [slot, mask, flag] of WEAPON_SLOTS) {
-        const object = slotObject(slot, state);
-        if (object === survivor || object === incoming)
-            clearSlot(slot, mask, flag, state);
-    }
-    installSlot(survivor, ...target, state);
+    if (((survivor.owornmask ?? 0) & ~wmask) !== 0)
+        await setnotworn(survivor, state);
+    await setworn(survivor, wmask, state);
+    await setnotworn(incoming, state);
 }
 //# sourceMappingURL=wield.js.map

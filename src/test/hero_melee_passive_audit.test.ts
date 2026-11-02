@@ -114,7 +114,7 @@ void test('a blind floating eye cannot freeze the hero who strikes it', async ()
 void test('a natural melee kick does not offer boots to an acid blob\'s object passive', async () => {
     await meleeRoom('sasquatch', 'acid blob');
     const boots = await addInventoryObject(IRON_SHOES);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     // Intrinsic acid resistance protects the body, not these boots.
     game.u.acidResistance = true;
     initRng(41n);
@@ -163,7 +163,7 @@ for (const gloved of [false, true]) {
         const cockatrice = await meleeRoom('gnomish wizard', 'cockatrice');
         game.storage = memoryStorage();
         game.iflags.toptenwin = false;
-        if (gloved) wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
+        if (gloved) await wearHeroArmor(await addInventoryObject(LEATHER_GLOVES));
         initRng(41n);
 
         const messages = await attackEast(/cockatrice|stone|Goodbye|points|survived|turns/, true);
@@ -231,7 +231,7 @@ void test('a wielded primary weapon protects later claws from contact petrificat
     game.iflags.toptenwin = false;
     await setPrimaryWeapon(await addInventoryObject(DAGGER));
     // A flexible helm fits the horned form and insulates its head butt.
-    wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM));
+    await wearHeroArmor(await addInventoryObject(ELVEN_LEATHER_HELM));
     initRng(41n);
 
     const messages = await attackEast(/cockatrice|stone|Goodbye|points|survived|turns/, true);

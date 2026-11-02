@@ -4,7 +4,6 @@
 import { armorOffMessage } from './do_wear.js';
 
 import { W_TOOL } from './const.js';
-import { setWornArtifactProperties } from './artifacts.js';
 import { setBallAndChainFelt } from './ball.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -17,8 +16,8 @@ import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';
 import { toggleBlindness } from './potion.js';
-import { releaseWeaponSlots } from './wield.js';
-import { cancelSlotTakeoff } from './do_wear.js';
+import { removeWornHeroItem } from './hero_equipment.js';
+import { setworn } from './worn.js';
 
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
@@ -35,24 +34,16 @@ function simpleEyewearName(object: GameObject): string {
     return 'a blindfold';
 }
 
+// C do_wear.c:Blindf_on() installs eyewear with setworn(otmp, W_TOOL) after
+// releasing a wielded or quivered item through remove_worn_item(otmp, FALSE).
 async function equipEyewear(object: GameObject): Promise<void> {
-    await releaseWeaponSlots(object);
-    game.ublindf = object;
-    if (game.u) game.u.ublindf = object;
-    object.worn = true;
-    object.wornSlot = 'ublindf';
-    object.owornmask = (object.owornmask ?? 0) | W_TOOL;
-    setWornArtifactProperties(object, 'ublindf', true, game);
+    await removeWornHeroItem(object, game, { unchainBall: false });
+    await setworn(object, W_TOOL, game);
 }
 
-export function unequipEyewear(object: GameObject, state: GameState = game): void {
-    if (state.ublindf === object || state.u.ublindf === object) cancelSlotTakeoff('ublindf', state);
-    if (state.ublindf === object) state.ublindf = null;
-    if (state.u?.ublindf === object) state.u.ublindf = null;
-    object.worn = false;
-    object.wornSlot = null;
-    object.owornmask = (object.owornmask ?? 0) & ~W_TOOL;
-    setWornArtifactProperties(object, 'ublindf', false, state);
+// C do_wear.c:Blindf_off() clears the slot with setworn(0, otmp->owornmask).
+export async function unequipEyewear(object: GameObject, state: GameState = game): Promise<void> {
+    await setworn(null, W_TOOL, state);
 }
 
 async function announceWorn(object: GameObject): Promise<void> {
@@ -127,7 +118,7 @@ export async function removeEyewear(object: GameObject | null = null, {
     object ||= worn ?? null;
     if (!object || worn !== object) return false;
     const wasBlind = heroIsBlind(state);
-    unequipEyewear(object, state);
+    await unequipEyewear(object, state);
     const blind = syncBlindness(state);
     if (!noOffMessage && state.flags?.verbose !== false)
         await publish(await armorOffMessage(object, state));

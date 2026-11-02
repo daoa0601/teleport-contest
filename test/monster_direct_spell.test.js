@@ -20,7 +20,7 @@ for (const protection of ['armor', 'half physical damage', 'half spell damage', 
         asmodeus.mux = game.u.ux;
         asmodeus.muy = game.u.uy;
         asmodeus.m_lev = 30;
-        wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
+        await wearHeroArmor(await addInventoryObject(CLOAK_OF_PROTECTION));
         const potion = await addInventoryObject(POT_HEALING);
         game.u.halfPhysicalDamage = protection === 'half physical damage';
         game.u.halfSpellDamage = protection === 'half spell damage';

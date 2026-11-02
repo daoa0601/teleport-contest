@@ -38,7 +38,7 @@ for (const removeCloak of [false, true]) {
         await freshObjectRoom({ hero: { uhp: 100, uhpmax: 100 } });
         requirePlayingGame(game);
         const cloak = await addInventoryObject(CLOAK_OF_PROTECTION);
-        wearHeroArmor(cloak);
+        await wearHeroArmor(cloak);
         findArmorClass();
         if (removeCloak)
             await rhack('T'.charCodeAt(0));

@@ -317,7 +317,7 @@ void test('slowing removes intrinsic and timed speed while retaining worn speed 
     grantIntrinsicProperty('fast', 'outside');
     await speedUpHero(25);
     const boots = await addInventoryObject(SPEED_BOOTS);
-    wearHeroArmor(boots);
+    await wearHeroArmor(boots);
     await zapHeroWithObject(await carryWand(WAN_SLOW_MONSTER));
     assert.equal(game.u.veryFastTurns, 0);
     assert.equal(hasIntrinsicProperty('fast'), false);

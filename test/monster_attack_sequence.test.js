@@ -15,7 +15,7 @@ void test('an energy vortex cooldown miss retains the preceding attack roll', as
     const input = freshTurnRoom({ role: 'barbarian', left: 1, right: 18, top: 1, bottom: 18 });
     requirePlayingGame(game);
     game.u.uhp = game.u.uhpmax = 500;
-    wearHeroArmor(await addInventoryObject(GRAY_DRAGON_SCALE_MAIL));
+    await wearHeroArmor(await addInventoryObject(GRAY_DRAGON_SCALE_MAIL));
     findArmorClass();
     const vortex = await createMonsterAt('energy vortex', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     vortex.mspec_used = 2;
