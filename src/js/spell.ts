@@ -24,7 +24,7 @@ import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
 import { loseHeroHp } from './hero_damage.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
-import { jumpHero } from './jumping.js';
+import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
 import { mksobj } from './mkobj.js';
 import { deleteObject } from './shk.js';

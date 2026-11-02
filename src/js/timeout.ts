@@ -26,7 +26,7 @@ import { wakeMonstersNearWithMessages, restartMonsterShapechanging } from './mon
 import { rnd } from './rng.js';
 import { propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, setPropertyTimeout } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { setSlipperyHands } from './towel.js';
+import { setSlipperyHands } from './potion.js';
 import { healHeroLegs } from './hero_legs.js';
 import { heroIsUnconscious, putHeroToSleep } from './hero_sleep.js';
 import { advanceHeroSickness, advanceHeroVomiting, heroIsSick, heroIsVomiting, sicknessDialogue, vomitingDialogue } from './hero_illness.js';

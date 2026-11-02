@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { W_TOOL } from '../js/const.js';
-import { useCreamPie } from '../js/cream_pie.js';
+import { useCreamPie } from '../js/apply.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

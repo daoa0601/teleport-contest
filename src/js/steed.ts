@@ -32,7 +32,7 @@ import {
     monsterTypeName,
 } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './leash_apply.js';
+import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject } from './invent.js';

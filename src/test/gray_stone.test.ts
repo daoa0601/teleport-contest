@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { useGrayStone } from '../js/gray_stone.js';
+import { useGrayStone } from '../js/apply.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { objectMaterial } from '../js/o_init.js';

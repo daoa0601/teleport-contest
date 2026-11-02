@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { initRng } from '../js/rng.js';
-import { useUnicornHorn } from '../js/unicorn_horn.js';
+import { useUnicornHorn } from '../js/apply.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness, startHeroVomiting, vomitHero } from '../js/hero_illness.js';
 import { statusConditions } from '../js/botl.js';

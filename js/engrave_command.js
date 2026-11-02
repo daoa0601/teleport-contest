@@ -31,7 +31,7 @@ import { exceedsActionCapacity } from './weight.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './recharge.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
-import { dryTowel } from './towel.js';
+import { dryTowel } from './weapon.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, } from './objnam.js';

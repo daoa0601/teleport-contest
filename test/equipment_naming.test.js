@@ -12,7 +12,7 @@ import { AKLYS, AMULET_OF_REFLECTION, ARROW, CROSSBOW_BOLT, DAGGER, DART, GOLD_D
 import { polymorphHero } from '../js/polyself.js';
 import { punishHero } from '../js/punishment.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { setSlipperyHands } from '../js/towel.js';
+import { setSlipperyHands } from '../js/potion.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from '../js/wield.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';

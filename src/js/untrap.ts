@@ -40,7 +40,7 @@ import type { DirectionSelection } from './tty_prompts.js';
 import { blocksDiagonalDoor, blocksMove, heroBadRock } from './hack.js';
 import { beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { checkHeroLeashes } from './leash_apply.js';
+import { checkHeroLeashes } from './apply.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { vision_recalc } from './vision.js';
 import { consumeObjectCharge } from './invent.js';
