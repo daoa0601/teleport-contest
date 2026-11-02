@@ -17,7 +17,7 @@ import { objectResistsDestruction } from './zap.js';
 import { ownedObjectName } from './objnam.js';
 import { d, rn2, rnl } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
-import { losePrimaryWeapon, setTwoWeaponCombat } from './wield.js';
+import { setTwoWeaponCombat, uwepgone } from './wield.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -82,7 +82,7 @@ export async function resolveHeroJoust(
     let survivingWeapon: GameObject | null = weapon;
     if (joust < 0) {
         setTwoWeaponCombat(false, state);
-        if (weapon === (state.uwep || state.u.uwep)) await losePrimaryWeapon(state);
+        if (weapon === (state.uwep || state.u.uwep)) await uwepgone(state);
         await publish(`${ownedObjectName(weapon, state)} shatters on impact!`);
         await consumeInventoryItem(weapon, state);
         // Even when a stack retains another lance, this impact has none.

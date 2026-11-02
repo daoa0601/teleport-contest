@@ -808,8 +808,10 @@ untrap	yn_function	inlined	ask prompts in every untrap branch (untrap.ts)
 untrap_box	yn_function	inlined	'Disarm it?' ask prompt (untrap.ts)
 untrap_prob	attacks	inlined	AD_FIRE weapon test plus Sting (untrap.ts)
 update_player_regions	inside_region	inlined	regionContains for the hero square (regions.ts)
+uqwepgone	update_inventory	inlined	botl refresh after losing the quivered ammo (wield.ts)
 use_skill	give_may_advance_msg	inlined	advancement feedback on the skill window (skills.ts)
 uwep_skill_type	weapon_type	inlined	weaponSkillType (apply.ts)
+uswapwepgone	update_inventory	inlined	botl refresh after losing the alternate weapon (wield.ts)
 uwepgone	setworn	inlined	clearSlot/setPrimaryWeapon(null) (wield.ts)
 uwepgone	update_inventory	inlined	botl refresh after losing the weapon (wield.ts)
 visible_region_at	inside_region	inlined	regionContains cell test (regions.ts)
@@ -1808,7 +1810,6 @@ docallcmd	cmdq_pop	inlined	doname reads the repeat or canned queue and clears a 
 dogaze	yn_function	inlined	confirmPeacefulGaze calls promptYesNo, then promptChoice and query.ts yn_function beyond the two-call reach limit
 domenucontrols	show_menu_controls	inlined	menuControlsHelp formats the native dolist=FALSE table using the current menu bindings (pager_help.ts)
 drop_weapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window
-drop_weapon	uswapwepgone	inlined	dropPolymorphWeapons clears the offhand with setSecondaryWeapon(null) before dropping it (polyself.ts)
 e_jumps	E_phrase	n/a	Only the native debugpline diagnostic uses this phrase
 e_jumps	is_fainted	inlined	heroIsUnaware includes the FAINTED hunger state for an involuntary delay (hero_sleep.ts)
 e_missed	is_fainted	inlined	heroIsUnaware includes the FAINTED hunger state when deciding whether a flyer can react (hero_sleep.ts)

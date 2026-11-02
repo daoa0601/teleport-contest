@@ -173,15 +173,16 @@ async function moveRevivalOccupant(monster, x, y, state) {
 // C hack.c:moverock().  Hero boulder pushes and their sokoban consequences.
 export async function pushBouldersAt(sx, sy, dx, dy) {
     requirePlayingGame(game);
-    try {
-        return await pushBoulders(sx, sy, dx, dy);
-    }
-    finally {
-        // next_boulder aliases corpsenm in C and only changes push prose.
-        for (const object of game.level.objects[sx]?.[sy] ?? [])
-            if (object.otyp === BOULDER)
-                object.corpsenm = 0;
-    }
+    const ret = await pushBoulders(sx, sy, dx, dy);
+    moverockDone(sx, sy);
+    return ret;
+}
+// C hack.c:moverock_done(). next_boulder aliases corpsenm in C and only
+// changes push prose; resume normal xname() for every boulder left there.
+function moverockDone(sx, sy) {
+    for (const object of game.level?.objects[sx]?.[sy] ?? [])
+        if (object.otyp === BOULDER)
+            object.corpsenm = 0;
 }
 async function pushBoulders(sx, sy, dx, dy) {
     requirePlayingGame(game);

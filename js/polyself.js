@@ -4,7 +4,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
-import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './wield.js';
+import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
 import { verbForSubject, makePlural, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
@@ -864,9 +864,9 @@ async function dropPolymorphWeapons(alone) {
         if (!object)
             continue;
         if (object === primary)
-            await losePrimaryWeapon();
+            await uwepgone(game);
         else
-            await setSecondaryWeapon(null);
+            await uswapwepgone(game);
         if (!object.in_use && canDrop)
             await dropCarriedObject(object);
         if (game.program_state.gameover)

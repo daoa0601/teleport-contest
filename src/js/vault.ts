@@ -15,9 +15,9 @@ import { bot } from './botl.js';
 import { redrawMap, newsym, canSpotMonster, map_invisible, map_location, monsterVisible } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, isok, ACCESSIBLE, COLNO, COULD_SEE, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
+import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, isok, ACCESSIBLE, COLNO, COULD_SEE, GD_DESTROYGOLD, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
-import { vision_note_blocker_change, cansee, couldsee, unset_seenv } from './vision.js';
+import { vision_note_blocker_change, cansee, couldsee, monsterHasLineOfSightToHero, unset_seenv } from './vision.js';
 import { setWallStateAt } from './wall_topology.js';
 import { stopLevelTimer } from './timeout.js';
 import { containedGold } from './shk.js';
@@ -486,6 +486,16 @@ export async function findVaultGuard(state: GameState = game): Promise<VaultGuar
     returning.mx = returning.my = 0;
     await parkVaultGuard(returning, state);
     return returning;
+}
+
+// C vault.c:vault_gd_watching(). A watchful guard remembers who ate or
+// destroyed the vault's gold and turns hostile on its next move.
+export async function vaultGdWatching(activity: number, state: GameState = game): Promise<void> {
+    const guard = await findVaultGuard(state);
+    if (guard?.mx && guard.mcansee && monsterHasLineOfSightToHero(guard, state)) {
+        if (activity === GD_EATGOLD || activity === GD_DESTROYGOLD)
+            guard._egd.witness = activity;
+    }
 }
 
 // C vault.c:gd_move(), its escort helpers, and find_guard_dest().

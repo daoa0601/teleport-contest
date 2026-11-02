@@ -273,6 +273,11 @@ function prepareTimedCommand(binding) {
         game._occupation = { key: 'command', text, binding };
     }
 }
+// C cmd.c:set_occupation(). Installs the resumable occupation and its
+// progress text; xtime is modelled by the occupation's own key.
+export function setOccupation(occupation, g = game) {
+    g._occupation = occupation;
+}
 async function redrawCommand() {
     await docrt();
     game.context.move = 0;

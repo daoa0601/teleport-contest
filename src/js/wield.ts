@@ -739,8 +739,9 @@ export async function setQuiverObject(
     return await replaceSlot(object, 'uquiver', W_QUIVER, 'ready', state);
 }
 
-// C uwepgone(): light ends before setworn removes the warning source.
-export async function losePrimaryWeapon(state: GameState = game): Promise<void> {
+// C wield.c:uwepgone().  The light-source message precedes setworn()'s
+// removal of the warning source, and the bare-hand notice is armed.
+export async function uwepgone(state: GameState = game): Promise<void> {
     const object = slotObject('uwep', state);
     if (!object) return;
     if (state.flags.weaponstatus) state.context.botl = true;
@@ -759,6 +760,37 @@ export async function losePrimaryWeapon(state: GameState = game): Promise<void> 
     state._unweapon = true;
 }
 
+// C wield.c:uswapwepgone().  setworn(0, W_SWAPWEP) plus the redraw.
+export async function uswapwepgone(state: GameState = game): Promise<void> {
+    const object = slotObject('uswapwep', state);
+    if (!object) return;
+    setTwoWeaponCombat(false, state);
+    cancelSlotTakeoff('uswapwep', state);
+    object.alternate = false;
+    object.owornmask = (object.owornmask ?? 0) & ~W_SWAPWEP;
+    state.uswapwep = null;
+    if (state.u) state.u.uswapwep = null;
+    recalculateTelepathyRange(state);
+}
+
+// C wield.c:uqwepgone().  setworn(0, W_QUIVER) plus the redraw.
+export async function uqwepgone(state: GameState = game): Promise<void> {
+    const object = slotObject('uquiver', state);
+    if (!object) return;
+    cancelSlotTakeoff('uquiver', state);
+    object.ready = false;
+    object.owornmask = (object.owornmask ?? 0) & ~W_QUIVER;
+    state.uquiver = null;
+    if (state.u) state.u.uquiver = null;
+    recalculateTelepathyRange(state);
+}
+
+// The weapon-slot part of C worn.c:setnotworn() (item destroyed or leaving
+// the hero) and of setworn()'s replacement step inside the setuwep()/
+// setuswapwep()/setuqwep() ports above: every weapon slot holding the
+// object is emptied at once.  setnotworn() never arms the "begin bashing"
+// notice, so its callers pass keepUnweapon; callers whose C counterpart
+// reaches the gone() functions leave it off (uwepgone arms the notice).
 export async function releaseWeaponSlots(
     object: GameObject | null | undefined, state: GameState = game,
     { keepUnweapon = false }: { keepUnweapon?: boolean } = {},
@@ -785,9 +817,6 @@ export async function releaseWeaponSlots(
     if (state.uquiver === object) state.uquiver = null;
     if (state.u?.uquiver === object) state.u.uquiver = null;
 
-    // C worn.c:setnotworn() clears a wielded slot without arming the
-    // "begin bashing" notice; only uwepgone()/setuwep(NULL) set unweapon.
-    // Callers whose C counterpart uses setnotworn() pass keepUnweapon.
     if (primary && !keepUnweapon) state._unweapon = true;
     object.wielded = false;
     object.alternate = false;

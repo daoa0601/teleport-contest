@@ -25,7 +25,7 @@ import { ownedObjectAction, ownedObjectName } from './objnam.js';
 import { d, rn2, rnl, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { rollPhysicalWeaponDamage, shadeBlocksWeaponBaseDamage } from './weapon.js';
-import { losePrimaryWeapon } from './wield.js';
+import { uwepgone } from './wield.js';
 import { ammunitionMatchesLauncher, isAmmunition, isPolearm } from './object_properties.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -134,7 +134,7 @@ async function improvisedWeaponContact(
         const stack = objectQuantity(weapon) > 1;
         await publish(`As you hit ${monsterName(monster, { state })}, ${stack ? 'one of ' : ''}${
             ownedObjectName(weapon, state, { capitalized: false })} breaks into splinters.`);
-        if (!stack) await losePrimaryWeapon(state);
+        if (!stack) await uwepgone(state);
         await consumeInventoryItem(weapon, state);
         specialMessage = true;
         if (!monsterIsShade(monster)) damage++;

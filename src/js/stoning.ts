@@ -44,7 +44,7 @@ import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { openingTinMaySaveHero } from './eat.js';
-import { releaseWeaponSlots } from './wield.js';
+import { uswapwepgone, uwepgone } from './wield.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rn2 } from './rng.js';
 
@@ -334,8 +334,11 @@ export async function selfTouchPetrifyingWeapons({
             state, publish, die,
         });
         if (result.died) return { touched: true, died: true };
-        if (!(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state))
-            await releaseWeaponSlots(weapon, state);
+        if (!(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)) {
+            // C trap.c:selftouch() unwields through the gone() family.
+            if (slot === 0) await uwepgone(state);
+            else await uswapwepgone(state);
+        }
     }
     return { touched, died: false };
 }
