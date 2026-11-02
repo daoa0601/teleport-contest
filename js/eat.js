@@ -38,12 +38,13 @@ import { hasNonArtifactConflict } from './hero_conflict.js';
 import { gainCorpseDisplacement } from './hero_displacement.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, startHeroVomiting } from './hero_illness.js';
+import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
-import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
+import { putHeroToSleep } from './timeout.js';
 import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { meltIce } from './ice.js';
@@ -70,7 +71,8 @@ import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumor.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition } from './shk.js';
-import { PM_GREEN_SLIME, heroCanBeSlimed, heroIsSlimeproof, startHeroSliming } from './slime.js';
+import { heroIsSlimeproof } from './polyself.js';
+import { PM_GREEN_SLIME } from './monster_data.js';
 import { dismountHero } from './steed.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './dbridge.js';
@@ -689,6 +691,14 @@ export async function applyCorpsePreEffects(mnum, { state = game, food = null, t
             await fixHeroPetrification({ state });
     }
     return { stopped: false, heroDied: !!state.program_state.gameover };
+}
+// C eat.c:852,1861: a body admits green-slime infection only when it is not
+// already sliming, not Unchanging, and not slimeproof.
+export function heroCanBeSlimed(state = game) {
+    const hero = state.u;
+    return !heroIsSliming(state)
+        && !hero.unchanging && !state.unchanging
+        && !heroIsSlimeproof(state);
 }
 // C eat.c:fix_petrification(): the timeout stops before its cure feedback.
 export async function fixHeroPetrification({ state = game } = {}) {

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { game } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { RIN_FREE_ACTION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { finishSpellTurn, prepareSpellCaster } from './support/monster-spells.js';

@@ -17,8 +17,9 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
-import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
-import type { DueObjectTimer } from './timeout.js';
+import {
+    beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGraph,
+} from './timeout.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
@@ -54,13 +55,6 @@ export interface RoomLightOptions {
     finishMonsterKill?: FinishMonsterKill;
 }
 
-export interface BurnTimerResult {
-    object: GameObject;
-    threshold: number;
-    overdue: boolean;
-    destroyed?: boolean;
-}
-
 export interface IgniteItemsOptions {
     state?: GameState;
     publish?: Publish;
@@ -68,7 +62,7 @@ export interface IgniteItemsOptions {
     visible?: boolean;
 }
 
-const CANDLE_TYPES = new Set([
+export const CANDLE_TYPES = new Set([
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE, WAX_CANDLE,
 ]);
 export const TIMED_LIGHT_TYPES = new Set([
@@ -205,27 +199,6 @@ export function snuffLightSource(x: number, y: number, state: GameState = game):
     if (target) snuffOrdinaryLight(target);
 }
 
-// C mkobj.c:obj_is_local(): a light is global when its outermost owner is
-// the hero or a migrating carrier, and level-local otherwise.
-function lightObjectIsGlobal(object: GameObject): boolean {
-    let outermost = object;
-    while (outermost.where === 'contained' && outermost.container)
-        outermost = outermost.container;
-    switch (outermost.where) {
-        case 'inventory':
-        case 'migrating':
-            return true;
-        case 'minvent':
-            return !outermost.ocarry || outermost.ocarry.mx === 0;
-        case 'buried':
-        case 'contained':
-        case 'floor':
-        case 'free':
-        case 'gone':
-        case 'onbill':
-            return false;
-    }
-}
 
 // C light.c:save_light_sources() writes a batch (the global lights, or one
 // level's lights) newest-first, and restore_light_sources() pushes each
@@ -496,81 +469,14 @@ export async function applyLightScrollEffect(
     return { known, consumed: false, heroDied: !!game.program_state.gameover };
 }
 
-function lampBurnTurns(age: number): number {
-    if (age > 150) return age - 150;
-    if (age > 100) return age - 100;
-    if (age > 50) return age - 50;
-    if (age > 25) return age - 25;
-    return age;
-}
-
-function candleBurnTurns(age: number): number {
-    if (age > 75) return age - 75;
-    if (age > 15) return age - 15;
-    return age;
-}
-
-function objectBurnTurns(object: GameObject) {
-    if (object.otyp === POT_OIL) {
-        const age = object.age ?? 0;
-        return object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
-    }
-    if (CANDLE_TYPES.has(object.otyp))
-        return candleBurnTurns(object.age ?? 0);
-    return lampBurnTurns(object.age ?? 0);
-}
 
 // C light.c:new_light_source() prepends to light_base, so each lighting
 // gives the object the newest slot in the list order that snuff searches.
-function registerObjectLightSource(object: GameObject, state: GameState): void {
+export function registerObjectLightSource(object: GameObject, state: GameState): void {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
 }
 
-// begin_burn() stores only the fuel remaining after the next warning
-// breakpoint; the timer owns the intervening turns.  Keeping both fields is
-// what lets save/restore and an overdue callback reconstruct source state.
-export function beginObjectBurn(
-    object: GameObject | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
-) {
-    if (!object
-        || (!LIGHT_TYPES.has(object.otyp) && !artifactEmitsLight(object))) {
-        return false;
-    }
-    const alreadyLit = !!object.lamplit;
-    if (artifactEmitsLight(object)) {
-        object.lamplit = true;
-        if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
-        }
-        return true;
-    }
-    if (object.otyp === MAGIC_LAMP) {
-        if ((object.spe ?? 0) <= 0) return false;
-        object.lamplit = true;
-        if (!alreadyLit) {
-            registerObjectLightSource(object, state);
-            state.vision_full_recalc = 1;
-        }
-        return true;
-    }
-    if (object.otyp === CANDELABRUM_OF_INVOCATION
-        && (object.spe ?? 0) <= 0) return false;
-    if ((object.age ?? 0) <= 0) return false;
-    const turns = objectBurnTurns(object);
-    const timer = scheduleObjectTimer(
-        object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state,
-    );
-    object.lamplit = !!timer;
-    if (!timer) return false;
-    object.age -= turns;
-    if (!alreadyLit) {
-        registerObjectLightSource(object, state);
-        state.vision_full_recalc = 1;
-    }
-    return true;
-}
 
 // apply.c:dorub() performs this type change before the released djinni can
 // grant a fatal wish.  A lit magic lamp already has a light source but no
@@ -590,180 +496,11 @@ export function transformMagicLampToOilLamp(
     return true;
 }
 
-// timeout.c:end_burn(..., TRUE) reaches cleanup_burn() through stop_timer().
-// The object's stored age excludes the turns owned by its active timer, so a
-// manual switch-off must restore the still-unspent portion before darkening
-// the source.  Natural expiry has already claimed its timer and deliberately
-// uses extinguishTimedLight() below instead.
-export function endObjectBurn(
-    object: GameObject | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
-) {
-    if (!object?.lamplit)
-        return false;
-    if (object.otyp === MAGIC_LAMP || artifactEmitsLight(object)
-        || object.otyp === GOLD_DRAGON_SCALE_MAIL || object.otyp === GOLD_DRAGON_SCALES) {
-        object.lamplit = false;
-        delete object._litSeq;
-        state.vision_full_recalc = 1;
-        return true;
-    }
-    const timer = stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
-    if (!timer || !Number.isFinite(timer.deadline)) return false;
-    return cleanupObjectBurn(object, timer.deadline, state, currentTurn);
-}
 
-// C cleanup_burn(), also called when Lua stops a burning object's timer.
-export function cleanupObjectBurn(
-    object: GameObject, deadline: number, state: GameState = game,
-    currentTurn = state.moves ?? 0,
-): boolean {
-    if (!object.lamplit) return false;
-    object.age = (object.age ?? 0) + deadline - currentTurn;
-    object.lamplit = false;
-    delete object._litSeq;
-    state.vision_full_recalc = 1;
-    return true;
-}
 
-function extinguishTimedLight(object: GameObject, state: GameState) {
-    object.lamplit = false;
-    delete object._litSeq;
-    stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
-    state.vision_full_recalc = 1;
-}
 
-function burnOwner(object: GameObject, state: GameState) {
-    if (object.where === 'inventory') {
-        const owner = carriedObjectOwner(object, state);
-        return owner.charAt(0).toUpperCase() + owner.slice(1);
-    }
-    const carrier = object.ocarry || requireGameLevel(state).monsters.find(monster =>
-        (monster.minvent || monster.inventory || []).includes(object));
-    // C shk.c:mon_owns(): s_suffix(y_monnam(obj->ocarry)), so a pet's item
-    // reads "Your saddled pony's".
-    return carrier ? possessiveName(monsterName(carrier, { article: 'your', capitalized: true, state })) : 'The';
-}
 
-function burnName(object: GameObject, state: GameState) {
-    const count = object.quan ?? object.quantity ?? 1;
-    const name = objectName(object, state);
-    return `${burnOwner(object, state)} ${count > 1 ? makePlural(name) : name}`;
-}
 
-async function finishBurnedObject(object: GameObject, state: GameState, { overdue = false } = {}) {
-    extinguishTimedLight(object, state);
-    if (object.otyp === CANDELABRUM_OF_INVOCATION) {
-        object.spe = 0;
-        object.owt = objectWeight(object);
-        return false;
-    }
-    if (object.otyp !== POT_OIL && object.otyp !== TALLOW_CANDLE && object.otyp !== WAX_CANDLE)
-        return false;
-    const floor = object.where === 'floor' && { x: object.ox, y: object.oy };
-    if (!overdue && object.where === 'inventory') await useUpInventoryStack(object, state);
-    else {
-        if (object.where === 'migrating') object.owornmask = 0;
-        await deleteObject(object, state);
-    }
-    if (floor && (overdue || object.otyp !== POT_OIL))
-        await maybeUnhideAt(floor.x, floor.y, state);
-    return true;
-}
 
-// C timeout.c:see_lamp_flicker().
-// C timeout.c:lantern_message().
-async function announceLampBurn(
-    object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
-    state: GameState, owner: string,
-): Promise<void> {
-    const floor = object.where === 'floor';
-    const lantern = object.otyp === BRASS_LANTERN;
-    if (threshold === 0) {
-        if (visible || byTouch) await plineWithContinuation(lantern
-            ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
-            : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
-        return;
-    }
-    if (!visible || ![150, 100, 50, 25].includes(threshold)) return;
-    if (lantern) {
-        await plineWithContinuation(floor ? formatSeenMessage('a lantern getting dim.', state)
-            : object.where === 'inventory' ? 'Your lantern is getting dim.'
-                : `${burnOwner(object, state)} lantern is getting dim.`);
-        if (object.where === 'inventory' && heroIsHallucinating(state))
-            await plineWithContinuation('Batteries have not been invented yet.');
-    } else if (threshold === 25) await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
-        : `${burnName(object, state)} seems about to go out.`);
-    else await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`, state)
-        : `${burnName(object, state)} flickers${threshold === 50 ? ' considerably' : ''}.`);
-}
 
-async function announceCandleBurn(
-    object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
-    state: GameState, ownership: string,
-): Promise<void> {
-    const menorah = object.otyp === CANDELABRUM_OF_INVOCATION;
-    const many = menorah ? object.spe > 1 : (object.quan ?? object.quantity ?? 1) > 1;
-    const floor = object.where === 'floor';
-    const candle = `${menorah ? "candelabrum's " : ''}candle`;
-    const owner = floor ? formatSeenMessage(`${menorah ? 'a ' : many ? 'some ' : 'a '}`, state) : `${ownership} `;
-    if (threshold === 75 && visible) {
-        await plineWithContinuation(`${owner}${candle}${many ? 's' : ''}${floor ? '' : many ? ' are' : ' is'} getting short.`);
-    } else if (threshold === 15 && visible) {
-        await plineWithContinuation(`${owner}${candle}${many ? "s'" : "'s"} flame${many ? 's' : ''} flicker${floor || many ? '' : 's'} low!`);
-    } else if (threshold === 0 && (visible || byTouch)) {
-        if (menorah) await plineWithContinuation(floor
-            ? formatSeenMessage(`a candelabrum's flame${many ? 's' : ''} die.`, state)
-            : `${ownership} candelabrum's flame${many ? 's die' : ' dies'}.`);
-        else {
-            const name = objectName(object, state);
-            await plineWithContinuation(floor
-                ? formatSeenMessage(`${many ? `some ${makePlural(name)}` : withIndefiniteArticle(name)} consumed!`, state)
-                : `${burnName(object, state)} ${many ? 'are' : 'is'} consumed!`);
-            if (heroIsHallucinating(state)) await plineWithContinuation(many ? 'They shriek!' : 'It shrieks!');
-            else if (!heroIsBlind(state)) await plineWithContinuation(many ? 'Their flames die.' : 'Its flame dies.');
-        }
-    }
-}
 
-// C timeout.c:burn_object(). The claimed timer is already removed. Messages
-// may pause before expiry removes equipment or bills; a late level timer
-// catches up silently without replaying warnings from the absent hero.
-export async function runClaimedObjectBurnTimer(
-    claimed: DueObjectTimer | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
-): Promise<BurnTimerResult | null> {
-    const object = claimed?.object;
-    const timeout = claimed?.timer?.deadline;
-    if (!object || !TIMED_LIGHT_TYPES.has(object.otyp) || !object.lamplit
-        || typeof timeout !== 'number' || !Number.isFinite(timeout)) return null;
-    if (timeout !== currentTurn) {
-        const elapsed = currentTurn - timeout;
-        if (elapsed >= (object.age ?? 0)) {
-            object.age = 0;
-            const destroyed = await finishBurnedObject(object, state, { overdue: true });
-            return { object, threshold: 0, overdue: true, destroyed };
-        }
-        object.age -= elapsed;
-        beginObjectBurn(object, state, currentTurn);
-        return { object, threshold: object.age, overdue: true };
-    }
-    const threshold = object.age ?? 0;
-    const location = getObjectLocation(object, state);
-    const visible = !heroIsBlind(state) && !!location && cansee(location.x, location.y);
-    const owner = location ? burnOwner(object, state) : '';
-    const byTouch = object.where === 'inventory' && object.otyp !== BRASS_LANTERN;
-    if (object.otyp === POT_OIL) {
-        if (visible) await plineWithContinuation(object.where === 'floor'
-            ? formatSeenMessage('a burning potion of oil go out.', state) : `${owner} potion of oil has burnt away.`);
-    } else if (CANDLE_TYPES.has(object.otyp))
-        await announceCandleBurn(object, threshold, visible, byTouch, state, owner);
-    else await announceLampBurn(object, threshold, visible, byTouch, state, owner);
-    const destroyed = threshold === 0 || object.otyp === POT_OIL
-        ? await finishBurnedObject(object, state) : false;
-    if (!destroyed && threshold > 0) beginObjectBurn(object, state, currentTurn);
-    if (visible && location && threshold === 0
-        && (object.otyp === POT_OIL || object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE))
-        await newsym(location.x, location.y);
-    return { object, threshold, overdue: false, destroyed };
-}

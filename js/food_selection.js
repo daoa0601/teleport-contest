@@ -5,7 +5,7 @@ import { veganCorpse } from './food_traits.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroFormClings, heroIsFlying, heroIsBreathless, heroSpecies } from './polyself.js';
-import { heroIsStrangled } from './hero_strangulation.js';
+import { heroIsStrangled } from './do_wear.js';
 import { clearHeroTrap, deleteTrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';

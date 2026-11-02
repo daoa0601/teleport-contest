@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { NO_MINVENT } from '../js/const.js';
 import { CANDELABRUM_OF_INVOCATION, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { vision_recalc } from '../js/vision.js';

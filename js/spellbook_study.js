@@ -13,7 +13,7 @@ import { shieldeff } from './display.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './potion.js';
-import { putHeroToSleep } from './hero_sleep.js';
+import { putHeroToSleep } from './timeout.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './do.js';
 import { learnObjectType } from './o_init.js';

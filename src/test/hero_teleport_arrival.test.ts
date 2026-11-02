@@ -10,7 +10,7 @@ import { A_STR, HOLE, M_AP_NOTHING, PIT, VIBRATING_SQUARE } from '../js/const.js
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { useHeroHide } from '../js/hero_hide.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, DIAMOND, RIN_TELEPORT_CONTROL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

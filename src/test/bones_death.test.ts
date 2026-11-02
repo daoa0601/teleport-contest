@@ -7,7 +7,7 @@ import { BURNING, DIED, FOUNTAIN, G_GENOD, GRAVE, HEADSTONE, LEAVESTATUE, NON_PM
 import { setHeroRemainsFromDeath, setHeroRemainsFromMonster } from '../js/death_remains.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { CORPSE, DAGGER, FOOD_RATION, LEATHER_ARMOR, MUMMY_WRAPPING, OIL_LAMP, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';

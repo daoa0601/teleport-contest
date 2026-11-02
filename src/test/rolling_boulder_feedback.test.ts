@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { LANDMINE, MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { BOULDER, CORPSE, WORM_TOOTH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

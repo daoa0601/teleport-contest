@@ -8,7 +8,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import {
     CORPSE, FOOD_RATION, GLOB_OF_GREEN_SLIME, MEATBALL,
 } from '../js/object_data.js';
-import { PM_GREEN_SLIME } from '../js/slime.js';
+import { PM_GREEN_SLIME } from '../js/monster_data.js';
 import {
     floorObject, addInventoryObject,
 } from './support/game-objects.js';

@@ -46,7 +46,7 @@ import { monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';
 import { untrap, untrapAbilityProblem } from './trap.js';
 import { possessiveName } from './hacklib.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';

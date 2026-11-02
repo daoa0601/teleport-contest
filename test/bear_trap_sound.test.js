@@ -4,7 +4,7 @@ import test from 'node:test';
 import { BEAR_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeDeaf } from '../js/potion.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { makeBlinded } from '../js/potion.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 for (const species of ['owlbear', 'bugbear', 'giant']) {

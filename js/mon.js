@@ -76,7 +76,7 @@ import { veganCorpse } from './food_traits.js';
 import { heroStomachName } from './body_parts.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';

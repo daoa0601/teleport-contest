@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DOOR, D_LOCKED, D_NODOOR, SDOOR, STONE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { WAN_PROBING } from '../js/object_data.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

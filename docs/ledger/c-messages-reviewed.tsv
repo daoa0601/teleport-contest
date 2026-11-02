@@ -483,8 +483,8 @@ timeout.c	restore_timers	timer-timer_count	diagnostic	Native save-stream field l
 timeout.c	restore_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:restore_timers(); serialized metadata, not displayed text. The port validates its own storage format.
 timeout.c	save_timers	timer-timer_count	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
 timeout.c	save_timers	timer-timer_id	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in timeout.c:save_timers(); serialized metadata, not displayed text. The port validates its own storage format.
-timeout.c	sickness_texts	Your illness feels worse.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " feels worse."; stage mapping matches sickness_texts[SIZE - i].
-timeout.c	sickness_texts	Your illness is severe.	composed	src/js/hero_illness.ts:sicknessMessage; Chooses illness or sickness per usick_type before " is severe."; stage mapping matches sickness_texts[SIZE - i].
+timeout.c	sickness_texts	Your illness feels worse.	composed	src/js/timeout.ts:sicknessMessage; Chooses illness or sickness per usick_type before " feels worse."; stage mapping matches sickness_texts[SIZE - i].
+timeout.c	sickness_texts	Your illness is severe.	composed	src/js/timeout.ts:sicknessMessage; Chooses illness or sickness per usick_type before " is severe."; stage mapping matches sickness_texts[SIZE - i].
 timeout.c	timer_sanity_check	x > 0 && x < COLNO && y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 topten.c	encode_extended_achievements	attained_the_rank_of_	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.
 topten.c	encode_extended_achievements	consulted_the_oracle	out-of-scope	Achievement names written into the extended xlogfile; the end-of-game enlightenment lists use different display text.

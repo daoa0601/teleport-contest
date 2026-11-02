@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { createFireExplosion } from '../js/fire_explosion.js';
 import { breakFloorObject } from '../js/dothrow.js';
 import { pushKeys } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { POT_OIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';

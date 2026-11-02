@@ -1,8 +1,8 @@
 // Isolated condition tests run the same two phases as nh_timeout().
-import { advanceHeroPetrification as tickPetrification, petrificationDialogue, } from '../../js/stoning.js';
-import { advanceHeroSliming as tickSlime, slimeDialogue } from '../../js/slime.js';
-import { advanceHeroStrangulation as tickStrangulation, strangulationDialogue, } from '../../js/hero_strangulation.js';
-import { advanceHeroSickness as tickSickness, sicknessDialogue, advanceHeroVomiting as tickVomiting, vomitingDialogue, } from '../../js/hero_illness.js';
+import { advanceHeroPetrification as tickPetrification, petrificationDialogue } from '../../js/timeout.js';
+import { advanceHeroSliming as tickSlime, slimeDialogue } from '../../js/timeout.js';
+import { advanceHeroStrangulation as tickStrangulation, strangulationDialogue } from '../../js/timeout.js';
+import { advanceHeroSickness as tickSickness, sicknessDialogue, advanceHeroVomiting as tickVomiting, vomitingDialogue } from '../../js/timeout.js';
 export async function advanceHeroPetrification(options = {}) {
     await petrificationDialogue(options);
     return tickPetrification(options);

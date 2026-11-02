@@ -46,6 +46,7 @@ src/js/enlightenment_background.ts	insight.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
+src/js/eyewear.ts	do_wear.c
 src/js/falling_boulder.ts	read.c
 src/js/familiar.ts	dog.c
 src/js/floor_naming.ts	do_name.c
@@ -70,7 +71,6 @@ src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
 src/js/hero_hide.ts	insight.c
 src/js/hero_hurtle.ts	dothrow.c
-src/js/hero_illness.ts	timeout.c
 src/js/hero_inventory.ts	invent.c
 src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
@@ -83,9 +83,7 @@ src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
 src/js/hero_self_zap.ts	zap.c
-src/js/hero_sleep.ts	timeout.c
 src/js/hero_status.ts	insight.c
-src/js/hero_strangulation.ts	timeout.c
 src/js/hero_weapon_contact.ts	uhitm.c
 src/js/hero_weapon_hit.ts	uhitm.c
 src/js/hero_weapon_impact.ts	uhitm.c
@@ -105,7 +103,6 @@ src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/levitation_drop.ts	artifact.c
-src/js/levitation_timeout.ts	timeout.c
 src/js/lift_object.ts	pickup.c
 src/js/lock.ts	lock.c
 src/js/lua/lifecycle.ts	nhlua.c
@@ -161,7 +158,6 @@ src/js/scatter.ts	explode.c
 src/js/shknam.ts	shknam.c
 src/js/sight_change.ts	zap.c
 src/js/skills.ts	weapon.c
-src/js/slime.ts	timeout.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
@@ -172,15 +168,12 @@ src/js/spellbook_study.ts	spell.c
 src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
-src/js/storms.ts	timeout.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c
 src/js/throne.ts	sit.c
 src/js/thrown_object.ts	zap.c
 src/js/timeout.ts	timeout.c
-src/js/timeout_warnings.ts	timeout.c
-src/js/timer_effects.ts	timeout.c
 src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
 src/js/toss_up.ts	dothrow.c

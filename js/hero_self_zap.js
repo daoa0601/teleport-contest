@@ -20,7 +20,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { releaseHold } from './hero_expulsion.js';
 import { healHero, speedUpHero } from './potion.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
-import { putHeroToSleep } from './hero_sleep.js';
+import { putHeroToSleep } from './timeout.js';
 import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
 import { heroSpecies, applyHeroGolemEffects, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { heroStatusLine } from './hero_status.js';

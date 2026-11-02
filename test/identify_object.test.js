@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MV_KNOWS_EGG } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { fullyIdentifyObject, identifyPack, inventoryItemDescription, } from '../js/invent.js';
+import { fullyIdentifyObject, identifyPack, inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { objectName } from '../js/objnam.js';

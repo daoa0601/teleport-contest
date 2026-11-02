@@ -12,7 +12,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, LEASH, OBJECT_NAMES, OIL_LAMP, SCR_PUNISHMENT, STATUE, WAX_CANDLE } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

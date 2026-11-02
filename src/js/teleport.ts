@@ -36,7 +36,7 @@ import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonste
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';

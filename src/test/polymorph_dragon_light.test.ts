@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { GOLD_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';

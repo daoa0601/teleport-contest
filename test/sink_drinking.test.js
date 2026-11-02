@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { requireScreenRow } from './support/screen.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, POT_FRUIT_JUICE, POT_HEALING, POT_OIL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

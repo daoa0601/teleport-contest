@@ -24,7 +24,7 @@ import { getObjectLocation, createPolymorphMonsterFromPile, do_osshock, obj_unpo
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { objectTimers } from '../js/timeout.js';
 import { objectMaterial } from '../js/o_init.js';
 
@@ -34,7 +34,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/regions.js';
-import { startHeroSliming, heroIsSliming } from '../js/slime.js';
+import { startHeroSliming, heroIsSliming } from '../js/potion.js';
 import { heroPolyGender, setHeroSpecies } from '../js/polyself.js';
 import { objectWeight } from '../js/mkobj.js';
 

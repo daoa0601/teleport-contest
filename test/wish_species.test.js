@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, STATUE, TIN } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function wish(request, wizardWish = true) {
     const result = await readObjectName(request, { wizardWish });

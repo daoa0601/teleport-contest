@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty, levitationAtWill, refreshProperty, setInvokedProperty, } from '../js/properties.js';
-import { advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue, } from '../js/levitation_timeout.js';
+import { advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue } from '../js/timeout.js';
 import { applyLevitationPotion } from '../js/potion.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { saveGame, restoreGame } from '../js/save.js';

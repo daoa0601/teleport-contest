@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import { resolveHeroEngulf } from './hero_engulf.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { d } from './rng.js';

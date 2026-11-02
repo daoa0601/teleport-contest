@@ -90,7 +90,7 @@ import type { MonsterStoningCureResult } from './muse.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { ShopGameState } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';

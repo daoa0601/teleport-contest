@@ -9,7 +9,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { OIL_LAMP, POT_OIL } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';

@@ -1,7 +1,7 @@
 // C invent.c:dispinv_with_action(), dopr*(), dotypeinv(), dounpaid();
 // shk.c:doinvbill(). These commands inspect inventory without taking time.
 import { game, requireGameLevel } from './gstate.js';
-import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject, } from './invent.js';
+import { inventoryActionForObject, inventoryItemDescription, inventoryPrimaryHandDetail, selectInventoryObject } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';

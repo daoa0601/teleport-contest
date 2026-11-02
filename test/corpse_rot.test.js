@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { SACK } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';

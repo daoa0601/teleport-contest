@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { breakFloorObject, objectBreaksOnImpact } from '../js/dothrow.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { itemizedShopBill } from '../js/shk.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { OBJECT_NAMES, POT_HEALING, POT_OIL, POT_WATER, WORTHLESS_PIECE_OF_RED_GLASS, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';

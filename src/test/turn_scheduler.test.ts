@@ -21,8 +21,8 @@ import {
     AKLYS, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, CLUB, CORPSE, DAGGER, LANCE, LONG_SWORD, OBJECT_NAMES, POT_PARALYSIS, SHIELD_OF_DRAIN_RESISTANCE, WAN_MAGIC_MISSILE,
 } from '../js/object_data.js';
 import { startHeroSickness } from '../js/potion.js';
-import { startHeroVomiting } from '../js/hero_illness.js';
-import { startHeroSliming } from '../js/slime.js';
+import { startHeroVomiting } from '../js/potion.js';
+import { startHeroSliming } from '../js/potion.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject, artifactObject, chargedWand, knownObject } from './support/game-objects.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
@@ -34,7 +34,7 @@ import { canSeeMonster } from '../js/display.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroLycanthropy } from '../js/were.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { runExtendedCommand } from './support/commands.js';
 

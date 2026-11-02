@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameLevel } from '../js/gstate.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG, OIL_LAMP } from '../js/object_data.js';
 import { scheduleObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

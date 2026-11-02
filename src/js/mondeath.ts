@@ -2,7 +2,7 @@
 // C refs: mon.c mlifesaver(), lifesaved_monster(), mondead().
 
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import {
     A_WIS, DOOR, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, G_GENOD,
     NON_PM, W_AMUL,

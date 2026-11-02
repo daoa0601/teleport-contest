@@ -19,7 +19,7 @@ import { fireDamageObject } from '../js/trap.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { announceGlobMerge } from '../js/glob.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { restartAmuletStrangulation } from '../js/hero_strangulation.js';
+import { restartAmuletStrangulation } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
 import { liftObject } from '../js/lift_object.js';
 import { lightRoom, lightWieldedArtifact } from '../js/light.js';

@@ -4,7 +4,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { strangulationDialogue } from '../js/hero_strangulation.js';
+import { strangulationDialogue } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';

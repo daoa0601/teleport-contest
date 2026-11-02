@@ -16,7 +16,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import { CORPSE, CRYSKNIFE, SACK } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';

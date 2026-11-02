@@ -65,7 +65,7 @@ import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMaz
 import { getbones } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
 import { restoreLevelRegions } from './regions.js';
-import { beginObjectBurn } from './light.js';
+import { beginObjectBurn } from './timeout.js';
 import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';

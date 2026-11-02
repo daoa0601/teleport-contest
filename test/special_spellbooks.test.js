@@ -14,7 +14,7 @@ import { BELL_OF_OPENING, BOULDER, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, SPE_N
 import { readBookOfDead, readNovel } from '../js/special_spellbooks.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTimers, stopAllObjectTimers } from '../js/timeout.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { vision_recalc } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { talkToDemon } from '../js/demon_talk.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterName } from '../js/do_name.js';
 import { runMonsterAction } from '../js/monmove.js';

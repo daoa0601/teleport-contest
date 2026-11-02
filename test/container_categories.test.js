@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { fullyIdentifyObject } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { CHEST, CLUB, LOADSTONE, POT_HEALING } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';

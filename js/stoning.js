@@ -15,7 +15,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame } from './gstate.js';
-import { cureHeroVomiting } from './hero_illness.js';
+import { cureHeroVomiting } from './potion.js';
 import { healHeroLegs } from './hero_legs.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
@@ -25,7 +25,7 @@ import { possessiveName } from './hacklib.js';
 import { CORPSE, EGG } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed, polymonHero } from './polyself.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import { clearHeroSliming } from './slime.js';
+import { clearHeroSliming } from './potion.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { openingTinMaySaveHero } from './eat.js';
@@ -143,82 +143,6 @@ export function clearHeroPetrification(state = game) {
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
     return wasPetrifying;
-}
-function removeHeroSpeed(state) {
-    setPropertyTimeout('fast', 0, state);
-    removeIntrinsicProperty('fast', state);
-}
-function petrificationMessage(turns, state) {
-    if (turns === 5)
-        return 'You are slowing down.';
-    if (turns === 4) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities are stiffening.'
-            : 'Your limbs are stiffening.';
-    }
-    if (turns === 3) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities have turned to stone.'
-            : 'Your limbs have turned to stone.';
-    }
-    if (turns === 2)
-        return 'You have turned to stone.';
-    return turns === 1 ? 'You are a statue.' : null;
-}
-// C timeout.c:stoned_dialogue().
-export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {
-    const hero = state.u;
-    const turns = hero.stonedTurns ?? 0;
-    if (turns <= 0)
-        return;
-    const message = petrificationMessage(turns, state);
-    if (message)
-        await publish(message, { urgent: true });
-    if (turns === 5) {
-        removeHeroSpeed(state);
-        if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
-    }
-    else if (turns === 4) {
-        if (!openingTinMaySaveHero('stoned', state))
-            await stopHeroOccupation(state, publish);
-        if (state.multi > 0)
-            endVoluntaryMultiTurn(state);
-    }
-    else if (turns === 3) {
-        await stopHeroOccupation(state, publish);
-        nomul(-3, state);
-        state._helplessReason = 'getting stoned';
-        state._helplessDoneMessage = 'You can move again.';
-        if (!hero.usteed)
-            await healHeroLegs(state, { cause: 'petrification', publish });
-    }
-    else if (turns === 2) {
-        if (hero.deafTurns !== undefined && hero.deafTurns > 0 && hero.deafTurns < 5)
-            hero.deafTurns = 5;
-        cureHeroVomiting(state);
-        clearHeroSliming(state);
-    }
-    await exerciseAttribute(A_DEX, false, state);
-}
-export async function advanceHeroPetrification({ state = game, die = finishHeroDeath, } = {}) {
-    const hero = state.u;
-    const turns = hero.stonedTurns ?? 0;
-    if (turns <= 0)
-        return { active: false, died: false };
-    hero.stonedTurns = turns - 1;
-    if (hero.stonedTurns > 0)
-        return { active: true, died: false, turns: hero.stonedTurns };
-    const killer = hero.stoneKiller || 'petrification';
-    const died = await die({
-        killer,
-        deathCause: petrificationDeathCause(state),
-        deathVerb: 'turned to stone',
-        deathLineShown: true,
-        deathType: STONING,
-    });
-    clearHeroPetrification(state);
-    return { active: false, died: !!died, turns: 0 };
 }
 // C mondata.c:poly_when_stoned(): a non-stone golem hero becomes a stone
 // golem only if stone golems have not been genocided.
@@ -360,18 +284,5 @@ function corpseSpeciesName(object) {
     if (object.corpsenm === undefined)
         throw new Error('Petrifying contact requires a corpse or egg species.');
     return requireMonsterData(MONSTER_NAME, object.corpsenm);
-}
-// C end.c:find_delayed_killer(): reading the stored petrification killer
-// and its prefix format back for the death report.
-function petrificationDeathCause(state) {
-    const name = state.u.stoneKiller;
-    if (!name)
-        return 'killed by petrification';
-    const format = state.u.stoneKillerFormat;
-    if (format === undefined)
-        throw new Error('Petrification requires its delayed killer format.');
-    if (format === NO_KILLER_PREFIX)
-        return name;
-    return `petrified by ${format === KILLED_BY_AN ? withIndefiniteArticle(name) : name}`;
 }
 //# sourceMappingURL=stoning.js.map

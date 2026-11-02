@@ -21,7 +21,7 @@ import { unpunishHero } from './punishment.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects } from './hack.js';

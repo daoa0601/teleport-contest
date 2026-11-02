@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { makeBlinded } from '../js/potion.js';
-import { heroIsSliming, startHeroSliming } from '../js/slime.js';
+import { heroIsSliming, startHeroSliming } from '../js/potion.js';
 import { createStaffedShop } from './support/shop.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

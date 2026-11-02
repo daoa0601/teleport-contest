@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { hitHeroWithRay } from '../js/hero_breath.js';
-import { startHeroSliming } from '../js/slime.js';
+import { startHeroSliming } from '../js/potion.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 void test('red-dragon breath burns slime without hurting its fireproof body', async () => {
     await freshRoomWithPolymorphedHero('red dragon', {

@@ -7,7 +7,7 @@ import {
 import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatDamage, resolveMonsterCombatEngulf } from '../js/mhitm.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, requireMonsterData } from '../js/monster_data.js';

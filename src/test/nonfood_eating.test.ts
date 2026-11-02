@@ -22,7 +22,7 @@ import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '
 import { initRng, rn2 } from '../js/rng.js';
 import { moveVaultGuard } from '../js/vault.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

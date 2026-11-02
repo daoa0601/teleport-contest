@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
 import { levelTimers, scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { floorObject } from './support/game-objects.js';

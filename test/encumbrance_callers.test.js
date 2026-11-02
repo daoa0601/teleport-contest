@@ -18,7 +18,7 @@ import { returnHeroToHumanForm } from '../js/polyself.js';
 import { poisonHero } from '../js/poison.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { dismountHero } from '../js/steed.js';
-import { runObjectTimer } from '../js/timer_effects.js';
+import { runObjectTimer } from '../js/timeout.js';
 import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { fireQuiveredGold } from './support/gold-arena.js';

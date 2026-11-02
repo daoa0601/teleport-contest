@@ -47,7 +47,7 @@ import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { heroSpecies } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dist2 } from './hacklib.js';

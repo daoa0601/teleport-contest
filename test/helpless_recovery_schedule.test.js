@@ -6,7 +6,7 @@ import { nomul } from '../js/hack.js';
 import { resetInputState } from '../js/input.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { HOLE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { dopray } from '../js/pray.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';

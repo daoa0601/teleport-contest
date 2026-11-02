@@ -8,7 +8,7 @@ import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ICE_BOX, OIL_LAMP } from '../js/object_data.js';
 import { addObjectToContainer } from '../js/mkobj.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { objectTimers, scheduleLevelTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { init_objects } from '../js/o_init.js';
 import { corpseObject, floorObject } from './support/game-objects.js';

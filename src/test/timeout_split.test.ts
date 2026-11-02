@@ -7,7 +7,7 @@ import { scheduleObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { splitObjectStack } from '../js/mkobj.js';
 
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { resetInputState } from '../js/input.js';

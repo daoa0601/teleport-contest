@@ -15,7 +15,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

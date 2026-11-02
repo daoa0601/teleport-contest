@@ -5,7 +5,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { cureHeroSickness } from './hero_illness.js';
+import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
 import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd, isok } from './const.js';

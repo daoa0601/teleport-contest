@@ -11,6 +11,7 @@ import { heroIsHallucinating } from './senses.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
 import { game } from './gstate.js';
+import { expiredFatally } from './timeout.js';
 import { bot } from './botl.js';
 import { displayLiquidName, docrt, flush_screen } from './display.js';
 import { flushPendingTopline } from './tty_topline.js';
@@ -54,7 +55,7 @@ import { possessiveName } from './hacklib.js';
 import { monsterDigests } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './polyself.js';
 import { heroHidingStatus } from './hero_hide.js';
-import { heroIsSick } from './hero_illness.js';
+import { heroIsSick } from './potion.js';
 import { heroFormSticks } from './polyself.js';
 import { monsterSaddle } from './steed.js';
 import { simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
@@ -224,11 +225,6 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, 
     return lines;
 }
 
-// C timeout.c:done_timeout() ORs I_SPECIAL into a fatal intrinsic after its
-// timer has counted down; the port keeps that condition's flag set at zero.
-function expiredFatally(active: boolean | undefined, turns: number | undefined): boolean {
-    return !!active && !turns;
-}
 
 // C insight.c:trap_predicament().
 function trapPredicament(final: EnlightenmentFinal, wizard: boolean): string {

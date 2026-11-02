@@ -7,7 +7,7 @@ import { A_INT, MENU_TRADITIONAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { applyPotionLikeInvisibility } from '../js/potion.js';
 import { heroIsInvisible, zapHeroInvisible } from '../js/hero_invisibility.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { MUMMY_WRAPPING, SPE_INVISIBILITY, WAN_MAKE_INVISIBLE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

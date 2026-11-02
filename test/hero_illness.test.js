@@ -14,7 +14,7 @@ import { initRng } from '../js/rng.js';
 import { useUnicornHorn } from '../js/apply.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness } from '../js/potion.js';
-import { startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/potion.js';
 import { vomitHero } from '../js/eat.js';
 import { statusConditions } from '../js/botl.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';

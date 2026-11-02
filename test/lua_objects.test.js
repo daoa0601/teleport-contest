@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { BELL_OF_OPENING, CHEST, FOOD_RATION, GOLD_PIECE, LOADSTONE, OIL_LAMP, ROCK, SPE_LIGHT } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { startLuaCore } from './support/lua-game.js';

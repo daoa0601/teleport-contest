@@ -9,7 +9,7 @@ import { rhack } from '../js/cmd.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { startHeroVomiting } from '../js/hero_illness.js';
+import { startHeroVomiting } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

@@ -14,7 +14,7 @@ import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { addShopObjectToBill, deleteObject } from '../js/shk.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';

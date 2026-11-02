@@ -4,7 +4,7 @@ import { glyphAt } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { finishMonsterAttackDeath } from '../js/end.js';
 import { WAX_CANDLE } from '../js/object_data.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';

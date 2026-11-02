@@ -8,7 +8,7 @@ import { monsterHasMapPosition, dismountHero } from './steed.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
-import { runDueTimers } from './timer_effects.js';
+import { runDueTimers } from './timeout.js';
 import { restoreLevelTimers } from './timeout.js';
 import { restoreLevelChains } from './level_restore.js';
 import { restoreLevelPetHistory, restoreObjectPetHistory, restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads } from './save.js';

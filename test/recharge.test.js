@@ -9,7 +9,7 @@ import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { BELL_OF_OPENING, CAN_OF_GREASE, CRYSTAL_BALL, MAGIC_FLUTE, MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION, WAN_FIRE, WAN_WISHING, } from '../js/object_data.js';
 import { chooseObjectToCharge, rechargeObject } from '../js/recharge.js';
 import { unpaidObjectCost } from '../js/shk.js';

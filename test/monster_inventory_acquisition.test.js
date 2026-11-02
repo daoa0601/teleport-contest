@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { runClaimedGlobTimer } from '../js/glob.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { punishHero } from '../js/punishment.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { moveloop_core } from '../js/allmain.js';

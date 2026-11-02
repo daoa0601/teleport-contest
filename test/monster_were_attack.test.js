@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { FAINTED, NO_MINVENT, W_ARMC } from '../js/const.js';
 import { canSeeMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

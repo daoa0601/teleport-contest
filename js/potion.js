@@ -19,7 +19,7 @@ import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttr
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, setMulti, travelStairs } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
-import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
+import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
 import { impossible } from './diagnostics.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, fingersOrGloves, washHands } from './fountain.js';
 import { canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, map_invisible, newsym, randomDisplayMonsterName, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
@@ -41,17 +41,17 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsVomiting } from './hero_illness.js';
+import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { healHeroLegs } from './hero_legs.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
-import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsStrangled } from './hero_strangulation.js';
-import { updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
+import { heroIsStrangled } from './do_wear.js';
+import { heroCanBeSlimed, updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
 import { peekCommandResponse } from './input.js';
 import { doEnlightenmentEffect, showEnlightenment } from './insight.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -82,7 +82,7 @@ import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice, deleteObject } from './shk.js';
-import { clearHeroSliming, burnAwayHeroSlime, heroIsFlaming, heroIsSliming } from './slime.js';
+import { heroIsFlaming } from './polyself.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
@@ -150,6 +150,49 @@ export async function startHeroSickness({ state = game, turns, cause = 'illness'
     hero.sickCause = cause;
     return { started: hero.sick, newlySick };
 }
+export function heroIsSick(state = game) {
+    return !!state.u?.sick || (state.u?.sickTurns ?? 0) > 0;
+}
+export function cureHeroSickness(state = game, type = SICK_ALL) {
+    const hero = state.u;
+    const currentType = hero.sickType ?? 0;
+    if (!heroIsSick(state) || !(currentType & type))
+        return false;
+    hero.sickType = currentType & ~type;
+    state.context.botl = true;
+    if (hero.sickType) {
+        hero.sick = true;
+        hero.sickTurns = Math.max(1, (hero.sickTurns ?? 1) * 2);
+    }
+    else {
+        hero.sick = false;
+        hero.sickTurns = 0;
+        delete hero.sickCause;
+    }
+    return true;
+}
+// Native make_sick(0, ..., talk, type): the type mask changes before the
+// cure message; the timeout and delayed cause remain until that line returns.
+export async function cureHeroSicknessWithMessages(state = game, type = SICK_ALL, publish = plineWithContinuation) {
+    const hero = state.u;
+    const currentType = hero.sickType ?? 0;
+    if (!heroIsSick(state) || !(currentType & type))
+        return false;
+    hero.sickType = currentType & ~type;
+    await publish(formatFeltMessage(hero.sickType ? 'somewhat better.' : 'cured.  What a relief!', state));
+    if (hero.sickType) {
+        hero.sickTurns = Math.min(TIMEOUT, (hero.sickTurns ?? 0) * 2);
+        state.context.botl = true;
+        await exerciseAttribute(A_CON, false, state);
+    }
+    else {
+        hero.sick = false;
+        hero.sickTurns = 0;
+        state.context.botl = true;
+        delete hero.sickCause;
+    }
+    return true;
+}
 // C potion.c:make_slimed(). This directly sets the timeout; the caller
 // separately decides whether a body admits infection and records its killer.
 export async function setHeroSlimingTimeout(turns, { state = game, message = null, publish = plineWithContinuation, } = {}) {
@@ -169,6 +212,55 @@ export async function setHeroSlimingTimeout(turns, { state = game, message = nul
     // The fake late-countdown appearance and cause survive the cure message.
     if (!hero.slimedTurns)
         clearHeroSliming(state);
+}
+export function heroIsSliming(state = game) {
+    return (state.u?.slimedTurns ?? 0) > 0 || !!state.u?.slimed;
+}
+// Starting the sliming countdown.
+// C end.c:delayed_killer(): the slime death defers its killer string until
+// the timeout fires; dropHeroSliming() in timeout.ts deallocates it.
+export function startHeroSliming({ state = game, turns = 10, killer = '', } = {}) {
+    const hero = state.u;
+    if (!heroCanBeSlimed(state))
+        return false;
+    hero.slimedTurns = turns;
+    hero.slimed = turns > 0;
+    if (hero.slimed)
+        state.context.botl = true;
+    hero.slimeKiller = killer;
+    return hero.slimed;
+}
+export function clearHeroSliming(state = game) {
+    const wasSliming = heroIsSliming(state);
+    if (wasSliming)
+        state.context.botl = true;
+    dropHeroSliming(state.u);
+    return wasSliming;
+}
+export function resetHeroSlimingCountdown(state = game, turns = 10) {
+    if (!heroIsSliming(state))
+        return false;
+    state.u.slimedTurns = turns;
+    state.u.slimed = true;
+    return true;
+}
+export function heroIsVomiting(state = game) {
+    return !!state.u?.vomiting || (state.u?.vomitingTurns ?? 0) > 0;
+}
+export function startHeroVomiting({ state = game, turns } = {}) {
+    const hero = state.u;
+    hero.vomitingTurns = Math.max(0, turns ?? 0);
+    hero.vomiting = hero.vomitingTurns > 0;
+    state.context.botl = true;
+    return hero.vomiting;
+}
+export function cureHeroVomiting(state = game) {
+    const hero = state.u;
+    const cured = heroIsVomiting(state);
+    hero.vomiting = false;
+    hero.vomitingTurns = 0;
+    state.context.botl = true;
+    return cured;
 }
 // C potion.c:make_stoned(). Admission belongs to the attack or command;
 // replacing an active timeout must retain its original delayed killer.

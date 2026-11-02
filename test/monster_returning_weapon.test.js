@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterWieldedWeapon } from '../js/weapon.js';
 import { readyRangedMonsterWeapon, returnMonsterWeapon, throwMonsterWeaponAtHero } from '../js/mthrowu.js';
 import { resetInputState } from '../js/input.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AKLYS, AMULET_OF_LIFE_SAVING, CLUB, DAGGER, OIL_LAMP, TALLOW_CANDLE, WAR_HAMMER } from '../js/object_data.js';

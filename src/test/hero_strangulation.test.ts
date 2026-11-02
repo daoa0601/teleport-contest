@@ -13,7 +13,7 @@ import { _statusLine2 } from '../js/botl.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 
-import { heroIsStrangled } from '../js/hero_strangulation.js';
+import { heroIsStrangled } from '../js/do_wear.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_STRANGULATION, LEATHER_ARMOR } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

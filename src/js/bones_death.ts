@@ -19,7 +19,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { forgetEngravings, makeEngravingAt } from './engrave.js';
-import { endObjectBurn } from './light.js';
+import { endObjectBurn } from './timeout.js';
 import { placeObjectSynchronously, placeCreatedObject } from './floor_object.js';
 import { bonesLevelExists, deleteBonesLevel, saveBonesLevel } from './bones.js';
 import { makemonAt } from './makemon.js';

@@ -5,7 +5,7 @@ import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, TT_LAVA } from '../j
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hurtleHero } from '../js/hero_hurtle.js';
 import { pushKeys } from '../js/input.js';
-import { levitationDialogue } from '../js/levitation_timeout.js';
+import { levitationDialogue } from '../js/timeout.js';
 import { refreshProperty } from '../js/properties.js';
 import { freshObjectRoom } from './support/object-room.js';
 

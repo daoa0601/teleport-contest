@@ -23,7 +23,7 @@ import { monsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { d, rn2 } from './rng.js';
-import { heroIsFlaming } from './slime.js';
+import { heroIsFlaming } from './polyself.js';
 import { setHeroSlimingTimeout } from './potion.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';

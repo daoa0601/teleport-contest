@@ -9,7 +9,7 @@ import { wearEyewear } from '../js/eyewear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import {
     AKLYS, AMULET_OF_REFLECTION, ARROW, CROSSBOW_BOLT, DAGGER, DART,
     GOLD_DRAGON_SCALES, GRAY_DRAGON_SCALES, LEATHER_GLOVES, LENSES,

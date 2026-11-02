@@ -42,7 +42,7 @@ import {
 } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { monsterIsHelpless } from './mondata.js';
-import { heroIsUnaware } from './hero_sleep.js';
+import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './monworn.js';

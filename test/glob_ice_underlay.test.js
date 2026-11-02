@@ -4,7 +4,7 @@ import { DB_ICE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
 import { scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
-import { runDueTimers } from '../js/timer_effects.js';
+import { runDueTimers } from '../js/timeout.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('ice below a raised bridge delays a floor glob shrinking', async () => {

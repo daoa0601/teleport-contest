@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { digMonsterTunnel } from '../js/dig.js';
 import { AMULET_OF_LIFE_SAVING, APPLE, BOULDER, ROCK, } from '../js/object_data.js';
 import { couldsee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';

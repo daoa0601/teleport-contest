@@ -11,7 +11,7 @@ import { AMULET_OF_YENDOR, CHEST, CLUB, RIN_FREE_ACTION, ROCK } from '../js/obje
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';
 import { heroIsHallucinating } from '../js/senses.js';
-import { putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/timeout.js';
 import { untrap } from '../js/trap.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { BAG_OF_HOLDING, POT_FULL_HEALING, POT_OIL, POT_SEE_INVISIBLE, WAN_CANCELLATION } from '../js/object_data.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

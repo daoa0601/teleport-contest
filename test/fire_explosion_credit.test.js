@@ -4,7 +4,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { explodePyroliskEggAt } from '../js/egg_impact.js';
 import { explodeLitOilPotion } from '../js/fire_explosion.js';
 import { game } from '../js/gstate.js';
-import { beginObjectBurn } from '../js/light.js';
+import { beginObjectBurn } from '../js/timeout.js';
 import { POT_OIL } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';
