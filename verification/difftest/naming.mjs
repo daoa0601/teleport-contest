@@ -10,7 +10,7 @@ import { makePlural, makeSingular, withIndefiniteArticle } from '../../js/objnam
 import { objectCombatName, objectAction, definiteName, observeObjectForNaming } from '../../js/objnam.js';
 import { objectDescription } from '../../js/objnam.js';
 import { monsterName, namelessMonsterName } from '../../js/do_name.js';
-import { oinit } from '../../js/mklev.js';
+import { oinit } from '../../js/o_init.js';
 import { W_SADDLE, MM_ANGRY, NO_MINVENT } from '../../js/const.js';
 
 const ROLES = ['archeologist', 'monk', 'priest', 'samurai'];

@@ -51,7 +51,7 @@ const changes = {
     naming_monnam: ['do_name.js', "if (invisible)\n        adjectives += 'invisible ';",
         "if (invisible)\n        adjectives += 'unseen ';"],
     naming_string_draw: ['objnam.js', 'export function makePlural(value) {',
-        "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],
+        "export function makePlural(value) {\n    rnd(1);"],
     naming_observe: ['objnam.js', 'observeObjectForNaming(object, { state });',
         ';'],
 };

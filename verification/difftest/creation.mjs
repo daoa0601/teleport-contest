@@ -4,7 +4,10 @@ import { game } from '../../js/gstate.js';
 import { initRng, enableRngLog, getRngLog } from '../../js/rng.js';
 import { isaac64_next_uint64 } from '../../js/isaac64.js';
 import { grantIntrinsicProperty } from '../../js/properties.js';
-import { mksobj, mkobj, rndClass, rndmonstAdj, mkclassAligned, makemonAt, oinit } from '../../js/mklev.js';
+import { mksobj, mkobj } from '../../js/mkobj.js';
+import { rndClass } from '../../js/objnam.js';
+import { rndmonstAdj, mkclassAligned, makemonAt } from '../../js/makemon.js';
+import { oinit } from '../../js/o_init.js';
 import { level_difficulty } from '../../js/dungeon.js';
 import { monsterTeleportRestricted } from '../../js/teleport_rules.js';
 import { GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, CORPSE, STATUE, FIGURINE,
