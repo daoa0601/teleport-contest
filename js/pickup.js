@@ -842,12 +842,15 @@ function monBeside(x, y) {
     }
     return false;
 }
-// C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
-// tipcontainer_gettarget(), and tipcontainer_checks().
+// doname() wrapper for tip menus and prompts; the tip mechanics live in the
+// dotip/tipcontainer functions below.
 async function containerDescription(object) {
     observeObjectForNaming(object);
     return await inventoryItemDescription(object);
 }
+// C pickup.c:dotip(). Floor containers first (menu when there are several,
+// choose_tip_container_menu() below), then the carried-object prompt, then
+// the spillage cases in tipOrdinaryObject().
 export async function tipCommand() {
     game.context.move = 0;
     const { ux: x, uy: y } = game.u;
@@ -921,6 +924,7 @@ export async function tipCommand() {
     }
     await tipOrdinaryObject(object);
 }
+// C pickup.c:dotip(), spillage and ordinary-object cases.
 async function tipOrdinaryObject(object) {
     let spill = null;
     if ([TALLOW_CANDLE, WAX_CANDLE].includes(object.otyp) && object.lamplit)
@@ -954,6 +958,8 @@ async function tipOrdinaryObject(object) {
     else
         await plineWithContinuation(object.otyp === STATUE ? 'Nothing interesting happens.' : 'Nothing happens.');
 }
+// C pickup.c:tipcontainer_gettarget(). The destination menu; tip to floor
+// needs no hands, container-to-container needs a free one.
 async function tipDestination(source) {
     const items = [{
             key: '-', text: 'on the floor', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
@@ -974,6 +980,7 @@ async function tipDestination(source) {
         sections: [{ items }], omitHeadings: true, pickOne: true, signalEscape: true });
     return { cancelled: picked === null, target: picked?.find(object => object !== null) ?? null };
 }
+// C pickup.c:tipcontainer_checks().
 async function tipChecks(source, target, allowEmpty) {
     if (target?.otyp === BAG_OF_TRICKS) {
         await useBagOfTricks(target);
@@ -1014,6 +1021,7 @@ async function tipChecks(source, target, allowEmpty) {
     }
     return true;
 }
+// C pickup.c:tipcontainer_checks(), bag of tricks / horn of plenty branch.
 async function emptyChargedContainer(source, target) {
     const shopGoods = source.where !== 'inventory' && !!costlySpot(source.ox, source.oy) && !source.no_charge;
     if (shopGoods)
@@ -1041,6 +1049,7 @@ async function emptyChargedContainer(source, target) {
     if (shopGoods)
         removeObjectAndContentsFromBill(source);
 }
+// C pickup.c:tipcontainer().
 async function tipContainer(source) {
     source.ox = game.u.ux;
     source.oy = game.u.uy;

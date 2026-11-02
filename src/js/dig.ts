@@ -1598,6 +1598,7 @@ export async function zapDigWithObject(
             }
             await captureRayTraversalFrame(state);
 
+            // C dig.c:conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
                 let adjacentPit = trapAt(x, y, state);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
@@ -1739,7 +1740,8 @@ async function digVertically(state: GameState, direction: number): Promise<void>
     await newsym(hero.ux, hero.uy);
 }
 
-// null permits digging; an empty string rejects it without a message.
+// C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
+// to reject silently, or the rejection message.
 function adjacentPitRejection(x: number, y: number, state: GameState): string | null {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;
@@ -1753,13 +1755,17 @@ function adjacentPitRejection(x: number, y: number, state: GameState): string | 
     if (type === IRONBARS) return 'The bars go much deeper than your pit.';
     if (type === SINK) return 'A tangled mass of plumbing remains below the sink.';
     const stairs = stairwayAt(x, y, state);
+    // C dig.c:On_ladder().
     if (stairs?.isladder) return 'The ladder is unaffected.';
+    // C dig.c:On_stairs() names the stairs as the supporting structure.
+    // On_ladder() is handled above.
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
         : type === ALTAR ? 'altar' : stairs ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;
     return support ? `The ${possessiveName(support)} supporting structures remain intact.` : null;
 }
 
+// C dig.c:pit_flow(). Floods a linked pit and its neighbors with the liquid.
 async function floodConnectedPits(trap: Trap | null | undefined, liquid: number, state: GameState): Promise<void> {
     if (!trap || !is_pit(trap.ttyp)) return;
     // Deleting a flooded pit clears its neighbors' links; retain its old exits.

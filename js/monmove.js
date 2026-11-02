@@ -1707,6 +1707,8 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
         monster.mspec_used ||
         trapAt(state, monster.mx, monster.my))
         return null;
+    // C monmove.c:soko_allow_web(): in unsolved Sokoban, only when the
+    // spinner sees the up stairs.
     if (state.level.flags.sokoban_rules) {
         let stairs = state.stairs;
         while (stairs && !stairs.up)
@@ -1724,6 +1726,7 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
         [monster.mx - 1, monster.my],
     ];
     const webbingWalls = webbingAnchors.reduce((count, [x, y]) => count + Number(holdsUpMonsterWeb(x, y, state)), 0);
+    // C monmove.c:count_traps(WEB).
     const existingWebs = (state?.level?.traps || []).filter((trap) => trap.ttyp === WEB).length;
     const probability = (monster.mnum === 96 ? 15 : 5) * (webbingWalls + 1) - 3 * existingWebs;
     const roll = recordRandom(random, calls, 1000);

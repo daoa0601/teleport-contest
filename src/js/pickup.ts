@@ -875,12 +875,16 @@ function monBeside(x: number, y: number): boolean {
     return false;
 }
 
-// C pickup.c:dotip(), choose_tip_container_menu(), tipcontainer(),
-// tipcontainer_gettarget(), and tipcontainer_checks().
+// doname() wrapper for tip menus and prompts; the tip mechanics live in the
+// dotip/tipcontainer functions below.
 async function containerDescription(object: GameObject): Promise<string> {
     observeObjectForNaming(object);
     return await inventoryItemDescription(object);
 }
+
+// C pickup.c:dotip(). Floor containers first (menu when there are several,
+// choose_tip_container_menu() below), then the carried-object prompt, then
+// the spillage cases in tipOrdinaryObject().
 
 export async function tipCommand(): Promise<void> {
     game.context.move = 0;
@@ -938,6 +942,7 @@ export async function tipCommand(): Promise<void> {
     await tipOrdinaryObject(object);
 }
 
+// C pickup.c:dotip(), spillage and ordinary-object cases.
 async function tipOrdinaryObject(object: GameObject): Promise<void> {
     let spill: string | null = null;
     if ([TALLOW_CANDLE, WAX_CANDLE].includes(object.otyp) && object.lamplit) spill = 'wax';
@@ -962,6 +967,8 @@ async function tipOrdinaryObject(object: GameObject): Promise<void> {
     } else await plineWithContinuation(object.otyp === STATUE ? 'Nothing interesting happens.' : 'Nothing happens.');
 }
 
+// C pickup.c:tipcontainer_gettarget(). The destination menu; tip to floor
+// needs no hands, container-to-container needs a free one.
 async function tipDestination(source: GameObject): Promise<{ cancelled: boolean; target: GameObject | null }> {
     const items: MultiSelectItem<GameObject | null>[] = [{
         key: '-', text: 'on the floor', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
@@ -981,6 +988,7 @@ async function tipDestination(source: GameObject): Promise<{ cancelled: boolean;
     return { cancelled: picked === null, target: picked?.find(object => object !== null) ?? null };
 }
 
+// C pickup.c:tipcontainer_checks().
 async function tipChecks(source: GameObject, target: GameObject | null, allowEmpty: boolean): Promise<boolean> {
     if (target?.otyp === BAG_OF_TRICKS) { await useBagOfTricks(target); return false; }
     source.lknown = true;
@@ -1018,6 +1026,7 @@ async function tipChecks(source: GameObject, target: GameObject | null, allowEmp
     return true;
 }
 
+// C pickup.c:tipcontainer_checks(), bag of tricks / horn of plenty branch.
 async function emptyChargedContainer(source: GameObject, target: GameObject | null): Promise<void> {
     const shopGoods = source.where !== 'inventory' && !!costlySpot(source.ox, source.oy) && !source.no_charge;
     if (shopGoods) await addShopObjectToBill(source, game, { ininv: false, silent: true });
@@ -1040,6 +1049,7 @@ async function emptyChargedContainer(source: GameObject, target: GameObject | nu
     if (shopGoods) removeObjectAndContentsFromBill(source);
 }
 
+// C pickup.c:tipcontainer().
 async function tipContainer(source: GameObject): Promise<void> {
     source.ox = game.u.ux;
     source.oy = game.u.uy;

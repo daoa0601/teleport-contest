@@ -1940,3 +1940,29 @@ discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-
 display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); terrain_properties.ts isPoolOrLavaAt is the same predicate
 display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
 zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire
+dotip	container_at	inlined	floor container scan with isContainer (pickup.ts tipCommand)
+tipcontainer_checks	update_inventory	n/a	no perm_invent window on an 80x24 tty
+tipcontainer_gettarget	u_handsy	inlined	heroHasNoHands/heroHasFreeHand test prints the hands messages (pickup.ts tipDestination)
+cmdq_add_ec	alloc	n/a	memory allocation for the queue node
+cmdq_add_ec	ext_func_tab_from_func	inlined	NATIVE_COMMANDS.find(handler) lookup in rememberCommand; commandForHandler (command_bindings.ts) is its port
+dowhatdoes	whatdoes_help	inlined	KEY_HELP text window; keyhelp_data.ts holds the filtered keyhelp lines (pager.ts whatDoesCommand)
+doname_base	count_contents	inlined	direct-contents length; C passes nested=FALSE, quantity=FALSE so count_contents(obj,F,F,T,F) is contents.length (objnam.ts objectDescription)
+doname_base	find_mid	inlined	leash monster lookup state.level.monsters.find(m_id) in describeTool (objnam.ts)
+doname_base	releaseobuf	n/a	static obuf pool management; strings are values in the port
+doname_base	strprepend	inlined	prefix concatenation through template strings
+glow_color	clr2colorname	inlined	artifact color table maps CLR_RED/CLR_BRIGHT_BLUE to color names directly (artifacts.ts artifactGlowColor)
+glow_color	hcolor	inlined	hallucination twist applied by displayColorName at the display boundary (objnam.ts primaryHandDescriptionDetail)
+zap_dig	mksobj_at	inlined	mksobj() plus placeCreatedObject() create and place the falling rock (digging_magic.ts digVertically), which is what mksobj_at() composes
+zap_dig	tmp_at	n/a	display only; the beam glyphs are painted directly and newsym restores the cells (digging_magic.ts)
+zap_dig	xytodir	inlined	xdir/ydir findIndex direction lookup (digging_magic.ts zapDigWithObject)
+ensure_way_out	selection_new	inlined	new SpecialSelection() (sp_lev.ts ensureWaysOut)
+ensure_way_out	selection_free	n/a	selection is garbage-collected
+ensure_way_out	set_selection_floodfillchk	inlined	floodAccessibleArea passes accessibleSpecialTerrain as the fill predicate (sp_lev.ts)
+generate_way_out_method	selection_new	inlined	component = new SpecialSelection() (sp_lev.ts addWayOut)
+generate_way_out_method	selection_free	n/a	selection is garbage-collected
+fill_empty_maze	sobj_at	inlined	boulder pile check level.objects[x][y].some(otyp === BOULDER) (sp_lev.ts fillEmptySpecialMaze)
+block_entry	carrying	inlined	inventory.some(PICK_AXE or DWARVISH_MATTOCK) (shk.ts shopkeeperBlockingEntry)
+let_to_name	alloc	n/a	memory allocation for the letter buffer
+mon_overrides_region	dist2	inlined	dx*dx+dy*dy <= range*(range+1) is distu (display.ts monsterOverridesMapRegion)
+openone	dist2	inlined	dx*dx+dy*dy < 3 is distu (detect.ts openit)
+shrink_worm	toss_wsegs	inlined	wormSegments.pop plus newsym of the tip; occupancy derives from the segment list (worm.ts removeWormTailTip)

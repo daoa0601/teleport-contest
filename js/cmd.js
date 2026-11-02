@@ -2212,11 +2212,13 @@ export function commandKeyDescription(command, bindings) {
     return key ? visibleCommandKey(key) : `#${name}`;
 }
 // ── Repeat queue (C cmd.c:CQ_REPEAT, cmdq_add_ec()) ───────────────────────
-// C cmd.c:CQ_REPEAT. Commands retain their selected handler; object choices
-// retain inventory letters so repeating acts on the current inventory.
+// C cmd.c:cmdq_clear() for the repeat queue.
 export function clearRepeatCommand() {
     game._repeatCommands = [];
 }
+// C cmd.c:cmdq_add_ec() pushes the resolved command into CQ_REPEAT.
+// Commands retain their selected handler; object choices retain inventory
+// letters so repeating acts on the current inventory.
 export function rememberCommand(binding, append) {
     if (game._inDoAgain)
         return;

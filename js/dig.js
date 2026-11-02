@@ -1428,6 +1428,7 @@ export async function zapDigWithObject(_object, { state = game } = {}) {
                 await show_glyph_cell(x, y, '*', CLR_WHITE, false, 0, { kind: 'effect', glyph: cmapToGlyph(CmapSymbol.digbeam) });
             }
             await captureRayTraversalFrame(state);
+            // C dig.c:conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
                 let adjacentPit = trapAt(x, y, state);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
@@ -1579,7 +1580,8 @@ async function digVertically(state, direction) {
     await stack_object(rock, state);
     await newsym(hero.ux, hero.uy);
 }
-// null permits digging; an empty string rejects it without a message.
+// C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
+// to reject silently, or the rejection message.
 function adjacentPitRejection(x, y, state) {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;
@@ -1597,13 +1599,17 @@ function adjacentPitRejection(x, y, state) {
     if (type === SINK)
         return 'A tangled mass of plumbing remains below the sink.';
     const stairs = stairwayAt(x, y, state);
+    // C dig.c:On_ladder().
     if (stairs?.isladder)
         return 'The ladder is unaffected.';
+    // C dig.c:On_stairs() names the stairs as the supporting structure.
+    // On_ladder() is handled above.
     const support = type === FOUNTAIN ? 'fountain' : type === THRONE ? 'throne'
         : type === ALTAR ? 'altar' : stairs ? 'stairs'
             : type === DRAWBRIDGE_DOWN || type === DBWALL ? 'drawbridge' : null;
     return support ? `The ${possessiveName(support)} supporting structures remain intact.` : null;
 }
+// C dig.c:pit_flow(). Floods a linked pit and its neighbors with the liquid.
 async function floodConnectedPits(trap, liquid, state) {
     if (!trap || !is_pit(trap.ttyp))
         return;

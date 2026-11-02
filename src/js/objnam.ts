@@ -2956,9 +2956,7 @@ function quiverDescription(item: GameObject): string {
 }
 
 // ---------------------------------------------------------------------------
-// Native objnam.c:doname_base(). Inventory and floor feedback share the same
-// knowledge, quantities, physical state, equipment annotations, and prices.
-// Callers observe the object separately before formatting it.
+// Options for the doname_base port directly below.
 // ---------------------------------------------------------------------------
 
 export interface ObjectDescriptionOptions {
@@ -3000,6 +2998,9 @@ export async function paymentObjectDescription(object: GameObject, quantity: num
     }
 }
 
+// C objnam.c:doname_base(). Inventory and floor feedback share the same
+// knowledge, quantities, physical state, equipment annotations, and prices.
+// Callers observe the object separately before formatting it.
 export async function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
     vagueQuantity = false,
