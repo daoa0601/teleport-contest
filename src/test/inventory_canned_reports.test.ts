@@ -4,7 +4,8 @@ import { W_RINGL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryReport } from '../js/inventory_reports.js';
-import { queryObjectClasses } from '../js/object_class_query.js';
+import { queryObjectClasses } from '../js/pickup.js';
+
 import { DAGGER, POT_HEALING, RIN_PROTECTION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

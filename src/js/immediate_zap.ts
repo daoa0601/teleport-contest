@@ -25,7 +25,8 @@ import {
     WAN_UNDEAD_TURNING,
 } from './object_data.js';
 import { singularObjectName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { relocateObjectRandomly } from './teleport.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { heroFormHidesUnderObjects } from './polyself.js';

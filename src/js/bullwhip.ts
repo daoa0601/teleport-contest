@@ -26,7 +26,8 @@ import { finishDestinationSpotEffects } from './location_effects.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { unwieldMonsterWeapon, monsterWieldedWeapon } from './weapon.js';
 import { BOULDER, CORPSE } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { isBimanualObject } from './object_properties.js';
 import { monsterName as describeMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';

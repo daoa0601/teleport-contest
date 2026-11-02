@@ -6,7 +6,7 @@ import { heroFootName } from './body_parts.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { propertyIsActive, refreshMovementProperties } from './properties.js';
 import { deleteEngravingAt } from './engrave.js';
 import { placeObject, stack_object } from './floor_object.js';

@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
 import { unlinkObject, createObjectBase } from './mkobj.js';
 import { nextIdent } from './ident.js';
 import { delobj } from './invent.js';

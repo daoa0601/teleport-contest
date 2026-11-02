@@ -17,7 +17,7 @@ import { monsterName, namelessMonsterName } from './do_name.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { BOULDER, CHEST, CORPSE, LARGE_BOX, OBJECT_NAMES, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { singularObjectName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { heroFormHidesUnderObjects } from './polyself.js';

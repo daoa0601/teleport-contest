@@ -5,7 +5,7 @@ import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
 import { luaInteger } from './arguments.js';
-import { OBJECT_CLASS_SYMBOLS } from '../object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS } from '../display.js';
 const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
 const TRAP_TYPES = new Map([

@@ -11,7 +11,8 @@ import { monsterIsAmorphous, monsterIsNoncorporeal, monsterIsShade } from './mon
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { HEAVY_IRON_BALL, OBJECT_SUBTYPE, TOWEL } from './object_data.js';
-import { verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './objnam.js';
+
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { d, rnd } from './rng.js';

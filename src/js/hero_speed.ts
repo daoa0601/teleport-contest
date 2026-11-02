@@ -5,7 +5,8 @@ import { heroLegName } from './body_parts.js';
 import { A_DEX } from './const.js';
 import { plineWithContinuation, type MessagePublisher } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import {
     hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout,
 } from './properties.js';

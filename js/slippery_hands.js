@@ -8,7 +8,7 @@ import { plineWithContinuation } from './pline.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { AKLYS } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { makePlural, makeSingular } from './object_grammar.js';
+import { makePlural, makeSingular } from './objnam.js';
 import { heroHasNoLimbs } from './polyself.js';
 import { isWeldedPrimary, setPrimaryWeapon, setSecondaryWeapon } from './wield.js';
 import { weaponDescription } from './weapon.js';

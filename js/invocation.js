@@ -6,7 +6,7 @@ import { heroFootName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { CANDELABRUM_OF_INVOCATION, } from './object_data.js';
 import { stopRun } from './runmode.js';
 import { monsterName } from './do_name.js';

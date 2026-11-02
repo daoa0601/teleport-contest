@@ -106,14 +106,14 @@ import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { objectClassForType } from './o_init.js';
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { artifactDamageBonus, artifactEmitsLight, artifactStrikesShade } from './artifacts.js';
 import { P_AXE, W_ARMG, WT_IRON_BALL_INCR } from './const.js';
 import { CREAM_PIE, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
 import { monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
-import { objectClassForType } from './object_knowledge.js';
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster) {
     const species = MONSTER_NAME[monster.mnum];

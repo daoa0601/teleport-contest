@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { POT_HEALING, WORTHLESS_PIECE_OF_WHITE_GLASS } from '../js/object_data.js';
-import { learnObjectType } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+
 import { moveUsedObjectToBill, shopObjectUnitCost } from '../js/shk.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

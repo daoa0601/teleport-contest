@@ -12,7 +12,7 @@ import { finishMonsterLiquidDeath, resolveMonsterLiquid } from './mon.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { monsterAtPosition } from './steed.js';
 import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { stopLevelTimer } from './timeout.js';
 import { objectName } from './objnam.js';
 import { isPoolAt } from './terrain_properties.js';

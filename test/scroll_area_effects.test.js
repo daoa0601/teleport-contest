@@ -11,7 +11,7 @@ import { setHeroSpecies } from '../js/hero_species.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, HELMET, ROCK, SCR_AMNESIA, SCR_EARTH, SCR_FIRE, SCR_STINKING_CLOUD, SPE_FORCE_BOLT, SPE_HEALING } from '../js/object_data.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { applyAreaScrollEffect } from '../js/read.js';
 import { advanceHeroSkill, ensureHeroSkills, practiceNeededToAdvance } from '../js/skills.js';

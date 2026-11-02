@@ -19,7 +19,7 @@ import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, monsterHasNoAttacks, mon
 import { monsterAtPosition } from './steed.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { monsterIsHelpless } from './mondata.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { canBeginTwoWeaponCombat, stopTwoWeaponCombat } from './two_weapon.js';

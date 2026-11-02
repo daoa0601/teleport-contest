@@ -15,7 +15,8 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { dodiscovered } from '../js/o_init.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { igniteItems } from '../js/light.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, GLOB_OF_GREEN_SLIME,

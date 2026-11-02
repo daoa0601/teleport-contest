@@ -8,7 +8,9 @@ import {
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { feelPetrifyingCorpse } from './stoning.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { inventoryItemDescription } from './invent.js';
 import { observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
@@ -20,7 +22,7 @@ import { heroSpecies } from './hero_species.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { visibleRegionAt } from './regions.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
 import type { Monster } from './monster_types.js';

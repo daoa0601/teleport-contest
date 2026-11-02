@@ -31,7 +31,8 @@ import {
 } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 import { monsterName, monsterLeashName } from './do_name.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { wakeAttackedMonster } from './mon.js';
 
 export interface AppliedWeaponAttackOptions {

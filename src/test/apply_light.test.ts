@@ -14,7 +14,8 @@ import { beginObjectBurn, endObjectBurn, objectLightRadius } from '../js/light.j
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { flush_screen } from '../js/display.js';
-import { objectQuantity, splitObjectStack } from '../js/object_stack.js';
+import { objectQuantity, splitObjectStack } from '../js/mkobj.js';
+
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { runDueTimers } from '../js/timer_effects.js';
 import { objectWeight } from '../js/weight.js';

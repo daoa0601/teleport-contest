@@ -2,8 +2,10 @@ import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
-import { objectBlessingDescription, objectDescription } from './object_description.js';
-import { primaryHandDescriptionDetail } from './object_equipment_description.js';
+import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle } from './objnam.js';
+import { rejoinObjectStack, splitObjectStack } from './mkobj.js';
+
+
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, docrt, flush_screen, newsym } from './display.js';
 import { bot, formatStrength } from './botl.js';
@@ -15,24 +17,31 @@ import { nhgetch, readchar } from './input.js';
 import { chooseInventoryObject, compactInventoryLetters, reassignInventoryLetters } from './inventory_prompt.js';
 import { commandResultCancelled, commandResultFailed } from './cmd.js';
 import { assignInventoryLetter, inventoryLetterRank } from './u_init.js';
-import { mergable, mergeObjectStacks } from './object_merge.js';
-import { unlinkObject } from './mkobj.js';
-import { rejoinObjectStack, splitObjectStack } from './object_stack.js';
+
+import { unlinkObject, deallocateObject, absorbGlob } from './mkobj.js';
+
 import { ynSingleKey } from './tty_prompts.js';
 import { keyText } from './prevmsg.js';
-import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit } from './const.js';
+
+import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, LOST_THROWN } from './const.js';
+import type { GameFlags } from './flags.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE } from './object_data.js';
+import {
+    MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP,
+    BUGLE, LEATHER_DRUM, ROCK, OBJECT_SUBTYPE, OBJECT_USES_KNOWN, OBJECT_MERGE, SLIME_MOLD,
+} from './object_data.js';
 import { MONSTER_GROWTH_TARGET } from './monster_data.js';
-import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
-import { learnObjectType, OBJECT_CLASS_SYMBOLS, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
+import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName, lootObjectName } from './objnam.js';
+import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, objectClassForType, observeObject, objectMaterial } from './o_init.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
-import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, ammunitionMatchesLauncher, isBlade } from './object_properties.js';
-import { isTwoWeaponObject } from './wield.js';
+import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, ammunitionMatchesLauncher, isBlade, isPolearm } from './object_properties.js';
+import { isTwoWeaponObject, mergeHeroWeaponSlots } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+
 import { discoverArtifact } from './artifacts.js';
 import { isContainer } from './container.js';
 import { isEdibleFood } from './food_selection.js';
@@ -45,12 +54,18 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';
-import { trapName, objectIsVulnerableToErosion } from './trap.js';
+import { trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
+import { touchPetrifies } from './stoning.js';
 import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './armor.js';
-import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject } from './shk.js';
+import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
+import { announceGlobMerge } from './glob.js';
+import { endObjectBurn, objectShedsLight } from './light.js';
+import { assertCreatedObject } from './do.js';
+import { isReviver } from './corpse_species.js';
+import { stopObjectTimers } from './timeout.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { maybeUnhideAt } from './mon.js';
@@ -1199,5 +1214,433 @@ export async function delobjCore(
         await newsym(object.ox, object.oy);
     }
     await deleteObject(object, state);
+}
+
+// ---------------------------------------------------------------------------
+// Inventory and loot ordering. C refs: invent.c:sortloot()/loot_classify().
+// ---------------------------------------------------------------------------
+
+export type InventoryOrderState = { flags: Pick<GameFlags, 'inv_order'> };
+
+interface LootClassification {
+    order: number;
+    subclass: number;
+    discovery: number;
+}
+
+type LootView = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'dknown' | 'globby'>>;
+
+interface LootEntry {
+    object: GameObject;
+    index: number;
+    classification?: LootClassification;
+    name?: string;
+}
+
+interface ObjectSortOptions {
+    mode?: number;
+    state?: GameState;
+    filter?: ((object: GameObject) => boolean) | null;
+}
+
+const DEFAULT_PACK_ORDER = [12, 5, 2, 3, 7, 9, 10, 8, 4, 11, 6, 13, 14, 15, 16];
+const DEFAULT_LOOT_ORDER = [12, 5, 4, 11, 8, 9, 10, 13, 7, 6, 2, 3, 14, 15, 16];
+const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
+    FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
+    DRUM_OF_EARTHQUAKE, HORN_OF_PLENTY]);
+
+export function inventoryClassOrder(state: InventoryOrderState = game): number[] {
+    return [...(state.flags.inv_order || DEFAULT_PACK_ORDER)];
+}
+
+// C invent.c:let_to_name() names[]. Conversion from a class to a string
+// for printing; this must match the object class order.
+export function objectClassHeading(oclass: number): string {
+    return [null, 'Illegal objects', 'Weapons', 'Armor', 'Rings', 'Amulets',
+        'Tools', 'Comestibles', 'Potions', 'Scrolls', 'Spellbooks', 'Wands',
+        'Coins', 'Gems/Stones', 'Boulders/Statues', 'Iron balls', 'Chains', 'Venoms'][oclass] || 'Other';
+}
+
+export const OBJECT_CLASS_LABELS: Readonly<Partial<Record<number, string>>> = {
+    2: 'Weapons',
+    3: 'Armor',
+    4: 'Rings',
+    5: 'Amulets',
+    6: 'Tools',
+    7: 'Comestibles',
+    8: 'Potions',
+    9: 'Scrolls',
+    10: 'Spellbooks',
+    11: 'Wands',
+    12: 'Coins',
+    13: 'Gems/Stones',
+    14: 'Boulders/Statues',
+    15: 'Iron balls',
+    16: 'Chains',
+    17: 'Venoms',
+};
+
+export function inventoryOrderSymbols(state: InventoryOrderState = game): string {
+    return inventoryClassOrder(state).map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
+}
+
+export function inventorySortMode(state: GameState = game): number {
+    return ((state.flags.sortloot ?? 'l') === 'f' ? SORTLOOT_LOOT : SORTLOOT_INVLET)
+        | (state.flags.sortpack !== false ? SORTLOOT_PACK : 0);
+}
+
+export function lootSortMode({ inventoryLetters = false, state = game }: {
+    inventoryLetters?: boolean; state?: GameState;
+} = {}): number {
+    const sortloot = state.flags.sortloot ?? 'l';
+    return (sortloot === 'f' || sortloot === 'l' && !inventoryLetters
+        ? SORTLOOT_LOOT : inventoryLetters ? SORTLOOT_INVLET : 0)
+        | (state.flags.sortpack !== false ? SORTLOOT_PACK : 0);
+}
+
+// Returns a new order without rewriting the inventory or container chain.
+// Observation is the native sort boundary; name normalization uses a view.
+export function sortObjects(objects: readonly GameObject[], {
+    mode = 0, state = game, filter = null,
+}: ObjectSortOptions = {}): GameObject[] {
+    const keepPetrifying = !!(mode & SORTLOOT_PETRIFY);
+    mode &= ~SORTLOOT_PETRIFY;
+    const entries: LootEntry[] = objects.filter(object => !filter || filter(object)
+        || keepPetrifying && object.otyp === CORPSE && touchPetrifies(object.corpsenm))
+        .map((object, index) => ({ object, index }));
+    if (!mode || entries.length < 2) return entries.map(entry => entry.object);
+    return recorderSort(entries, (left, right) => compareLoot(left, right, mode, state))
+        .map(entry => entry.object);
+}
+
+export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
+    const oclass = object.oclass || objectClassForType(object.otyp);
+    const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
+    const position = classOrder.indexOf(oclass);
+    const seen = !!object.dknown;
+    const discovered = objectTypeKnown(object, state);
+    const description = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+    return {
+        order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== 17),
+        subclass: lootSubclass(object, oclass, seen, discovered),
+        discovery: !seen ? 1 : discovered || !description ? 4
+            : state._objectCallNames?.[object.otyp] ? 3 : 2,
+    };
+}
+
+function lootSubclass(object: LootView, oclass: number, seen: boolean, discovered: boolean): number {
+    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    if (oclass === 3) return [7, 4, 1, 2, 3, 5, 6][skill] ?? 8;
+    if (oclass === 2) return skill < 0
+        ? skill >= -P_CROSSBOW && skill <= -P_BOW ? 1 : 3
+        : skill >= P_BOW && skill <= P_CROSSBOW ? 2
+            : [P_SPEAR, P_DAGGER, P_KNIFE].includes(skill) ? 4
+                : isPolearm(object) ? 6 : 5;
+    if (oclass === 6) {
+        if (seen && discovered && [BAG_OF_TRICKS, HORN_OF_PLENTY].includes(object.otyp)) return 2;
+        if (isContainer(object) || object.otyp === BAG_OF_TRICKS) return 1;
+        return INSTRUMENTS.has(object.otyp) ? 3 : 4;
+    }
+    if (oclass === 7) {
+        if (object.otyp === SLIME_MOLD) return 1;
+        if (object.otyp === TIN) return 3;
+        if (object.otyp === EGG) return 4;
+        if (object.otyp === CORPSE) return 5;
+        return object.globby ? 6 : 2;
+    }
+    if (oclass === 13) {
+        const material = objectMaterial(object.otyp);
+        if (material === 20 || material === 19) return !seen ? 1 : !discovered ? 2 : material === 20 ? 3 : 4;
+        return !seen ? 5 : object.otyp === ROCK ? 8 : !discovered ? 6 : 7;
+    }
+    return 1;
+}
+
+// C invent.c:sortloot_cmp(). The sort keys are computed by the renamed
+// helpers below: inuse_classify() -> inUseRating, invletter_value() ->
+// inventoryLetterValue, loot_xname() -> normalizedLootName.
+function compareLoot(left: LootEntry, right: LootEntry, mode: number, state: GameState): number {
+    const a = left.object, b = right.object;
+    if (mode & SORTLOOT_INUSE)
+        return inUseRating(b, state) - inUseRating(a, state) || left.index - right.index;
+    if ((mode & (SORTLOOT_PACK | SORTLOOT_INVLET)) !== SORTLOOT_INVLET) {
+        const aClass = classifyEntry(left, state), bClass = classifyEntry(right, state);
+        const difference = aClass.order - bClass.order;
+        if (difference) return difference;
+        if (!(mode & SORTLOOT_INVLET)) {
+            const detail = aClass.subclass - bClass.subclass || aClass.discovery - bClass.discovery;
+            if (detail) return detail;
+        }
+    }
+    if (mode & SORTLOOT_INVLET) {
+        const difference = inventoryLetterValue(a.invlet) - inventoryLetterValue(b.invlet);
+        if (difference) return difference;
+    }
+    if (!(mode & SORTLOOT_LOOT)) return left.index - right.index;
+    if (left.name === undefined) {
+        observeObjectForNaming(a, { state });
+        left.name = normalizedLootName(a, state);
+    }
+    if (right.name === undefined) {
+        observeObjectForNaming(b, { state });
+        right.name = normalizedLootName(b, state);
+    }
+    if (left.name !== right.name) return left.name < right.name ? -1 : 1;
+    const condition = beatitudeRating(b) - beatitudeRating(a)
+        || Number(!!b.greased) - Number(!!a.greased)
+        || lootErosion(a) - lootErosion(b)
+        || Number(!!(b.rknown && b.oerodeproof)) - Number(!!(a.rknown && a.oerodeproof));
+    if (condition) return condition;
+    if (OBJECT_USES_KNOWN[a.otyp] && a.oclass !== 7) {
+        const difference = (b.known ? b.spe ?? 0 : -1000) - (a.known ? a.spe ?? 0 : -1000);
+        if (difference) return difference;
+    }
+    return left.index - right.index;
+}
+
+function classifyEntry(entry: LootEntry, state: GameState): LootClassification {
+    if (!entry.classification) {
+        if (!heroIsBlind(state)) observeObject(entry.object, state);
+        entry.classification = classifyLoot(entry.object, state);
+    }
+    return entry.classification;
+}
+
+function normalizedLootName(object: GameObject, state: GameState): string {
+    const name = lootObjectName(object, state);
+    if (typeof name !== 'string')
+        throw new Error(`Loot object ${object.o_id} has no sortable name`);
+    return name.replace(/[A-Z]/g, letter => letter.toLowerCase());
+}
+
+function beatitudeRating(object: GameObject): number {
+    return object.bknown ? object.blessed ? 3 : object.cursed ? 1 : 2 : 0;
+}
+
+// obj.h aliases these conditions to the fields read by greatest_erosion().
+function lootErosion(object: GameObject): number {
+    return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0,
+        Number(!!object.orotten), Number(!!object.odiluted), Number(!!object.norevive));
+}
+
+function inventoryLetterValue(letter: string | null | undefined): number {
+    if (!letter) return 55;
+    if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 95;
+    if (letter >= 'A' && letter <= 'Z') return letter.charCodeAt(0) - 37;
+    return letter === '$' ? 1 : letter === '#' ? 54 : 55;
+}
+
+function inUseRating(object: GameObject, state: GameState): number {
+    const mask = (object.owornmask ?? 0) & (W_ACCESSORY | W_WEAPONS | W_ARMOR);
+    if (!mask && object.otyp === LEASH && object.leashmon) return 1;
+    if (!mask && object.oclass === 6 && object.lamplit) return 2;
+    const mainHandRing = state.u.rightHanded === false ? W_RINGL : W_RINGR;
+    const ratings = [W_ARMU, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMC, W_ARM,
+        W_QUIVER, W_SWAPWEP, W_WEP, W_TOOL,
+        mainHandRing === W_RINGR ? W_RINGL : W_RINGR, mainHandRing, W_AMUL];
+    const index = ratings.findIndex(slot => mask & slot);
+    return index >= 0 ? index + 3 : 0;
+}
+
+// ---------------------------------------------------------------------------
+// Ordinary stack compatibility and merging. C refs: invent.c:mergable(),
+// merged(), same_price().
+// ---------------------------------------------------------------------------
+
+const FOOD_CLASS = 7;
+
+function objectMergeName(object: GameObject | null | undefined): string {
+    return object?.oextra?.oname ?? object?.oname ?? '';
+}
+
+function hasAttachment(object: GameObject): boolean {
+    return !!(
+        object?.oextra?.omid || object?.oextra?.omonst
+    );
+}
+
+// C same_price(): each search follows next_shkp(TRUE), with its riling
+// side effects, and prefers the first keeper for the second object.
+function billedStackOwner(
+    object: GameObject, state: GameState,
+): ReturnType<typeof billForObject> {
+    for (const keeper of visitBilledShopkeepers(state)) {
+        const billed = billForObject(object, state, keeper);
+        if (billed) return billed;
+    }
+    return null;
+}
+
+function sameBillPrice(first: GameObject, second: GameObject, state: GameState): boolean {
+    const firstBill = billedStackOwner(first, state);
+    const secondBill = (firstBill
+        && billForObject(second, state, firstBill.resident))
+        || billedStackOwner(second, state);
+    return !!firstBill && !!secondBill
+        && firstBill.resident === secondBill.resident
+        && firstBill.entry.price === secondBill.entry.price;
+}
+
+export function mergable(
+    otmp: GameObject | null | undefined, obj: GameObject | null | undefined,
+    state: GameState = game,
+): boolean {
+    if (!otmp || !obj || otmp === obj || otmp.otyp !== obj.otyp
+        || otmp.nomerge || obj.nomerge || !OBJECT_MERGE[obj.otyp]) {
+        return false;
+    }
+    if (obj.oclass === COIN_CLASS) return true;
+    if (!!otmp.cursed !== !!obj.cursed
+        || !!otmp.blessed !== !!obj.blessed) return false;
+
+    const otmpLost = otmp.how_lost ?? 0;
+    const objLost = obj.how_lost ?? 0;
+    if (otmpLost === 4 || objLost === 4
+        || (otmpLost !== 0 && otmpLost !== objLost)) return false;
+    if (obj.globby || otmp.globby) return !!obj.globby && !!otmp.globby;
+
+    // C obj.h stores opoisoned in otrapped, odiluted in oeroded and norevive
+    // in oeroded2, so native mergable()'s tests of those fields also keep
+    // poisoned weapons, diluted potions and frozen corpses in their own stacks.
+    for (const field of [
+        'unpaid', 'no_charge', 'obroken', 'otrapped', 'opoisoned', 'lamplit',
+        'odiluted', 'norevive',
+    ] as const) {
+        if (!!otmp[field] !== !!obj[field]) return false;
+    }
+    if ((otmp.spe ?? 0) !== (obj.spe ?? 0)) return false;
+    if (obj.oclass === FOOD_CLASS
+        && ((otmp.oeaten ?? 0) !== (obj.oeaten ?? 0)
+            || !!otmp.orotten !== !!obj.orotten)) return false;
+
+    const impairedSight = heroIsBlind(state) || heroIsHallucinating(state);
+    const cleric = state?.urole?.key === 'priest';
+    if (!!otmp.dknown !== !!obj.dknown
+        || ((!!otmp.bknown !== !!obj.bknown)
+            && !cleric && impairedSight)
+        || (otmp.oeroded ?? 0) !== (obj.oeroded ?? 0)
+        || (otmp.oeroded2 ?? 0) !== (obj.oeroded2 ?? 0)
+        || !!otmp.greased !== !!obj.greased) {
+        return false;
+    }
+    if (erosionMatters(obj) && (!!otmp.oerodeproof !== !!obj.oerodeproof
+        || !!otmp.rknown !== !!obj.rknown && impairedSight)) return false;
+
+    if ([CORPSE, EGG, TIN].includes(obj.otyp)
+        && (otmp.corpsenm ?? -1) !== (obj.corpsenm ?? -1)) return false;
+    if (obj.otyp === EGG && (otmp.timed || obj.timed)) return false;
+    if (obj.otyp === CORPSE && isReviver(otmp.corpsenm)) return false;
+    if ((obj.otyp === TALLOW_CANDLE || obj.otyp === WAX_CANDLE)
+        && Math.trunc((otmp.age ?? 0) / 25)
+            !== Math.trunc((obj.age ?? 0) / 25)) return false;
+    if (obj.otyp === POT_OIL && obj.lamplit) return false;
+    // C: don't merge surcharged/differently priced unpaid stacks.
+    if (obj.unpaid && !sameBillPrice(obj, otmp, state)) return false;
+    if (hasAttachment(otmp) || hasAttachment(obj)) return false;
+
+    const otmpName = objectMergeName(otmp);
+    const objName = objectMergeName(obj);
+    if ((otmpName && objName && otmpName !== objName)
+        || (obj.otyp === CORPSE && !!otmpName !== !!objName)) return false;
+    // C keeps the two stamped-mail flavors (bones/wished vs hand-written)
+    // apart unless the stack ids share a parity.
+    if (obj.otyp === SCR_MAIL && (obj.spe ?? 0) > 0
+        && (obj.o_id % 2) !== (otmp.o_id % 2)) return false;
+    if ((otmp.oartifact ?? 0) !== (obj.oartifact ?? 0)) return false;
+    if (!!otmp.known !== !!obj.known && impairedSight) return false;
+    return true;
+}
+
+function comparisonDiscovers(
+    survivor: GameObject, incoming: GameObject, state: GameState,
+): boolean {
+    return !!survivor.known !== !!incoming.known
+        || (!!survivor.rknown !== !!incoming.rknown && !!survivor.oerodeproof)
+        || ((survivor.oclass === COIN_CLASS ? false : !!survivor.bknown)
+            !== !!incoming.bknown && state.urole?.key !== 'priest');
+}
+
+function comparisonNeedsMessage(
+    survivor: GameObject, incoming: GameObject, state: GameState,
+): boolean {
+    return survivor.where === 'inventory'
+        && incoming.how_lost !== LOST_THROWN && survivor.how_lost !== LOST_THROWN
+        && comparisonDiscovers(survivor, incoming, state);
+}
+
+// C merged() prelude, completed before either kind of display can yield.
+function prepareStackMerge(
+    survivor: GameObject, incoming: GameObject, state: GameState,
+): boolean {
+    const discovered = comparisonDiscovers(survivor, incoming, state);
+    if (!survivor.globby) {
+        const firstQuantity = survivor.quan ?? survivor.quantity ?? 1;
+        const secondQuantity = incoming.quan ?? incoming.quantity ?? 1;
+        const quantity = firstQuantity + secondQuantity;
+        if (!incoming.lamplit) {
+            survivor.age = Math.trunc(
+                (survivor.age * firstQuantity + incoming.age * secondQuantity)
+                    / quantity,
+            );
+        }
+        survivor.quan = survivor.quantity = quantity;
+        survivor.owt = objectWeight(survivor);
+        if (survivor.oclass === COIN_CLASS) survivor.bknown = false;
+    }
+    const incomingName = objectMergeName(incoming);
+    if (!objectMergeName(survivor) && incomingName) {
+        if (incoming.oextra?.oname) {
+            survivor.oextra = { ...(survivor.oextra || {}), oname: incoming.oextra.oname };
+        } else survivor.oname = incomingName;
+    }
+    unlinkObject(incoming, state);
+    if (incoming.pickup_prev && survivor.where === 'inventory')
+        survivor.pickup_prev = true;
+    if (incoming.lamplit) {
+        endObjectBurn(incoming, state, state.moves);
+        if (objectShedsLight(survivor)) state.vision_full_recalc = 1;
+    }
+    if (incoming.timed) stopObjectTimers(incoming, state);
+    if (!!survivor.known !== !!incoming.known) survivor.known = true;
+    if (!!survivor.rknown !== !!incoming.rknown) survivor.rknown = true;
+    if (!!survivor.bknown !== !!incoming.bknown) survivor.bknown = true;
+    mergeHeroWeaponSlots(survivor, incoming, state);
+    if (incoming.bypass) survivor.bypass = true;
+    return discovered;
+}
+
+// A creation merge has no display continuation. Reject such work before
+// changing ages, quantities, timers or ownership; live callers must await it.
+export async function mergeCreatedObjectStacks(
+    survivor: GameObject, incoming: GameObject, state: GameState = game,
+): Promise<GameObject | null> {
+    assertCreatedObject(incoming, state);
+    if (survivor.unpaid || billForObject(survivor, state) || incoming.owornmask)
+        throw new Error('creation merge requires unbilled objects and an unworn incoming object');
+    if (!mergable(survivor, incoming, state)) return null;
+    if (incoming.globby || comparisonNeedsMessage(survivor, incoming, state))
+        throw new Error('stack merge with display effects must be awaited');
+    prepareStackMerge(survivor, incoming, state);
+    await deleteObject(incoming, state, { mergeInto: survivor });
+    return survivor;
+}
+
+export async function mergeObjectStacks(
+    survivor: GameObject | null | undefined, incoming: GameObject | null | undefined,
+    state: GameState = game,
+): Promise<GameObject | null> {
+    requireLiveGame(state);
+    if (!survivor || !incoming || !mergable(survivor, incoming, state)) return null;
+    const discovered = prepareStackMerge(survivor, incoming, state);
+    if (incoming.globby) {
+        await announceGlobMerge(survivor, incoming, state);
+        return await absorbGlob(survivor, incoming, state);
+    }
+    if (discovered && survivor.where === 'inventory'
+        && incoming.how_lost !== LOST_THROWN && survivor.how_lost !== LOST_THROWN) {
+        await plineWithContinuation('You learn more about your items by comparing them.');
+    }
+    await deleteObject(incoming, state, { mergeInto: survivor });
+    return survivor;
 }
 

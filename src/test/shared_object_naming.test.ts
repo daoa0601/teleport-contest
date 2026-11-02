@@ -10,7 +10,9 @@ import {
     CHEST, CRYSKNIFE, FIGURINE, LONG_SWORD, POT_BOOZE, POT_WATER,
     RIN_PROTECTION, SHORT_SWORD, STATUE, TIN, YA,
 } from '../js/object_data.js';
-import { learnObjectType, recordObjectCall } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { objectName } from '../js/objnam.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

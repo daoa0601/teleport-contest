@@ -28,7 +28,8 @@ import { igniteItems } from './light.js';
 import { MONSTER_LEVEL } from './monster_data.js';
 import { monsterName as perceivedMonsterName } from './do_name.js';
 import { objectName } from './objnam.js';
-import { observeObject } from './object_knowledge.js';
+import { observeObject } from './o_init.js';
+
 import { heroIsBlind } from './senses.js';
 import { d, rn2, rnd } from './rng.js';
 import { burnArmorByFire, burnHeroArmorByFire, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';

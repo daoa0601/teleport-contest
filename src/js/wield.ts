@@ -15,15 +15,16 @@ import { monsterIsHumanoid } from './monster_data.js';
 import { heroSpecies } from './hero_species.js';
 import { heroHandName } from './body_parts.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
-import { armorUsesPairGrammar, makePlural } from './object_grammar.js';
+import { armorUsesPairGrammar, makePlural } from './objnam.js';
+import { clearSplitObjects, rejoinObjectStack, splitObjectStack } from './mkobj.js';
+import { objectClassForType } from './o_init.js';
+
 import {
     minimalObjectName, objectNameIsPlural, observeObjectForNaming,
 } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { getobj } from './inventory_prompt.js';
-import {
-    clearSplitObjects, rejoinObjectStack, splitObjectStack,
-} from './object_stack.js';
+
 import { freeInventoryObject } from './hero_inventory.js';
 import { addInventoryItem } from './u_init.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
@@ -32,7 +33,7 @@ import { stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 import { readySuggestion } from './quiver.js';
 import { objectOwnershipPrefix } from './shk.js';
-import { objectClassForType } from './object_knowledge.js';
+
 import { promptYesNoQuit } from './query.js';
 import {
     AKLYS_LIM,

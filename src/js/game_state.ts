@@ -6,7 +6,8 @@ import type { Role, Race, Alignment } from './roles.js';
 import type { GameFlags, InterfaceFlags } from './flags.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
-import type { ObjectPriceQuote } from './object_knowledge.js';
+import type { ObjectPriceQuote } from './shk.js';
+
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Shopkeeper } from './shop_types.js';
 import type { Position, Rectangle, Stairway, ActiveSpecialLevel, CachedLevelState, ElementalBubble } from './map_types.js';

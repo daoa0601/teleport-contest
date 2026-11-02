@@ -17,13 +17,15 @@ import { displayColorName, displayLiquidName, newsym, randomDisplayMonsterName }
 import { plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { tryCallObjectType } from './object_call.js';
+import { tryCallObjectType } from './do.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { objectResistsDestruction } from './zap.js';
 import { addBuriedObject } from './buried_object.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj } from './invent.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+
 import { engravingAt } from './engrave.js';
 import { cansee } from './vision.js';
 import { rnd, rn2 } from './rng.js';

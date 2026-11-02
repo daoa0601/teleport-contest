@@ -1,5 +1,5 @@
 import { trapName } from './trap.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 // Moving the hero through the air after a forceful action.
 // C ref: dothrow.c hurtle() and hurtle_step().
 import { formatFeltMessage } from './hero_speech.js';

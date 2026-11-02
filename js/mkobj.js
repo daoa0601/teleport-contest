@@ -5,7 +5,7 @@ import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
 import { novelTitle } from './novel_titles.js';
 import { setTinVariety } from './tin.js';
 import { relocateObjectRandomly } from './teleport.js';
-import { nextIdent } from './ident.js';
+import { nextIdent, nextObjectId } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
@@ -19,7 +19,7 @@ import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { forgetTempleEntry } from './priest.js';
 import { copyPetData, copyShopkeeperData, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
-import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph } from './timeout.js';
+import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
 import { objectWeight } from './weight.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
@@ -27,10 +27,12 @@ import { objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
 import { rndClass, ownedObjectName } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
-import { assignCandyWrapper } from './object_inscription.js';
-import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
+import { assignCandyWrapper } from './read.js';
+import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
+import { dropObjectAtHero } from './hero_drop.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld } from './do.js';
-import { deleteObject } from './shk.js';
+import { deleteObject, splitObjectBill, settleGlobAbsorptionBilling } from './shk.js';
+import { startGlobTimeout } from './glob.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
 import { landObjectOnAltar } from './altar_object.js';
@@ -38,7 +40,6 @@ import { heroHandName } from './body_parts.js';
 import { shipObject } from './dokick.js';
 import { updateCarriedLuck, freeInventoryObject } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
-import { dropObjectAtHero } from './object_drop.js';
 import { bookCursed } from './spellbook_study.js';
 import { resetBulkTakeoff } from './takeoff_state.js';
 const RANDOM_CLASS = 0;
@@ -1245,5 +1246,115 @@ export async function addCreatedObjectToContainer(container, object, state = gam
     const existing = containerStack(container, object, state);
     return existing ? await mergeCreatedObjectStacks(existing, object, state)
         : linkContainerObject(container, object);
+}
+// ---------------------------------------------------------------------------
+// Splitting one quantity from an ordinary object stack.
+// C refs: mkobj.c splitobj()/unsplitobj().
+// ---------------------------------------------------------------------------
+export function objectQuantity(object) {
+    if (!object)
+        return 0;
+    return Math.max(0, Math.trunc(object.quan ?? object.quantity ?? 1));
+}
+function setQuantity(object, count) {
+    object.quan = object.quantity = count;
+    object.owt = objectWeight(object);
+}
+export function splitObjectStack(object, count, state = game, objectId = null) {
+    const total = objectQuantity(object);
+    count = Math.trunc(count);
+    if (!object || object.contents?.length || count <= 0 || count >= total)
+        return null;
+    const split = {
+        ...object,
+        contents: [],
+        objectTimers: [],
+        timed: 0,
+        lamplit: false,
+        owornmask: 0,
+        worn: false,
+        wornSlot: null,
+        wielded: false,
+        alternate: false,
+        ready: false,
+        pickup_prev: false,
+        lua_ref_cnt: 0,
+    };
+    if (object.oextra) {
+        split.oextra = structuredClone(object.oextra);
+        delete split.oextra.omid;
+    }
+    split.o_id = objectId ?? nextObjectId(object, split, state);
+    setQuantity(object, total - count);
+    setQuantity(split, count);
+    state.context.objsplit = { parent_oid: object.o_id, child_oid: split.o_id };
+    linkObjectAfter(object, split, state);
+    // C mkobj.c:494 splitobj(): an unpaid stack's bill follows the split.
+    if (object.unpaid)
+        splitObjectBill(object, split, state);
+    copyObjectTimers(object, split, state);
+    // splitobj() copies an active light source after copying its timers.
+    // Each resulting candle stack has its own quantity-dependent radius, and
+    // obj_split_light_source() inserts the copy at the head of light_base,
+    // so the split-off stack owns the newer light source.
+    if (objectShedsLight(object)) {
+        split.lamplit = true;
+        state._lightSerial = (state._lightSerial ?? 0) + 1;
+        split._litSeq = state._lightSerial;
+        if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)
+            state.vision_full_recalc = 1;
+    }
+    return split;
+}
+// C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
+export async function rejoinObjectStack(parent, split, state = game) {
+    const latest = state.context.objsplit;
+    if (latest?.parent_oid !== parent.o_id || latest.child_oid !== split.o_id)
+        return null;
+    if (!sharesUnsplitChain(parent, split, state))
+        return null;
+    return await mergeObjectStacks(parent, split, state);
+}
+export function clearSplitObjects(state = game) {
+    state.context.objsplit = { parent_oid: 0, child_oid: 0 };
+}
+// ---------------------------------------------------------------------------
+// Glob absorption. C ref: mkobj.c obj_absorb().
+// ---------------------------------------------------------------------------
+function combineGlobMatter(survivor, incoming, state) {
+    const firstWeight = survivor.oeaten || survivor.owt;
+    const secondWeight = incoming.oeaten || incoming.owt;
+    const totalWeight = firstWeight + secondWeight;
+    const moves = state.moves;
+    if (!!survivor.bknown !== !!incoming.bknown)
+        survivor.bknown = incoming.bknown = false;
+    if (!!survivor.rknown !== !!incoming.rknown)
+        survivor.rknown = incoming.rknown = false;
+    if (!!survivor.greased !== !!incoming.greased)
+        survivor.greased = incoming.greased = false;
+    if (survivor.orotten || incoming.orotten)
+        survivor.orotten = incoming.orotten = true;
+    const relativeAge = Math.trunc(((moves - survivor.age) * firstWeight
+        + (moves - incoming.age) * secondWeight) / totalWeight);
+    survivor.age = moves - relativeAge;
+    survivor.owt += secondWeight;
+    if (survivor.oeaten || incoming.oeaten)
+        survivor.oeaten = totalWeight;
+    survivor.quan = survivor.quantity = 1;
+    const first = stopObjectTimer(survivor, OBJECT_TIMER_KIND.SHRINK_GLOB);
+    const second = stopObjectTimer(incoming, OBJECT_TIMER_KIND.SHRINK_GLOB);
+    const firstDelay = first ? first.deadline - moves : 0;
+    const secondDelay = second ? second.deadline - moves : 0;
+    const delay = Math.trunc(((firstDelay || 25) + (secondDelay || 25) + 1) / 2);
+    startGlobTimeout(survivor, state, moves, delay);
+}
+// C obj_absorb(), distinct from merged(): billing precedes all changes,
+// then raw deallocation skips ordinary name, knowledge and bill folding.
+export async function absorbGlob(survivor, incoming, state = game, { publish = plineWithContinuation } = {}) {
+    await settleGlobAbsorptionBilling(survivor, incoming, state, { publish });
+    combineGlobMatter(survivor, incoming, state);
+    unlinkObject(incoming, state);
+    deallocateObject(incoming, state);
+    return survivor;
 }
 //# sourceMappingURL=mkobj.js.map

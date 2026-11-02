@@ -6,7 +6,8 @@ import { newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import type { GameObject } from './object_types.js';
 import { rn2 } from './rng.js';
 import {

@@ -5,7 +5,8 @@ import { displayLiquidName } from './display.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap.js';
 

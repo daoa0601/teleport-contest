@@ -19,9 +19,11 @@ import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
 import type { GameObject } from './object_types.js';
 import { CRYSKNIFE, OBJECT_NAMES, WORM_TOOTH } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { billForObject, chargeAlteredUnpaidObject } from './shk.js';
+import { makePlural } from './objnam.js';
+import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown } from './shk.js';
 import { rn2 } from './rng.js';
+import { callObjectType } from './do_name.js';
+import type { ObjectCallResult } from './do_name.js';
 
 const M1_HIDE = 0x00000100;
 
@@ -235,4 +237,21 @@ export async function objectNoLongerHeld(
             await chargeAlteredUnpaidObject(member, 'degrade', state);
         revertCrysknife(member);
     }
+}
+
+// C do.c:trycall(). If obj is neither formally identified nor informally
+// called, prompt for a call name before the object's identity is lost.
+export async function tryCallObjectType(
+    object: GameObject | null | undefined,
+    state: GameState = game,
+): Promise<ObjectCallResult> {
+    if (
+        !object ||
+        object.dknown === false ||
+        objectTypeKnown(object, state) ||
+        state._objectCallNames?.[object.otyp]
+    ) {
+        return { prompted: false, named: false, callName: null };
+    }
+    return callObjectType(object, state);
 }

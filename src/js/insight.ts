@@ -7,7 +7,8 @@ import { formatFeltMessage } from './hero_speech.js';
 // C ref: insight.c — doattributes(), enlightenment().
 
 import { heroIsHallucinating } from './senses.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { game } from './gstate.js';
 import { bot } from './botl.js';
 import { displayLiquidName, docrt, flush_screen } from './display.js';

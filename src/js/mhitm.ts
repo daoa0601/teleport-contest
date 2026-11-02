@@ -88,10 +88,12 @@ import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js
 import { updateMonsterRegions } from './regions.js';
 import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './o_init.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
 import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objnam.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
 import { seductionCompatibility } from './seduction_compatibility.js';

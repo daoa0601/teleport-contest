@@ -7,7 +7,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { unlinkObject, createObjectBase } from './mkobj.js';
 import { nextIdent } from './ident.js';
 import { delobj } from './invent.js';

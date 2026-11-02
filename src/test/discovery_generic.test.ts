@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { A_WIS } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { learnObjectType } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('generic class placeholders cannot be discovered or credit Wisdom', async () => {

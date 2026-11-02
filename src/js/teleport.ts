@@ -54,7 +54,8 @@ import { makeStunned } from './hero_mental_status.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { deleteTrap, seeTrap, tryMonsterTrapEscape } from './trap.js';
 import { endVoluntaryMultiTurn } from './hack.js';import { fillPitWithBoulderAt } from './pit_fill.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';

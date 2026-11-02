@@ -17,7 +17,7 @@ import { rndClass } from './objnam.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR } from './object_data.js';
 import { objectCombatName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { altarWrath } from './pray.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';

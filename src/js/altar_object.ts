@@ -10,7 +10,8 @@ import {
     simpleObjectNameWithArticle, observeObjectForNaming,
 } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

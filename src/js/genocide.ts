@@ -20,7 +20,8 @@ import {
     MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL,
     monsterIsHuman, monsterIsVampire, monsterTypeName, requireMonsterData,
 } from './monster_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { getLine } from './query.js';
 import { rn1 } from './rng.js';

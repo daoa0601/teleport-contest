@@ -28,7 +28,8 @@ import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { visibleCommandKey } from './cmd.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { showDisclosureOverlay } from './windows.js';
 
 export type MapPositionPickType = typeof LOOK_TRADITIONAL | typeof LOOK_QUICK

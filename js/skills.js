@@ -6,7 +6,7 @@ import { MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P
 import { game, requireLiveGame } from './gstate.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectKnowledge } from './o_init.js';
 import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';
 import { ATR_INVERSE } from './terminal.js';

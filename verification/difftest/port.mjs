@@ -35,22 +35,22 @@ const changes = {
         'rnd(1); return applyErosion(object, damage);'],
     log: ['weapon.js', 'return applyErosion(object, damage);',
         'd(0, 4); return applyErosion(object, damage);'],
-    naming_plural: ['object_grammar.js', "return replacePluralSuffix(stem, '', 's') + excess;",
+    naming_plural: ['objnam.js', "return replacePluralSuffix(stem, '', 's') + excess;",
         "return replacePluralSuffix(stem, '', 'es') + excess;"],
-    naming_singular: ['object_grammar.js', "return finish(replacePluralSuffix(stem, 'ies', 'y'));",
+    naming_singular: ['objnam.js', "return finish(replacePluralSuffix(stem, 'ies', 'y'));",
         "return finish(replacePluralSuffix(stem, 'ies', 'ye'));"],
-    naming_an: ['object_grammar.js', "return 'aefhilmnosx'.includes(word.charAt(0)) ? 'an ' : 'a ';",
+    naming_an: ['objnam.js', "return 'aefhilmnosx'.includes(word.charAt(0)) ? 'an ' : 'a ';",
         "return 'aefhilmnos'.includes(word.charAt(0)) ? 'an ' : 'a ';"],
     naming_the: ['objnam.js', "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the ${name}`;",
         "if (!/^[A-Z]/u.test(name) || capitalizedMonsterTitle(name))\n        return `the  ${name}`;"],
     naming_bogus_titles: ['objnam.js', '...BOGUS_MONSTERS.flatMap(name => {',
         '...[].flatMap(name => {'],
     naming_xname: ['objnam.js', "noun = `pair of ${noun}`;", "noun = `two ${noun}`;"],
-    naming_doname: ['object_description.js', "if (object.greased)\n        prefix.push('greased');",
+    naming_doname: ['objnam.js', "if (object.greased)\n        prefix.push('greased');",
         "if (object.greased)\n        prefix.push('sleazy');"],
     naming_monnam: ['do_name.js', "if (invisible)\n        adjectives += 'invisible ';",
         "if (invisible)\n        adjectives += 'unseen ';"],
-    naming_string_draw: ['object_grammar.js', 'export function makePlural(value) {',
+    naming_string_draw: ['objnam.js', 'export function makePlural(value) {',
         "import { rnd } from './rng.js';\nexport function makePlural(value) {\n    rnd(1);"],
     naming_observe: ['objnam.js', 'observeObjectForNaming(object, { state });',
         ';'],
@@ -73,7 +73,7 @@ const data = await import('../../js/object_data.js');
 const monsters = await import('../../js/monster_data.js');
 const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
-const { objectClassForType } = await import('../../js/object_knowledge.js');
+const { objectClassForType } = await import('../../js/o_init.js');
 const { armorSlotFor } = await import('../../js/armor.js');
 const { BOGUS_MONSTERS } = await import('../../js/random_text_data.js');
 if (process.argv.includes('--metadata')) {

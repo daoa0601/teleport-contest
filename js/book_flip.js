@@ -3,8 +3,8 @@ import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './her
 import { displayColorName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
-import { makePlural } from './object_grammar.js';
-import { learnObjectType } from './object_knowledge.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
 import { minimalObjectName } from './objnam.js';
 import { OBJECT_MAGIC, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, } from './object_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

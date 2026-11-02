@@ -23,7 +23,7 @@ import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { snuffMonsterInventoryLights } from './light.js';
 import { monsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { heroIsUnchanging } from './polyself.js';
 import { d, rn2 } from './rng.js';
 import { heroIsFlaming, setHeroSlimingTimeout } from './slime.js';

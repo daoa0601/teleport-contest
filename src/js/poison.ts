@@ -18,7 +18,8 @@ import { loseHeroHp } from './hero_damage.js';
 import { nameToMonster } from './mondata.js';
 import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
 import { definiteName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
 import { reportHeroEncumbrance } from './encumbrance.js';

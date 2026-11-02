@@ -16,7 +16,8 @@ import {
     ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, ORCISH_ARROW, ORCISH_BOW,
     YA, YUMI,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';

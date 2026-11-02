@@ -47,7 +47,8 @@ import { monsterTeleportRestricted } from './teleport_rules.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { deliverCommonQuestInsult } from './quest_pager.js';
 import { remove_object } from './floor_object.js';
-import { objectDescription } from './object_description.js';
+import { objectDescription } from './objnam.js';
+
 import { priestIsInOwnTemple } from './priest.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { cansee } from './vision.js';

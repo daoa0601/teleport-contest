@@ -47,7 +47,8 @@ import {
     WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION,
     WAN_UNDEAD_TURNING,
 } from './object_data.js';
-import { mergeObjectStacks } from './object_merge.js';
+import { mergeObjectStacks } from './invent.js';
+
 import { applyHeroGolemEffects, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { unpunishHero } from './punishment.js';
 import { d, rn1, rnd } from './rng.js';

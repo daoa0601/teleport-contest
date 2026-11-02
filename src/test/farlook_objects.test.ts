@@ -7,7 +7,8 @@ import { map_object, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { DAGGER, STATUE } from '../js/object_data.js';
-import { objectDescription } from '../js/object_description.js';
+import { objectDescription } from '../js/objnam.js';
+
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

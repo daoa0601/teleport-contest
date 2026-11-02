@@ -12,7 +12,7 @@ import { displayQuestText, prepareQuestText, qtPager, comPager } from './quest_p
 import { artifactByName } from './artifacts.js';
 import { exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
 import { fullyIdentifyObject } from './invent.js';
-import { observeObject } from './object_knowledge.js';
+import { observeObject } from './o_init.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BELL_OF_OPENING } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';

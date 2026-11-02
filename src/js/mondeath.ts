@@ -24,9 +24,8 @@ import { changeMonsterForm } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import {
-    recordObjectEncounter, recordObjectKnowledge,
-} from './object_knowledge.js';
+import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+
 import { rn2, rnd } from './rng.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import type { Monster } from './monster_types.js';

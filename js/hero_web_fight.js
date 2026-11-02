@@ -5,7 +5,7 @@ import { artifactById } from './artifacts.js';
 import { newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { rn2 } from './rng.js';
 import { P_ISRESTRICTED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, WEB, } from './const.js';
 import { deleteTrap } from './trap.js';

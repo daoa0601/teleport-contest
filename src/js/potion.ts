@@ -79,15 +79,21 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHer
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster } from './monster_data.js';
 import type { Monster } from './monster_types.js';
-import { tryCallObjectType } from './object_call.js';
-import type { ObjectCallResult } from './object_call.js';
+import { tryCallObjectType } from './do.js';
+import type { ObjectCallResult } from './do_name.js';
+import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+
+
 import { ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN } from './object_data.js';
-import { objectDescription } from './object_description.js';
-import { hitFloorWithObject } from './object_drop.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
+
+
+
+
 import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import { definiteName, definiteObjectAction, objectAction, objectCombatName, objectName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';

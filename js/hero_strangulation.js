@@ -12,7 +12,7 @@ import { heroHasNoHead, heroIsBreathless } from './hero_species.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { AMULET_OF_STRANGULATION } from './object_data.js';
 import { deleteObject } from './shk.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
 import { refreshProperty } from './properties.js';
 import { rn2 } from './rng.js';
 import { stopHeroOccupation } from './occupation.js';

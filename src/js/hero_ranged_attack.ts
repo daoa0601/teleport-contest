@@ -17,7 +17,8 @@ import {
     BOOMERANG, BOULDER, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
     GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_SUBTYPE, YUMI,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
 import { rnd, rn2 } from './rng.js';

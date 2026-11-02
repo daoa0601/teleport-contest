@@ -5,7 +5,8 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
-import { recordObjectEncounter, recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectEncounter, recordObjectKnowledge } from '../js/o_init.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 

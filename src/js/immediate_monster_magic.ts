@@ -39,7 +39,8 @@ import {
     SPE_TURN_UNDEAD, STATUE, WAN_CANCELLATION, WAN_LIGHT, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP,
     WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import { objectName, simpleObjectTypeName } from './objnam.js';
 import { landFloorObject } from './floor_effects.js';
 import { d, rn2, rnd } from './rng.js';

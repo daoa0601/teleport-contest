@@ -77,7 +77,8 @@ import { isAxe } from './object_properties.js';
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { deleteEngravingAt } from './engrave.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats } from './terrain_properties.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { migrateMonsterOffLevel } from './dog.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 

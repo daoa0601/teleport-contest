@@ -6,7 +6,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn, objectLightRadius } from '../js/light.js';
 import { GOLD_DRAGON_SCALE_MAIL, OIL_LAMP, SCR_LIGHT, WAX_CANDLE } from '../js/object_data.js';
-import { withIndefiniteArticle } from '../js/object_grammar.js';
+import { withIndefiniteArticle } from '../js/objnam.js';
+
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';

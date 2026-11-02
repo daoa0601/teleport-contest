@@ -153,7 +153,9 @@ import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { objectClassForType } from './o_init.js';
+
 import { objectCanTouchShade } from './hero_object_contact.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import type { DeathHandler } from './end.js';
@@ -187,7 +189,7 @@ import {
     monsterIsWooden,
     monsterSpeciesHatesSilver,
 } from './monster_data.js';
-import { objectClassForType } from './object_knowledge.js';
+
 import type { ArtifactDefender } from './artifacts.js';
 
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.

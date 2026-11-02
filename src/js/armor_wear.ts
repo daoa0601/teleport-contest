@@ -11,7 +11,8 @@ import {
 import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_NAMES } from './object_data.js';
 import { isSword } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { isBimanualObject, isFlimsyObject } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';

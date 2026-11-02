@@ -3,14 +3,15 @@ import assert from 'node:assert/strict';
 
 import { A_CHA } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { objectDescription } from '../js/object_description.js';
-import { objectDescriptionPrice } from '../js/object_description_price.js';
+import { objectDescription, objectDescriptionPrice } from '../js/objnam.js';
+import { priceQuoteSuffix, recordObjectPriceQuote } from '../js/shk.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
+
+
 import {
     DAGGER, FOOD_RATION, GLOB_OF_GRAY_OOZE, GOLD_PIECE, POT_HEALING, SACK,
 } from '../js/object_data.js';
-import {
-    priceQuoteSuffix, recordObjectKnowledge, recordObjectPriceQuote,
-} from '../js/object_knowledge.js';
+
 import { unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { addShopObjectToBill, getCostOfShopItem, unpaidObjectCost } from '../js/shk.js';
 import { addInventoryItem } from '../js/u_init.js';

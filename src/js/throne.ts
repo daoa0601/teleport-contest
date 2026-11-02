@@ -32,7 +32,8 @@ import type { GameObject } from './object_types.js';
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+
 import { loseHeroHp } from './hero_damage.js';
 import { cureHeroSickness } from './hero_illness.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';

@@ -29,10 +29,14 @@ import {
     FLINT, LEASH, OBJECT_NAMES, OBJECT_NUTRITION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, TRIDENT, requireObjectData,
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
-import { tryCallObjectType } from './object_call.js';
-import { dropObjectAtHero } from './object_drop.js';
+import { withIndefiniteArticle } from './objnam.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+import { tryCallObjectType } from './do.js';
+import { dropObjectAtHero } from './hero_drop.js';
+
+
+
+
 import { objectName, objectHasPersonalName } from './objnam.js';
 import { applyRottenFood } from './ordinary_food_effects.js';
 import { poisonHeroStrengthAndHp } from './poison.js';

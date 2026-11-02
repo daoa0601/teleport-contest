@@ -10,7 +10,7 @@ import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHasEyes, monsterFaceName } from './body_parts.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind } from './senses.js';

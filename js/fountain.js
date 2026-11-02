@@ -26,7 +26,7 @@ import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { level_difficulty } from './dungeon.js';
 import { grantMonsterWish } from './potion.js';
 import { BOULDER, DILITHIUM_CRYSTAL, LUCKSTONE } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { promptYesNo } from './query.js';
 import { inTown } from './room.js';
 import { rnd, rn2 } from './rng.js';

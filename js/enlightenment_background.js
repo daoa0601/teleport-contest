@@ -13,7 +13,7 @@ import { findArmorClass } from './armor.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { hiddenGold } from './gold.js';
 import { currency } from './currency.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { deityName } from './alignment.js';
 import { newExperienceThreshold, experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_LEVEL, monsterTypeName } from './monster_data.js';

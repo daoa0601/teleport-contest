@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { experienceRankIndex } from './exper.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
-import { makePlural, makeSingular, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 import { heroIsBlind } from './senses.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';

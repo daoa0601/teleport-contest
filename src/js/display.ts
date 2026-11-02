@@ -59,7 +59,7 @@ import { rn2, rn2Display } from './rng.js';
 import {
     BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE,
 } from './random_text_data.js';
-import { OBJECT_CLASS_SYMBOLS, recordObjectEncounter } from './object_knowledge.js';
+import { recordObjectEncounter } from './o_init.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
@@ -2808,3 +2808,45 @@ export async function cls() {
     }
     game.context.botl = true;
 }
+
+// ---------------------------------------------------------------------------
+// Object class symbols. C ref: drawing.c def_oc_syms[].
+// ---------------------------------------------------------------------------
+
+// C drawing.c:def_oc_syms, indexed by the object class from objclass.h.
+export const OBJECT_CLASS_SYMBOLS = [
+    '',
+    ']',
+    ')',
+    '[',
+    '=',
+    '"',
+    '(',
+    '%',
+    '!',
+    '?',
+    '+',
+    '/',
+    '$',
+    '*',
+    '`',
+    '0',
+    '_',
+    '.',
+];
+
+// C drawing.c:def_oc_syms[].explain, in object-class order.
+export const OBJECT_CLASS_EXPLAIN: readonly string[] = [
+    '', 'strange object', 'weapon', 'suit or piece of armor', 'ring',
+    'amulet', 'useful item (pick-axe, key, lamp...)', 'piece of food',
+    'potion', 'scroll', 'spellbook', 'wand', 'pile of coins', 'gem or rock',
+    'boulder or statue', 'iron ball', 'iron chain', 'splash of venom',
+];
+
+// C drawing.c:def_oc_syms[].name (defsym.h OBJCLASS names), used by
+// detect.c:object_detect() to describe what was detected.
+export const OBJECT_CLASS_NAMES: readonly string[] = [
+    '', 'illegal objects', 'weapons', 'armor', 'rings', 'amulets', 'tools',
+    'food', 'potions', 'scrolls', 'spellbooks', 'wands', 'coins', 'rocks',
+    'large stones', 'iron balls', 'chains', 'venoms',
+];

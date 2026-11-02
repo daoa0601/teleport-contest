@@ -10,7 +10,7 @@ import { speciesWasGenocided } from './mon.js';
 import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { roles } from './roles.js';
-import { makeSingular } from './object_grammar.js';
+import { makeSingular } from './objnam.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { heroIsHallucinating } from './senses.js';

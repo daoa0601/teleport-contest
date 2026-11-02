@@ -22,7 +22,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
 import { consumeObjectCharge } from './invent.js';
 import { definiteObjectAction, definiteName, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { askForTune, playTune } from './passtune.js';

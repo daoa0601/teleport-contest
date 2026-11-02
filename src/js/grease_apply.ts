@@ -9,7 +9,8 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { getobj } from './inventory_prompt.js';
 import { consumeObjectCharge } from './invent.js';
 import { CORPSE } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { definiteObjectAction, objectName, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';
 import { propertyIsActive } from './properties.js';

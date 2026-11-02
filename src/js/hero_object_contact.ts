@@ -27,9 +27,11 @@ import {
     IRON_CHAIN, MIRROR, TOWEL,
 } from './object_data.js';
 import { unlinkObject } from './mkobj.js';
-import { observeObject } from './object_knowledge.js';
+import { observeObject } from './o_init.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+
 import { objectMaterial } from './o_init.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+
 import { corpseName, objectName, pluralizeObjectNoun } from './objnam.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { d, rnd, rn2 } from './rng.js';

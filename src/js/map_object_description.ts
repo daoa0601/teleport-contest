@@ -13,9 +13,11 @@ import {
     OBJECT_NAMES, ORANGE, PEAR, SLIME_MOLD, STATUE,
 } from './object_data.js';
 import { stopObjectTimers } from './timeout.js';
-import { objectDescription } from './object_description.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
-import { objectClassForType, observeObject } from './object_knowledge.js';
+import { objectDescription, makePlural, withIndefiniteArticle } from './objnam.js';
+import { objectClassForType, observeObject } from './o_init.js';
+
+
+
 import type { GameObject } from './object_types.js';
 import { distantObjectName, minimalObjectName } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

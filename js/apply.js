@@ -18,7 +18,8 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { isGrayStone } from './object_properties.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+import { makePlural } from './objnam.js';
 import { dopay } from './shk.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
@@ -86,7 +87,6 @@ import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonster
 import { canDigDown } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { BOULDER, OBJECT_DESCRIPTIONS, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
-import { makePlural } from './object_grammar.js';
 import { unlinkObject } from './mkobj.js';
 import { stopLevelTimer } from './timeout.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';

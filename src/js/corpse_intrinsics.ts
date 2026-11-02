@@ -14,7 +14,8 @@ import {
     MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData,
 } from './monster_data.js';
 import { CORPSE } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { corpseName, killerObjectName } from './objnam.js';
 import {
     grantIntrinsicProperty, hasIntrinsicProperty, refreshProperty,

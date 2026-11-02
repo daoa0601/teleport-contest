@@ -3,7 +3,7 @@
 import { game } from './gstate.js';
 import { nameToMonster } from './mondata.js';
 import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
-import { makePlural, makeSingular } from './object_grammar.js';
+import { makePlural, makeSingular } from './objnam.js';
 import { rnd } from './rng.js';
 const FRUIT_NAME_BYTES = 31; // PL_FSIZ includes the trailing NUL.
 export function initializeFruitRegistry(name = 'slime mold', state = game) {

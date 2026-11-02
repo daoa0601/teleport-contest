@@ -5,7 +5,7 @@ import { generateMinetown } from '../js/mkmaze.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
 import { MM_NOGRP, NON_PM } from '../js/const.js';
 import { getObjectClassBounds } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
 void test('ransacked Minetown sends its raiders and named stolen goods into the lower Mines', async () => {

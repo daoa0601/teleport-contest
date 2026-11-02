@@ -64,7 +64,9 @@ import {
     ARROW, BEARTRAP, BOULDER, CAN_OF_GREASE, DART, LAND_MINE,
     LARGE_BOX, CHEST, POT_OIL,
 } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectKnowledge } from './o_init.js';
+import { objectDescription, makePlural, withIndefiniteArticle } from './objnam.js';
+
 import { isBimanualObject } from './object_properties.js';
 import {
     heroHasNoHands,
@@ -87,9 +89,9 @@ import {
     observeObjectForNaming, definiteName, objectCombatName, objectQuestion,
     simpleObjectName, simpleObjectNameWithArticle,
 } from './objnam.js';
-import { objectDescription } from './object_description.js';
+
 import { monsterName as canonicalMonsterName } from './do_name.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+
 
 const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;

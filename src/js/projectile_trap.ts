@@ -14,7 +14,8 @@ import { placeCreatedObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel } from './gstate.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ARROW, DART } from './object_data.js';
-import { objectDescription } from './object_description.js';
+import { objectDescription } from './objnam.js';
+
 import { observeObjectForNaming } from './objnam.js';
 import { deleteObject } from './shk.js';
 import { rn2, rnd } from './rng.js';

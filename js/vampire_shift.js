@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { monsterTypeName } from './monster_data.js';
 import { heroCanChangeVampireShape, polymorphHero } from './polyself.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 export async function useHeroVampireShift() {
     const previous = game.u.umonnum;
     if (heroCanChangeVampireShape(game)) {

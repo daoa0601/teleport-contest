@@ -4,7 +4,11 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
 import { landObjectOnAltar } from './altar_object.js';
 import { ALTAR } from './const.js';
 import { inventoryItemDescription, consumeObjectCharge } from './invent.js';
@@ -13,8 +17,8 @@ import { surfaceName } from './terrain_name.js';
 import { mkobj, addObjectToContainer } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { FOOD_RATION, HORN_OF_PLENTY, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOOZE, POT_OIL, POT_SICKNESS, POT_WATER } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { learnObjectType } from './object_knowledge.js';
+
+
 import { objectName, observeObjectForNaming } from './objnam.js';
 import { rn2 } from './rng.js';
 import { addShopObjectToBill } from './shk.js';

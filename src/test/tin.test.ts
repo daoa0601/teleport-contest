@@ -15,7 +15,8 @@ import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AXE, DAGGER, LEATHER_GLOVES, TIN, TIN_OPENER } from '../js/object_data.js';
-import { objectQuantity } from '../js/object_stack.js';
+import { objectQuantity } from '../js/mkobj.js';
+
 import { addShopObjectToBill } from '../js/shk.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setSlipperyHands } from '../js/towel.js';

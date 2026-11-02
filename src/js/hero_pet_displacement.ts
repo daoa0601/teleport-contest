@@ -19,7 +19,8 @@ import type { Monster } from './monster_types.js';
 import { monsterDeathCount } from './mon.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { goodPosition } from './teleport_rules.js';
 import { trapName } from './trap.js';
 import { feelTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from './trap.js';

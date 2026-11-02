@@ -1,4 +1,5 @@
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
 import { rotCorpse } from './corpse_rot.js';
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
@@ -13,7 +14,6 @@ import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore } from './invent.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonNear, maketrap } from './mklev.js';
 import { makemonAt } from './makemon.js';

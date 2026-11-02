@@ -18,7 +18,7 @@ import { heroHasWaterWalking } from './armor.js';
 import { finishDestinationSpotEffects } from './location_effects.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
 import { moveHeroByTeleport } from './teleport.js';

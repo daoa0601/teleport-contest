@@ -1,7 +1,7 @@
 // C role.c:reset_role_filtering() and its four setup_*menu() helpers.
 import { MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY } from './const.js';
 import { nativeRoleChoices, validCharacterAlignment, validCharacterGender, validCharacterRace, } from './character_choices.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { aligns, findAlignment, findGender, findRace, findRole, genders, races } from './roles.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 export function createCharacterFilters() {

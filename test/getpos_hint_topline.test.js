@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, POT_OBJECT_DETECTION, SCR_STINKING_CLOUD } from '../js/object_data.js';
 import { detectObjects } from '../js/detect.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
 import { addInventoryObject, floorObject, uninitializedObject } from './support/game-objects.js';
 import { readInventoryObject } from './support/commands.js';
 import { answerPrompts } from './support/input-boundaries.js';

@@ -14,7 +14,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { A_CON, ALTAR, FAINTING, POISONING, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT, } from './const.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { definiteName } from './objnam.js';
 import { nameToMonster } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';

@@ -64,7 +64,9 @@ import { createElementalMonsterExplosion } from './explosion.js';
 import { startHeroSickness } from './hero_illness.js';
 import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle, objectDescription } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
+
 import { stopHeroOccupation } from './occupation.js';
 import { stopRun } from './runmode.js';
 import { makeBlinded } from './sight_change.js';
@@ -102,7 +104,7 @@ import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './muse.js';
 import { isPoolAt } from './terrain_properties.js';
 import { observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName } from './objnam.js';
-import { objectDescription } from './object_description.js';
+
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { isPermanentlyPoisonedObject } from './object_properties.js';
@@ -143,7 +145,7 @@ import { detachHeroGold, heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+
 import { promptYesNo } from './query.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { randomMonsterRelocation } from './teleport.js';

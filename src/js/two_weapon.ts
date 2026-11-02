@@ -14,7 +14,8 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+
 import {
     objectHasPersonalName, objectName, objectNameIsPlural,
     ownedObjectAction, ownedObjectName,

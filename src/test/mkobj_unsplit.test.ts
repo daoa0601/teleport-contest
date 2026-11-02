@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { rejoinObjectStack, splitObjectStack } from '../js/object_stack.js';
+import { rejoinObjectStack, splitObjectStack } from '../js/mkobj.js';
+
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

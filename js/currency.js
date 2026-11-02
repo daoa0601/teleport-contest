@@ -1,6 +1,6 @@
 // C invent.c:currency(). Hallucinated currency names use the core RNG.
 import { game } from './gstate.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 const CURRENCIES = [

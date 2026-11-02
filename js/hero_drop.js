@@ -2,7 +2,7 @@
 // C refs: do.c drop() (714-780), dropx() (786-796),
 // better_not_try_to_drop_that() (946-962).
 import { IS_ALTAR, IS_SINK, LOST_DROPPED } from './const.js';
-import { CORPSE, MEAT_RING } from './object_data.js';
+import { CORPSE, MEAT_RING, EGG, TIN, GLOB_OF_GREEN_SLIME, ENORMOUS_MEATBALL, MEATBALL, MEAT_STICK } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { canLetGo, freeInventoryObject } from './hero_inventory.js';
@@ -13,17 +13,31 @@ import { heroHandName, monsterStomachName } from './body_parts.js';
 import { monsterDigests } from './monster_data.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { inventoryItemDescription } from './invent.js';
-import { objectMonsterName, ownedObjectAction, observeObjectForNaming, } from './objnam.js';
+import { objectMonsterName, ownedObjectAction, observeObjectForNaming, definiteObjectAction, } from './objnam.js';
 import { possessiveName } from './hacklib.js';
-import { objectIsUnpaid } from './shk.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from './levitation_drop.js';
 import { dropRingIntoSink } from './ring_sink.js';
-import { shipObject } from './dokick.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { shipObject, containerImpactDamage } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
+import { applyFloorEffects } from './floor_effects.js';
+import { placeObject, stack_object } from './floor_object.js';
+import { impactDisturbsZombies } from './hack.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { changeMonsterForm, healMonster } from './mon.js';
+import { growMonster } from './makemon.js';
+import { petrifyMonsterImmediately } from './trap.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
+import { newsym, map_object } from './display.js';
+import { propertyIsActive } from './properties.js';
+import { heroIsBlind } from './senses.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { AD_POLY } from './monster_attack_types.js';
+import { objectIsUnpaid, stolenValue, sellHeroDroppedObject, deleteObject } from './shk.js';
+import { dropBall } from './ball.js';
 const RING_CLASS = 4;
-// C do.c:946-962 better_not_try_to_drop_that(): u_safe_from_fatal_corpse()
 // with st_all (pickup.c:273-281) checks gloves and stoning resistance
 // before prompting; the caller has already established otyp == CORPSE.
 async function betterNotTryToDropThat(object, state) {
@@ -142,5 +156,142 @@ export async function dropHeroObject(object, { state = game, publish = plineWith
     await dropInventoryObjectAtHero(object, { state, publish });
     // the drop took time even if a fatal floor effect ended the game
     return true;
+}
+// ---------------------------------------------------------------------------
+// C do.c:845-888 engulfer_digests_food(): an animal swallower instantly
+// digests corpses, globs, and meat items; the effect owners match the
+// corpse's polymorph/petrify/growth/heal potential.
+// ---------------------------------------------------------------------------
+const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
+const PM_NURSE = MONSTER_NAME.indexOf('nurse');
+// monflag.h M2_SHAPESHIFTER; pm_to_cham() (mon.c:533-546) is this test.
+const M2_SHAPESHIFTER = 0x00004000;
+// C obj.h:318.  Sometimes eggs and tins carry special corpsenm values that
+// must not index mons[].
+function isFoodObject(object) {
+    return object.otyp === CORPSE || object.otyp === EGG || object.otyp === TIN;
+}
+// C obj.h:321-324 polyfood(): ofood with a real corpsenm whose species is a
+// shapeshifter or deals AD_POLY.
+function isPolymorphFood(object) {
+    return isFoodObject(object) && object.corpsenm !== undefined && object.corpsenm >= 0
+        && (((MONSTER_FLAGS2[object.corpsenm] ?? 0) & M2_SHAPESHIFTER) !== 0
+            || (MONSTER_ATTACKS[object.corpsenm] || []).some(([, damageType]) => damageType === AD_POLY));
+}
+async function engulferDigestsFood(object, { state, publish }) {
+    const swallower = state.u.ustuck;
+    if (!swallower || !monsterDigests(swallower)
+        || !(object.otyp === CORPSE || object.globby
+            || object.otyp === MEATBALL || object.otyp === ENORMOUS_MEATBALL
+            || object.otyp === MEAT_RING || object.otyp === MEAT_STICK))
+        return { digested: false, heroDied: false };
+    let couldPetrify = false;
+    let couldPoly = false;
+    let couldSlime = false;
+    let couldGrow = false;
+    let couldHeal = false;
+    if (object.otyp === CORPSE) {
+        couldPetrify = object.corpsenm !== undefined && touchPetrifies(object.corpsenm);
+        couldPoly = isPolymorphFood(object);
+        couldGrow = object.corpsenm === PM_WRAITH;
+        couldHeal = object.corpsenm === PM_NURSE;
+    }
+    else if (object.otyp === GLOB_OF_GREEN_SLIME) {
+        couldSlime = true;
+    }
+    await publish(`${definiteObjectAction(object, 'are', state)} instantly digested!`);
+    if (couldPoly || couldSlime) {
+        const change = await changeMonsterForm(swallower, couldSlime ? PM_GREEN_SLIME : null, state, { publish, showMessage: couldSlime });
+        if (change?.heroDied)
+            return { digested: true, heroDied: true };
+    }
+    else if (couldPetrify) {
+        const stone = await petrifyMonsterImmediately(swallower, {
+            creditHero: true, publish,
+            finishDeath: (monster, options) => finishHeroMonsterKill(monster, monster.mx, monster.my, {
+                ...options, showKillMessage: false, recordConduct: false,
+            }),
+        });
+        if (stone.heroDied)
+            return { digested: true, heroDied: true };
+    }
+    else if (couldGrow) {
+        growMonster(swallower, { state });
+    }
+    else if (couldHeal) {
+        healMonster(swallower, swallower.mhpmax, 0);
+        // C muse.c mcureblindness() with verbose FALSE: no message
+        if (!swallower.mcansee) {
+            swallower.mcansee = 1;
+            swallower.mblinded = 0;
+        }
+    }
+    await deleteObject(object, state); // always used up
+    return { digested: true, heroDied: false };
+}
+export async function dropObjectAtHero(object, { impact = false, state = game, publish = plineWithContinuation } = {}) {
+    requireLiveGame(state);
+    const hero = state.u;
+    if (object === (state.uwep || hero.uwep))
+        await setPrimaryWeapon(null, state);
+    if (object === (state.uquiver || hero.uquiver))
+        await setQuiverObject(null, state);
+    if (object === (state.uswapwep || hero.uswapwep))
+        await setSecondaryWeapon(null, state);
+    if (hero.uswallow) {
+        // hero has dropped an item while inside an engulfer
+        const ball = state.uball || hero.uball;
+        if (object !== ball) { // mon doesn't pick up ball
+            // moving shop item into engulfer's inventory treated as theft;
+            // C passes (unpaid obj, x, y, peaceful=TRUE, silent=FALSE) —
+            // unpaid is the shared recursive ownership test (contents too)
+            if (objectIsUnpaid(object))
+                await stolenValue(object, hero.ux, hero.uy, true, {
+                    state, publish, silent: false,
+                });
+            // add to engulfer's inventory if not immediately eaten
+            const digestion = await engulferDigestsFood(object, { state, publish });
+            if (digestion.heroDied)
+                return null;
+            if (!digestion.digested) {
+                if (!hero.ustuck)
+                    throw new Error('A swallowed hero has no engulfer.');
+                await addObjectToMonsterInventory(hero.ustuck, object, state);
+            }
+        }
+    }
+    else {
+        const floor = await applyFloorEffects(object, hero.ux, hero.uy, {
+            state, publish, verb: 'drop',
+        });
+        // Floor effects (lava destruction, water damage) can be fatal;
+        // a dead hero gets no placement, selling, or encumbrance work.
+        if (state.program_state?.gameover)
+            return null;
+        // C returns immediately when flooreffects succeeds; the tail
+        // encumber_msg() is not reached on this path.
+        if (floor.finished)
+            return floor.object;
+        await placeObject(object, hero.ux, hero.uy, state);
+        if (impact)
+            await containerImpactDamage(object, hero.ux, hero.uy, {
+                state, publish, fromInventory: true,
+            });
+        impactDisturbsZombies(object, impact, state);
+        const ball = state.uball || hero.uball;
+        if (object === ball) {
+            await dropBall(hero.ux, hero.uy, { state, publish });
+        }
+        else if (state.level?.flags?.has_shop) {
+            await sellHeroDroppedObject(object, hero.ux, hero.uy, state, { publish });
+        }
+        const stacked = await stack_object(object, state);
+        if (heroIsBlind(state) && propertyIsActive('levitation', state))
+            await map_object(stacked ?? object, false);
+        await newsym(hero.ux, hero.uy); // remap location under self
+    }
+    await reportHeroEncumbrance(state, publish);
+    return object;
 }
 //# sourceMappingURL=hero_drop.js.map

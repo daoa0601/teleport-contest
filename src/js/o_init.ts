@@ -14,17 +14,24 @@ import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE, MENU_ITEMFLAGS_SELECTED } from './const.js';
 import { yn_function } from './query.js';
-import { callObjectType, objectTypeIsCallable } from './object_call.js';
+import { callObjectType, objectTypeIsCallable } from './do_name.js';
+import { OBJECT_CLASS_LABELS, classifyLoot, inventoryClassOrder } from './invent.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { priceQuoteSuffix } from './shk.js';
+import { armorPresentationName } from './objnam.js';
+
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import type { GameObject } from './object_types.js';
 import type { DiscoverySortMode } from './flags.js';
-import { heroIsBlind } from './senses.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { exerciseWisdom } from './attrib.js';
+import { repriceDiscoveredGems } from './shk.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData } from './object_data.js';
-import { OBJECT_CLASS_LABELS, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject, priceQuoteSuffix } from './object_knowledge.js';
+import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, ARROW as FIRST_OBJECT, OBJECT_BASES } from './object_data.js';
+
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
-import { armorPresentationName } from './object_grammar.js';
-import { classifyLoot, inventoryClassOrder } from './object_sort.js';
+
+
 import type { GameState } from './game_state.js';
 
 const DISCOVERY_ORDERS: Readonly<Record<DiscoverySortMode, string>> = {
@@ -517,4 +524,65 @@ export function objectMaterial(
         ? objectOrType : objectOrType?.otyp;
     if (type === undefined) return 0;
     return state.objectMaterials?.[type] ?? OBJECT_MATERIAL[type] ?? 0;
+}
+
+// ---------------------------------------------------------------------------
+// Object discovery order and encounters. C refs: o_init.c observe_object(),
+// discover_object() (the makeknown() macro).
+// ---------------------------------------------------------------------------
+
+export function objectClassForType(otyp: number | null | undefined): number {
+    if (typeof otyp !== 'number' || !Number.isInteger(otyp) || otyp < 1) return 0;
+    for (let oclass = OBJECT_BASES.length - 1; oclass >= 2; oclass--) {
+        const first = OBJECT_BASES[oclass];
+        if (first && otyp >= first) return oclass;
+    }
+    return 0;
+}
+
+export function rememberType(otyp: number, state: GameState = game): void {
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
+    if (!Array.isArray(state._objectDiscoveryOrder)) state._objectDiscoveryOrder = [];
+    if (!state._objectDiscoveryOrder.includes(otyp)) state._objectDiscoveryOrder.push(otyp);
+}
+
+// C o_init.c:observe_object().
+export function observeObject(object: Pick<GameObject, 'otyp' | 'dknown'>, state: GameState = game): void {
+    if (object.otyp >= FIRST_OBJECT && !heroIsHallucinating(state)) {
+        object.dknown = true;
+        recordObjectEncounter(object.otyp, state);
+    }
+}
+
+export function recordObjectEncounter(otyp: number, state: GameState = game): void {
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
+    rememberType(otyp, state);
+    if (!(state._encounteredObjectTypes instanceof Set)) state._encounteredObjectTypes = new Set();
+    state._encounteredObjectTypes.add(otyp);
+}
+
+export function recordObjectKnowledge(otyp: number, state: GameState = game): void {
+    discoverKnownType(otyp, false, state);
+}
+
+function discoverKnownType(otyp: number, creditHero: boolean, state: GameState): void {
+    if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT) return;
+    const known = OBJECT_INITIAL_KNOWN[otyp] || state._knownObjectTypes?.has(otyp);
+    rememberType(otyp, state);
+    if (!(state._knownObjectTypes instanceof Set)) state._knownObjectTypes = new Set();
+    state._knownObjectTypes.add(otyp);
+    if (known) return;
+    if (creditHero) exerciseWisdom(true, state);
+    if (objectClassForType(otyp) === 13 && state.program_state.in_moveloop
+        && !state.program_state.gameover)
+        repriceDiscoveredGems(otyp, state);
+}
+
+// C makeknown() — the macro every caller's call graph spells
+// discover_object(): learning a type also records the encounter and
+// credits Wisdom once. Restoring saved knowledge does not grant that credit.
+export function learnObjectType(otyp: number, state: GameState = game): void {
+    if (otyp < FIRST_OBJECT) return;
+    recordObjectEncounter(otyp, state);
+    discoverKnownType(otyp, true, state);
 }

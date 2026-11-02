@@ -26,7 +26,8 @@ import {
     WAR_HAMMER, WAX_CANDLE, requireObjectData,
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { harmlessMissile } from './projectile.js';
 import type { GameObject } from './object_types.js';
 import { roomsAt } from './room.js';

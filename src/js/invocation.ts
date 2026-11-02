@@ -8,7 +8,8 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import {
     CANDELABRUM_OF_INVOCATION,
 } from './object_data.js';

@@ -7,8 +7,10 @@ import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE
 import { armorSimpleName, heroHasWaterWalking } from './armor.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './invent.js';
-import { objectDescription as fullObjectDescription } from './object_description.js';
-import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName } from './objnam.js';
+import { objectDescription as fullObjectDescription, verbForSubject } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
+
+import { objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle } from './objnam.js';
 import { cansee, couldsee, vision_recalc } from './vision.js';
 import { endObjectBurn } from './light.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -22,7 +24,7 @@ import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject
 import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
 import { BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, OBJECT_SUBTYPE, CORPSE, DART } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+
 import { displayColorName, displayLiquidName, canSeeMonster, canSpotMonster, map_trap, newsym } from './display.js';
 import { objectResistsDestruction, getObjectLocation, blankNovel } from './zap.js';
 import { objectMaterial } from './o_init.js';
@@ -39,7 +41,7 @@ import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position, Trap } from './map_types.js';
-import { verbForSubject } from './object_grammar.js';
+
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster } from './mon.js';
 import type { MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions, MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult, PetrificationContactOptions, PetrificationOptions } from './mon.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance } from './anti_magic_trap.js';
@@ -2380,4 +2382,18 @@ function objectSubject(view: ObjectView, state: GameState, capitalized = true): 
         return `${possessiveName(owner)} ${view.name}`;
     }
     return `${capitalized ? 'The' : 'the'} ${view.name}`;
+}
+
+// C trap.c:trapnote(): the squeaky board's musical note, with its article
+// (an()).
+const SQUEAKY_BOARD_NOTES = [
+    'C note', 'D flat', 'D note', 'E flat',
+    'E note', 'F note', 'F sharp', 'G note',
+    'G sharp', 'A note', 'B flat', 'B note',
+];
+
+export function squeakyBoardNoteWithArticle(index: number): string {
+    const note = SQUEAKY_BOARD_NOTES[index];
+    if (!note) return '';
+    return withIndefiniteArticle(note);
 }

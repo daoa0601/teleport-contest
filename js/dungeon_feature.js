@@ -9,7 +9,7 @@ import { displayLiquidName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { dungeonDepth } from './hacklib.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { levelTimers } from './timeout.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { heroIsHallucinating } from './senses.js';

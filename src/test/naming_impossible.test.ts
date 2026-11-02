@@ -18,7 +18,8 @@ import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { useTinOpener } from '../js/tin.js';
 import { quoteShopGoods, SELL_DELIBERATE, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition } from '../js/shk.js';
 import { enableRngLog, getRngLog } from '../js/rng.js';
-import { priceQuoteSuffix } from '../js/object_knowledge.js';
+import { priceQuoteSuffix } from '../js/shk.js';
+
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';

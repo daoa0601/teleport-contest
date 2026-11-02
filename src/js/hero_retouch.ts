@@ -30,7 +30,8 @@ import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { hitFloorWithObject } from './object_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+
 import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { bypassObject, clearBypasses, nextUnbypassedObject } from './worn.js';

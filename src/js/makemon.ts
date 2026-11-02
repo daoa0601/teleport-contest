@@ -10,7 +10,8 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './displa
 import { plineWithContinuation } from './pline.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+
 import { visibleRegionAt } from './regions.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';

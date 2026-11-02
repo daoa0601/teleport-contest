@@ -34,11 +34,14 @@ import type { Monster } from './monster_types.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { BOULDER } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { observeObject } from './object_knowledge.js';
+import { withIndefiniteArticle } from './objnam.js';
+import { observeObject } from './o_init.js';
+import { splitObjectStack } from './mkobj.js';
+
+
 import { shipObject } from './dokick.js';
 import { unlinkObject } from './mkobj.js';
-import { splitObjectStack } from './object_stack.js';
+
 import { angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt } from './mon.js';
 import { relocateObjectRandomly } from './teleport.js';
 import type { GameObject } from './object_types.js';

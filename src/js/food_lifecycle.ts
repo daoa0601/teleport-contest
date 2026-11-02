@@ -6,8 +6,10 @@ import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { CORPSE, EGG, GOLD_PIECE, OBJECT_NUTRITION, TIN, requireObjectData } from './object_data.js';
-import { dropObjectAtHero } from './object_drop.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+
+
 import { chargeAlteredUnpaidObject, SELL_DONTSELL, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { fleshPetrifies } from './stoning.js';
 import { addInventoryItem } from './u_init.js';

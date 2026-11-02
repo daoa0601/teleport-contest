@@ -23,7 +23,7 @@ import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, requireMonsterData } from './monster_data.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, BOULDER, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LOADSTONE, OBJECT_NAMES, } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { ownedObjectAction } from './objnam.js';
 import { uncurseObjectState } from './mkobj.js';
 import { heroHasNoHands, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';

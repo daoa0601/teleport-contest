@@ -3,7 +3,7 @@ import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { BAG_OF_TRICKS, DWARVISH_MATTOCK, GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALES, OBJECT_NAMES, POT_GAIN_ABILITY, POT_HEALING, SPEED_BOOTS, } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [request, type] of [
     ['speed boots', SPEED_BOOTS],

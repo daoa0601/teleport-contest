@@ -14,7 +14,8 @@ import { setBallAndChainFelt } from './ball.js';
 import { heroEyeCount, heroEyeName, heroHasEyes } from './body_parts.js';
 import { learnUnseenInventory } from './hero_inventory.js';
 import { heroIsUnaware } from './hero_sleep.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+
 import { propertyIsActive } from './properties.js';
 import {
     blindfolded, heroIsBlind, heroIsHallucinating, heroWouldBeBlindWithTimeout,

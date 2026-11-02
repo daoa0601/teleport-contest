@@ -1,8 +1,8 @@
 // Text-entered option values. C refs: options.c:optfn_*(), botl.c:parse_status_hl1().
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
-import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { planInventoryOrder } from './object_sort.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { planInventoryOrder } from './options.js';
 import { MONSTER_CLASS_SYMBOLS } from './monster_data.js';
 import { WARNCOUNT } from './const.js';
 import { decodeOptionEscapes } from './option_escapes.js';

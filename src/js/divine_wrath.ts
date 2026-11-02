@@ -23,7 +23,8 @@ import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } f
 import { rn2, rnz } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { attrcurse, rndcurse } from './throne.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
     monsterHasShockResistance,

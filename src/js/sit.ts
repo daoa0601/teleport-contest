@@ -20,7 +20,9 @@ import { spendHeroNutrition } from './hunger.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { stack_object } from './floor_object.js';
-import { dropObjectAtHero } from './object_drop.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { observeObject } from './o_init.js';
+
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm } from './mkobj.js';
@@ -31,7 +33,7 @@ import {
 import {
     CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS,
 } from './object_data.js';
-import { observeObject } from './object_knowledge.js';
+
 import { objectCombatName, definiteName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';

@@ -64,7 +64,9 @@ import { insideShopRoomAt } from './shk.js';
 import { mksobj } from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races } from './roles.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType, recordObjectEncounter } from './o_init.js';
+import { verbForSubject } from './objnam.js';
+
 import { d, rnd, rn2 } from './rng.js';
 import {
     GOLD_DRAGON_SCALE_MAIL,
@@ -103,7 +105,7 @@ import { displayColorName, glyphAt } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { isContainer } from './container.js';
 import { requireLiveGame } from './gstate.js';
-import { verbForSubject } from './object_grammar.js';
+
 import { wornObjectGrantsProperty } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { getRumor } from './mklev.js';
@@ -132,7 +134,7 @@ import {
     monsterIsNonliving,
 } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { recordObjectEncounter } from './object_knowledge.js';
+
 import { observeDistantObjectForNaming } from './objnam.js';
 import {
     destroyInventoryByElement,

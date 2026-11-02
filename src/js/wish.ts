@@ -9,7 +9,8 @@ import { flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { objectDescription } from './object_description.js';
+import { objectDescription } from './objnam.js';
+
 import type { GameObject } from './object_types.js';
 import { CORPSE } from './object_data.js';
 import {

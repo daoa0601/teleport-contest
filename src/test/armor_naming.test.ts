@@ -9,7 +9,8 @@ import { pushKeys } from '../js/input.js';
 import { objectName } from '../js/objnam.js';
 import { IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { observeObject } from '../js/object_knowledge.js';
+import { observeObject } from '../js/o_init.js';
+
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';

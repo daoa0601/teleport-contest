@@ -31,7 +31,8 @@ import {
     LOADSTONE, OBJECT_NAMES,
 } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { ownedObjectAction } from './objnam.js';
 import { uncurseObjectState } from './mkobj.js';
 import { heroHasNoHands, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';

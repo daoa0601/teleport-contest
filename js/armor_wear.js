@@ -7,7 +7,7 @@ import { MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monst
 import { BATTLE_AXE, MUMMY_WRAPPING, OBJECT_NAMES } from './object_data.js';
 import { isSword } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { isBimanualObject, isFlimsyObject } from './object_properties.js';
 import { heroHasNoHands, heroIsVerySmall, heroMonsterForm } from './polyself.js';
 import { surfaceName } from './terrain_name.js';

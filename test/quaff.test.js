@@ -11,7 +11,7 @@ import { grantHeroSeeInvisible } from '../js/hero_seeing.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { resetInputState } from '../js/input.js';
 import { objectWeight } from '../js/weight.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
 import { POT_FRUIT_JUICE, POT_HEALING, POT_INVISIBILITY, POT_MONSTER_DETECTION, POT_OIL, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SPEED, RIN_INVISIBILITY, } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { drinkPotion, quaff } from '../js/quaff.js';

@@ -28,7 +28,8 @@ import { petrifyMonsterAttacker } from './mhitm.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './trap.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+
 import { drainObjectEnchantment } from './zap.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { monsterReflectionSource } from './ray.js';

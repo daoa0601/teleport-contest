@@ -41,7 +41,8 @@ import {
     OBJECT_SUBTYPE,
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroCanReachFloor } from './floor_reach.js';

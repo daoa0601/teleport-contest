@@ -2,7 +2,8 @@ import { takeRepeatCommand } from './cmd.js';
 import { clearCannedCommands } from './cmd.js';
 import { game } from './gstate.js';
 import { takeCommandResponse } from './input.js';
-import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+
 
 // The queued branch of native display_inventory checks class symbols in
 // the filter, even when its caller supplied inventory letters instead.

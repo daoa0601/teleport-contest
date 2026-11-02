@@ -6,7 +6,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { POT_SPEED, WAN_SPEED_MONSTER } from '../js/object_data.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
+
 import { initRng } from '../js/rng.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

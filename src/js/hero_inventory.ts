@@ -13,13 +13,15 @@ import type { HeroPossessions } from './hero_types.js';
 import { impossible, panic } from './diagnostics.js';
 import { recordLiteracy } from './literacy.js';
 import { levelPrizeKind } from './level_prize.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+import { makePlural } from './objnam.js';
+
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { heroIsBlind } from './senses.js';
 import { objectTypeKnown, deleteObject } from './shk.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { heroHandName } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+
 import { ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, W_ACCESSORY, W_ARMOR, W_SADDLE, OBJECT_TIMER_KIND } from './const.js';
 import {
     AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,

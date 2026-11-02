@@ -13,7 +13,8 @@ import { igniteItems } from './light.js';
 import { delobj } from './invent.js';
 import { objectResistsDestruction } from './zap.js';
 import { erodeObject } from './trap.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import {
     BAG_OF_TRICKS, CHEST, ICE_BOX, LARGE_BOX,

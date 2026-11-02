@@ -6,7 +6,8 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { CORPSE, FLINT, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, OBJECT_NAMES, POT_HEALING, RUBY, STATUE, STETHOSCOPE } from '../js/object_data.js';
-import { learnObjectType } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+
 import { initRng } from '../js/rng.js';
 import { applyInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

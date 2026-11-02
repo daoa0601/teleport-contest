@@ -20,7 +20,9 @@ import {
     OBJECT_PROPERTY_ID, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, OBJECT_UNIQUE,
     OBJECT_USES_KNOWN, OBJECT_WEIGHT,
 } from '../object_data.js';
-import { OBJECT_CLASS_SYMBOLS, objectClassForType } from '../object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS } from '../display.js';
+import { objectClassForType } from '../o_init.js';
+
 import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../u_init.js';

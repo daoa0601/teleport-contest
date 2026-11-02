@@ -6,7 +6,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';
 import { SCR_CREATE_MONSTER } from '../js/object_data.js';
-import { withIndefiniteArticle } from '../js/object_grammar.js';
+import { withIndefiniteArticle } from '../js/objnam.js';
+
 import { initRng, rn2Display } from '../js/rng.js';
 import { monsterSaddle } from '../js/steed.js';
 import { readInventoryObject } from './support/commands.js';

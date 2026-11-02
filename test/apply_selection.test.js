@@ -10,7 +10,7 @@ import { VIBRATING_SQUARE } from '../js/const.js';
 import { retouchHeroObject } from '../js/hero_retouch.js';
 import { resetInputState } from '../js/input.js';
 import { BELL_OF_OPENING, CLUB, EUCALYPTUS_LEAF, GOLD_PIECE, LOADSTONE, OIL_LAMP, OBJECT_NAMES, POT_HEALING, POT_OIL, SPE_BLANK_PAPER, TOUCHSTONE, } from '../js/object_data.js';
-import { learnObjectType } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { runExtendedCommand } from './support/commands.js';

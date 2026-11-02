@@ -12,7 +12,7 @@ import { nomul } from './hack.js';
 import { heroPolyGender, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace } from './mondata.js';

@@ -17,15 +17,19 @@ import { takeHeroGold } from './hero_gold.js';
 import { makeConfused } from './hero_mental_status.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { consumeInventoryItem } from './invent.js';
-import { tryCallObjectType } from './object_call.js';
+import { tryCallObjectType } from './do.js';
+import { learnObjectType } from './o_init.js';
+import { makePlural } from './objnam.js';
+import { objectQuantity } from './mkobj.js';
+
 import { erodeObject } from './trap.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
     LENSES, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, requireObjectData } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+
 import { stopHeroOccupation } from './occupation.js';
 import { definiteObjectAction, objectName } from './objnam.js';
-import { objectQuantity } from './object_stack.js';
+
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNo } from './query.js';

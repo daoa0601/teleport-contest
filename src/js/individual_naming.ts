@@ -14,7 +14,8 @@ import {
     OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE,
     POT_WATER, SPEED_BOOTS, SPE_NOVEL,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import {
     objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun,
     simpleObjectName, simpleObjectNameWithArticle,

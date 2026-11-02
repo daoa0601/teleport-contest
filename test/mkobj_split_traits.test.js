@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createCorpstatAt } from '../js/mkobj.js';
 import { CORPSE } from '../js/object_data.js';
-import { splitObjectStack } from '../js/object_stack.js';
+import { splitObjectStack } from '../js/mkobj.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 void test('split corpse stacks retain independent monster traits for revival', async () => {

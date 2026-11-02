@@ -7,7 +7,7 @@ import { landFloorObject } from '../js/floor_effects.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
-import { learnObjectType } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
 import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, POT_OIL, SPE_BOOK_OF_THE_DEAD, TOOLED_HORN, UNICORN_HORN, } from '../js/object_data.js';
 import { LAVAPOOL } from '../js/const.js';
 import { initRng } from '../js/rng.js';

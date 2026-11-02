@@ -7,7 +7,7 @@ import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 const COIN_CLASS = 12;
 async function objectDescription(object, state) {
     observeObjectForNaming(object, { state });

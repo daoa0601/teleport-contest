@@ -31,7 +31,8 @@ import {
 } from './monster_data.js';
 import { namelessMonsterName, monsterName } from './do_name.js';
 import { ownedObjectName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { CORPSE, EGG } from './object_data.js';
 import { rnd } from './rng.js';
 import { adjustSpellDamage } from './zap.js';

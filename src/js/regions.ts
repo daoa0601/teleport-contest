@@ -23,7 +23,8 @@ import type { MessagePublisher } from './pline.js';
 
 import { heroIsBreathless } from './hero_species.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
 import {

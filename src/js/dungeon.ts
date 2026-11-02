@@ -17,7 +17,8 @@ import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } 
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { questLeaderName } from './quest_pager.js';
 import { addMenuHeading } from './windows.js';
 import type { TextMenuLine } from './windows.js';

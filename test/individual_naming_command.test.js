@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { ARROW, ELVEN_DAGGER, LONG_SWORD, RIN_PROTECTION, SPE_FORCE_BOLT, SPE_NOVEL } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -49,7 +49,9 @@ import { GETOBJ_SUGGEST } from './const.js';
 import { monsterName } from './do_name.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { monsterAtPosition } from './steed.js';
-import { observeBucForNaming } from './object_knowledge.js';
+import { observeBucForNaming, withIndefiniteArticle } from './objnam.js';
+import { objectQuantity } from './mkobj.js';
+
 import { descendFromLevitation } from './levitation_commands.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { propertyIsActive } from './properties.js';
@@ -130,7 +132,7 @@ import { dosearch } from './detect.js';
 import {
     continueWipingFace, donull, dowipe, threateningMonsterNearby,
 } from './do.js';
-import { objectQuantity } from './object_stack.js';
+
 import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
 import { setSecondaryWeapon } from './wield.js';
@@ -150,7 +152,7 @@ import { doUntrap } from './untrap.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave_command.js';
 import { climbOutOfPit, triggerHeroTrapAt } from './hero_traps.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { ledgerNo } from './hacklib.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
 import { dopray } from './pray.js';

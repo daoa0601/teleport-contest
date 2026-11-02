@@ -5,7 +5,8 @@ import { MENU_COMBINATION, MENU_TRADITIONAL, PARANOID_AUTOALL } from '../js/cons
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { CLUB, DAGGER, LOADSTONE } from '../js/object_data.js';
-import { objectDescription } from '../js/object_description.js';
+import { objectDescription } from '../js/objnam.js';
+
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';

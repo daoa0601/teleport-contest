@@ -10,14 +10,18 @@ import { plineWithContinuation } from './pline.js';
 import { placeObject } from './floor_object.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { dropObjectAtHero, hitFloorWithObject } from './object_drop.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { observeObject } from './o_init.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+
 import { heroCanReachFloor } from './floor_reach.js';
 import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { unlinkObject } from './mkobj.js';
-import { observeObject } from './object_knowledge.js';
+
 import { observeObjectForNaming } from './objnam.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+
 import { isMissileObject } from './object_properties.js';
 import { ammunitionMatchesLauncher } from './object_properties.js';
 import { setQuiverObject } from './wield.js';

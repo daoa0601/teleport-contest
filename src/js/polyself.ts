@@ -7,7 +7,9 @@ import { monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, losePrimaryWeapon, setSecondaryWeapon } from './wield.js';
 import { P_SHORT_SWORD, P_SABER } from './const.js';
-import { verbForSubject, makePlural } from './object_grammar.js';
+import { verbForSubject, makePlural, withIndefiniteArticle } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
+
 import { OBJECT_SUBTYPE } from './object_data.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
@@ -23,7 +25,7 @@ import { finishHeroHelplessness } from './allmain.js';
 import { genocideDeathOptions, heroHasBeenGenocided, takePolymorphGenocide } from './hero_genocide.js';
 import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded } from './sight_change.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
@@ -36,7 +38,7 @@ import {
     adjustLevelAbilities, experienceRankIndex, randomExperience,
 } from './exper.js';
 import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { currentAttribute, maximumAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import {

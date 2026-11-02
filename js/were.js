@@ -23,7 +23,7 @@ import { heroIsDeaf } from './senses.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
+import { withIndefiniteArticle, makePlural } from './objnam.js';
 import { monsterGrowlSound } from './ambient_sounds.js';
 import { tameMonster } from './dog.js';
 const M2_WERE = 0x00000004;

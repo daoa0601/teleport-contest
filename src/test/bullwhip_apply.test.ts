@@ -12,7 +12,8 @@ import { installPagerInput } from './support/pager-input.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BOULDER, BULLWHIP, CLUB, CORPSE, CRYSKNIFE, DAGGER, ROCK } from '../js/object_data.js';
-import { objectQuantity } from '../js/object_stack.js';
+import { objectQuantity } from '../js/mkobj.js';
+
 import { polymonHero } from '../js/polyself.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { UNENCUMBERED, nearCapacity, objectWeight } from '../js/weight.js';

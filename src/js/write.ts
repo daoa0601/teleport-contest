@@ -18,8 +18,10 @@ import {
     getObjectClassBounds, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SPELL_LEVEL,
     SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL,
 } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
+
+
 import type { GameObject } from './object_types.js';
 import { objectCombatName, objectNameIsPlural, simpleObjectName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';

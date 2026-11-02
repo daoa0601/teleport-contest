@@ -49,10 +49,13 @@ import {
 } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+import { observeObject } from './o_init.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { delobj } from './invent.js';
-import { observeObject } from './object_knowledge.js';
+
 import { objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
@@ -62,7 +65,7 @@ import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
 import { objectCombatName, objectNameIsPlural } from './objnam.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { rangedTargetHitBonus, breakFloorObject } from './dothrow.js';

@@ -7,7 +7,7 @@ import { canSpotMonster, newsym, canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './ambient_sounds.js';
 import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './leash_apply.js';
