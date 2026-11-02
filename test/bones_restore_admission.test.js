@@ -3,12 +3,13 @@ import test from 'node:test';
 import { FOUNTAIN, MAGIC_PORTAL, STAIRS } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { maketrap, mklev, } from '../js/mklev.js';
+import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
+import { maketrap } from '../js/trap.js';
 function bonesRoom(storage) {
     freshPlayableRoom({ flags: { debug: true }, hero: { uz: { dnum: 0, dlevel: 7 } } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 10, bonetag: 'D' })];

@@ -8,7 +8,7 @@ import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER } from '../js/object_data.js';
-import { fillPitWithBoulderAt } from '../js/pit_fill.js';
+import { fillPitWithBoulderAt } from '../js/trap.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

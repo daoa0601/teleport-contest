@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BEAR_TRAP, P_BASIC, P_FLAIL, SLP_GAS_TRAP, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { GRAPPLING_HOOK } from '../js/object_data.js';

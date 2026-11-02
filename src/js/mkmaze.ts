@@ -5,32 +5,26 @@
 // bound_digging. sp_lev.c construction lives in sp_lev.ts / sp_lev_lua.ts;
 // regular room-and-corridor generation stays in mklev.ts.
 
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, isok, LEVEL_TIMER_KIND } from './const.js';
-import { isPoolAt } from './dbridge.js';
+import { isPoolAt, isIceAt } from './dbridge.js';
 import { BOULDER, STATUE } from './object_data.js';
 import { createPoisonGasCloud } from './regions.js';
 import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation } from './pline.js';
-import { requireInitializedGame } from './gstate.js';
 import type { PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { deleteTrap } from './trap.js';
+import { deleteTrap, maketrap } from './trap.js';
 import { canOverwriteTerrain } from './display.js';
-import { isIceAt } from './dbridge.js';
-
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { stopLevelTimer } from './timeout.js';
 import { fillSpecialRoom, medusaPetrifiable } from './sp_lev.js';
 import { generateLuaSpecialLevel } from './sp_lev_lua.js';
 import { goodPosition } from './teleport_rules.js';
-import {
-    createCorpstatAt, createToptenObject, mkgold, mkobj_at, rndmonnum,
-    set_corpsenm, mksobj_at,
-} from './mkobj.js';
+import { createCorpstatAt, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at } from './mkobj.js';
 import { makemon } from './makemon.js';
 import { occupied } from './mkroom.js';
 import { createMaze } from './maze_terrain.js';
@@ -39,17 +33,10 @@ import { premap_detect } from './detect.js';
 import { specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import {
-    GEM_CLASS, NO_TRAP, PM_MINOTAUR, RANDOM_CLASS, countLevelFeatures,
-    is_branchlev, maketrap, mkstairs, mktrap, place_branch, placeBranchAt,
-    stairway_find_dir,
-} from './mklev.js';
+import { GEM_CLASS, NO_TRAP, PM_MINOTAUR, RANDOM_CLASS, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
 import { createOrcRaid } from './orc_raid.js';
 import { isRoom } from './map_types.js';
-import type {
-    ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room,
-    StairRegion,
-} from './map_types.js';
+import type { ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room, StairRegion } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { sendMonsterToLimbo } from './mon.js';
 

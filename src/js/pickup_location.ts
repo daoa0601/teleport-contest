@@ -2,31 +2,21 @@
 // C ref: hack.c pickup_checks().
 
 import { heroHasWaterWalking } from './do_wear.js';
-
-import {
-    ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE,
-    P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit,
-} from './const.js';
+import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit } from './const.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-
-import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
-import {
-    MONSTER_SYMBOL, monsterDigests,
-} from './monster_data.js';
+import { MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import {
-    heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm,
-} from './polyself.js';
+import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { riderCannotReachMessage } from './steed.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation, Trap } from './map_types.js';
+import { floorReachProblem, heroTeetersAtPit } from './trap.js';
 
 export interface PickupLocationProblem {
     messages: string[];

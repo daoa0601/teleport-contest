@@ -7,7 +7,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX, BEAR_TRAP, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES, } from '../js/object_data.js';
 import { heroIsPolymorphed } from '../js/polyself.js';

@@ -4,7 +4,6 @@ import { rhack } from '../js/cmd.js';
 import { HOLE, PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { WAN_DIGGING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -14,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
-
+import { maketrap } from '../js/trap.js';
 void test('a visible ceiling-clinger stays above a hole made by a broken digging wand', async () => {
     const level = await freshObjectRoom({ hero: { uhp: 500, uhpmax: 500 } });
     game.dungeons = [createDungeon({ dname: 'The Dungeons of Doom', num_dunlevs: 30 })];

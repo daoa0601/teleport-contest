@@ -18,17 +18,8 @@ import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { objectWeight } from './mkobj.js';
+import { sokobanGuilt } from './trap.js';
 const GEM_CLASS = 13;
-// C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
-// its own boulder conversion; the shared fracture owner now owns it.
-export function sokobanGuilt(state) {
-    if (!state.level?.flags?.sokoban_rules)
-        return;
-    if (!state.u.uconduct)
-        state.u.uconduct = {};
-    state.u.uconduct.sokocheat = (state.u.uconduct.sokocheat ?? 0) + 1;
-    changeHeroLuck(-1, state);
-}
 async function dropStatueContents(statue, x, y, state) {
     for (const object of statue.contents || []) {
         object.where = 'free';

@@ -1,14 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { HOLE, TRAPDOOR } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { maketrap } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-
+import { maketrap } from '../js/trap.js';
 for (const invoked of [false, true]) {
     void test(`a trapdoor ${invoked ? 'can reach the sanctum after' : 'stops at the vibrating-square level before'} invocation`, async () => {
         await freshObjectRoom({ hero: { uz: { dnum: 0, dlevel: 4 }, uevent: { invoked } } });

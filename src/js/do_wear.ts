@@ -13,7 +13,9 @@
 
 import { game, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { commandResultCancelled, setMulti, clearCannedCommands } from './cmd.js';
+import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import type { GameObject } from './object_types.js';
@@ -23,55 +25,47 @@ import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY,
 import { isBimanualObject, isSword } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName } from './body_parts.js';
 import type { PlayingGameState, GameState } from './game_state.js';
-import type { ArmorCompletion } from './cmd.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender } from './polyself.js';
-import { heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging } from './polyself.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging } from './polyself.js';
 import { armorWearDecision } from './armor_wear.js';
 import { isEyewear, removeEyewear, wearEyewear } from './eyewear.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { learnObjectType, observeObject } from './o_init.js';
+import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
+import type { InventoryClassification } from './inventory_prompt.js';
 import { canSelectOff } from './bulk_takeoff.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn } from './worn.js';
 import { yn_function } from './query.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
-import type { InventoryClassification } from './inventory_prompt.js';
-import { objectMaterial } from './o_init.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { makeHallucinated } from './potion.js';
+import { makeHallucinated, setSlipperyHands, showInvisibilityMessage } from './potion.js';
 import { displayColorName, newsym, see_monsters, displayLiquidName } from './display.js';
 import { objectResistsDestruction } from './zap.js';
-import { erodeObject, erosionMatters, objectIsVulnerableToErosion } from './trap.js';
+import { erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
-import { heroResistsStoning, resolveImmediatePetrification, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
-import { setSlipperyHands } from './potion.js';
+import { heroResistsStoning, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel } from './dungeon.js';
-
 import { removeWornHeroItem } from './hero_equipment.js';
-import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn, equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
-import type { MessagePublisher } from './pline.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute, attributeIsAtLimit } from './attrib.js';
+import type { AttributeIndex } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { curseObjectState } from './mkobj.js';
-import type { AttributeIndex } from './attrib.js';
 import { monsterName } from './do_name.js';
-import { captureLevitationState, grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
+import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain } from './mondata.js';
 import { refreshInvisibleMonsters } from './hero_seeing.js';
-import { showInvisibilityMessage } from './potion.js';
 import { tryCallObjectType } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex } from './exper.js';
@@ -82,6 +76,7 @@ import { clearHeroStrangulation, heroIsStrangled, startAmuletStrangulation } fro
 import { canLetGo } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { weaponDescription } from './weapon.js';
+
 export async function doputon(): Promise<void> {
     if (wearingFullEquipment()) {
         const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
@@ -473,7 +468,6 @@ export function pendingArmorAction(state: GameState = game): ArmorCompletion | n
     return after?.kind === 'wear' || after?.kind === 'remove' ? after : null;
 }
 
-
 // C do_wear.c:takeoff_order, reset_remarm(), cancel_doff(), doffing().
 export const TAKEOFF_ORDER = [
     'ublindf', 'uwep', 'uarms', 'uarmg', 'uleft', 'uright', 'uarmc',
@@ -512,7 +506,6 @@ export function isBeingTakenOff(object: GameObject, state: GameState = game): bo
     const slot = state.context.takeoff?.current;
     return !!slot && takeoffSlotObject(slot, state) === object;
 }
-
 
 // C do_wear.c:equip_ok(), inaccessible_equipment(), count_worn_stuff().
 type EquipmentAction = 'wear' | 'put on' | 'take off' | 'remove';
@@ -588,7 +581,6 @@ export function wearingFullEquipment(state: GameState = game): boolean {
         && state.uarms && state.uarmg && state.uarmf && state.uleft
         && state.uright && state.uamul && state.ublindf);
 }
-
 
 // armor.js — Hero armor-class projection.
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
@@ -1590,7 +1582,6 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
     return true;
 }
 
-
 // Rings and amulets worn by the hero.
 // C refs: worn.c:setworn(), do_wear.c:Ring_on(), Ring_off(), Amulet_on(),
 // and Amulet_off().
@@ -1924,7 +1915,6 @@ function learnRing(ring: GameObject, observable: boolean, state: GameState): voi
     if (ring.dknown && objectTypeKnown(ring, state) && OBJECT_CHARGED[ring.otyp])
         ring.known = true;
 }
-
 
 // C do_wear.c:glibr(). Each turn, slippery fingers shed uncursed rings and
 // any wielded weapon that is not welded or an aklys.

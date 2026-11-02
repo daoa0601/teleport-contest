@@ -6,11 +6,7 @@ import { I_SPECIAL, TIMEOUT, TT_PIT, W_ART, W_ARTI } from './const.js';
 import { MONSTER_FLAGS1 } from './monster_data.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
-import type {
-    CarriedPropertySource, IntrinsicOrigin, LevitationState, PropertyHero,
-    PropertyName, PropertyObject, PropertySources, PropertyState,
-    StashedLevitationSources, WornPropertySlot,
-} from './property_types.js';
+import type { CarriedPropertySource, IntrinsicOrigin, LevitationState, PropertyHero, PropertyName, PropertyObject, PropertySources, PropertyState, StashedLevitationSources, WornPropertySlot } from './property_types.js';
 
 const permanentOrigins: readonly IntrinsicOrigin[] = ['role', 'experience', 'race', 'outside'];
 const movementProperties: readonly PropertyName[] = ['levitation', 'flying', 'swimming', 'stealth'];
@@ -84,7 +80,6 @@ export function levitationSourceIsActive(ignoreBoots: boolean, state: PropertySt
         || !!record?.carried.length || timedSourceIsActive('levitation', state.u)
         || !!record?.worn.some(source => !ignoreBoots || source.slot !== 'uarmf');
 }
-
 
 export function propertyIsBlocked(property: PropertyName, state: PropertyState = game) {
     if (existingPropertyRecord(property, state)?.blockedByTerrain) return true;
@@ -309,34 +304,6 @@ export function restoreLevitationSources(stash: StashedLevitationSources, state:
     hero.levitationTurns = stash.turns;
     refreshMovementProperties(state);
     return hero;
-}
-
-// C trap.c:float_down()/float_up() read the stored HLevitation/ELevitation/
-// BLevitation/BFlying masks before any caller removes a levitation source.
-// Equipment and effect setters refresh the derived state while removing that
-// source, so they snapshot first and pass the result through the landing
-// owner's `previous` argument.  Both blocked bits are captured separately:
-// terrain and a floor trap can block levitation at the same time, and only a
-// sole floor-trap block (C BLevitation == I_SPECIAL) gets feedback.
-export function captureLevitationState(state: PropertyState = game): LevitationState {
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    const hasSource = propertySourceIsActive('levitation', state);
-    return {
-        // HLevitation || ELevitation
-        hasSource,
-        // Levitation macro: sources and not blocked
-        active: propertyIsActive('levitation', state),
-        // BLevitation FROMOUTSIDE: solid rock or a wall of water
-        blockedByTerrain:
-            !!existingPropertyRecord('levitation', state)?.blockedByTerrain,
-        // BLevitation I_SPECIAL: floor-trap hold over live levitation sources
-        blockedByTrap: hasSource && trapped,
-        // Flying macro
-        flying: propertyIsActive('flying', state),
-        // BFlying: flight suppressed by levitation or a floor trap
-        flyingBlocked: propertyIsBlocked('flying', state),
-    };
 }
 
 export function hasInvokedProperty(property: PropertyName, state: PropertyState = game) {

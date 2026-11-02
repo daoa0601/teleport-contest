@@ -1,20 +1,17 @@
 // Effects shared by hero- and monster-triggered land mines.
 // C ref: trap.c:blow_up_landmine().
-import { deleteTrap } from './trap.js';
-import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM, } from './const.js';
+import { deleteTrap, seeTrap, waterDamageChain, fireDamageChain, fillPitWithBoulderAt } from './trap.js';
+import { D_BROKEN, IS_DOOR, Is_airlevel, Is_waterlevel, LAVAPOOL, PIT, ROOM } from './const.js';
 import { displayLiquidName, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
-import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
+import { spotChecks } from './hack.js';
+import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
-import { seeTrap, waterDamageChain } from './trap.js';
-import { fireDamageChain } from './fire_damage.js';
 import { vision_note_blocker_change } from './vision.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { spotChecks } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { unlinkObject } from './mkobj.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';

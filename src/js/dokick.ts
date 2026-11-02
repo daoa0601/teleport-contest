@@ -8,10 +8,9 @@ import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } from './attrib.js';
-import { findDrawbridgeAt } from './dbridge.js';
+import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './hero_legs.js';
-
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
@@ -20,7 +19,6 @@ import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_
 import { applyHeroContactPassive } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
@@ -32,13 +30,12 @@ import { promptDirection } from './tty_prompts.js';
 import { commandResultCancelled } from './cmd.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { isPoolAt, isIceAt } from './dbridge.js';
-
-import { captureThrownObjectFlight, type ProjectileFlightCapture, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
-import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName } from './objnam.js';
+import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
+import type { ProjectileFlightCapture } from './thrown_object.js';
+import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural } from './objnam.js';
 import { disturbGrave } from './grave.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { mksobj, unlinkObject } from './mkobj.js';
+import { mksobj, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
 import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';
 import { vision_recalc, vision_reset, cansee, couldsee } from './vision.js';
 import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS } from './object_data.js';
@@ -54,29 +51,21 @@ import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-
 import { specialContactDamage } from './contact_damage.js';
-import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap } from './trap.js';
+import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, resolveImmediatePetrification } from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { splitObjectStack } from './mkobj.js';
-import { objectDescription, makePlural } from './objnam.js';
-
-import { impactDisturbsZombies } from './hack.js';
-import { breakChestLock } from './lock.js';
+import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt } from './hack.js';
+import { breakChestLock, maybeResetPick } from './lock.js';
 import type { GameObject, ObjectMigration } from './object_types.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-
-import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper } from './shk.js';
-import { containedGold } from './shk.js';
-
-
-import { resolveImmediatePetrification, touchPetrifies, heroResistsStoning } from './stoning.js';
+import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold } from './shk.js';
+import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { resolveGoldMonsterContact } from './gold_throw.js';
 import { scatterFloorObjects } from './scatter.js';
@@ -85,23 +74,12 @@ import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
-import { maybeResetPick } from './lock.js';
-
 import { onQuestStart, okToQuest } from './quest.js';
-
 import { surfaceName } from './terrain_name.js';
 import { currency } from './currency.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { objectResistsDestruction } from './zap.js';
-import {
-    loseHeroHp,
-    checkHeroAttackOverexertion,
-    invWeight,
-    weightCapacity,
-    roomsAt,
-} from './hack.js';
-import { objectWeight } from './mkobj.js';
 
 // C dokick.c:kick_ouch().
 async function kickOuch(x: number, y: number, objectName = '') {

@@ -1,17 +1,16 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { BEAR_TRAP, HWALL, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { PICK_AXE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
+import { maketrap } from '../js/trap.js';
 void test('chewing a shop wall never starts a real dig', async () => {
     const level = await freshObjectRoom();
     await createStaffedShop({

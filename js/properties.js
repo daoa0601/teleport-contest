@@ -293,32 +293,6 @@ export function restoreLevitationSources(stash, state = game) {
     refreshMovementProperties(state);
     return hero;
 }
-// C trap.c:float_down()/float_up() read the stored HLevitation/ELevitation/
-// BLevitation/BFlying masks before any caller removes a levitation source.
-// Equipment and effect setters refresh the derived state while removing that
-// source, so they snapshot first and pass the result through the landing
-// owner's `previous` argument.  Both blocked bits are captured separately:
-// terrain and a floor trap can block levitation at the same time, and only a
-// sole floor-trap block (C BLevitation == I_SPECIAL) gets feedback.
-export function captureLevitationState(state = game) {
-    const hero = state.u;
-    const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
-    const hasSource = propertySourceIsActive('levitation', state);
-    return {
-        // HLevitation || ELevitation
-        hasSource,
-        // Levitation macro: sources and not blocked
-        active: propertyIsActive('levitation', state),
-        // BLevitation FROMOUTSIDE: solid rock or a wall of water
-        blockedByTerrain: !!existingPropertyRecord('levitation', state)?.blockedByTerrain,
-        // BLevitation I_SPECIAL: floor-trap hold over live levitation sources
-        blockedByTrap: hasSource && trapped,
-        // Flying macro
-        flying: propertyIsActive('flying', state),
-        // BFlying: flight suppressed by levitation or a floor trap
-        flyingBlocked: propertyIsBlocked('flying', state),
-    };
-}
 export function hasInvokedProperty(property, state = game) {
     return !!existingPropertyRecord(property, state)?.invoked;
 }

@@ -5,23 +5,21 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './potion.js';
 import { heroHandName } from './body_parts.js';
 import { heroSpecies } from './polyself.js';
-import { nomul } from './hack.js';
+import { nomul, loseHeroHp } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './do_wear.js';
-
 import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
 import { currency } from './currency.js';
 import { bot } from './botl.js';
 import { randomColorName, shieldeff } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
-import { triggerHeroFireTrap } from './fire_trap.js';
+import type { MessagePublisher } from './pline.js';
+import { triggerHeroFireTrap } from './trap.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import type { MessagePublisher } from './pline.js';
-
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
 import { delobj } from './invent.js';
@@ -34,7 +32,6 @@ import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteO
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory, getObjectLocation } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
-import { loseHeroHp } from './hack.js';
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;

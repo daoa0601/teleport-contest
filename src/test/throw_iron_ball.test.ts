@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import { A_STR, PIT, STONE, STR19, TT_INFLOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -8,7 +7,6 @@ import { remove_object } from '../js/floor_object.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { BOULDER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { punishHero } from '../js/punishment.js';
-import { maketrap } from '../js/mklev.js';
 import { initRng } from '../js/rng.js';
 import type { GameObject } from '../js/object_types.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -17,7 +15,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { throwInventoryObject } from './support/commands.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
-
+import { maketrap } from '../js/trap.js';
 // A punished hero carrying the attached ball: unlink the floor ball and hold
 // it, the state pickup leaves behind when the ball is picked up.
 async function holdAttachedBall(): Promise<GameObject> {

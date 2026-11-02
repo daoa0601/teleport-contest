@@ -5,7 +5,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { POLY_TRAP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

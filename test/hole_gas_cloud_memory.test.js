@@ -4,11 +4,11 @@ import { flush_screen } from '../js/display.js';
 import { HOLE } from '../js/const.js';
 import { makeBlinded } from '../js/potion.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { maketrap } from '../js/mklev.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 // C trap.c:maketrap() links a new trap into the level's trap list only after
 // the per-type construction finishes (trap.c:577). The newsym() that
 // unearth_objs() issues from inside that construction (dig.c:2111) therefore

@@ -5,7 +5,7 @@ import { TT_WEB } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { setHeroTrap } from '../js/hero_traps.js';
+import { setHeroTrap } from '../js/trap.js';
 import { requireFixtureGame } from './support/game-state.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 

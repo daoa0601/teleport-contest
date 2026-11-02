@@ -5,12 +5,11 @@ import { PIT, ROOM } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { makeStunned } from '../js/potion.js';
-import { maketrap } from '../js/mklev.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';
 import { DAGGER } from '../js/object_data.js';
-
+import { maketrap } from '../js/trap.js';
 void test('the terrain view can retain a discovered trap', async () => {
     const input = freshTurnRoom({ flags: { tips: false } });
     const trap = await maketrap(14, 10, PIT);

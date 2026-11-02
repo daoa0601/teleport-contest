@@ -1,18 +1,16 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
-import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
+import { requirePlayingGame, requireGameDisplay, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ACH_INVK, ACH_NOVL } from '../js/achievements.js';
 import { FIRE_TRAP, MOAT, NO_MINVENT, ROOM, STAIRS, VIBRATING_SQUARE, OBJECT_TIMER_KIND } from '../js/const.js';
-import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { level_difficulty } from '../js/dungeon.js';
 import { installPagerInput } from './support/pager-input.js';
-import { maketrap } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { novelTitle, NOVEL_TITLES } from '../js/novel_titles.js';
-import { BELL_OF_OPENING, BOULDER, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, SPE_NOVEL, ROCK, SPE_BOOK_OF_THE_DEAD, } from '../js/object_data.js';
+import { BELL_OF_OPENING, BOULDER, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, SPE_NOVEL, ROCK, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
 import { readBookOfDead, readNovel } from '../js/special_spellbooks.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTimers, stopAllObjectTimers } from '../js/timeout.js';
@@ -23,6 +21,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { createStaffedShop } from './support/shop.js';
+import { maketrap } from '../js/trap.js';
 async function readDead(book) {
     requirePlayingGame(game);
     // Invocation has four announcement phases. Native raising adds up to five

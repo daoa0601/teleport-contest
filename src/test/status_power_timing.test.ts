@@ -4,7 +4,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { drainHeroEnergy } from '../js/hero_energy.js';
+import { drainHeroEnergy } from '../js/trap.js';
 import { useHeroBreath } from '../js/polyself.js';
 import { useHeroMindBlast } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';

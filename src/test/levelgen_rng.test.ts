@@ -1,7 +1,6 @@
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
-
 import { A_LAWFUL, ARROW_TRAP, COLNO, CORR, DOOR, D_NODOOR, G_EXTINCT, G_GENOD, HOLE, LADDER, LAVAPOOL, LEVEL_TELEP, M_AP_FURNITURE, PIT, POOL, ROCKTRAP, ROOM, ROOMOFFSET, ROWNO, SCORR, STAIRS, TELEP_TRAP, THEMEROOM, TRAPDOOR, WEB } from '../js/const.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -9,7 +8,7 @@ import { CmapSymbol } from '../js/glyph_numbers.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { resetInputState } from '../js/input.js';
 import { isRoom } from '../js/map_types.js';
-import { maketrap, mklev } from '../js/mklev.js';
+import { mklev } from '../js/mklev.js';
 import { mkclassAligned } from '../js/makemon.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
@@ -20,7 +19,7 @@ import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { createDungeon } from './support/topology.js';
 import { floorObjects } from './support/level-state.js';
-
+import { maketrap } from '../js/trap.js';
 for (const terrain of [STAIRS, LADDER]) {
     void test(`water-plane traps retry a selected ${terrain === STAIRS ? 'stair' : 'ladder'} square`, async t => {
         const level = await buildThemedLevel(t, `

@@ -2,10 +2,11 @@
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
 
-import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { beginCommandResult, commandResultCancelled, setMulti } from './cmd.js';import { requireInitializedHero } from './hero_types.js';
+import { beginCommandResult, commandResultCancelled, setMulti } from './cmd.js';
+import { requireInitializedHero } from './hero_types.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -17,26 +18,21 @@ import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING
 import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
-
 import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { weaponHitBonus } from './weapon.js';
+import { weaponHitBonus, dryTowel } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
-import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName } from './objnam.js';
+import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription } from './objnam.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { objectClassForType } from './o_init.js';
+import { objectClassForType, objectMaterial } from './o_init.js';
 import { rejoinObjectStack } from './mkobj.js';
-import { makePlural, verbForSubject, objectDescription } from './objnam.js';
-
-import { applyPolearm, applyTool } from './apply.js';
+import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
-import { couldPoleMonster } from './apply.js';
 import { promptDirection } from './tty_prompts.js';
-
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
@@ -44,10 +40,8 @@ import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-
+import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName } from './body_parts.js';
-import { dryTowel } from './weapon.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
@@ -59,8 +53,6 @@ import { dropObjectAtHero } from './hero_drop.js';
 import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName } from './terrain_name.js';
-import { requireGameLevel, requireInitializedGame } from './gstate.js';
-import { IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG } from './const.js';
 import { tossObjectUp } from './toss_up.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
@@ -68,9 +60,9 @@ import { offerThrownFood } from './thrown_food.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterHasMapPosition } from './steed.js';
-import { canSeeMonster, canSpotMonster, flush_screen, newsym } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym, randomDisplayMonsterName } from './display.js';
 import { goodPosition } from './teleport_rules.js';
-import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject } from './trap.js';
+import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject, resolveImmediatePetrification } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
@@ -79,17 +71,11 @@ import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
 import { isPoolAt } from './dbridge.js';
-
 import { armorSimpleName } from './do_wear.js';
-
-import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { setMonsterMalign } from './makemon.js';
-import { randomDisplayMonsterName } from './display.js';
+import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
-
-import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, settleThrownShopObject, stolenValue, makeAngryShopkeeper, insideShopRoomAt } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

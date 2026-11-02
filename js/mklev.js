@@ -1,12 +1,13 @@
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, curseObjectState, deallocateObject } from './mkobj.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, curseObjectState, deallocateObject, objectWeight } from './mkobj.js';
 import { oinit, objectMaterial } from './o_init.js';
 import { isRoom } from './map_types.js';
-import { deleteTrap, finishSokobanIfSolved } from './trap.js';
+import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
+import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetHeroTrap, maketrap } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemon, mkclass, setMimicAppearance } from './makemon.js';
+import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { addFruit } from './fruit.js';
 import { setTinVariety } from './eat.js';
@@ -27,8 +28,6 @@ import { LUA_SOURCES } from './generated/lua_sources.js';
 import { nextIdent } from './ident.js';
 import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
-import { resetHeroTrap } from './terrain_movement.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
 import { ageStoresFuel } from './container.js';
@@ -43,36 +42,31 @@ import { init_rect, rnd_rect } from './rect.js';
 import { depth as depth_of_level, ledgerNo } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { createMaze } from './maze_terrain.js';
-import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, } from './object_data.js';
-import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME, } from './monster_data.js';
-import { setMonsterMalign } from './makemon.js';
+import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE } from './object_data.js';
+import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
-import { flush_screen, newsym, terrain_glyph } from './display.js';
+import { flush_screen, newsym, terrain_glyph, canOverwriteTerrain } from './display.js';
 import { pline } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
-import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText, } from './engrave.js';
+import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setupElementalBubbles } from './elemental.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
-import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey, somexyspace, } from './mkroom.js';
-import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification, } from './mkmaze.js';
+import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied, roomHasStair, somex, somey, somexyspace, insideRoom } from './mkroom.js';
+import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification } from './mkmaze.js';
 import { getbones } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
 import { restoreLevelRegions } from './regions.js';
 import { beginObjectBurn } from './light.js';
-import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
 import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
-import { canOverwriteTerrain } from './display.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue, } from './sp_lev.js';
+import { addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { beginLuaThemerooms, callLuaThemerooms, generateLuaSpecialLevel, themerooms_generate } from './sp_lev_lua.js';
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
-import { insideRoom } from './mkroom.js';
-import { objectWeight } from './mkobj.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
@@ -531,260 +525,6 @@ async function unmakeNastySubstitute(monster) {
     await discardMonsterInventory(monster, true);
     await removeMonsterFromGame(monster);
 }
-// C trap.c:hole_destination().
-// C trap.c:choose_trapnote().
-export async function maketrap(x, y, typ) {
-    // trap.c:maketrap() treats the two pseudo-types returned by rndtrap()
-    // as failed constructions.  They describe trapped furniture rather than
-    // floor traps and must not occupy the coordinate for later lregions.
-    if (typ === TRAPPED_DOOR || typ === TRAPPED_CHEST)
-        return null;
-    if (!game.level) {
-        return {
-            ttyp: typ, tx: x, ty: y, tseen: typ === HOLE, once: false,
-            launch: { x: 0, y: 0 },
-        };
-    }
-    const level = game.level;
-    if (!level.traps)
-        level.traps = [];
-    const oldTrap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-    // C reinitializes a destroyable trap in place.  This matters when a Lua
-    // random trap lands on a fixed one: t_at() must expose the replacement,
-    // not an older duplicate.  Portals and the vibrating square are the two
-    // undestroyable floor traps and reject replacement.
-    if (oldTrap
-        && (oldTrap.ttyp === MAGIC_PORTAL
-            || oldTrap.ttyp === VIBRATING_SQUARE))
-        return null;
-    if (!oldTrap) {
-        const terrain = level.at(x, y)?.typ;
-        // trap.c:maketrap() rejects terrain before allocating a trap.  In
-        // particular, Wiz-strt's random trap can land in a cloud: the Lua
-        // location owner accepts that dry square, but maketrap() rejects
-        // IS_AIR and its caller must not run the later victim-chance draw.
-        if (terrain !== undefined && !canOverwriteTerrain(terrain)
-            || isPoolAt(x, y) || isLavaAt(x, y)
-            || (terrain !== undefined && IS_FURNITURE(terrain)
-                && typ !== PIT && typ !== HOLE)
-            || (terrain === DRAWBRIDGE_UP && typ === MAGIC_PORTAL)
-            || (terrain !== undefined && IS_AIR(terrain) && typ !== MAGIC_PORTAL)
-            || (typ === LEVEL_TELEP && Is_knox_level(game.u.uz))) {
-            return null;
-        }
-    }
-    if (oldTrap && game.u.utrap && game.u.ux === x && game.u.uy === y) {
-        const trappedIn = game.u.utraptype;
-        if ((trappedIn === TT_BEARTRAP && typ !== BEAR_TRAP)
-            || (trappedIn === TT_WEB && typ !== WEB)
-            || (trappedIn === TT_PIT && !is_pit(typ))
-            || (trappedIn === TT_LAVA && !isLavaAt(x, y))) {
-            await resetHeroTrap(false);
-        }
-    }
-    const initializedTrap = {
-        // trap.c:maketrap() initializes the one unhideable floor trap as
-        // already seen; ordinary trap doors remain concealed.
-        ttyp: typ, tx: x, ty: y, tseen: typ === HOLE, once: false,
-        launch: { x: 0, y: 0 },
-    };
-    const trap = oldTrap || initializedTrap;
-    if (oldTrap) {
-        trap.ttyp = initializedTrap.ttyp;
-        trap.tseen = initializedTrap.tseen;
-        trap.once = initializedTrap.once;
-        trap.launch = initializedTrap.launch;
-        delete trap.launch2;
-        delete trap.dst;
-        delete trap.teledest;
-        delete trap.conjoined;
-        delete trap.tnote;
-        delete trap.madeby_u;
-    }
-    if (is_pit(typ))
-        trap.conjoined = 0;
-    if (is_hole(typ)) {
-        // C ref: trap.c hole_destination().  Ordinary holes and trapdoors
-        // advance at least one level, then have a 3/4 chance to stop at each
-        // level until the current dungeon's bottom is reached.
-        const dnum = game.u?.uz?.dnum ?? 0;
-        const dungeon = game.dungeons?.[dnum];
-        let bottom = dungeon?.num_dunlevs
-            ?? (game.u?.uz?.dlevel ?? 1);
-        if (In_quest(game.u.uz)) {
-            const locate = game.specialLevels?.get('x-loca');
-            if (locate && (dungeon?.dunlev_ureached ?? 0) < locate.dlevel)
-                bottom = locate.dlevel;
-        }
-        else if (In_hell(game.u.uz) && !game.u.uevent?.invoked) {
-            bottom--;
-        }
-        let dlevel = game.u?.uz?.dlevel ?? 1;
-        while (dlevel < bottom) {
-            dlevel++;
-            if (rn2(4))
-                break;
-        }
-        trap.dst = { dnum, dlevel };
-    }
-    if (is_pit(typ) || is_hole(typ)) {
-        await preparePitOrHoleTerrain(x, y, typ);
-    }
-    else if (typ === STATUE_TRAP) {
-        // trap.c mk_trap_statue(): avoid a co-aligned unicorn whose eventual
-        // attitude would contradict the trap, then let mkcorpstat() perform
-        // its independent initialized-statue identity before overwriting it.
-        let statueMonster;
-        let tryCount = 10;
-        do {
-            statueMonster = rndmonnumAdj(3, 6);
-        } while (--tryCount > 0
-            && MONSTER_SYMBOL[statueMonster] === 21
-            && ((MONSTER_FLAGS2[statueMonster] ?? 0) & M2_JEWELS)
-            && Math.sign(game.u?.ualign?.type ?? 0)
-                === Math.sign(MONSTER_ALIGNMENT[statueMonster] ?? 0));
-        const statue = await createCorpstatAt(STATUE, null, statueMonster, x, y, 0);
-        const temporary = await makemon(statue.corpsenm ?? null, 0, 0, MM_NOCOUNTBIRTH | MM_NOMSG);
-        if (temporary) {
-            await putGeneratedMonsterInventoryInStatue(temporary, statue);
-            level.monsters = level.monsters.filter(monster => monster !== temporary);
-        }
-    }
-    else if (typ === SQKY_BOARD) {
-        const used = new Set(level.traps
-            .filter(candidate => candidate !== trap && candidate.ttyp === SQKY_BOARD)
-            .map(candidate => candidate.tnote));
-        const available = [];
-        for (let note = 0; note < 12; note++)
-            if (!used.has(note))
-                available.push(note);
-        const selectedNote = available.length
-            ? available[rn2(available.length)] : rn2(12);
-        if (selectedNote === undefined)
-            throw new Error('Squeaky board selected a missing note');
-        trap.tnote = selectedNote;
-    }
-    else if (typ === ROLLING_BOULDER_TRAP
-        && level.flags.sokoban_rules) {
-        // Sokoban has no rolling-boulder launchers. The trap stays in place
-        // without creating another boulder.
-        trap.launch = { x, y };
-        trap.launch2 = { x, y };
-    }
-    else if (typ === ROLLING_BOULDER_TRAP) {
-        // C ref: trap.c find_random_launch_coord()/mkroll_launch().  A
-        // rolling-boulder trap chooses one distance and starting direction,
-        // then searches all eight directions at decreasing distances until
-        // both sides of the trigger have a clear path and the launch square
-        // is neither pool nor lava.
-        let distance = rn1(5, 4);
-        let direction = rn2(8);
-        let tries = 0;
-        // isclearpath(): any ZAP_POS terrain (pools and lava included) except
-        // a closed or locked door, with no pit, hole, or teleport trap.
-        const clearPath = (dx, dy, length) => {
-            for (let step = 1; step <= length; step++) {
-                const px = x + step * dx, py = y + step * dy;
-                const loc = isok(px, py) ? level.at(px, py) : undefined;
-                if (!loc || !ZAP_POS(loc.typ)
-                    || (IS_DOOR(loc.typ) && (loc.doormask & (D_LOCKED | D_CLOSED)) !== 0))
-                    return false;
-                const blockingTrap = level.traps.some(candidate => candidate !== trap && candidate.tx === px
-                    && candidate.ty === py
-                    && (is_pit(candidate.ttyp) || is_hole(candidate.ttyp)
-                        || (candidate.ttyp >= TELEP_TRAP && candidate.ttyp <= MAGIC_PORTAL)));
-                if (blockingTrap)
-                    return false;
-            }
-            return true;
-        };
-        let launch = null;
-        while (distance >= 2) {
-            const dx = xdir[direction], dy = ydir[direction];
-            if (dx === undefined || dy === undefined)
-                throw new Error(`Rolling boulder trap has invalid direction ${direction}`);
-            const lx = x + distance * dx, ly = y + distance * dy;
-            const landsInLiquid = isPoolAt(lx, ly) || isLavaAt(lx, ly);
-            if (!landsInLiquid && clearPath(dx, dy, distance)
-                && clearPath(-dx, -dy, distance)) {
-                launch = { x: lx, y: ly };
-                break;
-            }
-            direction = (direction + 1) % 8;
-            if (++tries % 8 === 0)
-                distance--;
-        }
-        if (launch) {
-            const boulder = await mksobj(BOULDER, true, false);
-            placeCreatedObject(boulder, launch.x, launch.y);
-            await stack_object(boulder);
-            trap.launch = launch;
-            await newsym(launch.x, launch.y);
-            trap.launch2 = {
-                x: x - (launch.x - x), y: y - (launch.y - y),
-            };
-        }
-        else {
-            trap.launch = { x, y };
-            trap.launch2 = { x, y };
-        }
-    }
-    // C trap.c:maketrap() links the new trap into ftrap only after the
-    // per-type construction (trap.c:577). The newsym() from unearth_objs()
-    // inside that construction therefore cannot observe this trap yet: a
-    // hole dug under a standing monster maps the remembered background, not
-    // the fresh tseen hole, into hero memory.
-    if (!oldTrap)
-        level.traps.push(trap);
-    if (oldTrap)
-        finishSokobanIfSolved();
-    return trap;
-}
-// C trap.c:maketrap() owns these effects even when the caller is Lua or
-// wizard trap creation rather than digging. Preserve the old shop terrain
-// for repair before opening the floor and exposing buried objects.
-async function preparePitOrHoleTerrain(x, y, trapType) {
-    const level = requireGameLevel();
-    const location = level.requireAt(x, y);
-    const oldType = location.typ;
-    const wasIce = isIceAt(x, y);
-    const wallOrDoor = IS_DOOR(oldType) || IS_WALL(oldType);
-    if (roomsAt(game.level, x, y, SHOPBASE).length
-        && (is_hole(trapType) || wallOrDoor)) {
-        addShopDamage(x, y, wallOrDoor && !game.context.mon_moving ? SHOP_HOLE_COST : 0);
-    }
-    if (oldType === DRAWBRIDGE_UP) {
-        location.drawbridgemask = ((location.drawbridgemask ?? 0) & ~DB_UNDER) | DB_FLOOR;
-        location.flags = location.drawbridgemask;
-    }
-    else {
-        if (IS_ROOM(oldType))
-            setLevelTerrainType(x, y, ROOM);
-        else if (oldType === STONE || oldType === SCORR)
-            setLevelTerrainType(x, y, CORR);
-        else if (IS_WALL(oldType) || oldType === SDOOR)
-            setLevelTerrainType(x, y, level.flags.is_maze_lev ? ROOM
-                : level.flags.is_cavernous_lev ? CORR : DOOR);
-        // These separate JS fields mirror the same native rm.flags union.
-        location.flags = 0;
-        location.doormask = 0;
-        location.wall_info = 0;
-        location.altarmask = 0;
-        location.ladder = 0;
-        location.drawbridgemask = 0;
-        location.looted = 0;
-        location.icedpool = 0;
-        location.emptygrave = 0;
-    }
-    if (wasIce && !isIceAt(x, y)) {
-        updateIceObjectTimersAt(x, y, game, { includeBuried: true });
-        stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY);
-    }
-    if (oldType !== location.typ && (oldType === FOUNTAIN || oldType === SINK))
-        countLevelFeatures();
-    await unearthFloorObjectsAt(x, y);
-    vision_note_blocker_change(x, y);
-}
 export async function finishBuriedZombieTimer(event, state = game) {
     if (!event || event.kind !== 'revived' || event.finished)
         return event;
@@ -797,34 +537,6 @@ export async function finishBuriedZombieTimer(event, state = game) {
     event.filledByBoulder = result.filled ? result.boulder : null;
     event.buriedFloorObjects = result.buriedFloorObjects;
     return event;
-}
-// C trap.c:delfloortrap().  Destroys a trap which emanates from the floor,
-// freeing a hero or monster caught in it.  Portal-like and special traps are
-// not floor traps and are rejected.
-export async function deleteFloorTrap(trap, state = game) {
-    if (!trap)
-        return false;
-    const ttyp = trap.ttyp;
-    const removable = ttyp === SQKY_BOARD || ttyp === BEAR_TRAP
-        || ttyp === LANDMINE || ttyp === FIRE_TRAP || is_pit(ttyp)
-        || is_hole(ttyp) || ttyp === TELEP_TRAP || ttyp === LEVEL_TELEP
-        || ttyp === WEB || ttyp === MAGIC_TRAP || ttyp === ANTI_MAGIC;
-    if (!removable)
-        return false;
-    if (state.u?.ux === trap.tx && state.u?.uy === trap.ty) {
-        // C reset_utrap(TRUE): a freed hero may resume floating.
-        if (state.u.utraptype !== TT_BURIEDBALL) {
-            await resetHeroTrap(true, state);
-        }
-    }
-    else {
-        const monster = (state.level?.monsters || []).find(candidate => monsterHasMapPosition(candidate, state) &&
-            !candidate.dead && monsterOccupiesPosition(candidate, trap.tx, trap.ty));
-        if (monster)
-            monster.mtrapped = 0;
-    }
-    deleteTrap(trap, state);
-    return true;
 }
 export async function runClaimedObjectRotTimer(claimed, state = game) {
     const object = claimed?.object;

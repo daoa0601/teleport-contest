@@ -375,19 +375,19 @@ src/js/familiar.ts	familiarSpecies	rn2	"[""3""]"	constant
 src/js/familiar.ts	makeFamiliar	rn2	"[""10""]"	constant
 src/js/figurine.ts	scheduleFigurineRetry	rnd	"[""5000""]"	constant
 src/js/figurine_timer.ts	attachFigurineTimer	rnd	"[""9000""]"	constant
-src/js/fire_damage.ts	burnContainer	context.random	"[""chance""]"	constant
-src/js/fire_damage.ts	fireDamageObject	random	"[""20""]"	constant
+src/js/trap.ts	burnContainer	context.random	"[""chance""]"	constant
+src/js/trap.ts	fireDamageObject	random	"[""20""]"	constant
 src/js/fire_explosion.ts	explodeLitOilPotion	rollDice	"[""diluted ? 3 : 4"", ""4""]"	constant
-src/js/fire_trap.ts	beginMonsterFireTrap	rollDice	"[""2"", ""4""]"	constant
-src/js/fire_trap.ts	burnHeroAndPossessions	rn2	"[""3""]"	constant
-src/js/fire_trap.ts	finishMonsterFireTrap	random	"[""3""]"	constant
-src/js/fire_trap.ts	finishMonsterFireTrap	random	"[""event.damage + 1""]"	unproved
-src/js/fire_trap.ts	reduceHeroMaximumHitPoints	rn2	"[""range""]"	unproved
-src/js/fire_trap.ts	reduceMonsterFormMaximumHitPoints	rn2	"[""range""]"	unproved
-src/js/fire_trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
-src/js/fire_trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
-src/js/fire_trap.ts	triggerHeroFireTrap	rn2	"[""2""]"	constant
-src/js/fire_trap.ts	triggerHeroFireTrap	rnd	"[""3""]"	constant
+src/js/trap.ts	beginMonsterFireTrap	rollDice	"[""2"", ""4""]"	constant
+src/js/trap.ts	burnHeroAndPossessions	rn2	"[""3""]"	constant
+src/js/trap.ts	finishMonsterFireTrap	random	"[""3""]"	constant
+src/js/trap.ts	finishMonsterFireTrap	random	"[""event.damage + 1""]"	unproved
+src/js/trap.ts	reduceHeroMaximumHitPoints	rn2	"[""range""]"	unproved
+src/js/trap.ts	reduceMonsterFormMaximumHitPoints	rn2	"[""range""]"	unproved
+src/js/trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
+src/js/trap.ts	triggerHeroFireTrap	d	"[""2"", ""4""]"	constant
+src/js/trap.ts	triggerHeroFireTrap	rn2	"[""2""]"	constant
+src/js/trap.ts	triggerHeroFireTrap	rnd	"[""3""]"	constant
 src/js/flash.ts	flashHitsMonster	d	"[""1 + object.spe"", ""4""]"	unproved
 src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
 src/js/flash.ts	flashHitsMonster	rn2	"[""4""]"	constant
@@ -450,8 +450,8 @@ src/js/guardian_angel.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
 src/js/hack.ts	escapeFromStickyMonster	rn2	"[""frozen ? 8 : 40""]"	constant
 src/js/hack.ts	heroLiquidEffects	random	"[""3""]"	constant
 src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
-src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
-src/js/hack.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
+src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
+src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
 src/js/hero_attack_accuracy.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
 src/js/hack.ts	beastChoosesHeroDisplacement	rn2	"[""2""]"	constant
 src/js/hero_breath.ts	hitWithAcid	random	"[""3""]"	constant
@@ -485,8 +485,8 @@ src/js/dig.ts	continueHeroDigging	rnd	"[""5""]"	constant
 src/js/dig.ts	continueHeroDigging	rnl	"[""7""]"	constant
 src/js/mkobj.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
 src/js/hero_displacement.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
-src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
-src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
+src/js/trap.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
+src/js/trap.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
 src/js/hero_engulf.ts	beginHeroEngulf	random	"[""20""]"	constant
 src/js/hero_engulf.ts	beginHeroEngulf	rollOne	"[""level + 5""]"	invariant
 src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""2""]"	constant
@@ -592,43 +592,43 @@ src/js/hero_strangulation.ts	strangulationDialogue	rn2	"[""50""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	random	"[""3""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""20""]"	constant
 src/js/hero_thrown_egg_pie_venom.ts	hitMonsterWithThrownEggPieOrVenom	rollOne	"[""25""]"	constant
-src/js/hero_traps.ts	climbOutOfPit	rn2	"[""2""]"	constant
-src/js/hero_traps.ts	climbOutOfPit	rn2	"[""5""]"	constant
-src/js/hero_traps.ts	heroCanMoveFromTrap	rn2	"[""5""]"	constant
-src/js/hero_traps.ts	triggerBearTrap	d	"[""2"", ""4""]"	constant
-src/js/hero_traps.ts	triggerBearTrap	rn2	"[""10""]"	constant
-src/js/hero_traps.ts	triggerBearTrap	rn2	"[""2""]"	constant
-src/js/hero_traps.ts	triggerBearTrap	rn2	"[""4""]"	constant
-src/js/hero_traps.ts	triggerFallingRockTrap	d	"[""2"", ""6""]"	constant
-src/js/hero_traps.ts	triggerFallingRockTrap	rn2	"[""15""]"	constant
-src/js/hero_traps.ts	triggerHeroTrap	rn2	"[""5""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rn2	"[""3""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rn2	"[""3""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rn2	"[""35""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rn2	"[""35""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rnd	"[""16""]"	constant
-src/js/hero_traps.ts	triggerLandmine	rnd	"[""16""]"	constant
-src/js/hero_traps.ts	triggerMagicTrap	rn2	"[""30""]"	constant
-src/js/hero_traps.ts	triggerMagicTrap	rnd	"[""10""]"	constant
-src/js/hero_traps.ts	triggerPit	rn2	"[""5""]"	constant
-src/js/hero_traps.ts	triggerPit	rn2	"[""6""]"	constant
-src/js/hero_traps.ts	triggerPit	rn2	"[""6""]"	constant
-src/js/hero_traps.ts	triggerPit	rnd	"[""adjacent ? 3 : 6""]"	constant
-src/js/hero_traps.ts	triggerPit	rnd	"[""conjoined ? 4 : adjacent ? 6 : 10""]"	constant
-src/js/hero_traps.ts	triggerPit	rnd	"[""trap.ttyp === PIT ? 6 : 10""]"	constant
-src/js/hero_traps.ts	triggerProjectileTrap	rn2	"[""15""]"	constant
-src/js/hero_traps.ts	triggerProjectileTrap	rn2	"[""2""]"	constant
-src/js/hero_traps.ts	triggerProjectileTrap	rn2	"[""6""]"	constant
-src/js/hero_traps.ts	triggerRustTrap	rn2	"[""3""]"	constant
-src/js/hero_traps.ts	triggerRustTrap	rn2	"[""5""]"	constant
-src/js/hero_traps.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
-src/js/hero_traps.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rn2	"[""2""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rn2	"[""4""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rn2	"[""4""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rn2	"[""6""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rn2	"[""6""]"	constant
-src/js/hero_traps.ts	webTrapDuration	rnd	"[""2""]"	constant
+src/js/trap.ts	climbOutOfPit	rn2	"[""2""]"	constant
+src/js/trap.ts	climbOutOfPit	rn2	"[""5""]"	constant
+src/js/hack.ts	heroCanMoveFromTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	triggerBearTrap	d	"[""2"", ""4""]"	constant
+src/js/trap.ts	triggerBearTrap	rn2	"[""10""]"	constant
+src/js/trap.ts	triggerBearTrap	rn2	"[""2""]"	constant
+src/js/trap.ts	triggerBearTrap	rn2	"[""4""]"	constant
+src/js/trap.ts	triggerFallingRockTrap	d	"[""2"", ""6""]"	constant
+src/js/trap.ts	triggerFallingRockTrap	rn2	"[""15""]"	constant
+src/js/trap.ts	triggerHeroTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
+src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
+src/js/trap.ts	triggerLandmine	rn2	"[""35""]"	constant
+src/js/trap.ts	triggerLandmine	rn2	"[""35""]"	constant
+src/js/trap.ts	triggerLandmine	rnd	"[""16""]"	constant
+src/js/trap.ts	triggerLandmine	rnd	"[""16""]"	constant
+src/js/trap.ts	triggerMagicTrap	rn2	"[""30""]"	constant
+src/js/trap.ts	triggerMagicTrap	rnd	"[""10""]"	constant
+src/js/trap.ts	triggerPit	rn2	"[""5""]"	constant
+src/js/trap.ts	triggerPit	rn2	"[""6""]"	constant
+src/js/trap.ts	triggerPit	rn2	"[""6""]"	constant
+src/js/trap.ts	triggerPit	rnd	"[""adjacent ? 3 : 6""]"	constant
+src/js/trap.ts	triggerPit	rnd	"[""conjoined ? 4 : adjacent ? 6 : 10""]"	constant
+src/js/trap.ts	triggerPit	rnd	"[""trap.ttyp === PIT ? 6 : 10""]"	constant
+src/js/trap.ts	triggerProjectileTrap	rn2	"[""15""]"	constant
+src/js/trap.ts	triggerProjectileTrap	rn2	"[""2""]"	constant
+src/js/trap.ts	triggerProjectileTrap	rn2	"[""6""]"	constant
+src/js/trap.ts	triggerRustTrap	rn2	"[""3""]"	constant
+src/js/trap.ts	triggerRustTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
+src/js/trap.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
+src/js/trap.ts	webTrapDuration	rn2	"[""2""]"	constant
+src/js/trap.ts	webTrapDuration	rn2	"[""4""]"	constant
+src/js/trap.ts	webTrapDuration	rn2	"[""4""]"	constant
+src/js/trap.ts	webTrapDuration	rn2	"[""6""]"	constant
+src/js/trap.ts	webTrapDuration	rn2	"[""6""]"	constant
+src/js/trap.ts	webTrapDuration	rnd	"[""2""]"	constant
 src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnd	"[""2""]"	constant
 src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnd	"[""damage ? 20 : 10""]"	constant
 src/js/hero_weapon_contact.ts	improvisedWeaponContact	rnl	"[""4""]"	constant
@@ -1141,11 +1141,11 @@ src/js/extralev.ts	makeroguerooms	rn2	"[""7""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""(y === 2 ? 5 : 4) - dy + 1""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""23 - dx + 1""]"	constant
 src/js/mklev.ts	makerooms	rn2	"[""2""]"	constant
-src/js/mklev.ts	maketrap	rn1	"[""5"", ""4""]"	constant
-src/js/mklev.ts	maketrap	rn2	"[""12""]"	constant
-src/js/mklev.ts	maketrap	rn2	"[""4""]"	constant
-src/js/mklev.ts	maketrap	rn2	"[""8""]"	constant
-src/js/mklev.ts	maketrap	rn2	"[""available.length""]"	guarded
+src/js/trap.ts	maketrap	rn1	"[""5"", ""4""]"	constant
+src/js/trap.ts	maketrap	rn2	"[""12""]"	constant
+src/js/trap.ts	maketrap	rn2	"[""4""]"	constant
+src/js/trap.ts	maketrap	rn2	"[""8""]"	constant
+src/js/trap.ts	maketrap	rn2	"[""available.length""]"	guarded
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""4""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant
@@ -1879,7 +1879,7 @@ src/js/pick_axe.ts	attackWithTool	rn2	"[""7""]"	constant
 src/js/pick_axe.ts	attackWithTool	rnd	"[""6""]"	constant
 src/js/pick_axe.ts	strikeUndiggable	d	"[""2"", ""2""]"	constant
 src/js/pick_axe.ts	strikeUndiggable	rn2	"[""3""]"	constant
-src/js/pit_fill.ts	applyBoulderPitEffects	rnd	"[""15""]"	constant
+src/js/do.ts	applyBoulderPitEffects	rnd	"[""15""]"	constant
 src/js/poison.ts	poisonHero	random	"[""10""]"	constant
 src/js/poison.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unproved
 src/js/poison.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
@@ -2023,10 +2023,10 @@ src/js/projectile.ts	shouldMulchMissile	rn2	"[""4""]"	constant
 src/js/projectile.ts	shouldMulchMissile	rn2	"[""chance""]"	guarded
 src/js/projectile.ts	shouldMulchMissile	rnl	"[""4""]"	constant
 src/js/projectile_bars.ts	hitIronBars	random	"[""Math.max(2, chance)""]"	constant
-src/js/projectile_trap.ts	beginMonsterProjectileTrap	random	"[""15""]"	constant
-src/js/projectile_trap.ts	beginMonsterProjectileTrap	random	"[""6""]"	constant
-src/js/projectile_trap.ts	beginMonsterProjectileTrap	rollOne	"[""20""]"	constant
-src/js/projectile_trap.ts	hitSteedWithTrapMissile	rnd	"[""20""]"	constant
+src/js/trap.ts	beginMonsterProjectileTrap	random	"[""15""]"	constant
+src/js/trap.ts	beginMonsterProjectileTrap	random	"[""6""]"	constant
+src/js/trap.ts	beginMonsterProjectileTrap	rollOne	"[""20""]"	constant
+src/js/trap.ts	hitSteedWithTrapMissile	rnd	"[""20""]"	constant
 src/js/quantum_cat.ts	observeQuantumCat	rn2	"[""2""]"	constant
 src/js/quest.ts	talkQuestCharacter	rn2	"[""5""]"	constant
 src/js/quest.ts	talkQuestCharacter	rn2	"[""5""]"	constant
@@ -2256,7 +2256,7 @@ src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportMonsterThroughPortal	random	"[""7""]"	constant
 src/js/teleport_rules.ts	goodPosition	random	"[""13""]"	constant
-src/js/terrain_movement.ts	floatHeroDown	rnd	"[""2""]"	constant
+src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
 src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
 src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
 src/js/throne.ts	normalThroneEffect	rn1	"[""4"", ""3""]"	constant
@@ -2387,9 +2387,9 @@ src/js/apply.ts	causeHornTrouble	random	"[""constitution""]"	invariant
 src/js/apply.ts	shuffleTroubles	random	"[""index + 1""]"	unproved
 src/js/apply.ts	useUnicornHorn	random	"[""maximum""]"	constant
 src/js/apply.ts	useUnicornHorn	rollDice	"[""2"", ""object?.blessed ? 4 : 2""]"	constant
-src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant
-src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""8""]"	constant
-src/js/untrap.ts	rewardMonsterRescue	random	"[""3""]"	constant
+src/js/trap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant
+src/js/trap.ts	rewardMonsterRescue	luckRandom	"[""8""]"	constant
+src/js/trap.ts	rewardMonsterRescue	random	"[""3""]"	constant
 src/js/vault.ts	maintainVaultResidence	rn2	"[""deaths * deaths""]"	guarded
 src/js/vault.ts	payVaultGuardOnExit	random	"[""2""]"	constant
 src/js/vault.ts	payVaultGuardOnExit	random	"[""2""]"	constant

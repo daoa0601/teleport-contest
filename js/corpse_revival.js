@@ -1,8 +1,6 @@
-import { withIndefiniteArticle } from './objnam.js';
-import { objectQuantity, splitObjectStack } from './mkobj.js';
+import { withIndefiniteArticle, corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
+import { objectQuantity, splitObjectStack, riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import { rotCorpse } from './corpse_rot.js';
-// Corpse revival timers.
-// C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 import { setMonsterGivenName, monsterName } from './do_name.js';
 import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, OBJECT_TIMER_KIND } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
@@ -15,14 +13,11 @@ import { updateHeroHunger } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore } from './invent.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { findMonsterNearPosition, makemonNear, maketrap } from './mklev.js';
+import { findMonsterNearPosition, makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName, } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
-import { revealMonsterAppearance } from './mon.js';
-import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
-import { corpseName as corpseObjectName, objectCombatName, ownedObjectName } from './objnam.js';
+import { revealMonsterAppearance, changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { upstart } from './hacklib.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue, deleteObject } from './shk.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
@@ -34,6 +29,7 @@ import { cansee } from './vision.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './revival_species.js';
 import { restoreMonsterTraits } from './zap.js';
+import { maketrap } from './trap.js';
 function requireCorpseSpecies(corpse) {
     if (typeof corpse.corpsenm !== 'number')
         throw new TypeError('Corpse revival requires a monster species.');

@@ -5,7 +5,7 @@ import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 
 import { BEAR_TRAP, TT_BEARTRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { FUMBLE_BOOTS, LEVITATION_BOOTS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

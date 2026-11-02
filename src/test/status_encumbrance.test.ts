@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

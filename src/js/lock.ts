@@ -4,6 +4,7 @@
 // reset_pick()/maybe_reset_pick(), u_have_forceable_weapon(),
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
+
 import { currency } from './currency.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, isok, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
@@ -16,15 +17,11 @@ import { flushPendingTopline } from './tty_topline.js';
 import { feel_location, feel_newsym, newsym, canSeeMonster, displayLiquidName, glyphAt, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
-import { findDrawbridgeAt } from './dbridge.js';
+import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
-
-
 import { triggerBoobyTrap } from './booby_trap.js';
-
-import { heroPassesWalls } from './polyself.js';
-import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
+import { heroPassesWalls, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { isContainer } from './container.js';
 import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -35,8 +32,7 @@ import type { ForceLockOccupation, PickLockOccupation } from './occupation_types
 import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
-import { withIndefiniteArticle } from './objnam.js';
-import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
+import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
 import { objectResistsDestruction } from './zap.js';
@@ -53,9 +49,7 @@ import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
-
-import { untrap, untrapAbilityProblem } from './untrap.js';
+import { untrap, untrapAbilityProblem } from './trap.js';
 import { possessiveName } from './hacklib.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatHeardMessage } from './hero_speech.js';
@@ -63,6 +57,7 @@ import { triggerMonsterDoorTrap } from './monmove.js';
 import { stopHeroOccupation } from './occupation.js';
 import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
+
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
 

@@ -1,35 +1,18 @@
 // pray.c owner: prayer trouble detection and repair, divine wrath and gifts,
 // and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
 // sacrifice (pure move, no behavior change).
+
 import { recordAchievement } from './achievements.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
-import { ringRemovalObstacle } from './do_wear.js';
-
-import {
-    artifactById, artifactByName, artifactExistCount, createArtifactGift,
-    discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin,
-} from './artifacts.js';
-import { disintegrateWornArmor, simpleArmorName } from './do_wear.js';
-
+import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName } from './do_wear.js';
+import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
+import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
-import {
-    adjustAttribute, attributeChangeMessage,
-    exerciseAttribute,
-} from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseForHero, reviveCorpseImmediately } from './corpse_revival.js';
-import {
-    ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE,
-    Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY,
-    GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE,
-    GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel,
-    LUCKMAX, LUCKMIN, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG,
-    P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY,
-    PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL,
-    TT_LAVA, Upolyd, W_SADDLE, WEAK, isok,
-} from './const.js';
+import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, isok } from './const.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
@@ -39,112 +22,62 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { placeCreatedObject } from './floor_object.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
-import {
-    game, requireInitializedGame, requirePlayingGame,
-} from './gstate.js';
-import { announceTerrainRescue, nomul } from './hack.js';
+import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
+import { nomul, loseHeroHp, nearCapacity } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { angerTemplePriest } from './priest.js';
-import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned, makeBlinded } from './potion.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
 import { confersLuck } from './hero_inventory.js';
 import { clearHeroStrangulation, heroIsStrangled } from './hero_strangulation.js';
-import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
+import { clearHeroTrap, announceTerrainRescue } from './trap.js';
 import { currentHungerState, restoreHeroNutrition } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import {
-    consumeInventoryItem, inventoryItemDescription,
-} from './invent.js';
+import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
-import {
-    mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState,
-} from './mkobj.js';
-import {
-    MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META,
-    MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL,
-    monsterIsUnicorn, requireMonsterData,
-} from './monster_data.js';
+import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity } from './mkobj.js';
+import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsUnicorn, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance,
-    monsterHasDisintegrationResistance, monsterHasShockResistance,
-} from './mondata.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import {
-    AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR,
-    BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS,
-    GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS,
-    LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
-    OBJECT_SUBTYPE, SPE_BLANK_PAPER, STATUE, getObjectClassBounds,
-    requireObjectData,
-} from './object_data.js';
+import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, requireObjectData } from './object_data.js';
 import type { GameObject } from './object_types.js';
-import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { isBimanualObject } from './object_properties.js';
-import {
-    learnObjectType, observeObject, recordObjectEncounter,
-} from './o_init.js';
-import {
-    rndClass, objectName, observeObjectForNaming, ownedObjectAction,
-    ownedObjectName, simpleObjectNameWithArticle,
-} from './objnam.js';
-import { objectQuantity } from './mkobj.js';
+import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';
-import {
-    heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects,
-    returnHeroToHumanForm,
-} from './polyself.js';
+import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm } from './polyself.js';
 import type { PropertyName } from './property_types.js';
-import {
-    grantIntrinsicProperty, hasIntrinsicProperty,
-    hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty,
-    wornObjectGrantsProperty,
-} from './properties.js';
+import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty, wornObjectGrantsProperty } from './properties.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { paranoidQuery, promptYesNo, promptYesNoQuit } from './query.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
-import {
-    discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay,
-} from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './ray.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
-import {
-    blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
-    permanentBlind, setHeroBlindnessTurns, syncDeafness,
-} from './senses.js';
-import { makeBlinded } from './potion.js';
-import {
-    adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill,
-} from './skills.js';
+import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
+import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
-import {
-    clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying,
-    heroResistsStoning, touchPetrifies,
-} from './stoning.js';
+import { clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { animateStatue } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { teleportHeroSafely } from './teleport.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { flushPendingTopline } from './tty_topline.js';
-import {
-    displayColorName, docrt, newsym, see_monsters, shieldeff,
-} from './display.js';
+import { displayColorName, docrt, newsym, see_monsters, shieldeff } from './display.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
-
 import { purifyHeroLycanthropy } from './were.js';
 import { isPoolOrLavaAt } from './dbridge.js';
-
 import type { GameState, PlayingGameState, PrayerOutcome } from './game_state.js';
-import { pline as printLine } from './pline.js';
-import { plineWithContinuation as pline } from './pline.js';
-import { loseHeroHp, nearCapacity } from './hack.js';
+import { pline as printLine, plineWithContinuation as pline } from './pline.js';
+import { freeHeroFromBuriedBall } from './dig.js';
 
 // ---------------------------------------------------------------------------
 // Prayer decisions and the three-turn prayer occupation (pray)
@@ -180,7 +113,6 @@ export async function altarWrath(x: number, y: number, state: GameState = game) 
     if (luck > -5 && rn2(luck + 6))
         state.u.uluck = Math.max(LUCKMIN, baseLuck - (rn2(20) ? 1 : 2));
 }
-
 
 export async function dopray() {
     const game = requireInitializedGame();

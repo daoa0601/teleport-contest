@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROCKTRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { ROCK } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

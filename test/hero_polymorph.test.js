@@ -11,7 +11,7 @@ import { loseHeroHp } from '../js/hack.js';
 import { heroIsSick } from '../js/hero_illness.js';
 import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';

@@ -1,12 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { wearHeroAccessory } from '../js/do_wear.js';
-
 import { MM_ANGRY, NO_MINVENT, POLY_TRAP, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';
-import { maketrap } from '../js/mklev.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AT_BREA } from '../js/monster_attack_types.js';
@@ -18,7 +15,7 @@ import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
-
+import { maketrap } from '../js/trap.js';
 for (const peaceful of [false, true]) {
     void test(`a blocked ${peaceful ? 'peaceful' : 'hostile'} monster can attack the hero under Conflict`, async () => {
         let attacked = false;

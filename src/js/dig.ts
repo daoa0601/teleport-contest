@@ -1,67 +1,30 @@
-// dig.c owner: hero and monster digging, terrain changes, burial, and
-// wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
-// digging_watch/buried_object/hole (pure move, no behavior change).
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { objectIsHardHelmet } from './do_wear.js';
-
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { heroFootName, heroHeadName, monsterStomachName } from './body_parts.js';
-import {
-    A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align,
-    BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER,
-    D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED,
-    DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER,
-    DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS,
-    DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE,
-    DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP,
-    DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED,
-    DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY,
-    DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE,
-    DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL,
-    FOUNTAIN, F_WARNED, GRAVE, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR,
-    IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE,
-    IS_TREE, IS_WALL, Is_airlevel, Is_botlevel, Is_earthlevel,
-    Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL,
-    MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT,
-    OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR,
-    SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE,
-    THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT,
-    Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap,
-    is_pit, isok, xdir, ydir,
-} from './const.js';
+import { A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, isok, xdir, ydir } from './const.js';
 import { currency } from './currency.js';
-import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
+import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
 import { convertSecretDoor } from './detect.js';
 import { impossible } from './diagnostics.js';
 import { impactDrop } from './dokick.js';
 import { formatDraftMessage } from './draft_message.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { monsterName } from './do_name.js';
-import {
-    canSeeMonster, displayLiquidName, feel_location, flush_screen, newsym,
-    show_glyph_cell,
-} from './display.js';
+import { canSeeMonster, displayLiquidName, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
-import { fireDamageChain } from './fire_damage.js';
-import {
-    placeCreatedObject, placeObject, remove_object, stack_object,
-    updateIceObjectTimersAt,
-} from './floor_object.js';
+import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, clearHeroTrap, setHeroTrap, triggerHeroTrap, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
+import { placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously } from './floor_object.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
-import type {
-    DiggingContext, GameState, PlayingGameState,
-} from './game_state.js';
-import {
-    game, requireGameLevel, requireLiveGame, requirePlayingGame,
-} from './gstate.js';
+import type { DiggingContext, GameState, PlayingGameState } from './game_state.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
-import { heroLiquidEffects, mayDig, spotChecks } from './hack.js';
+import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpotEffects, inTown, roomsAt, switchHeroTerrain } from './hack.js';
 import { depth, dist2, possessiveName, upstart } from './hacklib.js';
-
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { expelHero } from './hero_expulsion.js';
 import { freeInventoryObject } from './hero_inventory.js';
@@ -69,92 +32,53 @@ import { woundHeroLegs } from './hero_legs.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { clearHeroTrap, setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
-
 import { objectMaterial } from './o_init.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
-import { canDigDown, deleteFloorTrap, maketrap, stairwayAt } from './mklev.js';
+import { canDigDown, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject } from './mkobj.js';
-import {
-    angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid,
-    wakeMonstersNearWithMessages,
-} from './mon.js';
+import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
-import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE,
-    monsterDigests, monsterIsWhirly, monsterTypeName, requireMonsterData,
-} from './monster_data.js';
-import {
-    definiteName, objectName, observeObjectForNaming, ownedObjectAction,
-    ownedObjectName, simpleObjectName,
-} from './objnam.js';
-import {
-    BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL,
-    ROCK, STATUE,
-} from './object_data.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsWhirly, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
+import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { isAxe, isBimanualObject, isPick } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import type { DiggingOccupation } from './occupation_types.js';
-import type { MessagePublisher } from './pline.js';
 import { pline, plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { heroMonsterForm, heroIsFlying } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';
 import { refreshMovementProperties } from './properties.js';
 import { punishHero, unpunishHero } from './punishment.js';
 import { autopickupAtHero } from './pickup.js';
-import { connectPits, pitsAreConjoined } from './pit_connections.js';
 import { angerTemplePriest } from './priest.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import {
-    addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper,
-    payForShopDamage, shopDig, stolenValue,
-} from './shk.js';
+import { addShopDamage, costlySpot, deleteObject, makeAngryShopkeeper, payForShopDamage, shopDig, stolenValue } from './shk.js';
 import { shopkeeperName } from './shknam.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { monsterHasMapPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
-import { resetHeroTrap } from './terrain_movement.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling } from './dungeon.js';
-import { monsterFliesOrFloats } from './mon.js';
-
+import { levelHasCeiling, levelAtDepth } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
-import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
-import { stopLevelTimer } from './timeout.js';
-import {
-    convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap,
-    seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain,
-} from './trap.js';
-import {
-    cansee, monsterHasLineOfSightToHero, unblock_point,
-    vision_note_blocker_change,
-} from './vision.js';
-import {
-    heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero,
-} from './weapon.js';
+import { scheduleObjectTimer, stopObjectTimer, stopLevelTimer } from './timeout.js';
+import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';
+import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import { levelAtDepth } from './dungeon.js';
 import { captureRayTraversalFrame } from './ray.js';
 import { endObjectBurn } from './light.js';
 import { displayMessageWindow } from './tty_topline.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import {
-    loseHeroHp,
-    finishDestinationSpotEffects,
-    inTown,
-    roomsAt,
-    switchHeroTerrain,
-} from './hack.js';
+// dig.c owner: hero and monster digging, terrain changes, burial, and
+// wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
+// digging_watch/buried_object/hole (pure move, no behavior change).
 
 // ---------------------------------------------------------------------------
 // Hero pick-axe/axe digging occupation (hero_digging)
@@ -177,7 +101,6 @@ export type DiggingTarget = typeof DIGTYP_UNDIGGABLE | typeof DIGTYP_ROCK
     | typeof DIGTYP_STATUE | typeof DIGTYP_BOULDER | typeof DIGTYP_DOOR
     | typeof DIGTYP_TREE;
 
-
 function monsterAt(x: number, y: number, state: GameState): Monster | null {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
@@ -189,7 +112,6 @@ function objectAt(x: number, y: number, otyp: number, state: GameState): GameObj
     return (state.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === otyp) || null;
 }
-
 
 // C dig.c pick_can_reach(): whether a pick can reach a statue or boulder
 // that sits in (or beside) a pit.
@@ -826,7 +748,6 @@ function verbose(state: GameState): boolean {
     return state.flags?.verbose !== false;
 }
 
-
 function alignmentWord(alignment: number): string {
     if (alignment > 0) return 'lawful';
     if (alignment < 0) return 'chaotic';
@@ -838,7 +759,6 @@ function alignmentWord(alignment: number): string {
 function liquidName(typ: number, state: GameState = game): string {
     return displayLiquidName(typ === LAVAPOOL ? 'lava' : 'water', state);
 }
-
 
 // C dig.c:dig_check().  Pure classification; no messages, no randomness.
 export function digCheck(madeBy: DiggingActor, x: number, y: number, state: GameState = game) {
@@ -1445,7 +1365,6 @@ export async function digUpGrave(
     await newsym(digX, digY);
 }
 
-
 // ---------------------------------------------------------------------------
 // Liquid which can flow into a newly opened hole (hole)
 // ---------------------------------------------------------------------------
@@ -1901,7 +1820,6 @@ function scheduleBuriedRot(object: GameObject, underIce: boolean, state: GameSta
     );
 }
 
-
 // C dig.c:unearth_objs().  Buried objects return to the floor; an unearthed
 // punishment ball drags the hero's chain back into punishment.  Callers
 // converting ice terrain should run obj_ice_effects() first.
@@ -2062,4 +1980,25 @@ export async function wizBury(): Promise<void> {
         : buried === 0 ? 'No objects buried.'
             : `${buried} object${buried === 1 ? '' : 's'} buried.`);
     game.context.move = 0;
+}
+
+// ── moved from src/js/trap.ts ──
+
+// C dig.c:buried_ball_to_freedom(). The ball stays where it was buried,
+// which may be beside the hero rather than directly underneath them.
+export async function freeHeroFromBuriedBall(state: GameState = game) {
+    if (state.u.utrap && state.u.utraptype !== TT_BURIEDBALL) return false;
+    const ball = buriedBallNear(state.u.ux, state.u.uy, state);
+    if (!ball) return false;
+    const { ox: x, oy: y } = ball;
+    unlinkObject(ball, state);
+    placeObjectSynchronously(ball, x, y, state);
+    await stack_object(ball, state);
+    await resetHeroTrap(true, state);
+    const level = requireGameLevel(state);
+    level.engravings = (level.engravings || []).filter(
+        engraving => engraving.x !== x || engraving.y !== y,
+    );
+    await newsym(x, y);
+    return true;
 }

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { LANDMINE, PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING } from '../js/object_data.js';
 import { heroIsPolymorphed } from '../js/polyself.js';

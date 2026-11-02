@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, CLUB, CORPSE, GOLD_PIECE, LEASH } from '../js/object_data.js';
-import { fireDamageObject } from '../js/fire_damage.js';
+import { fireDamageObject } from '../js/trap.js';
 import { scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { knownObject, addInventoryObject, floorObject } from './support/game-objects.js';

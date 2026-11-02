@@ -4,18 +4,15 @@
 import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
+import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { findArmorClass, heroHasDrainResistance } from './do_wear.js';
-
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroIsPunished } from './ball.js';
 import { changeBoxLockByMagic } from './box_magic.js';
-import { askTeleportDestination } from './teleport.js';
-import {
-    A_CHA, A_CON, A_STR, DIED, EXPL_FIERY, M_SEEN_COLD, M_SEEN_ELEC,
-    M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, Upolyd,
-} from './const.js';
+import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
+import { A_CHA, A_CON, A_STR, DIED, EXPL_FIERY, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, Upolyd } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { shieldeff } from './display.js';
@@ -25,44 +22,27 @@ import { loseHeroExperience } from './exper.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { releaseHold } from './hero_expulsion.js';
-import { healHero } from './potion.js';
+import { healHero, speedUpHero } from './potion.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { putHeroToSleep } from './hero_sleep.js';
 import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
-import { speedUpHero } from './potion.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, applyHeroGolemEffects, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { heroStatusLine } from './hero_status.js';
 import { hitObjectWithWand } from './immediate_zap.js';
-import { lightDamage, igniteItems } from './light.js';
-import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
+import { lightDamage } from './light.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
-import {
-    CHEST, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, LARGE_BOX,
-    SPE_CANCELLATION, SPE_CONE_OF_COLD, SPE_DETECT_UNSEEN, SPE_DIG,
-    SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL,
-    SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_MAGIC_MISSILE, SPE_POLYMORPH,
-    SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY,
-    SPE_TURN_UNDEAD, SPE_WIZARD_LOCK,
-    WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHT,
-    WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE,
-    WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SLEEP,
-    WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION,
-    WAN_UNDEAD_TURNING,
-} from './object_data.js';
+import { CHEST, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, LARGE_BOX, SPE_CANCELLATION, SPE_CONE_OF_COLD, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING } from './object_data.js';
 import { mergeObjectStacks } from './invent.js';
-
-import { applyHeroGolemEffects, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { unpunishHero } from './punishment.js';
 import { d, rn1, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { flashBurn } from './sight_change.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
-import { heroControlsTeleport, teleportHero } from './teleport.js';
-import { burnHeroArmorByFire } from './trap.js';
-import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
+import { burnHeroArmorByFire, igniteItems, closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
 import { turnHeroWithUndeadMagic } from './undead_turning.js';
 import { couldsee } from './vision.js';
-import { learnWand, cancelObjectMagic, destroyInventoryByElement, probeObjectChain } from './zap.js';import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { learnWand, cancelObjectMagic, destroyInventoryByElement, probeObjectChain } from './zap.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 
 const CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 const STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');

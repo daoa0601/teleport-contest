@@ -4,23 +4,17 @@
 // expiry runs in the property loop at C property order, levitation before
 // flying.
 
-import {
-    ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT,
-} from './const.js';
+import { ACCESSIBLE, I_SPECIAL, Is_waterlevel, TIMEOUT } from './const.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './pline.js';
 import { plineWithContinuation } from './pline.js';
-import {
-    captureLevitationState, hasCarriedProperty, hasInvokedProperty,
-    hasWornProperty, propertyIsActive, refreshProperty,
-} from './properties.js';
-import { floatHeroDown } from './terrain_movement.js';
+import type { MessagePublisher } from './pline.js';
+import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { surfaceName } from './terrain_name.js';
 import { isPoolOrLavaAt } from './dbridge.js';
-
+import { captureLevitationState, floatHeroDown } from './trap.js';
 
 export type LevitationTimeoutResult =
     | { active: false; expired: false; flyingBypassed: false }

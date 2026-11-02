@@ -1,13 +1,6 @@
-import { isLavaAt, isPoolAt } from './dbridge.js';
-
-// Floor features named by look_here() and describe_decor().
-// C invent.c:dfeature_at(), stairs.c:stairs_description(), pager.c:ice_descr().
-
+import { isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { deityName } from './alignment.js';
 import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, IS_FURNITURE, IS_LAVA, IS_POOL, PLNMSG_BACK_ON_GROUND, SINK, STONE, THRONE, TREE, LEVEL_TIMER_KIND } from './const.js';
-import { findDrawbridgeAt } from './dbridge.js';
-import { drawbridgeUnderlyingType } from './dbridge.js';
-
 import { displayLiquidName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -17,12 +10,14 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Stairway } from './map_types.js';
 import { dungeonDepth } from './hacklib.js';
 import { withIndefiniteArticle } from './objnam.js';
-
 import { levelTimers } from './timeout.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
+import { backOnGroundMessage } from './trap.js';
+// Floor features named by look_here() and describe_decor().
+// C invent.c:dfeature_at(), stairs.c:stairs_description(), pager.c:ice_descr().
 
 interface FeatureOptions { state?: GameState; probing?: boolean }
 
@@ -125,37 +120,6 @@ export function dungeonFeatureSentence(feature: string | null): string {
     const noArticle = feature === 'molten lava' || feature === 'ice'
         || feature.startsWith('frozen ') || feature.slice(feature.indexOf(' ')) === ' ice';
     return `There is ${noArticle ? feature : withIndefiniteArticle(feature)} here.`;
-}
-
-// C trap.c:back_on_ground(). Both ordinary pool exit and rescue name
-// the current surface, including ice beneath a raised drawbridge.
-export function backOnGroundMessage(rescued: boolean, state: GameState): string {
-    const { ux, uy } = state.u;
-    let surface = surfaceName(ux, uy, state);
-    let preposition = state.u.levitating || state.u.levitation || state.u.flying ? 'over' : 'on';
-    switch (surface) {
-    case 'floor': case 'ground':
-        surface = 'solid ground';
-        break;
-    case 'ice':
-        surface = iceDescriptionAt(ux, uy, { state });
-        break;
-    case 'bridge': case 'altar': case 'headstone':
-        surface = withIndefiniteArticle(surface);
-        break;
-    case 'stairs': case 'lava': case 'bottom':
-        surface = `the ${surface}`;
-        break;
-    case 'air':
-        surface = 'the air';
-        preposition = 'in';
-        break;
-    default:
-        surface = withIndefiniteArticle(surface);
-        preposition = 'in';
-    }
-    const subject = rescued ? 'You find yourself' : state.flags.verbose ? 'You are back' : 'Back';
-    return `${subject} ${preposition} ${surface}.`;
 }
 
 interface DecorOptions {

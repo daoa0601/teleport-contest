@@ -1,16 +1,14 @@
+import { feel_location } from '../js/display.js';
 import type { DisplayGlyph } from '../js/display.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { BC_CHAIN, PIT, TT_BEARTRAP, TT_LAVA, TT_WEB, WEB } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
-import { setHeroTrap } from '../js/hero_traps.js';
+import { setHeroTrap, floatHeroDown } from '../js/trap.js';
 import { punishHero } from '../js/punishment.js';
 import { placeObjectSynchronously, remove_object } from '../js/floor_object.js';
-import { floatHeroDown } from '../js/terrain_movement.js';
-import { feel_location } from '../js/display.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { floorObject } from './support/game-objects.js';
 import { HEAVY_IRON_BALL, ROCK } from '../js/object_data.js';
@@ -20,7 +18,6 @@ import { initRng } from '../js/rng.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { moveObject } from '../js/hack.js';
-
 // Real punishment ownership: punishHero creates the ball and chain and
 // places them; repositioning uses the shared floor owners only.
 async function punishedHero({

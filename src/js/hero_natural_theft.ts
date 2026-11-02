@@ -1,14 +1,15 @@
 // C uhitm.c:steal_it(), theft_petrifies(), and hero AD_SGLD/SEDU/SITM/SSEX.
+
 import { A_DEX, M_ATTK_MISS, W_ARM, W_ARMG, W_WEP } from './const.js';
 import { findArtifact } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroSeductionCompatibility } from './hero_form_contact.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, mergable } from './invent.js';
 import { AD_SGLD } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { monsterSelfTouch } from './trap.js';
+import { monsterSelfTouch, resolveImmediatePetrification } from './trap.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -17,13 +18,10 @@ import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { CORPSE } from './object_data.js';
 import { dropObjectAtHero } from './hero_drop.js';
-import { mergable } from './invent.js';
-
-
 import { corpseName } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { heroIsBlind } from './senses.js';
-import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
+import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { addInventoryItem } from './u_init.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { Monster } from './monster_types.js';

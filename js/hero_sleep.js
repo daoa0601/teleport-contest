@@ -6,6 +6,7 @@ import { game } from './gstate.js';
 import { FAINTED } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { stopHeroOccupation } from './occupation.js';
+import { heroIsUnconscious } from './trap.js';
 // C timeout.c:fall_asleep().
 export async function putHeroToSleep(turns, { state = game, doneMessage = 'You wake up.', publish = plineWithContinuation, } = {}) {
     const hero = state.u;
@@ -26,14 +27,5 @@ export async function putHeroToSleep(turns, { state = game, doneMessage = 'You w
 export function heroIsUnaware(state = game) {
     return heroHasInvoluntaryDelay(state)
         && (heroIsUnconscious(state) || state.u?.uhs === FAINTED);
-}
-// C trap.c:unconscious(), narrower than Unaware (which also includes fainting).
-export function heroIsUnconscious(state = game) {
-    if (!heroHasInvoluntaryDelay(state))
-        return false;
-    const message = state._helplessDoneMessage || '';
-    return !!state.u?.usleep || message.startsWith('You awake')
-        || message.startsWith('You regain con')
-        || message.startsWith('You are consci');
 }
 //# sourceMappingURL=hero_sleep.js.map

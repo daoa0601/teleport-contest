@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { COLNO, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, ROWNO, SQKY_BOARD, STONE } from '../js/const.js';
-import { maketrap } from '../js/mklev.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -16,7 +15,7 @@ import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-
+import { maketrap } from '../js/trap.js';
 const REVEAL_PROSE = /fall|board|piercer|ogre|snake|hiding|Wait|mimic|hit|miss|It |turn into/i;
 
 function finalProse(messages: string[]): string {

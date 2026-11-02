@@ -3,14 +3,14 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { CLOUD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { heroIsUnconscious, putHeroToSleep } from '../js/hero_sleep.js';
+import { putHeroToSleep } from '../js/hero_sleep.js';
 import { CHAIN_MAIL, SPEED_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { doStorms } from '../js/storms.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
-
+import { heroIsUnconscious } from '../js/trap.js';
 void test('a storm in the hero\'s cloud causes temporary deafness and hiding', async () => {
     const input = freshTurnRoom({ hero: { uhp: 1000, uhpmax: 1000 }, seed: 19n });
     requirePlayingGame(game);

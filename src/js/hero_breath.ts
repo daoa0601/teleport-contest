@@ -2,51 +2,34 @@
 // C refs: polyself.c dobreathe() and zap.c ubreatheu()/zhitu().
 
 import type { MonsterAttack } from './data_types.js';
+import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
+import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
+import { AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM, AD_RBRE, AD_SLEE, AT_BREA } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { heroHasArtifactDefense } from './artifacts.js';
-import { heroHasHalfSpellDamage } from './zap.js';
+import { heroHasHalfSpellDamage, destroyColdInventory, destroyElectricInventory, destroyFireInventory } from './zap.js';
 import { disintegrateWornArmor } from './do_wear.js';
-
 import { exerciseAttribute } from './attrib.js';
-import {
-    A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM,
-} from './const.js';
+import { A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM } from './const.js';
 import { displayLiquidName, shieldeff } from './display.js';
-import { plineWithContinuation } from './pline.js';
-import { finishHeroDeath } from './end.js';
-
 import { monsterSpellDeathReason } from './mcastu.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { putHeroToSleep } from './hero_sleep.js';
-import { igniteItems } from './light.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS2, monsterIsNonliving,
-} from './monster_data.js';
-import {
-    AD_ACID, AD_COLD, AD_DISN, AD_DRST, AD_ELEC, AD_FIRE, AD_MAGM,
-    AD_RBRE, AD_SLEE, AT_BREA,
-} from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, monsterIsNonliving } from './monster_data.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { applyHeroGolemEffects, heroMonsterForm } from './polyself.js';
 import { poisonHero } from './poison.js';
 import { d, rn2, rnd } from './rng.js';
 import { clearHeroSliming } from './slime.js';
-import { burnHeroArmorByFire, erodeArmor, damageObjectWithAcid } from './trap.js';
-import {
-    destroyColdInventory, destroyElectricInventory, destroyFireInventory,
-} from './zap.js';
+import { burnHeroArmorByFire, erodeArmor, damageObjectWithAcid, igniteItems } from './trap.js';
 import { monsterHasLineOfSightToHero } from './vision.js';
-import {
-    seenResistanceForDamage,
-    monstersForgetHeroResistance,
-    monstersObserveHeroResistance,
-} from './mondata.js';
+import { seenResistanceForDamage, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import { loseHeroHp } from './hack.js';
 
 export function heroBreathAttack(state = game, damageType: DamageType | null = null) {

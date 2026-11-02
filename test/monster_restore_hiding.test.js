@@ -6,11 +6,9 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { nameToMonster } from '../js/mondata.js';
-import { revealMonsterAppearance } from '../js/mon.js';
+import { revealMonsterAppearance, attemptMonsterRestrap, hideMonsterUnder, maybeUnhideAt } from '../js/mon.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { attemptMonsterRestrap, hideMonsterUnder, maybeUnhideAt } from '../js/mon.js';
 import { hideMonsterOnRestore } from '../js/save.js';
 import { APPLE, CORPSE, GOLD_PIECE, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -18,6 +16,7 @@ import { cansee, couldsee, vision_note_blocker_change, vision_recalc } from '../
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { maketrap } from '../js/trap.js';
 async function unseenMonster(species, x = 12, y = 10) {
     const monster = await createMonsterAt(species, x, y);
     monster.minvis = true;

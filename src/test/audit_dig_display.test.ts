@@ -4,13 +4,11 @@ import { rhack } from '../js/cmd.js';
 import { PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { WAN_DIGGING } from '../js/object_data.js';
-import { connectPits } from '../js/pit_connections.js';
+import { connectPits, maketrap } from '../js/trap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-
 void test('a blind hero remembers a new pit beyond a conjoined pit after a digging zap', async () => {
     const level = await freshObjectRoom({ hero: { blindTurns: 10 } });
     const ownPit = await maketrap(10, 10, PIT);

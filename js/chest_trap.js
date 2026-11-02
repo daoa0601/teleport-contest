@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeHallucinated, makeStunned } from './potion.js';
 import { heroHandName } from './body_parts.js';
 import { heroSpecies } from './polyself.js';
-import { nomul } from './hack.js';
+import { nomul, loseHeroHp } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './do_wear.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
@@ -13,7 +13,7 @@ import { bot } from './botl.js';
 import { randomColorName, shieldeff } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
-import { triggerHeroFireTrap } from './fire_trap.js';
+import { triggerHeroFireTrap } from './trap.js';
 import { game } from './gstate.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { staggerVerb } from './dothrow.js';
@@ -27,7 +27,6 @@ import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteO
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { destroyElectricInventory, getObjectLocation } from './zap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
-import { loseHeroHp } from './hack.js';
 const BLIND_GAS = [
     'humid', 'odorless', 'pungent', 'chilling', 'acrid', 'biting',
 ];

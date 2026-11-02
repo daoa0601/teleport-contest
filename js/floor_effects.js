@@ -1,27 +1,27 @@
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
-import { ALTAR, CORR, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit, } from './const.js';
+import { ALTAR, CORR, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
-import { map_background, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import { map_background, newsym } from './display.js';
 import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './dothrow.js';
 import { deleteObject } from './shk.js';
 import { BOULDER, POT_OIL } from './object_data.js';
-import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural, } from './objnam.js';
+import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { shipObject } from './dokick.js';
 import { objectResistsDestruction } from './zap.js';
-import { applyBoulderPitEffects } from './pit_fill.js';
+import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { rnl, rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectWeight } from './mkobj.js';
+import { applyBoulderPitEffects } from './do.js';
 const POTION_CLASS = 8;
 function squareIsVisible(state, x, y) {
     if (state === game)

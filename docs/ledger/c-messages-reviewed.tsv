@@ -524,10 +524,10 @@ topten.c	writexlentry	version=	out-of-scope	Record/log/extended-log file I/O (re
 topten.c	writexlentry	wish_cnt=	out-of-scope	Record/log/extended-log file I/O (record file, xlogfile and its xlsx form); the port serves scores from session data instead of the filesystem, per docs/c-js-semantics.md Operating-system features.
 trap.c	chest_trap	trigger a trap!	composed	src/js/chest_trap.ts:triggerChestTrap; Selects trigger a trap for an ordinary trigger and set it off for a disarm failure.
 trap.c	lava_effects	and are about to be immolated	dead	This else-if follows if (!Fire_resistance), so Fire_resistance is true and boil_away = !Fire_resistance is false.
-trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
-trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/hero_traps.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
-trap.c	untrap	are containers	composed	src/js/untrap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
-trap.c	untrap	is a container	composed	src/js/untrap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
+trap.c	trapeffect_arrow_trap	An arrow shoots out at you!	composed	src/js/trap.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
+trap.c	trapeffect_dart_trap	A little dart shoots out at you!	composed	src/js/trap.ts:triggerProjectileTrap; Selects An arrow or A little dart and appends shoots out at you.
+trap.c	untrap	are containers	composed	src/js/trap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
+trap.c	untrap	is a container	composed	src/js/trap.ts:chooseFloorTrapOrBox; Chooses is/are and a container/containers for the disarm prompt "There %s and %s here.  %s %s?".
 uhitm.c	gulpum	is burning to a crisp!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	is freezing to death!	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.
 uhitm.c	gulpum	seems mildly chilly.	composed	src/js/hero_combat_engulf.ts:engulfDamage; Selects mildly chilly or hot when resistant and freezing to death or burning to a crisp otherwise.

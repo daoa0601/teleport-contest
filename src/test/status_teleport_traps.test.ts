@@ -5,7 +5,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { activateMagicPortal } from '../js/teleport.js';

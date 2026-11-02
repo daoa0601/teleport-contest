@@ -6,7 +6,7 @@ import { DELPHI, DOOR, D_CLOSED, LAVAPOOL, NO_MINVENT, OROOM, ROCKTRAP, ROOMOFFS
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, decideMonsterShapeChange } from '../js/mon.js';

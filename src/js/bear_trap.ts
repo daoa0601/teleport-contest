@@ -4,23 +4,16 @@
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Trap } from './map_types.js';
+import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
+import { monsterInAir } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { publishHeardMessage } from './hero_speech.js';
-import {
-    MONSTER_NAME, MONSTER_SIZE,
-    monsterIsAmorphous,
-    monsterIsUnsolid,
-    monsterIsWhirly,
-} from './monster_data.js';
-import { monsterWearsIronShoes } from './monworn.js';
+import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly } from './monster_data.js';
 import { d, rn2 } from './rng.js';
-import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterInAir } from './mon.js';
-
+import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap, monsterWearsIronShoes } from './trap.js';
 import { monsterName } from './do_name.js';
 
 export interface MonsterBearTrapEvent {

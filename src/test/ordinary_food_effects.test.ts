@@ -2,21 +2,15 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, G_GENOD, ICE, NO_MINVENT, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
-import {
-    doeat, applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood,
-} from '../js/eat.js';
+import { doeat, applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { heroIsUnconscious } from '../js/hero_sleep.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { races } from '../js/roles.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    APPLE, CARROT, CLOVE_OF_GARLIC, EGG, FOOD_RATION, FORTUNE_COOKIE,
-    LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, PEAR, TRIPE_RATION,
-} from '../js/object_data.js';
+import { APPLE, CARROT, CLOVE_OF_GARLIC, EGG, FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, PEAR, TRIPE_RATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind, heroIsDeaf, setHeroBlindnessTurns } from '../js/senses.js';
@@ -29,7 +23,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
-
+import { heroIsUnconscious } from '../js/trap.js';
 async function foodRoom(options: ObjectRoomOptions = {}) {
     const level = await freshObjectRoom(options);
     requirePlayingGame(game);
@@ -213,7 +207,6 @@ void test('royal jelly still strengthens a killer bee when queen bees are genoci
     assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('killer bee'));
     assert.equal(game.u.acurr.a[A_STR], strength + 1);
 });
-
 
 void test('rotten food confuses a fungus using its native sensation', async () => {
     await foodRoom();

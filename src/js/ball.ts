@@ -2,64 +2,41 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { isPoolAt } from './dbridge.js';
-
-// ball.js — Punishment ball-and-chain movement.
-// C ref: ball.c bc_order(), move_bc(), and drag_ball().
-
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './mon.js';
 import { cls, displayLiquidName, map_object, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { placeObjectSynchronously, remove_object } from './floor_object.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { hitFloorWithObject } from './dothrow.js';
-
+import { hitFloorWithObject, rangedTargetHitBonus } from './dothrow.js';
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './do_wear.js';
-
-import { heroHeadName } from './body_parts.js';
-
+import { heroHeadName, heroLegName } from './body_parts.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './mkobj.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
-import { rangedTargetHitBonus } from './dothrow.js';
 import { rn1, rn2, rnd } from './rng.js';
-import {
-    A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE,
-    TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB,
-    Is_waterlevel, is_hole, is_pit,
-} from './const.js';
+import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit } from './const.js';
 import { dist2, distmin } from './hacklib.js';
-
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
-import { heroLegName } from './body_parts.js';
 import { woundHeroLegs } from './hero_legs.js';
-import { resetHeroTrap } from './terrain_movement.js';
-import { fillPitWithBoulderAt } from './pit_fill.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { fillPitWithBoulderAt, resetHeroTrap } from './trap.js';
+import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './hero_physical_hit.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './ray_hit_message.js';
-
-import { applyHeroLocationEffects } from './hack.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
-import type { MessagePublisher } from './pline.js';
 import type { KillerFormat } from './end.js';
-import {
-    moveObject,
-    loseHeroHp,
-    nearCapacity,
-    SLT_ENCUMBER,
-    weightCapacity,
-} from './hack.js';
+// ball.js — Punishment ball-and-chain movement.
+// C ref: ball.c bc_order(), move_bc(), and drag_ball().
 
 interface BallMoveGeometry {
     ball: GameObject;
@@ -293,7 +270,6 @@ export async function restoreBallAndChainPlacement(
     await newsym(x, y);
     state._ballChainRestriction = 0;
 }
-
 
 function carried(object: GameObject | null | undefined, state: GameState = game): boolean {
     return !!object && (object.where === 'inventory' || state.inventory.includes(object));

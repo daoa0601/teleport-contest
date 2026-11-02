@@ -4,7 +4,6 @@ import { rhack } from '../js/cmd.js';
 import { DB_EAST, DB_FLOOR, DB_LAVA, DBWALL, DRAWBRIDGE_UP, HOLE, MOAT, PIT, POOL, ROOM, TT_PIT, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { maketrap } from '../js/mklev.js';
 import { PICK_AXE, POT_HEALING, WAN_DIGGING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -12,6 +11,7 @@ import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createSpecialLevel } from './support/topology.js';
+import { maketrap } from '../js/trap.js';
 void test('downward digging sloshes exposed lava under a raised drawbridge', async () => {
     const level = await freshObjectRoom();
     const span = level.requireAt(10, 10);

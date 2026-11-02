@@ -5,7 +5,7 @@ import { BEAR_TRAP, HOLE, LANDMINE, MAGIC_PORTAL, PIT, ROCKTRAP, ROLLING_BOULDER
 import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';

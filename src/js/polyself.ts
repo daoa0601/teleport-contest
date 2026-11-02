@@ -10,12 +10,13 @@ import { formatFeltMessage } from './hero_speech.js';
 import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
-import { BOLT_LIM, P_SHORT_SWORD, P_SABER } from './const.js';
-import { verbForSubject, makePlural, withIndefiniteArticle } from './objnam.js';
+import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
+import { verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-
-import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
+import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
+import { finishHeroDeath } from './end.js';
 import type { DeathHandler, FinishHeroDeathOptions } from './end.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -24,22 +25,25 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import type { HeroCoordinates } from './hero_types.js';
+import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
+import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import type { HeroRayResult } from './hero_breath.js';
 import type { NativeRayResult } from './ray_attack.js';
+import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
 import type { HeroWereChangeOptions } from './were.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
+import { races } from './roles.js';
 import type { RoleKey } from './roles.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { heroHasFreeAction, pendingArmorAction } from './do_wear.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt } from './hack.js';
+import { heroHasFreeAction, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff } from './do_wear.js';
+import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { setMimicBlocking } from './hero_seeing.js';
-import { makeBlinded } from './potion.js';
-
-import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
+import { makeBlinded, setSlipperyHands } from './potion.js';
 import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './eat.js';
@@ -52,7 +56,6 @@ import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './breath_ray.js';
-import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
 import { promptDirection } from './tty_prompts.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
@@ -60,58 +63,38 @@ import { hurtleHero } from './hero_hurtle.js';
 import { placeCreatedObject, stack_object } from './floor_object.js';
 import { mksobj } from './mkobj.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
-import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
 import { tossObjectUp } from './toss_up.js';
-import { deleteTrap, feelTrap } from './trap.js';
-import { buryFloorObjectsAt } from './dig.js';
-import { maketrap } from './mklev.js';
+import { deleteTrap, feelTrap, clearHeroTrap, triggerHeroTrap, igniteItems, resetHeroTrap, maketrap } from './trap.js';
+import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
-
-import { currentAttribute, maximumAttribute } from './attrib.js';
+import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
-import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
 import { addShopDamage, deleteObject } from './shk.js';
-import { cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName } from './do_wear.js';
-
 import { isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, refreshMovementProperties, revokeIntrinsicProperty } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
-import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, igniteItems, objectLightRadius } from './light.js';
-import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
-import { exerciseAttribute } from './attrib.js';
+import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius } from './light.js';
 import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, resolveMonsterClass, speciesCanBlow } from './mondata.js';
-import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
 import { getLine, promptYesNo, yn_function } from './query.js';
-import { setSlipperyHands } from './potion.js';
-import { races } from './roles.js';
-import { finishHeroDeath } from './end.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
-import { isBeingTakenOff } from './do_wear.js';
-
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
-import { clearHeroTrap, freeHeroFromBuriedBall, triggerHeroTrap } from './hero_traps.js';
-import { resetHeroTrap } from './terrain_movement.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster } from './mon.js';
 import { learnEggType } from './invent.js';
 import { expelHero } from './hero_expulsion.js';
-import { applyHeroLocationEffects } from './hack.js';
 import { restartAmuletStrangulation, stopStrangulationInImmuneForm } from './hero_strangulation.js';
 import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown } from './slime.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
-import { loseHeroHp, roundDiv } from './hack.js';
+
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
 const M1_CLING = 0x00000010;
@@ -1150,7 +1133,6 @@ function canDropPolymorphWeapon(object: GameObject) {
     return !(object.otyp === LEASH && object.leashmon);
 }
 
-
 function humanAttributeArrays() {
     requirePlayingGame(game);
     const u = game.u;
@@ -2188,9 +2170,6 @@ export function heroGazeAttack(state = game) {
         ([attackType]) => attackType === AT_GAZE,
     ) || null;
 }
-
-
-
 
 function heroIsConfused(state: GameState) {
     return !!(state.u?.confused || (state.u?.confusionTurns ?? 0) > 0);

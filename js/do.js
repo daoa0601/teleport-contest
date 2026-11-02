@@ -1,23 +1,33 @@
 // do.js — shared hero command transactions.
 // C refs: do.c cmd_safety_prevention(), donull(), dowipe(), and wipeoff();
 //         hack.c monster_nearby().
-import { setHeroBlindnessTimeout } from './senses.js';
-import { game, requireLiveGame } from './gstate.js';
+import { setHeroBlindnessTimeout, heroIsBlind } from './senses.js';
+import { game, requireLiveGame, requireGameLevel } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { monsterIsScaredAt } from './monmove.js';
-import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
+import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { AT_BOOM } from './monster_attack_types.js';
-import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
+import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, HOLE, TRAPDOOR } from './const.js';
 import { makeBlinded } from './potion.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
 import { CRYSKNIFE, OBJECT_NAMES, WORM_TOOTH } from './object_data.js';
 import { makePlural } from './objnam.js';
 import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown } from './shk.js';
-import { rn2 } from './rng.js';
-import { callObjectType } from './do_name.js';
-import { threateningMonsterNearby } from './hack.js';
+import { rn2, rnd } from './rng.js';
+import { callObjectType, monsterName } from './do_name.js';
+import { threateningMonsterNearby, loseHeroHp } from './hack.js';
+import { buryFloorObjectsAt } from './dig.js';
+import { canSpotMonster, newsym } from './display.js';
+import { cansee } from './vision.js';
+import { finishEnvironmentalMonsterDeath } from './mon.js';
+import { formatHeardMessage } from './hero_speech.js';
+import { heroSpecies } from './polyself.js';
+import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
+import { rollPhysicalWeaponDamage } from './weapon.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { deleteFloorTrap, resetHeroTrap } from './trap.js';
 function dangerousHeroProperties() {
     const u = game.u;
     return !!(u.stoned || (u.stonedTurns ?? 0) > 0
@@ -185,5 +195,86 @@ export async function tryCallObjectType(object, state = game) {
         return { prompted: false, named: false, callName: null };
     }
     return callObjectType(object, state);
+}
+// ── moved from src/js/trap.ts ──
+export async function applyBoulderPitEffects(boulder, trap, x, y, { state = game, publish = plineWithContinuation, verb = '', } = {}) {
+    requireLiveGame(state);
+    const level = requireGameLevel(state);
+    if (boulder.where !== 'free')
+        throw new Error('boulder pit effects require a free object');
+    const trapType = trap.ttyp;
+    const seen = !!trap.tseen;
+    const heroHere = state.u.ux === x && state.u.uy === y;
+    const monster = monsterAtPosition(level, x, y);
+    let squishedHero = false;
+    if (monster?.mtrapped || state.u.utrap && heroHere) {
+        if (verb && (cansee(x, y) || heroHere))
+            await publish(`${heroIsBlind(state) ? 'A' : 'The'} boulder ${verb}s into the pit${monster ? '' : ' with you'}.`);
+        if (monster) {
+            if (!ignoresFallingBoulder(monster.mnum)) {
+                if (state.context.mon_moving) {
+                    monster.mhp -= rollPhysicalWeaponDamage(boulder, monster);
+                    if (monster.mhp <= 0) {
+                        const destroyed = monsterIsNonliving(monster.mnum) || monsterIsVampireShifter(monster);
+                        const death = await finishEnvironmentalMonsterDeath(monster, state, {
+                            publish, deathMessage: canSpotMonster(monster)
+                                ? `${monsterName(monster, { state, capitalized: true })} is ${destroyed ? 'destroyed' : 'killed'}!` : null,
+                        });
+                        if (death.heroDied || state.program_state.gameover)
+                            return { finished: true, object: boulder, heroDied: true };
+                    }
+                }
+                else if ((await hitMonsterWithSettlingBoulder(monster, boulder, { state, publish })).heroDied) {
+                    return { finished: true, object: boulder, heroDied: true };
+                }
+            }
+            monster.mtrapped = 0;
+        }
+        else if (!state.u.passesWalls && !ignoresFallingBoulder(heroSpecies(state))) {
+            const damage = rnd(15);
+            const cause = 'squished under a boulder';
+            if (await loseHeroHp(state.u.halfPhysicalDamage ? Math.trunc((damage + 1) / 2) : damage, cause, { state, publish, deathCause: cause }))
+                return { finished: true, object: boulder, heroDied: true };
+            squishedHero = true;
+        }
+        else
+            await resetHeroTrap(true, state);
+    }
+    if (verb && !squishedHero) {
+        if (heroIsBlind(state) && heroHere) {
+            const message = formatHeardMessage('a CRASH! beneath you.', state);
+            if (message)
+                await publish(message);
+        }
+        else if (!heroIsBlind(state) && cansee(x, y)) {
+            const effect = trapType === TRAPDOOR ? 'plugs a trap door'
+                : trapType === HOLE ? 'plugs a hole' : 'fills a pit';
+            await publish(`The boulder ${trapType === TRAPDOOR && !seen ? 'triggers and ' : ''}${effect}.`);
+        }
+        else {
+            const message = formatHeardMessage(`a boulder ${verb}.`, state);
+            if (message)
+                await publish(message);
+        }
+    }
+    const remainingTrap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (remainingTrap) {
+        await deleteFloorTrap(remainingTrap, state);
+        if (state.program_state.gameover)
+            return { finished: true, object: boulder, heroDied: true };
+        if (state.u.utrap && heroHere)
+            await resetHeroTrap(false, state);
+    }
+    boulder.ox = x;
+    boulder.oy = y;
+    await useUpFloorObject(boulder, 1, { state, publish });
+    const buriedFloorObjects = await buryFloorObjectsAt(x, y, state, { publish });
+    await newsym(x, y);
+    return { finished: true, object: null, buriedFloorObjects };
+}
+const M1_WALLWALK = 0x08;
+const M2_ROCKTHROW = 0x08000000;
+function ignoresFallingBoulder(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK) || !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
 }
 //# sourceMappingURL=do.js.map

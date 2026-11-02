@@ -4,7 +4,7 @@ import test from 'node:test';
 import { ARROW_TRAP, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/hero_traps.js';
+import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ARROW } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

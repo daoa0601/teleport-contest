@@ -1,10 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
-import { A_WIS } from '../js/const.js';
+import { A_WIS, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { igniteItems } from '../js/light.js';
-import { NO_MINVENT } from '../js/const.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { shopkeeperName } from '../js/shknam.js';
 import { OIL_LAMP, POT_OIL } from '../js/object_data.js';
@@ -16,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { createStaffedShop } from './support/shop.js';
-
+import { igniteItems } from '../js/trap.js';
 void test('a known oil potion catches light with one potion prefix', async () => {
     await freshObjectRoom();
     const potion = await addInventoryObject(POT_OIL);

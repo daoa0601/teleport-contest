@@ -6,16 +6,10 @@ import { CORPSTAT_HISTORIC } from './const.js';
 import { shopkeeperName } from './shknam.js';
 import { newsym } from './display.js';
 import { pline } from './pline.js';
+import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import type { MessagePublisher } from './pline.js';
-
-interface FractureOptions {
-    state?: GameState;
-    random?: typeof rn2;
-    publish?: MessagePublisher;
-}
 import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { changeHeroLuck } from './attrib.js';
@@ -28,18 +22,15 @@ import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { objectWeight } from './mkobj.js';
+import { sokobanGuilt } from './trap.js';
 
+interface FractureOptions {
+    state?: GameState;
+    random?: typeof rn2;
+    publish?: MessagePublisher;
+}
 
 const GEM_CLASS = 13;
-
-// C trap.c:sokoban_guilt().  force_bolt.js previously kept this logic beside
-// its own boulder conversion; the shared fracture owner now owns it.
-export function sokobanGuilt(state: GameState): void {
-    if (!state.level?.flags?.sokoban_rules) return;
-    if (!state.u.uconduct) state.u.uconduct = {};
-    state.u.uconduct.sokocheat = (state.u.uconduct.sokocheat ?? 0) + 1;
-    changeHeroLuck(-1, state);
-}
 
 async function dropStatueContents(
     statue: GameObject,

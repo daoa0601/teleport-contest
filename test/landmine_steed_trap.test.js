@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { CHEST, CORPSE, SADDLE } from '../js/object_data.js';
-import { keepSaddleWithSteedcorpse, triggerHeroTrap } from '../js/hero_traps.js';
+import { keepSaddleWithSteedcorpse, triggerHeroTrap } from '../js/trap.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
