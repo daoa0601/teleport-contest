@@ -7,7 +7,8 @@ part of the game, the grader, or `npm run check`. See
 ## `difftest/`: concrete calls with serialized heap and hero state
 
 This prototype calls real linked recorder functions and their emitted-JavaScript
-ports. It is empirical testing, with no new equivalence theorem and no CI job.
+ports. It is empirical testing, with no new equivalence theorem. The sibling
+`difftest` CI job builds the native harness and runs all differential tests.
 It currently covers these six entry points:
 
 | Recorder function | Emitted JavaScript |
@@ -196,10 +197,11 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 41 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 52 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
-initialized monster movement, eight geometry/species predicates, and eight
-ISAAC64/seed-packing claims. The monster claims check all 383 valid native
+initialized monster movement, eight geometry/species predicates, eight
+ISAAC64/seed-packing claims, and eleven bounded-state/inline claims. The monster
+claims check all 383 valid native
 species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
@@ -234,6 +236,32 @@ existing armor helpers. Four added executor tests cover these behaviors;
 three failed before the corresponding verifier extensions. See
 `docs/formal-verification.md` for per-claim domains, paths and measured times.
 
+The complete bounded-state run passed all 52 claims, 56 probes and 60 mutant
+checks in 772.20 s and wrote the ledger after success. The final focused suite
+passed 83 tests in 72.741 s, the 36 ledger tests took 4.061 s, and the CI-style
+fast proof/ledger command passed in 241.71 s. The bounded-state
+extension adds six symbolic attack-array claims, four
+carrying-capacity claims and an actual inline `sgn` expression. Attack rows
+have six records with every byte field symbolic. Capacity covers initialized
+species, representative source/block masks, pending boots, mounts and wounded
+legs, with restoration of all four modified property masks. Inventory claims
+are bounded to 0..4 objects of four types (gold, boulder, dagger, food ration),
+quantities/weights 0..100000 and fresh ordinary cached weights; extra weight is
+within +/-1000000. They compose already proved attribute/capacity summaries.
+The `sgn` claim executes only the real `aimedDirection` `dx` initializer under
+explicit locals. See `docs/formal-verification.md` for the exact entry relation,
+projection limits and measurements. No whole caller or unbounded heap theorem
+is implied.
+
+The dedicated fast-proof CI step checks every fast claim and the complete
+ledger. The ledger CLI unit tests retain small real-program acceptance tests
+and complete-ledger rejection tests; they no longer repeat that entire proof
+run. The independent difftest job has its own unchanged 30-minute limit and a
+locked pytest environment. From `verification/difftest`, its local commands are
+`uv run --locked run.py --build` and `uv run --locked python -m pytest -q`.
+Bash pipeline failure propagation preserves a failed build or pytest status
+through the reporting `tee` command.
+
 The `rnl` claim splits its domain exhaustively into magnitude intervals of
 the luck sum (`u.uluck + u.moreluck`, both `schar`, so the 17 intervals
 `[0,15], [16,31], ..., {256}` cover it). Each interval keeps the
@@ -263,7 +291,7 @@ final suite of 63 executor/query/selection tests passing in 83.1 s and the
 same 37 ledger CLI tests in 140.1 s.
 
 Run the language, solver-isolation and command-selection tests
-(63 tests; no game sessions):
+(83 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
@@ -277,8 +305,9 @@ switch fallthrough/break/return behavior, C signed and unsigned bit operations,
 JS 32-bit coercion, imports, defaults, scopes, libc assertions, signed division safety and rejected constructs. C table
 values come from clang initializers. JS constant arrays are read from emitted
 modules; this assumes the fields read still have their initial values. The
-game-table claims include native record and attack fields. Writable heap state
-is not modeled; movement's initializer performs no writes in its entry domain.
+game-table claims include native record and attack fields. Declared C field writes and bounded object chains are modeled; general heap
+allocation and shared/cyclic chains remain outside the model. Movement's
+initializer performs no writes in its entry domain.
 
 Pointer member reads from global state require a pointer declared through
 `references` or a `CPtr` in `c_globals`; declaring only a flattened pointee
@@ -355,7 +384,7 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 `experience:tables` and `mcalcmove:tables` are marked `slow` in their specs.
 The default command includes them, all probes and all mutants. Use
 `uv run prove.py --skip-slow` for pull-request checks: it reports each excluded
-claim and checks the other 39. The separate scheduled job uses `--slow-only --check-ledger`.
+claim and checks the other 50. The separate scheduled job uses `--slow-only --check-ledger`.
 Run just the slow claims with:
 
 ```sh

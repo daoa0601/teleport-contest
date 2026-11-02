@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 41 scoped C/JavaScript claims,
+`verification/equivalence/` now proves 52 scoped C/JavaScript claims,
 including hero equipment, forms, initial monster tables, and eight ISAAC64
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
@@ -44,7 +44,7 @@ over rank 4.
 
 `cd verification/equivalence && uv run prove.py` (clang and uv).
 `--skip-slow` excludes the two slow table claims and their negative checks, with
-an explicit `SKIPPED` line for each. The default includes all 41 claims.
+an explicit `SKIPPED` line for each. The default includes all 52 claims.
 In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
 **Claim.** For every input in the domain, every random sequence (core and
@@ -83,6 +83,17 @@ split `rnl` row use this batch's complete runs.
 | `ceiling_hider:tables` | `mondata.h:ceiling_hider` ↔ `monster_data.js:monsterSpeciesHidesOnCeiling` | Same domain; initial flags and monster classes | 383×(1×1) | 3.3 s |
 | `sliparm:tables` | `mondata.c:sliparm` ↔ `monster_data.js:monsterSlipsArmor` | Same domain; initial sizes, classes and species identities | 383×(1×1) | 4.0 s |
 | `breakarm:tables` | `mondata.c:breakarm` ↔ `monster_data.js:monsterBreaksArmor` | Same domain; initial flags, sizes, classes and species identities | 383×(1×1) | 8.7 s |
+| `attacktype:engulfs` | `mondata.c:attacktype` ↔ `monster_data.js:monsterCanEngulf` | Six symbolic attack records; `AT_ENGL` query | 1×1 | 1.4 s |
+| `attacktype:armed` | `mondata.c:attacktype` ↔ `monmove.js:speciesHasWeaponAttack` | Same array domain; `AT_WEAP` query | 1×1 | <0.1 s |
+| `dmgtype_fromattack:digests` | `mondata.h:digests` via native scan ↔ `monster_data.js:monsterDigests` | Same array domain; `AD_DGST`, `AT_ENGL`; presence only | 1×1 | 4.3 s |
+| `dmgtype_fromattack:enfolds` | `mondata.h:enfolds` via native scan ↔ `monster_data.js:monsterEnfolds` | Same array domain; `AD_WRAP`, `AT_ENGL`; presence only | 1×1 | 3.6 s |
+| `attacktype_fordmg:digests` | `mondata.c:attacktype_fordmg` ↔ `monster_data.js:monsterDigests` | Same array domain; `AT_ENGL`, `AD_DGST`; presence only | 1×1 | 3.4 s |
+| `dmgtype:sticks` | `mondata.c:sticks`, including `dmgtype` ↔ `monster_data.js:monsterSpeciesSticks` | Same array domain; complete sticking predicate | 1×1 | 1.6 s |
+| `weight_cap:state` | `hack.c:weight_cap` ↔ `weight.js:weightCapacity` | Related hero state, representative property masks, initial species; restored properties | 1×1 | 27.8 s |
+| `inv_weight:chain4` | `hack.c:inv_weight` ↔ `weight.js:invWeight` | Related inventory length 0..4; four object types; fresh cache; weights/quantities 0..100000 | 5×(1×1) | 8.6 s |
+| `calc_capacity:chain4` | `hack.c:calc_capacity` ↔ `weight.js:calcCapacity` | Same chain domain; extra weight in [-1000000,1000000] | 5×(1×1) | 12.9 s |
+| `near_capacity:chain4` | `hack.c:near_capacity` ↔ `weight.js:nearCapacity` | Same chain domain; extra weight zero | 5×(1×1) | 9.6 s |
+| `sgn:inline` | `hacklib.c:sgn` ↔ emitted `muse.js:aimedDirection` dx initializer | Any C int delta; explicit local inputs; enclosing caller excluded | 2×1 | <0.1 s |
 | `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 3.1 s |
 | `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 0.9 s |
 | `xlev_to_rank` | `botl.c:xlev_to_rank` ↔ `exper.js:experienceRankIndex` | Every C int level | 3×3 | 0.2 s |
@@ -106,6 +117,66 @@ split `rnl` row use this batch's complete runs.
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
 | `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
+
+**Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
+including **56 domain probes** and **60 mutant checks**, and wrote the ledger
+only after success. The bounded-state path counts above are after deterministic
+joining; their branch conditions and obligations remain in the proof terms.
+Eleven additional claims execute the pinned C
+bodies and emitted callbacks. Six scan a symbolic `permonst.mattk[6]`:
+all four `uchar` fields in every slot range independently over 0..255.
+The related JS row has the same six records. No initial species table is
+assumed by these six claims. Query types are the constants used by the real
+helpers: engulfing, weapon attacks, digesting, wrapping and sticking.
+`attacktype_fordmg` and `dmgtype_fromattack` are observed for presence;
+which matching pointer they return is outside the projection. `dmgtype`
+is exercised through the complete `sticks` predicate. Null-pointer probes
+produce native safety counterexamples, and each claim kills a result mutant.
+
+The capacity claims cover original and polymorphed forms across every valid
+initial species index, both wounded-leg bits, air-level identity, a nullable
+mount with any valid initial species, and pending boots. Property sources use
+explicit representative masks: intrinsic/timed sources are zero or `TIMEOUT`,
+boot levitation uses `W_ARMF`, other levitation uses `W_RING`, flying uses
+`W_ARMC`, and terrain/trap blocks use `FROMOUTSIDE`/`I_SPECIAL`. The JS records
+represent those same source-presence flags. Their projected movement fields
+and trap/stealth blocks satisfy `float_vs_flight`/`steed_vs_stealth` at entry.
+The air-level pair is initialized and nonzero; native `disp.botl` is already
+true. These are declared entry restrictions, not a theorem about every raw
+property mask or caller initialization.
+
+`weight_cap` executes both property helpers and proves restoration of
+ELevitation, BLevitation, BFlying and BStealth. Its result is proved in
+1..1000. It uses the previously proved `acurr:all` summary, now also checked
+for a 3..125 result range; the Strength condensation still executes on both
+sides. The inventory claims use this proved, pure capacity summary. Selecting
+a composed claim also selects its prerequisites; a failed prerequisite fails
+the composition. The existing assumed dungeon-difficulty contract is unchanged.
+
+Inventory is an acyclic, unshared `nobj` chain of length 0..4, related to a JS
+array in the same order. Each slot independently chooses gold, boulders,
+daggers or food rations. Quantities and cached weights are 0..100000, classes
+correspond, and partly eaten food is excluded. Non-coin, non-skipped cached
+weights equal initial metadata weight times quantity at entry. `calc_capacity`
+allows extra weight in [-1000000,1000000], keeping C arithmetic defined.
+The native `gw.wc` cache is tracked for subsequent reads but has no JS exit
+counterpart. The scalar loop-invariant interface cannot havoc linked pointers;
+these claims explicitly stop at four objects and make no unbounded-chain claim.
+
+`sgn:inline` compares every C int with the actual `dx` initializer in emitted
+`muse.js:aimedDirection`. The supplied locals encode that int as `target.x`
+with `monster.mx = 0`. The enclosing function and the earlier assignments
+establishing those locals are excluded. No game helper was invented.
+
+The executors now model fixed-array pointer provenance and one-past bounds,
+callback destructuring and short-circuiting, ordered array reduction, and
+per-path writes to declared C fields. Every modeled C write must restore its
+entry value unless explicitly recorded as native-only exit state. Optional
+deterministic joining retains branch guards, values, stream positions and
+pre-join safety obligations; it avoids enumerating the same property branches
+repeatedly. General heap allocation, cyclic/shared lists, arbitrary property
+masks, other object types, containers, partial meals, live species-table
+mutations and caller establishment of these relations remain unproved.
 
 **Geometry and species batch.** The eight added claims execute the real
 emitted functions. Four C harness functions expand the actual `mondata.h`
@@ -141,10 +212,10 @@ are used by `hack`, `mon` and pet movement; minds and hands affect monster
 actions; ceiling hiding and armor fit affect movement and polymorphs. The RNG
 ledgers record 226,931 eval and 28,208 public random calls under `m_move`,
 which uses the mind/hand predicates; these are random-call counts, not counts
-of predicate invocations. Carrying capacity was deferred because
+of predicate invocations. That batch deferred carrying capacity because
 `weight_cap` temporarily changes property state and `calc_capacity` reaches
 inventory chains. `dmgtype` needs attack-pointer traversal and JS callbacks;
-`sgn` has no standalone emitted counterpart. No port fidelity bug was found
+`sgn` had no standalone emitted counterpart; the bounded-state batch below checks an actual inline initializer. No port fidelity bug was found
 within the eight stated domains.
 
 The complete 41-claim run exited 0 in **704.66 s**, including **45 domain
@@ -469,7 +540,7 @@ that a negative `rounddiv` denominator can be reached through a debug option:
   literal object options, array defaults and `Number.isFinite` cover the
   corresponding initialized JS paths. C `for` loops require an initializer,
   condition and update, and use the same checked unrolling rule as `while`.
-- Not yet: heap writes, pointer arithmetic, general sparse JS arrays, Lua, `async`/`await`,
+- Not yet: general heap writes or pointer arithmetic outside a fixed array, general sparse JS arrays, Lua, `async`/`await`,
   escaped JS string literals, exceptions as control flow, loops that log inside their bodies under
   induction, and JS declarations that shadow an outer binding (rejected, not
   modeled). An induction loop needs a variant as well as an invariant, so
@@ -817,9 +888,9 @@ a logically equivalent rewrite requires a reviewed `--write-ledger` refresh.
    Remaining work: discharge `abon`'s dungeon-difficulty contract, equipped
    monster AC, live table mutations, missing-field initialization and preservation
    of those relations by state-changing callers. `online2` now pairs with
-   `hacklib.js:pointsOnline`; `sgn`, `isqrt`, and `rank_to_xlev` still have no
-   matching standalone emitted function in the inspected modules; no function
-   was invented for a claim.
+   `hacklib.js:pointsOnline`; `sgn` now has an inline-expression claim; `isqrt` and `rank_to_xlev`
+   still have no matching standalone emitted function in the inspected modules.
+   No game function was invented for a claim.
 3. **ISAAC64 (done for the stated domains).** The frozen BigInt generator
    and C uint64 generator have equal outputs and successor states for init,
    reseed, mix, update, and next; wrapper seed packing also proves. The full

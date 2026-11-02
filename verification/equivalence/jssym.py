@@ -98,6 +98,20 @@ def _strip(node):
     return node
 
 
+def _array_slots(node):
+    """(binding node or None, element position) for each comma-separated slot
+    of an array pattern. Holes bind nothing but still advance the position."""
+    slots, position = [], 0
+    for child in node.children:
+        if child.type == ',':
+            position += 1
+        elif child.type in ('identifier', 'assignment_pattern'):
+            slots.append((child, position))
+        elif child.type not in ('[', ']', 'comment'):
+            raise Unsupported(f'JavaScript array parameter pattern {child.type}')
+    return slots
+
+
 def _assigned(node) -> set:
     names = set()
     for m in [node, *_descendants(node)]:
@@ -127,6 +141,32 @@ class JSExec:
     def where(self, node) -> str:
         return f'{self.stack[-1][1]}:{node.start_point[0] + 1}'
 
+    @staticmethod
+    def merge_value(guard, a, b):
+        if a is b:
+            return a
+        if not isinstance(a, V) or not isinstance(b, V) or a.kind != b.kind:
+            raise Unsupported('JavaScript values cannot be joined')
+        if a.kind in ('num', 'bool', 'big'):
+            return V(a.kind, z3.simplify(z3.If(guard, a.v, b.v)))
+        if a.kind in ('str', 'obj', 'null', 'undef', 'ctx', 'fn') and a.v == b.v:
+            return a
+        raise Unsupported('JavaScript values cannot be joined')
+
+    def join(self, paths):
+        return self.m.join(paths, self.merge_value)
+
+    def join_results(self, results):
+        if not self.m.world.join_paths:
+            return results
+        for q, value in results:
+            q.ret = value
+        joined = self.join([q for q, _ in results])
+        results = [(q, q.ret) for q in joined]
+        for q, _ in results:
+            q.ret = None
+        return results
+
     def run(self, name, args, label='js/rng.js'):
         out = []
         path = self.m.start_path()
@@ -138,13 +178,40 @@ class JSExec:
             out.append(p)
         return out
 
+    def run_initializer(self, name, binding, locals, label):
+        """Execute one actual emitted initializer under explicit entry locals.
+
+        This proves an expression slice. Its enclosing function and the
+        earlier assignments establishing those locals are outside the claim.
+        """
+        decl = self.modules[label][1][name]
+        candidates = [node for node in _descendants(decl)
+                      if node.type == 'variable_declarator'
+                      and node.child_by_field_name('name').text.decode() == binding]
+        if len(candidates) != 1:
+            raise Unsupported(f'{label}:{name} needs one initializer for {binding}')
+        path = self.m.start_path()
+        path.env.update(locals)
+        self.stack.append((name, label, {}))
+        self.local_names.append(set(locals))
+        try:
+            results = self.eval(path, candidates[0].child_by_field_name('value'))
+        finally:
+            self.stack.pop()
+            self.local_names.pop()
+        out = []
+        for p, value in results:
+            p.ret = value
+            out.append(p)
+        return out
+
     def call(self, path, name, args):
         label, name = name
         if (label, name) in self.m.world.js_calls:
-            expected, result = self.m.world.js_calls[(label, name)]
-            if args != expected:
-                raise Unsupported(f'JavaScript call contract argument mismatch for {label}:{name}')
-            return [(path, result)]
+            for expected, result in self.m.world.js_calls[(label, name)]:
+                if args == expected:
+                    return [(path, result)]
+            raise Unsupported(f'JavaScript call contract argument mismatch for {label}:{name}')
         decl = self.modules[label][1][name]
         if decl.type == 'generator_function_declaration' or any(c.type == 'async' for c in decl.children):
             raise Unsupported(f'async or generator function {name}')
@@ -177,7 +244,7 @@ class JSExec:
             q.frames.pop()
             q.ret, q.returned = None, False
             results.append((q, value))
-        return results
+        return self.join_results(results)
 
     def _parameter(self, path, node, value):
         if node.type == 'identifier':
@@ -205,6 +272,14 @@ class JSExec:
                     for p in paths:
                         p.env[name] = item
             return paths
+        if node.type == 'array_pattern':
+            if value.kind != 'array':
+                raise Unsupported('JavaScript array parameter of a non-array')
+            paths = [path]
+            for slot, position in _array_slots(node):
+                item = value.v[position] if position < len(value.v) else UNDEF
+                paths = seq(paths, lambda p, slot=slot, item=item: self._parameter(p, slot, item))
+            return paths
         raise Unsupported('JavaScript parameter pattern')
 
     def _bind_default(self, path, name, field):
@@ -224,6 +299,7 @@ class JSExec:
             outer, paths = set(path.env), [path]
             for c in n.named_children:
                 paths = seq(paths, lambda p, c=c: self.exec(p, c))
+                paths = self.join(paths)
             return _close_scope(outer, paths)
         if t in ('lexical_declaration', 'variable_declaration'):
             paths = [path]
@@ -404,6 +480,10 @@ class JSExec:
         if label not in self.modules:
             raise Unsupported(f'unloaded JavaScript module {label} for {name}')
         _, functions, imports, constants = self.modules[label]
+        if (label, name) in self.m.world.js_constants:
+            if name not in constants or constants[name] is None:
+                raise Unsupported(f'entry-state table {name} has no immutable binding in {label}')
+            return self.m.world.js_constants[(label, name)]
         if name in functions:
             return V('fn', (label, name))
         if name in imports:
@@ -455,6 +535,8 @@ class JSExec:
             return z3.is_true(z3.simplify(value.v)) or z3.is_false(z3.simplify(value.v))
         if value.kind in ('str', 'fn', 'null', 'undef'):
             return True
+        if value.kind == 'set':
+            return all(JSExec._constant(item) for item in value.v)
         if value.kind == 'record':
             return all(JSExec._constant(item) for item in value.v.values())
         return value.kind == 'array' and all(JSExec._constant(item) for item in value.v)
@@ -479,7 +561,10 @@ class JSExec:
         if t == 'parenthesized_expression':
             return self.eval(path, n.named_children[0])
         if t == 'number':
-            return [(path, self.num(path, z3.IntVal(int(n.text.decode(), 0)), self.where(n), 'literal'))]
+            text = n.text.decode()
+            if text.endswith('n'):
+                return [(path, V('big', z3.IntVal(int(text[:-1], 0))))]
+            return [(path, self.num(path, z3.IntVal(int(text, 0)), self.where(n), 'literal'))]
         if t == 'string':
             if b'\\' in n.text:
                 raise Unsupported('escaped JavaScript string literal')
@@ -568,6 +653,18 @@ class JSExec:
                     field = 'consequence' if taken else 'alternative'
                     out.extend(self.eval(p2, n.child_by_field_name(field)))
             return out
+        if t == 'new_expression':
+            constructor = n.child_by_field_name('constructor')
+            arguments = n.child_by_field_name('arguments')
+            if constructor.type == 'identifier' and constructor.text == b'Set' \
+                    and arguments is not None and len(arguments.named_children) == 1:
+                out = []
+                for p, value in self.eval(path, arguments.named_children[0]):
+                    if value.kind != 'array':
+                        raise Unsupported(f'new Set of {value.kind} at {self.where(n)}')
+                    out.append((p, V('set', tuple(value.v))))
+                return out
+            raise Unsupported(f'JavaScript new at {self.where(n)}')
         if t == 'call_expression':
             return self._call_expr(path, n)
         raise Unsupported(f'JavaScript expression {t} at {self.where(n)}')
@@ -583,7 +680,11 @@ class JSExec:
                 out.append((p, V('num', z3.IntVal(len(obj.v)))))
                 continue
             if obj.kind == 'record':
-                out.append((p, obj.v.get(prop, UNDEF)))
+                value = obj.v.get(prop, UNDEF)
+                if value.kind == 'choice':
+                    out.extend(self._choices(p, value.v))
+                else:
+                    out.append((p, value))
                 continue
             if obj.kind != 'obj':
                 raise Unsupported(f'member .{prop} of {obj.kind}')
@@ -598,7 +699,8 @@ class JSExec:
             elif key in world.js_values:
                 value = world.js_values[key]
                 out.extend(self._choices(p, value.v) if value.kind == 'choice' else [(p, value)])
-            elif any(k.startswith(key + '.') or k.startswith(key + '[') for k in world.js_state) or key == 'game.u':
+            elif any(k.startswith(key + '.') or k.startswith(key + '[')
+                     for k in (*world.js_state, *world.js_values)) or key == 'game.u':
                 out.append((p, V('obj', key)))
             else:
                 raise Unsupported(f'unmodeled JavaScript state {key}')
@@ -622,9 +724,16 @@ class JSExec:
                 if obj.kind == 'obj' and index.kind == 'str':
                     key = f'{obj.v}.{index.v}'
                     value = self.module_env.get(key, self.m.world.js_values.get(key))
+                    if value is None and key in self.m.world.js_state:
+                        out.append((q, self.num(q, self.m.world.js_state[key],
+                                                self.where(n), 'state read')))
+                        continue
                     if value is None:
                         raise Unsupported(f'unmodeled JavaScript state {key}')
                     out.extend(self._choices(q, value.v) if value.kind == 'choice' else [(q, value)])
+                    continue
+                if obj.kind == 'record' and index.kind == 'str':
+                    out.append((q, obj.v.get(index.v, UNDEF)))
                     continue
                 array = obj
                 if obj.kind == 'obj':
@@ -680,6 +789,10 @@ class JSExec:
             self.m.oblige(path, b.v != 0, 'JavaScript number remainder by zero produces NaN', where)
             return V('num', self.m.trem(path, a.v, b.v))
         if op in ('&', '|', '^', '<<', '>>', '>>>'):
+            if op in ('&', '|', '^'):
+                folded = self._distribute_bits(op, a.v, b.v)
+                if folded is not None:
+                    return V('num', folded)
             av, bv = z3.Int2BV(a.v, 32), z3.Int2BV(b.v, 32)
             operand = bit_operation('&', bv, z3.BitVecVal(31, 32)) if op in ('<<', '>>', '>>>') else bv
             result = bit_operation(op, av, operand)
@@ -692,6 +805,27 @@ class JSExec:
             self.m.oblige(path, z3.And(b.v >= 0, b.v <= 53), 'JavaScript power outside exact integer domain', where)
             return V('num', select_int([z3.IntVal(2 ** i) for i in range(54)], b.v))
         raise Unsupported(f'number operator {op} at {where} (only + - * and Math.trunc(a / b))')
+
+    @staticmethod
+    def _distribute_bits(op, a, b):
+        """&, |, ^ distributed over If (32-bit coercion) so table selects
+        masked with constants fold; None falls back to bit vectors."""
+        if z3.is_app_of(a, z3.Z3_OP_ITE):
+            left = JSExec._distribute_bits(op, a.arg(1), b)
+            right = JSExec._distribute_bits(op, a.arg(2), b)
+            if left is None or right is None:
+                return None
+            return z3.simplify(z3.If(a.arg(0), left, right))
+        if z3.is_app_of(b, z3.Z3_OP_ITE):
+            left = JSExec._distribute_bits(op, a, b.arg(1))
+            right = JSExec._distribute_bits(op, a, b.arg(2))
+            if left is None or right is None:
+                return None
+            return z3.simplify(z3.If(b.arg(0), left, right))
+        if not (z3.is_int_value(a) and z3.is_int_value(b)):
+            return None
+        result = bit_operation(op, z3.Int2BV(a, 32), z3.Int2BV(b, 32))
+        return z3.simplify(bit_int(result, 32, True))
 
     def _binary(self, path, n):
         op = n.child_by_field_name('operator').text.decode()
@@ -745,7 +879,8 @@ class JSExec:
             elif op == '-' and v.kind == 'num':
                 out.append((p, V('num', -v.v)))
             elif op == '~' and v.kind == 'num':
-                out.append((p, V('num', bit_int(bit_operation('~', z3.Int2BV(v.v, 32)), 32, True))))
+                out.append((p, V('num', z3.simplify(
+                    bit_int(bit_operation('~', z3.Int2BV(v.v, 32)), 32, True)))))
             else:
                 raise Unsupported(f'unary {op}')
         return out
@@ -764,6 +899,31 @@ class JSExec:
                     raise Unsupported('Number.isInteger arity')
                 return [(p, V('bool', z3.BoolVal(v.kind == 'num')))
                         for p, v in self.eval(path, arg_nodes[0])]
+            if obj == 'Object' and prop == 'keys' and len(arg_nodes) == 1:
+                out = []
+                for p, value in self.eval(path, arg_nodes[0]):
+                    if value.kind == 'record':
+                        out.append((p, V('array', tuple(V('str', key) for key in value.v))))
+                    else:
+                        raise Unsupported(f'Object.keys of {value.kind}')
+                return out
+            if prop == 'has' and len(arg_nodes) == 1:
+                out = []
+                for p, members in self.eval(path, fn.child_by_field_name('object')):
+                    if members.kind != 'set':
+                        raise Unsupported('JavaScript Set.has on a non-set')
+                    for q, value in self.eval(p, arg_nodes[0]):
+                        out.append((q, V('bool', z3.Or(*(self._equal(item, value)
+                                                          for item in members.v)))))
+                return out
+            if prop == 'reduce' and len(arg_nodes) == 2:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript reduce() on a non-array')
+                    for q, initial in self.eval(p, arg_nodes[1]):
+                        out.extend(self._array_reduce(q, array, arg_nodes[0], initial, where))
+                return out
             if obj == '_rngLog' and prop == 'push':
                 return [(p, UNDEF) for p in self._log(path, arg_nodes[0])]
             if prop == 'includes' and len(arg_nodes) == 1:
@@ -773,6 +933,13 @@ class JSExec:
                         raise Unsupported('JavaScript includes on a non-array')
                     for q, value in self.eval(p, arg_nodes[0]):
                         out.append((q, V('bool', z3.Or(*(self._equal(item, value) for item in array.v)))))
+                return out
+            if prop == 'some' and len(arg_nodes) == 1:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript some() on a non-array')
+                    out.extend(self._array_some(p, array, arg_nodes[0], where))
                 return out
             if prop == 'indexOf' and len(arg_nodes) == 1:
                 out = []
@@ -857,6 +1024,107 @@ class JSExec:
                 raise Unsupported(f'Math.{name} at {where}')
             out.append((p, V('num', r)))
         return out
+
+    def _array_some(self, path, array, callback, where):
+        """Array.prototype.some with an expression-bodied arrow callback.
+
+        The scan short-circuits exactly as JavaScript does: an element's
+        callback body runs only while every earlier element evaluated false,
+        so its path condition and obligations carry that prefix.
+        """
+        cb = _strip(callback)
+        if cb.type != 'arrow_function':
+            raise Unsupported(f'Array.some callback at {where} is not an arrow function')
+        parameters = cb.child_by_field_name('parameters')
+        if parameters is not None:
+            prm_nodes = parameters.named_children
+        else:
+            prm_nodes = [cb.child_by_field_name('parameter')]
+            if prm_nodes[0] is None:
+                raise Unsupported(f'Array.some callback at {where} has no parameters')
+        body = cb.child_by_field_name('body')
+        if body.type == 'statement_block':
+            raise Unsupported(f'Array.some callback at {where} has a block body')
+        if len(prm_nodes) > 3:
+            raise Unsupported(f'Array.some callback at {where} has more than three parameters')
+        live, matched = [path], []
+        for index, element in enumerate(array.v):
+            following = []
+            for q in live:
+                outer = dict(q.env)
+                parameter_names = set()
+                paths = [q]
+                arguments = [element, V('num', z3.IntVal(index)), array]
+                for prm, value in zip(prm_nodes, arguments):
+                    parameter_names.update(self._parameter_names(prm))
+                    paths = seq(paths, lambda p, prm=prm, value=value: self._parameter(p, prm, value))
+                evaluated = [outcome for p2 in paths for outcome in self.eval(p2, body)]
+                _close_scope(outer, [p2 for p2, _ in evaluated])
+                for p2, _ in evaluated:
+                    for name in parameter_names & outer.keys():
+                        p2.env[name] = outer[name]
+                for p2, value in evaluated:
+                    for p3, taken in self.m.branch(p2, self.truth(value)):
+                        if taken:
+                            matched.append(p3)
+                        else:
+                            following.append(p3)
+            live = following
+            if not live:
+                break
+        return ([(p, V('bool', z3.BoolVal(True))) for p in matched]
+                + [(p, V('bool', z3.BoolVal(False))) for p in live])
+
+    @staticmethod
+    def _parameter_names(node):
+        if node.type == 'identifier':
+            return {node.text.decode()}
+        if node.type == 'assignment_pattern':
+            return JSExec._parameter_names(node.child_by_field_name('left'))
+        if node.type == 'array_pattern':
+            return set().union(*(JSExec._parameter_names(slot) for slot, _ in _array_slots(node)))
+        raise Unsupported(f'callback parameter pattern {node.type}')
+
+    def _array_reduce(self, path, array, callback, initial, where):
+        """Array.prototype.reduce with an expression-bodied two-parameter
+        arrow callback: (accumulator, element). Evaluated in element order,
+        threading the accumulator through every fork."""
+        cb = _strip(callback)
+        if cb.type != 'arrow_function':
+            raise Unsupported(f'Array.reduce callback at {where} is not an arrow function')
+        parameters = cb.child_by_field_name('parameters')
+        if parameters is None or len(parameters.named_children) != 2:
+            raise Unsupported(f'Array.reduce callback at {where} needs two parameters')
+        acc_node, element_node = parameters.named_children
+        body = cb.child_by_field_name('body')
+        states = [(path, initial)]
+        for element in array.v:
+            following = []
+            for q, acc in states:
+                outer = dict(q.env)
+                paths = [q]
+                for node, value in ((acc_node, acc), (element_node, element)):
+                    paths = seq(paths, lambda p, node=node, value=value: self._parameter(p, node, value))
+                if body.type == 'statement_block':
+                    outcomes = []
+                    for p2 in paths:
+                        for p3 in self.exec(p2, body):
+                            if p3.broken:
+                                raise Unsupported(f'Array.reduce callback break at {where}')
+                            value = p3.ret if p3.returned else UNDEF
+                            p3.ret, p3.returned = None, False
+                            outcomes.append((p3, value))
+                    results = outcomes
+                else:
+                    results = [outcome for p2 in paths for outcome in self.eval(p2, body)]
+                _close_scope(outer, [p2 for p2, _ in results])
+                parameter_names = self._parameter_names(acc_node) | self._parameter_names(element_node)
+                for p2, _ in results:
+                    for name in parameter_names & outer.keys():
+                        p2.env[name] = outer[name]
+                following.extend(results)
+            states = self.join_results(following)
+        return states
 
     def _log(self, path, template):
         if template.type != 'template_string':

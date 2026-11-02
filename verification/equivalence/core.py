@@ -44,6 +44,7 @@ class Path:
     ret: object = None
     returned: bool = False
     broken: bool = False
+    heap: dict = field(default_factory=dict)   # C global-state writes: key -> CVal
 
     @property
     def env(self) -> dict:
@@ -51,7 +52,7 @@ class Path:
 
     def fork(self) -> 'Path':
         return Path(list(self.pc), [dict(f) for f in self.frames], dict(self.pos),
-                    list(self.events), self.ret, self.returned, self.broken)
+                    list(self.events), self.ret, self.returned, self.broken, dict(self.heap))
 
 
 @dataclass
@@ -91,9 +92,14 @@ class World:
     c_globals: dict                    # name -> executor value
     js_choices: dict = field(default_factory=dict)  # path -> [(condition, literal string)]
     js_values: dict = field(default_factory=dict)   # explicitly related pointers and finite maps
-    c_calls: dict = field(default_factory=dict)     # explicit read-only call contracts
-    js_calls: dict = field(default_factory=dict)
+    c_calls: dict = field(default_factory=dict)     # name -> [(expected arguments, pure result)]
+    js_calls: dict = field(default_factory=dict)    # (module, name) -> argument/result cases
     loops: dict = field(default_factory=dict)   # (side, function, ordinal) -> LoopSpec
+    fn_identities: dict = field(default_factory=dict)  # C function name -> small int identity
+    unrelated_state: tuple = ()
+    join_paths: bool = False  # join deterministic branches in bounded-state claims
+    js_constants: dict = field(default_factory=dict)  # related mutable table entries
+    js_locals: dict = field(default_factory=dict)  # entry locals for an inline expression claim
     unroll: int = 12
     streams: dict = field(default_factory=lambda: {s: stream_fn(s) for s in STREAMS})
     _fresh: int = 0
@@ -119,6 +125,52 @@ class Machine:
 
     def start_path(self) -> Path:
         return Path([], [{}], {s: z3.IntVal(0) for s in STREAMS}, [])
+
+    def join(self, paths, merge_value, entry_value=lambda key: None):
+        """Join compatible deterministic outcomes with conditional values.
+
+        Guards retain the union of both domains. Obligations were recorded
+        before joining and keep their original guards. Different control
+        states, scopes, events or stream positions remain separate.
+        """
+        if not self.world.join_paths:
+            return paths
+        groups = []
+        for path in paths:
+            for index, other in enumerate(groups):
+                if (path.events or other.events or path.returned != other.returned
+                        or path.broken != other.broken or len(path.frames) != len(other.frames)
+                        or any(a.keys() != b.keys() for a, b in zip(path.frames, other.frames))
+                        or any(not z3.eq(path.pos[s], other.pos[s]) for s in STREAMS)):
+                    continue
+                common = 0
+                for a, b in zip(other.pc, path.pc):
+                    if not z3.eq(a, b):
+                        break
+                    common += 1
+                guard = z3.And(*other.pc[common:])
+                try:
+                    frames = [{key: merge_value(guard, a[key], b[key]) for key in a}
+                              for a, b in zip(other.frames, path.frames)]
+                    ret = merge_value(guard, other.ret, path.ret)
+                    heap = {}
+                    for key in other.heap.keys() | path.heap.keys():
+                        a = other.heap.get(key, entry_value(key))
+                        b = path.heap.get(key, entry_value(key))
+                        if a is None or b is None:
+                            raise Unsupported(f'join has no entry value for {key}')
+                        heap[key] = merge_value(guard, a, b)
+                except Unsupported:
+                    continue
+                joined = other.fork()
+                joined.pc = other.pc[:common] + [z3.simplify(z3.Or(
+                    guard, z3.And(*path.pc[common:])))]
+                joined.frames, joined.ret, joined.heap = frames, ret, heap
+                groups[index] = joined
+                break
+            else:
+                groups.append(path)
+        return groups
 
     def feasible(self, pc: list) -> bool:
         return self.world.query(pc, 5000) != z3.unsat
@@ -331,6 +383,12 @@ def select_int(values, index):
     """A finite array read. The caller separately obliges an in-bounds index."""
     if not values:
         raise Unsupported('read from an empty array')
+    index = z3.simplify(index)
+    if z3.is_int_value(index) and 0 <= index.as_long() < len(values):
+        return values[index.as_long()]
+    if z3.is_app_of(index, z3.Z3_OP_ITE):
+        return z3.simplify(z3.If(index.arg(0), select_int(values, index.arg(1)),
+                                 select_int(values, index.arg(2))))
     result = values[-1]
     for i in reversed(range(len(values) - 1)):
         result = z3.If(index == i, values[i], result)

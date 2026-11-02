@@ -14,7 +14,7 @@ from specs import INT, Spec
 class ProofSelectionTests(unittest.TestCase):
     def run_prover(self, *arguments, slow=False,
                    body='return x > 0 ? x : 0;',
-                   probe=lambda s: [s['x'] == -1], mutant='return 1;'):
+                   probe=lambda s: [s['x'] == -1], mutant='return 1;', dependency=None):
         with TemporaryDirectory(prefix='fv-selection-', dir=prove.REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             js_file = Path(directory) / 'example.js'
@@ -25,11 +25,19 @@ class ProofSelectionTests(unittest.TestCase):
                         probes=[('negative input', probe)],
                         mutants=[(str(js_file), body, mutant)],
                         require_counterexamples=True, slow=slow, js_file=str(js_file))
+            specs = [spec]
+            if dependency is not None:
+                c_file.write_text(c_file.read_text() + '\nint prerequisite(int x) { return x; }')
+                js_file.write_text(js_file.read_text() + f'\nfunction prerequisite(x) {{ {dependency} }}')
+                prerequisite = Spec('prerequisite', 'prerequisite', 'prerequisite', [('x', INT)],
+                                    pre=spec.pre, js_file=str(js_file))
+                spec.dependencies = ('prerequisite',)
+                specs = [prerequisite, spec]
             output = io.StringIO()
             # Keep the real executors and runner; unrelated generator claims
             # have their own selection tests.
             with (
-                patch.multiple(prove, SPECS=[spec], C_FILES=[str(c_file)], JS_FILES=[str(js_file)]),
+                patch.multiple(prove, SPECS=specs, C_FILES=[str(c_file)], JS_FILES=[str(js_file)]),
                 patch.object(prove, 'isaac_claims', return_value={}),
                 patch.object(prove, 'prove_isaac64', return_value=0),
                 patch.object(prove, 'prove_seed_packing', return_value=0),
@@ -68,6 +76,14 @@ class ProofSelectionTests(unittest.TestCase):
         status, report = self.run_prover('--slow-only', body='return 1;',
                                        probe=lambda s: [s['x'] == 1])
         self.assertEqual(status, 0, report)
+
+    def test_selecting_a_composed_claim_proves_its_prerequisite(self):
+        status, report = self.run_prover('--only', 'example', dependency='return x;')
+        self.assertEqual(status, 0, report)
+
+    def test_a_failed_prerequisite_rejects_the_composed_claim(self):
+        status, report = self.run_prover('--only', 'example', dependency='return x + 1;')
+        self.assertNotEqual(status, 0, report)
 
 
 if __name__ == '__main__':
