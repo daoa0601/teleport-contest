@@ -8,11 +8,15 @@ import { dropHeroObject } from './hero_drop.js';
 import { selectInventoryObject } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { LOADSTONE } from './object_data.js';
-import { objectDescription } from './object_description.js';
-import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
+import { objectDescription } from './objnam.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack } from './mkobj.js';
+
+
+
 import { objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack } from './object_stack.js';
+
 import { getLine, tty_yn_function } from './query.js';
 import { SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { isWeldedPrimary } from './wield.js';

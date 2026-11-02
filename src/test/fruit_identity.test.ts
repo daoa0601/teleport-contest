@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { M_AP_OBJECT, M_AP_TYPE, NO_MINVENT } from '../js/const.js';
 import { deleteObject } from '../js/shk.js';
-import { mergable } from '../js/object_merge.js';
+import { mergable } from '../js/invent.js';
+
 import {
     addFruit, changePreferredFruit, fruitFromIndex, fruitFromName, fruitName, initializeFruitRegistry,
 } from '../js/fruit.js';

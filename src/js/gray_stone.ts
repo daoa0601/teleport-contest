@@ -12,8 +12,10 @@ type StoneFeedback = { message: string } | { scratch: boolean; color: string | n
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { OBJECT_COLOR, TOUCHSTONE } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { learnObjectType } from './object_knowledge.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
+
 import { objectMaterial } from './o_init.js';
 import { isFlimsyObject, isGrayStone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';

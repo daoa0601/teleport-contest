@@ -7,7 +7,8 @@ import {
     OBJECT_NAMES, POT_GAIN_ABILITY, POT_HEALING, SPEED_BOOTS,
 } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 
 for (const [request, type] of [

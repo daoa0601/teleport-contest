@@ -12,7 +12,7 @@ import { EGG, LUMP_OF_ROYAL_JELLY } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { objectTimers, stopObjectTimer } from './timeout.js';
 import { definiteObjectAction, ownedObjectName } from './objnam.js';
-import { rejoinObjectStack, splitObjectStack, } from './object_stack.js';
+import { rejoinObjectStack, splitObjectStack } from './mkobj.js';
 import { releaseWeaponSlots } from './wield.js';
 import { addInventoryItem } from './u_init.js';
 import { heroIsPolymorphed, heroIsUnchanging, polymonHero, returnHeroToHumanForm, } from './polyself.js';

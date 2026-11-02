@@ -11,7 +11,7 @@ import { heroFootName, monsterFootName, heroHandName } from './body_parts.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterCanEngulf, monsterIsAnimal, monsterIsSlithy, monsterTypeName, } from './monster_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { AD_SITM } from './monster_attack_types.js';
 import { BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { OBJECT_DELAY } from './object_data.js';

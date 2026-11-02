@@ -16,7 +16,7 @@ import { MONSTER_ATTACKS, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNo
 import { changeMonsterForm } from './mon.js';
 import { triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
-import { recordObjectEncounter, recordObjectKnowledge, } from './object_knowledge.js';
+import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { rn2, rnd } from './rng.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 // which_armor(mon, W_AMUL) is the eligibility boundary: carrying an amulet

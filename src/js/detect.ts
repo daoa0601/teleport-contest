@@ -35,7 +35,10 @@ import {
     Is_airlevel, Is_waterlevel, isok, IS_FURNITURE,
 } from './const.js';
 import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
-import { OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, objectClassForType, observeObject } from './object_knowledge.js';
+import { OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { objectClassForType, observeObject } from './o_init.js';
+import { withIndefiniteArticle, makePlural } from './objnam.js';
+
 import { objectMaterial } from './o_init.js';
 
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -49,7 +52,7 @@ import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './regions.js';
 import { openFallingTrap, openHoldingTrap, trapName } from './trap.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { TER_DETECT, TER_MON, TER_OBJ, TER_TRP } from './const.js';
 import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { requireLiveGame } from './gstate.js';
@@ -65,7 +68,7 @@ import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './currency.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { getObjectClassBounds } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { triggerBoobyTrap } from './booby_trap.js';

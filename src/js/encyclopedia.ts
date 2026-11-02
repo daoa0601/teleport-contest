@@ -5,7 +5,8 @@ import type { EncyclopediaEntry } from './encyclopedia_data.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
 import { fruitFromName } from './fruit.js';
-import { makeSingular } from './object_grammar.js';
+import { makeSingular } from './objnam.js';
+
 
 export function encyclopediaEntries(name: string, state: GameState = game): readonly EncyclopediaEntry[] {
     return encyclopediaMatches(name, state).map(match => match.entry);

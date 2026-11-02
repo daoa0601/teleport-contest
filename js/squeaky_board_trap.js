@@ -1,7 +1,8 @@
 // Squeaky boards triggered by monsters.
 // C ref: trap.c:trapeffect_sqky_board().
 import { publishHeardMessage } from './hero_speech.js';
-import { BOLT_LIM, COULD_SEE, squeakyBoardNoteWithArticle } from './const.js';
+import { BOLT_LIM, COULD_SEE } from './const.js';
+import { squeakyBoardNoteWithArticle } from './trap.js';
 import { game } from './gstate.js';
 import { dist2 } from './hacklib.js';
 import { wakeMonstersNearWithMessages } from './mon.js';

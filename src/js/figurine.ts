@@ -26,8 +26,9 @@ import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './timeout.js';
 import { monsterName } from './do_name.js';
 import { objectCombatName } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { objectDescription } from './object_description.js';
+import { withIndefiniteArticle, objectDescription } from './objnam.js';
+
+
 
 type FigurineLocation = Position & (
     { carrier: 'inventory'; monsterCarrier: null }

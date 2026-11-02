@@ -5,7 +5,9 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { dodiscovered } from '../js/o_init.js';
 import { POT_HEALING, POT_WATER } from '../js/object_data.js';
-import { recordObjectKnowledge, recordObjectPriceQuote } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectPriceQuote } from '../js/shk.js';
+
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';

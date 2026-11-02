@@ -13,7 +13,9 @@ import { corpseName, killerObjectName, observeObjectForNaming,
     ownedObjectName, objectNameIsPlural,
     simpleObjectName, objectName } from './objnam.js';
 import { heroHandName } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
 import { displayColorName, newsym, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -32,7 +34,7 @@ import { heroFormClings } from './polyself.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { cancelSlotTakeoff, takeoffSlotObject } from './takeoff_state.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { floatHeroDown, floatHeroUp } from './terrain_movement.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { artifactEmitsLight, heroHasArtifactDefense } from './artifacts.js';

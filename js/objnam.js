@@ -1,34 +1,41 @@
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
-// C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname().
+// C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
 import { game, requireGameLevel } from './gstate.js';
-import { objectProb, objectMaterial } from './o_init.js';
+import { objectProb, objectMaterial, objectClassForType, observeObject } from './o_init.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
-import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents } from './shk.js';
+import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
+import { impossible } from './diagnostics.js';
+import { monsterName } from './do_name.js';
+import { currency } from './currency.js';
+import { eggHasMonsterSpecies } from './egg_impact.js';
+import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
+import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP } from './const.js';
 import { mkobj, mksobj, set_corpsenm, unlinkObject } from './mkobj.js';
-import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
+import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { parseTinPreparation, setTinVariety, tinDetails } from './tin.js';
-import { isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind } from './senses.js';
-import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, } from './artifacts.js';
+import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns, } from './artifacts.js';
 import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, } from './object_data.js';
-import { armorPresentationName, withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
+import { isBeingTakenOff } from './takeoff_state.js';
+import { pendingArmorAction } from './do_wear.js';
+import { equipmentLightDescription } from './light.js';
 import { armorSimpleName } from './armor.js';
 import { isContainer } from './container.js';
-import { OBJECT_CLASS_SYMBOLS, objectClassForType, observeBucForNaming, observeObject } from './object_knowledge.js';
-import { objectDisclosureText } from './object_inscription.js';
+import { OBJECT_CLASS_SYMBOLS, displayColorName } from './display.js';
 import { cansee } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
 import * as objects from './object_data.js';
-import { nameToMonster, resolveMonsterNamePrefix, } from './mondata.js';
+import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
-import { EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
+import { EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { consumeRemainingFood, foodNutrition } from './food_lifecycle.js';
 import { placeCreatedObject } from './floor_object.js';
@@ -46,7 +53,7 @@ import { propertyIsActive } from './properties.js';
 import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { waterbodyName } from './terrain_name.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
-import { deleteTrap, trapName, waterDamageObject } from './trap.js';
+import { deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import { lookupNovelTitle } from './novel_titles.js';
@@ -2384,5 +2391,686 @@ async function bridgeMessage(surface, type) {
 }
 async function say(message) {
     await plineWithContinuation(message.charAt(0).toUpperCase() + message.slice(1));
+}
+// ---------------------------------------------------------------------------
+// Noun grammar. C refs: obj.h pair_of(), objnam.c armor_simple_name()/
+// obj_typename(), makeplural(), makesingular(), just_an(), vtense().
+// ---------------------------------------------------------------------------
+export function armorUsesPairGrammar(actualName) {
+    return /(?:gloves|gauntlets|boots|shoes)(?: of .+)?$/
+        .test(String(actualName || ''));
+}
+export function armorPresentationName(name, actualName = name) {
+    if (armorUsesPairGrammar(actualName))
+        return `pair of ${name}`;
+    if (/dragon scales$/.test(String(actualName || '')))
+        return `set of ${name}`;
+    return name;
+}
+// C ref: objnam.c:makeplural().  This owner is also used for hallucinated
+// monster names, so it retains native compound and irregular suffix rules
+// rather than assuming an object-facing "append s" grammar.
+const PLURAL_COMPOUNDS = [
+    ' of ', ' labeled ', ' called ', ' named ', ' above', ' versus ',
+    ' from ', ' in ', ' on ', ' a la ', ' with', ' de ', " d'", ' du ',
+    ' au ', '-in-', '-at-',
+];
+const PLURAL_ONE_OFF = [
+    ['child', 'children'], ['cubus', 'cubi'], ['culus', 'culi'],
+    ['Cyclops', 'Cyclopes'], ['djinni', 'djinn'], ['erinys', 'erinyes'],
+    ['foot', 'feet'], ['fungus', 'fungi'], ['goose', 'geese'],
+    ['knife', 'knives'], ['labrum', 'labra'], ['louse', 'lice'],
+    ['mouse', 'mice'], ['mumak', 'mumakil'], ['nemesis', 'nemeses'],
+    ['ovum', 'ova'], ['ox', 'oxen'], ['passerby', 'passersby'],
+    ['rtex', 'rtices'], ['serum', 'sera'], ['staff', 'staves'],
+    ['tooth', 'teeth'],
+];
+const PLURAL_AS_IS = [
+    'boots', 'shoes', 'gloves', 'lenses', 'scales', 'eyes', 'gauntlets',
+    'iron bars', 'bison', 'deer', 'elk', 'fish', 'fowl', 'tuna', 'yaki',
+    '-hai', 'krill', 'manes', 'moose', 'ninja', 'sheep', 'ronin', 'roshi',
+    'shito', 'tengu', 'ki-rin', 'Nazgul', 'gunyoki', 'piranha', 'samurai',
+    'shuriken', 'haggis', 'Bordeaux', 'ae', 'eaux', 'matzot',
+];
+const NO_MEN_PREFIXES = [
+    'albu', 'antihu', 'anti', 'ata', 'auto', 'bildungsro', 'cai', 'cay',
+    'ceru', 'corner', 'decu', 'des', 'dura', 'fir', 'hanu', 'het',
+    'infrahu', 'inhu', 'nonhu', 'otto', 'out', 'prehu', 'protohu',
+    'subhu', 'superhu', 'talis', 'unhu', 'sha', 'hu', 'un', 'le', 're',
+    'so', 'to', 'at', 'a',
+];
+const CH_K_SUFFIXES = [
+    'monarch', 'poch', 'tech', 'mech', 'stomach', 'psych', 'amphibrach',
+    'anarch', 'atriarch', 'azedarach', 'broch', 'gastrotrich', 'isopach',
+    'loch', 'oligarch', 'peritrich', 'sandarach', 'sumach', 'symposiarch',
+];
+function hasSuffix(text, suffix) {
+    return text.toLowerCase().endsWith(suffix.toLowerCase());
+}
+function replacePluralSuffix(text, singular, plural) {
+    return replaceWithMatchingCase(text, text.length - singular.length, plural);
+}
+// Native Strcasecpy() preserves each overwritten character's case. Once it
+// reaches the old end, it continues the case of the last written character.
+function replaceWithMatchingCase(text, start, replacement) {
+    let result = text.slice(0, start);
+    for (let index = 0; index < replacement.length; index++) {
+        const previous = text.charAt(start + index) || result.charAt(result.length - 1);
+        const next = replacement.charAt(index);
+        result += /[a-z]/.test(previous) ? next.toLowerCase()
+            : /[A-Z]/.test(previous) ? next.toUpperCase() : next;
+    }
+    return result;
+}
+function caseLike(source, replacement) {
+    return replaceWithMatchingCase(source, 0, replacement);
+}
+function badManPlural(text) {
+    const lower = text.toLowerCase();
+    return NO_MEN_PREFIXES.some(prefix => {
+        const suffix = `${prefix}man`;
+        if (!lower.endsWith(suffix))
+            return false;
+        const start = lower.length - suffix.length;
+        return start === 0 || lower[start - 1] === ' ';
+    });
+}
+// C objnam.c:singplur_compound().
+function pluralCompoundIndex(text) {
+    let result = -1;
+    const lower = text.toLowerCase();
+    for (const compound of PLURAL_COMPOUNDS) {
+        const index = lower.indexOf(compound.toLowerCase());
+        if (index >= 0 && (result < 0 || index < result))
+            result = index;
+    }
+    return result;
+}
+// C objnam.c:ch_ksound().
+export function makePlural(value) {
+    const text = (value ?? '').replace(/^ +/, '');
+    if (!text)
+        return 's';
+    const pronouns = new Map([
+        ['he', 'they'], ['she', 'they'], ['it', 'they'],
+        ['him', 'them'], ['her', 'them'],
+        ['his', 'their'], ['its', 'their'],
+    ]);
+    const pronoun = pronouns.get(text.toLowerCase());
+    if (pronoun)
+        return text.charAt(0) === text.charAt(0).toUpperCase()
+            ? pronoun.charAt(0).toUpperCase() + pronoun.slice(1) : pronoun;
+    if (/^pair of /i.test(text))
+        return text;
+    const compoundIndex = pluralCompoundIndex(text);
+    const excess = compoundIndex >= 0 ? text.slice(compoundIndex) : '';
+    const stem = (compoundIndex >= 0 ? text.slice(0, compoundIndex) : text)
+        .replace(/ +$/, '');
+    if (stem.length === 1 || !/[A-Za-z]$/.test(stem))
+        return `${stem}'s${excess}`;
+    if (PLURAL_AS_IS.some(suffix => hasSuffix(stem, suffix)))
+        return stem + excess;
+    if (stem.length > 5 && hasSuffix(stem, 'craft'))
+        return stem + excess;
+    if (/^(?:slice|mongoose)$/i.test(stem))
+        return replacePluralSuffix(stem, '', 's') + excess;
+    if (stem.length > 2 && hasSuffix(stem, 'ox')
+        && !(stem.length > 5 && hasSuffix(stem, 'muskox'))) {
+        return replacePluralSuffix(stem, '', 'es') + excess;
+    }
+    if (hasSuffix(stem, 'man') && badManPlural(stem))
+        return replacePluralSuffix(stem, '', 's') + excess;
+    for (const [singular, plural] of PLURAL_ONE_OFF) {
+        if (hasSuffix(stem, plural))
+            return stem + excess;
+        if (hasSuffix(stem, singular))
+            return replacePluralSuffix(stem, singular, plural) + excess;
+    }
+    // Native treats the Japanese arrow noun as invariant only as a word,
+    // including compounds such as "ya named Needle", never as a suffix.
+    if (/(?:^| )ya$/i.test(stem))
+        return stem + excess;
+    if (hasSuffix(stem, 'man'))
+        return replacePluralSuffix(stem, 'man', 'men') + excess;
+    if (hasSuffix(stem, 'f') && stem.length >= 2) {
+        const before = stem.charAt(stem.length - 2).toLowerCase();
+        if (!hasSuffix(stem, 'erf') && /[aeioulr]/.test(before))
+            return replacePluralSuffix(stem, 'f', 'ves') + excess;
+    }
+    if (hasSuffix(stem, 'ium'))
+        return replacePluralSuffix(stem, 'ium', 'ia') + excess;
+    if (/(?:alga|hypha|larva|amoeba|vertebra)$/i.test(stem))
+        return replacePluralSuffix(stem, '', 'e') + excess;
+    if (stem.length > 3 && hasSuffix(stem, 'us')
+        && !/(?:lotus|wumpus)$/i.test(stem)) {
+        return replacePluralSuffix(stem, 'us', 'i') + excess;
+    }
+    if (hasSuffix(stem, 'sis'))
+        return replacePluralSuffix(stem, 'sis', 'ses') + excess;
+    if (hasSuffix(stem, 'eau') && !hasSuffix(stem, 'bureau'))
+        return replacePluralSuffix(stem, '', 'x') + excess;
+    if (/(?:matzoh|matzah)$/i.test(stem))
+        return stem.slice(0, -2) + caseLike(stem.slice(-2), 'ot') + excess;
+    if (/(?:matzo|matza)$/i.test(stem))
+        return stem.slice(0, -1) + caseLike(stem.slice(-1), 'ot') + excess;
+    if (stem.length >= 5 && /(?:dex|dix|tex)$/i.test(stem) && !hasSuffix(stem, 'index'))
+        return stem.slice(0, -2) + caseLike(stem.slice(-2), 'ices') + excess;
+    const chKSound = hasSuffix(stem, 'ch')
+        && CH_K_SUFFIXES.some(suffix => hasSuffix(stem, suffix));
+    if (/[zxs]$/i.test(stem)
+        || (/(?:ch|sh)$/i.test(stem) && !chKSound)
+        || stem.length >= 4 && /ato$/i.test(stem) || /dingo$/i.test(stem)) {
+        return replacePluralSuffix(stem, '', 'es') + excess;
+    }
+    if (/[^aeiou]y$/i.test(stem))
+        return stem.slice(0, -1) + caseLike(stem.slice(-1), 'ies') + excess;
+    return replacePluralSuffix(stem, '', 's') + excess;
+}
+// C objnam.c:just_an(). The prefix includes its trailing space, or is empty.
+export function indefiniteArticlePrefix(text) {
+    const word = text.toLowerCase();
+    if (word.length === 1 || word[1] === ' ')
+        return 'aefhilmnosx'.includes(word.charAt(0)) ? 'an ' : 'a ';
+    if (word.startsWith('the ') || word === 'molten lava'
+        || word === 'iron bars' || word === 'ice')
+        return '';
+    const vowelSound = /^[aeiou]/.test(word)
+        && !/^one(?:[-_ ]|$)/.test(word)
+        && !/^(?:eu|uke|ukulele|unicorn|uranium|useful)/.test(word);
+    return vowelSound || /^x[^aeiou]/.test(word) ? 'an ' : 'a ';
+}
+export function withIndefiniteArticle(text) {
+    return indefiniteArticlePrefix(text) + text;
+}
+const SINGULAR_SUBJECTS = [
+    'erinys', 'manes', 'cyclops', 'hippocrates', 'pelias', 'aklys',
+    'amnesia', 'detect monsters', 'paralysis', 'shape changers', 'nemesis',
+];
+// C objnam.c:makesingular(). Fruit registration and name lookup share the
+// same suffix and compound decisions as ordinary object grammar.
+export function makeSingular(value) {
+    const text = (value ?? '').replace(/^ +/, '');
+    if (!text)
+        return '';
+    const pronoun = new Map([['they', 'it'], ['them', 'it'], ['their', 'its']]).get(text.toLowerCase());
+    if (pronoun)
+        return text.charAt(0) === text.charAt(0).toUpperCase()
+            ? pronoun.charAt(0).toUpperCase() + pronoun.slice(1) : pronoun;
+    const index = pluralCompoundIndex(text);
+    const excess = index >= 0 ? text.slice(index) : '';
+    const stem = index >= 0 ? text.slice(0, index) : text;
+    const finish = (result) => result + excess;
+    const same = PLURAL_AS_IS.filter(suffix => !['ae', 'eaux', 'matzot'].includes(suffix))
+        .concat(SINGULAR_SUBJECTS);
+    if (same.some(suffix => hasSuffix(stem, suffix))
+        || stem.length > 5 && hasSuffix(stem, 'craft')
+        || /^(?:slice|mongoose)$/i.test(stem))
+        return finish(stem);
+    const noManPrefixes = [
+        'abdo', 'acu', 'agno', 'ceru', 'cogno', 'cycla', 'fleh', 'grava',
+        'hegu', 'preno', 'sonar', 'speci', 'dai', 'exa', 'fla', 'sta', 'teg',
+        'tegu', 'vela', 'da', 'hy', 'lu', 'no', 'nu', 'ra', 'ru', 'se', 'vi',
+        'ya', 'o', 'a',
+    ];
+    if (hasSuffix(stem, 'men') && noManPrefixes.some(prefix => {
+        const suffix = `${prefix}men`;
+        return stem.toLowerCase() === suffix || stem.toLowerCase().endsWith(` ${suffix}`);
+    }))
+        return finish(stem);
+    for (const [singular, plural] of PLURAL_ONE_OFF) {
+        if (hasSuffix(stem, singular))
+            return finish(stem);
+        if (hasSuffix(stem, plural))
+            return finish(replacePluralSuffix(stem, plural, singular));
+    }
+    if (hasSuffix(stem, 's')) {
+        if (hasSuffix(stem, 'es')) {
+            if (hasSuffix(stem, 'ies')) {
+                if (/cookies$|(?:^| )pies$|(?:^| )genies$|mbies$|yries$/i.test(stem))
+                    return finish(stem.slice(0, -1));
+                return finish(replacePluralSuffix(stem, 'ies', 'y'));
+            }
+            if (/[lraeiou]ves$/i.test(stem) && !/(?:cloves|nerves)$/i.test(stem))
+                return finish(replacePluralSuffix(stem, 'ves', 'f'));
+            if (/(?:eses|oxes|nxes|ches|uses|shes|sses|atoes|dingoes|aleaxes)$/i.test(stem))
+                return finish(stem.slice(0, -2));
+        }
+        else if (hasSuffix(stem, 'us') && !/(?:tengus|hezrous)$/i.test(stem)
+            || hasSuffix(stem, 'ss') || /(?:^| )lens$/i.test(stem))
+            return finish(stem);
+        return finish(stem.slice(0, -1));
+    }
+    if (hasSuffix(stem, 'men'))
+        return finish(replacePluralSuffix(stem, 'men', 'man'));
+    if (/(?:matzot|ae|eaux)$/i.test(stem))
+        return finish(stem.slice(0, -1));
+    if (/e[lr]ia$/i.test(stem))
+        return finish(replacePluralSuffix(stem, 'a', 'um'));
+    return finish(stem);
+}
+// C objnam.c:vtense(). The input verb is plural; null requests singular.
+export function verbForSubject(subject, verb) {
+    if (subject !== null) {
+        const noun = subject.toLowerCase();
+        const stem = noun.split(/ (?:of|from|called|named|labeled) /u, 1)[0] ?? '';
+        const singular = SINGULAR_SUBJECTS.some(word => stem === word || stem.endsWith(` ${word}`));
+        const plural = /(?:[^us]s|eeth|feet|ia|ae)$/u.test(stem) && !singular;
+        if (!/^(?:a|an) /u.test(noun)
+            && (plural || noun === 'they' || noun === 'you'))
+            return verb;
+    }
+    if (verb.toLowerCase() === 'are')
+        return caseLike(verb, 'is');
+    if (verb.toLowerCase() === 'have')
+        return verb.slice(0, -2) + caseLike(verb.slice(-2), 's');
+    if (/(?:[zxs]|[cs]h)$/iu.test(verb) || /^.o$/iu.test(verb))
+        return verb + caseLike(verb.slice(-1), 'es');
+    if (/[^aeiou]y$/iu.test(verb))
+        return verb.slice(0, -1) + caseLike(verb.slice(-1), 'ies');
+    return verb + caseLike(verb.slice(-1), 's');
+}
+const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
+// Native xname_flags appends this after pluralizing the base noun and before
+// the individual name. Dummy naming views omit the object's identity.
+export function objectDisclosureText(object, state = game) {
+    if (!state.program_state.gameover || !object.o_id)
+        return '';
+    switch (object.otyp) {
+        case T_SHIRT:
+        case ALCHEMY_SMOCK:
+            return ` with text "${garmentInscription(object, state)}"`;
+        case CANDY_BAR: {
+            const wrapper = candyWrapperText(object);
+            return wrapper ? ` labeled "${wrapper}"` : '';
+        }
+        case HAWAIIAN_SHIRT:
+            return ` with ${withIndefiniteArticle(hawaiianMotif(object, state))} motif`;
+        default:
+            return '';
+    }
+}
+export async function objectClassDescription(item, state = game) {
+    const details = { prefix: [], suffix: '' };
+    const known = item.known || item.overrideIdentified || state.iflags.override_ID;
+    switch (item.oclass) {
+        case TOOL_CLASS:
+            if (!isWeaponTool(item))
+                await describeTool(item, details, !!known, state);
+            break;
+        case FOOD_CLASS:
+            if (item.oeaten)
+                details.prefix.push('partly eaten');
+            if (item.otyp === EGG && item.spe === 1 && eggHasMonsterSpecies(item)
+                && (known || (state.mvitals?.[item.corpsenm]?.mvflags ?? 0) & MV_KNOWS_EGG))
+                details.suffix = ' (laid by you)';
+            break;
+        case POTION_CLASS:
+            if (item.otyp === POT_OIL && item.lamplit)
+                details.suffix = ' (lit)';
+            break;
+        case WAND_CLASS:
+            if (known)
+                details.suffix = chargeDescription(item);
+            break;
+    }
+    if (state.flags.debug && state.iflags.wizmgender
+        && [CORPSE, STATUE, FIGURINE].includes(item.otyp)) {
+        const gender = item.spe & CORPSTAT_GENDER;
+        const label = gender === CORPSTAT_RANDOM ? 'unspecified gender'
+            : gender === CORPSTAT_MALE ? 'male'
+                : gender === CORPSTAT_FEMALE ? 'female' : 'neuter';
+        details.suffix += ` (${label})`;
+    }
+    return details;
+}
+async function describeTool(item, details, known, state) {
+    // The native worn-tool branch ends before attachment, fuel, or charges.
+    if ((item.owornmask ?? 0) & (W_TOOL | W_SADDLE))
+        return;
+    if (item.otyp === LEASH && item.leashmon) {
+        const monster = state.level?.monsters.find(actor => actor.m_id === item.leashmon && actor.mhp > 0);
+        if (monster) {
+            details.suffix = ` (attached to ${monsterName(monster, {
+                state, article: 'your', suppressIt: true,
+            })})`;
+        }
+        else {
+            await impossible(`leashed monster #${item.leashmon} not found`, { state });
+            item.leashmon = 0;
+        }
+        return;
+    }
+    if (item.otyp === CANDELABRUM_OF_INVOCATION) {
+        details.suffix = ` (${item.spe} of 7 candle${item.spe === 1 ? '' : 's'}${item.lamplit ? ', lit' : ' attached'})`;
+        return;
+    }
+    const candle = item.otyp === TALLOW_CANDLE || item.otyp === WAX_CANDLE;
+    if (candle || [OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN].includes(item.otyp)) {
+        if (candle && remainingCandleFuel(item, state) < 20 * requireObjectData(OBJECT_COST, item.otyp))
+            details.prefix.push('partly used');
+        if (item.lamplit)
+            details.suffix = ' (lit)';
+        return;
+    }
+    if (known && OBJECT_CHARGED[item.otyp])
+        details.suffix = chargeDescription(item);
+}
+function remainingCandleFuel(item, state) {
+    if (!item.lamplit)
+        return item.age;
+    const deadline = item.objectTimers?.find(timer => timer.kind === OBJECT_TIMER_KIND.BURN_OBJECT)?.deadline ?? 0;
+    return item.age + deadline - state.moves;
+}
+function chargeDescription(item) {
+    return ` (${item.recharged}:${item.spe})`;
+}
+// ---------------------------------------------------------------------------
+// C objnam.c:doname_base() pricing suffixes. Describing a current price also
+// remembers the quote and chooses the displayed currency.
+// ---------------------------------------------------------------------------
+export async function objectDescriptionPrice(object, { state = game, withPrice = false, } = {}) {
+    if (state.iflags.suppress_price || state.program_state.restoring)
+        return '';
+    if (objectIsUnpaid(object)) {
+        const price = await unpaidObjectCost(object, state, 'contents');
+        return quotedPriceSuffix(object, object.unpaid ? 'unpaid' : 'contents', price, state);
+    }
+    if (withPrice) {
+        const { price, noCharge } = getCostOfShopItem(object, state);
+        if (price > 0)
+            return quotedPriceSuffix(object, noCharge ? 'contents' : 'for sale', price, state);
+        if (noCharge > 0)
+            return ' (no charge)';
+    }
+    return state.flags.price_quotes && !objectTypeKnown(object, state)
+        ? priceQuoteSuffix(object.otyp, state) : '';
+}
+function quotedPriceSuffix(object, label, price, state) {
+    const suffix = ` (${label}, ${price} ${currency(price, { state })})`;
+    recordObjectPriceQuote(object.otyp, Math.trunc(price / object.quan), 'buy', state);
+    return suffix;
+}
+export function wornObjectDescription(item, state = game) {
+    const mask = item.owornmask ?? 0;
+    switch (isWeaponTool(item) ? WEAPON_CLASS : item.oclass) {
+        case AMULET_CLASS:
+            return mask & W_AMUL ? ' (being worn)' : '';
+        case ARMOR_CLASS:
+            return mask & W_ARMOR ? wornArmorDescription(item, state) : '';
+        case TOOL_CLASS:
+            return mask & (W_TOOL | W_SADDLE) ? ' (being worn)' : '';
+        case RING_CLASS:
+            return wornRingDescription(mask, state);
+        case FOOD_CLASS:
+            return item.otyp === MEAT_RING ? wornRingDescription(mask, state) : '';
+        case BALL_CLASS:
+        case CHAIN_CLASS:
+            return mask & (W_BALL | W_CHAIN)
+                ? ` (${mask & W_BALL ? 'chained' : 'attached'} to you)` : '';
+        default:
+            return '';
+    }
+}
+export function heldObjectDescription(item, { state = game, primaryHandDetail = null, projectPrimaryHand = false, } = {}) {
+    const mask = (item.owornmask ?? 0) | (projectPrimaryHand ? W_WEP : 0);
+    let description = '';
+    if (mask & W_WEP) {
+        if (usesPrimaryHandPhrase(item, state)) {
+            const hand = isBimanualObject(item) ? makePlural(heroHandName(state))
+                : `${state.u.rightHanded === false ? 'left' : 'right'} ${heroHandName(state)}`;
+            const action = item.otyp === AKLYS ? 'tethered to'
+                : isTwoWeaponPrimary(item, state) ? 'wielded in' : 'weapon in';
+            const detail = primaryHandDetail ? `, ${primaryHandDetail}` : '';
+            description += ` (${action} ${hand}${detail})`;
+        }
+        else {
+            description += ' (wielded)';
+        }
+    }
+    if (mask & W_SWAPWEP) {
+        description += state.u.twoweap
+            ? ` (wielded in ${state.u.rightHanded === false ? 'right' : 'left'} ${heroHandName(state)})`
+            : ` (alternate weapon${item.quan === 1 ? '' : 's'}; not wielded)`;
+    }
+    if (mask & W_QUIVER)
+        description += ` (${quiverDescription(item)})`;
+    return description;
+}
+// Materialize only at a menu/prinv boundary: hallucinated glow colors draw
+// from display RNG, and the native abbreviated "(wielded)" has no light detail.
+export function primaryHandDescriptionDetail(item, state = game) {
+    if (!((item.owornmask ?? 0) & W_WEP)
+        || !usesPrimaryHandPhrase(item, state) || heroIsBlind(state))
+        return null;
+    if (item === state.uwep && state.warn_obj_cnt > 0 && wieldedArtifactWarns(state)) {
+        return `${artifactGlowVerb(state.warn_obj_cnt, true)} ${displayColorName(artifactGlowColor(item, state), state)}`;
+    }
+    return item.lamplit && artifactEmitsLight(item)
+        ? `${equipmentLightDescription(item, state)} lit` : null;
+}
+function wornArmorDescription(item, state) {
+    const pending = pendingArmorAction(state);
+    const dressing = pending?.object === item ? pending.kind : null;
+    let description = item === (state.uskin || state.u.uskin) ? 'embedded in your skin'
+        : dressing === 'remove' || isBeingTakenOff(item, state) ? 'being doffed'
+            : dressing === 'wear' ? 'being donned' : 'being worn';
+    description = ` (${description})`;
+    // Native Concat(bp, 1, ...) uses strncat(), which still appends after the
+    // closing parenthesis it meant to replace; the light text uses snprintf()
+    // and does replace it.
+    if (item === (state.uarmg || state.u.uarmg)
+        && (state.u.glib || (state.u.glibTurns ?? 0) > 0))
+        description += '; slippery)';
+    if (!heroIsBlind(state) && item.lamplit && artifactEmitsLight(item))
+        description = `${description.slice(0, -1)}, ${equipmentLightDescription(item, state)} lit)`;
+    return description;
+}
+function wornRingDescription(mask, state) {
+    if (!(mask & W_RING))
+        return '';
+    let description = '';
+    if (mask & W_RINGR)
+        description += ' (on right ';
+    if (mask & W_RINGL)
+        description += ' (on left ';
+    return `${description}${heroHandName(state)})`;
+}
+function usesPrimaryHandPhrase(item, state) {
+    if (isTwoWeaponPrimary(item, state))
+        return true;
+    if (item.quan !== 1)
+        return false;
+    return item.oclass === WEAPON_CLASS
+        ? !isLauncherAmmunition(item) && !isMissileObject(item) : isWeaponTool(item);
+}
+function isTwoWeaponPrimary(item, state) {
+    return item === (state.uwep || state.u.uwep) && !!state.u.twoweap;
+}
+function quiverDescription(item) {
+    switch (item.oclass) {
+        case WEAPON_CLASS:
+            return !isLauncherAmmunition(item) ? 'at the ready'
+                : OBJECT_SUBTYPE[item.otyp] === -P_BOW ? 'in quiver' : 'in quiver pouch';
+        case RING_CLASS:
+        case AMULET_CLASS:
+        case WAND_CLASS:
+        case COIN_CLASS:
+        case GEM_CLASS:
+            return 'in quiver pouch';
+        default:
+            return 'at the ready';
+    }
+}
+// C objnam.c:paydoname(). Billing hides contents, weights, and the usual
+// inventory price; the payment menu supplies its own price column.
+export async function paymentObjectDescription(object, quantity, { state = game, purchasingContents = false, } = {}) {
+    const { quan, cknown } = object;
+    const { wizweight, suppress_price } = state.iflags;
+    const hasContents = !!object.contents?.length;
+    object.quan = quantity;
+    if (hasContents)
+        object.cknown = false;
+    state.iflags.wizweight = false;
+    state.iflags.suppress_price = true;
+    try {
+        let name = await objectDescription(object, { state });
+        if (hasContents) {
+            if (!object.no_charge && !(purchasingContents && object.unpaid))
+                name = `${object.unpaid ? 'an unpaid' : 'your'} ${name.replace(/^an? /, '')}`;
+            name = object.unpaid ? `${name} and its contents` : `the contents of ${name}`;
+        }
+        return name;
+    }
+    finally {
+        object.quan = quan;
+        if (cknown === undefined)
+            delete object.cknown;
+        else
+            object.cknown = cknown;
+        if (wizweight === undefined)
+            delete state.iflags.wizweight;
+        else
+            state.iflags.wizweight = wizweight;
+        if (suppress_price === undefined)
+            delete state.iflags.suppress_price;
+        else
+            state.iflags.suppress_price = suppress_price;
+    }
+}
+export async function objectDescription(object, { state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false, vagueQuantity = false, } = {}) {
+    let noun = objectName(object, state);
+    const poisoned = !!object.opoisoned && noun.startsWith('poisoned ');
+    if (poisoned)
+        noun = noun.slice(9);
+    const override = !!(state.iflags.override_ID || object.overrideIdentified);
+    const quantity = vagueQuantity && !object.dknown && !override ? 'some' : String(object.quan);
+    const known = object.known || override;
+    const contentsKnown = object.cknown || override;
+    const prefix = [];
+    const chargedContainer = object.otyp === BAG_OF_TRICKS || object.otyp === HORN_OF_PLENTY;
+    if (contentsKnown && (chargedContainer ? object.spe === 0 && !known
+        : (isContainer(object) || object.otyp === STATUE) && !object.contents?.length))
+        prefix.push('empty');
+    const blessing = objectBlessingDescription(object, state);
+    if (blessing)
+        prefix.push(blessing);
+    if (object.otyp === CHEST || object.otyp === LARGE_BOX) {
+        if (object.otrapped && object.tknown && object.dknown)
+            prefix.push('trapped');
+        if (object.lknown || override)
+            prefix.push(object.obroken ? 'broken' : object.olocked ? 'locked' : 'unlocked');
+    }
+    if (object.greased)
+        prefix.push('greased');
+    if (poisoned && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS
+        || isWeaponTool(object)))
+        prefix.push('poisoned');
+    prefix.push(...erosionDescription(object, state));
+    if (known && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS || isWeaponTool(object)
+        || object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]))
+        prefix.push(`${object.spe >= 0 ? '+' : ''}${object.spe}`);
+    const details = await objectClassDescription(object, state);
+    prefix.push(...details.prefix);
+    if (object.quan !== 1)
+        noun = pluralizeObjectNoun(object, noun);
+    let description;
+    if (object.otyp === CORPSE) {
+        description = corpseName(object, {
+            adjective: [...(object.quan !== 1 ? [quantity] : []), ...prefix].join(' '),
+            includeArticle: object.quan === 1,
+        }) + noun.replace(/^corpses?/, '');
+    }
+    else {
+        if (object.otyp === EGG && object.corpsenm !== undefined && eggHasMonsterSpecies(object)
+            && (known || ((state.mvitals?.[object.corpsenm]?.mvflags ?? 0) & MV_KNOWS_EGG)))
+            prefix.push(MONSTER_NAME[object.corpsenm] ?? '');
+        description = [...prefix, noun].join(' ');
+        const fruitArtifact = object.otyp === SLIME_MOLD ? artifactByName(noun, state) : null;
+        if (object.quan !== 1)
+            description = `${quantity} ${description}`;
+        else if (objectHasPersonalName(object, state) || uniqueObject(object, state)
+            || fruitArtifact?.name.toLowerCase().startsWith('the '))
+            description = `the ${description.replace(/^the /i, '')}`;
+        else if (!fruitArtifact)
+            description = withIndefiniteArticle(description);
+    }
+    if (contentsKnown && object.contents?.length) {
+        const count = object.contents.length;
+        description += ` containing ${count} item${count === 1 ? '' : 's'}`;
+    }
+    description += wornObjectDescription(object, state) + details.suffix;
+    const handDetail = primaryHandDetail === undefined
+        ? primaryHandDescriptionDetail(object, state) : primaryHandDetail;
+    description += heldObjectDescription(object, { state, primaryHandDetail: handDetail, projectPrimaryHand });
+    description += await objectDescriptionPrice(object, { state, withPrice });
+    if (state.flags.debug && state.iflags.wizweight) {
+        description = withPrice && description.endsWith(')')
+            ? `${description.slice(0, -1)}, ${object.owt} aum)`
+            : `${description} (${object.owt} aum)`;
+    }
+    return description.slice(0, BUFSZ - 1);
+}
+export function objectBlessingDescription(object, state = game) {
+    const override = state.iflags.override_ID || object.overrideIdentified;
+    if ((!object.bknown && !override) || object.otyp === GOLD_PIECE)
+        return null;
+    if (object.otyp === POT_WATER && objectTypeKnown(object, state)
+        && (object.blessed || object.cursed))
+        return null;
+    if (object.cursed)
+        return 'cursed';
+    if (object.blessed)
+        return 'blessed';
+    const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
+    const retainsUncursed = (!(object.known || override) || !OBJECT_CHARGED[object.otyp]
+        || object.oclass === ARMOR_CLASS || object.oclass === RING_CLASS)
+        && object.otyp !== SCROLL_OF_MAIL
+        && object.otyp !== FAKE_AMULET_OF_YENDOR && object.otyp !== AMULET_OF_YENDOR
+        && state.urole?.key !== 'priest';
+    return state.flags.implicit_uncursed === false || retainsUncursed ? 'uncursed' : null;
+}
+function uniqueObject(object, state) {
+    const override = state.iflags.override_ID || object.overrideIdentified;
+    if (!object.dknown && !override)
+        return false;
+    if (object.otyp === FAKE_AMULET_OF_YENDOR && !object.known && !override)
+        return true;
+    return !!OBJECT_UNIQUE[object.otyp]
+        && (object.known || !!override || object.otyp === AMULET_OF_YENDOR);
+}
+// C xname_flags(): Clerics recognize beatitude whenever an object is named.
+export function observeBucForNaming(object, state = game) {
+    if (state.urole?.key !== 'priest')
+        return;
+    object.bknown = true;
+    object.buc = object.blessed ? 'blessed' : object.cursed ? 'cursed' : undefined;
+}
+// C objnam.c:add_erosion_words().
+function erosionDescription(object, state) {
+    if (!trapErosionMatters(object))
+        return [];
+    const fixedKnife = object.otyp === CRYSKNIFE;
+    const rusty = objectIsVulnerableToErosion(object, 'rust', state);
+    const cracked = objectIsVulnerableToErosion(object, 'crack', state);
+    const corroded = objectIsVulnerableToErosion(object, 'corrosion', state);
+    const burnt = objectIsVulnerableToErosion(object, 'burn', state);
+    const rotted = objectIsVulnerableToErosion(object, 'rot', state);
+    if (!fixedKnife && !rusty && !cracked && !corroded && !burnt && !rotted)
+        return [];
+    const words = [];
+    if (!fixedKnife && object.oeroded)
+        words.push(erosionDegree(object.oeroded) + (rusty ? 'rusty' : cracked ? 'cracked' : 'burnt'));
+    if (!fixedKnife && object.oeroded2)
+        words.push(erosionDegree(object.oeroded2) + (corroded ? 'corroded' : 'rotted'));
+    if ((object.rknown || object.overrideIdentified || state.iflags.override_ID) && object.oerodeproof) {
+        const proof = fixedKnife ? 'fixed' : rusty ? 'rustproof' : corroded ? 'corrodeproof'
+            : burnt ? 'fireproof' : cracked ? 'tempered' : rotted ? 'rotproof' : '';
+        if (proof)
+            words.push(proof);
+    }
+    return words;
+}
+function erosionDegree(level) {
+    return level === 2 ? 'very ' : level === 3 ? 'thoroughly ' : '';
 }
 //# sourceMappingURL=objnam.js.map

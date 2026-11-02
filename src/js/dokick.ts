@@ -59,7 +59,9 @@ import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+import { objectDescription, makePlural } from './objnam.js';
+
 import { impactDisturbsZombies } from './hack.js';
 import { breakChestLock } from './lock.js';
 import type { GameObject, ObjectMigration } from './object_types.js';
@@ -67,7 +69,7 @@ import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-import { objectDescription } from './object_description.js';
+
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper } from './shk.js';
 import { containedGold } from './gold.js';
 import { roomsAt } from './room.js';
@@ -82,7 +84,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
 import { maybeResetPick } from './lock_context.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { makePlural } from './object_grammar.js';
+
 import { surfaceName } from './terrain_name.js';
 import { currency } from './currency.js';
 import { shopkeeperName } from './shknam.js';

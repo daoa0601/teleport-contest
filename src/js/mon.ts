@@ -81,7 +81,9 @@ import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterI
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+import { makePlural } from './objnam.js';
+
 import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { surfaceName } from './terrain_name.js';
@@ -116,7 +118,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
-import { makePlural } from './object_grammar.js';
+
 import { releaseHeroFromMonster, expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import type { DungeonLocation } from './dungeon_types.js';

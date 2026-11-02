@@ -39,14 +39,16 @@ import {
 import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { roomForRoomno } from './room.js';
 import { rn2, rnd } from './rng.js';
-import { makePlural } from './object_grammar.js';
-import { learnObjectType } from './object_knowledge.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
+
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { objectWeight } from './weight.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { useUpInventoryStack } from './hero_inventory.js';
 import { objectResistsDestruction, getObjectLocation } from './zap.js';
 import { ownedObjectAction } from './objnam.js';

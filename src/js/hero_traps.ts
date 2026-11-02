@@ -27,8 +27,9 @@ import {
     SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR,
     TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT,
     TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold,
-    squeakyBoardNoteWithArticle, MGIVENNAME,
+    MGIVENNAME,
 } from './const.js';
+import { squeakyBoardNoteWithArticle } from './trap.js';
 import {
     displayLiquidName, flush_screen, lastDirtyMapCursor, newsym, shieldeff, show_glyph_cell,
 } from './display.js';
@@ -126,10 +127,12 @@ import { resetHeroTrap } from './terrain_movement.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { upstart } from './hacklib.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+import { observeObject } from './o_init.js';
+
 import { objectName, observeObjectForNaming, killerObjectName, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { activateMagicPortal, askTeleportDestination } from './teleport.js';
-import { observeObject } from './object_knowledge.js';
+
 import { triggerHeroPolymorphTrap } from './hero_polymorph_trap.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 

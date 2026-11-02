@@ -13,7 +13,7 @@ import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
-import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
+import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING } from './object_data.js';
 import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
@@ -28,12 +28,15 @@ import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName } from './objnam.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+import { rejoinObjectStack } from './mkobj.js';
+import { makePlural, verbForSubject, objectDescription } from './objnam.js';
+
 import { applyPolearm, applyTool } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
 import { couldPoleMonster } from './polearm.js';
 import { promptDirection } from './tty_prompts.js';
-import { rejoinObjectStack } from './object_stack.js';
+
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
@@ -42,7 +45,7 @@ import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext
 import { canLetGo } from './hero_inventory.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+
 import { heroHandName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { dryTowel } from './towel.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
@@ -52,7 +55,12 @@ import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySup
 import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { hitFloorWithObject } from './object_drop.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { shipObject } from './dokick.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { surfaceName } from './terrain_name.js';
+import { requireGameLevel, requireInitializedGame } from './gstate.js';
+import { IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR } from './const.js';
 import { tossObjectUp } from './toss_up.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
@@ -77,7 +85,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { releaseCameraDemon } from './camera.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
-import { objectDescription } from './object_description.js';
+
 import { makemonAt } from './makemon.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, settleThrownShopObject, stolenValue, makeAngryShopkeeper, insideShopRoomAt } from './shk.js';
@@ -1267,4 +1275,65 @@ export async function breakObjectAtLocation(object: GameObject, {
         observed: visible || audible,
         cameraDemon,
     };
+}
+
+// ---------------------------------------------------------------------------
+// C dothrow.c:606-647 hitfloor(): object hits floor at hero's feet.  The
+// object is free and its coordinates may be stale; every floor-bound owner
+// below receives the hero's explicit position instead.
+// ---------------------------------------------------------------------------
+
+export interface HitFloorOptions {
+    verbose?: boolean;
+    state?: GameState;
+    publish?: MessagePublisher;
+}
+
+export async function hitFloorWithObject(
+    object: GameObject,
+    { verbose = true, state = game, publish = plineWithContinuation }: HitFloorOptions = {},
+) {
+    requireLiveGame(state);
+    const hero = state.u;
+    const level = requireGameLevel(state);
+    const location = level.at(hero.ux, hero.uy);
+    if (!location) throw new Error('The hero is outside the dungeon map.');
+
+    if (IS_SOFT(location.typ) || hero.uinwater || hero.uswallow)
+        return dropObjectAtHero(object, { state, publish });
+
+    if (IS_ALTAR(location.typ)) {
+        await landObjectOnAltar(object, { state, publish });
+    } else if (verbose) {
+        // C Doname2(obj) is the capitalized full doname; otense conjugates
+        // the verb by quantity.
+        const verb = (object.otyp === WAN_STRIKING ? 'strike' : 'hit')
+            + (object.quan > 1 ? '' : 's');
+        let surf = surfaceName(hero.ux, hero.uy, state);
+        const trap = level.traps.find(candidate =>
+            candidate.tx === hero.ux && candidate.ty === hero.uy);
+        // describe something that might keep the object where it is or
+        // precede the next message stating that it falls
+        if (trap?.tseen) {
+            if (trap.ttyp === TRAPDOOR) surf = 'trap door';
+            else if (trap.ttyp === HOLE) surf = 'edge of the hole';
+            else if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT)
+                surf = 'edge of the pit';
+        }
+        observeObjectForNaming(object, { state });
+        const description = await inventoryItemDescription(object);
+        await publish(`${
+            description.charAt(0).toUpperCase()}${description.slice(1)} `
+            + `${verb} the ${surf}.`);
+    }
+
+    const broke = await breakFloorObject(object, {
+        state, publish, x: hero.ux, y: hero.uy, fromInventory: true,
+    });
+    // A fatal break (potion vapor, burning oil) can end the game without
+    // destroying the object; gate on the game-over state itself.
+    if (broke.destroyed || state.program_state?.gameover) return null;
+    if (await shipObject(object, hero.ux, hero.uy, { state: requireInitializedGame(state), publish }))
+        return null;
+    return dropObjectAtHero(object, { impact: true, state, publish });
 }

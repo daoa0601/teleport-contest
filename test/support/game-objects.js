@@ -1,5 +1,5 @@
 import { game } from '../../js/gstate.js';
-import { recordObjectKnowledge } from '../../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../../js/o_init.js';
 import { CORPSE, LARGE_BOX } from '../../js/object_data.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { addCreatedObjectToContainer } from '../../js/mkobj.js';

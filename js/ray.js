@@ -11,7 +11,7 @@ import { game } from './gstate.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectKnowledge } from './o_init.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';

@@ -27,7 +27,8 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL,
     monsterCanEngulf, monsterIsAnimal, monsterIsSlithy, monsterTypeName,
 } from './monster_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { AD_SITM } from './monster_attack_types.js';
 import {
     BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES,

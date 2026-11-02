@@ -16,7 +16,8 @@ import {
 import { monsterIsHumanoid } from './monster_data.js';
 import { isBimanualObject } from './object_properties.js';
 import { heroSpecies } from './hero_species.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { objectMonsterName, objectName } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import { heroHasNoLimbs } from './polyself.js';

@@ -11,7 +11,8 @@ import {
     BELL_OF_OPENING, FOOD_RATION, GOLD_PIECE, MAGIC_HARP, POT_BOOZE,
     RIN_PROTECTION, SHORT_SWORD,
 } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { readObjectName, simpleObjectNameWithArticle } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import type { RoleKey } from '../js/roles.js';

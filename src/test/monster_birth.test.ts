@@ -11,7 +11,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterBirth, makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { makePlural } from '../js/object_grammar.js';
+import { makePlural } from '../js/objnam.js';
+
 import { GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { minimalObjectName } from '../js/objnam.js';
 import { initRng, rn2Display } from '../js/rng.js';

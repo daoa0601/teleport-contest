@@ -4,7 +4,9 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_DESCRIPTIONS, POT_HEALING, RIN_PROTECTION } from '../js/object_data.js';
-import { objectClassForType, recordObjectCall, recordObjectKnowledge } from '../js/object_knowledge.js';
+import { objectClassForType, recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { applyNethackrc } from '../js/options.js';
 import { freshObjectRoom } from './support/object-room.js';
 

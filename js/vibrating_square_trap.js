@@ -5,7 +5,7 @@ import { game } from './gstate.js';
 import { monsterFootName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
 import { monsterHasNoLimbs } from './monster_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
 import { monsterInAir } from './terrain_properties.js';
 import { monsterName } from './do_name.js';

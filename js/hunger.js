@@ -29,7 +29,7 @@ import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { heroIsBreathless, heroSpecies } from './hero_species.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, MEAT_RING, OBJECT_CHARGED, RIN_PROTECTION, RIN_SLOW_DIGESTION, } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectKnowledge } from './o_init.js';
 const M1_METALLIVORE = 0x80000000;
 const M1_CARNIVORE = 0x20000000;
 const M1_HERBIVORE = 0x40000000;

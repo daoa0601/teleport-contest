@@ -14,7 +14,8 @@ import {
     moveObject, placeObjectSynchronously, remove_object,
 } from './floor_object.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { hitFloorWithObject } from './object_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './armor.js';
 import { heroHeadName } from './body_parts.js';

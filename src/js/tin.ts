@@ -29,9 +29,12 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { AD_POLY } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { AXE, OBJECT_NAMES, PICK_AXE, TIN, TIN_OPENER } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { observeObject } from './object_knowledge.js';
-import { splitObjectStack, objectQuantity } from './object_stack.js';
+import { makePlural } from './objnam.js';
+import { observeObject } from './o_init.js';
+import { splitObjectStack, objectQuantity } from './mkobj.js';
+
+
+
 import { ownedObjectName } from './objnam.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { propertyIsActive } from './properties.js';

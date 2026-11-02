@@ -14,7 +14,7 @@ import { extinguishHeroFormLight, heroHasNoLimbs, heroIsPolymorphed } from './po
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { openingTinMaySaveHero } from './tin.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 export const PM_GREEN_SLIME = 208;
 const PM_FLAMING_SPHERE = 30;
 const PM_FIRE_VORTEX = 111;

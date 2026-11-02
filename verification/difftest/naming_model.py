@@ -12,11 +12,11 @@ from model import TARGETS, integer, record
 
 NAMING_TARGETS = ['makeplural', 'makesingular', 'articles', 'xname', 'doname', 'x_monnam']
 NAMING_LOCATIONS = [
-    ('objnam.c:makeplural', 'object_grammar.js:makePlural'),
-    ('objnam.c:makesingular', 'object_grammar.js:makeSingular'),
+    ('objnam.c:makeplural', 'objnam.js:makePlural'),
+    ('objnam.c:makesingular', 'objnam.js:makeSingular'),
     ('objnam.c:an()/the()', 'objnam.js:withIndefiniteArticle/definiteName'),
     ('objnam.c:xname_flags', 'objnam.js:objectName via objectCombatName'),
-    ('objnam.c:doname_base', 'object_description.js:objectDescription'),
+    ('objnam.c:doname_base', 'objnam.js:objectDescription'),
     ('do_name.c:x_monnam', 'do_name.js:monsterName'),
 ]
 NAMING_BASE = len(TARGETS) + 6  # first naming target index (12)

@@ -5,7 +5,8 @@ import { ALTAR, ICE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, POOL } from '../js/co
 import { displayLiquidName } from '../js/display.js';
 import { initRng } from '../js/rng.js';
 import { trapName } from '../js/trap.js';
-import { withIndefiniteArticle } from '../js/object_grammar.js';
+import { withIndefiniteArticle } from '../js/objnam.js';
+
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';

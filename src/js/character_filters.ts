@@ -4,7 +4,8 @@ import {
     nativeRoleChoices, validCharacterAlignment, validCharacterGender, validCharacterRace,
 } from './character_choices.js';
 import type { CharacterChoices, CharacterFacet } from './character_choices.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { aligns, findAlignment, findGender, findRace, findRole, genders, races } from './roles.js';
 import type { AlignmentName, GenderName, RaceName, RoleKey } from './roles.js';
 import {

@@ -4,7 +4,7 @@
 import { objectMaterial } from './o_init.js';
 import { P_BOW, P_CROSSBOW, P_DAGGER, P_SLING, } from './const.js';
 import { AKLYS, FLINT, OBJECT_SUBTYPE, ROCK, } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
 import { objectTypeKnown } from './shk.js';
 import { isLauncherAmmunition, isMissileObject, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 function quiverObjectClass(item) {

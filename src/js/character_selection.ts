@@ -4,7 +4,8 @@ import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { rn2 } from './rng.js';
 import { NO_COLOR } from './terminal.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { rawPrint } from './pline.js';
 import { findRole, findRace, findGender, findAlignment, randomCharacterOption, roles, races, genders, aligns } from './roles.js';
 import type { Role, Race, Gender, Alignment } from './roles.js';

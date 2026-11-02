@@ -33,7 +33,7 @@ import { takeCommandResponse } from './input.js';
 import { wakeMonster } from './mon.js';
 import { monsterHasShockResistance } from './mondata.js';
 import { MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { objectMaterial } from './o_init.js';
 import { walkPathCells } from './path_walk.js';
 import { applyPotionEffect } from './potion.js';

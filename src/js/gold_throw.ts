@@ -27,7 +27,9 @@ import {
     A_CHA, DOOR, D_CLOSED, D_LOCKED, Is_airlevel, Is_waterlevel,
     LOST_THROWN, ZAP_POS, isok,
 } from './const.js';
-import { hitFloorWithObject } from './object_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { tossObjectUp } from './toss_up.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
@@ -49,7 +51,7 @@ import { MONSTER_FLAGS2, monsterDigests, monsterIsWhirly } from './monster_data.
 import { hasShopkeeperData } from './shop_types.js';
 import { sellHeroDroppedObject, makeShopkeeperHappy } from './shk.js';
 import { OBJECT_COST } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { objectCombatName } from './objnam.js';
 import { shipObject } from './dokick.js';
 import { ceilingName, surfaceName } from './terrain_name.js';

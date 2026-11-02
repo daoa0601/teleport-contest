@@ -15,7 +15,8 @@ import { cansee } from './vision.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
 import { glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { farlookLocationDescription, screenDescription } from './pager.js';
 import type { Selection } from './selvar.js';
 import {

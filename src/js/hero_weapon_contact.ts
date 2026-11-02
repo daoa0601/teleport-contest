@@ -19,7 +19,8 @@ import { BOOMERANG, KATANA, OBJECT_SUBTYPE } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { isBimanualObject, isFlimsyObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
-import { objectQuantity } from './object_stack.js';
+import { objectQuantity } from './mkobj.js';
+
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
 import { d, rn2, rnl, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';

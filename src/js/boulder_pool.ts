@@ -17,7 +17,8 @@ import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { monsterName } from './do_name.js';
-import { verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './objnam.js';
+
 import { objectCombatName } from './objnam.js';
 import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';

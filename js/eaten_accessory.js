@@ -14,7 +14,7 @@ import { changeHeroSex } from './hero_species.js';
 import { MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { restoreNaturalMonsterShapes } from './mon.js';
 import { OBJECT_NAMES, OBJECT_PROPERTY, requireObjectData } from './object_data.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './o_init.js';
 import { heroIsPolymorphed, returnHeroToHumanForm } from './polyself.js';
 import { captureLevitationState, grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasTimedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshProperty, propertyTimeout, setPropertyTimeout, } from './properties.js';
 import { d, rn2, rnd } from './rng.js';

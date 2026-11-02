@@ -4,7 +4,7 @@ import { THRONE, T_LOOTED } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { CHEST, GOLD_PIECE, SPE_WIZARD_LOCK } from './object_data.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';

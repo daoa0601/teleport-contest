@@ -124,7 +124,11 @@ import { artifactEmitsLight, artifactById } from './artifacts.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming } from './objnam.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+import { splitObjectStack } from './mkobj.js';
+import { learnObjectType } from './o_init.js';
+import { tryCallObjectType } from './do.js';
+
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import {
@@ -208,7 +212,7 @@ import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './polymor
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './rust_trap.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
-import { splitObjectStack } from './object_stack.js';
+
 import { plineWithContinuation } from './pline.js';
 import { placeCreatedObject, placeObjectSynchronously, stack_object } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
@@ -238,7 +242,7 @@ import { setMonsterPermanentInvisibility } from './worn.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { depth, dist2, distmin } from './hacklib.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { rndmonstAdj, growMonster } from './makemon.js';
 import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -252,7 +256,7 @@ import {
     beginMonsterPitTrap, finishDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility,
     seeTrap, trapAt, triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap,
 } from './trap.js';
-import { tryCallObjectType } from './object_call.js';
+
 import {
     findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction,
 } from './teleport_rules.js';

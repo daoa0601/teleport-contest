@@ -12,11 +12,11 @@ import type { GameObject } from './object_types.js';
 import { monsterIsHumanoid } from './monster_data.js';
 import {
     GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING,
-    OBJECT_DELAY,
+    OBJECT_DELAY, TOWEL,
 } from './object_data.js';
-import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR } from './const.js';
+import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, W_RING, W_AMUL, W_TOOL } from './const.js';
 import { isBimanualObject } from './object_properties.js';
-import { heroFingerName, heroHandName } from './body_parts.js';
+import { heroFingerName, heroHandName, heroHeadName } from './body_parts.js';
 import type { PlayingGameState, GameState } from './game_state.js';
 import type { ArmorCompletion } from './cmd.js';
 import { recordRandom } from './monster_action_types.js';
@@ -25,7 +25,9 @@ import { heroHasNoHead, heroSpecies } from './hero_species.js';
 import {
     heroHasNoHands, heroHasNoLimbs, heroIsVerySmall,
 } from './polyself.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+
 import {
     armorOffMessage, armorSimpleName, removeHeroArmor, wearHeroArmor,
 } from './armor.js';
@@ -33,8 +35,8 @@ import { armorWearDecision } from './armor_wear.js';
 import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
 import { isEyewear, removeEyewear, wearEyewear } from './eyewear.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { learnObjectType } from './object_knowledge.js';
-import { observeObjectForNaming } from './objnam.js';
+
+import { observeObjectForNaming, objectName, objectHasPersonalName, objectDescription, withIndefiniteArticle } from './objnam.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
 import {
@@ -43,7 +45,7 @@ import {
 import { canSelectOff } from './bulk_takeoff.js';
 import { resetBulkTakeoff, TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
 import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
-import { objectWearMessage } from './object_wear_message.js';
+
 import { yn_function } from './query.js';
 
 export async function doputon(): Promise<void> {
@@ -433,4 +435,18 @@ export function selectHeroDisenchantmentTarget(
 export function pendingArmorAction(state: GameState = game): ArmorCompletion | null {
     const after = state._afterMove;
     return after?.kind === 'wear' || after?.kind === 'remove' ? after : null;
+}
+
+// C do_wear.c:on_msg(). Zero-delay armor uses xname; accessories use prinv.
+export async function objectWearMessage(object: GameObject, state: GameState = game): Promise<string | null> {
+    const mask = object.owornmask ?? 0;
+    const verbose = state.flags.verbose !== false;
+    const inventoryFeedback = !!(mask & (W_RING | W_AMUL)) || !!(mask & W_TOOL) && !verbose;
+    if (!inventoryFeedback && !verbose) return null;
+    observeObjectForNaming(object, { state });
+    if (inventoryFeedback) return `${object.invlet} - ${await objectDescription(object, { state })}.`;
+    const noun = objectName(object, state);
+    const name = objectHasPersonalName(object, state) ? `the ${noun}` : withIndefiniteArticle(noun);
+    const how = object.otyp === TOWEL ? ` around your ${heroHeadName(state)}` : '';
+    return `You are now wearing ${name}${how}.`;
 }

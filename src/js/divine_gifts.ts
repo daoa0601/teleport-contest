@@ -31,8 +31,10 @@ import {
 } from './object_data.js';
 import type { GameObject } from './object_types.js';
 import { deleteObject } from './shk.js';
-import { withIndefiniteArticle, makePlural } from './object_grammar.js';
-import { learnObjectType, observeObject, recordObjectEncounter } from './object_knowledge.js';
+import { withIndefiniteArticle, makePlural } from './objnam.js';
+import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
+
+
 import { objectName, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty } from './properties.js';
 import type { PropertyName } from './property_types.js';

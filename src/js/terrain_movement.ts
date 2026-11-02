@@ -30,7 +30,8 @@ import { moveObject } from './floor_object.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { buriedBallNear } from './buried_object.js';
 import { heroLegName } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { heroIsHallucinating } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';

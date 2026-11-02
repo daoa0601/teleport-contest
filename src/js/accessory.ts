@@ -17,7 +17,11 @@ import {
     OBJECT_PROPERTY, RIN_PROTECTION,
 } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './o_init.js';
+import { objectWearMessage } from './do_wear.js';
+import { tryCallObjectType } from './do.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { showInvisibilityMessage } from './hero_invisibility.js';
 import { heroIsBlind } from './senses.js';
@@ -34,10 +38,10 @@ import { changeHeroSex, heroIsBreathless, heroPolyGender } from './hero_species.
 import { displayLiquidName, newsym, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem } from './invent.js';
-import { objectWearMessage } from './object_wear_message.js';
-import { tryCallObjectType } from './object_call.js';
+
+
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { heroIsInDangerousRegion } from './regions.js';

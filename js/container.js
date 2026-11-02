@@ -1,6 +1,11 @@
 // Container use and object transfer.
 // C refs: pickup.c use_container(), in_container(), out_container().
-import { makePlural } from './object_grammar.js';
+import { makePlural, objectDescription as describeObject } from './objnam.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { objectClassForType } from './o_init.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack } from './mkobj.js';
+import { matchesObjectCategories, queryObjectClasses } from './pickup.js';
 import { containerContents } from './end.js';
 import { bot } from './botl.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen } from './display.js';
@@ -16,11 +21,8 @@ import { finishInventoryRemoval, useUpInventoryStack } from './hero_inventory.js
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
 import { inventoryItemDescription, inventoryPrimaryHandDetail } from './invent.js';
-import { objectDescription as describeObject } from './object_description.js';
 import { getobj } from './inventory_prompt.js';
 import { definiteObjectAction, definiteName, objectCombatName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectQuestion, ownedSimpleObjectName, simpleObjectName, objectQuestion, simpleObjectNameWithArticle, } from './objnam.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './object_sort.js';
-import { OBJECT_CLASS_SYMBOLS, objectClassForType } from './object_knowledge.js';
 import { clearJustPicked } from './just_picked.js';
 import { liftObject } from './lift_object.js';
 import { objectShedsLight, snuffLitObject } from './light.js';
@@ -32,13 +34,11 @@ import { startCorpseTimeout, unlinkObject, addObjectToContainer } from './mkobj.
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BELL_OF_OPENING, BOULDER, BAG_OF_TRICKS, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, GOLD_PIECE, ICE_BOX, LARGE_BOX, LEASH, LOADSTONE, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SPE_BOOK_OF_THE_DEAD, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack, } from './object_stack.js';
 import { stopObjectTimer } from './timeout.js';
 import { heroHasNoHands } from './polyself.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
 import { paranoidYesNoQuit, promptChoice, tty_yn_function } from './query.js';
-import { matchesObjectCategories, queryObjectClasses } from './object_class_query.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { touchPetrifyingCorpse } from './stoning.js';
 import { addPickedInventoryObject, pickupInventoryMessage } from './pickup.js';

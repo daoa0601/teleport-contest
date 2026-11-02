@@ -83,11 +83,16 @@ import {
 import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster } from './makemon.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './o_init.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { tryCallObjectType } from './do.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { setMonsterPermanentInvisibility } from './worn.js';
 import { trapName } from './trap.js';
 import { monsterKnowsTrap, monsterLearnsTrap } from './mondata.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
 import { placeObjectSynchronously, sweepFloorPile } from './floor_object.js';
@@ -95,7 +100,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { forgetObjectKnowledge, unlinkObject, addObjectToContainer } from './mkobj.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { dropObjectAtHero } from './object_drop.js';
+
 import {
     definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural,
     observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun,
@@ -126,8 +131,8 @@ import { heroHasHalfSpellDamage } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
 import { randomTeleportDepth } from './level_teleport.js';
-import { tryCallObjectType } from './object_call.js';
-import { splitObjectStack } from './object_stack.js';
+
+
 import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough, maketrap } from './mklev.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';

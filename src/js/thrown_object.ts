@@ -63,14 +63,17 @@ import {
     BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, 
     OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+import { splitObjectStack } from './mkobj.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { objectIsVulnerableToErosion } from './trap.js';
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
 } from './object_properties.js';
 import { shipObject } from './dokick.js';
-import { splitObjectStack } from './object_stack.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
+
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';

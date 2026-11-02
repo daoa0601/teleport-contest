@@ -39,7 +39,8 @@ import { stopHeroOccupation } from './occupation.js';
 import { polymonHero } from './polyself.js';
 import { finishHeroDeath } from './end.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { newsym, randomDisplayMonsterName, see_monsters } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

@@ -9,7 +9,7 @@ import { removeEyewear } from './eyewear.js';
 import { game, requireLiveGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { LENSES } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';

@@ -3,23 +3,22 @@
 // alreadynamed(), christen_monst(), rndghostname(), roguename(), mon_nam(),
 // distant_monnam(), l_monnam(), noname_monnam(), monverbself().  The
 // remaining individual owners are naming_categories.ts (the category menu),
-// individual_naming.ts (do_oname), object_call.ts (docall) and
-// floor_naming.ts (namefloorobj).
+// individual_naming.ts (do_oname) and floor_naming.ts (namefloorobj).
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, W_SADDLE, } from './const.js';
 import { clearCannedCommands } from './cmd.js';
 import { takeCommandKey, takeCommandPosition } from './input.js';
 import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { nameFloorObject } from './floor_naming.js';
-import { renameDiscoveredType } from './o_init.js';
+import { renameDiscoveredType, recordObjectEncounter, rememberType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { SPE_NOVEL } from './object_data.js';
+import { SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, } from './object_data.js';
 import { nameIndividualObject } from './individual_naming.js';
 import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomDisplayMonsterIdentity, seeMonsterWithInfrared, } from './display.js';
-import { callObjectType, objectTypeIsCallable } from './object_call.js';
-import { objectTypeKnown } from './shk.js';
-import { observeObjectForNaming } from './objnam.js';
+import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
+import { objectName, observeObjectForNaming } from './objnam.js';
+import { impossible } from './diagnostics.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
@@ -35,7 +34,7 @@ import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from './mondata.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { rn2 } from './rng.js';
 import { monsterAtPosition } from './steed.js';
 // C do_name.c:docallcmd().
@@ -418,5 +417,82 @@ export function monsterReflexiveAction(monster, name, verb, otherText = '', { st
             name = name[0] === 'T' ? 'Them' : 'them';
     }
     return `${name} ${action}${otherText ? ` ${otherText}` : ''} ${reflexive}`;
+}
+// ---------------------------------------------------------------------------
+// Object type calls. C refs: do_name.c objtyp_is_callable(), docall(),
+// docall_xname().
+// ---------------------------------------------------------------------------
+// C do_name.c:objtyp_is_callable().
+export function objectTypeIsCallable(object, state = game) {
+    if (state._objectCallNames?.[object.otyp])
+        return true;
+    if (object.otyp === AMULET_OF_YENDOR || object.otyp === FAKE_AMULET_OF_YENDOR)
+        return false;
+    return [3, 4, 5, 6, 8, 9, 10, 11, 13, 17].includes(object.oclass)
+        && !!OBJECT_DESCRIPTIONS[object.otyp];
+}
+// C docall() stores the call name on the shared type.
+export function recordObjectCall(otyp, name, state = game) {
+    if (!Number.isInteger(otyp) || otyp < 1 || !name)
+        return;
+    rememberType(otyp, state);
+    if (!state._objectCallNames)
+        state._objectCallNames = {};
+    state._objectCallNames[otyp] = name;
+}
+// C do_name.c:docall_xname().
+export async function callObjectType(object, state = game) {
+    if (!object.dknown)
+        return { prompted: false, named: false, callName: null };
+    // C docall() publishes buffered status before getlin() disables bot().
+    await flush_screen(1);
+    const sample = { ...object, quan: 1, quantity: 1, blessed: false, cursed: false };
+    delete sample.oextra;
+    delete sample.oname;
+    delete sample.buc;
+    if (sample.oclass === 2)
+        sample.opoisoned = 0;
+    else if (sample.oclass === 8)
+        sample.odiluted = false;
+    else if (sample.otyp === TOWEL || sample.otyp === STATUE)
+        sample.spe = 0;
+    else if (sample.otyp === TIN)
+        sample.known = false;
+    else if (sample.otyp === FIGURINE)
+        sample.corpsenm = -1;
+    else if (sample.otyp === HEAVY_IRON_BALL)
+        sample.owt = OBJECT_WEIGHT[HEAVY_IRON_BALL] ?? sample.owt;
+    else if (sample.oclass === 7 && sample.globby)
+        sample.owt = 120;
+    let prompt;
+    if (object.oclass === 8 && object.fromsink) {
+        const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        prompt = `Call a stream of ${appearance} fluid:`;
+    }
+    else {
+        // C docall_xname() observes the prompt's sample before player input.
+        observeObjectForNaming(sample, { state });
+        prompt = `Call ${withIndefiniteArticle(objectName(sample, state))}:`;
+    }
+    const callName = await playerName(prompt);
+    if (callName === null)
+        return { prompted: true, named: false, callName: null };
+    if (!callName) {
+        if (state._objectCallNames?.[object.otyp]) {
+            delete state._objectCallNames[object.otyp];
+            if (!objectTypeKnown(object, state) && !state._encounteredObjectTypes?.has(object.otyp)) {
+                if (state._objectDiscoveryOrder?.includes(object.otyp))
+                    state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
+                else
+                    await impossible('named object not in disco', { state });
+                if (object.oclass === 13)
+                    repriceDiscoveredGems(object.otyp, state);
+            }
+        }
+        return { prompted: true, named: false, callName: null };
+    }
+    recordObjectCall(object.otyp, callName, state);
+    recordObjectEncounter(object.otyp, state);
+    return { prompted: true, named: true, callName };
 }
 //# sourceMappingURL=do_name.js.map

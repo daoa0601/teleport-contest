@@ -17,7 +17,8 @@ import {
     TALLOW_CANDLE, POT_HEALING,
 } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
-import { objectQuantity } from '../js/object_stack.js';
+import { objectQuantity } from '../js/mkobj.js';
+
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { moveVaultGuard } from '../js/vault.js';

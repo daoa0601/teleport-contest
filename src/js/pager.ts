@@ -23,7 +23,9 @@ import {
     MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME,
     MONSTER_SYMBOL, monsterDigests, monsterTypeName,
 } from './monster_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
+
 import { visibleRegionAt } from './regions.js';
 import { isPoolAt } from './terrain_properties.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
@@ -54,7 +56,7 @@ import { warningSymbols } from './warning_symbols.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+
 import { distantMonsterName, monsterName } from './do_name.js';
 import { dist2 } from './hacklib.js';
 import { heroIsPunished } from './ball.js';

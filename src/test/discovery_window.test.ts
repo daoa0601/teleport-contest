@@ -12,10 +12,10 @@ import {
     POT_BOOZE, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_HEALING, POT_SICKNESS,
     POT_WATER, RIN_PROTECTION, SACK, SCR_IDENTIFY, WAN_CANCELLATION, WOODEN_HARP,
 } from '../js/object_data.js';
-import {
-    learnObjectType, recordObjectCall, recordObjectEncounter, recordObjectKnowledge,
-    recordObjectPriceQuote,
-} from '../js/object_knowledge.js';
+import { learnObjectType, recordObjectEncounter, recordObjectKnowledge } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+import { recordObjectPriceQuote } from '../js/shk.js';
+
 import { objectName } from '../js/objnam.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { changeTutorialState } from '../js/tutorial_state.js';

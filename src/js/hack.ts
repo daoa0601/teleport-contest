@@ -69,7 +69,8 @@ import {
 } from './terrain_properties.js';
 import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { waterbodyName } from './terrain_name.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
+
 import { backOnGroundMessage, iceDescriptionAt } from './dungeon_feature.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

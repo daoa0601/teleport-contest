@@ -8,7 +8,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { veganCorpse, vegetarianCorpse } from './food_traits.js';
 import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { CANDY_BAR, CREAM_PIE, EGG, FORTUNE_COOKIE, LUMP_OF_ROYAL_JELLY, PANCAKE, } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { objectMaterial } from './o_init.js';
 import { foodObjectName } from './objnam.js';
 const WAX = 2, FLESH = 4, LEATHER = 7, BONE = 9, DRAGON_HIDE = 10;

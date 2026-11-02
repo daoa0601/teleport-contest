@@ -80,13 +80,17 @@ import {
     ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_PROPERTY,
     OBJECT_SUBTYPE, TALLOW_CANDLE, WAN_FIRE, WAN_STRIKING, WAX_CANDLE,
 } from './object_data.js';
-import { dropObjectAtHero } from './object_drop.js';
-import { makePlural, withIndefiniteArticle, verbForSubject } from './object_grammar.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { makePlural, withIndefiniteArticle, verbForSubject } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
+import { splitObjectStack } from './mkobj.js';
+
+
+
 import { objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
-import { splitObjectStack } from './object_stack.js';
+
 import {
     definiteName, definiteObjectAction, objectCombatName, objectHasPersonalName, killerObjectName,
     observeObjectForNaming, simpleObjectName,

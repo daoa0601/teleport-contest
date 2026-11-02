@@ -20,7 +20,7 @@ import { monsterName } from './do_name.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { observeObjectForNaming } from './objnam.js';
-import { objectDescription } from './object_description.js';
+import { objectDescription } from './objnam.js';
 import { EGG } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { isPoolAt } from './terrain_properties.js';

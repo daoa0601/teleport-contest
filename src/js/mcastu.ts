@@ -17,7 +17,8 @@ import {
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
-import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './object_grammar.js';
+import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
+
 import {
     canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName,
 } from './display.js';

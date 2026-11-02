@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { HELMET, LEATHER_GLOVES, POT_BOOZE, POT_HEALING, SPEED_BOOTS, WAN_FIRE } from '../js/object_data.js';
-import { recordObjectEncounter, recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectEncounter, recordObjectKnowledge } from '../js/o_init.js';
 import { applyNethackrc } from '../js/options.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

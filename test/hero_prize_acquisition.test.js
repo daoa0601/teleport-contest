@@ -11,7 +11,7 @@ import { isLevelPrize } from '../js/level_prize.js';
 import { generateMinesEnd } from '../js/mkmaze.js';
 import { searchMonsterItems } from '../js/monmove.js';
 import { AMULET_OF_REFLECTION, BAG_OF_HOLDING, LUCKSTONE } from '../js/object_data.js';
-import { observeObject } from '../js/object_knowledge.js';
+import { observeObject } from '../js/o_init.js';
 import { addPickedInventoryObject, pickupAtHero } from '../js/pickup.js';
 import { dropInventoryObject, inventoryLetter } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

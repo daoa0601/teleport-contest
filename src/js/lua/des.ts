@@ -17,7 +17,8 @@ import type { SpecialSelection } from '../selvar.js';
 import type { SelectionContext } from './selection.js';
 import { unwrapSelection } from './selection.js';
 import { luaInteger } from './arguments.js';
-import { OBJECT_CLASS_SYMBOLS } from '../object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS } from '../display.js';
+
 
 export interface LuaPoint { x: number; y: number }
 export type LuaRegion = [number, number, number, number];

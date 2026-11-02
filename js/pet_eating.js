@@ -10,7 +10,7 @@ import { feedBeeRoyalJelly } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_DELAY, OBJECT_NUTRITION } from './object_data.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
 import { DOGFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
 import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';

@@ -6,7 +6,7 @@ import { A_CHA, HUNGRY, WEAK } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { shopObjectUnitCost } from '../js/shk.js';
-import { splitObjectStack } from '../js/object_stack.js';
+import { splitObjectStack } from '../js/mkobj.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { FOOD_RATION, LONG_SWORD, SCR_IDENTIFY, WAN_FIRE, WORTHLESS_PIECE_OF_RED_GLASS, } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

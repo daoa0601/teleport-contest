@@ -40,7 +40,8 @@ import {
     AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, MEAT_RING,
     OBJECT_CHARGED, RIN_PROTECTION, RIN_SLOW_DIGESTION,
 } from './object_data.js';
-import { recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectKnowledge } from './o_init.js';
+
 
 interface HungerOptions { state?: GameState; }
 

@@ -11,7 +11,9 @@ import { mksobj } from '../js/mkobj.js';
 import { applyMonsterPassiveToObject } from '../js/uhitm.js';
 import { cancelObjectMagic } from '../js/zap.js';
 import { CLUB, LEATHER_ARMOR, MAGIC_LAMP, OIL_LAMP, POT_HEALING, POT_WATER } from '../js/object_data.js';
-import { recordObjectCall, recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
+
 import { objectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

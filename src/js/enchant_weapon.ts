@@ -12,14 +12,16 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { learnObjectType, objectClassForType } from './o_init.js';
+
 import {
     CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER,
     ELVEN_SHORT_SWORD, ELVEN_SPEAR, OBJECT_DESCRIPTIONS,
     OBJECT_NAMES, WORM_TOOTH, getObjectClassBounds, requireObjectData,
 } from './object_data.js';
 import { erosionMatters } from './trap.js';
-import { learnObjectType, objectClassForType } from './object_knowledge.js';
+
 import { ownedObjectAction } from './objnam.js';
 import { isWeaponTool } from './object_properties.js';
 import { uncurseObjectState } from './mkobj.js';

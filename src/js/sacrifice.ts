@@ -41,11 +41,14 @@ import { monsterName } from './do_name.js';
 import {
     AMULET_OF_YENDOR, CORPSE, FAKE_AMULET_OF_YENDOR, OBJECT_SUBTYPE,
 } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { learnObjectType, recordObjectEncounter } from './o_init.js';
+import { objectQuantity } from './mkobj.js';
+
 import { simpleObjectNameWithArticle } from './objnam.js';
-import { learnObjectType, recordObjectEncounter } from './object_knowledge.js';
+
 import { useUpFloorObject } from './floor_consumption.js';
-import { objectQuantity } from './object_stack.js';
+
 import { uncurseObjectState } from './mkobj.js';
 import { angerTemplePriest } from './priest.js';
 import { heroFormHidesUnderObjects } from './polyself.js';

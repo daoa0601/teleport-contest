@@ -837,7 +837,7 @@ xname_flags	nextobuf	n/a	name buffers are garbage-collected strings
 xname_flags	permapoisoned	inlined	opoisoned flag naming covers Grimtooth (objnam.ts)
 xname_flags	releaseobuf	n/a	name buffers are garbage-collected strings
 xname_flags	tin_details	inlined	tinDetails (tin.ts)
-xname_flags	xcalled	inlined	_objectCallNames lookup (objnam.ts, object_knowledge.ts)
+xname_flags	xcalled	inlined	_objectCallNames lookup (objnam.ts, do_name.ts)
 you_unwere	is_fainted	inlined	Unaware gate in heroCanControlPolymorph covers the were-change prompt (were.ts, polyself.ts)
 you_were	is_fainted	inlined	Unaware gate in heroCanControlPolymorph covers the were-change prompt (were.ts, polyself.ts)
 zap_steed	dist2	inlined	squared distance to the remembered position (zap.ts)
@@ -1737,10 +1737,10 @@ prayer_done	change_luck	inlined	finishPrayerOccupation adjusts and clamps hero l
 prayer_done	wake_nearby	inlined	finishPrayerOccupation wakes monsters with wakeMonstersNearWithMessages at ulevel times twenty squared-distance units (pray.ts)
 precheck	dist2	inlined	checkMonsterWandBackfire computes squared coordinate offsets for nearby explosion feedback (muse.ts)
 precheck	mquaffmsg	inlined	prepareMonsterItemUse calls presentMonsterQuaff, retaining the visible and caller-level not-deaf branches (muse.ts)
-query_classes	add_valid_menu_class	inlined	queryObjectClasses keeps unique selected classes and special categories in its categories array (object_class_query.ts)
-query_classes	count_unpaid	inlined	queryObjectClasses recursively checks unpaid contents before offering the unpaid category (object_class_query.ts)
-query_classes	def_char_to_objclass	inlined	queryObjectClasses finds the selected class in OBJECT_CLASS_SYMBOLS (object_class_query.ts)
-query_classes	tally_BUCX	inlined	queryObjectClasses gathers BUC categories, priest knowledge, goldX, and pickup_prev before building the prompt (object_class_query.ts)
+query_classes	add_valid_menu_class	inlined	queryObjectClasses keeps unique selected classes and special categories in its categories array (pickup.ts)
+query_classes	count_unpaid	inlined	queryObjectClasses recursively checks unpaid contents before offering the unpaid category (pickup.ts)
+query_classes	def_char_to_objclass	inlined	queryObjectClasses finds the selected class in OBJECT_CLASS_SYMBOLS (pickup.ts)
+query_classes	tally_BUCX	inlined	queryObjectClasses gathers BUC categories, priest knowledge, goldX, and pickup_prev before building the prompt (pickup.ts)
 revive_egg	dead_species	inlined	eggSpeciesIsDead checks genocide of both the egg species and its younger form; extinction does not sterilize it (egg_species.ts)
 seffect_food_detection	food_detect	inlined	detectionEffect selects detectFood as the callback for the food-detection scroll (read.ts)
 seffect_gold_detection	trap_detect	inlined	detectionEffect selects detectTraps for a cursed gold-detection scroll (read.ts)
@@ -1779,7 +1779,7 @@ gcrownu	unrestrict_weapon_skill	inlined	crownHero calls unrestrictHeroSkill for 
 gcrownu	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body
 getspell	cmdq_pop	inlined	selectSpellToCast consumes the repeat or canned entry before opening a menu; non-key commands cancel while preserving bundled answer tails (spell_menu.ts)
 dispinv_with_action	display_inventory	inlined	reportSubset consumes queued inventory choices before its singleton or in-use menu, then opens the selected object's actions (inventory_reports.ts, inventory_queued_choice.ts)
-query_classes	display_inventory	inlined	The inventory lookup consumes a queued choice through takeQueuedInventoryChoice or displays selectInventoryObject when no answer is queued (object_class_query.ts)
+query_classes	display_inventory	inlined	The inventory lookup consumes a queued choice through takeQueuedInventoryChoice or displays selectInventoryObject when no answer is queued (pickup.ts)
 can_grapple_location	dist2	inlined	chooseTarget compares squaredDistanceFromHero with the active grappling range (grappling_hook.ts)
 grease_ok	inaccessible_equipment	inlined	greaseSuggestion checks coveringEquipment for cloak, suit, and glove obstructions; the hands choice is suggested separately (grease_apply.ts)
 use_grapple	cmdq_add_ec	inlined	applyInventoryObject queues an apply command when useGrapplingHook reports that wielding requires resuming (cmd.ts)
@@ -1936,7 +1936,7 @@ zap_map	is_db_wall	inlined	the portcullis test is originalType === DBWALL inline
 zap_updown	is_db_wall	inlined	the portcullis test is level.requireAt(x,y).typ === DBWALL inline (zap.ts zapVertically and strikeOrLockVertically)
 zap_updown	mksobj_at	inlined	mksobj() plus placeCreatedObject() create and place the dislodged rock (zap.ts strikeOrLockVertically), which is what mksobj_at() composes
 discover_object	Japanese_item_name	inlined	japaneseItemName in o_init.ts:241 (C objnam.c:Japanese_item_name) drives the samurai discovery annotations; discoverKnownType expresses the disco[] insertion through the known/encountered sets
-discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-inventory window; the grader has no perm_invent window, and the gem reprice itself is repriceDiscoveredGems (object_knowledge.ts)
+discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-inventory window; the grader has no perm_invent window; and the gem reprice itself is repriceDiscoveredGems (o_init.ts)
 display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); terrain_properties.ts isPoolOrLavaAt is the same predicate
 display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
 zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire

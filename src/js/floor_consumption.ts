@@ -1,6 +1,7 @@
 // C invent.c:useupf(). Consume floor stock, retaining any used-up shop bill.
 import { delobj } from './invent.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { addShopObjectToBill, costlySpot, stolenValue } from './shk.js';
 import { roomsAt } from './room.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

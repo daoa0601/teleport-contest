@@ -36,7 +36,11 @@ import type {
     MonsterMovement, MonsterMovementAction, MonsterCallLog, RandomBelow, RollDice, RollOne,
 } from './monster_action_types.js';
 import { clearBypasses } from './worn.js';
-import { clearSplitObjects } from './object_stack.js';
+import { clearSplitObjects } from './mkobj.js';
+import { tryCallObjectType } from './do.js';
+import { observeBucForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType } from './o_init.js';
+
 import {
     A_CURRENT, A_ORIGINAL, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM,
     RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS,
@@ -56,7 +60,7 @@ import { warnWithMasterKey, applyArtifactHit } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { overexertHeroHp } from './hero_overexertion.js';
 import { ceilingName } from './terrain_name.js';
-import { tryCallObjectType } from './object_call.js';
+
 import { consumeMonsterItem } from './mthrowu.js';
 import {
     heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination,
@@ -97,9 +101,7 @@ import {
 } from './monster_attack_types.js';
 import type { MonsterAttackDeathOptions, FinishHeroDeathOptions } from './end.js';
 import { findArtifact } from './artifacts.js';
-import {
-    observeBucForNaming, observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType,
-} from './object_knowledge.js';
+
 import { loseHeroExperience } from './exper.js';
 import {
     makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction,
@@ -148,7 +150,7 @@ import {
 } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+
 import { monsterFliesOrFloats } from './terrain_properties.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';

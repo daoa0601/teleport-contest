@@ -7,14 +7,17 @@ import { heroIsBlind } from './senses.js';
 import { definiteObjectAction, objectName, ownedObjectName } from './objnam.js';
 import { heroFingerName } from './body_parts.js';
 import { armorSimpleName } from './armor.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+import { learnObjectType } from './o_init.js';
+
 import { inventoryItemDescription } from './invent.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { unlinkObject } from './mkobj.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+
 import { addInventoryItem } from './u_init.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { heroIsOnStairs, isInvocationPosition } from './invocation_position.js';
 import { promptYesNo } from './query.js';
 import {

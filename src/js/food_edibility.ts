@@ -8,7 +8,8 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { APPLE, CORPSE, EGG, GLOB_OF_GREEN_SLIME, TIN } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { objectQuantity } from './object_stack.js';
+import { objectQuantity } from './mkobj.js';
+
 import { definiteName, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { promptYesNo } from './query.js';

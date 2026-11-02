@@ -9,7 +9,8 @@ import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { promptYesNo } from './query.js';
 import { rn2 } from './rng.js';
 import { strikeSteed } from './steed.js';

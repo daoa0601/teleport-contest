@@ -50,7 +50,7 @@ import { makeStunned } from './hero_mental_status.js';
 import { deleteTrap, seeTrap, tryMonsterTrapEscape } from './trap.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';

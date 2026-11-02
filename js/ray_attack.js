@@ -27,7 +27,7 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { distantObjectName, objectName } from './objnam.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { hitHeroWithRay } from './hero_breath.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { wornMonsterLifeSaver } from './mondeath.js';

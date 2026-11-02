@@ -28,7 +28,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { hurtleMonster, breakFloorObject } from '../js/dothrow.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap, tryMonsterTrapEscape } from '../js/trap.js';
 import { AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE, } from '../js/object_data.js';
-import { dropObjectAtHero } from '../js/object_drop.js';
+import { dropObjectAtHero } from '../js/hero_drop.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/projectile_trap.js';
 import { initRng } from '../js/rng.js';

@@ -59,7 +59,8 @@ import { altarWrath } from './pray.js';
 import { randomEngraving } from './mklev.js';
 import { monsterName } from './do_name.js';
 import { unlinkObject } from './mkobj.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { useUpInventoryStack } from './hero_inventory.js';
 import { impossible } from './diagnostics.js';
 import {

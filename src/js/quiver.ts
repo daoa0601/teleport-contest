@@ -9,7 +9,8 @@ import {
 import {
     AKLYS, FLINT, OBJECT_SUBTYPE, ROCK,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import { objectTypeKnown } from './shk.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

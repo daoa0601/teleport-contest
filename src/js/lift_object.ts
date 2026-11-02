@@ -10,8 +10,10 @@ import { MONSTER_FLAGS2 } from './monster_data.js';
 import {
     BAG_OF_HOLDING, BOULDER, GOLD_PIECE, LOADSTONE, SCR_SCARE_MONSTER,
 } from './object_data.js';
-import { mergable } from './object_merge.js';
-import { objectQuantity } from './object_stack.js';
+import { mergable } from './invent.js';
+import { objectQuantity } from './mkobj.js';
+
+
 import {
     definiteName, objectCombatName,
     wishedObjectPresentation, observeObjectForNaming,

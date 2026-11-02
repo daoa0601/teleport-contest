@@ -14,7 +14,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 const code = (key) => key.charCodeAt(0);

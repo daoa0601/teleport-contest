@@ -21,7 +21,8 @@ import {
     WAN_TELEPORTATION, WORTHLESS_PIECE_OF_RED_GLASS,
 } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
-import { objectClassForType } from '../js/object_knowledge.js';
+import { objectClassForType } from '../js/o_init.js';
+
 import { objectMaterial } from '../js/o_init.js';
 import { punishHero } from '../js/punishment.js';
 import { initRng } from '../js/rng.js';

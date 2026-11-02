@@ -68,10 +68,13 @@ import { specialDisplayName } from './dungeon.js';
 import { addInventoryItem } from './u_init.js';
 import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
-import { recordObjectEncounter, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { recordObjectEncounter } from './o_init.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
+
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { observeObjectForNaming } from './objnam.js';
-import { inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+
 import { objectTypeKnown } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { flipSpecialLevel, flipSpecialLevelRandom } from './sp_lev.js';

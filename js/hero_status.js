@@ -10,7 +10,7 @@ import { heroIsStrangled } from './hero_strangulation.js';
 import { piousness } from './insight.js';
 import { MONSTER_LEVEL, monsterDigests } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { visibleRegionAt } from './regions.js';
 import { blindfolded, heroIsBlind } from './senses.js';
 import { heroIsPetrifying } from './stoning.js';

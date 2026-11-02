@@ -7,7 +7,8 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { ARROW, CLUB, FOOD_RATION, LOADSTONE, POT_HEALING, SACK } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { beginObjectBurn } from '../js/light.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryItem } from '../js/u_init.js';

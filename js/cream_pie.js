@@ -5,14 +5,14 @@ import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { CREAM_PIE } from './object_data.js';
 import { heroFaceName, heroHasEyes } from './body_parts.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+import { splitObjectStack } from './mkobj.js';
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind, } from './senses.js';
 import { chargeAlteredUnpaidObject, } from './shk.js';
 import { makeBlinded } from './sight_change.js';
 import { releaseWeaponSlots } from './wield.js';
-import { splitObjectStack } from './object_stack.js';
 import { unlinkObject } from './mkobj.js';
 import { delobj } from './invent.js';
 function splitOnePie(stack) {

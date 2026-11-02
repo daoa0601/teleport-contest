@@ -21,9 +21,11 @@ import {
     TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE,
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { objectQuantity } from './object_stack.js';
+import { objectQuantity } from './mkobj.js';
+import { dropObjectAtHero } from './hero_drop.js';
+
 import { observeObjectForNaming } from './objnam.js';
-import { dropObjectAtHero } from './object_drop.js';
+
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';

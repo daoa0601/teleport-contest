@@ -21,7 +21,7 @@ import { monstersInFmonOrder } from './mon.js';
 import { novelTitle } from './novel_titles.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORPSE } from './object_data.js';
-import { learnObjectType, observeObject } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './o_init.js';
 import { NO_MINVENT } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';

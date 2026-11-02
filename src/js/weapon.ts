@@ -36,7 +36,9 @@ import {
     OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE,
     ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData,
 } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural, makeSingular } from './objnam.js';
+import { objectClassForType } from './o_init.js';
+
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
 import { isBimanualObject } from './object_properties.js';
@@ -83,7 +85,7 @@ import {
     monsterIsWooden,
     monsterSpeciesHatesSilver,
 } from './monster_data.js';
-import { objectClassForType } from './object_knowledge.js';
+
 import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
 import type { ArtifactDefender } from './artifacts.js';
@@ -96,7 +98,7 @@ import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
 import { P_FLAIL } from './const.js';
 import { FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE } from './object_data.js';
-import { makeSingular } from './object_grammar.js';
+
 import { SKILL_NAMES } from './skills.js';
 import { isAmmunition } from './object_properties.js';
 

@@ -15,11 +15,13 @@ import {
     SACK, TOOLED_HORN, TOWEL, WAN_FIRE, WAX_CANDLE,
 } from '../js/object_data.js';
 import { lootObjectName } from '../js/objnam.js';
-import { learnObjectType, recordObjectCall } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+import { changeInventoryOrder } from '../js/options.js';
+import { inventoryOrderSymbols, inventorySortMode, lootSortMode, sortObjects } from '../js/invent.js';
+
 import { dodiscovered } from '../js/o_init.js';
-import {
-    changeInventoryOrder, inventoryOrderSymbols, inventorySortMode, lootSortMode, sortObjects,
-} from '../js/object_sort.js';
+
 import { applyNethackrc } from '../js/options.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

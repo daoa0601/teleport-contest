@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { learnObjectType, recordObjectCall, recordObjectEncounter } from '../js/object_knowledge.js';
+import { learnObjectType, recordObjectEncounter } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import {
     MAGIC_MARKER, OBJECT_NAMES, SCR_BLANK_PAPER, SCR_ENCHANT_ARMOR, SCR_IDENTIFY,
     SCR_GENOCIDE, SCR_LIGHT, SPE_BLANK_PAPER, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_NOVEL,

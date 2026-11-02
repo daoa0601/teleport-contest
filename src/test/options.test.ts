@@ -24,7 +24,8 @@ import { memoryStorage } from './support/memory-storage.js';
 import { showMultiSelectWindow } from '../js/windows.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { DAGGER, LONG_SWORD } from '../js/object_data.js';
-import { inventoryOrderSymbols, inventorySortMode, sortObjects } from '../js/object_sort.js';
+import { inventoryOrderSymbols, inventorySortMode, sortObjects } from '../js/invent.js';
+
 import { knownObject } from './support/game-objects.js';
 
 function visibleOptions() {

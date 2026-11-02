@@ -8,7 +8,8 @@ import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { monsterName } from './do_name.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { monsterResistsEffect } from './zap.js';

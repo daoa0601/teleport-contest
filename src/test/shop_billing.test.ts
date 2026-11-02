@@ -19,8 +19,10 @@ import {
     addShopObjectToBill, billedPickupQuote, chargeAlteredUnpaidObject, checkSpecialRoom,
     getCostOfShopItem, settleThrownShopObject, splitObjectBill,
 } from '../js/shk.js';
-import { splitObjectStack } from '../js/object_stack.js';
-import { mergeObjectStacks } from '../js/object_merge.js';
+import { splitObjectStack } from '../js/mkobj.js';
+import { mergeObjectStacks } from '../js/invent.js';
+
+
 import { pickupAtHero } from '../js/pickup.js';
 import {
     floorObject, knownObject, uninitializedObject,

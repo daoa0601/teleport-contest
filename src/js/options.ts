@@ -22,7 +22,8 @@ import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupType
 import type { InventoryMenuItem, MenuLabel, PageLocalMenuItem, PageLocalMultiSelectSection, SelectableMenuItem } from './windows.js';
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { clearStatusHilites, countStatusHilites, statusHiliteMenu } from './botl.js';
-import { parseStatusHl1, replayStatusHiliteOperations, type StatusHiliteOperation } from './botl.js';
+import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
+import type { StatusHiliteOperation } from './botl.js';
 import { countBindKeys, handlerRebindKeys } from './rebind_keys.js';
 import { CommandBindings } from './command_bindings.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
@@ -36,12 +37,14 @@ import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { vision_recalc } from './vision.js';
 import { getLine } from './query.js';
-import { changeInventoryOrder, inventoryOrderSymbols } from './object_sort.js';
+import { inventoryClassOrder, inventoryOrderSymbols } from './invent.js';
+import type { InventoryOrderState } from './invent.js';
 import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
-import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings, setVanqOrder, vanquishedOptionValue } from './end.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
@@ -3475,4 +3478,33 @@ export async function doOptions(menuRequested = false): Promise<void> {
     await bot();
     game.iflags.optionMessages = true;
     game.context.move = 0;
+}
+
+// ---------------------------------------------------------------------------
+// C options.c:change_inv_order().
+// ---------------------------------------------------------------------------
+
+// C options.c:change_inv_order() keeps valid entries even when others are
+// bad, then fills omitted classes using their previous order. Omitted gold
+// leads.
+export function changeInventoryOrder(symbols: string, state: InventoryOrderState = game): boolean {
+    const change = planInventoryOrder(symbols, state);
+    state.flags.inv_order = change.order;
+    return change.errors.length === 0;
+}
+
+export function planInventoryOrder(symbols: string, state: InventoryOrderState = game): { order: number[]; errors: string[] } {
+    const previous = inventoryClassOrder(state);
+    const order = symbols.includes('$') ? [] : [12];
+    const errors: string[] = [];
+    for (const [index, symbol] of [...symbols].entries()) {
+        const oclass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
+        if (oclass < 1) errors.push(`Not an object class '${symbol}'`);
+        else if (!previous.includes(oclass)) errors.push(`Object class '${symbol}' not allowed`);
+        else if (symbols.indexOf(symbol, index + 1) !== -1) errors.push(`Duplicate object class '${symbol}'`);
+        else {
+            order.push(oclass);
+        }
+    }
+    return { order: [...order, ...previous.filter(oclass => !order.includes(oclass))], errors };
 }

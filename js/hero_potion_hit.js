@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { loseHeroHp } from './hero_damage.js';
-import { tryCallObjectType } from './object_call.js';
+import { tryCallObjectType } from './do.js';
 import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, randomBottleName, } from './potion.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';

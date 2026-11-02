@@ -19,7 +19,9 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { isGrayStone } from './object_properties.js';
 import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+import { makePlural } from './objnam.js';
+
 import { dopay } from './shk.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
@@ -109,7 +111,7 @@ import {
     WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION,
     WAN_UNDEAD_TURNING, WAN_WISHING,
 } from './object_data.js';
-import { makePlural } from './object_grammar.js';
+
 import { unlinkObject } from './mkobj.js';
 import { stopLevelTimer } from './timeout.js';
 import { observeObjectForNaming, ownedObjectName } from './objnam.js';

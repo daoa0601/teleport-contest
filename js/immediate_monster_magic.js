@@ -28,7 +28,7 @@ import { setMimicAppearance, monsterHitPointsPerLevel } from './makemon.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { BOULDER, CHEST, FIGURINE, LARGE_BOX, OBJECT_COLOR, OBJECT_NAMES, POT_POLYMORPH, SPE_EXTRA_HEALING, SPE_FORCE_BOLT, SPE_HEALING, SPE_POLYMORPH, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, STATUE, WAN_CANCELLATION, WAN_LIGHT, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
 import { objectName, simpleObjectTypeName } from './objnam.js';
 import { landFloorObject } from './floor_effects.js';
 import { d, rn2, rnd } from './rng.js';

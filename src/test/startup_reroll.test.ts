@@ -9,7 +9,8 @@ import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription, rerollMenu } from '../js/invent.js';
 import { runSegment } from '../js/jsmain.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, JADE } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { objectTypeKnown } from '../js/shk.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs,

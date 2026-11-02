@@ -37,12 +37,16 @@ import { withMonsterNoticesBlocked } from './hack.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition } from './steed.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
+import { learnObjectType } from './o_init.js';
+import { tryCallObjectType } from './do.js';
+
 import {
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, CORNUTHAUM,
     ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT,
     ELVEN_SHIELD, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, LEASH, LOADSTONE,
     OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, POT_WATER,
+    ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT,
     SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR,
     SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE,
     SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE,
@@ -62,6 +66,12 @@ import { askTeleportDestination, teleportHero } from './teleport.js';
 import { levelTeleport } from './level_teleport.js';
 import { detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { d, rn2, rn1, rnd } from './rng.js';
+import { wipeoutText } from './engrave.js';
+import { withIndefiniteArticle } from './objnam.js';
+import type { ObjectInscriptionView } from './objnam.js';
+import {
+    APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES,
+} from './readable_object_text.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
 import { monsterSaddle } from './steed.js';
@@ -85,13 +95,13 @@ import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import { addExperience } from './exper.js';
-import { learnObjectType } from './object_knowledge.js';
+
 import { enchantWeapon } from './enchant_weapon.js';
 import { makeStunned } from './hero_mental_status.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
-import { tryCallObjectType } from './object_call.js';
+
 import { promptYesNo } from './query.js';
 import { readOrdinaryObject } from './readable_objects.js';
 import { angerMonster } from './mon.js';
@@ -1169,4 +1179,63 @@ async function scrollEffect(
         await impossible(`What weird effect is this? (${source.otyp})`);
         return;
     }
+}
+
+// ---------------------------------------------------------------------------
+// Readable garment and wrapper text. C refs: read.c tshirt_text(),
+// apron_text(), hawaiian_motif(), hawaiian_design(), candy_wrapper_text(),
+// assign_candy_wrapper(). Shared with end-of-game xname_flags() disclosure.
+// ---------------------------------------------------------------------------
+
+const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
+
+// C read.c:tshirt_text() and read.c:apron_text(). Erosion wears the
+// lettering away deterministically from the hero's birth date.
+export function garmentInscription(object: ObjectInscriptionView, state: GameState = game): string {
+    if (object.otyp !== T_SHIRT && object.otyp !== ALCHEMY_SMOCK)
+        throw new Error('Only T-shirts and alchemy smocks have garment inscriptions.');
+    const messages = object.otyp === T_SHIRT ? SHIRT_MESSAGES : APRON_MESSAGES;
+    const id = object.o_id ?? 0;
+    const text = inscriptionAt(messages, id % messages.length);
+    const erosion = Math.max(object.oeroded || 0, object.oeroded2 || 0);
+    if (!erosion) return text;
+    return wipeoutText(text, Math.trunc(text.length * erosion / 6),
+        (id ^ heroBirthday(state)) >>> 0);
+}
+
+// C read.c:candy_wrapper_text().
+export function candyWrapperText(object: ObjectInscriptionView): string {
+    return CANDY_WRAPPERS[(object.spe ?? 0) % CANDY_WRAPPERS.length] ?? '';
+}
+
+// C read.c:hawaiian_motif().
+export function hawaiianMotif(object: ObjectInscriptionView, state: GameState = game): string {
+    const motif = ((object.o_id ?? 0) ^ heroBirthday(state)) >>> 0;
+    return inscriptionAt(HAWAIIAN_MOTIFS, motif % HAWAIIAN_MOTIFS.length);
+}
+
+// C read.c:hawaiian_design().
+export function hawaiianDesign(object: ObjectInscriptionView, state: GameState = game): string {
+    const background = ((object.o_id ?? 0) ^ ~heroBirthday(state)) >>> 0;
+    const backgroundText = inscriptionAt(HAWAIIAN_BACKGROUNDS, background % HAWAIIAN_BACKGROUNDS.length);
+    return `${makePlural(hawaiianMotif(object, state))} on ${withIndefiniteArticle(backgroundText)} background`;
+}
+
+function heroBirthday(state: GameState): number {
+    if (state.ubirthday === undefined)
+        throw new Error('Object text requires the initialized hero birth time.');
+    return state.ubirthday;
+}
+
+function inscriptionAt(messages: readonly string[], index: number): string {
+    const message = messages[index];
+    if (message === undefined)
+        throw new RangeError(`No readable inscription at index ${index}.`);
+    return message;
+}
+
+// C read.c:assign_candy_wrapper(). Index zero is the blank wrapper.
+export function assignCandyWrapper(object: GameObject): void {
+    if (object.otyp === CANDY_BAR)
+        object.spe = 1 + rn2(CANDY_WRAPPERS.length - 1);
 }

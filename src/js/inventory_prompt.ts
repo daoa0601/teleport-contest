@@ -16,7 +16,8 @@ import {
     GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
 } from './const.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LOADSTONE } from './object_data.js';
-import { splitObjectStack } from './object_stack.js';
+import { splitObjectStack } from './mkobj.js';
+
 import { isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
 import { rememberObjectChoice, takeRepeatCommand } from './cmd.js';

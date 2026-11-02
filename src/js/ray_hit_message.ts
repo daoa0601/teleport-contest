@@ -6,7 +6,8 @@ import type { GameState } from './game_state.js';
 import { canSpotMonster } from './display.js';
 import { game } from './gstate.js';
 import { monsterName } from './do_name.js';
-import { verbForSubject } from './object_grammar.js';
+import { verbForSubject } from './objnam.js';
+
 import { definiteName } from './objnam.js';
 import { cansee } from './vision.js';
 

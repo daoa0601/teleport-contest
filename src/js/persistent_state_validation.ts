@@ -9,7 +9,8 @@ import type {
 } from './game_state.js';
 import type { CachedLevelState } from './map_types.js';
 import type { MonsterVital } from './monster_types.js';
-import type { ObjectPriceQuote, ObjectPriceRange } from './object_knowledge.js';
+import type { ObjectPriceQuote, ObjectPriceRange } from './shk.js';
+
 import type { LuaSerializedValue, LuaVariables } from './lua/runtime.js';
 import type { Fields, SavedEntityContext } from './saved_validation.js';
 import type { PersistentState } from './state_schema.js';

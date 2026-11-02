@@ -55,19 +55,22 @@ import {
     WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA,
     SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON,
 } from './object_data.js';
-import { recordObjectEncounter, recordObjectKnowledge } from './object_knowledge.js';
+import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
+import { makePlural } from './objnam.js';
+
 import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
 import { hiddenGold } from './gold.js';
 import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { invWeight, objectWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
-import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './object_merge.js';
+
 import { assertCreatedObject } from './do.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { makePlural } from './object_grammar.js';
+
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { newMonsterHitPoints } from './makemon.js';
 

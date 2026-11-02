@@ -7,7 +7,8 @@ import type { PropertyObject, WornPropertySlot } from './property_types.js';
 import { game, requireLiveGame } from './gstate.js';
 import { TIMEOUT } from './const.js';
 import { heroEyeCount, heroEyeName, heroHasEyes } from './body_parts.js';
-import { makePlural, verbForSubject } from './object_grammar.js';
+import { makePlural, verbForSubject } from './objnam.js';
+
 import { plineWithContinuation } from './pline.js';
 import { see_monsters, see_objects, see_traps, swallowed } from './display.js';
 import { heroIsUnaware } from './hero_sleep.js';

@@ -303,11 +303,11 @@ the shared RNG stream and log comparison.
 
 | Input target | Recorder entry | Emitted JavaScript entry |
 |---|---|---|
-| `makeplural` | `objnam.c:makeplural` | `object_grammar.js:makePlural` |
-| `makesingular` | `objnam.c:makesingular` | `object_grammar.js:makeSingular` |
-| `articles` | `objnam.c:an()` and `objnam.c:the()` | `object_grammar.js:withIndefiniteArticle`, `objnam.js:definiteName` |
+| `makeplural` | `objnam.c:makeplural` | `objnam.js:makePlural` |
+| `makesingular` | `objnam.c:makesingular` | `objnam.js:makeSingular` |
+| `articles` | `objnam.c:an()` and `objnam.c:the()` | `objnam.js:withIndefiniteArticle`, `objnam.js:definiteName` |
 | `xname` | `objnam.c:xname_flags` (CXN_NORMAL) plus `an()`/`the()`/`aobjnam(obj, NULL)` wrappers | `objnam.js:objectCombatName`/`objectAction` (corpse species suppressed for the `xname` field, kept for `aobjnam`) |
-| `doname` | `objnam.c:doname_base(obj, 0)` | `object_description.js:objectDescription` |
+| `doname` | `objnam.c:doname_base(obj, 0)` | `objnam.js:objectDescription` |
 | `x_monnam` | `do_name.c:x_monnam` | `do_name.js:monsterName`, or `namelessMonsterName` for `SUPPRESS_NAME` |
 
 String targets compare only the returned strings and the (empty) RNG
@@ -436,7 +436,7 @@ recording was run.
 | Finding | Result and native evidence |
 |---|---|
 | Generic rows inside containers | Fixed: every object in the tree must have `otyp >= FIRST_OBJECT` (`ARROW` in this table). `include/objects.h` places the dummy and generic rows before that boundary; `o_init.c:init_objects` starts the real class ranges at `MAXOCLASSES`, and `mkobj.c:mkobj` / `mkbox_cnts` create contents through those ranges. `{"target":"doname","object":{"otyp":"SACK","contents":[{"otyp":2}]}}` was accepted before and now raises `ValueError`. The test checks every excluded index at depths 0, 1 and 2, with real objects accepted at the same depths. |
-| First class members silently lost | Not reproduced. The metadata comes from emitted `object_knowledge.js:objectClassForType`, not the generic rows' native `oc_class` fields. It returns class 0 for all 17 pre-`ARROW` indices, so none was selected for the real-class matrix. The first-member coverage test passes both before and after. The class buckets now start explicitly at `ARROW`, and accidental generic edge inputs raise rather than being silently dropped. Initially known types still exclude `nameKnown=0` as documented. |
+| First class members silently lost | Not reproduced. The metadata comes from emitted `o_init.js:objectClassForType`, not the generic rows' native `oc_class` fields. It returns class 0 for all 17 pre-`ARROW` indices, so none was selected for the real-class matrix. The first-member coverage test passes both before and after. The class buckets now start explicitly at `ARROW`, and accidental generic edge inputs raise rather than being silently dropped. Initially known types still exclude `nameKnown=0` as documented. |
 | Missing hand-picked and generated type keys | Fixed: use `WAN_FIRE`, `WAN_COLD`, `SCR_IDENTIFY`, `SCR_ENCHANT_WEAPON` and `GAIN_STRENGTH`. Strict lookups also exposed nonexistent `ELVEN_RING_MAIL`; its armor case now uses `ELVEN_MITHRIL_COAT`. The unused `BLESSED_STATUETTE` alternative was removed. Required names now raise `KeyError` if missing instead of skipping a case or selecting a different type. These are the native wand, scroll, ring and armor names from `include/objects.h`. The restored cases include a known zero-charge fire wand and both `implicit_uncursed` settings for cold wands, identify scrolls and elven armor. Native `objnam.c:doname_base` controls charge suffixes and the `uncursed` prefix. |
 | Redundant expected RNG counts/log | Removed the assertions of native core count 0 and emitted `{core:0, display:0, log:[]}`. Tests retain native/emitted comparison and detection of the extra-draw mutant through the comparison result. They no longer read those RNG records directly. |
 | See invisible without detection | Fixed: `{"target":"x_monnam","monster":{"mnum":"newt","minvis":1},"hero":{"detect":0,"seeInvis":1}}` was accepted and now raises `ValueError`. Native `display.h:_mon_visible` permits see invisible, so `do_name.c:x_monnam`'s `canspotmon` result would otherwise depend on uncomputed `cansee`. Generated see-invisible cases now enable detection; undetected invisible cases remain covered. |

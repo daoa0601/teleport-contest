@@ -5,10 +5,10 @@
 //   gstate.js (game state singleton, no imports from this DAG)
 //   terminal.js (leaf: ANSI color constants)
 //   hacklib.js (leaf: string utilities)
-//   object_grammar.js (leaf: pure noun grammar)
+//   objnam.js grammar tables (pure noun grammar; see objnam.js)
 //   version.js (leaf: build version)
 //   monster_data.js <- monster_attack_types.js (leaf metadata)
-//   const.js <- terminal.js, hacklib.js, object_grammar.js, version.js,
+//   const.js <- terminal.js, hacklib.js, version.js,
 //               gstate.js, monster_data.js
 //   objects.js <- imports: const.js
 //   monsters.js <- imports: const.js, objects.js
@@ -26,7 +26,7 @@ import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+
 // Runtime imports must keep the dependency graph above acyclic.
 import { game } from './gstate.js';
 import { CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BRIGHT_CYAN, CLR_BRIGHT_GREEN, CLR_BRIGHT_MAGENTA, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_RED, CLR_WHITE, CLR_YELLOW } from './terminal.js';
@@ -2305,18 +2305,6 @@ export const TRAP_EXPLANATIONS = [
     'statue trap', 'magic trap', 'anti-magic field', 'polymorph trap',
     'vibrating square', 'trapped door', 'trapped chest',
 ];
-
-const SQUEAKY_BOARD_NOTES = [
-    'C note', 'D flat', 'D note', 'E flat',
-    'E note', 'F note', 'F sharp', 'G note',
-    'G sharp', 'A note', 'B flat', 'B note',
-];
-
-export function squeakyBoardNoteWithArticle(index: number): string {
-    const note = SQUEAKY_BOARD_NOTES[index];
-    if (!note) return '';
-    return withIndefiniteArticle(note);
-}
 
 // Trap helpers (trap.h)
 export function is_pit(ttyp: number): boolean { return ttyp === PIT || ttyp === SPIKED_PIT; }

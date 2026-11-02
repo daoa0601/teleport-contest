@@ -4,7 +4,7 @@ import { armorSimpleName } from './armor.js';
 import { displayLiquidName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { setPropertyTimeout } from './properties.js';
 import { waterDamageObject } from './trap.js';
 export function fingersOrGloves() {

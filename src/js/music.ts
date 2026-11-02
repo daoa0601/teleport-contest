@@ -33,7 +33,8 @@ import {
     MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE,
     WOODEN_HARP,
 } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
+
 import { consumeObjectCharge } from './invent.js';
 import {
     definiteObjectAction,

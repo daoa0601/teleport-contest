@@ -2,8 +2,8 @@ import { def_warnsyms } from './const.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS } from './monster_data.js';
-import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { withIndefiniteArticle } from './objnam.js';
 // pager.c:do_screen_description() with looked=FALSE. Typed symbols use the
 // default class and dungeon symbols, even when the map uses another set.
 export function typedSymbolDescription(symbol, context) {

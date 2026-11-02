@@ -5,7 +5,8 @@ import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';
-import { objectDescription } from '../js/object_description.js';
+import { objectDescription } from '../js/objnam.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

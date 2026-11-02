@@ -20,10 +20,13 @@ import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
 import { hurtleHero } from './hero_hurtle.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { tossObjectUp } from './toss_up.js';
-import { hitFloorWithObject } from './object_drop.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { withIndefiniteArticle } from './objnam.js';
+import { rejoinObjectStack } from './mkobj.js';
+
 import { AKLYS, BOOMERANG, OBJECT_SUBTYPE } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
-import { rejoinObjectStack } from './object_stack.js';
+
+
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { skillName } from './skills.js';

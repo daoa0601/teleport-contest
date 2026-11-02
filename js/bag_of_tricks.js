@@ -6,7 +6,7 @@ import { game } from './gstate.js';
 import { makemonAt } from './makemon.js';
 import { consumeObjectCharge } from './invent.js';
 import { BAG_OF_TRICKS } from './object_data.js';
-import { learnObjectType } from './object_knowledge.js';
+import { learnObjectType } from './o_init.js';
 import { rn2, rnd } from './rng.js';
 import { objectTypeKnown } from './shk.js';
 export async function useBagOfTricks(bag, { tipping = false } = {}) {

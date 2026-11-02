@@ -4,7 +4,9 @@ import { inventoryItemDescription } from './invent.js';
 import { monsterFliesOrFloats, isLavaAt, isPoolAt } from './terrain_properties.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
 import { observeDistantObjectForNaming } from './objnam.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { splitObjectStack } from './mkobj.js';
+
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
@@ -36,7 +38,7 @@ import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { monsterCanCarryObject, monsterCarryAmount } from './mon.js';
-import { splitObjectStack } from './object_stack.js';
+
 import { isLevelPrize } from './level_prize.js';
 import {
     BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, SCR_MAIL, TRIPE_RATION, requireObjectData,

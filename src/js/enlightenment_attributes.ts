@@ -13,7 +13,8 @@ import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } 
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { minimalObjectName } from './objnam.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+
 import {
     DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY,
     RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL,

@@ -13,7 +13,7 @@ import { game } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
 import { EGG } from './object_data.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';

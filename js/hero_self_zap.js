@@ -28,7 +28,7 @@ import { lightDamage, igniteItems } from './light.js';
 import { AD_COLD, AD_ELEC, AD_FIRE } from './monster_attack_types.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving } from './monster_data.js';
 import { CHEST, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, LARGE_BOX, SPE_CANCELLATION, SPE_CONE_OF_COLD, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from './object_data.js';
-import { mergeObjectStacks } from './object_merge.js';
+import { mergeObjectStacks } from './invent.js';
 import { applyHeroGolemEffects, heroIsUnchanging, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { unpunishHero } from './punishment.js';
 import { d, rn1, rnd } from './rng.js';

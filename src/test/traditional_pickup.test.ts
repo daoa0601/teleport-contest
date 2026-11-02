@@ -8,7 +8,8 @@ import { syncHeroInvisibility } from '../js/hero_invisibility.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { ARROW, CLUB, FOOD_RATION, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';

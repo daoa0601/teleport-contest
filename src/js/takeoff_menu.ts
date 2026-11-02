@@ -6,10 +6,13 @@ import { consumeHallucinatedMenuObjectGlyph } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription, selectInventoryObject } from './invent.js';
-import { objectDescription } from './object_description.js';
-import { OBJECT_CLASS_SYMBOLS } from './object_knowledge.js';
+import { objectDescription } from './objnam.js';
+import { OBJECT_CLASS_SYMBOLS } from './display.js';
+import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
+
+
 import { observeObjectForNaming } from './objnam.js';
-import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './object_sort.js';
+
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuUnderlay } from './windows.js';

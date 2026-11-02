@@ -36,7 +36,11 @@ import { searchSpecial } from './mkroom.js';
 import { intemple, moveSpecial, specialMoverSeesHero } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH } from './object_data.js';
-import { learnObjectType, recordObjectPriceQuote, observeObject } from './object_knowledge.js';
+import { learnObjectType, observeObject } from './o_init.js';
+import { paymentObjectDescription, objectDescription } from './objnam.js';
+import { dropObjectAtHero } from './hero_drop.js';
+import { mergable } from './invent.js';
+import { splitObjectStack } from './mkobj.js';
 import { ACH_SHOP, ACH_TOWN, recordAchievement } from './achievements.js';
 import { nextIdent, nextObjectId } from './ident.js';
 import { getObjectLocation } from './zap.js';
@@ -54,13 +58,9 @@ import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash } from './leash_apply.js';
 import { makemonAt } from './makemon.js';
 import { SPBOOK_CLASS } from './mklev.js';
-import { paymentObjectDescription, objectDescription } from './object_description.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
-import { dropObjectAtHero } from './object_drop.js';
-import { mergable } from './object_merge.js';
-import { splitObjectStack } from './object_stack.js';
 import { addInventoryItem } from './u_init.js';
 import { intrinsicPossible } from './corpse_intrinsics.js';
 import { countContents } from './invent.js';
@@ -4764,5 +4764,34 @@ export async function warnAboutRemovedPick(object, state = game) {
         }
     }
     state._pickWarningMove = state.moves;
+}
+// C shk.c:record_price_quote() stores prices without discovering the type.
+export function recordObjectPriceQuote(otyp, price, kind = 'buy', state = game) {
+    if (!Number.isInteger(otyp) || otyp < 1 || !Number.isInteger(price) || price < 0)
+        return;
+    if (!state._objectPriceQuotes)
+        state._objectPriceQuotes = {};
+    const quote = state._objectPriceQuotes[otyp] || {};
+    const observed = quote[kind];
+    quote[kind] = observed
+        ? { min: Math.min(observed.min, price), max: Math.max(observed.max, price) }
+        : { min: price, max: price };
+    state._objectPriceQuotes[otyp] = quote;
+}
+// C shk.c:append_price_quote(). Discovery lists always include the quote;
+// ordinary object descriptions decide whether the option and knowledge allow it.
+export function priceQuoteSuffix(otyp, state = game) {
+    const quote = state._objectPriceQuotes?.[otyp];
+    if (!quote)
+        return '';
+    const parts = [];
+    for (const kind of ['buy', 'sell']) {
+        const range = quote[kind];
+        if (!range)
+            continue;
+        const { min, max } = range;
+        parts.push(min === max ? `${kind} ${min}` : `${kind} ${min}-${max}`);
+    }
+    return parts.length ? ` {${parts.join(' ')}}` : '';
 }
 //# sourceMappingURL=shk.js.map

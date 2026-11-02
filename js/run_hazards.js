@@ -3,7 +3,7 @@ import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './armor.js';
 import { IS_WATERWALL, LAVAWALL, VIBRATING_SQUARE } from './const.js';
 import { displayLiquidName } from './display.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { trapName } from './trap.js';
 export function knownRunTrap(x, y, state) {

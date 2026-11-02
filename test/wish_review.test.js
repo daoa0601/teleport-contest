@@ -7,7 +7,7 @@ import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hero_digging.js';
 import { mksobj } from '../js/mkobj.js';
 import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, MAGIC_MARKER, MIRROR, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TALLOW_CANDLE, TIN, WAX_CANDLE, } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('retrying plate armor as plate mail keeps the armor class restriction', async () => {

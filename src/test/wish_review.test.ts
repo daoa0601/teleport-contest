@@ -15,7 +15,8 @@ import {
     POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS,
     TALLOW_CANDLE, TIN, WAX_CANDLE,
 } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 

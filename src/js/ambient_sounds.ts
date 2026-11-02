@@ -19,7 +19,8 @@ import {
     monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead, monsterIsVampireShifter, monsterTypeName,
 } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
+import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace } from './mondata.js';

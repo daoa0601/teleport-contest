@@ -6,7 +6,8 @@ import type { InterfaceFlags } from './flags.js';
 import type { Fruit, GameState } from './game_state.js';
 import { nameToMonster } from './mondata.js';
 import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
-import { makePlural, makeSingular } from './object_grammar.js';
+import { makePlural, makeSingular } from './objnam.js';
+
 import { rnd } from './rng.js';
 
 interface FruitNameSettings {

@@ -7,7 +7,7 @@ import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { pushKeys } from '../js/input.js';
 import { IRON_SHOES } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { initRng } from '../js/rng.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

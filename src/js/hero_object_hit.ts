@@ -19,8 +19,9 @@ import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { verbForSubject, withIndefiniteArticle } from './object_grammar.js';
-import { objectDescription } from './object_description.js';
+import { verbForSubject, withIndefiniteArticle, objectDescription } from './objnam.js';
+
+
 import { definiteName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import {

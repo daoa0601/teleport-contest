@@ -10,7 +10,8 @@ import {
     AKLYS, FLINT, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_CHARGED,
     OBJECT_DIR, OBJECT_NAMES, OBJECT_SUBTYPE, TOUCHSTONE, WAR_HAMMER,
 } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
+
 import { objectMaterial } from './o_init.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';

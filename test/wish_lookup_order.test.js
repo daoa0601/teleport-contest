@@ -3,7 +3,7 @@ import test from 'node:test';
 import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { AMULET_OF_YENDOR, BAG_OF_TRICKS, LAND_MINE, LEATHER_ARMOR, ORANGE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, POT_HEALING, SACK, SLIME_MOLD, } from '../js/object_data.js';
-import { recordObjectCall } from '../js/object_knowledge.js';
+import { recordObjectCall } from '../js/do_name.js';
 import { readObjectName } from '../js/objnam.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('the tool class suffix selects a land mine object before wizard trap dispatch', async () => {

@@ -5,7 +5,7 @@ import { A_DEX } from './const.js';
 import { heroLegName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { makePlural } from './object_grammar.js';
+import { makePlural } from './objnam.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 export async function healHeroLegs(state = game, { cause = 'healing', publish = plineWithContinuation, } = {}) {
     const hero = state.u;

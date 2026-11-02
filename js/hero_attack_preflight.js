@@ -17,7 +17,7 @@ import { revealMonsterAppearance } from './mon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { paranoidQuery } from './query.js';
 import { monsterName, monsterLeashName } from './do_name.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { wakeAttackedMonster } from './mon.js';
 const M1_CONCEAL = 0x00000080;
 const S_EEL = 57;

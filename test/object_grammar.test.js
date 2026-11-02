@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { makePlural, makeSingular, verbForSubject, withIndefiniteArticle } from '../js/object_grammar.js';
+import { makePlural, makeSingular, verbForSubject, withIndefiniteArticle } from '../js/objnam.js';
 void test('ya remains invariant as a word while other nouns ending in ya pluralize', () => {
     assert.equal(makePlural('ya'), 'ya');
     assert.equal(makePlural('poisoned ya'), 'poisoned ya');

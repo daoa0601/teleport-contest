@@ -4,7 +4,8 @@ import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { makeConfused } from '../js/hero_mental_status.js';
 import { resetInputState } from '../js/input.js';
-import { tryCallObjectType } from '../js/object_call.js';
+import { tryCallObjectType } from '../js/do.js';
+
 import { POT_CONFUSION } from '../js/object_data.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -7,7 +7,7 @@ import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, } from './monster_data.js';
 import { CORPSE } from './object_data.js';
-import { withIndefiniteArticle } from './object_grammar.js';
+import { withIndefiniteArticle } from './objnam.js';
 import { corpseName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroFormClings, heroFormHidesUnderObjects, heroFormHidesWithoutCover, heroIsFlying, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';

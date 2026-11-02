@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { addInventoryItem } from '../js/u_init.js';
-import { mergeObjectStacks } from '../js/object_merge.js';
+import { mergeObjectStacks } from '../js/invent.js';
 import { ARROW, DAGGER, GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 import { claimNextDueObjectTimer } from '../js/timeout.js';

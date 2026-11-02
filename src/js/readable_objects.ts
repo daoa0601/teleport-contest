@@ -8,13 +8,16 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { consumeInventoryItem } from './invent.js';
 import { recordLiteracy } from './literacy.js';
-import { tryCallObjectType } from './object_call.js';
+import { tryCallObjectType } from './do.js';
+import { makePlural } from './objnam.js';
+import { candyWrapperText, garmentInscription, hawaiianDesign } from './read.js';
+
 import {
     ALCHEMY_SMOCK, CANDY_BAR, CAN_OF_GREASE, CORNUTHAUM, CREDIT_CARD,
     DUNCE_CAP, FORTUNE_COOKIE, HAWAIIAN_SHIRT, MAGIC_MARKER, OBJECT_NAMES,
 } from './object_data.js';
-import { makePlural } from './object_grammar.js';
-import { candyWrapperText, garmentInscription, hawaiianDesign } from './object_inscription.js';
+
+
 import { minimalObjectName, objectName } from './objnam.js';
 import { readCookieFortune } from './rumor.js';
 import { heroIsBlind } from './senses.js';

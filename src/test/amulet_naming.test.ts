@@ -2,7 +2,9 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
 import { AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR } from '../js/object_data.js';
-import { learnObjectType, recordObjectCall } from '../js/object_knowledge.js';
+import { learnObjectType } from '../js/o_init.js';
+import { recordObjectCall } from '../js/do_name.js';
+
 import { minimalObjectName, objectCombatName, objectName } from '../js/objnam.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

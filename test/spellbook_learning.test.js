@@ -16,7 +16,7 @@ import { SPE_LIGHT, SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_BLANK_PAPER, LENSES, 
 import { forceLearnSpell } from '../js/spell.js';
 import { currentSpellKnowledge } from '../js/spell.js';
 import { studyBook, continueSpellbookStudy, cursedBook } from '../js/spellbook_study.js';
-import { recordObjectKnowledge } from '../js/object_knowledge.js';
+import { recordObjectKnowledge } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';

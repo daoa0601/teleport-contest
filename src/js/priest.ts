@@ -46,7 +46,8 @@ import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterTypeName } from '.
 import { monsterName } from './do_name.js';
 import type { MonsterArticle } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
-import { indefiniteArticlePrefix } from './object_grammar.js';
+import { indefiniteArticlePrefix } from './objnam.js';
+
 import { makemon, makemonAt } from './makemon.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { mksobj, mkobj } from './mkobj.js';

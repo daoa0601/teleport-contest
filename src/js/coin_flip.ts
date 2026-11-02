@@ -6,9 +6,11 @@ import { A_DEX } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { makePlural, withIndefiniteArticle } from './object_grammar.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
+import { objectQuantity, splitObjectStack } from './mkobj.js';
+
 import { objectName } from './objnam.js';
-import { objectQuantity, splitObjectStack } from './object_stack.js';
+
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';

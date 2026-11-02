@@ -5,7 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import { A_DEX, A_STR, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, ORCISH_ARROW, ORCISH_BOW, YA, YUMI, } from './object_data.js';
-import { objectClassForType } from './object_knowledge.js';
+import { objectClassForType } from './o_init.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { rnd } from './rng.js';
 import { isQuestArtifact } from './quest.js';
