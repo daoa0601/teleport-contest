@@ -1,5 +1,5 @@
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 // regions.js — Shared level-region construction.
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().

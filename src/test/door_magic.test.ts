@@ -4,7 +4,8 @@ import { createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { changeDoorByMagic } from '../js/door_magic.js';
+import { changeDoorByMagic } from '../js/lock.js';
+
 import { monsterAtPosition } from '../js/steed.js';
 import { requireGameDisplay, requireGameLevel, game } from '../js/gstate.js';
 import {

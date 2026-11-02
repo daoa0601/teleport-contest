@@ -1,17 +1,20 @@
+// Monster body and terrain rules.
+// C ref: mon.c.
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses } from './worn.js';
-import { isAccessibleAt, isLavaAt, isPoolAt, levelIsWaterLevel, monsterFliesOrFloats, monsterInAir, levelHasCeiling, } from './terrain_properties.js';
-import { canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition, } from './monmove.js';
+import { isAccessibleAt } from './monmove.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import { canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, isok, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, OBJECT_TIMER_KIND } from './const.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster, monsterKillLineVisible, unmap_invisible, swallowed, } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster, monsterKillLineVisible, unmap_invisible, swallowed } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { splitMonster } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, monsterIsNoncorporeal, monsterIsRider, monsterSpeciesSticks, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_RESISTS, MONSTER_SOUND, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterHasHead, monsterIsAmorphous, monsterIsDisplacer, MONSTER_BODY_META, MONSTER_HAS_WEAPON_ATTACK, monsterHatesSilver, monsterIsCovetous, monsterIsKop, monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, monsterIsNoncorporeal, monsterIsRider, monsterSpeciesSticks, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_RESISTS, MONSTER_SOUND, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterHasHead, monsterIsAmorphous, monsterIsDisplacer, MONSTER_BODY_META, MONSTER_HAS_WEAPON_ATTACK, monsterHatesSilver, monsterIsCovetous, monsterIsKop, monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses } from './monster_data.js';
 import { monsterName, namelessMonsterName, setMonsterGivenName, formatMonsterName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, } from './mondata.js';
-import { AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies } from './mondata.js';
+import { AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS } from './object_data.js';
 import { objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
@@ -22,13 +25,13 @@ import { monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, mons
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMonsterHitPoints } from './makemon.js';
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName } from './objnam.js';
-import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap, } from './steed.js';
+import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
 import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
 import { thawObject } from './container.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { placeObject, placeCreatedObject, stack_object } from './floor_object.js';
-import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE, } from './monster_attack_types.js';
-import { removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, findMonsterArmorClass, applyMonsterEquipmentProperties, clearMonsterCarriedObjectState, } from './monworn.js';
+import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
+import { removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, findMonsterArmorClass, applyMonsterEquipmentProperties, clearMonsterCarriedObjectState } from './monworn.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
@@ -39,16 +42,17 @@ import { unpunishHero } from './punishment.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { surfaceName } from './terrain_name.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious } from './hero_species.js';
-import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change, } from './vision.js';
+import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './ambient_sounds.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { isReviver, isZombieMaker, zombieForm, isRider } from './corpse_species.js';
-import { insideWizardTower, sameDungeonLevel, level_difficulty } from './dungeon.js';
+import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling } from './dungeon.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
-import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody, } from './worm.js';
+import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { heroIsDisplaced, dragonFormForArmor } from './armor.js';
+import { heroIsDisplaced } from './do_wear.js';
+import { dragonFormForArmor } from './polyself.js';
 import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './regions.js';
 import { monsterKnowsTrap } from './mondata.js';
 import { hasTrack } from './track.js';
@@ -79,7 +83,7 @@ import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardD
 import { veganCorpse } from './food_traits.js';
 import { heroStomachName } from './body_parts.js';
 import { loseHeroHp } from './hero_damage.js';
-import { prepareVaultGuardDeath } from './vault_guard.js';
+import { prepareVaultGuardDeath } from './vault.js';
 import { armorThiefGone } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
@@ -4112,5 +4116,24 @@ export function restoreMonsterTrueSpecies(monster) {
     if (storedSpecies !== null)
         monster.cham = NON_PM;
     return { oldSpecies, trueSpecies };
+}
+// C mon.c:m_in_air(): is_flyer() || is_floater() || (is_clinger()
+// && has_ceiling() && mundetected).
+export function monsterFliesOrFloats(monster) {
+    if (!monster)
+        return false;
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    const symbol = MONSTER_SYMBOL[monster?.mnum];
+    return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
+}
+export function monsterInAir(monster, state = game) {
+    if (!monster)
+        return false;
+    if (monsterFliesOrFloats(monster))
+        return true;
+    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+    return !!(flags & M1_CLING)
+        && levelHasCeiling(state)
+        && !!monster.mundetected;
 }
 //# sourceMappingURL=mon.js.map

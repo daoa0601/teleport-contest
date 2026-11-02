@@ -32,7 +32,8 @@ import { promptDirection } from './tty_prompts.js';
 import { commandResultCancelled } from './cmd.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { isPoolAt, isIceAt } from './terrain_properties.js';
+import { isPoolAt, isIceAt } from './dbridge.js';
+
 import { captureThrownObjectFlight, type ProjectileFlightCapture, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName } from './objnam.js';
 import { disturbGrave } from './grave.js';
@@ -71,7 +72,8 @@ import { breakFloorObject } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper } from './shk.js';
-import { containedGold } from './gold.js';
+import { containedGold } from './shk.js';
+
 import { roomsAt } from './room.js';
 import { resolveImmediatePetrification, touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -82,7 +84,8 @@ import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
-import { maybeResetPick } from './lock_context.js';
+import { maybeResetPick } from './lock.js';
+
 import { onQuestStart, okToQuest } from './quest.js';
 
 import { surfaceName } from './terrain_name.js';

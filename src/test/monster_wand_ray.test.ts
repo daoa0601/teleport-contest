@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import {
     DBWALL, DB_EAST, DB_MOAT, DOOR, DRAWBRIDGE_UP, D_BROKEN, D_CLOSED,
     M_AP_OBJECT, M_SEEN_MAGR, MM_NOGRP, MM_NOWAIT, NO_MINVENT, STONE, W_AMUL,

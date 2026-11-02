@@ -1,7 +1,7 @@
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { moveloop_core } from '../js/allmain.js';
 import { DOOR, D_CLOSED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { clearMessageWindow, flushPendingTopline } from '../js/tty_topline.js';

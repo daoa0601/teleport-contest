@@ -22,8 +22,10 @@ import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshHeroConditionRoom } from './support/hero-state.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import { wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { flushPendingTopline } from '../js/tty_topline.js';
 
 void test('a green slime touch infects and still deals its physical damage', async () => {

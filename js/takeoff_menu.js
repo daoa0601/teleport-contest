@@ -12,7 +12,7 @@ import { inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects
 import { observeObjectForNaming } from './objnam.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
-import { TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
+import { TAKEOFF_ORDER, takeoffSlotObject } from './do_wear.js';
 const WEAPON_CLASS = 2;
 export async function selectBulkTakeoff(selectOff) {
     const style = game.flags.menu_style ?? MENU_FULL;

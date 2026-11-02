@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { expelHero } from '../js/hero_expulsion.js';
 import { resetInputState } from '../js/input.js';
-import { continuePicking, pickLock } from '../js/lock_pick.js';
+import { continuePicking, pickLock } from '../js/lock.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { CREDIT_CARD } from '../js/object_data.js';

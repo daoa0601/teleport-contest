@@ -15,7 +15,7 @@ import { DOGFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
 import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
 import { G_GENOD } from './const.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { cansee } from './vision.js';
 const FOOD_CLASS = 7;
 const COIN_CLASS = 12;

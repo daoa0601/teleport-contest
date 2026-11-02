@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { HOLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

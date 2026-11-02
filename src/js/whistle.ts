@@ -26,7 +26,8 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { objectTypeKnown } from './shk.js';
-import { monsterInAir } from './terrain_properties.js';
+import { monsterInAir } from './mon.js';
+
 import { moveMonsterNextToHero, teleportHeroToRandomPet } from './teleport.js';
 import { heroTeleportRestricted } from './teleport_rules.js';
 import { summonVaultGuardSoon } from './vault.js';

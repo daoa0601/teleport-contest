@@ -16,7 +16,8 @@ import { bot } from '../js/botl.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { heroLiquidEffects, sinkHeroIntoLava } from '../js/hack.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
+
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, LEASH, LEATHER_ARMOR, LOADSTONE, POT_ACID,

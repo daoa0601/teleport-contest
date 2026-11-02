@@ -1,7 +1,8 @@
 import type { EnlightenmentFinal } from './enlightenment_attributes.js';
 import { fromWhat, heroHasNoEyes, intrinsicPropertyMask } from './attribute_provenance.js';
 import { levitationAtWill, propertyTimeout } from './properties.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { formatFeltMessage } from './hero_speech.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
@@ -27,7 +28,8 @@ import {
     SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { simpleArmorName } from './armor.js';
+import { simpleArmorName } from './do_wear.js';
+
 import { attributeEnlightenmentLines, contractEnlightenment, combatIncrement, monkArmorPenalty } from './enlightenment_attributes.js';
 export { piousness } from './enlightenment_attributes.js';
 import {

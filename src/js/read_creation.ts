@@ -15,7 +15,8 @@ import { setMonsterMalign } from './makemon.js';
 import { getLine, promptYesNo } from './query.js';
 import { revivalReplacement } from './revival_species.js';
 import { monsterSaddle, putSaddleOnMonster } from './steed.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { couldsee } from './vision.js';
 import type { Monster } from './monster_types.js';
 import { tameMonster } from './dog.js';

@@ -50,10 +50,12 @@ import {
     OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
     OBJECT_SUBTYPE, OBJECT_WEIGHT,
 } from './object_data.js';
-import { isBeingTakenOff } from './takeoff_state.js';
+import { isBeingTakenOff } from './do_wear.js';
+
 import { pendingArmorAction } from './do_wear.js';
 import { equipmentLightDescription } from './light.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { isContainer } from './container.js';
 import { OBJECT_CLASS_SYMBOLS, displayColorName } from './display.js';
 import { cansee } from './vision.js';
@@ -82,7 +84,9 @@ import type { MapLocation } from './map_types.js';
 import { canFallThrough, countLevelFeatures, make_grave, maketrap } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { propertyIsActive } from './properties.js';
-import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { canOverwriteTerrain } from './display.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
 import { waterbodyName } from './terrain_name.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion } from './trap.js';

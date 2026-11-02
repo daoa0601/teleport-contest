@@ -14,8 +14,10 @@ import {
 } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedCemeteryEntry, validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
-import { TAKEOFF_ORDER } from './takeoff_state.js';
-import type { TakeoffContext } from './takeoff_state.js';
+import { TAKEOFF_ORDER } from './do_wear.js';
+
+import type { TakeoffContext } from './do_wear.js';
+
 import type { PersistentGameContext } from './state_schema.js';
 
 export function validSavedGameContext(

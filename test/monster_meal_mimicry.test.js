@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { removeHeroAccessory, wearHeroAccessory } from '../js/accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, ROOM } from '../js/const.js';
 import { canSpotMonster, glyphAt, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
+import { removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
 import { THRONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { LEATHER_GLOVES } from '../js/object_data.js';

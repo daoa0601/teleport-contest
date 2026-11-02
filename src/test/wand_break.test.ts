@@ -8,7 +8,8 @@ import {
     A_STR, DOOR, HWALL, MM_ANGRY, MM_NOGRP, MM_NOTAIL, NO_MINVENT,
     PARANOID_BREAKWAND, PIT, W_WEP,
 } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

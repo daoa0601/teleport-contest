@@ -2,7 +2,8 @@ import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
+
 import { NO_MINVENT, PIT, TT_PIT } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
 import { requireGameLevel, game } from '../js/gstate.js';

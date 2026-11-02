@@ -3,7 +3,8 @@
 
 import { setHeroGrip } from './hero_grip.js';
 import { heroIsHallucinating } from './senses.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
 import { AD_STCK } from './monster_attack_types.js';
@@ -24,6 +25,8 @@ import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { stumbleOntoMimic } from './mimic.js';
+
+
 import { revealMonsterAppearance } from './mon.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SYMBOL,

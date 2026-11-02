@@ -27,7 +27,8 @@ import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { spotChecks } from './hack.js';
 import { BOULDER } from './object_data.js';
 import { unlinkObject } from './mkobj.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { updateIceObjectTimersAt } from './floor_object.js';
 
 export interface LandMineOptions {

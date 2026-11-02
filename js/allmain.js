@@ -47,8 +47,8 @@ import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCu
 import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash, checkHeroLeashes } from './leash_apply.js';
 import { touchPetrifies } from './stoning.js';
-import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, } from './armor.js';
-import { isBeingTakenOff } from './takeoff_state.js';
+import { armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor } from './do_wear.js';
+import { isBeingTakenOff } from './do_wear.js';
 import { OBJECT_DELAY, ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BIMANUAL, OBJECT_NAMES, } from './object_data.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { heroSpecies, setHeroSpecies } from './hero_species.js';
@@ -89,7 +89,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources, } from './vision.js';
 import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
-import { monsterFliesOrFloats } from './terrain_properties.js';
+import { monsterFliesOrFloats } from './mon.js';
 import { observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -127,7 +127,7 @@ import { moveElementalBubbles } from './elemental.js';
 import { removeObjectAndContentsFromBill, checkSpecialRoom, currentShopResident, fixShopDamage } from './shk.js';
 import { inventoryItemDescription, rerollMenu } from './invent.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyTimeout, propertyIsBlocked, refreshProperty, setPropertyTimeout, } from './properties.js';
-import { heroHasSlipperyHands, slipFromSlipperyHands } from './slippery_hands.js';
+import { heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
 import { nhTimeout } from './timeout.js';
 function putLine(col, row, text, attr = 0) {
     const game = requireInitializedGame();

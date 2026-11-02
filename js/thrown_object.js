@@ -38,7 +38,7 @@ import { rn2, rnd } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
-import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';

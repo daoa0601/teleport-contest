@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
-import { stopDonning } from '../js/armor.js';
+import { stopDonning } from '../js/do_wear.js';
+
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';

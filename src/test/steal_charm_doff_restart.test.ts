@@ -7,7 +7,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';

@@ -4,7 +4,7 @@ import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
 import { resolveMonsterLiquid } from './mon.js';

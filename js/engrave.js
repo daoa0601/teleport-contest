@@ -9,7 +9,7 @@ import { rn2, rnd } from './rng.js';
 import { BUFSZ, COLNO, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE, ROWNO, } from './const.js';
 import { newsym } from './display.js';
 import { surfaceName } from './terrain_name.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';

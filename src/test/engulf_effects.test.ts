@@ -2,7 +2,8 @@ import { finishAtCommandInput, installPagerInput } from './support/pager-input.j
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

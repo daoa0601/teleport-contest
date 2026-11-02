@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { setMulti } from '../js/cmd.js';
 import { nomul } from '../js/hack.js';

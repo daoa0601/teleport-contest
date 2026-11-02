@@ -10,7 +10,7 @@ import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_F
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { visibleRegionAt } from './regions.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
 import { iceDescriptionAt } from './dungeon_feature.js';

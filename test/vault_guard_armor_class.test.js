@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { moveloop_core } from '../js/allmain.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { LEATHER_CLOAK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

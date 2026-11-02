@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

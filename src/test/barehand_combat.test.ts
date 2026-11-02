@@ -1,8 +1,10 @@
 import type { RoleKey } from '../js/roles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { prepareHeroBarehandContact } from '../js/barehand_combat.js';
 import { recalculateHeroPhysicalDamage } from '../js/hero_physical_damage.js';
 import { rhack } from '../js/cmd.js';

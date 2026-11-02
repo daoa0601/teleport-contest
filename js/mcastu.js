@@ -6,7 +6,7 @@
 import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT, } from './const.js';
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterIsNonliving, monsterTypeName, } from './monster_data.js';
-import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
+import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName, } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';

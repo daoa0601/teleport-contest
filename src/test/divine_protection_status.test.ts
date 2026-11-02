@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
+
 import { grantPrayerFavor } from '../js/pray.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';

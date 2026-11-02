@@ -29,7 +29,9 @@ import {
 import { heroFormSticks } from './hero_species.js';
 import { touchPetrifies } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
-import { isPoolAt, levelHasCeiling } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
+
 
 const M1_HUMANOID = 0x00020000;
 const S_MIMIC = 13;

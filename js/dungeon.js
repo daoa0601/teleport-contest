@@ -4,7 +4,7 @@
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { ALTAR, AM_MASK, Amask2align, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd, } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
@@ -12,7 +12,7 @@ import { deityName } from './alignment.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './quest_pager.js';
 import { addMenuHeading } from './windows.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { roomForIndex } from './room.js';
@@ -1162,5 +1162,21 @@ export async function senseBuriedObjects(state = game) {
     if (level.buriedObjects?.some(object => object.ox === hero.ux && object.oy === hero.uy)) {
         await plineWithContinuation(`You sense something below your ${makePlural(heroFootName(state))}.`);
     }
+}
+// C dungeon.c:has_ceiling() and dungeon.h:Is_waterlevel(): level
+// classification by branch bookkeeping, not map terrain.
+export function levelHasCeiling(state = game) {
+    const current = state.u.uz;
+    const astral = state.astral_level;
+    const earth = state.earth_level;
+    const inEndgame = !!current && !!astral && current.dnum === astral.dnum;
+    const onEarth = !!current && !!earth
+        && current.dnum === earth.dnum && current.dlevel === earth.dlevel;
+    return !inEndgame || onEarth;
+}
+export function levelIsWaterLevel(state = game) {
+    const level = state.u?.uz;
+    const water = state.water_level;
+    return !!level && !!water && level.dnum === water.dnum && level.dlevel === water.dlevel;
 }
 //# sourceMappingURL=dungeon.js.map

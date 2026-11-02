@@ -1,6 +1,7 @@
 // Opening and eating tins. C eat.c:start_tin(), opentin(), consume_tin().
 import { commandResultCancelled, commandResultSpentTime } from './cmd.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { TinOpening } from './occupation_types.js';

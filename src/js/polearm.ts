@@ -15,7 +15,8 @@ import {
     STATUE_TRAP,
     isok,
 } from './const.js';
-import { isAccessibleAt } from './terrain_properties.js';
+import { isAccessibleAt } from './monmove.js';
+
 import { artifactById } from './artifacts.js';
 import { canSenseMonster, glyphAt, unmap_invisible } from './display.js';
 import { pline } from './pline.js';

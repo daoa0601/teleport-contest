@@ -4,8 +4,10 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
+
 import { A_NONE, A_WIS } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { angryGods, godsUpset, godZapsHero } from '../js/pray.js';

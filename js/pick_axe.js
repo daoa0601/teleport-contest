@@ -29,7 +29,7 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon.js';
 import { isPick } from './object_properties.js';
 import { connectPits } from './pit_connections.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName } from './do_name.js';
 const M1_WALLWALK = 0x00000008;
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');

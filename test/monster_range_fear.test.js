@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ALTAR, MM_ANGRY, NO_MINVENT, PIT } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -9,7 +9,7 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { checkMonsterHeroRange } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 import { AMULET_OF_LIFE_SAVING, GOLD_DRAGON_SCALES, SCR_SCARE_MONSTER } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';

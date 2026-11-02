@@ -3,7 +3,7 @@
 // water_damage(), and erode_obj().
 import { formatSeenMessage } from './hero_speech.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
-import { armorSimpleName, heroHasWaterWalking } from './armor.js';
+import { armorSimpleName, heroHasWaterWalking } from './do_wear.js';
 import { fireDamageObject } from './fire_damage.js';
 import { delobj } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject } from './objnam.js';
@@ -17,7 +17,9 @@ import { useUpInventoryStack } from './hero_inventory.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid, MONSTER_ATTACKS } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying } from './polyself.js';
-import { isPoolAt, levelHasCeiling, monsterFliesOrFloats, monsterInAir } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
+import { monsterFliesOrFloats, monsterInAir } from './mon.js';
 import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon } from './weapon.js';
 import { BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, OBJECT_SUBTYPE, CORPSE, DART } from './object_data.js';

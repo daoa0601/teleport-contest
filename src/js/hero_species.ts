@@ -7,7 +7,8 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName } from './property_types.js';
-import { dragonFormForArmor } from './armor.js';
+import { dragonFormForArmor } from './polyself.js';
+
 import {
     MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2,
     MONSTER_FLAGS3, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL,

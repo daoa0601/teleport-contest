@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { removeHeroAccessory, wearHeroAccessory } from '../js/accessory.js';
-import { findArmorClass } from '../js/armor.js';
+import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
+import { findArmorClass } from '../js/do_wear.js';
 import { currentAttribute } from '../js/attrib.js';
 import { invokeArtifactPower } from '../js/artifacts.js';
 import { artifactByName } from '../js/artifacts.js';

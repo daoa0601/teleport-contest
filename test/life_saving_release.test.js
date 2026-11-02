@@ -1,7 +1,7 @@
 import { loadScoreRecords } from '../js/score_records.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';

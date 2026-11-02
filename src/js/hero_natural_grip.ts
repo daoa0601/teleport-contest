@@ -1,6 +1,7 @@
 // Hero stick and wrap attacks. C uhitm.c:mhitm_ad_stck(), mhitm_ad_wrap().
 import { setHeroGrip } from './hero_grip.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { monsterLegName } from './body_parts.js';
 import { MGIVENNAME, M_ATTK_MISS, W_ARM, W_ARMC, W_ARMH, W_ARMU } from './const.js';
 import { heroSpecies } from './hero_species.js';
@@ -15,7 +16,8 @@ import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectName } from './objnam.js';
 import { objectTypeKnown } from './shk.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import type { MessagePublisher } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';

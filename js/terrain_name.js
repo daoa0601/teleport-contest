@@ -2,8 +2,8 @@
 import { ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel, Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR, DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok, } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { displayLiquidName } from './display.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { drawbridgeUnderlyingType } from './dbridge.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
 import { roomsAt } from './room.js';

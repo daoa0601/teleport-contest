@@ -4,7 +4,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { currentAttribute } from '../js/attrib.js';
-import { applyArmorOnEffects, wearHeroArmor, removeHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor, removeHeroArmor } from '../js/do_wear.js';
+
 import { A_DEX, A_STR, NO_MINVENT, P_ESCAPE_SPELL, P_EXPERT, P_SKILLED, SICK_ALL, STONE, TIMEOUT, WEAK } from '../js/const.js';
 import { canSeeMonster, map_invisible } from '../js/display.js';
 import { pline } from '../js/pline.js';

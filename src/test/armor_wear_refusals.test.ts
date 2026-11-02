@@ -3,8 +3,10 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { TT_BEARTRAP } from '../js/const.js';
 import {
     DAGGER, GAUNTLETS_OF_POWER, LEATHER_CLOAK, MEAT_RING, OBJECT_NAMES, RIN_PROTECTION,

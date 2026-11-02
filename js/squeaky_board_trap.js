@@ -10,7 +10,7 @@ import { monsterIsMindless } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterInAir } from './terrain_properties.js';
+import { monsterInAir } from './mon.js';
 function canAlmostSee(state, x, y) {
     return !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
 }

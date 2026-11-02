@@ -3,7 +3,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heroHasDrainResistance } from '../js/armor.js';
+import { heroHasDrainResistance } from '../js/do_wear.js';
 import { currentAttribute } from '../js/attrib.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';

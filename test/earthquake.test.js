@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COLNO, DOOR, D_CLOSED, D_NODOOR, MOAT, PIT, ROOM, ROWNO, STONE, TT_PIT, W_AMUL, } from '../js/const.js';
 import { createEarthquake } from '../js/earthquake.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { addTrap } from './support/level-state.js';

@@ -6,7 +6,8 @@ import { beginObjectBurn, endObjectBurn } from './light.js';
 import { heroIsBlind } from './senses.js';
 import { definiteObjectAction, objectName, ownedObjectName } from './objnam.js';
 import { heroFingerName } from './body_parts.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { makePlural } from './objnam.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';
 import { learnObjectType } from './o_init.js';

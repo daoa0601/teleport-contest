@@ -108,7 +108,8 @@ import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hi
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { snuffThrownCandle } from './thrown_object.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import type { Monster } from './monster_types.js';

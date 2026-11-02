@@ -15,7 +15,7 @@ import { recordObjectKnowledge } from '../js/o_init.js';
 import { POT_FRUIT_JUICE, POT_HEALING, POT_INVISIBILITY, POT_MONSTER_DETECTION, POT_OIL, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SPEED, RIN_INVISIBILITY, } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { drinkPotion, quaff } from '../js/quaff.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { addShopObjectToBill, billForObject } from '../js/shk.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';

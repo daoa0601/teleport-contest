@@ -45,10 +45,10 @@ import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './
 import { visibleRegionAt } from './regions.js';
 import { trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
 import { touchPetrifies } from './stoning.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible } from './diagnostics.js';
-import { armorSimpleName, armorSlotFor } from './armor.js';
+import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
 import { announceGlobMerge } from './glob.js';
 import { endObjectBurn, objectShedsLight } from './light.js';

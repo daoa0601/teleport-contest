@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { DOOR, D_LOCKED, D_WARNED, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { pickLock } from '../js/lock_pick.js';
+import { pickLock } from '../js/lock.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { LOCK_PICK, MUMMY_WRAPPING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

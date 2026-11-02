@@ -8,7 +8,8 @@ import {
 } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     ACID_VENOM, AMULET_OF_LIFE_SAVING, ARROW, BLINDING_VENOM, BOW, CLUB,

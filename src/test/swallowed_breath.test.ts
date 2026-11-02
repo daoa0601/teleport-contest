@@ -1,7 +1,8 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { createDungeon } from './support/topology.js';
 import { installPagerInput } from './support/pager-input.js';
-import { armorBaseBonus } from '../js/armor.js';
+import { armorBaseBonus } from '../js/do_wear.js';
+
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { W_ARM } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
@@ -18,7 +19,8 @@ import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_BREA } from '../js/monster_attack_types.js';
 import { initRng } from '../js/rng.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { addInventoryObject } from './support/game-objects.js';
 import { runMonsterAbilityCommand } from './support/commands.js';
 import { freshMonsterAbilityRoom, installSwallowedHero } from './support/hero-state.js';

@@ -1,6 +1,6 @@
 // Native uhitm.c:hmon_hitmon_msg_hit(), msg_silver(), msg_lightobj(),
 // shade_miss(), and the deferred poison-wearing-off message.
-import { armorSlotFor } from './armor.js';
+import { armorSlotFor } from './do_wear.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { M_AP_MONSTER, M_AP_TYPE, P_WHIP } from './const.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, map_invisible } from './display.js';

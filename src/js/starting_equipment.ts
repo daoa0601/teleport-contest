@@ -1,6 +1,7 @@
 // C u_init.c:ini_inv_use_obj(), after starting-item discovery.
 
-import { armorSlotFor, wearHeroArmor } from './armor.js';
+import { armorSlotFor, wearHeroArmor } from './do_wear.js';
+
 import type { GameState } from './game_state.js';
 import {
     FLINT, ROCK, SPE_BLANK_PAPER, TIN_OPENER,

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { DOOR, D_LOCKED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { continuePicking, pickLock } from '../js/lock_pick.js';
+import { continuePicking, pickLock } from '../js/lock.js';
 import { CREDIT_CARD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { applyRayFloorFeatures } from '../js/zap.js';

@@ -8,7 +8,7 @@ import { MONSTER_NAME, MONSTER_SIZE, monsterIsAmorphous, monsterIsUnsolid, monst
 import { monsterWearsIronShoes } from './monworn.js';
 import { d, rn2 } from './rng.js';
 import { finishMonsterTrapDeath, monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterInAir } from './terrain_properties.js';
+import { monsterInAir } from './mon.js';
 import { monsterName } from './do_name.js';
 const MZ_SMALL = 1;
 const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');

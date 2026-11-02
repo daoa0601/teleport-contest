@@ -13,7 +13,8 @@ import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/sight_change.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { createSteamCloud } from '../js/regions.js';
 import { addInventoryObject } from './support/game-objects.js';

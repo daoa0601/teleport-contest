@@ -10,7 +10,8 @@
 // dothrow.ts; inaccessible_equipment()'s covering test in
 // equipment_selection.ts.
 
-import { armorSlotFor, heroHasFreeAction } from './armor.js';
+import { armorSlotFor, heroHasFreeAction } from './do_wear.js';
+
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, restoreHeroBaseAttributes } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
@@ -26,7 +27,8 @@ import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
-import { coveringEquipment, reportCoveredEquipment } from './equipment_selection.js';
+import { coveringEquipment, reportCoveredEquipment } from './do_wear.js';
+
 import { fireDamageObject } from './fire_damage.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './floor_reach.js';
@@ -112,7 +114,8 @@ import { burnAwayHeroSlime, heroIsFlaming, heroIsSliming } from './slime.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { fixHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';

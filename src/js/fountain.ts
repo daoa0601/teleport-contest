@@ -3,7 +3,8 @@
 // fountain_sword/sink_dipping/sink_drinking/sink_terrain/dip_water
 // (pure move, no behavior change).
 import { distmin } from './hacklib.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { heroArmName, heroFaceName, heroFingerName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import {
     artifactByName, discoverArtifact, nameArtifact,

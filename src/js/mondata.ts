@@ -13,7 +13,8 @@ import {
     AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX,
 } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
-import { dragonFormForArmor } from './armor.js';
+import { dragonFormForArmor } from './polyself.js';
+
 import { artifactById } from './artifacts.js';
 import {
     M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON,

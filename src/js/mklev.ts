@@ -96,7 +96,9 @@ import { objectWeight } from './weight.js';
 import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
-import { canOverwriteTerrain, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { canOverwriteTerrain } from './display.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
 import {
     addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction,
     medusaPetrifiable, putGeneratedMonsterInventoryInStatue,

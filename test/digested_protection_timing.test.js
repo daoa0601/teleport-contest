@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
 import { digestAccessory } from '../js/eaten_accessory.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

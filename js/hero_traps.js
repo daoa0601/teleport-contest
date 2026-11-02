@@ -1,7 +1,7 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial } from './o_init.js';
 import { heroLocomotion } from './hero_locomotion.js';
-import { isLavaAt } from './terrain_properties.js';
+import { isLavaAt } from './dbridge.js';
 import { surfaceName } from './terrain_name.js';
 // Trap effects on the hero.
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
@@ -13,7 +13,7 @@ import { deleteTrap, makeTrapMissile, trapName } from './trap.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { maybeDestroyWeb } from './web_trap.js';
 import { currentAttribute, exerciseAttribute, } from './attrib.js';
-import { armorSimpleName, objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './do_wear.js';
 import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
 import { A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, DISMOUNT_POLY, In_endgame, In_quest, is_pit, HOLE, M_SEEN_SLEEP, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, TELEP_TRAP, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, VAULT, VIBRATING_SQUARE, WEB, isok, Is_stronghold, MGIVENNAME, } from './const.js';
 import { squeakyBoardNoteWithArticle } from './trap.js';

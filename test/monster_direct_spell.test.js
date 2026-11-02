@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { ICE, MM_ANGRY, MM_NOGRP, M_SEEN_COLD, M_SEEN_FIRE, NO_MINVENT, POOL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

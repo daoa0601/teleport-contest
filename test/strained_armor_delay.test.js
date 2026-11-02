@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { nearCapacity } from '../js/weight.js';

@@ -23,7 +23,8 @@ import { d, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { waterbodyName } from './terrain_name.js';
-import { isLavaAt, isPoolAt, monsterInAir } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import { monsterInAir } from './mon.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 export async function dropBoulderIntoLiquid(boulder, x, y, state = game, { publish = plineWithContinuation, random = rn2, pushing = false, } = {}) {
     requireLiveGame(state);

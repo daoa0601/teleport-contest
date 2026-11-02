@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { heroHasFreeAction } from '../js/armor.js';
+import { heroHasFreeAction } from '../js/do_wear.js';
 import { STONE, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { continueHeroDigging, startHeroDigging } from '../js/dig.js';

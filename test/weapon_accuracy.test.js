@@ -1,7 +1,7 @@
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { NO_MINVENT, POOL, ROOM } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { DAGGER, PICK_AXE, RED_DRAGON_SCALE_MAIL, RIN_PROTECTION, SPEAR, TRIDENT, } from '../js/object_data.js';

@@ -106,7 +106,8 @@ import {
     killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes,
     smellUnseenMonster,
 } from './mon.js';
-import { maybeResetPick } from './lock_context.js';
+import { maybeResetPick } from './lock.js';
+
 import { mklev } from './mklev.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { checkSpecialRoom, setPaidShopkeeper } from './shk.js';

@@ -1,5 +1,5 @@
 // Native insight.c:ustatusline(), shared by self-probing and stethoscopes.
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
 import { heroFingerName, heroHasEyes, heroLegName } from './body_parts.js';
 import { M_AP_TYPE, SICK_NONVOMITABLE, SICK_VOMITABLE, Upolyd } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';

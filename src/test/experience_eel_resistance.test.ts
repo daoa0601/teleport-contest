@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { NO_MINVENT, POOL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { EXPENSIVE_CAMERA, OBJECT_NAMES } from '../js/object_data.js';

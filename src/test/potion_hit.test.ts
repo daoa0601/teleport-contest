@@ -4,7 +4,8 @@ import type { Monster } from '../js/monster_types.js';
 import type { InitializedHero } from '../js/hero_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 
 import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

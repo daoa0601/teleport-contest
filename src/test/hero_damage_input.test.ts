@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { A_STR, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

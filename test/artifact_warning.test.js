@@ -23,7 +23,7 @@ import { readObjectName } from '../js/objnam.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { AMULET_OF_LIFE_SAVING, CHEST, DAGGER, PICK_AXE, POT_HEALING, POT_WATER, ROCK, SACK, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

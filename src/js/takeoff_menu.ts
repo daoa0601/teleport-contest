@@ -18,7 +18,8 @@ import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from
 import type { MenuUnderlay } from './windows.js';
 import type { MultiSelectItem, MultiSelectSection } from './windows.js';
 import type { GameObject } from './object_types.js';
-import { TAKEOFF_ORDER, takeoffSlotObject } from './takeoff_state.js';
+import { TAKEOFF_ORDER, takeoffSlotObject } from './do_wear.js';
+
 
 type Category = number | 'all' | 'u' | 'B' | 'C' | 'U' | 'X' | 'P';
 type BucCategory = 'B' | 'C' | 'U' | 'X';

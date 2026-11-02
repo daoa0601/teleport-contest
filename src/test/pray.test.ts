@@ -7,8 +7,10 @@ import { angryGodMaximum } from '../js/pray.js';
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL, W_TOOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
+
 import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { grantPrayerFavor } from '../js/pray.js';
 import { magicNegation } from '../js/mhitu.js';

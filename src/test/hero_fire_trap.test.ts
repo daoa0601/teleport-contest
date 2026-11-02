@@ -2,7 +2,8 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { triggerChestTrap } from '../js/chest_trap.js';
 import { FIRE_TRAP, ICE, ICED_POOL, M_SEEN_COLD, M_SEEN_FIRE, POOL } from '../js/const.js';

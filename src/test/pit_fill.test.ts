@@ -3,7 +3,8 @@ import type { GameState } from '../js/game_state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, PIT, TT_PIT, W_AMUL } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { applyFloorEffects } from '../js/floor_effects.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

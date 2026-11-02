@@ -4,7 +4,8 @@ import { publishHeardMessage } from './hero_speech.js';
 import { seeTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
 import { resetTrapSetting } from './apply.js';
-import { maybeResetPick } from './lock_context.js';
+import { maybeResetPick } from './lock.js';
+
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';

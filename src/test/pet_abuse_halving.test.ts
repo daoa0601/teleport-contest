@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { abusePet, initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { RIN_CONFLICT } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';

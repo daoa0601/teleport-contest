@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { bot, timebot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';

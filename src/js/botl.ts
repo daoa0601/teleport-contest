@@ -55,7 +55,8 @@ import { propertyIsActive } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsSliming } from './slime.js';
 import { heroIsPetrifying } from './stoning.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { artifactById } from './artifacts.js';
 import { isBimanualObject } from './object_properties.js';
 import { weaponDescription } from './weapon.js';

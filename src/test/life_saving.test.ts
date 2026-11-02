@@ -3,7 +3,8 @@ import { loadScoreRecords } from '../js/score_records.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { A_CON, LAVAPOOL, NO_MINVENT, POOL } from '../js/const.js';
 import { heroLiquidEffects } from '../js/hack.js';

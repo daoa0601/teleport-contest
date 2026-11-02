@@ -2,7 +2,7 @@ import { createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { DB_FLOOR, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, ENGRAVE, GP_ALLOW_U, GP_AVOID_MONPOS, GP_CHECKSCARY, HEADSTONE, LAVAPOOL, MM_IGNORELAVA, MM_IGNOREWATER, MON_FLOOR, MON_OFFMAP, POOL, ROOM, STONE, WATER, W_NONPASSWALL, } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';

@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { placeCreatedObject } from '../js/floor_object.js';

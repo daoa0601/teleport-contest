@@ -6,7 +6,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { vision_reset, vision_recalc } from '../js/vision.js';
 import { useBell } from '../js/apply_bell.js';
-import { removeHeroArmor } from '../js/armor.js';
+import { removeHeroArmor } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { nomul } from '../js/hack.js';
 import { finishOrdinaryDeath } from '../js/end.js';

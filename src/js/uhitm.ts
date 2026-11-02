@@ -20,7 +20,8 @@
 // knockback destination through dothrow.c:will_hurtle(), words the
 // message, then hurtles the defender.
 
-import { armorSimpleName, heroHasDrainResistance, heroHasFreeAction } from './armor.js';
+import { armorSimpleName, heroHasDrainResistance, heroHasFreeAction } from './do_wear.js';
+
 import { artifactById, monsterHasArtifactDefense } from './artifacts.js';
 import { applyArtifactHit } from './artifacts.js';
 import {
@@ -152,7 +153,9 @@ import { requireInitializedHero } from './hero_types.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero, randomMonsterRelocation } from './teleport.js';
 import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { isPoolAt, levelIsWaterLevel } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+import { levelIsWaterLevel } from './dungeon.js';
+
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { objectClassForType } from './o_init.js';
 

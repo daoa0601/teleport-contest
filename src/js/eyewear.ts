@@ -1,7 +1,8 @@
 // Wearing and removing blindfolds, towels, and lenses.
 // C ref: do_wear.c Blindf_on(), Blindf_off().
 
-import { armorOffMessage } from './armor.js';
+import { armorOffMessage } from './do_wear.js';
+
 import { W_TOOL } from './const.js';
 import { setWornArtifactProperties } from './artifacts.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -17,7 +18,8 @@ import {
 } from './senses.js';
 import { toggleBlindness } from './sight_change.js';
 import { releaseWeaponSlots } from './wield.js';
-import { cancelSlotTakeoff } from './takeoff_state.js';
+import { cancelSlotTakeoff } from './do_wear.js';
+
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';

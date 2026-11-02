@@ -14,7 +14,8 @@ import {
     invokeArtifactPower,
 } from '../js/artifacts.js';
 import { applyLevitationPotion } from '../js/levitation_potion.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import {
     FEDORA, ORCISH_HELM, POT_LEVITATION,
 } from '../js/object_data.js';

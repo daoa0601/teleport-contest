@@ -17,7 +17,7 @@ import { possessiveName } from './hacklib.js';
 import { distantObjectName, objectName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { currency } from './currency.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
-import { hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
 import { currentShopResident, shopkeeperInOwnShop, unpaidObjectCost, reportShopFinances } from './shk.js';
 import { objectsInTimerGraph } from './timeout.js';
 import { MENU_FULL, MENU_PARTIAL, PICK_ONE, SORTLOOT_INUSE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, W_WEAPONS, } from './const.js';

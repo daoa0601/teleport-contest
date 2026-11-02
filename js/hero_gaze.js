@@ -2,7 +2,7 @@
 // C ref: polyself.c dogaze().
 import { heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
-import { heroHasFreeAction } from './armor.js';
+import { heroHasFreeAction } from './do_wear.js';
 import { KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING, } from './const.js';
 import { canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';

@@ -15,7 +15,8 @@ import {
     AMULET_OF_LIFE_SAVING, CLOVE_OF_GARLIC, DAGGER, OBJECT_NAMES, PICK_AXE,
 } from '../js/object_data.js';
 import { PIT, P_POLEARMS, P_BASIC } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import {
     installHeroWeaponSkills, installPolymorphedHero, installSwallowedHero,
 } from './support/hero-state.js';

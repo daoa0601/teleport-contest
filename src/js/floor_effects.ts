@@ -31,7 +31,8 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
 import { cansee } from './vision.js';
 import { objectWeight } from './weight.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 
 export interface FloorEffectOptions {
     state?: GameState;

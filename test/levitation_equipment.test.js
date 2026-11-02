@@ -1,7 +1,7 @@
 import { addTrap } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { PIT, TT_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

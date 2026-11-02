@@ -2,7 +2,7 @@
 // effects, learnscrolltyp()/learnscroll(), can_center_cloud(), forget(), and
 // do_stinking_cloud(). Effects own their exceptions to scroll disposal.
 import { exerciseAttribute, exerciseWisdom } from './attrib.js';
-import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder, } from './armor.js';
+import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
 import { heroIsPunished } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName } from './body_parts.js';
@@ -60,7 +60,8 @@ import { drainHeroWeaponSkills } from './skills.js';
 import { burnAwayHeroSlime } from './slime.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { ceilingName } from './terrain_name.js';
-import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import { addExperience } from './exper.js';
 import { enchantWeapon } from './enchant_weapon.js';

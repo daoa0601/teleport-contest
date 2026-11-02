@@ -42,7 +42,7 @@ import { GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_WE
 import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
 import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { P_SPEAR } from './const.js';
 import { requireInitializedHero } from './hero_types.js';

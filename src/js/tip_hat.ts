@@ -1,6 +1,7 @@
 // C sounds.c:tiphat() and responsive_mon_at().
 import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH, isok } from './const.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { canSeeMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -15,7 +16,8 @@ import { STATUE } from './object_data.js';
 import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { isAccessibleAt } from './terrain_properties.js';
+import { isAccessibleAt } from './monmove.js';
+
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
 import { couldsee } from './vision.js';
 import type { GameObject } from './object_types.js';

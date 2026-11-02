@@ -42,7 +42,7 @@ import { shipObject } from './dokick.js';
 import { updateCarriedLuck, freeInventoryObject } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 import { bookCursed } from './spellbook_study.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { resetBulkTakeoff } from './do_wear.js';
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;
 const ARMOR_CLASS = 3;

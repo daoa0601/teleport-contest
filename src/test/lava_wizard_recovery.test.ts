@@ -7,7 +7,8 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { floatHeroDown } from '../js/terrain_movement.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { wearHeroArmor, findArmorClass } from '../js/armor.js';
+import { wearHeroArmor, findArmorClass } from '../js/do_wear.js';
+
 import { LEATHER_ARMOR, POT_WATER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 

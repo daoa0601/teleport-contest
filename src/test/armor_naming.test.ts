@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { BEAR_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';

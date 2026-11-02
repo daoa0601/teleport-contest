@@ -25,7 +25,7 @@ import { searchSpecial } from './mkroom.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { priestIsInOwnTemple } from './priest.js';
 import { roomForRoomno } from './room.js';
-import { findVaultGuard } from './vault_guard.js';
+import { findVaultGuard } from './vault.js';
 import { rn2, rnd } from './rng.js';
 import { recorderLocalHour } from './calendar.js';
 import { currency } from './currency.js';

@@ -7,7 +7,8 @@ import { withIndefiniteArticle } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { setMulti } from './cmd.js';
 import { nomul } from './hack.js';
-import { heroHasWaterWalking } from './armor.js';
+import { heroHasWaterWalking } from './do_wear.js';
+
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import {
     D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_waterlevel, KILLED_BY,
@@ -48,7 +49,8 @@ import { vision_recalc } from './vision.js';
 import { switchHeroTerrain } from './terrain_movement.js';
 import { surfaceName } from './terrain_name.js';
 import { walkPathCells } from './path_walk.js';
-import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './terrain_properties.js';
+import { isLavaAt, isMoatAt, isPoolAt, isWaterwallAt } from './dbridge.js';
+
 import { angerMonster, monsterWearsTorsoArmor, wakeMonster } from './mon.js';
 
 export interface HeroTeleportMovement {

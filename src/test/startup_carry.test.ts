@@ -7,7 +7,9 @@ import { memoryStorage } from './support/memory-storage.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { carriedGold, containedGold, hiddenGold } from '../js/gold.js';
+import { carriedGold, hiddenGold } from '../js/vault.js';
+import { containedGold } from '../js/shk.js';
+
 import { game } from '../js/gstate.js';
 import { goldInsightLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';

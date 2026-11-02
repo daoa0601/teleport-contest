@@ -1,7 +1,8 @@
 // Charging scrolls and artifacts share these item effects.
 // C read.c:charge_ok(), recharge(), stripspe(), wand_explode().
 
-import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
+
 import { exerciseAttribute } from './attrib.js';
 import {
     A_STR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, SPE_LIM,

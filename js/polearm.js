@@ -3,7 +3,7 @@
 // get_valid_polearm_position(), snickersnee_used_dist_attk().
 import { monsterAtPosition } from './steed.js';
 import { COLNO, IS_FURNITURE, P_BASIC, P_SKILLED, P_TWO_WEAPON_COMBAT, ROWNO, SCORR, STONE, STATUE_TRAP, isok, } from './const.js';
-import { isAccessibleAt } from './terrain_properties.js';
+import { isAccessibleAt } from './monmove.js';
 import { artifactById } from './artifacts.js';
 import { canSenseMonster, glyphAt, unmap_invisible } from './display.js';
 import { pline } from './pline.js';

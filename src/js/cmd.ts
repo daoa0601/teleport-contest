@@ -16,7 +16,8 @@ import type { ContextMenuSelection } from './context_menu.js';
 import { CLICK_1, CLICK_2, xdir, ydir } from './const.js';
 import { queueCommandResponses } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
-import { continuePicking } from './lock_pick.js';
+import { continuePicking } from './lock.js';
+
 import { resetOccupations } from './occupation_reset.js';
 import { ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT } from './const.js';
 import { STAIRS, THRONE } from './const.js';
@@ -68,7 +69,8 @@ import {
 } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { resetBulkTakeoff } from './do_wear.js';
+
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandResponse } from './input.js';
 import { terrainCommand } from './terrain_view.js';
@@ -142,7 +144,8 @@ import { NO_COLOR } from './terminal.js';
 import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling } from './monster_data.js';
 import { heroFormSticks } from './hero_species.js';
 import { autopickupAtHero } from './pickup.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { dosave } from './save.js';
 import { arriveTravel, captureRunmodeDelay, startRun, startWalkRepeat, stopRun } from './runmode.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

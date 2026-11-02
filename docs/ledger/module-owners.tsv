@@ -1,10 +1,8 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
-src/js/accessory.ts	do_wear.c
 src/js/achievements.ts	insight.c
 src/js/apply.ts	apply.c
 src/js/apply_bell.ts	apply.c
 src/js/apply_selection.ts	apply.c
-src/js/armor.ts	do_wear.c
 src/js/artifacts.ts	artifact.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
@@ -36,11 +34,8 @@ src/js/dbridge.ts	dbridge.c
 src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c
 src/js/dogmove.ts	dogmove.c
-src/js/door_magic.ts	lock.c
 src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
-src/js/drawbridge_occupants.ts	dbridge.c
-src/js/drawbridge_terrain.ts	dbridge.c
 src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
 src/js/eaten_accessory.ts	eat.c
@@ -52,7 +47,6 @@ src/js/engrave.ts	engrave.c
 src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
 src/js/enlightenment_background.ts	insight.c
-src/js/equipment_selection.ts	do_wear.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
@@ -144,8 +138,6 @@ src/js/levitation_timeout.ts	timeout.c
 src/js/lift_object.ts	pickup.c
 src/js/location_effects.ts	hack.c
 src/js/lock.ts	lock.c
-src/js/lock_context.ts	lock.c
-src/js/lock_pick.ts	lock.c
 src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/selection.ts	botl.c
 src/js/makemon.ts	makemon.c
@@ -154,7 +146,6 @@ src/js/mcastu.ts	mcastu.c
 src/js/meal_mimic.ts	eat.c
 src/js/menu_coloring.ts	windows.c
 src/js/mhitm.ts	mhitm.c
-src/js/mimic.ts	lock.c
 src/js/mirror.ts	apply.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
@@ -210,7 +201,6 @@ src/js/runmode.ts	hack.c
 src/js/scatter.ts	explode.c
 src/js/shknam.ts	shknam.c
 src/js/skills.ts	weapon.c
-src/js/slippery_hands.ts	do_wear.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
@@ -223,10 +213,8 @@ src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stethoscope.ts	apply.c
 src/js/storms.ts	timeout.c
-src/js/takeoff_state.ts	do_wear.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c
-src/js/terrain_properties.ts	dbridge.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/timeout_warnings.ts	timeout.c
@@ -246,8 +234,6 @@ src/js/undead_turning.ts	zap.c
 src/js/untrap.ts	trap.c
 src/js/vampire_shift.ts	polyself.c
 src/js/vault.ts	vault.c
-src/js/vault_exit.ts	vault.c
-src/js/vault_guard.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
 src/js/web_trap.ts	trap.c

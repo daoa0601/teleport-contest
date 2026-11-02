@@ -2,7 +2,7 @@
 // C ref: uhitm.c attack_checks().
 import { setHeroGrip } from './hero_grip.js';
 import { heroIsHallucinating } from './senses.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { observeObjectForNaming } from './objnam.js';
 import { artifactById } from './artifacts.js';
 import { AD_STCK } from './monster_attack_types.js';

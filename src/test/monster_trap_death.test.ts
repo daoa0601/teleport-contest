@@ -9,7 +9,8 @@ import {
 } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
-import { moveDrawbridgeOccupants } from '../js/drawbridge_occupants.js';
+import { moveDrawbridgeOccupants } from '../js/dbridge.js';
+
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { A_STR, G_GENOD, M_AP_NOTHING, POLY_CONTROLLED, UNENCUMBERED } from '../js/const.js';
 import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

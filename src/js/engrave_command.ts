@@ -15,8 +15,10 @@ import { disturbGrave } from './grave.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
+import { drawbridgeUnderlyingType } from './dbridge.js';
+
 import {
     ACCESSIBLE, ALTAR, BURN, CLOUD, COLNO, DRAWBRIDGE_UP, DUST, ENGRAVE, ENGR_BLOOD,
     GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, HEADSTONE, IS_AIR, IS_FOUNTAIN,

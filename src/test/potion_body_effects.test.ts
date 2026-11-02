@@ -2,7 +2,8 @@ import type { Dungeon } from '../js/dungeon_types.js';
 import type { InventoryObjectOverrides } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { A_WIS, SICK_ALL } from '../js/const.js';
 import { setTopline } from '../js/pline.js';
 import { canHeroRiseUp, levelAtDepth } from '../js/dungeon.js';

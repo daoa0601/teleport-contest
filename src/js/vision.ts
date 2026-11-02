@@ -18,7 +18,8 @@ import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { objectLightRadius } from './light.js';
 import { objectsInTimerGraph } from './timeout.js';
-import { isMoatAt, isPoolAt } from './terrain_properties.js';
+import { isMoatAt, isPoolAt } from './dbridge.js';
+
 import type { GameMap } from './game.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

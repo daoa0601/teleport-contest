@@ -2,7 +2,7 @@
 // C refs: polyself.c dobreathe() and zap.c ubreatheu()/zhitu().
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroHasHalfSpellDamage } from './zap.js';
-import { disintegrateWornArmor } from './armor.js';
+import { disintegrateWornArmor } from './do_wear.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM, } from './const.js';
 import { displayLiquidName, shieldeff } from './display.js';

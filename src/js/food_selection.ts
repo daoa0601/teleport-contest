@@ -29,7 +29,8 @@ import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { deleteTrap } from './trap.js';
 import { exceedsActionCapacity } from './weight.js';
 

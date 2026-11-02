@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { A_DEX, A_STR, NO_MINVENT, P_BARE_HANDED_COMBAT, P_BASIC, P_DAGGER, P_EXPERT, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, STR18, W_ARM, } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

@@ -1,4 +1,4 @@
-import { resetPick } from './lock_context.js';
+import { resetPick } from './lock.js';
 // Locking and opening magic applied to a box. C ref: lock.c boxlock().
 import { game } from './gstate.js';
 import { plineWithContinuation as pline } from './pline.js';

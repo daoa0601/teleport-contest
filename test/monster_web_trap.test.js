@@ -1,7 +1,7 @@
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { WEB } from '../js/const.js';
 import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

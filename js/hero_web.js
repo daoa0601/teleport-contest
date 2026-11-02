@@ -1,6 +1,6 @@
 // Spinning a web with #monster while polymorphed into a spider.
 // C refs: cmd.c domonability(), polyself.c dospinweb().
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 import { feelTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
 import { exerciseAttribute } from './attrib.js';

@@ -1,7 +1,8 @@
 import { formatFeltMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial } from './o_init.js';
 import { heroLocomotion } from './hero_locomotion.js';
-import { isLavaAt } from './terrain_properties.js';
+import { isLavaAt } from './dbridge.js';
+
 import { surfaceName } from './terrain_name.js';
 // Trap effects on the hero.
 // C refs: trap.c dotrap(), trapeffect_*(), launch_obj(), and teleport.c
@@ -16,7 +17,8 @@ import { maybeDestroyWeb } from './web_trap.js';
 import {
     currentAttribute, exerciseAttribute,
 } from './attrib.js';
-import { armorSimpleName, objectIsHardHelmet } from './armor.js';
+import { armorSimpleName, objectIsHardHelmet } from './do_wear.js';
+
 import { heroArmName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
 import {
     A_CON, A_DEX, A_STR, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP,

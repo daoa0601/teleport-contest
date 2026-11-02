@@ -7,7 +7,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME, monsterCanEngulf } from '../js/monster_data.js';
 import { NO_MINVENT, PIT } from '../js/const.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, EGG, POT_POLYMORPH } from '../js/object_data.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

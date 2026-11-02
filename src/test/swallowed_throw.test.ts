@@ -43,7 +43,8 @@ import {
     installHeroWeaponSkills, installHumanWerewolfHero,
     installPolymorphedHero, wearPolymorphControlRing,
 } from './support/hero-state.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addTrap, floorObjects, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

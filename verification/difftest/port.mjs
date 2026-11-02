@@ -74,7 +74,7 @@ const monsters = await import('../../js/monster_data.js');
 const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
 const { objectClassForType } = await import('../../js/o_init.js');
-const { armorSlotFor } = await import('../../js/armor.js');
+const { armorSlotFor } = await import('../../js/do_wear.js');
 const { BOGUS_MONSTERS } = await import('../../js/random_text_data.js');
 if (process.argv.includes('--metadata')) {
     console.log(JSON.stringify({
@@ -113,7 +113,7 @@ const { isaac64_next_uint64 } = await import('../../js/isaac64.js');
 const weight = await import('../../js/weight.js');
 const { rollPhysicalWeaponDamage } = await import('../../js/weapon.js');
 const { findHeroMeleeHitThreshold } = await import('../../js/hero_attack_accuracy.js');
-const { wearHeroAccessory } = await import('../../js/accessory.js');
+const { wearHeroAccessory } = await import('../../js/do_wear.js');
 const { grantIntrinsicProperty } = await import('../../js/properties.js');
 const accuracyRing = data.OBJECT_NAMES.indexOf('increase accuracy');
 

@@ -1,7 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { findArmorClass, removeHeroArmor, stopDonning, wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { findArmorClass, removeHeroArmor, stopDonning, wearHeroArmor } from '../js/do_wear.js';
+
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NO_MINVENT, PIT, POOL, ROOM, TT_BEARTRAP, TT_PIT } from '../js/const.js';

@@ -11,8 +11,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
+
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

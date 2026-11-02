@@ -19,7 +19,8 @@ import { floatHeroDown } from './terrain_movement.js';
 import { stopHeroOccupation } from './occupation.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { surfaceName } from './terrain_name.js';
-import { isPoolOrLavaAt } from './terrain_properties.js';
+import { isPoolOrLavaAt } from './dbridge.js';
+
 
 export type LevitationTimeoutResult =
     | { active: false; expired: false; flyingBypassed: false }

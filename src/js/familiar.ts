@@ -6,7 +6,8 @@ import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

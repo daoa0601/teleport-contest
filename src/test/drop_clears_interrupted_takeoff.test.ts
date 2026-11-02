@@ -17,7 +17,8 @@ import { wornObjectDescription } from '../js/objnam.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import type { Monster } from '../js/monster_types.js';
 
 // An interrupted bulk takeoff: the adjacent monster stops the occupation the

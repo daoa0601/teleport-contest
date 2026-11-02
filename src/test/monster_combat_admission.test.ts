@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { M_AP_TYPE, NO_MINVENT, W_WEP } from '../js/const.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';

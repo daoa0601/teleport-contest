@@ -29,7 +29,8 @@ import { mapVicinity } from './detect.js';
 import { mksobj } from './mkobj.js';
 import { deleteObject } from './shk.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
-import { findArmorClass } from './armor.js';
+import { findArmorClass } from './do_wear.js';
+
 import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { restoreCannedCommandTail } from './cmd.js';
 import {

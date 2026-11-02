@@ -2,7 +2,8 @@
 import { game } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { visibleCommandKey } from './cmd.js';
-import { autoUnlockFlags } from './lock_pick.js';
+import { autoUnlockFlags } from './lock.js';
+
 import { statusVersion } from './version.js';
 import { statusConditionOptions } from './botl.js';
 import { showInventoryWindow, showMultiSelectWindow } from './windows.js';

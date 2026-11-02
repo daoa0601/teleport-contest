@@ -2,7 +2,7 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX, } from './monster_attack_types.js';
-import { dragonFormForArmor } from './armor.js';
+import { dragonFormForArmor } from './polyself.js';
 import { artifactById } from './artifacts.js';
 import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';

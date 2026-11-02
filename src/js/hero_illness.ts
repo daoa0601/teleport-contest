@@ -8,7 +8,8 @@ import type { Hero } from './hero_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
+
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { currentMulti } from './cmd.js';

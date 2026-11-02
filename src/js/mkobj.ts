@@ -51,7 +51,8 @@ import { updateCarriedLuck, freeInventoryObject } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 
 import { bookCursed } from './spellbook_study.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { resetBulkTakeoff } from './do_wear.js';
+
 
 
 

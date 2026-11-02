@@ -5,7 +5,7 @@ import test from 'node:test';
 // verb stays singular.
 import { rhack } from '../js/cmd.js';
 import { PIT, SPIKED_PIT, TT_PIT } from '../js/const.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';

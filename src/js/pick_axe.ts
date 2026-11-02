@@ -50,7 +50,8 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { heroStrengthDamageBonus } from './weapon.js';
 import { isPick } from './object_properties.js';
 import { connectPits } from './pit_connections.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import type { GameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { Position } from './map_types.js';

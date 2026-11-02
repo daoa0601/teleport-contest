@@ -1,5 +1,6 @@
 // C apply.c:use_stethoscope() and its_dead().
-import { armorSlotFor } from './armor.js';
+import { armorSlotFor } from './do_wear.js';
+
 import { heroHandName } from './body_parts.js';
 import { CORR, Is_stronghold, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STATUE_TRAP, isok, OBJECT_TIMER_KIND } from './const.js';
 import { convertSecretDoor } from './detect.js';

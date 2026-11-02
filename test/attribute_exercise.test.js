@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { checkAttributeExercise, exerciseAttribute, exerciseWisdom } from '../js/attrib.js';
-import { wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_CHA, A_CON, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

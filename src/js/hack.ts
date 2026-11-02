@@ -60,14 +60,12 @@ import {
 import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
 import { vision_recalc, vision_reset, couldsee } from './vision.js';
 import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, OVERLOADED } from './weight.js';
-import {
-    armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking,
-    heroKnowsWaterWalking, removeHeroArmor, stopDonning,
-} from './armor.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning } from './do_wear.js';
+
 import { clearHeroSliming, heroIsSliming } from './slime.js';
-import {
-    isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, isPoolOrLavaAt,
-} from './terrain_properties.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
+import { levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './dungeon.js';
+
 import {
     captureLevitationState, clearLevitationMasks, hasIntrinsicProperty,
     hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties,
@@ -106,6 +104,7 @@ import { attackHostileMonster } from './hero_melee.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { beastChoosesHeroDisplacement, settleBeastHeroDisplacement } from './hero_beast_displacement.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
+
 import { monsterAtPosition } from './steed.js';
 import { makeMonsterFlee, heroCanOoze } from './monmove.js';
 import { confirmHeroStep } from './hero_step_confirmation.js';
@@ -119,7 +118,8 @@ import { confusePromptDirection } from './tty_prompts.js';
 import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
 import { artifactById } from './artifacts.js';
 import { checkSlipperyIce } from './fumbling.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { drawbridgeUnderlyingType } from './dbridge.js';
+
 import { arriveTravel, captureRunmodeDelay, stopRun } from './runmode.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { monsterMayDigLocation } from './mon.js';
@@ -139,7 +139,8 @@ import { xyToDirection } from './cmd.js';
 import { doopen } from './lock.js';
 import { askTeleportDestination } from './teleport.js';
 import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
-import { removeHeroAccessory } from './accessory.js';
+import { removeHeroAccessory } from './do_wear.js';
+
 import { floorObjectDescription } from './floor_object_display.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 

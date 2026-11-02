@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { A_STR, CORR, FAINTED, FAINTING, HUNGRY, NOT_HUNGRY, POOL, ROOMOFFSET, SATIATED, STARVED, VAULT, VWALL, WEAK, } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { _statusLine2 } from '../js/botl.js';
 import { clearMessageWindow } from '../js/tty_topline.js';

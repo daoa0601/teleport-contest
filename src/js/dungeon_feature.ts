@@ -1,11 +1,13 @@
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 // Floor features named by look_here() and describe_decor().
 // C invent.c:dfeature_at(), stairs.c:stairs_description(), pager.c:ice_descr().
 
 import { deityName } from './alignment.js';
 import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, IS_FURNITURE, IS_LAVA, IS_POOL, PLNMSG_BACK_ON_GROUND, SINK, STONE, THRONE, TREE, LEVEL_TIMER_KIND } from './const.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { drawbridgeUnderlyingType } from './dbridge.js';
+
 import { displayLiquidName } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

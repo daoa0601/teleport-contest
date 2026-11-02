@@ -352,7 +352,7 @@ The naming state relation extends the creation relation. Facts beyond it:
 | `oeroded`/`odiluted` and `otrapped`/`opoisoned` alias one C field; each pair is exclusive and potions use the shared field only as `odiluted` 0/1 | `obj.h` field aliases |
 | Generic class rows before `FIRST_OBJECT` and `SPE_NOVEL` (named at construction) are excluded | `mkobj.c:mksobj`, `o_init.c` |
 | Worn masks are 0 or one supported slot appropriate to the type, and contained objects have mask 0. Body armor uses suits, ring slots use rings or a meat ring, amulet slots use amulets, eyewear uses blindfold/lenses/towel, and punishment slots use their ball/chain types. `uarm*`/`uwep` slot owners stay null so `donning()`/`doffing()` stay false | `do_wear.c:canwearobj`, `accessory_or_armor_on`, `donning`, `doffing`; `read.c:punish` |
-| Armor-category metadata is read from emitted `armor.js:armorSlotFor`; its agreement with native `oc_armcat` is an assumed table correspondence. Slot bits come from emitted `const.js` | `obj.h:is_suit`, `objects.h` armor entries, `prop.h` worn masks |
+| Armor-category metadata is read from emitted `do_wear.js:armorSlotFor`; its agreement with native `oc_armcat` is an assumed table correspondence. Slot bits come from emitted `const.js` | `obj.h:is_suit`, `objects.h` armor entries, `prop.h` worn masks |
 | Weapon/alternate slots accept non-weapons but exclude coins; the quiver permits gold and other non-ammunition | `wield.c:wield_ok`, `ready_ok`, `dowield`, `doquiver_core` |
 | `leashmon` (corpsenm alias) must be 0; the harness has no live leashed monster | `objnam.c:doname_base` leash branch |
 | `slime mold spe` must index a registered input fruit (`fruit_from_indx`) | `objnam.c:xname_flags` |

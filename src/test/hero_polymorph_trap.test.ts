@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { POLY_TRAP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';

@@ -1,5 +1,6 @@
 // Revealing a monster disguised as an object or dungeon feature.
-// C refs: uhitm.c stumble_onto_mimic() and lock.c stumble_on_door_mimic().
+// C refs: uhitm.c that_is_a_mimic() and stumble_onto_mimic(); monst.h
+// is_door_mappear(). lock.c:stumble_on_door_mimic() lives in lock.ts.
 
 import { setHeroGrip } from './hero_grip.js';
 import { M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE } from './const.js';
@@ -85,16 +86,6 @@ export function isDoorMimic(monster: Monster | null | undefined, state: GameStat
 export function hasDoorAppearance(monster: Monster | null | undefined): monster is Monster {
     return !!monster && M_AP_TYPE(monster) === M_AP_FURNITURE
         && monster.mappearance !== undefined && CLOSED_DOOR_APPEARANCES.has(monster.mappearance);
-}
-
-// lock.c checks the disguise itself, even when the hero senses the monster.
-export async function stumbleOnDoorMimic(x: number, y: number, state: GameState = game): Promise<boolean> {
-    if (!state.level || state.u.protectionFromShapeChangers || state.protectionFromShapeChangers)
-        return false;
-    const monster = monsterAtPosition(state.level, x, y);
-    if (!hasDoorAppearance(monster)) return false;
-    await stumbleOntoMimic(monster, state);
-    return true;
 }
 
 export async function revealMimic(

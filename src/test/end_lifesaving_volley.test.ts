@@ -16,7 +16,8 @@ import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 
 void test('life saving during a volley stops the remaining missiles', async () => {
     await freshObjectRoom({ role: 'rogue', recalculateVision: false });

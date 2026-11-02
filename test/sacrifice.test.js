@@ -9,7 +9,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactById, initializeArtifacts } from '../js/artifacts.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
 import { terrain_glyph } from '../js/display.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';

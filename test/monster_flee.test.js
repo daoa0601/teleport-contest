@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_FURNITURE, PIT, TT_PIT } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
@@ -12,7 +12,7 @@ import { applyInventoryObject, throwInventoryObject } from './support/commands.j
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { lightWieldedArtifact, endObjectBurn } from '../js/light.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 import { GOLD_DRAGON_SCALES } from '../js/object_data.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

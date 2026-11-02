@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { fallWithIronBall } from '../js/ball.js';
 import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY, OBJECT_TIMER_KIND } from '../js/const.js';
 import { bot } from '../js/botl.js';

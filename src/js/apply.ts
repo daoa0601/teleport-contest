@@ -73,7 +73,8 @@ import { useTinningKit } from './tinning_kit.js';
 import { useSaddle, monsterAtPosition } from './steed.js';
 import { isRoyalJelly, useRoyalJelly } from './royal_jelly.js';
 import { useBullwhip } from './bullwhip.js';
-import { pickLock } from './lock_pick.js';
+import { pickLock } from './lock.js';
+
 import { useCrystalBall } from './crystal_ball.js';
 import { isContainer, useContainer } from './container.js';
 import { useTinOpener } from './tin.js';
@@ -118,7 +119,8 @@ import { fillPitWithBoulderAt } from './pit_fill.js';
 import { paranoidQuery } from './query.js';
 import { roomsAt } from './room.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidUsage, payForShopDamage } from './shk.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { vision_note_blocker_change } from './vision.js';
 import { exceedsActionCapacity } from './weight.js';
 import { zappable } from './zap.js';

@@ -45,7 +45,8 @@ import { drinkPotion } from './quaff.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { surfaceName } from './terrain_name.js';
-import { findVaultGuard } from './vault_guard.js';
+import { findVaultGuard } from './vault.js';
+
 import { isWeldedPrimary, releaseWeaponSlots } from './wield.js';
 import { exceedsActionCapacity, objectWeight } from './weight.js';
 import { monsterHasLineOfSightToHero } from './vision.js';

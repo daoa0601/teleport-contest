@@ -2,7 +2,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test, {} from 'node:test';
 import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { CORR, D_CLOSED, DOOR, PIT, P_DAGGER, STONE, W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { clearMessageWindow } from '../js/tty_topline.js';

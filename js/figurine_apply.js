@@ -9,7 +9,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
 import { stopObjectTimer } from './timeout.js';
 import { heroIsBlind } from './senses.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { promptDirection } from './tty_prompts.js';
 export async function useFigurine(object) {
     requireLiveGame(game);

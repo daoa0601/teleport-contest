@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { AKLYS, LONG_SWORD, RIN_PROTECTION } from '../js/object_data.js';

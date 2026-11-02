@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CORR, DOOR, D_CLOSED, G_EXTINCT, G_NOCORPSE, HWALL, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, MM_NOMSG, NO_MINVENT, ROOMOFFSET, TEMPLE, } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

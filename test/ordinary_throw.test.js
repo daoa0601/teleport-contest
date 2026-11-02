@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { A_DEX, A_LAWFUL, A_STR, P_BASIC, P_BOW, P_CROSSBOW, P_DART, P_SKILLED, W_ARMG, W_WEP, } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, ARROW, BLINDING_VENOM, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, DART, EGG, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, ROCK, STATUE, YA, YUMI, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

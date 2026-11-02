@@ -20,7 +20,7 @@ import { rn2 } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { dismountHero } from './steed.js';
 import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } from './stoning.js';
-import { isIceAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isPoolAt } from './dbridge.js';
 import { monsterHasColdResistance } from './mondata.js';
 export function checkSlipperyIce() {
     const hero = game.u;

@@ -22,7 +22,8 @@ import {
 } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { drinkPotion, quaff } from '../js/quaff.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { addShopObjectToBill, billForObject } from '../js/shk.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';

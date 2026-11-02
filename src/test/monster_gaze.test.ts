@@ -3,10 +3,12 @@ import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
+
 import { MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, POOL, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';

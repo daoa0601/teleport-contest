@@ -7,13 +7,16 @@ import type { EnlightenmentFinal } from './enlightenment_attributes.js';
 import { heroHandedName } from './body_parts.js';
 import { artifactById } from './artifacts.js';
 import { recorderLocalHour } from './calendar.js';
-import { ringRemovalObstacle } from './accessory.js';
+import { ringRemovalObstacle } from './do_wear.js';
+
 import { heroIsBlind } from './senses.js';
 import { costlySpot } from './shk.js';
 import { depth, endgameLevelName } from './hacklib.js';
-import { findArmorClass } from './armor.js';
+import { findArmorClass } from './do_wear.js';
+
 import { heroGoldAmount } from './hero_gold.js';
-import { hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
+
 import { currency } from './currency.js';
 import { withIndefiniteArticle } from './objnam.js';
 

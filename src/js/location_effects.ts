@@ -18,11 +18,14 @@ import { gotoLevel } from './level_change.js';
 import { autopickupAtHero } from './pickup.js';
 import { checkSpecialRoom } from './shk.js';
 import { levelTimers } from './timeout.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
+
 import { finishCeilingMonsterArrival } from './ceiling_monster_arrival.js';
 import { roomsAt } from './room.js';
-import { findVaultGuard } from './vault_guard.js';
-import { noticeVaultEscape } from './vault_escort.js';
+import { findVaultGuard } from './vault.js';
+
+import { noticeVaultEscape } from './vault.js';
+
 
 export interface SpotEffectResult {
     died: boolean;

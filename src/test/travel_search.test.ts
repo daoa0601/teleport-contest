@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { continueRun } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
 import { D_CLOSED, DOOR, IRONBARS, LAVAPOOL, POOL, ROOM, STONE, VIBRATING_SQUARE } from '../js/const.js';

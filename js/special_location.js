@@ -5,7 +5,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { somexy } from './mkroom.js';
 import { BOULDER } from './object_data.js';
 import { rn2 } from './rng.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 export const DRY = 0x01;
 export const WET = 0x02;
 export const HOT = 0x04;

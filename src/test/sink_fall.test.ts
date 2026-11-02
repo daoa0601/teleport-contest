@@ -4,8 +4,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SINK } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { fallIntoSink } from '../js/hack.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

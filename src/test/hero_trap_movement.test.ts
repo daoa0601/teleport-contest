@@ -6,7 +6,8 @@ import assert from 'node:assert/strict';
 
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
@@ -30,7 +31,8 @@ import { vision_reset } from '../js/vision.js';
 import {
     addInventoryObject, floorObject,
 } from './support/game-objects.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

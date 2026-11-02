@@ -2,7 +2,7 @@ import { requireScreenRow } from './support/screen.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { THRONE } from '../js/const.js';
 import { game } from '../js/gstate.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { disintegrateWornArmor } from '../js/armor.js';
+import { disintegrateWornArmor } from '../js/do_wear.js';
+
 import { currentAttribute } from '../js/attrib.js';
 import { rhack } from '../js/cmd.js';
 import { A_CHA, A_INT, A_WIS } from '../js/const.js';
