@@ -101,4 +101,8 @@ void test('a knave-warned guard keeps the hero position its relocation refresh c
         + 'still believes the hero stands on (11,11), the square the '
         + 'relocation refresh chose; a further refresh would have re-rolled '
         + 'the belief to (9,9) (monmove.c:1812-1816, teleport.c:1702)');
+    assert.notDeepEqual(guard.mtrack?.[0], { x: 12, y: 10 },
+        'ordinary movement starts from the square mnexto() chose: m_move() '
+        + 're-reads omx/omy at not_special, so the guard\'s track never records '
+        + 'its pre-relocation post (monmove.c:1853-1854)');
 });

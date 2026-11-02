@@ -1263,8 +1263,8 @@ export function setMonsterApparentHeroPosition(monster, state, random, calls = n
     return true;
 }
 async function moveHostile(monster, state, random, rollDice, rollOne, calls, capabilities) {
-    const oldx = monster.mx;
-    const oldy = monster.my;
+    let oldx = monster.mx;
+    let oldy = monster.my;
     // monmove.c:m_move() refreshes the apparent target exactly once
     // (monmove.c:1761), before every actor specialization including
     // shk_move(), pri_move(), and gd_move().  This refresh is
@@ -1305,6 +1305,11 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
                 return guardMovement;
         }
     }
+    // monmove.c:m_move() not_special: omx/omy are re-read here, so a guard
+    // that gd_move() relocated and then fell through (-1) moves on from its
+    // new square.
+    oldx = monster.mx;
+    oldy = monster.my;
     const finishMovement = (movement, postMoveStatus, movementStage) => ({
         ...movement,
         postMoveStatus,
