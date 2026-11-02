@@ -26,7 +26,8 @@ import { distantObjectName, objectName, observeObjectForNaming, simpleObjectName
 
 import { currency } from './currency.js';
 import { heroGoldAmount, heroGoldObject } from './hero_gold.js';
-import { hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
+
 import { currentShopResident, shopkeeperInOwnShop, unpaidObjectCost, reportShopFinances } from './shk.js';
 import { objectsInTimerGraph } from './timeout.js';
 import {

@@ -8,7 +8,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

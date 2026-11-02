@@ -4,13 +4,15 @@
 import { commandResultCancelled, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { game, requireGameLevel } from './gstate.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import {
     definiteName, objectCombatName, objectNameIsPlural, objectQuestion,
     observeObjectForNaming, ownedSimpleObjectName, simpleObjectName,
     simpleObjectNameWithArticle,
 } from './objnam.js';
-import { autokey, autoUnlockFlags, pickLock } from './lock_pick.js';
+import { autokey, autoUnlockFlags, pickLock } from './lock.js';
+
 import { isForceableWeapon } from './lock.js';
 import { getAdjacentLocation } from './tty_prompts.js';
 import {

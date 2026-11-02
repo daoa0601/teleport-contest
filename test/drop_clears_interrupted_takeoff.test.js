@@ -16,7 +16,7 @@ import { wornObjectDescription } from '../js/objnam.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 // An interrupted bulk takeoff: the adjacent monster stops the occupation the
 // way allmain.c's monster_nearby() check does, which leaves the 'A' context
 // behind in C (svc.context.takeoff).

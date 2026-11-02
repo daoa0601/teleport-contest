@@ -7,7 +7,8 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath } from '../js/mon.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import {

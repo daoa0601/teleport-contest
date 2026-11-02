@@ -1,5 +1,6 @@
 // C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero attacker branch.
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
+
 import { exerciseWisdom } from './attrib.js';
 import { applyCannibalPenalty } from './cannibalism.js';
 import { A_INT, DIED, KILLED_BY_AN, M_ATTK_MISS, W_AMUL, W_ARMH } from './const.js';

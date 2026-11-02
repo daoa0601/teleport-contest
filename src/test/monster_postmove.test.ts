@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { ARROW_TRAP, D_CLOSED, D_ISOPEN, DOOR, MMOVE_MOVED, MM_ANGRY, NO_MINVENT, POLY_TRAP, ROOM, STAIRS, W_AMUL, WEB } from '../js/const.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { moveMonsterForHeroAttack } from '../js/monmove.js';
 import { glyphAt, newsym } from '../js/display.js';

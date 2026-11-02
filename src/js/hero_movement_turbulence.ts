@@ -6,7 +6,8 @@ import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroCanSwim } from './hack.js';
 import { rn2 } from './rng.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { MOD_ENCUMBER, SLT_ENCUMBER, nearCapacity } from './weight.js';
 
 // C hack.c:air_turbulence().

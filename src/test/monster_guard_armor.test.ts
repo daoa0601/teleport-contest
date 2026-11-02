@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { armorBonus, armorSlotFor } from '../js/armor.js';
+import { armorBonus, armorSlotFor } from '../js/do_wear.js';
+
 import { TIN_WHISTLE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

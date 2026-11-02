@@ -46,7 +46,8 @@ import { definiteName, objectName, simpleObjectName, observeObjectForNaming, plu
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
+
 import { heroGoldAmount } from './hero_gold.js';
 import { restoreHeroNutrition } from './hunger.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
@@ -59,7 +60,8 @@ import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
 import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { payVaultGuardOnExit } from './vault_exit.js';
+import { payVaultGuardOnExit } from './vault.js';
+
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { paranoidQuery, promptChoice, promptYesNo } from './query.js';
@@ -74,7 +76,8 @@ import { collectLevelFollowers } from './dog.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
-import { isAccessibleAt } from './terrain_properties.js';
+import { isAccessibleAt } from './monmove.js';
+
 
 
 export interface DeathDamage {

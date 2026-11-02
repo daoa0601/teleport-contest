@@ -10,7 +10,7 @@ import { objectClassForType, observeObject } from './o_init.js';
 import { distantObjectName, minimalObjectName } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { costlySpot } from './shk.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 const STRANGE_OBJECT = 0;
 export async function objectAtMapDescription(x, y, glyph, state = game, style = 'farlook') {
     return await withMapObject(x, y, glyph, async (object, temporary) => {

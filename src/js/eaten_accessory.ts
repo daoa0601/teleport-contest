@@ -1,7 +1,8 @@
 // C eat.c:eataccessory(), accessory_has_effect(), bounded_increase().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { removeHeroAccessory } from './accessory.js';
+import { removeHeroAccessory } from './do_wear.js';
+
 import { adjustAttribute, attributeChangeMessage } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { A_CHA, A_CON, A_STR, TIMEOUT } from './const.js';

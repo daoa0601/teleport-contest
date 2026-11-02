@@ -1,7 +1,8 @@
 import { monsterAtPosition } from '../js/steed.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import {
     M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_NOGRP, MM_NOWAIT, MSLOW,
     NO_MINVENT, STRAT_WAITFORU, W_ARM,

@@ -1,7 +1,8 @@
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 // ball.js — Punishment ball-and-chain movement.
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 
@@ -17,7 +18,8 @@ import { applyFloorEffects } from './floor_effects.js';
 import { hitFloorWithObject } from './dothrow.js';
 
 import { exerciseAttribute } from './attrib.js';
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
+
 import { heroHeadName } from './body_parts.js';
 import { loseHeroHp } from './hero_damage.js';
 import { removeHeroEquipment } from './hero_equipment.js';

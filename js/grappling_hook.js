@@ -22,7 +22,7 @@ import { OBJECT_SUBTYPE } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { ensureHeroSkills } from './skills.js';
 import { surfaceName } from './terrain_name.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { cansee, couldsee } from './vision.js';
 import { showPagedPickOneMenu } from './windows.js';
 const M2_STRONG = 0x04000000;

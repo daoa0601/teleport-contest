@@ -13,6 +13,8 @@ import {
 import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './mimic.js';
+
+
 import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { objectNoLongerHeld } from './do.js';
 import { pickupFloorObject } from './pickup.js';
@@ -36,7 +38,8 @@ import { rnl, rn2, rnd } from './rng.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { heroIsBlind } from './senses.js';
-import { isLavaAt, isPoolOrLavaAt } from './terrain_properties.js';
+import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';
+
 import { moveHeroByTeleport } from './teleport.js';
 import { resetHeroTrap } from './terrain_movement.js';
 import { vision_recalc, vision_reset } from './vision.js';
@@ -44,7 +47,8 @@ import { heroStrengthDamageBonus } from './weapon.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
-import { heroHasSlipperyHands } from './slippery_hands.js';
+import { heroHasSlipperyHands } from './do_wear.js';
+
 import { fireDamageObject } from './fire_damage.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';

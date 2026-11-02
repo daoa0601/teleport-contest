@@ -4,8 +4,10 @@ import type { RoleKey } from '../js/roles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
+
 import { M_SEEN_MAGR, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

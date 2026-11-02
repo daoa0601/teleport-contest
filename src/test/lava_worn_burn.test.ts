@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { LAVAPOOL } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';

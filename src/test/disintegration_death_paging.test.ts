@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { game } from '../js/gstate.js';
 import { hitHeroWithRay } from '../js/hero_breath.js';
 import { resetInputState } from '../js/input.js';

@@ -1,5 +1,5 @@
 // C read.c:drop_boulder_on_player(), drop_boulder_on_monster().
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
 import { heroHeadName, monsterStomachName } from './body_parts.js';
 import { W_ARMH } from './const.js';
 import { canSpotMonster, map_invisible, newsym } from './display.js';

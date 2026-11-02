@@ -1,13 +1,15 @@
 import { monsterAtPosition } from '../js/steed.js';
 import type { Monster } from '../js/monster_types.js';
-import { armorBaseBonus } from '../js/armor.js';
+import { armorBaseBonus } from '../js/do_wear.js';
+
 import { findMonsterArmorClass } from '../js/monworn.js';
 import type { Room } from '../js/map_types.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { hurtleMonster } from '../js/dothrow.js';
 import { setPrimaryWeapon } from '../js/wield.js';

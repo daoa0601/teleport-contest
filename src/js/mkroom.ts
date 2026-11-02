@@ -6,7 +6,8 @@
 // mklev.c occupied() that share this file's room table.
 
 import { game, requireGameLevel } from './gstate.js';
-import { isPoolOrLavaAt } from './terrain_properties.js';
+import { isPoolOrLavaAt } from './dbridge.js';
+
 import { rn2, rnd, rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import {

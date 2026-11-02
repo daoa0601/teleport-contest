@@ -22,7 +22,7 @@ import { objectCombatName, definiteName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';
 import { surfaceName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { heroGoldAmount } from './hero_gold.js';
 import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, } from './polyself.js';
 import { heroFormSticks } from './hero_species.js';

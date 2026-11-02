@@ -1,5 +1,5 @@
 // C u_init.c:ini_inv_use_obj(), after starting-item discovery.
-import { armorSlotFor, wearHeroArmor } from './armor.js';
+import { armorSlotFor, wearHeroArmor } from './do_wear.js';
 import { FLINT, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
 import { learnInitialSpell } from './spell.js';

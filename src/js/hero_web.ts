@@ -4,7 +4,8 @@
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { feelTrap } from './trap.js';
 import { deleteTrap } from './trap.js';
 import { exerciseAttribute } from './attrib.js';

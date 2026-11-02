@@ -6,7 +6,8 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { ORCISH_HELM } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';

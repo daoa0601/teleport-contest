@@ -4,14 +4,14 @@ import { GRAVE, MM_NOGRP, NO_MINVENT, ROOM, ROOMOFFSET, VAULT } from '../js/cons
 import { currency } from '../js/currency.js';
 import { engravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hiddenGold } from '../js/gold.js';
+import { hiddenGold } from '../js/vault.js';
 import { heroGoldAmount } from '../js/hero_gold.js';
 import { makeHallucinated } from '../js/hero_mental_status.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { DAGGER, GOLD_PIECE, LARGE_BOX, POT_HEALING } from '../js/object_data.js';
 import { updateHeroRoomMembership } from '../js/room.js';
-import { payVaultGuardOnExit } from '../js/vault_exit.js';
+import { payVaultGuardOnExit } from '../js/vault.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';

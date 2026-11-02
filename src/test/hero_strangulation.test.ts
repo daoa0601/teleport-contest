@@ -4,8 +4,10 @@ import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { _statusLine2 } from '../js/botl.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

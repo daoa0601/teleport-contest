@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { moveloop_core } from '../js/allmain.js';
-import { removeHeroAccessory } from '../js/accessory.js';
+import { removeHeroAccessory } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { DUST } from '../js/const.js';
 import { engravingAt } from '../js/engrave.js';

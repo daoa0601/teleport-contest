@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap } from '../js/anti_magic_trap.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
+
 import { beginMonsterBearTrap, finishMonsterBearTrap } from '../js/bear_trap.js';
 import { heroBlindingObjectHitMessage } from '../js/blinding_attack.js';
 import { finishGhostlyPickup } from '../js/bones_object.js';

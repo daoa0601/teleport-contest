@@ -19,8 +19,10 @@ import { AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WATER_WALKING_BOOT
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { wearHeroArmor } from '../js/armor.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { memoryStorage } from './support/memory-storage.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { createStaffedShop } from './support/shop.js';

@@ -4,7 +4,7 @@ import { reportHeroEncumbrance } from './encumbrance.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { isok, OBJECT_TIMER_KIND } from './const.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
 import { unlinkObject, deallocateObject } from './mkobj.js';
 import { game, requireLiveGame } from './gstate.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';

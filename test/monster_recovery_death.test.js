@@ -1,7 +1,7 @@
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { DOOR, D_CLOSED, D_NODOOR, D_TRAPPED, NO_MINVENT, PIT } from '../js/const.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';

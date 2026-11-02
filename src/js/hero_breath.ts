@@ -11,7 +11,8 @@ import type { GameObject } from './object_types.js';
 import type { PropertyName } from './property_types.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroHasHalfSpellDamage } from './zap.js';
-import { disintegrateWornArmor } from './armor.js';
+import { disintegrateWornArmor } from './do_wear.js';
+
 import { exerciseAttribute } from './attrib.js';
 import {
     A_CON, A_DEX, A_STR, M_SEEN_MAGR, NON_PM,

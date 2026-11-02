@@ -4,7 +4,7 @@ import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
 import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { findMonsterNearPosition, } from './mklev.js';

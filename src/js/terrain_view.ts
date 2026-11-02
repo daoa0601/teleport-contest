@@ -17,7 +17,8 @@ import type { MapLocation } from './map_types.js';
 import { monsterAtPosition } from './steed.js';
 import { visibleRegionAt } from './regions.js';
 import { heroIsHallucinating } from './senses.js';
-import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { terrainCoversObjectsAt } from './display.js';
+
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';
 import { cansee } from './vision.js';
 import { showTerrainCodeLegend, showTerrainCodes } from './wizcmds.js';

@@ -1,7 +1,7 @@
 // Floor-object ownership and pile order.
 // C refs: mkobj.c place_object(), remove_object(), splitobj(),
 // obj_timer_checks(), and invent.c stackobj(), obj_extract_self().
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
 import { newsym } from './display.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { BOULDER, CORPSE } from './object_data.js';

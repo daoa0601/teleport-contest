@@ -2,7 +2,7 @@
 // item destruction, form changes and instant death complete here.
 import { formatFeltMessage } from './hero_speech.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { findArmorClass, heroHasDrainResistance } from './armor.js';
+import { findArmorClass, heroHasDrainResistance } from './do_wear.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroIsPunished } from './ball.js';
 import { changeBoxLockByMagic } from './box_magic.js';

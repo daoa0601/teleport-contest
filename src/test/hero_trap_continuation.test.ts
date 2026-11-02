@@ -2,7 +2,8 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { ARROW_TRAP, BEAR_TRAP, FIRE_TRAP, POOL, ROOM, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';

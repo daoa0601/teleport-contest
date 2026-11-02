@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { removeHeroAccessory, wearHeroAccessory } from '../js/accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { CORPSTAT_INIT, M_AP_NOTHING, M_AP_TYPE, NON_PM, NO_MINVENT, ROOM } from '../js/const.js';
 import { reviveCorpseByMagic } from '../js/corpse_revival.js';
 import { canSeeMonster, flush_screen } from '../js/display.js';

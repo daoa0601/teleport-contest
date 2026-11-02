@@ -10,8 +10,10 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { displayLiquidName } from './display.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { drawbridgeUnderlyingType } from './dbridge.js';
+
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
 import { roomsAt } from './room.js';

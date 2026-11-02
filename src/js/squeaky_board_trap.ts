@@ -15,7 +15,8 @@ import { monsterIsMindless } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { heroIsDeaf } from './senses.js';
 import { monsterTrapVisibility, seeTrap } from './trap.js';
-import { monsterInAir } from './terrain_properties.js';
+import { monsterInAir } from './mon.js';
+
 
 export interface MonsterSqueakyBoardEvent {
     kind: 'squeaky-board';

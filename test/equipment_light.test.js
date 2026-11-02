@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
+import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
 import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
 import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';

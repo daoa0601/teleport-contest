@@ -9,7 +9,7 @@ import { grantIntrinsicProperty, hasIntrinsicProperty } from '../js/properties.j
 import { artifactByName } from '../js/artifacts.js';
 import { artifactInvokeIsActive, deactivateArtifactProperty, invokeArtifactPower, } from '../js/artifacts.js';
 import { applyLevitationPotion } from '../js/levitation_potion.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { FEDORA, ORCISH_HELM, POT_LEVITATION, } from '../js/object_data.js';
 import { addInventoryObject, knownObject, } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

@@ -1,5 +1,5 @@
 // C do_wear.c:canwearobj(). Decisions precede contact and slot changes.
-import { armorSimpleName, armorSlotFor } from './armor.js';
+import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import { heroFingerName, heroFootName, heroLegName } from './body_parts.js';
 import { TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, W_ARMOR } from './const.js';
 import { game } from './gstate.js';

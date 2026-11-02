@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_RINGL } from '../js/const.js';
 import { specialContactDamage } from '../js/contact_damage.js';
 import { canSpotMonster, flush_screen } from '../js/display.js';

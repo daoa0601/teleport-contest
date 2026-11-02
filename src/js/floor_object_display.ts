@@ -6,7 +6,8 @@ import { ICE, Is_airlevel, Is_waterlevel, PLNMSG_ONE_ITEM_HERE, is_pit } from '.
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';

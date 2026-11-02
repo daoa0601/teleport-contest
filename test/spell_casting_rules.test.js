@@ -2,7 +2,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_INT, A_STR, A_WIS, HUNGRY, P_BASIC, P_SKILLED, WEAK } from '../js/const.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { game } from '../js/gstate.js';
 import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
 import { currentHungerState } from '../js/hunger.js';

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { rhack } from '../js/cmd.js';
 import { FOUNTAIN, F_WARNED, ROOM, ROLLING_BOULDER_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';

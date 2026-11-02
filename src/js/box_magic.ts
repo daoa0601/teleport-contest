@@ -1,4 +1,5 @@
-import { resetPick } from './lock_context.js';
+import { resetPick } from './lock.js';
+
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 // Locking and opening magic applied to a box. C ref: lock.c boxlock().

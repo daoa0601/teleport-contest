@@ -16,7 +16,8 @@ import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM,
     monsterIsNonliving, monsterTypeName,
 } from './monster_data.js';
-import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './armor.js';
+import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
+
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 
 import {

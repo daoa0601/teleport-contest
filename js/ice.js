@@ -15,7 +15,7 @@ import { BEARTRAP, BOULDER, LAND_MINE } from './object_data.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { stopLevelTimer } from './timeout.js';
 import { objectName } from './objnam.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { deleteTrap, convertTrapToObject } from './trap.js';
 import { cansee, vision_recalc } from './vision.js';
 export async function meltIce(x, y, { announce = plineWithContinuation, message = 'The ice crackles and melts.', } = {}) {

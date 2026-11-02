@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { Upolyd } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { GameDisplay } from '../js/game_display.js';

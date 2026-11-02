@@ -78,8 +78,10 @@ import { updateMonsterRegions } from './regions.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
-import { isPoolAt } from './terrain_properties.js';
-import { armorSimpleName } from './armor.js';
+import { isPoolAt } from './dbridge.js';
+
+import { armorSimpleName } from './do_wear.js';
+
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { releaseCameraDemon } from './camera.js';

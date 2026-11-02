@@ -15,7 +15,7 @@ import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { getObjectLocation, createPolymorphMonsterFromPile, do_osshock, obj_unpolyable, poly_obj, polymorphFloorObject, stone_to_flesh_obj } from '../js/zap.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { beginObjectBurn } from '../js/light.js';
 import { objectTimers } from '../js/timeout.js';
 import { objectMaterial } from '../js/o_init.js';

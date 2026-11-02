@@ -1,7 +1,8 @@
 // C dothrow.c:toss_up(). Ceiling contact precedes the fall onto the hero;
 // floor effects precede damage from an intact falling object.
 
-import { objectIsHardHelmet, simpleArmorName } from './armor.js';
+import { objectIsHardHelmet, simpleArmorName } from './do_wear.js';
+
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { heroFaceName, heroHeadName } from './body_parts.js';
 import { KILLED_BY, STONING, Upolyd, WT_TO_DMG } from './const.js';
@@ -30,7 +31,8 @@ import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { ceilingName } from './terrain_name.js';
-import { levelHasCeiling } from './terrain_properties.js';
+import { levelHasCeiling } from './dungeon.js';
+
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

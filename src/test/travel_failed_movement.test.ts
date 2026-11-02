@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { continueRun, heroTestMove } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { D_CLOSED, DOOR, ICE, LAVAPOOL, LAVAWALL, PIT, POOL, ROOM, STONE, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import type { GameMap } from '../js/game.js';
 import { game } from '../js/gstate.js';

@@ -4,7 +4,9 @@
 
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { armorBonus, armorSimpleName, armorSlotFor, dragonFormForArmor } from './armor.js';
+import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
+import { dragonFormForArmor } from './polyself.js';
+
 import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName } from './objnam.js';
 import { verbForSubject } from './objnam.js';
 import { learnObjectType } from './o_init.js';

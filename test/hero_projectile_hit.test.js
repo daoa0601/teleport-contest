@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
 import { NO_MINVENT, Upolyd } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';

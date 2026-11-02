@@ -4,7 +4,7 @@ import { floorObjects } from './support/level-state.js';
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_WIS, MONSEEN_INFRAVIS, MONSEEN_NORMAL, NO_MINVENT, W_AMUL, W_ARMS } from '../js/const.js';
 import { speakArtifact } from '../js/artifacts.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';

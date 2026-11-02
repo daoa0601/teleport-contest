@@ -7,7 +7,8 @@ import {
     TIMEOUT, W_ARTI,
 } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import type { GameState } from './game_state.js';
 import type { Stairway } from './map_types.js';
 import type { MessagePublisher } from './pline.js';

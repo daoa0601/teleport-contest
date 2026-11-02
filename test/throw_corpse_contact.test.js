@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { game } from '../js/gstate.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

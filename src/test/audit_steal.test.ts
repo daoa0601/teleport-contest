@@ -3,7 +3,8 @@ import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { continueFoodMeal, doeat } from '../js/eat.js';
 import { rhack } from '../js/cmd.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

@@ -2,8 +2,10 @@
 // target may have changed since the occupation was interrupted.
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import { resetPick } from './lock_context.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { resetPick } from './lock.js';
+
+import { resetBulkTakeoff } from './do_wear.js';
+
 import { resetTrapSetting } from './apply.js';
 
 export function resetOccupations(state: GameState = game): void {

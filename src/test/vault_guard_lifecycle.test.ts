@@ -33,7 +33,8 @@ import { installPunishedHero } from './support/hero-state.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { isLavaAt, isPoolAt } from '../js/terrain_properties.js';
+import { isLavaAt, isPoolAt } from '../js/dbridge.js';
+
 
 async function guardCorridor({ blocked = true } = {}) {
     const level = await freshObjectRoom();

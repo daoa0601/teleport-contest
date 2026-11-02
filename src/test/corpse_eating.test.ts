@@ -2,8 +2,10 @@ import { installPagerInput } from './support/pager-input.js';
 import { touchFoodObject } from '../js/food_lifecycle.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { moveloop_core } from '../js/allmain.js';
 import { applyCannibalPenalty } from '../js/cannibalism.js';
 import { A_INT, M_AP_OBJECT } from '../js/const.js';

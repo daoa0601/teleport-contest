@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { convertQuestLine } from '../js/quest_pager.js';
-import { removeHeroArmor, wearHeroArmor } from '../js/armor.js';
+import { removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
 import { DUST } from '../js/const.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { propertyIsActive } from '../js/properties.js';

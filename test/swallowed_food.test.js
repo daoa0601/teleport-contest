@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { W_AMUL } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { initializePet } from '../js/dog.js';

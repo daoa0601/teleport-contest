@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
-import { findArmorClass, wearHeroArmor } from '../js/armor.js';
+import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { rhack } from '../js/cmd.js';
 import { LEVEL_TELEP, LA_DOWN, LA_UP, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';

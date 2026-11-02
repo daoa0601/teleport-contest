@@ -3,7 +3,7 @@
 import { Upolyd } from './const.js';
 import { reassessStatusFields } from './botl.js';
 import { game } from './gstate.js';
-import { dragonFormForArmor } from './armor.js';
+import { dragonFormForArmor } from './polyself.js';
 import { MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterHasHead, monsterIsBat, monsterIsVampire, monsterSpeciesHatesSilver, monsterSpeciesSticks, validVampireShiftForm, } from './monster_data.js';
 import { AD_BLND, AD_HALU, AD_MAGM, AD_RBRE, AT_EXPL, AT_GAZE, } from './monster_attack_types.js';
 import { grantIntrinsicProperty, refreshMovementProperties, revokeIntrinsicProperty, } from './properties.js';

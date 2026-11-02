@@ -13,7 +13,8 @@ import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok,
 import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 import { zapHeroWithObject } from './hero_self_zap.js';
 import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject } from './floor_object.js';
-import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
+
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -22,11 +23,13 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
-import { resetPick } from './lock_context.js';
+import { resetPick } from './lock.js';
+
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
 import { closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge } from './dbridge.js';
-import { drawbridgeUnderlyingType } from './drawbridge_terrain.js';
+import { drawbridgeUnderlyingType } from './dbridge.js';
+
 import { roomsAt } from './room.js';
 import { setHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { monsterName } from './do_name.js';
@@ -34,7 +37,8 @@ import { possessiveName } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { loseHeroHp } from './hero_damage.js';
 import { commandResultCancelled } from './cmd.js';
-import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
+
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
 import { finishHeroDeath } from './end.js';
@@ -96,9 +100,11 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import type { MonsterHitPointRandom } from './makemon.js';
 import { zapDigWithObject } from './dig.js';
-import { objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './armor.js';
+import { objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
+
 import { impossible } from './diagnostics.js';
-import { changeDoorByMagic } from './door_magic.js';
+import { changeDoorByMagic } from './lock.js';
+
 import { recordMappedOverviewState } from './dungeon.js';
 import { forceDescribeDecor } from './dungeon_feature.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';

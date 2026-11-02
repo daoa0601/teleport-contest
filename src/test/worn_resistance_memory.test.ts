@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory, removeHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory, removeHeroAccessory } from '../js/do_wear.js';
+
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { I_SPECIAL, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from '../js/hero_equipment.js';

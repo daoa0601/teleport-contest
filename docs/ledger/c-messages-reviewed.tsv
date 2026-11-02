@@ -182,9 +182,9 @@ light.c	wiz_light_sources	-------- ----- ------ ----  -------	diagnostic	#lights
 light.c	wiz_light_sources	Mobile light sources: hero @ (	diagnostic	#lightsources wizard dump of light-source bookkeeping; native-introspection output.
 light.c	wiz_light_sources	location range flags  type    id	diagnostic	#lightsources wizard dump header; native-introspection output.
 lock.c	doforce	here, but its lock is already	composed	src/js/lock.ts:doforce; Joins the box description with already and the broken or unlocked state.
-lock.c	lock_action	unlocking the box	composed	src/js/lock_pick.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
-lock.c	lock_action	unlocking the chest	composed	src/js/lock_pick.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
-lock.c	pick_lock	no lock on the drawbridge.	composed	src/js/lock_pick.ts:pickDoorLock; Selects see or feel and lock on the drawbridge for the portcullis.
+lock.c	lock_action	unlocking the box	composed	src/js/lock.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
+lock.c	lock_action	unlocking the chest	composed	src/js/lock.ts:lockAction; Chooses chest or box and drops the un- prefix for a currently unlocked target, as the native actions[] + 2 trick does.
+lock.c	pick_lock	no lock on the drawbridge.	composed	src/js/lock.ts:pickDoorLock; Selects see or feel and lock on the drawbridge for the portcullis.
 mail.c	ckmailstatus	I have some mail for you	out-of-scope	Mail delivery requires host mailbox polling (MAIL, MAILCKFREQ); the browser runtime has no OS mailbox, per docs/c-js-semantics.md Operating-system features.
 mail.c	md_rush	This place's too crowded.  I'm outta here.	out-of-scope	The mail daemon requires host mailbox polling and delivery (MAIL without SIMPLE_MAIL); the browser runtime has no OS mailbox integration.
 makemon.c	clone_mon	has_edog(m2) && has_edog(mon)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.

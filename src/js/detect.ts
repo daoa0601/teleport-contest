@@ -60,7 +60,8 @@ import type { PlayingGameState } from './game_state.js';
 import type { TrapGlyphSource } from './display.js';
 import type { Hero } from './hero_types.js';
 import { propertyIsActive } from './properties.js';
-import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { terrainCoversObjectsAt } from './display.js';
+
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { expelHero } from './hero_expulsion.js';

@@ -30,48 +30,27 @@ import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.j
 import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './hunger.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { game, requirePlayingGame } from './gstate.js';
 import { removeEyewear } from './eyewear.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
-import {
-    adjustLevelAbilities, experienceRankIndex, randomExperience,
-} from './exper.js';
+import { adjustLevelAbilities, experienceRankIndex, randomExperience } from './exper.js';
 import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 
 import { currentAttribute, maximumAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1,
-    MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME,
-    MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor,
-    monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur,
-    monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid,
-    monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall,
-    monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed,
-    validVampireShiftForm,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterBreaksArmor, monsterHasNoHands, monsterHornCount, monsterIsBat, monsterIsCentaur, monsterIsAmorphous, monsterIsSlithy, monsterIsUnsolid, monsterIsMindFlayer, monsterIsUnicorn, monsterIsVampire, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm } from './monster_data.js';
 import { AD_ELEC, AD_FIRE, AT_BREA, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
-import {
-    AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE,
-    GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, OBJECT_NAMES,
-    RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
-} from './object_data.js';
+import { AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { deleteObject } from './shk.js';
-import { cancelDonning, dragonFormForArmor, findArmorClass, removeHeroArmor, simpleArmorName } from './armor.js';
+import { cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName } from './do_wear.js';
+
 import { isFlimsyObject } from './object_properties.js';
-import {
-    adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius,
-} from './light.js';
-import {
-    A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING,
-    M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR,
-    TT_LAVA, TT_PIT, TT_WEB, Upolyd,
-    POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT,
-    W_ACCESSORY, W_ARMOR, W_SADDLE,
-} from './const.js';
+import { adjustObjectLightAfterBlessing as adjustObjectLight, endObjectBurn, objectLightRadius } from './light.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, resolveMonsterClass } from './mondata.js';
@@ -81,17 +60,15 @@ import { setSlipperyHands } from './towel.js';
 import { races } from './roles.js';
 import { finishHeroDeath } from './end.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
-import {
-    clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying,
-    selfTouchPetrifyingWeapons,
-} from './stoning.js';
+import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
 import { changeHeroSex, heroFormSticks, heroHasNoHead, heroPolyGender, setHeroSpecies, heroLikesLava } from './hero_species.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { loseHeroHp } from './hero_damage.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
-import { isBeingTakenOff } from './takeoff_state.js';
+import { isBeingTakenOff } from './do_wear.js';
+
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './punishment.js';
 import { clearHeroTrap, freeHeroFromBuriedBall } from './hero_traps.js';
@@ -100,18 +77,11 @@ import { handleRidingAfterFormChange } from './steed.js';
 import { hideHeroUnder } from './mon.js';
 import { learnEggType } from './invent.js';
 import { heroCanSpinWeb } from './hero_web.js';
-import {
-    expelHero, releaseHeroGrip,
-} from './hero_expulsion.js';
+import { expelHero, releaseHeroGrip } from './hero_expulsion.js';
 import { applyHeroLocationEffects } from './hack.js';
-import {
-    restartAmuletStrangulation, stopStrangulationInImmuneForm,
-} from './hero_strangulation.js';
-import {
-    clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown,
-} from './slime.js';
+import { restartAmuletStrangulation, stopStrangulationInImmuneForm } from './hero_strangulation.js';
+import { clearHeroSliming, heroIsFlaming, heroIsSliming, resetHeroSlimingCountdown } from './slime.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
-
 const M1_NOTAKE = 0x00000800;
 const M1_NOLIMBS = 0x00006000;
 const M1_CLING = 0x00000010;
@@ -1509,4 +1479,16 @@ async function restoreDragonArmor(state = game, publish: MessagePublisher = plin
     armor.owornmask = (armor.owornmask ?? 0) & ~I_SPECIAL;
     armor.wornSlot = 'uarm';
     if (armor.lamplit) await adjustObjectLight(armor, oldLight, state);
+}
+
+// C polyself.c:armor_to_dragon(): scales and scale mail use the same color order.
+export function dragonFormForArmor(object: Pick<GameObject, 'otyp'> | null | undefined) {
+    const type = object?.otyp;
+    if (type === undefined) return null;
+    const firstDragon = MONSTER_NAME.indexOf('gray dragon');
+    if (type >= GRAY_DRAGON_SCALE_MAIL && type <= YELLOW_DRAGON_SCALE_MAIL)
+        return firstDragon + type - GRAY_DRAGON_SCALE_MAIL;
+    if (type >= GRAY_DRAGON_SCALES && type <= YELLOW_DRAGON_SCALES)
+        return firstDragon + type - GRAY_DRAGON_SCALES;
+    return null;
 }

@@ -14,7 +14,7 @@ import { MONSTER_BODY_META } from './monster_data.js';
 import { monsterWearsIronShoes } from './monworn.js';
 import { rn2, rnd } from './rng.js';
 import { beginMonsterPitTrap, finishMonsterPitTrap, finishMonsterTrapDeath, monsterTrapVisibility, seeTrap, } from './trap.js';
-import { monsterInAir } from './terrain_properties.js';
+import { monsterInAir } from './mon.js';
 import { monsterLearnsTrap, monstersSeeTrap } from './mondata.js';
 import { monsterName as canonicalMonsterName } from './do_name.js';
 async function finishMineDeath(monster, event, state, options) {

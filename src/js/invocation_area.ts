@@ -25,7 +25,8 @@ import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { fractureRock } from './rock_breakage.js';
 import { resetHeroTrap } from './terrain_movement.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { deleteTrap } from './trap.js';
 import { vision_note_blocker_change } from './vision.js';
 

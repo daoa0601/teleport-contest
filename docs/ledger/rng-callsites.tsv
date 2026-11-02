@@ -1,5 +1,5 @@
 file	function	callee	arguments	class
-src/js/accessory.ts	applyAmuletOnEffects	rnd	"[""98""]"	constant
+src/js/do_wear.ts	applyAmuletOnEffects	rnd	"[""98""]"	constant
 src/js/alignment.ts	changeHeroAlignmentFromHelmet	rn1	"[""2"", ""3""]"	constant
 src/js/alignment.ts	changeHeroAlignmentFromHelmet	rn2	"[""50""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
@@ -74,10 +74,10 @@ src/js/apply_bell.ts	useBell	rnd	"[""2""]"	constant
 src/js/apply_light.ts	useLamp	d	"[""2"", ""10""]"	constant
 src/js/apply_light.ts	useLamp	rn2	"[""2""]"	constant
 src/js/apply_light.ts	useLamp	rn2	"[""3""]"	constant
-src/js/armor.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
-src/js/armor.ts	erodeWornArmor	rn2	"[""4""]"	constant
-src/js/armor.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
-src/js/armor.ts	someHeroArmor	rn2	"[""4""]"	constant
+src/js/do_wear.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
+src/js/do_wear.ts	erodeWornArmor	rn2	"[""4""]"	constant
+src/js/do_wear.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
+src/js/do_wear.ts	someHeroArmor	rn2	"[""4""]"	constant
 src/js/artifacts.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	guarded
 src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant
 src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant
@@ -290,8 +290,8 @@ src/js/draft_message.ts	formatDraftMessage	random	"[""3""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""2""]"	constant
 src/js/drawbridge_debris.ts	scatterDrawbridgeDebris	rn2	"[""6""]"	constant
-src/js/drawbridge_occupants.ts	entityJumps	rnd	"[""10""]"	constant
-src/js/drawbridge_occupants.ts	entityMissed	rnd	"[""8""]"	constant
+src/js/dbridge.ts	entityJumps	rnd	"[""10""]"	constant
+src/js/dbridge.ts	entityMissed	rnd	"[""8""]"	constant
 src/js/dungeon.ts	branchLevel	rn2	"[""count""]"	unproved
 src/js/dungeon.ts	inducedAlignment	rn2	"[""100""]"	constant
 src/js/dungeon.ts	inducedAlignment	rn2	"[""100""]"	constant
@@ -756,7 +756,7 @@ src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved
 src/js/lock.ts	breakChestLock	rn2	"[""3""]"	constant
 src/js/lock.ts	continueForceLock	rn2	"[""100""]"	constant
 src/js/lock.ts	continueForceLock	rn2	"[""3""]"	constant
-src/js/lock_pick.ts	continuePicking	rn2	"[""100""]"	constant
+src/js/lock.ts	continuePicking	rn2	"[""100""]"	constant
 src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[0])""]"	unproved
 src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[1])""]"	unproved
 src/js/lua/lifecycle.ts	bindingsFor/rn2	rn2	"[""luaInteger(args[0])""]"	unproved
@@ -2391,8 +2391,8 @@ src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""10""]"	constant
 src/js/untrap.ts	rewardMonsterRescue	luckRandom	"[""8""]"	constant
 src/js/untrap.ts	rewardMonsterRescue	random	"[""3""]"	constant
 src/js/vault.ts	maintainVaultResidence	rn2	"[""deaths * deaths""]"	guarded
-src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
-src/js/vault_exit.ts	payVaultGuardOnExit	random	"[""2""]"	constant
+src/js/vault.ts	payVaultGuardOnExit	random	"[""2""]"	constant
+src/js/vault.ts	payVaultGuardOnExit	random	"[""2""]"	constant
 src/js/apply.ts	breakWand	d	"[""1 + wand.spe"", ""6""]"	unproved
 src/js/apply.ts	breakWand	rnd	"[""3""]"	constant
 src/js/apply.ts	breakWand	rnd	"[""damage""]"	unproved

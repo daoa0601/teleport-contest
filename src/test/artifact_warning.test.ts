@@ -23,7 +23,8 @@ import { readObjectName } from '../js/objnam.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import {
     AMULET_OF_LIFE_SAVING,
     CHEST,

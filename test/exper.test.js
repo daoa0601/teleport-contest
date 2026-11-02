@@ -12,7 +12,7 @@ import { races } from '../js/roles.js';
 import { freshGame } from './support/game-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { pushKeys } from '../js/input.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING } from '../js/object_data.js';
 import { heroIsPolymorphed } from '../js/polyself.js';

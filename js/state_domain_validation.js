@@ -1,7 +1,7 @@
 import { arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string, } from './saved_validation.js';
 import { isSavedRecord } from './saved_graph.js';
 import { validSavedCemeteryEntry, validSavedDungeonLocation, validSavedPosition } from './map_validation.js';
-import { TAKEOFF_ORDER } from './takeoff_state.js';
+import { TAKEOFF_ORDER } from './do_wear.js';
 export function validSavedGameContext(value, entities) {
     return closedFieldsMatch(value, {
         move: integer,

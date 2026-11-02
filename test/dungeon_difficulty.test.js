@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { level_difficulty } from '../js/dungeon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { RIN_AGGRAVATE_MONSTER } from '../js/object_data.js';

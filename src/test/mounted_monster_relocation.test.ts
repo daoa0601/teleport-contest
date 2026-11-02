@@ -2,7 +2,8 @@ import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { P_BASIC, P_RIDING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';

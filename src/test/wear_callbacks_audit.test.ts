@@ -4,7 +4,8 @@ import { moveloop_core } from '../js/allmain.js';
 import { currentAttribute } from '../js/attrib.js';
 import { rhack } from '../js/cmd.js';
 import { A_DEX, A_INT, A_WIS } from '../js/const.js';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
+
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';

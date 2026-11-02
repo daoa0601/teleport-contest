@@ -18,7 +18,8 @@ import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
 import type { AfterMove, CannedCommand, MovementAttempt, RepeatCommandEntry, RunState } from './cmd.js';
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
-import type { TakeoffContext } from './takeoff_state.js';
+import type { TakeoffContext } from './do_wear.js';
+
 import type { Artifact, ArtifactOrigin } from './artifacts.js';
 import type { LuaVariables } from './lua/runtime.js';
 import type { LuaAlignmentName } from './lua/lifecycle.js';

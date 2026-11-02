@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, NEED_WEAPON, NO_MINVENT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { monsterWieldedWeapon } from '../js/weapon.js';

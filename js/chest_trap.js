@@ -6,7 +6,7 @@ import { heroHandName } from './body_parts.js';
 import { heroSpecies } from './hero_species.js';
 import { nomul } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
-import { heroHasFreeAction } from './armor.js';
+import { heroHasFreeAction } from './do_wear.js';
 import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
 import { currency } from './currency.js';
 import { bot } from './botl.js';

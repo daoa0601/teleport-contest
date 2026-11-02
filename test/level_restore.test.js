@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { removeHeroAccessory, wearHeroAccessory } from '../js/accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { MM_NOGRP, NON_PM, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { remove_object } from '../js/floor_object.js';

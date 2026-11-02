@@ -16,7 +16,8 @@ import {
 } from './const.js';
 import { newsym } from './display.js';
 import { surfaceName } from './terrain_name.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
+
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
 import {

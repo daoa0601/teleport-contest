@@ -1,7 +1,7 @@
 // C hack.c:spoteffects(): a concealed monster shares the arrival square
 // until its surprise attack is resolved, then moves beside the hero.
 import { heroHasCarriedArtifactFlag } from './artifacts.js';
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
 import { RLOC_NOMSG } from './const.js';
 import { canSenseMonster } from './display.js';
 import { damageHeroFromMonster } from './hero_damage.js';

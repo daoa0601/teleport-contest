@@ -3,7 +3,7 @@
 // timeout.c sickness_dialogue(), vomiting_dialogue(); eat.c vomit().
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
-import { isIceAt } from './terrain_properties.js';
+import { isIceAt } from './dbridge.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
 import { currentMulti } from './cmd.js';

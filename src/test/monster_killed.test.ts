@@ -1,7 +1,8 @@
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 
 import { MM_FEMALE, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { canSpotMonster, monsterKillLineVisible } from '../js/display.js';

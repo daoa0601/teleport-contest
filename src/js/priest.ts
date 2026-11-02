@@ -39,7 +39,8 @@ import { beginMonsterHeroAttack } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { checkSpecialRoom, shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { heroIsDisplaced } from './armor.js';
+import { heroIsDisplaced } from './do_wear.js';
+
 import { heroIsInvisible } from './hero_invisibility.js';
 import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterTypeName } from './monster_data.js';

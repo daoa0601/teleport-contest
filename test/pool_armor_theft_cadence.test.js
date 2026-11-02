@@ -5,7 +5,7 @@ import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { moveloop_core } from '../js/allmain.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { LEATHER_ARMOR, TIN_WHISTLE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

@@ -4,7 +4,7 @@ import { requireFixtureGame } from './game-state.js';
 import type { FreshGameOptions } from './game-state.js';
 import type { RoleKey } from '../../js/roles.js';
 import { ROOM } from '../../js/const.js';
-import { findArmorClass } from '../../js/armor.js';
+import { findArmorClass } from '../../js/do_wear.js';
 import { GameMap } from '../../js/game.js';
 import { GameDisplay } from '../../js/game_display.js';
 import { game } from '../../js/gstate.js';

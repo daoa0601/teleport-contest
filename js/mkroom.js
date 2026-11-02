@@ -5,7 +5,7 @@
 // shrine_pos(); plus the coordinate selectors somexy()/somexyspace() and
 // mklev.c occupied() that share this file's room table.
 import { game, requireGameLevel } from './gstate.js';
-import { isPoolOrLavaAt } from './terrain_properties.js';
+import { isPoolOrLavaAt } from './dbridge.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { AIR, ALTAR, AM_SHRINE, ANTHOLE, ANY_SHOP, ANY_TYPE, BARRACKS, BEEHIVE, BLCORNER, BRCORNER, CLOUD, COCKNEST, CORR, COURT, CROSSWALL, LEPREHALL, DBWALL, DOOR, DRAWBRIDGE_DOWN, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, ICE, IRONBARS, IS_DOOR, IS_FURNITURE, IS_ROOM, IS_WALL, LADDER, LAVAPOOL, LAVAWALL, MM_ASLEEP, MM_NOGRP, MORGUE, OROOM, POOL, ROOM, ROOMOFFSET, SHOPBASE, SDOOR, SINK, SPACE_POS, STAIRS, STONE, SWAMP, TEMPLE, TDWALL, THRONE, TLCORNER, TLWALL, TRCORNER, TREE, TRWALL, TUWALL, VWALL, WATER, ZOO, isok, Align2amask, In_endgame, A_NONE, G_GONE, } from './const.js';

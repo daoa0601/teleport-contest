@@ -1,7 +1,8 @@
 import { objectTypeKnown } from '../js/shk.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { IRONBARS, M_SEEN_ELEC, M_SEEN_REFL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { AMULET_OF_REFLECTION } from '../js/object_data.js';

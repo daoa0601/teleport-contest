@@ -12,7 +12,7 @@ import { dopray } from '../js/pray.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { statusConditionBit } from '../js/botl.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';

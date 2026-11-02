@@ -21,7 +21,7 @@ import { addInventoryItem } from './u_init.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import { isWetTowel } from './object_properties.js';
 import { stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
-import { resetBulkTakeoff } from './takeoff_state.js';
+import { resetBulkTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { promptYesNoQuit } from './query.js';
@@ -48,7 +48,7 @@ import { recalculateTelepathyRange } from './worn.js';
 import { makeHallucinated } from './hero_mental_status.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { heroIsBlind } from './senses.js';
-import { cancelSlotTakeoff } from './takeoff_state.js';
+import { cancelSlotTakeoff } from './do_wear.js';
 const WEAPON_CLASS = 2;
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();

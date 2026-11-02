@@ -15,7 +15,7 @@ import { displayColorName, map_background, newsym, newsym_force, see_monsters, s
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
-import { heroHasDrainResistance } from './armor.js';
+import { heroHasDrainResistance } from './do_wear.js';
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';

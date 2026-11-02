@@ -1,6 +1,8 @@
 // C do_wear.c:doddoremarm(), select_off(), take_off(), do_takeoff().
-import { removeHeroAccessory } from './accessory.js';
-import { armorOffMessage, armorSimpleName, removeHeroArmor } from './armor.js';
+import { removeHeroAccessory } from './do_wear.js';
+
+import { armorOffMessage, armorSimpleName, removeHeroArmor } from './do_wear.js';
+
 import { heroFingerName, heroFootName, heroHandName } from './body_parts.js';
 import {
     TT_BEARTRAP, TT_INFLOOR, P_LONG_SWORD, P_SHORT_SWORD,
@@ -25,8 +27,10 @@ import { paranoidQuery } from './query.js';
 import { touchPetrifies } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
-import { TAKEOFF_ORDER, resetBulkTakeoff, takeoffSlotObject } from './takeoff_state.js';
-import type { TakeoffSlot } from './takeoff_state.js';
+import { TAKEOFF_ORDER, resetBulkTakeoff, takeoffSlotObject } from './do_wear.js';
+
+import type { TakeoffSlot } from './do_wear.js';
+
 import { selectBulkTakeoff } from './takeoff_menu.js';
 
 export async function takeOffAll(): Promise<void> {

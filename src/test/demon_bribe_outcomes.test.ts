@@ -9,7 +9,8 @@ import type { Monster } from '../js/monster_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
-import { carriedGold } from '../js/gold.js';
+import { carriedGold } from '../js/vault.js';
+
 import { AMULET_OF_YENDOR, GOLD_PIECE, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

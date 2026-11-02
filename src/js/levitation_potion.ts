@@ -19,12 +19,14 @@ import { floatHeroUp } from './terrain_movement.js';
 import { rnd, rn1 } from './rng.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { travelStairs } from './cmd.js';
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
+
 import { loseHeroHp } from './hero_damage.js';
 
 import { ceilingName } from './terrain_name.js';
 import { heroHeadName } from './body_parts.js';
-import { levelHasCeiling } from './terrain_properties.js';
+import { levelHasCeiling } from './dungeon.js';
+
 
 // C potion.c:itimeout()/itimeout_incr(): the timeout caps at TIMEOUT.
 function increaseLevitationTimeout(hero: Hero, amount: number): void {

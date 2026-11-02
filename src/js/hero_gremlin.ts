@@ -1,4 +1,5 @@
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 // The #monster water-splitting ability for a hero in gremlin form.
 // C ref: cmd.c domonability().
 

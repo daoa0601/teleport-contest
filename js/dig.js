@@ -3,7 +3,7 @@
 // digging_watch/buried_object/hole (pure move, no behavior change).
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { heroFootName, heroHeadName, monsterStomachName } from './body_parts.js';
@@ -69,7 +69,9 @@ import { monsterHasMapPosition } from './steed.js';
 import { bringLeashedFollowers, randomMonsterRelocation } from './teleport.js';
 import { resetHeroTrap, switchHeroTerrain } from './terrain_movement.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isMoatAt, isPoolAt, levelHasCeiling, monsterFliesOrFloats, } from './terrain_properties.js';
+import { isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
+import { monsterFliesOrFloats } from './mon.js';
 import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { stopLevelTimer } from './timeout.js';

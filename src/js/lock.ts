@@ -1,28 +1,26 @@
+// lock.js — Doors, containers, and their locks.
+// C refs: lock.c — picking_lock()/picking_at()/lock_action(), picklock(),
+// pick_lock(), autokey(), breakchestlock(), forcelock(), doforce(),
+// reset_pick()/maybe_reset_pick(), u_have_forceable_weapon(),
+// stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
+// boxlock(), doorlock().
 import { currency } from './currency.js';
-// Lock forcing.
-// C ref: lock.c doforce(), forcelock(), and breakchestlock().
-import { autokey, autoUnlockFlags, continuePicking, pickLock } from './lock_pick.js';
-
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
-import {
-    A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE,
-    AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED,
-    D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
-    SHOPBASE, SHOP_DOOR_COST, TT_PIT, isok,
-} from './const.js';
+import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, isok, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
 import { commandResultCancelled } from './cmd.js';
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { BAG_OF_TRICKS } from './object_data.js';
+import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
+import { BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT } from './object_data.js';
 import { doloot } from './pickup.js';
-import type { MapLocation } from './map_types.js';
+import type { MapLocation, Position } from './map_types.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { feel_location, feel_newsym, newsym } from './display.js';
+import { feel_location, feel_newsym, newsym, canSeeMonster, displayLiquidName, glyphAt, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection, readDirectionKey } from './tty_prompts.js';
-import { vision_note_blocker_change } from './vision.js';
+import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt } from './dbridge.js';
-import { doorObstructed } from './door_magic.js';
 import { recordMappedOverviewState } from './dungeon.js';
-import { stumbleOnDoorMimic } from './mimic.js';
+import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
+
+
 import { triggerBoobyTrap } from './booby_trap.js';
 import { roomsAt } from './room.js';
 import { heroPassesWalls } from './hero_species.js';
@@ -31,32 +29,41 @@ import { isContainer } from './container.js';
 import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { placeObject, stack_object } from './floor_object.js';
-import type { GameState } from './game_state.js';
+import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { ForceLockOccupation } from './occupation_types.js';
-import { consumeInventoryItem, delobj } from './invent.js';
+import type { ForceLockOccupation, PickLockOccupation } from './occupation_types.js';
+import { consumeInventoryItem, delobj, inventoryItemDescription } from './invent.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import {
-    CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE,
-    OBJECT_SUBTYPE,
-} from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle } from './objnam.js';
-
-import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName } from './objnam.js';
-import { inventoryItemDescription } from './invent.js';
+import { definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { surfaceName } from './terrain_name.js';
-import { resetPick } from './lock_context.js';
 import { objectResistsDestruction } from './zap.js';
-import { isWeaponTool } from './object_properties.js';
-import { CORPSE, ICE_BOX } from './object_data.js';
+import { isWeaponTool, isBlade } from './object_properties.js';
 import { startCorpseTimeout, unlinkObject } from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
-import { promptYesNoQuit } from './query.js';
-import { heroIsBlind } from './senses.js';
+import { promptYesNoQuit, promptYesNo } from './query.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
-import { isBlade } from './object_properties.js';
+import { artifactById, touchArtifactByHero } from './artifacts.js';
+import { heroFingerName } from './body_parts.js';
+import { triggerChestTrap } from './chest_trap.js';
+import { monsterAtPosition } from './steed.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { monsterName } from './do_name.js';
+import { maybeAbsorbItem } from './steal.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
+import { untrap, untrapAbilityProblem } from './untrap.js';
+import { possessiveName } from './hacklib.js';
+import { heroIsUnaware } from './hero_sleep.js';
+import { formatHeardMessage } from './hero_speech.js';
+import { triggerMonsterDoorTrap } from './monmove.js';
+import { stopHeroOccupation } from './occupation.js';
+import { impossible } from './diagnostics.js';
+// Lock forcing.
+// C ref: lock.c doforce(), forcelock(), and breakchestlock().
 
 const WEAPON_CLASS = 2;
 const TOOL_CLASS = 6;
@@ -610,3 +617,526 @@ export function pickingAt(state: GameState, x: number, y: number): boolean {
         && occupation.x === x && occupation.y === y;
 }
 
+// Native lock.c keeps progress separately from the running occupation.
+export function resetPick(state: GameState = game): void {
+    state._lockAttempt = null;
+}
+
+export function maybeResetPick(container: GameObject | null, state: GameState = game): void {
+    const attempt = state._lockAttempt;
+    if (container ? attempt?.container === container : attempt?.container?.where !== 'inventory')
+        resetPick(state);
+}
+
+// Applying keys, picks and cards. C lock.c:pick_lock(), picklock(), autokey().
+export function autoUnlockFlags(state: GameState = game): number {
+    const setting = state.flags.autounlock;
+    if (setting === undefined || setting === true) return AUTOUNLOCK_APPLY_KEY;
+    if (typeof setting === 'number') return setting;
+    if (!setting) return 0;
+    const choices = setting.split(setting.includes('+') ? '+' : /\s+/);
+    const unlockTypes = [
+        { name: 'untrap', flag: AUTOUNLOCK_UNTRAP },
+        { name: 'apply-key', flag: AUTOUNLOCK_APPLY_KEY },
+        { name: 'kick', flag: AUTOUNLOCK_KICK },
+        { name: 'force', flag: AUTOUNLOCK_FORCE },
+    ];
+    let flags = 0;
+    for (const value of choices) {
+        const choice = value.trim().toLowerCase();
+        if (!choice) continue;
+        if ('none'.startsWith(choice)) return 0;
+        const compact = choice.replace(/[ _-]/g, '');
+        for (const type of unlockTypes) {
+            if (type.name.startsWith(choice) || type.name.replace('-', '') === compact) {
+                flags |= type.flag;
+                break;
+            }
+        }
+    }
+    return flags;
+}
+
+export function isHeroMagicKey(tool: GameObject | null, state: GameState = game): boolean {
+    if (!tool) return false;
+    return artifactById(tool.oartifact, state)?.name === 'The Master Key of Thievery'
+        && (state.urole?.key === 'rogue' ? !tool.cursed : !!tool.blessed);
+}
+
+export function autokey(opening: boolean, state: GameState = game): GameObject | null {
+    let key: GameObject | null = null, pick: GameObject | null = null, card: GameObject | null = null;
+    let foreignKey: GameObject | null = null, foreignPick: GameObject | null = null, foreignCard: GameObject | null = null;
+    for (const tool of state.inventory) {
+        const artifact = artifactById(tool.oartifact, state);
+        const foreign = artifact?.questArtifact && artifact.name.toLowerCase() !== state.urole?.artifactName.toLowerCase();
+        if (foreign) {
+            if (tool.otyp === SKELETON_KEY && !foreignKey) foreignKey = tool;
+            else if (tool.otyp === LOCK_PICK && !foreignPick) foreignPick = tool;
+            else if (tool.otyp === CREDIT_CARD && !foreignCard) foreignCard = tool;
+        } else {
+            if (tool.otyp === SKELETON_KEY && (!key || isHeroMagicKey(tool, state))) key = tool;
+            else if (tool.otyp === LOCK_PICK && !pick) pick = tool;
+            else if (tool.otyp === CREDIT_CARD && !card) card = tool;
+        }
+    }
+    if (!opening) card = foreignCard = null;
+    if (!key && !pick && !card) key = foreignKey;
+    if (!pick && !card) pick = foreignPick;
+    if (!card) card = foreignCard;
+    return key || pick || card;
+}
+
+export function lockToolName(tool: GameObject, state: GameState = game): string {
+    observeObjectForNaming(tool);
+    return ownedObjectName(tool, state, { capitalized: false });
+}
+
+// True includes the native "learned something" result, which takes a turn.
+export async function pickLock(tool: GameObject | null, {
+    state = game, target = null, container = null,
+}: { state?: GameState; target?: Position | null; container?: GameObject | null } = {}): Promise<boolean> {
+    requirePlayingGame(state);
+    const previous = state._lockAttempt;
+    // Native uses picktyp 0 for both a missing tool and blunt forcing.
+    const samePickType = previous?.key === 'pick-lock'
+        ? previous.tool?.otyp === tool?.otyp
+        : previous?.key === 'force-lock' && !previous.picktyp && !tool;
+    if (previous?.usedtime && samePickType) {
+        if (heroHasNoHands(state)) {
+            const noun = tool?.otyp === LOCK_PICK ? 'pick' : tool?.otyp === CREDIT_CARD ? 'card' : 'key';
+            await plineWithContinuation(`Unfortunately, you can no longer hold the ${noun}.`);
+            resetPick(state);
+        } else if (state.u.uswallow || previous.container && !heroCanReachFloor(state, { checkPit: true })) {
+            await plineWithContinuation('Unfortunately, you can no longer reach the lock.');
+            resetPick(state);
+        } else {
+            const attempt: PickLockOccupation = previous.key === 'pick-lock' ? previous : {
+                key: 'pick-lock', text: '', remaining: 51, tool,
+                container: previous.container,
+                x: previous.container?.ox ?? state.u.ux,
+                y: previous.container?.oy ?? state.u.uy,
+                chance: previous.chance, usedtime: previous.usedtime,
+            };
+            attempt.text = lockAction(attempt);
+            attempt.magicKey = isHeroMagicKey(tool, state);
+            await plineWithContinuation(`You resume your attempt at ${attempt.text}.`);
+            state._lockAttempt = state._occupation = attempt;
+        }
+        return true;
+    }
+    if (heroHasNoHands(state)) {
+        await plineWithContinuation(`You can't hold ${tool ? await inventoryItemDescription(tool) : 'that'} -- you have no hands!`);
+        return false;
+    }
+    if (state.u.uswallow) {
+        await plineWithContinuation(`You can't ${tool?.otyp === CREDIT_CARD ? '' : 'lock or '}unlock ${state.u.ustuck ? monsterName(state.u.ustuck) : 'the monster'}.`);
+        return false;
+    }
+    const automatic = target !== null || container !== null;
+    let position = target;
+    if (!position) {
+        const direction = await promptDirection();
+        if (!direction) {
+            await plineWithContinuation('Never mind.');
+            return false;
+        }
+        position = { x: state.u.ux + direction.dx, y: state.u.uy + direction.dy };
+        if (!isok(position.x, position.y)) {
+            await plineWithContinuation('Invalid location!');
+            return false;
+        }
+    }
+    const { x, y } = position;
+    if (x === state.u.ux && y === state.u.uy)
+        return pickBoxLock(tool, container, automatic, state);
+    return pickDoorLock(tool, x, y, automatic, state);
+}
+
+async function pickBoxLock(tool: GameObject | null, container: GameObject | null, automatic: boolean, state: GameState): Promise<boolean> {
+    const { ux: x, uy: y } = state.u;
+    if ((state.u.dz ?? 0) < 0 && !automatic) {
+        await plineWithContinuation(`There isn't any sort of lock up ${state.u.levitating || state.levitating ? 'here' : 'there'}.`);
+        return true;
+    }
+    if (isLavaAt(x, y, state)) {
+        await plineWithContinuation(`Doing that would probably melt ${tool ? lockToolName(tool, state) : 'your tool'}.`);
+        return true;
+    }
+    if (isPoolAt(x, y, state) && !(state.underwater || state.u.uinwater)) {
+        await plineWithContinuation(`The ${displayLiquidName('water', state)} has no lock.`);
+        return true;
+    }
+    const boxes = (state.level?.objects[x]?.[y] ?? []).filter(box =>
+        (box.otyp === CHEST || box.otyp === LARGE_BOX) && (!automatic || box === container));
+    for (const box of boxes) {
+        if (!heroCanReachFloor(state, { checkPit: true })) {
+            await plineWithContinuation(`You can't reach ${definiteName(objectName(box), state)} from up here.`);
+            return true;
+        }
+        const flags = autoUnlockFlags(state);
+        if (automatic && flags & AUTOUNLOCK_UNTRAP && !untrapAbilityProblem(state, { checkFloor: true })) {
+            const answer = box.tknown ? box.otrapped ? 'y' : 'n'
+                : await promptYesNoQuit(`Check ${ownedObjectName(box, state, { capitalized: false })} for a trap?`);
+            if (answer === 'q') return false;
+            if (answer === 'y') {
+                await untrap({ state, container: box });
+                return true;
+            }
+        }
+        if (automatic && flags & AUTOUNLOCK_APPLY_KEY) {
+            if (!tool || await promptYesNoQuit(`Unlock it with ${lockToolName(tool, state)}?`) !== 'y') return false;
+        } else {
+            const verb = box.obroken ? 'fix its lock' : !box.olocked ? 'lock it'
+                : tool?.otyp === LOCK_PICK ? 'pick its lock' : 'unlock it';
+            observeObjectForNaming(box, { state });
+            const description = await inventoryItemDescription(box);
+            box.lknown = true;
+            const answer = await promptYesNoQuit(`There is ${description} here; ${verb}?`);
+            if (answer === 'q') return false;
+            if (answer === 'n') continue;
+        }
+        if (box.obroken) {
+            await plineWithContinuation(`You can't fix its broken lock with ${tool ? simpleObjectNameWithArticle(tool, state) : 'that'}.`);
+            return true;
+        }
+        if (tool?.otyp === CREDIT_CARD && !box.olocked) {
+            await plineWithContinuation(`You can't do that with a ${simpleObjectTypeName(tool.otyp, state)}.`);
+            return true;
+        }
+        if (automatic && tool) {
+            const touch = await touchArtifactByHero(tool, artifactById(tool.oartifact, state), { state });
+            if (!touch.allowed || touch.died) return true;
+        }
+        startPicking(tool, { container: box }, state);
+        return true;
+    }
+    if (!boxes.length) await plineWithContinuation("There doesn't seem to be any sort of lock here.");
+    return true;
+}
+
+async function pickDoorLock(tool: GameObject | null, x: number, y: number, automatic: boolean, state: GameState): Promise<boolean> {
+    requirePlayingGame(state);
+    if (state.u.utrap && state.u.utraptype === TT_PIT) {
+        await plineWithContinuation("You can't reach over the edge of the pit.");
+        return false;
+    }
+    const door = state.level.requireAt(x, y);
+    const monster = monsterAtPosition(state.level, x, y);
+    if (monster && canSeeMonster(monster) && M_AP_TYPE(monster) !== M_AP_FURNITURE && M_AP_TYPE(monster) !== M_AP_OBJECT) {
+        await plineWithContinuation(tool?.otyp === CREDIT_CARD && (monster.isshk || monster.mnum === MONSTER_NAME.indexOf('Oracle'))
+            ? '"No checks, no credit, no problem."'
+            : `I don't think ${monsterName(monster)} would appreciate that.`);
+        return true;
+    }
+    if (hasDoorAppearance(monster)) {
+        await stumbleOntoMimic(monster, state);
+        if (tool) await maybeAbsorbItem(monster, tool, state);
+        return true;
+    }
+    if (door.typ !== DOOR) {
+        const previousGlyph = glyphAt(x, y)?.glyph;
+        recordMappedOverviewState();
+        const previousTerrain = door.lastseentyp;
+        await feel_location(x, y);
+        const learned = glyphAt(x, y)?.glyph !== previousGlyph || door.lastseentyp !== previousTerrain;
+        const portcullis = door.typ === DBWALL && findDrawbridgeAt(x, y, state) !== null;
+        await plineWithContinuation(`You ${heroIsBlind(state) ? 'feel' : 'see'} no ${portcullis ? 'lock on the drawbridge' : 'door there'}.`);
+        return learned;
+    }
+    if (door.doormask === D_NODOOR || door.doormask === D_ISOPEN || door.doormask === D_BROKEN) {
+        await plineWithContinuation(door.doormask === D_NODOOR ? 'This doorway has no door.'
+            : door.doormask === D_ISOPEN ? 'You cannot lock an open door.' : 'This door is broken.');
+        return true;
+    }
+    if (autoUnlockFlags(state) & AUTOUNLOCK_UNTRAP && !untrapAbilityProblem(state)) {
+        const answer = await promptYesNoQuit('Check this door for a trap?');
+        if (answer === 'q') return false;
+        if (answer === 'y') {
+            await untrap({ state, door: { x, y } });
+            return true;
+        }
+    }
+    if (tool?.otyp === CREDIT_CARD && !(door.doormask & D_LOCKED)) {
+        await plineWithContinuation("You can't lock a door with a credit card.");
+        return true;
+    }
+    const action = door.doormask & D_LOCKED ? 'Unlock' : 'Lock';
+    const answer = await promptYesNoQuit(`${action} it${automatic && tool ? ` with ${lockToolName(tool, state)}` : ''}?`);
+    if (answer !== 'y' || !tool) return false;
+    if (automatic) {
+        const touch = await touchArtifactByHero(tool, artifactById(tool.oartifact, state), { state });
+        if (!touch.allowed || touch.died) return true;
+    }
+    startPicking(tool, { door, x, y }, state);
+    return true;
+}
+
+function startPicking(tool: GameObject | null, target: Pick<PickLockOccupation, 'door' | 'container'> & Partial<Position>, state: GameState): void {
+    const attempt: PickLockOccupation = {
+        key: 'pick-lock', text: '', remaining: 51, usedtime: 0, tool,
+        x: target.x ?? state.u.ux, y: target.y ?? state.u.uy,
+        ...target, chance: lockPickChance(tool, target.container, state), magicKey: isHeroMagicKey(tool, state),
+    };
+    attempt.text = lockAction(attempt);
+    state._lockAttempt = state._occupation = attempt;
+}
+
+export async function continuePicking(occupation: PickLockOccupation, state: GameState = game): Promise<boolean> {
+    requirePlayingGame(state);
+    const box = occupation.container;
+    const door = occupation.door;
+    if (box) {
+        if (box.where !== 'floor' || box.ox !== state.u.ux || box.oy !== state.u.uy) {
+            occupation.usedtime = 0;
+            state._occupation = null;
+            return false;
+        }
+    } else if (door) {
+        if (state.level.at(state.u.ux + (state.u.dx ?? 0), state.u.uy + (state.u.dy ?? 0)) !== door) {
+            occupation.usedtime = 0;
+            state._occupation = null;
+            return false;
+        }
+        if (door.doormask === D_NODOOR || door.doormask === D_ISOPEN || door.doormask === D_BROKEN) {
+            await plineWithContinuation(door.doormask === D_NODOOR ? 'This doorway has no door.'
+                : door.doormask === D_ISOPEN ? 'You cannot lock an open door.' : 'This door is broken.');
+            occupation.usedtime = 0;
+            state._occupation = null;
+            return false;
+        }
+    } else {
+        // A declined #force drops the box target of an interrupted pick;
+        // native picklock() then matches no door against the hero's
+        // direction tile and silently stops.
+        occupation.usedtime = 0;
+        state._occupation = null;
+        return false;
+    }
+    const usedtime = occupation.usedtime++;
+    const action = lockAction(occupation);
+    if (usedtime >= 50 || heroHasNoHands(state)) {
+        await plineWithContinuation(`You give up your attempt at ${action}.`);
+        await exerciseAttribute(A_DEX, true, state);
+    } else if (rn2(100) >= occupation.chance) return true;
+    else if ((box?.otrapped || door && door.doormask & D_TRAPPED) && occupation.magicKey) {
+        occupation.chance += 20;
+        if (box) {
+            if (!box.tknown) await plineWithContinuation('You find a trap!');
+            box.tknown = true;
+        }
+        if (await promptYesNo('Do you want to try to disarm it?') === 'y') {
+            const locked = door ? !!(door.doormask & D_LOCKED) : !!box?.olocked;
+            if (door) door.doormask &= ~D_TRAPPED;
+            else if (box) { box.otrapped = false; box.tknown = false; }
+            await plineWithContinuation(`You succeed in disarming the trap.  The ${door ? 'door' : box?.otyp === CHEST ? 'chest' : 'box'} is still ${locked ? '' : 'un'}locked.`);
+            await exerciseAttribute(A_WIS, true, state);
+        } else {
+            await plineWithContinuation(`You stop ${action}.`);
+            await exerciseAttribute(A_WIS, false, state);
+        }
+    } else {
+        await plineWithContinuation(`You succeed in ${action}.`);
+        if (door) {
+            if (door.doormask & D_TRAPPED) {
+                if (await triggerBoobyTrap('door', { bodypart: true, state })) return false;
+                door.doormask = D_NODOOR;
+                vision_note_blocker_change(occupation.x, occupation.y);
+                if (roomsAt(state.level, occupation.x, occupation.y, SHOPBASE).length)
+                    addShopDamage(occupation.x, occupation.y, SHOP_DOOR_COST, state);
+                await newsym(occupation.x, occupation.y);
+            } else door.doormask = door.doormask & D_LOCKED ? D_CLOSED : D_LOCKED;
+        } else if (box) {
+            box.olocked = !box.olocked;
+            box.lknown = true;
+            if (box.otrapped) {
+                const trap = await triggerChestTrap(box, { state, bodyPart: heroFingerName(state) });
+                if (trap?.died) return false;
+            }
+        }
+        await exerciseAttribute(A_DEX, true, state);
+    }
+    occupation.usedtime = 0;
+    state._occupation = null;
+    return false;
+}
+
+function lockAction(attempt: PickLockOccupation): string {
+    if (attempt.door && !(attempt.door.doormask & D_LOCKED)) return 'locking the door';
+    if (attempt.container && !attempt.container.olocked)
+        return `locking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
+    if (attempt.tool?.otyp === LOCK_PICK || attempt.tool?.otyp === CREDIT_CARD) return 'picking the lock';
+    if (attempt.door) return 'unlocking the door';
+    if (attempt.container)
+        return `unlocking the ${attempt.container.otyp === CHEST ? 'chest' : 'box'}`;
+    // A target-less leftover resumes under the generic picking label.
+    return 'picking the lock';
+}
+
+function lockPickChance(tool: GameObject | null, box: GameObject | undefined, state: GameState): number {
+    if (!tool) return 0;
+    const dexterity = currentAttribute(A_DEX, state);
+    const rogue = state.urole?.key === 'rogue';
+    let chance;
+    switch (tool.otyp) {
+    case CREDIT_CARD:
+        chance = (box ? dexterity : 2 * dexterity) + (rogue ? 20 : 0);
+        break;
+    case LOCK_PICK:
+        chance = (box ? 4 : 3) * dexterity + (rogue ? (box ? 25 : 30) : 0);
+        break;
+    default:
+        chance = (box ? 75 : 70) + dexterity;
+        break;
+    }
+    if (box?.cursed) chance = Math.trunc(chance / 2);
+    return chance;
+}
+
+// C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
+// shop damage, drawbridge effects, and the decision to target a door.
+
+const WAND_CLASS = 11;
+
+export async function changeDoorByMagic(source: GameObject, x: number, y: number, { state = game }: { state?: GameState } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const door = state.level.at(x, y);
+    if (!door || ![DOOR, SDOOR].includes(door.typ)) return false;
+    const opening = [WAN_OPENING, SPE_KNOCK].includes(source.otyp);
+    const locking = [WAN_LOCKING, SPE_WIZARD_LOCK].includes(source.otyp);
+    const striking = [WAN_STRIKING, SPE_FORCE_BOLT].includes(source.otyp);
+    if (door.typ === SDOOR) {
+        if (!opening && !striking) return false;
+        // Magic exposes a closed door; it does not preserve a secret lock.
+        door.typ = DOOR;
+        door.doormask = D_CLOSED | (door.doormask & D_TRAPPED);
+        await newsym(x, y);
+        if (cansee(x, y)) await plineWithContinuation('A door appears in the wall!');
+        if (opening) return true;
+    }
+    let changed = true, message = null, loudness = 0;
+    if (locking) {
+        const quietly = source.oclass === WAND_CLASS && !source.dknown;
+        if (Is_rogue_level(state.u.uz)) {
+            const visible = cansee(x, y);
+            if (visible) await plineWithContinuation('A cloud of dust springs up in the older, more primitive doorway.');
+            else await publishHeard('a swoosh.', state);
+            if (await doorObstructed(x, y, quietly, state)) {
+                if (visible) await plineWithContinuation('The cloud quickly dissipates.');
+                return false;
+            }
+            door.typ = SDOOR;
+            door.doormask = D_NODOOR;
+            vision_note_blocker_change(x, y);
+            if (visible) await plineWithContinuation('The doorway vanishes!');
+            await newsym(x, y);
+            return true;
+        }
+        if (await doorObstructed(x, y, quietly, state)) return false;
+        if (state.level.traps.some(trap => trap.tx === x && trap.ty === y)) {
+            await plineWithContinuation('A cloud of dust springs up in the doorway, but quickly dissipates.');
+            return false;
+        }
+        switch (door.doormask & ~D_TRAPPED) {
+        case D_CLOSED: message = 'The door locks!'; break;
+        case D_ISOPEN: message = 'The door swings shut, and locks!'; break;
+        case D_BROKEN: message = 'The broken door reassembles and locks!'; break;
+        case D_NODOOR: message = 'A cloud of dust springs up and assembles itself into a door!'; break;
+        default: changed = false; break;
+        }
+        door.doormask = D_LOCKED | (door.doormask & D_TRAPPED);
+        vision_note_blocker_change(x, y);
+        await newsym(x, y);
+    } else if (opening) {
+        if (door.doormask & D_LOCKED) {
+            message = 'The door unlocks!';
+            door.doormask = D_CLOSED | (door.doormask & D_TRAPPED);
+        } else changed = false;
+    } else if (striking) {
+        if (!(door.doormask & (D_LOCKED | D_CLOSED))) changed = false;
+        else if (door.doormask & D_TRAPPED) {
+            const occupant = monsterAtPosition(state.level, x, y);
+            const saw = occupant ? canSeeMonster(occupant) : cansee(x, y);
+            door.doormask = D_NODOOR;
+            vision_note_blocker_change(x, y);
+            await newsym(x, y);
+            const sees = occupant ? canSeeMonster(occupant) : cansee(x, y);
+            if (occupant) await triggerMonsterDoorTrap(occupant, saw || sees, { state });
+            else {
+                loudness = 40;
+                if (state.flags.verbose) {
+                    if ((saw || sees) && !heroIsUnaware(state))
+                        await plineWithContinuation('KABOOM!!  You see a door explode.');
+                    else if (!heroIsDeaf(state)) {
+                        const dx = x - state.u.ux, dy = y - state.u.uy;
+                        await publishHeard(`a ${dx * dx + dy * dy > 49 ? 'distant' : 'nearby'} explosion.`, state);
+                    }
+                }
+            }
+        } else {
+            const saw = cansee(x, y);
+            door.doormask = D_BROKEN;
+            vision_note_blocker_change(x, y);
+            const sees = cansee(x, y);
+            await newsym(x, y);
+            if (state.flags.verbose) {
+                if ((saw || sees) && !heroIsUnaware(state))
+                    await plineWithContinuation('The door crashes open!');
+                else if (!heroIsDeaf(state)) await publishHeard('a crashing sound.', state);
+            }
+            if (state.vision_full_recalc) await vision_recalc(0);
+            loudness = 20;
+        }
+    } else await impossible(`magic (${source.otyp}) attempted on door.`);
+    if (message && cansee(x, y)) await plineWithContinuation(message);
+    if (loudness) {
+        await wakeMonstersNearWithMessages(x, y, loudness, state);
+        if (roomsAt(state.level, x, y, SHOPBASE).length) addShopDamage(x, y, 0, state);
+    }
+    if (changed && state._occupation?.key === 'pick-lock' && state._occupation.door === door) {
+        await stopHeroOccupation(state);
+        resetPick(state);
+    }
+    return changed;
+}
+
+// C lock.c:obstructed().
+export async function doorObstructed(x: number, y: number, quietly: boolean, state: PlayingGameState) {
+    const occupant = monsterAtPosition(state.level, x, y);
+    if (occupant && M_AP_TYPE(occupant) !== M_AP_FURNITURE) {
+        if (M_AP_TYPE(occupant) === M_AP_OBJECT) {
+            if (!quietly) await plineWithContinuation("Something's in the way.");
+            return true;
+        }
+        if (!quietly) {
+            let name = monsterName(occupant, { capitalized: true, augmentIt: true, state });
+            if ((occupant.mx !== x || occupant.my !== y) && canSpotMonster(occupant))
+                name = `${possessiveName(name)} tail`;
+            await plineWithContinuation(`${name} blocks the way!`);
+        }
+        if (!canSpotMonster(occupant)) await map_invisible(x, y);
+        return true;
+    }
+    if (state.level.objects?.[x]?.[y]?.length) {
+        if (!quietly) await plineWithContinuation("Something's in the way.");
+        return true;
+    }
+    return false;
+}
+
+async function publishHeard(text: string, state: GameState) {
+    const message = formatHeardMessage(text, state);
+    if (message) await plineWithContinuation(message);
+}
+
+// C lock.c:stumble_on_door_mimic(): check the disguise itself, even when
+// the hero senses the monster.
+// lock.c checks the disguise itself, even when the hero senses the monster.
+export async function stumbleOnDoorMimic(x: number, y: number, state: GameState = game): Promise<boolean> {
+    if (!state.level || state.u.protectionFromShapeChangers || state.protectionFromShapeChangers)
+        return false;
+    const monster = monsterAtPosition(state.level, x, y);
+    if (!hasDoorAppearance(monster)) return false;
+    await stumbleOntoMimic(monster, state);
+    return true;
+}

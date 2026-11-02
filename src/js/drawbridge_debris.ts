@@ -10,7 +10,8 @@ import { IRON_CHAIN } from './object_data.js';
 import { rn2 } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import type { GameState } from './game_state.js';
-import type { DrawbridgeOptions } from './drawbridge_terrain.js';
+import type { DrawbridgeOptions } from './dbridge.js';
+
 import type { Position } from './map_types.js';
 
 export async function scatterDrawbridgeDebris(

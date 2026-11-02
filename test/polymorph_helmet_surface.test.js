@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { CORR } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';

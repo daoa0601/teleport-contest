@@ -1,7 +1,7 @@
 import { roles } from '../js/roles.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_CON, A_DEX, A_INT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { POT_BOOZE, POT_CONFUSION, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_RESTORE_ABILITY, POT_SICKNESS, TOWEL, LENSES, POT_BLINDNESS, POT_PARALYSIS, POT_SLEEPING, POT_SPEED, POT_INVISIBILITY, POT_WATER, RIN_FREE_ACTION, SPEED_BOOTS, } from '../js/object_data.js';

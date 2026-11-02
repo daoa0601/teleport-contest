@@ -1,6 +1,6 @@
 // Opening and eating tins. C eat.c:start_tin(), opentin(), consume_tin().
 import { commandResultCancelled, commandResultSpentTime } from './cmd.js';
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
 import { currentAttribute, currentStrength, gainHeroStrength } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
 import { triggerBoobyTrap } from './booby_trap.js';

@@ -3,9 +3,9 @@
 import { commandResultCancelled, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
 import { game, requireGameLevel } from './gstate.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, } from './objnam.js';
-import { autokey, autoUnlockFlags, pickLock } from './lock_pick.js';
+import { autokey, autoUnlockFlags, pickLock } from './lock.js';
 import { isForceableWeapon } from './lock.js';
 import { getAdjacentLocation } from './tty_prompts.js';
 import { ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, is_pit, isok, GRAVE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_ITEMFLAGS_SELECTED, PLNMSG_OBJNAM_ONLY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, } from './const.js';

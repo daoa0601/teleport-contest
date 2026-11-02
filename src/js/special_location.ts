@@ -5,7 +5,8 @@ import { game, requireGameLevel } from './gstate.js';
 import { somexy } from './mkroom.js';
 import { BOULDER } from './object_data.js';
 import { rn2 } from './rng.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import type { MapLocation, Position, Room } from './map_types.js';
 
 interface LocationContext {

@@ -18,7 +18,9 @@ import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap } from './trap.js';
-import { canOverwriteTerrain, isIceAt } from './terrain_properties.js';
+import { canOverwriteTerrain } from './display.js';
+import { isIceAt } from './dbridge.js';
+
 import { updateIceObjectTimersAt } from './floor_object.js';
 import { stopLevelTimer } from './timeout.js';
 import { fillSpecialRoom, medusaPetrifiable } from './sp_lev.js';

@@ -6,7 +6,8 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { findArmorClass, heroHasDrainResistance } from './armor.js';
+import { findArmorClass, heroHasDrainResistance } from './do_wear.js';
+
 import { heroHasArtifactDefense } from './artifacts.js';
 import { heroIsPunished } from './ball.js';
 import { changeBoxLockByMagic } from './box_magic.js';

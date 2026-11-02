@@ -3,7 +3,7 @@ import { createSpecialLevel } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { changeDoorByMagic } from '../js/door_magic.js';
+import { changeDoorByMagic } from '../js/lock.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { requireGameDisplay, requireGameLevel, game } from '../js/gstate.js';
 import { DOOR, SDOOR, STONE, D_NODOOR, D_BROKEN, D_ISOPEN, D_CLOSED, D_LOCKED, D_TRAPPED, NO_MINVENT, PIT, TRAPPED_DOOR, W_AMUL, M_AP_FURNITURE, M_AP_OBJECT, M_AP_F_DKNOWN, } from '../js/const.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { applyNethackrc } from '../js/options.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { game, requireGameDisplay, requireInitializedGame } from '../js/gstate.js';
 import { showEnlightenment, showFinalAttributes } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
@@ -15,7 +16,8 @@ import { BLINDFOLD, DUNCE_CAP, CORNUTHAUM, MUMMY_WRAPPING, RIN_INVISIBILITY, OBJ
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';
 import { races } from '../js/roles.js';
 import { freshGameplayRoom } from './support/playable-room.js';

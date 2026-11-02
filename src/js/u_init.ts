@@ -28,7 +28,8 @@ import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
-import { findArmorClass } from './armor.js';
+import { findArmorClass } from './do_wear.js';
+
 import { ensureQuestStatus } from './quest.js';
 import {
     GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, LOST_THROWN, NOT_HUNGRY,
@@ -60,7 +61,8 @@ import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.
 import { makePlural } from './objnam.js';
 
 import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
-import { hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
+
 import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { invWeight, objectWeight } from './weight.js';
 import { syncBlindness, syncDeafness } from './senses.js';

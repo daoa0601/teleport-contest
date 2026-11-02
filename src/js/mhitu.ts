@@ -49,7 +49,8 @@ import {
 } from './monster_attack_types.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning } from './armor.js';
+import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning } from './do_wear.js';
+
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
 import { isPolearm, type WeaponView } from './object_properties.js';
 import { weaponHitBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
@@ -74,7 +75,8 @@ import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHer
 import type { MonsterAttackDeathOptions, DeathHandler, FinishHeroDeathOptions } from './end.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { removeHeroAccessory, wearHeroAccessory } from './accessory.js';
+import { removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
+
 import { heroHasHalfSpellDamage, drainObjectEnchantment } from './zap.js';
 import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
@@ -102,7 +104,8 @@ import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { disturbMealMimicry } from './meal_mimic.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './muse.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName } from './objnam.js';
 
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';

@@ -57,7 +57,9 @@ export interface ArtifactTouchResult {
 }
 
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM } from './const.js';
-import { dragonFormForArmor, heroHasDrainResistance } from './armor.js';
+import { dragonFormForArmor } from './polyself.js';
+import { heroHasDrainResistance } from './do_wear.js';
+
 import { game, requirePlayingGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';

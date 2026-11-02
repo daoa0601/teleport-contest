@@ -7,7 +7,7 @@ import { MONSTER_SYMBOL } from './monster_data.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 const S_EEL = 57;
 // The caller owns interrupt_multi() when this recovery reaches full health.
 export async function regenerateHeroHp(capacity, turn) {

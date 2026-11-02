@@ -1,7 +1,7 @@
 // Applied mirrors. C apply.c:use_mirror(), beautiful(); zap.c:bhit(INVIS_BEAM).
 import { A_CHA, COLNO, MAXULEV, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, RLOC_MSG, Upolyd, WEAK, isok, } from './const.js';
 import { currentAttribute } from './attrib.js';
-import { heroHasFreeAction } from './armor.js';
+import { heroHasFreeAction } from './do_wear.js';
 import { heroFaceName, monsterStomachName } from './body_parts.js';
 import { commandResultCancelled } from './cmd.js';
 import { nomul } from './hack.js';

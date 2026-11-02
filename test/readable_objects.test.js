@@ -1,7 +1,7 @@
 import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';

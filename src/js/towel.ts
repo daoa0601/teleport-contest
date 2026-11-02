@@ -1,5 +1,6 @@
 // C apply.c:use_towel() and weapon.c:dry_a_towel().
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
+
 import { heroFaceName, heroHandName } from './body_parts.js';
 import { TIMEOUT } from './const.js';
 import { canSeeMonster } from './display.js';

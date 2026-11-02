@@ -3,7 +3,8 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import { touchArtifactByHero } from '../js/artifacts.js';
 import {
     A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB,

@@ -12,7 +12,8 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NAMES,
 } from '../js/object_data.js';
-import { wearHeroAccessory, removeHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory, removeHeroAccessory } from '../js/do_wear.js';
+
 import {
     captureLevitationState, grantIntrinsicProperty, levitationIsPurelyTimed,
     revokeIntrinsicProperty, setPropertyTerrainBlocked,

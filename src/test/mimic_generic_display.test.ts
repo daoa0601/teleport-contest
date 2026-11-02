@@ -4,6 +4,8 @@ import { M_AP_MONSTER, M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { stumbleOntoMimic } from '../js/mimic.js';
+
+
 import { nameToMonster } from '../js/mondata.js';
 import { DIAMOND, SPE_FORCE_BOLT } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';

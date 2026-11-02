@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import type { ArmorSlot } from '../js/armor.js';
+import type { ArmorSlot } from '../js/do_wear.js';
+
 import {
     W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU,
     W_QUIVER, W_SWAPWEP, W_WEP,

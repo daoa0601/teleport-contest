@@ -9,7 +9,8 @@ import type { Monster } from './monster_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
-import { heroHasFreeAction } from './armor.js';
+import { heroHasFreeAction } from './do_wear.js';
+
 import {
     KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STONING,
 } from './const.js';

@@ -1,6 +1,6 @@
 // Ordinary-object reading. C refs: read.c doread(), erode_obj_text(),
 // tshirt_text(), apron_text(), hawaiian_design(), and candy_wrapper_text().
-import { armorSimpleName } from './armor.js';
+import { armorSimpleName } from './do_wear.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

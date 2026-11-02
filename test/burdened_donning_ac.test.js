@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { findArmorClass } from '../js/armor.js';
+import { findArmorClass } from '../js/do_wear.js';
 import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';

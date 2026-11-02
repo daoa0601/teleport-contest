@@ -1,12 +1,14 @@
 // Rules applied before the pickup menu or object transfer.
 // C ref: hack.c pickup_checks().
 
-import { heroHasWaterWalking } from './armor.js';
+import { heroHasWaterWalking } from './do_wear.js';
+
 import {
     ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE,
     P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit,
 } from './const.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { floorReachProblem, heroTeetersAtPit } from './floor_reach.js';
 import { game } from './gstate.js';
 import {

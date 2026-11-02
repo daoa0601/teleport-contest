@@ -10,7 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { requireScreenRow } from './support/screen.js';
 import { CLUB, CORPSE, CREAM_PIE, SLIME_MOLD, WHITE_DRAGON_SCALE_MAIL, } from '../js/object_data.js';
 import { attrcurse, rndcurse } from '../js/throne.js';
-import { applyArmorOnEffects } from '../js/armor.js';
+import { applyArmorOnEffects } from '../js/do_wear.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { addFruit } from '../js/fruit.js';

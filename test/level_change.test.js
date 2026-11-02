@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { FOUNTAIN, HOLE, NO_MINVENT, ROOM, STONE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { level_difficulty } from '../js/dungeon.js';

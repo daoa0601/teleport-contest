@@ -18,7 +18,7 @@ import { statusConditions } from '../js/botl.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import { addInventoryObject, addInventoryWeapon, } from './support/game-objects.js';
 import { freshHeroConditionRoom, installPolymorphedHero, } from './support/hero-state.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 void test('fatal illness worsens and reaches the normal death path', async () => {
     await freshHeroConditionRoom();

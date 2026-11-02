@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 import {
     ALTAR, AM_SHRINE, Align2amask, D_CLOSED, DOOR, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL,
     M_SEEN_SLEEP, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, ROOM, ROOMOFFSET, STONE, TELEP_TRAP, TEMPLE,

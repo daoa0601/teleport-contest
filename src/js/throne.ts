@@ -22,7 +22,8 @@ import {
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
-import { heroHasDrainResistance } from './armor.js';
+import { heroHasDrainResistance } from './do_wear.js';
+
 import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';

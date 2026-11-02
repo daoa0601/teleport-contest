@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
 import { MM_ANGRY, NO_MINVENT, POLY_TRAP, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';

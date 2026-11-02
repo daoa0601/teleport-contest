@@ -3,12 +3,14 @@
 // sacrifice (pure move, no behavior change).
 import { recordAchievement } from './achievements.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
-import { ringRemovalObstacle } from './accessory.js';
+import { ringRemovalObstacle } from './do_wear.js';
+
 import {
     artifactById, artifactByName, artifactExistCount, createArtifactGift,
     discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin,
 } from './artifacts.js';
-import { disintegrateWornArmor, simpleArmorName } from './armor.js';
+import { disintegrateWornArmor, simpleArmorName } from './do_wear.js';
+
 import type { AttributeIndex } from './attrib.js';
 import {
     adjustAttribute, attributeChangeMessage,
@@ -142,7 +144,8 @@ import { heroHasFreeHand } from './engrave.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { nearCapacity } from './weight.js';
 import { purifyHeroLycanthropy } from './were.js';
-import { isPoolOrLavaAt } from './terrain_properties.js';
+import { isPoolOrLavaAt } from './dbridge.js';
+
 import type { GameState, PlayingGameState, PrayerOutcome } from './game_state.js';
 import { pline as printLine } from './pline.js';
 import { plineWithContinuation as pline } from './pline.js';

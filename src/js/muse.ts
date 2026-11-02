@@ -44,7 +44,9 @@ import {
     WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION,
     WAN_UNDEAD_TURNING,
 } from './object_data.js';
-import { objectIsHardHelmet, dragonFormForArmor } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
+import { dragonFormForArmor } from './polyself.js';
+
 import {
     findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction,
 } from './teleport_rules.js';
@@ -118,7 +120,8 @@ import { castNativeRay, hitMonsterWithRay } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './sight_change.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
-import { changeDoorByMagic } from './door_magic.js';
+import { changeDoorByMagic } from './lock.js';
+
 import { loseHeroHp } from './hero_damage.js';
 import { hitObjectWithWand } from './immediate_zap.js';
 import { revealMonsterAppearance } from './mon.js';
@@ -136,7 +139,9 @@ import { randomTeleportDepth } from './level_teleport.js';
 import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough, maketrap } from './mklev.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
-import { isAccessibleAt, isIceAt, isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isAccessibleAt } from './monmove.js';
+import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
 import { heroSpecies } from './hero_species.js';

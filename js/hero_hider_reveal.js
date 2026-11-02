@@ -5,7 +5,7 @@
 //     pointed out;
 //   S_MIMIC with an appearance — a hero polymorphed into a mimic that
 //     mimicked something via #monster; sticky forms grab the attacker.
-import { objectIsHardHelmet } from './armor.js';
+import { objectIsHardHelmet } from './do_wear.js';
 import { M_AP_NOTHING, W_ARMH } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -23,7 +23,7 @@ import { observeObjectForNaming } from './objnam.js';
 import { objectDescription } from './objnam.js';
 import { EGG } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { ceilingName } from './terrain_name.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveHeroByTeleport } from './teleport.js';

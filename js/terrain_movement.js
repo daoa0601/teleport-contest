@@ -2,7 +2,7 @@ import { trapName } from './trap.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
 import { classifyStatusTerrain } from './hack.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 import { D_CLOSED, D_LOCKED, DISMOUNT_FELL, DISMOUNT_GENERIC, DOOR, HOLE, IS_OBSTRUCTED, IS_ROOM, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, PIT, STATUE_TRAP, TRAPDOOR, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, WEB, W_SADDLE, is_hole, is_pit, } from './const.js';
@@ -26,7 +26,7 @@ import { dismountHero, steedIsGrounded } from './steed.js';
 import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroCanSwim } from './hack.js';
-import { heroHasWaterWalking } from './armor.js';
+import { heroHasWaterWalking } from './do_wear.js';
 import { heroIsPunished } from './ball.js';
 import { rnd } from './rng.js';
 import { loseHeroHp } from './hero_damage.js';

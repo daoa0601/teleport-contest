@@ -4,8 +4,10 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { wearHeroAccessory } from '../js/accessory.js';
-import { applyArmorOnEffects, findArmorClass, removeHeroArmor, wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { applyArmorOnEffects, findArmorClass, removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
+
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';

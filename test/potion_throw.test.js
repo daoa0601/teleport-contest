@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_DEX, STONE, WEB, W_ARM, W_ARMC, W_SADDLE, W_WEP, } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroGoldAmount, setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';

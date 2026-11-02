@@ -2,7 +2,8 @@ import { trapName } from './trap.js';
 import { setHeroGrip } from './hero_grip.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { isLavaAt, isPoolAt } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+
 import { classifyStatusTerrain } from './hack.js';
 // C hack.c:switch_terrain(), trap.c:float_up()/reset_utrap().
 
@@ -44,7 +45,8 @@ import { applyHeroLiquidEffects, applyHeroLocationEffects } from './hack.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { heroCanSwim } from './hack.js';
 
-import { heroHasWaterWalking } from './armor.js';
+import { heroHasWaterWalking } from './do_wear.js';
+
 import { heroIsPunished } from './ball.js';
 import { rnd } from './rng.js';
 import { loseHeroHp } from './hero_damage.js';

@@ -89,7 +89,8 @@ import {
 import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
 import type { ArtifactDefender } from './artifacts.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
+
 import { artifactToHitBonus } from './artifacts.js';
 import { P_SPEAR } from './const.js';
 import { requireInitializedHero } from './hero_types.js';

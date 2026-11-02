@@ -12,7 +12,8 @@ import { takeMonsterTurn } from '../js/monmove.js';
 import { monsterDistressEvents } from '../js/mon.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { monsterFliesOrFloats } from '../js/terrain_properties.js';
+import { monsterFliesOrFloats } from '../js/mon.js';
+
 import { teleportMonsterThroughPortal } from '../js/teleport.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';

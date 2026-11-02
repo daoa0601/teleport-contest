@@ -130,7 +130,7 @@ readobjnam	readobjnam_preparse	inlined	parseWishText (objnam.ts)
 readobjnam	readobjnam_postparse1	inlined	parseWishNoun and lookupWishType (objnam.ts)
 readobjnam	readobjnam_postparse2	inlined	lookupWishType (objnam.ts)
 readobjnam	wizterrainwish	n/a	wizard mode only
-really_done	paygd	inlined	settleGameExit calls payVaultGuardOnExit (end.ts, vault_exit.ts)
+really_done	paygd	inlined	settleGameExit calls payVaultGuardOnExit (end.ts, vault.ts)
 rehumanize	polyman	inlined	becomeHuman keeps the pit rn1(6,2) (polyself.ts)
 reverse_loot	courtmon	inlined	courtMonsterType (confused_loot.ts)
 rndmonst	rndmonst_adj	inlined	rndmonstAdj with no bounds is rndmonst (makemon.ts)
@@ -262,17 +262,17 @@ create_object	describe_level	n/a	impossible() text only
 create_object	def_char_to_objclass	inlined	des.object option parsing (lua/des.ts)
 create_object	mkobj_at	inlined	special-object class helpers (sp_lev.ts) call mkobj.ts:mkobj_at
 create_object	mksobj_at	inlined	special-object helpers (sp_lev.ts) call mkobj.ts:mksobj_at
-destroy_drawbridge	spoteffects	inlined	settleEntityAfterCollapse (drawbridge_occupants.ts)
-destroy_drawbridge	do_entity	inlined	handleEntity (drawbridge_occupants.ts)
-destroy_drawbridge	e_died	inlined	killCollapseVictim (drawbridge_occupants.ts)
-destroy_drawbridge	nokiller	inlined	the killer is passed per death (drawbridge_occupants.ts)
+destroy_drawbridge	spoteffects	inlined	settleEntityAfterCollapse (dbridge.ts)
+destroy_drawbridge	do_entity	inlined	handleEntity (dbridge.ts)
+destroy_drawbridge	e_died	inlined	killCollapseVictim (dbridge.ts)
+destroy_drawbridge	nokiller	inlined	the killer is passed per death (dbridge.ts)
 destroy_drawbridge	mksobj_at	inlined	debris creation (drawbridge_debris.ts)
 destroy_drawbridge	sobj_at	inlined	boulder lookup (dbridge.ts)
 dighole	sobj_at	inlined	boulderAt (digging_terrain.ts)
 dighole	wake_nearby	inlined	wakeMonstersNearWithMessages(ulevel * 20) (digging_terrain.ts)
 dip_into	undiscovered_artifact	n/a	only for plural lenses, never a potion
 dodip	undiscovered_artifact	n/a	only through pair_of/is_plural for lenses, which already read "them"
-dodip	inaccessible_equipment	inlined	reportCoveredEquipment (equipment_selection.ts)
+dodip	inaccessible_equipment	inlined	reportCoveredEquipment (do_wear.ts)
 dodip	rider_cant_reach	n/a	can_reach_floor() already refuses an unskilled rider before the pool prompt
 disarm_holdingtrap	attacks	inlined	fire-damage artifact test (untrap.ts)
 docast	cmdq_add_key	inlined	repeat command queue (spell.ts)
@@ -372,7 +372,7 @@ create_particular	create_particular_creation	inlined	createParticularMonster cre
 create_particular	create_particular_parse	inlined	createParticularMonster parse half (read_creation.ts)
 critically_low_hp	xlev_to_rank	inlined	level band mapping (prayer_trouble.ts)
 deliver_splev_message	deliver_by_pline	inlined	deliverSpecialLevelMessages (level_change.ts)
-dip_ok	inaccessible_equipment	inlined	coveringEquipment excludes covered items (equipment_selection.ts)
+dip_ok	inaccessible_equipment	inlined	coveringEquipment excludes covered items (do_wear.ts)
 dismount_steed	sobj_at	inlined	boulder check on the landing square (steed.ts)
 dlord	sgn	inlined	Math.sign alignment match (minion.ts)
 dmonsfree	describe_level	n/a	diagnostic inside impossible() only
@@ -465,8 +465,8 @@ eval_offering	sacrifice_value	inlined	corpse value logic (sacrifice.ts)
 eval_offering	sgn	inlined	Math.sign of the corpse species alignment (sacrifice.ts)
 fill_pit	sobj_at	inlined	boulder lookup to drop in the pit (pit_fill.ts)
 fill_pit	t_at	inlined	traps.find pit/hole test (pit_fill.ts)
-find_guard_dest	in_fcorridor	inlined	fake-corridor membership test (vault_escort.ts)
-findgd	parkguard	inlined	parkVaultGuard (vault_guard.ts)
+find_guard_dest	in_fcorridor	inlined	fake-corridor membership test (vault.ts)
+findgd	parkguard	inlined	parkVaultGuard (vault.ts)
 findpriest	histemple_at	inlined	templeRoomAt/findPriest (priest.ts)
 finish_quest	carrying	inlined	inventory scan for Amulet and Bell (quest.ts)
 finish_quest	update_inventory	inlined	inventory refresh after handing over quest items (quest.ts)
@@ -653,7 +653,7 @@ outrumor	is_fainted	inlined	FAINTED hero gets no cookie fortune (rumor.ts)
 pay	check_credit	inlined	credit applied to the payment (shk.ts)
 pay_for_damage	money_cnt	inlined	heroGoldAmount plus credit against the cost (shk.ts)
 pay_for_damage	sgn	inlined	adjustHeroAlignment(Math.sign(...)) (shk.ts)
-paygd	money_cnt	inlined	heroGoldAmount (vault_exit.ts)
+paygd	money_cnt	inlined	heroGoldAmount (vault.ts)
 peffect_restore_ability	pluslvl	inlined	level gain when restoring past max (attrib.ts)
 peffect_restore_ability	unfixable_trouble_count	inlined	trouble tally wording (attrib.ts)
 percent_success	isqrt	inlined	Math.floor(Math.sqrt(...)) (spell_casting_rules.ts)
@@ -845,8 +845,8 @@ zombie_can_dig	isok	inlined	bounds check (corpse_revival.ts)
 zombie_can_dig	t_at	inlined	traps.find on the grave square (corpse_revival.ts)
 able_to_loot	cant_reach_floor	inlined	heroCanReachFloor check (pickup.ts)
 able_to_loot	rider_cant_reach	inlined	riderCannotReachMessage for a mounted hero (pickup.ts)
-accessible	closed_door	inlined	closed/locked door test in isAccessibleAt (terrain_properties.ts)
-accessible	db_under_typ	inlined	drawbridgeUnderlyingType at a raised bridge (terrain_properties.ts)
+accessible	closed_door	inlined	closed/locked door test in isAccessibleAt (dbridge.ts)
+accessible	db_under_typ	inlined	drawbridgeUnderlyingType at a raised bridge (dbridge.ts)
 awaken_monsters	awaken_scare	inlined	awakenMonster with the fright flag (music.ts)
 awaken_monsters	dist2	inlined	monsterDistance per monster (music.ts)
 bagotricks	discover_object	inlined	learnObjectType(BAG_OF_TRICKS) (bag_of_tricks.ts)
@@ -898,12 +898,12 @@ try_disarm	weight_cap	inlined	encumbrance test in the tight-space refusal (untra
 u_init_skills_discoveries	find_ac	inlined	armor class computed after starting gear (u_init.ts)
 u_init_skills_discoveries	num_spells	inlined	starting spell count per role (u_init.ts)
 u_init_skills_discoveries	skills_for_role	inlined	role skill table applied at startup (u_init.ts)
-uleftvault	in_fcorridor	inlined	fake-corridor membership test (vault_escort.ts)
-uleftvault	money_cnt	inlined	heroGoldAmount dropped on exit (vault_escort.ts)
-uleftvault	um_dist	inlined	distance from the guard decides escape (vault_escort.ts)
-wallify_vault	in_fcorridor	inlined	fake-corridor bounds while restoring walls (vault_escort.ts)
-wallify_vault	sobj_at	inlined	object scan on restored squares (vault_escort.ts)
-wallify_vault	xy_set_wall_state	inlined	wall state restored per square (vault_escort.ts)
+uleftvault	in_fcorridor	inlined	fake-corridor membership test (vault.ts)
+uleftvault	money_cnt	inlined	heroGoldAmount dropped on exit (vault.ts)
+uleftvault	um_dist	inlined	distance from the guard decides escape (vault.ts)
+wallify_vault	in_fcorridor	inlined	fake-corridor bounds while restoring walls (vault.ts)
+wallify_vault	sobj_at	inlined	object scan on restored squares (vault.ts)
+wallify_vault	xy_set_wall_state	inlined	wall state restored per square (vault.ts)
 water_damage	discover_object	inlined	learnObjectType for revealed contents (trap.ts)
 water_damage	update_inventory	n/a	no persistent inventory window; observation refreshes (trap.ts)
 water_damage	water_damage_chain	inlined	waterDamageChain for containers (trap.ts)
@@ -1033,15 +1033,15 @@ show_achievements	remove_achievement	inlined	same reorder: filter ACH_AMUL/ACH_U
 close_drawbridge	del_engr_at	inlined	removeEngravingAt on both squares (dbridge.ts)
 close_drawbridge	delallobj	inlined	destroyObjectsAt on both squares (dbridge.ts)
 close_drawbridge	dist2	inlined	squaredHeroDistance/distu comparison for coming/going (dbridge.ts announceBridgeMovement)
-close_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (drawbridge_occupants.ts)
+close_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (dbridge.ts)
 close_drawbridge	nokiller	n/a	killer globals are not cached across occupant handling in the port
-close_drawbridge	set_entity	inlined	entityAt captures bridge and wall occupants incl. worm tails (drawbridge_occupants.ts)
+close_drawbridge	set_entity	inlined	entityAt captures bridge and wall occupants incl. worm tails (dbridge.ts)
 open_drawbridge	del_engr_at	inlined	removeEngravingAt on both squares (dbridge.ts)
 open_drawbridge	delallobj	inlined	destroyObjectsAt (dbridge.ts)
 open_drawbridge	dist2	inlined	squaredHeroDistance comparison (dbridge.ts)
-open_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (drawbridge_occupants.ts)
+open_drawbridge	do_entity	inlined	moveDrawbridgeOccupants -> handleEntity (dbridge.ts)
 open_drawbridge	nokiller	n/a	killer globals are not cached across occupant handling in the port
-open_drawbridge	set_entity	inlined	entityAt captures occupants (drawbridge_occupants.ts)
+open_drawbridge	set_entity	inlined	entityAt captures occupants (dbridge.ts)
 show_conduct	N_times	inlined	wish count phrasing in wishConductLines (insight.ts)
 show_conduct	enlght_line	inlined	conduct rows pushed as strings (insight.ts)
 show_conduct	enlght_out	inlined	rows rendered by the disclosure overlay (insight.ts)
@@ -1064,11 +1064,11 @@ lookaround	avoid_moving_on_trap	inlined	knownRunTrap + announceRunTrap (cmd.ts l
 lookaround	dist2	inlined	corridor turn/adjacency checks in lookaroundRun (cmd.ts)
 lookaround	nomul	inlined	lookaroundRun returns false and the caller stops the run (cmd.ts)
 lookaround	set_msg_xy	inlined	lookaroundRun marks the monster or door square before its stop message (cmd.ts)
-pick_lock	acurr	inlined	currentAttribute(A_DEX) in the chance rolls (lock_pick.ts)
-pick_lock	could_untrap	inlined	untrapAbilityProblem gates the AUTOUNLOCK_UNTRAP offer (lock_pick.ts)
-pick_lock	get_adjacent_loc	inlined	promptDirection plus isok 'Invalid location!' check (lock_pick.ts pickLock)
-pick_lock	set_occupation	inlined	state._lockAttempt/_occupation install (lock_pick.ts)
-pick_lock	yn_function	inlined	promptYesNoQuit questions for traps and unlocking (lock_pick.ts)
+pick_lock	acurr	inlined	currentAttribute(A_DEX) in the chance rolls (lock.ts)
+pick_lock	could_untrap	inlined	untrapAbilityProblem gates the AUTOUNLOCK_UNTRAP offer (lock.ts)
+pick_lock	get_adjacent_loc	inlined	promptDirection plus isok 'Invalid location!' check (lock.ts pickLock)
+pick_lock	set_occupation	inlined	state._lockAttempt/_occupation install (lock.ts)
+pick_lock	yn_function	inlined	promptYesNoQuit questions for traps and unlocking (lock.ts)
 pluslvl	achieve_rank	inlined	rankAchievement(newRank) (exper.ts gainExperienceLevel)
 pluslvl	count_achievements	inlined	recordAchievement result distinguishes the two chronicle lines (exper.ts)
 pluslvl	newuexp	inlined	newExperienceThreshold reads/sets uexp (exper.ts)
@@ -1119,10 +1119,10 @@ getdir	cmdq_add_key	inlined	takeCommandKey consumes a queued direction key (tty_
 getdir	dxdy_moveok	inlined	grid-bug diagonal rejection in the direction reader (tty_prompts.ts)
 getdir	redraw_cmd	inlined	doredraw binding honored during the prompt retry (tty_prompts.ts)
 getdir	sgn	inlined	Math.sign applied to the chosen direction (tty_prompts.ts)
-picklock	add_damage	inlined	addShopDamage(SHOP_DOOR_COST) after breaking a shop door (lock_pick.ts)
-picklock	in_rooms	inlined	the shop-door check beside the damage (lock_pick.ts)
-picklock	unblock_point	inlined	vision_note_blocker_change on the opened door (lock_pick.ts)
-picklock	yn_function	inlined	promptYesNoQuit questions inside the occupation (lock_pick.ts)
+picklock	add_damage	inlined	addShopDamage(SHOP_DOOR_COST) after breaking a shop door (lock.ts)
+picklock	in_rooms	inlined	the shop-door check beside the damage (lock.ts)
+picklock	unblock_point	inlined	vision_note_blocker_change on the opened door (lock.ts)
+picklock	yn_function	inlined	promptYesNoQuit questions inside the occupation (lock.ts)
 scatter	alloc	n/a	scatter chain nodes are array entries
 scatter	shop_keeper	inlined	costlySpot(x, y)?.resident plus credit baseline (scatter.ts)
 scatter	sobj_at	inlined	floorPile loop over the scatter site (scatter.ts)
@@ -1376,7 +1376,7 @@ get_count	digit	inlined	48..57 digit parsing (inventory_prompt.ts, cmd.ts)
 get_strength_str	acurr	inlined	formatStrength over the live strength (display.ts)
 get_valid_polearm_position	dist2	inlined	dx*dx+dy*dy reach check (polearm.ts)
 getbones	trickery	n/a	port storage keys bones per level; the id-mismatch panic cannot occur
-glibr	fingers_or_gloves	inlined	heroFingerName in the ring-shed message (slippery_hands.ts)
+glibr	fingers_or_gloves	inlined	heroFingerName in the ring-shed message (do_wear.ts)
 handle_tip	cmd_from_func	inlined	tip publication keyed by the tip bit (cmd.ts, getpos.ts)
 hurtle	sgn	inlined	Math.sign of the hurtle direction (hero_hurtle.ts)
 impact_drop	drop_to	inlined	downwardGate migration of the dropped pile (dokick.ts)
@@ -1695,7 +1695,7 @@ doprwep	empty_handed	inlined	inventoryReport chooses empty handed, bare handed, 
 doprwep	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying weapons (inventory_reports.ts)
 eatmupdate	alloc	n/a	Meal mimic text uses managed strings rather than an allocated C buffer
 end_engulf	tmp_at	inlined	endHeroEngulfDisplay redraws the defender and hero squares to remove the single-cell engulf overlay (hero_combat_engulf.ts)
-equip_ok	inaccessible_equipment	inlined	equipmentIsCovered checks cloak, suit, and gloves with the caller's known-cursed-only condition (equipment_selection.ts)
+equip_ok	inaccessible_equipment	inlined	equipmentIsCovered checks cloak, suit, and gloves with the caller's known-cursed-only condition (do_wear.ts)
 erode_obj	dist2	inlined	Floor erosion visibility requires underwater sight and coordinate offsets at most one, equivalent to squared distance below three (trap.ts)
 erode_obj	inventory_resistance_check	inlined	inventoryResists implements the fire and acid checks used by erosion, including carried artifact resistance and the dwarvish cloak (trap.ts)
 erode_obj	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body
@@ -1871,10 +1871,10 @@ there_cmd_menu_next2u	t_at	inlined	adjacentEntries finds a trap by its map coord
 there_cmd_menu_self	mcmd_addmenu	inlined	selfEntries supplies each action and label through the add callback; selectContextMenu passes the collected entries to tty_add_menu
 there_cmd_menu_self	num_spells	inlined	selfEntries adds Cast a spell only when the contiguous known-spell array has entries
 there_cmd_menu_self	stairway_at	inlined	selfEntries traverses game.stairs and stops at the first stairway on the selected square
-is_pool	isok	inlined	terrain_properties.ts isPoolAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
-is_pool	is_moat	inlined	terrain_properties.ts isPoolAt calls isMoatAt (C dbridge.c:is_moat()) after the POOL/MOAT/WATER type test; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
-is_lava	isok	inlined	terrain_properties.ts isLavaAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_LAVA macro helper in const.ts instead
-is_waterwall	isok	inlined	terrain_properties.ts isWaterwallAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_WATERWALL macro helper in const.ts instead
+is_pool	isok	inlined	dbridge.ts isPoolAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_pool	is_moat	inlined	dbridge.ts isPoolAt calls isMoatAt (C dbridge.c:is_moat()) after the POOL/MOAT/WATER type test; the by-name match found rm.h's IS_POOL macro helper in const.ts instead
+is_lava	isok	inlined	dbridge.ts isLavaAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_LAVA macro helper in const.ts instead
+is_waterwall	isok	inlined	dbridge.ts isWaterwallAt is the cited counterpart and checks isok() at entry; the by-name match found rm.h's IS_WATERWALL macro helper in const.ts instead
 notice_all_mons	alloc	n/a	memory allocation; the port builds a plain array of the spottable monsters
 notice_mons_cmp	dist2	inlined	noticeAllMonsters sorts by (mx-ux)^2+(my-uy)^2, dist2(u,mon) inline, and the stable Array.sort retains fmon order like the deterministic qsort tie-break (hack.ts)
 show_glyph	isok	n/a	isok only guards the impossible() diagnostic for out-of-range glyph positions (display.c:1894); the port has no developer-diagnostic path to guard
@@ -1937,6 +1937,6 @@ zap_updown	is_db_wall	inlined	the portcullis test is level.requireAt(x,y).typ ==
 zap_updown	mksobj_at	inlined	mksobj() plus placeCreatedObject() create and place the dislodged rock (zap.ts strikeOrLockVertically), which is what mksobj_at() composes
 discover_object	Japanese_item_name	inlined	japaneseItemName in o_init.ts:241 (C objnam.c:Japanese_item_name) drives the samurai discovery annotations; discoverKnownType expresses the disco[] insertion through the known/encountered sets
 discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-inventory window; the grader has no perm_invent window; and the gem reprice itself is repriceDiscoveredGems (o_init.ts)
-display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); terrain_properties.ts isPoolOrLavaAt is the same predicate
+display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (zap.ts displayBuriedInventory); dbridge.ts isPoolOrLavaAt is the same predicate
 display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
 zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire

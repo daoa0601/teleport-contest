@@ -3,7 +3,7 @@
 // lookup and maps spentTurn to context.move.
 import { I_SPECIAL, Is_airlevel, Is_waterlevel, TT_INFLOOR, TT_LAVA, TIMEOUT, W_ARTI, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
-import { isPoolAt } from './terrain_properties.js';
+import { isPoolAt } from './dbridge.js';
 import { glyphAt } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, propertyIsBlocked, } from './properties.js';

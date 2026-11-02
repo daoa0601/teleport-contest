@@ -12,8 +12,10 @@ import type { MessagePublisher } from './pline.js';
 import { finishMonsterKilled } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
 import { AD_FIRE, AD_PHYS } from './monster_attack_types.js';
-import { isIceAt, isPoolAt } from './terrain_properties.js';
-import { heroHasDrainResistance } from './armor.js';
+import { isIceAt, isPoolAt } from './dbridge.js';
+
+import { heroHasDrainResistance } from './do_wear.js';
+
 import { heroHasArtifactDefense } from './artifacts.js';
 import { M_SEEN_FIRE, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';

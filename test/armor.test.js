@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArmorOnEffects, armorBaseBonus, armorBonus, armorOnIdentifiesType, findArmorClass, heroIsDisplaced, removeArmorProperties, wearHeroArmor, } from '../js/armor.js';
+import { applyArmorOnEffects, armorBaseBonus, armorBonus, armorOnIdentifiesType, findArmorClass, heroIsDisplaced, removeArmorProperties, wearHeroArmor } from '../js/do_wear.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_STR } from '../js/const.js';
 import { formatStrength } from '../js/botl.js';
 import { weightCapacity } from '../js/weight.js';
 import { AMULET_OF_GUARDING, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, GAUNTLETS_OF_POWER, LEATHER_GLOVES, RING_MAIL, RIN_PROTECTION, ROBE, RED_DRAGON_SCALE_MAIL, SMALL_SHIELD, } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { wearHeroAccessory } from '../js/accessory.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addInventoryObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

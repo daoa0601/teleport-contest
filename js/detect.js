@@ -32,7 +32,7 @@ import { TER_DETECT, TER_MON, TER_OBJ, TER_TRP } from './const.js';
 import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { requireLiveGame } from './gstate.js';
 import { propertyIsActive } from './properties.js';
-import { terrainCoversObjectsAt } from './terrain_properties.js';
+import { terrainCoversObjectsAt } from './display.js';
 import { selectMapPosition, showGetposInstructions, showGetposTip } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { expelHero } from './hero_expulsion.js';

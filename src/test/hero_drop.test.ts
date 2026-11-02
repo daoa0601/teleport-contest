@@ -16,7 +16,8 @@ import { OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { shopkeeperName } from '../js/shknam.js';
 import { createStaffedShop } from './support/shop.js';
-import { wearHeroArmor } from '../js/armor.js';
+import { wearHeroArmor } from '../js/do_wear.js';
+
 
 const DAGGER = OBJECT_NAMES.indexOf('dagger');
 const COCKATRICE = OBJECT_NAMES.length; // placeholder-free tests below use real indices

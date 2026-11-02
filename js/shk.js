@@ -19,7 +19,7 @@ import { heroSpecies, heroPolyGender, heroPassesWalls } from './hero_species.js'
 import { monsterName } from './do_name.js';
 import { possessiveName, depth, distmin, dist2, pointsOnline } from './hacklib.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
-import { containedGold, hiddenGold } from './gold.js';
+import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
 import { currency } from './currency.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
@@ -35,7 +35,7 @@ import { insideRoom, inTown, roomForRoomno, roomsAt, updateHeroRoomMembership, r
 import { searchSpecial } from './mkroom.js';
 import { intemple, moveSpecial, specialMoverSeesHero } from './priest.js';
 import { recordDiscoveredRoom } from './dungeon.js';
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH } from './object_data.js';
+import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE } from './object_data.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { paymentObjectDescription, objectDescription } from './objnam.js';
 import { dropObjectAtHero } from './hero_drop.js';
@@ -48,7 +48,7 @@ import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
 import { performMonsterTurn } from './monmove.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
-import { heroIsDisplaced } from './armor.js';
+import { heroIsDisplaced } from './do_wear.js';
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -87,7 +87,7 @@ import { moveMonsterNextToHero } from './teleport.js';
 import { deleteTrap, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
-import { maybeResetPick } from './lock_context.js';
+import { maybeResetPick } from './lock.js';
 import { bookDisappears } from './spellbook_study.js';
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
@@ -4793,5 +4793,25 @@ export function priceQuoteSuffix(otyp, state = game) {
         parts.push(min === max ? `${kind} ${min}` : `${kind} ${min}-${max}`);
     }
     return parts.length ? ` {${parts.join(' ')}}` : '';
+}
+// C shk.c:contained_gold(): recursively contained coins.
+function quantity(object) {
+    return object?.quan ?? object?.quantity ?? 0;
+}
+// `container` is the already-admitted enclosing object. Immediate coin
+// stacks are countable; deeper containers require their own cknown bit when
+// the caller does not have the source's preternatural even_if_unknown view.
+export function containedGold(container, evenIfUnknown = true) {
+    let total = 0;
+    for (const object of container?.contents || []) {
+        if (object.otyp === GOLD_PIECE || object.oclass === 12) {
+            total += quantity(object);
+        }
+        else if (Array.isArray(object.contents)
+            && (evenIfUnknown || object.cknown)) {
+            total += containedGold(object, evenIfUnknown);
+        }
+    }
+    return total;
 }
 //# sourceMappingURL=shk.js.map

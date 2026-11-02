@@ -7,8 +7,10 @@ import { planInput } from './support/planned-input.js';
 import assert from 'node:assert/strict';
 
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
-import { wearHeroAccessory } from '../js/accessory.js';
-import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
+import { wearHeroAccessory } from '../js/do_wear.js';
+
+import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
+
 import { A_STR, IRONBARS, MFAST, NEED_WEAPON, NEW_MOON, NO_MINVENT, NO_WEAPON_WANTED, PIT, POOL, STONE, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { initializePet } from '../js/dog.js';

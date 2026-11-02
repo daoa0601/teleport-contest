@@ -4,14 +4,17 @@ import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
 import { magicNegation } from './mhitu.js';
-import { simpleArmorName } from './armor.js';
+import { simpleArmorName } from './do_wear.js';
+
 import { confersLuck } from './hero_inventory.js';
 import { fromWhat, extrinsicPropertyMask, intrinsicPropertyMask, veryFast } from './attribute_provenance.js';
 import { hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked, propertyTimeout } from './properties.js';
 import { blindnessBlocked, blindfolded, heroIsBlind, permanentBlind } from './senses.js';
 import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } from './hero_species.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js';
-import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
+
 import { minimalObjectName } from './objnam.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
