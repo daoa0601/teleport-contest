@@ -2907,25 +2907,33 @@ export async function turnGolemToStone(monster, publish) {
         await newsym(monster.mx, monster.my);
     return { changed, heroDied: false };
 }
+// C mon.c:vamp_stone() (mon.c:3766-3830). A vampshifter escapes petrifying
+// only while actually shifted into a non-genocided alternate form
+// (mon.c:3773-3774); otherwise it stones. A shapechanger whose base form
+// resists stoning (a sandestin) always escapes: it is healed first, and
+// newcham() reverts it to the innate shape — or refuses without side
+// effects when that shape is genocided or already current (mon.c:5339-5343)
+// — leaving the monster alive either way (mon.c:3817-3827). cham is never
+// cleared, so the reverted monster remains a shapechanger that
+// mcalcdistress() keeps polling, and newcham() owns the NC_SHOW_MSG
+// transformation message (mon.c:5460-5476): the capitalized tame-aware old
+// name, "turns into a <form>!", or "disappears!"/"appears!" with the smell
+// of an unspotable form.
 export async function restoreShapechanger(monster, publish) {
     const baseForm = monster?.cham;
-    if (baseForm === undefined || !Number.isInteger(baseForm) || baseForm < 0
-        || baseForm === monster.mnum || speciesWasGenocided(baseForm, game)) {
+    if (baseForm === undefined || !Number.isInteger(baseForm) || baseForm < 0)
         return null;
-    }
-    if (VAMPIRE_FORMS.has(baseForm))
+    if (VAMPIRE_FORMS.has(baseForm)) {
+        if (baseForm === monster.mnum || speciesWasGenocided(baseForm, game))
+            return null;
         return await reviveStonedVampire(monster, baseForm, publish);
+    }
     if (!monsterHasStoneResistance({ mnum: baseForm }))
         return null;
-    const oldName = monsterTypeName(monster.mnum, !!monster.female);
     restoreRevertedMonsterHealth(monster);
-    const change = await changeMonsterForm(monster, baseForm, game, { publish });
-    if (!change || change.heroDied)
+    const change = await changeMonsterForm(monster, baseForm, game, { showMessage: true, publish });
+    if (change?.heroDied)
         return change;
-    monster.cham = -1;
-    if (canSeeMonster(monster)) {
-        await publish(`The ${oldName} turns into ${monsterTypeName(baseForm)}!`);
-    }
     await newsym(monster.mx, monster.my);
     return { changed: true, heroDied: false };
 }
