@@ -58,6 +58,10 @@ jobs:
         run: |
           node scripts/static-gaps.mjs edges --check-ledger docs/ledger/c-edges.tsv | tee static-edges.txt
           { echo '```'; head -5 static-edges.txt; tail -1 static-edges.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Module-owner ledger check
+        run: |
+          node scripts/static-gaps.mjs owners --check-ledger docs/ledger/module-owners.tsv | tee static-owners.txt
+          { echo '```'; head -4 static-owners.txt; tail -1 static-owners.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always()
         with:

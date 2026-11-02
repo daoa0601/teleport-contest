@@ -1156,6 +1156,8 @@ export async function addShopObjectToBill(object, state = game, { ininv = true, 
     }
     return transaction;
 }
+// C invent.c:count_contents(container, TRUE, TRUE, FALSE, TRUE).
+// Count unpaid stack quantities, including contents of nested containers.
 function countUnpaidContents(container) {
     let count = 0;
     for (const content of container.contents || []) {
@@ -3039,6 +3041,7 @@ export async function chatWithShopkeeper(monster, state = game) {
     }
     await plineWithContinuation(message);
 }
+// C shk.c:block_door(). A shopkeeper blocks a diagonal shop exit.
 export function shopkeeperBlockingDoor(x, y, state = game) {
     if (state.level?.at(x, y)?.typ !== DOOR)
         return null;
@@ -3050,6 +3053,7 @@ export function shopkeeperBlockingDoor(x, y, state = game) {
         && shop.shd.x === x && shop.shd.y === y && !monsterIsHelpless(keeper)
         && (shop.debit || shop.billct || shop.robbed) ? keeper : null;
 }
+// C shk.c:block_entry(). A shopkeeper blocks a diagonal shop entry.
 export function shopkeeperBlockingEntry(x, y, state = game) {
     const door = state.level?.at(state.u.ux, state.u.uy);
     if (door?.typ !== DOOR || door.doormask !== D_BROKEN)

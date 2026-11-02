@@ -487,6 +487,7 @@ function rayResistance(monster, damageType, state) {
         return monsterHasAcidResistance(monster);
     return false;
 }
+// C zap.c:disintegrate_mon(). The ray destroys armor, then the monster.
 async function disintegrateMonster(monster, state) {
     if (monsterHasDisintegrationResistance(monster)) {
         return { damage: 0, resisted: true };

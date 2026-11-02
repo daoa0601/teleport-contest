@@ -30,6 +30,8 @@ export async function airTurbulenceStopsHero(): Promise<boolean> {
     return true;
 }
 
+// C hack.c:water_turbulence(). Water can foil the intended move; the
+// native water friction guard is folded into the call below.
 export async function waterTurbulenceStopsHero(): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;

@@ -1027,6 +1027,9 @@ export async function detectObjects(source, { state = game, objectClass = 0 } = 
 function effectResult(result, known, strangeFeeling = false) {
     return { result, known, strangeFeeling };
 }
+// C potion.c:strange_feeling(), message half, as detect.c's detectors call
+// it; the trycall/useup half stays with the callers' effectResult handling.
+// The owning full port is potion.ts:strangeFeeling().
 async function strangeFeeling(message, state, forceMessage = false) {
     await plineWithContinuation(state.flags.beginner && !forceMessage
         ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`

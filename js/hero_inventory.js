@@ -147,6 +147,7 @@ export async function reactToSeenInventoryObject(object, state = game) {
     learnObjectType(object.otyp, state);
     recordLiteracy('became literate by deciphering a scroll label', { state });
 }
+// C invent.c:learn_unseen_invent(). Regaining sight marks unseen inventory.
 export async function learnUnseenInventory(state = game) {
     if (heroIsBlind(state))
         return;

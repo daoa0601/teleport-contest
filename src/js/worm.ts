@@ -348,6 +348,7 @@ export async function shrinkStationaryMonsterWorm(monster: Monster, { rollDice =
         monster.mhp = Math.max(1, monster.mhp - rollDice(2, 2));
 }
 
+// C worm.c:shrink_worm(). Drops the starting tail segment.
 async function removeWormTailTip(monster: WormMonster) {
     const tip = monster.wormSegments.pop();
     if (tip) await newsym(tip.x, tip.y);

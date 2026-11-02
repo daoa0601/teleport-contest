@@ -1025,6 +1025,9 @@ function effectResult(result: 0 | 1, known: boolean, strangeFeeling = false): De
     return { result, known, strangeFeeling };
 }
 
+// C potion.c:strange_feeling(), message half, as detect.c's detectors call
+// it; the trycall/useup half stays with the callers' effectResult handling.
+// The owning full port is potion.ts:strangeFeeling().
 async function strangeFeeling(message: string, state: GameState, forceMessage = false) {
     await plineWithContinuation(state.flags.beginner && !forceMessage
         ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`

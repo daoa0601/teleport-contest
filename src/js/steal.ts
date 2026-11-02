@@ -753,7 +753,7 @@ export async function releaseMonsterInventory(monster: Monster, state: GameState
     return dropped;
 }
 
-// C steal.c:thiefdead(), called by mon.c:m_detach() for death or removal.
+// C steal.c:thiefdead(), called from mon.c m_detach for death or removal.
 // Keep the armor-removal delay, but replace the theft and recovery message.
 export function armorThiefGone(monster: Monster, state: GameState = game): void {
     const theft = state._armorTheft;

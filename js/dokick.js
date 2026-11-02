@@ -991,7 +991,7 @@ function stairwayAt(state, x, y) {
     }
     return null;
 }
-function nextLevel(state) {
+function levelBelow(state) {
     const current = state.u?.uz || { dnum: 0, dlevel: 1 };
     return { ...current, dlevel: (current.dlevel ?? 1) + 1 };
 }
@@ -1014,14 +1014,14 @@ function trapDestination(state) {
         return state.valley_level || null;
     if (inEndgame(state) || onBottomLevel(state))
         return null;
-    return nextLevel(state);
+    return levelBelow(state);
 }
 function downwardGate(state, x, y) {
     if (onQuestStart(state) && !okToQuest(state))
         return null;
     const stair = stairwayAt(state, x, y);
     if (stair && !stair.up) {
-        const destination = stair.tolev || nextLevel(state);
+        const destination = stair.tolev || levelBelow(state);
         if (stair.isladder) {
             return {
                 arrival: MIGR_LADDER_UP,

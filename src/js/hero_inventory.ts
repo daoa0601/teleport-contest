@@ -158,6 +158,7 @@ export async function reactToSeenInventoryObject(object: GameObject, state: Game
     recordLiteracy('became literate by deciphering a scroll label', { state });
 }
 
+// C invent.c:learn_unseen_invent(). Regaining sight marks unseen inventory.
 export async function learnUnseenInventory(state: GameState = game) {
     if (heroIsBlind(state)) return;
     const priest = state.urole?.key === 'priest';

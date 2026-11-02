@@ -116,6 +116,16 @@ function wordMatch(cWords, portWords) {
             at++;
     return at === cWords.length;
 }
+// The function's own origin citation: the FIRST comment line of the block
+// above the declaration must open with `C file.c:name()`. Mentions later in
+// the block, or mid-prose ("reads X() as", "through X()", "via X()"), are
+// callee coverage for the edges mode and never an origin.
+export function originCitation(firstComment) {
+    if (!firstComment)
+        return null;
+    const match = /^\/\/\s*(?:C\s+)?[A-Za-z0-9_]+\.[ch]:\s*([A-Za-z_][A-Za-z0-9_]*)\(\)/.exec(firstComment);
+    return match?.[1] ?? null;
+}
 // `name(` or `name()` in comment text, normalized.
 function citations(comments) {
     const names = new Set();
@@ -167,6 +177,16 @@ function portIndex(root) {
         for (const fn of fns) {
             for (const name of citations(leadingComments(fn)))
                 byCitation.set(name, [...(byCitation.get(name) ?? []), fn]);
+        }
+    }
+    const byOrigin = new Map();
+    for (const fns of byName.values()) {
+        for (const fn of fns) {
+            const origin = originCitation(leadingComments(fn)[0]);
+            if (origin) {
+                const key = normalizedName(origin);
+                byOrigin.set(key, [...(byOrigin.get(key) ?? []), fn]);
+            }
         }
     }
     const direct = new Map();
@@ -246,7 +266,7 @@ function portIndex(root) {
         const source = fn.getSourceFile();
         return `${relative(root, source.fileName)}:${source.getLineAndCharacterOfPosition(fn.getStart(source)).line + 1}`;
     };
-    return { byName, byCitation, reach, locate };
+    return { byName, byCitation, byOrigin, reach, locate };
 }
 function readAliases(path) {
     const aliases = new Map();
@@ -279,12 +299,13 @@ function readJustified(path) {
     });
     return justified;
 }
-export async function compareEdges(root, tree, cacheDir, definedIn) {
+export async function compareEdges(root, tree, cacheDir, definedIn, ownOriginOnly = false) {
     const graph = await cCallGraph(tree, cacheDir, definedIn);
     const index = portIndex(root);
     const aliases = readAliases(join(root, 'docs', 'ledger', 'c-ts-aliases.tsv'));
     const justified = readJustified(join(root, 'docs', 'ledger', 'c-edges-justified.tsv'));
     const portNames = (cName) => [cName, ...(aliases.get(cName) ?? [])].map(normalizedName);
+    const citationIndex = ownOriginOnly ? index.byOrigin : index.byCitation;
     const rows = [];
     const unmapped = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {
@@ -292,9 +313,12 @@ export async function compareEdges(root, tree, cacheDir, definedIn) {
         const byName = [...new Set(portNames(caller).flatMap(name => index.byName.get(name) ?? []))];
         // A citation counts when the C name itself has no same-named port
         // function; an alias adds counterparts but never hides a citation.
+        // `ownOriginOnly` (the owners view) reads only a comment block that
+        // opens with the port's own `C file.c:name()` citation, so prose
+        // mentions of other C functions cannot claim ownership.
         const ownName = index.byName.get(normalizedName(caller)) ?? [];
         const counterparts = [...new Set([...byName,
-                ...(ownName.length ? [] : portNames(caller).flatMap(name => index.byCitation.get(name) ?? []))])];
+                ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []))])];
         if (!counterparts.length) {
             unmapped.push({ file, function: caller });
             continue;

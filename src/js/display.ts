@@ -2225,6 +2225,7 @@ async function showMapRegion(x: number, y: number) {
             glyph: cmapToGlyph(poisonous ? CmapSymbol.poisoncloud : CmapSymbol.cloud) });
 }
 
+// C display.c:mon_overrides_region(). A sensed monster outranks a gas cloud.
 function monsterOverridesMapRegion(monster: Monster | null | undefined, x: number, y: number) {
     if (game.level?.at(x, y)?.remembered_glyph?.kind === 'invisible') return true;
     if (!monster) return false;

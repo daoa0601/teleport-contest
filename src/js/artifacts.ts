@@ -274,6 +274,8 @@ export function artifactWarningMask(
         : 0;
 }
 
+// C artifact.c:glow_color(). The warning-glow color for Sting, Orcrist, and
+// Grimtooth, as Sting_effects names it in the start-glowing message.
 export function artifactGlowColor(object: GameObject, state: GameState = game): string {
     const artifact = artifactById(object.oartifact, state);
     if (!artifact) throw new Error('Artifact glow requires a known artifact');
@@ -778,6 +780,7 @@ export function artifactStrikesShade(
     return artifactById(object?.oartifact)?.name === 'Sunsword';
 }
 
+// C artifact.c:bane_applies(). The artifact's bane targets the carrier.
 export function artifactBaneApplies(
     artifact: Artifact | null | undefined,
     state: GameState = game,
@@ -857,21 +860,22 @@ export function rollHeroArtifactBlast(
     return damage;
 }
 
-// C artifact.c:is_magic_key()/has_magic_key(), for monster carriers.
-
 const PM_ROGUE = MONSTER_NAME.indexOf('rogue');
 
+// C artifact.c:is_magic_key(). Master Key of Thievery, keyed to rogues.
 export function isMonsterMagicKey(monster: Monster, object: GameObject, state: GameState = game): boolean {
     if (artifactById(object.oartifact, state)?.name !== 'The Master Key of Thievery') return false;
     return monster.mnum === PM_ROGUE ? !object.cursed : !!object.blessed;
 }
 
+// C artifact.c:has_magic_key(), for the hero's inventory.
 export function heroHasMagicKey(state: GameState = game): boolean {
     return state.inventory.some(object =>
         artifactById(object.oartifact, state)?.name === 'The Master Key of Thievery'
         && (state.urole?.key === 'rogue' ? !object.cursed : object.blessed));
 }
 
+// C artifact.c:has_magic_key(), for a monster's inventory.
 export function monsterHasMagicKey(monster: Monster, state: GameState = game): boolean {
     return (monster.minvent || []).some(object => isMonsterMagicKey(monster, object, state));
 }

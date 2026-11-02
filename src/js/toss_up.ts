@@ -48,6 +48,7 @@ const MINERAL = 21;
 const M1_WALLWALK = 0x08;
 const M1_UNSOLID = 0x00100000;
 
+// C dothrow.c:toss_up(). The hero tosses an object upwards; it falls back.
 export async function tossObjectUp(object: GameObject, {
     state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd,
 }: TossUpOptions = {}): Promise<GameObject | null> {

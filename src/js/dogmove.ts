@@ -155,6 +155,7 @@ function petCanSee(pet: Monster, x: number, y: number) {
     return clearPath(pet.mx, pet.my, x, y);
 }
 
+// C dogmove.c:find_targ(). Walks outward for a ranged-attack target.
 function findTarget(
     pet: Monster,
     dx: number,

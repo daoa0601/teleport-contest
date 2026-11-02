@@ -597,6 +597,7 @@ function rayResistance(monster: Monster, damageType: DamageType, state: GameStat
     return false;
 }
 
+// C zap.c:disintegrate_mon(). The ray destroys armor, then the monster.
 async function disintegrateMonster(monster: Monster, state: GameState): Promise<MonsterRayHit> {
     if (monsterHasDisintegrationResistance(monster)) {
         return { damage: 0, resisted: true };

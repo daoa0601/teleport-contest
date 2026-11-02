@@ -1181,6 +1181,9 @@ async function stealGold(attacker, defender, context) {
         await publish(`${thiefName} steals some gold from ${monsterName(defender, { state })}.`);
     return escapeAfterTheft(attacker, thiefName, context);
 }
+// C uhitm.c:mhitm_ad_sedu(), its monster-vs-monster theft branch: steal a
+// non-cursed item when the thief is tame. The hero branch is steal_it,
+// ported in hero_natural_theft.ts.
 async function stealItem(attacker, defender, context) {
     if (attacker.mcan)
         return theftResult(context.damage);

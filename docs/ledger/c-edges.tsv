@@ -1,5 +1,6 @@
 # caller	callee — C call edges the port counterpart reaches (static-gaps.mjs edges)
 Cloak_off	newsym
+Finish_digestion	cpostfx
 H2Opotion_dip	water_damage
 Hear_again	make_deaf
 Hear_again	rn2
@@ -108,6 +109,8 @@ bite	do_reset_eat
 blackout	isok
 blackout	unset_seenv
 blengr	rn2
+block_door	in_rooms
+block_entry	in_rooms
 block_point	fill_point
 blocked_boulder	isok
 blocking_terrain	is_waterwall
@@ -131,6 +134,10 @@ bounded_increase	rnd
 break_armor	exercise
 break_armor	surface
 breaksink	newsym
+build_room	create_room
+build_room	create_subroom
+build_room	rn2
+build_room	topologize
 buried_ball_to_freedom	newsym
 buried_ball_to_freedom	reset_utrap
 buried_ball_to_punishment	newsym
@@ -183,6 +190,7 @@ check_here	look_here
 check_here	nomul
 check_leash	rn2
 check_leash	rnd
+check_pos	isok
 check_shop_obj	contained_gold
 check_shop_obj	costly_spot
 check_shop_obj	in_rooms
@@ -270,7 +278,13 @@ cprefx	exercise
 cprefx	maybe_cannibal
 cprefx	use_up_tin
 crawl_destination	doorless_door
+create_altar	in_rooms
+create_altar	rn2
+create_corridor	makecorridors
 create_critters	makemon
+create_door	isok
+create_door	okdoor
+create_door	rn2
 create_gas_cloud	make_gas_cloud
 create_gas_cloud	rn2
 create_gas_cloud_selection	make_gas_cloud
@@ -1057,6 +1071,8 @@ end_engulf	newsym
 engrave	newsym
 engulfer_digests_food	pm_to_cham
 enhance_weapon_skill	yn_function
+ensure_way_out	selection_floodfill
+ensure_way_out	selection_getpoint
 enter_explore_mode	paranoid_query
 erode_obj	rnl
 escape_from_sticky_mon	nomul
@@ -1104,6 +1120,13 @@ feel_newsym	feel_location
 feel_newsym	newsym
 figurine_location_checks	isok
 figurine_location_checks	may_passwall
+fill_empty_maze	makemon
+fill_empty_maze	maketrap
+fill_empty_maze	mkgold
+fill_empty_maze	mkobj_at
+fill_empty_maze	mksobj_at
+fill_empty_maze	rn2
+fill_empty_maze	rnd
 fill_ordinary_room	level_difficulty
 fill_ordinary_room	makemon
 fill_ordinary_room	maketrap
@@ -1131,6 +1154,8 @@ find_guard_dest	tele
 find_okay_roompos	bydoor
 find_okay_roompos	occupied
 find_poleable_mon	glyph_at
+find_targ	clear_path
+find_targ	isok
 finddpos	finddpos_shift
 finddpos	rn2
 finddpos_shift	good_rm_wall_doorpos
@@ -1174,6 +1199,12 @@ flashburn	make_blinded
 flashburn	shieldeff
 flip_coin	acurr
 flip_coin	rn2
+flip_level	fix_wall_spines
+flip_level	placebc
+flip_level	set_wall_state
+flip_level	unplacebc
+flip_level	vision_reset
+flip_level_rnd	rn2
 float_down	dismount_steed
 float_down	encumber_msg
 float_down	is_lava
@@ -1293,6 +1324,8 @@ godvoice	rn2
 good_rm_wall_doorpos	bydoor
 good_rm_wall_doorpos	isok
 goodpos	accessible
+goodpos	closed_door
+goodpos	is_pool
 goodpos	isok
 goodpos	rn2
 gulpmm	newsym
@@ -1783,6 +1816,10 @@ maybe_generate_rnd_mon	rn2
 maybe_reset_pick	reset_pick
 maybe_sdoor	rn2
 maybe_smudge_engr	rnd
+maybe_spin_web	d
+maybe_spin_web	in_rooms
+maybe_spin_web	maketrap
+maybe_spin_web	rn2
 maybe_unhide_at	is_pool
 mayberem	acurr
 mayberem	rn2
@@ -2020,6 +2057,8 @@ mount_steed	yn_function
 move_bc	bc_order
 move_bc	maybe_unhide_at
 move_bc	newsym
+move_gold	newsym
+move_gold	rn2
 move_into_trap	check_leash
 move_into_trap	exercise
 move_into_trap	newsym
@@ -2246,6 +2285,10 @@ openholdingtrap	reward_untrap
 openholdingtrap	rn2
 openholdingtrap	trapname
 openholdingtrap	vision_recalc
+openone	newsym
+openone	open_drawbridge
+openone	openholdingtrap
+openone	wake_nearto
 out_container	costly_spot
 out_container	fatal_corpse_mistake
 out_container	lift_object
@@ -2831,6 +2874,7 @@ set_artifact_intrinsic	get_artifact
 set_artifact_intrinsic	see_monsters
 set_bc	bc_order
 set_bc	newsym
+set_door_orientation	isok
 set_levltyp	count_level_features
 set_levltyp	isok
 set_levltyp_lit	isok
@@ -2849,6 +2893,7 @@ set_ulycn	set_uasmon
 set_wounded_legs	encumber_msg
 setup_waterlevel	rn2
 setworn	set_artifact_intrinsic
+shared_with_room	isok
 shieldeff	flush_screen
 shieldeff	newsym
 shiny_orc_stuff	rn2
@@ -3108,6 +3153,12 @@ tmp_at	isok
 tmp_at	newsym
 toggle_blindness	see_monsters
 toggle_blindness	vision_recalc
+toss_up	ceiling
+toss_up	done
+toss_up	losehp
+toss_up	make_blinded
+toss_up	rn2
+toss_up	rnd
 touchfood	sellobj_state
 transient_light_cleanup	discard_flashes
 transient_light_cleanup	flush_screen
@@ -3354,6 +3405,9 @@ water_damage	rn2
 water_damage	rnd
 water_damage_chain	water_damage
 water_has_kelp	rn2
+water_turbulence	isok
+water_turbulence	near_capacity
+water_turbulence	nomul
 weapon_insight	skill_name
 welcome	l_nhcore_call
 wielding_corpse	instapetrify
@@ -3430,6 +3484,20 @@ you_unwere	unconscious
 you_were	paranoid_query
 you_were	unconscious
 youhiding	surface
+zap_dig	closed_door
+zap_dig	dighole
+zap_dig	fillholetyp
+zap_dig	in_rooms
+zap_dig	in_town
+zap_dig	is_pool
+zap_dig	isok
+zap_dig	losehp
+zap_dig	may_dig
+zap_dig	newsym
+zap_dig	recalc_block_point
+zap_dig	rn2
+zap_dig	rnd
+zap_dig	stairway_at
 zap_hit	rn2
 zap_hit	rnd
 zap_map	close_drawbridge

@@ -207,6 +207,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
     }
 }
 
+// C eat.c:Finish_digestion(). Corpse post-effects once digestion completes.
 export async function finishHeroDigestion(state: GameState = game): Promise<void> {
     const species = state._digestedMonsterSpecies;
     if (species === undefined || species === null) return;

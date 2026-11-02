@@ -210,6 +210,7 @@ async function deleteGlob(glob, state) {
         return;
     deallocateObject(glob, state);
 }
+// C eat.c:eating_glob(). True while this glob is the meal in progress.
 function activelyEatingGlob(glob, state) {
     return state._occupation?.key === 'eat-food'
         && state.context.victual?.piece === glob;
