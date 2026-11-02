@@ -128,6 +128,7 @@ void test('a floor-pile window too wide for a corner overlays only its own rows'
     });
     const ration = await floorObject(FOOD_RATION, 10, 10);
     const input = resetInputState();
+    await flush_screen(1);
     const listing = showFloorPile([apple, ration]);
     await input.waitUntilBlocked();
     const title = displayedRow(0);
@@ -137,7 +138,7 @@ void test('a floor-pile window too wide for a corner overlays only its own rows'
     await listing;
     assert.match(title, /^Things that are here:/);
     assert.match(marker, /^ --More--/);
-    // look_here() flushes the lit room before the window; its rows stay.
+    // The previously displayed room stays visible below the window.
     assert.match(rowBelowWindow, /^ {6}\.{10} *$/);
 });
 // C invent.c:look_here() shows the pile in a corner window and its
