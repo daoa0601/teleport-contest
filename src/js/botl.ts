@@ -3,7 +3,7 @@
 
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
-import { currentHungerState } from './hunger.js';
+import { currentHungerState } from './eat.js';
 import { renderStatusLine2, writeStatusLines, hitpointBar, conditionStyle } from './wintty.js';
 import type { StatusLine2Layout } from './wintty.js';
 import { statusVersion } from './version.js';
@@ -70,6 +70,7 @@ import {
 import { NO_COLOR, ATR_BOLD, ATR_INVERSE, ATR_UNDERLINE } from './terminal.js';
 import { classifyStatusTerrain } from './hack.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
+
 // C ref: botl.c:get_strength_str(): strength values above 18 encode the exceptional
 // 18/xx range; 118 is the traditional 18/** maximum.
 export function formatStrength(value: number | null | undefined) {

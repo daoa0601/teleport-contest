@@ -5,7 +5,7 @@ import {
     DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP,
     D_CLOSED, D_ISOPEN, NO_MINVENT, PIT, STONE,
 } from '../js/const.js';
-import { grantCorpseIntrinsic } from '../js/corpse_intrinsics.js';
+import { grantCorpseIntrinsic } from '../js/eat.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';

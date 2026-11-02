@@ -18,7 +18,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import {
     gainHeroNutrition, getHungry, resetHeroFaint, spendHeroNutrition,
-} from '../js/hunger.js';
+} from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

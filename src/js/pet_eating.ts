@@ -9,7 +9,7 @@ import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { foodNutrition } from './food_lifecycle.js';
+import { foodNutrition } from './eat.js';
 import { inventoryItemDescription } from './invent.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { consumeMonsterObject } from './mon.js';

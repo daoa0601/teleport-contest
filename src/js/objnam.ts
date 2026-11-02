@@ -25,7 +25,9 @@ import {
     monsterIsVerySmall, monsterTypeName,
 } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
-import { parseTinPreparation, setTinVariety, tinDetails } from './tin.js';
+import {
+    parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition,
+} from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { objectWeight } from './weight.js';
@@ -68,7 +70,6 @@ import {
     YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL,
 } from './object_data.js';
 import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
-import { consumeRemainingFood, foodNutrition } from './food_lifecycle.js';
 import { placeCreatedObject } from './floor_object.js';
 import { beginObjectBurn } from './light.js';
 import { hatchableEggSpecies } from './egg_species.js';
@@ -90,6 +91,7 @@ import { vision_note_blocker_change } from './vision.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import { lookupNovelTitle } from './novel_titles.js';
 import type { Fruit } from './game_state.js';
+
 export { japaneseItemName } from './japanese_item_name.js';
 
 // Detection and minimal_xname supply a naming view without allocating a game object.
@@ -282,16 +284,6 @@ export function objectCombatName(object: GameObject, {
     let name = objectName(object, state);
     if ((object.quan ?? object.quantity ?? 1) !== 1) name = pluralizeObjectNoun(object, name);
     return name.replace(/^the /iu, '');
-}
-
-// C eat.c:food_xname(): eating describes one item, even in a larger stack.
-export function foodObjectName(object: GameObject, {
-    state = game, definite = false,
-}: { state?: GameState; definite?: boolean } = {}): string {
-    if (object.otyp === CORPSE)
-        return corpseName(object, { singular: true, definite });
-    const name = objectName(object, state);
-    return definite ? definiteName(name, state) : name;
 }
 
 // invent.c:loot_xname() ignores counts and individual user names. Its

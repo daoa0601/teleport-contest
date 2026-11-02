@@ -5,7 +5,7 @@ import { A_INT, A_STR, A_WIS, HUNGRY, P_BASIC, P_SKILLED, WEAK } from '../js/con
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
-import { currentHungerState } from '../js/hunger.js';
+import { currentHungerState } from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, CHAIN_MAIL, HELMET, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, QUARTERSTAFF, ROBE, ROCK, SMALL_SHIELD, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_TURN_UNDEAD, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { ensureHeroSkills } from '../js/skills.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findArmorClass } from '../js/armor.js';
-import { digestAccessory } from '../js/eaten_accessory.js';
+import { digestAccessory } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';

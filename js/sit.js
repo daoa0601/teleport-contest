@@ -7,7 +7,7 @@ import { displayLiquidName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition } from './eat.js';
 import { heroCanReachFloor } from './floor_reach.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { stack_object } from './floor_object.js';

@@ -44,7 +44,7 @@ import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold } from './gold.js';
 import { heroGoldAmount } from './hero_gold.js';
-import { restoreHeroNutrition } from './hunger.js';
+import { restoreHeroNutrition } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';

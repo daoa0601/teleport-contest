@@ -6,7 +6,7 @@ import { A_INT, A_STR, A_WIS, HUNGRY, P_BASIC, P_SKILLED, WEAK } from '../js/con
 import { wearHeroArmor } from '../js/armor.js';
 import { game } from '../js/gstate.js';
 import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
-import { currentHungerState } from '../js/hunger.js';
+import { currentHungerState } from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import {
     AMULET_OF_YENDOR, CHAIN_MAIL, HELMET, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,

@@ -18,7 +18,6 @@ src/js/boulder_pool.ts	do.c
 src/js/boulder_push.ts	hack.c
 src/js/calendar.ts	calendar.c
 src/js/camera.ts	apply.c
-src/js/cannibalism.ts	eat.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
 src/js/coin_flip.ts	apply.c
@@ -27,9 +26,6 @@ src/js/config_errors.ts	wintty.c
 src/js/confused_loot.ts	pickup.c
 src/js/confusing_touch.ts	uhitm.c
 src/js/context_menu.ts	cmd.c
-src/js/corpse_eating.ts	eat.c
-src/js/corpse_intrinsics.ts	eat.c
-src/js/corpse_meal.ts	eat.c
 src/js/cream_pie.ts	apply.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
@@ -43,7 +39,6 @@ src/js/drawbridge_occupants.ts	dbridge.c
 src/js/drawbridge_terrain.ts	dbridge.c
 src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
-src/js/eaten_accessory.ts	eat.c
 src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
 src/js/enchant_weapon.ts	wield.c
@@ -63,12 +58,10 @@ src/js/fire_damage.ts	trap.c
 src/js/floor_naming.ts	do_name.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
-src/js/food_conduct.ts	eat.c
-src/js/food_edibility.ts	eat.c
-src/js/food_lifecycle.ts	eat.c
 src/js/fruit.ts	objnam.c
 src/js/fumbling.ts	timeout.c
 src/js/genocide.ts	read.c
+src/js/glob.ts	mkobj.c
 src/js/glyph_customizations.ts	display.c
 src/js/gold_throw.ts	dothrow.c
 src/js/grappling_hook.ts	apply.c
@@ -80,6 +73,7 @@ src/js/hero_attack_accuracy.ts	weapon.c
 src/js/hero_attack_conduct.ts	uhitm.c
 src/js/hero_breath.ts	zap.c
 src/js/hero_breath_command.ts	polyself.c
+src/js/hero_combat_engulf.ts	uhitm.c
 src/js/hero_damage.ts	hack.c
 src/js/hero_drop.ts	do.c
 src/js/hero_energy.ts	trap.c
@@ -121,7 +115,6 @@ src/js/hero_web.ts	polyself.c
 src/js/hero_web_fight.ts	hack.c
 src/js/hole_destination.ts	trap.c
 src/js/horn_of_plenty.ts	mkobj.c
-src/js/hunger.ts	eat.c
 src/js/ice.ts	zap.c
 src/js/ident.ts	mkobj.c
 src/js/individual_naming.ts	do_name.c
@@ -151,19 +144,18 @@ src/js/lua/selection.ts	botl.c
 src/js/makemon.ts	makemon.c
 src/js/maze_terrain.ts	mkmaze.c
 src/js/mcastu.ts	mcastu.c
-src/js/meal_mimic.ts	eat.c
 src/js/menu_coloring.ts	windows.c
 src/js/mhitm.ts	mhitm.c
 src/js/mimic.ts	lock.c
 src/js/mirror.ts	apply.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
+src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
 src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
-src/js/nonfood_eating.ts	eat.c
 src/js/novel_titles.ts	do_name.c
 src/js/o_init.ts	o_init.c
 src/js/object_properties.ts	artifact.c
@@ -171,7 +163,6 @@ src/js/occupation.ts	allmain.c
 src/js/occupation_reset.ts	cmd.c
 src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c
-src/js/ordinary_food_effects.ts	eat.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
@@ -231,7 +222,6 @@ src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/timeout_warnings.ts	timeout.c
 src/js/timer_effects.ts	timeout.c
-src/js/tin.ts	eat.c
 src/js/tinning_kit.ts	apply.c
 src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c

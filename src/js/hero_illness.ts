@@ -8,49 +8,26 @@ import type { Hero } from './hero_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import { heroIsHallucinating } from './senses.js';
-import { isIceAt } from './terrain_properties.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { makeConfused, makeStunned } from './hero_mental_status.js';
-import { currentMulti } from './cmd.js';
-import { endVoluntaryMultiTurn, nomul } from './hack.js';
-import { heroStomachName } from './body_parts.js';
+import { endVoluntaryMultiTurn } from './hack.js';
 import {
     adjustAttribute, currentAttribute, exerciseAttribute,
 } from './attrib.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import {
-    A_CON, ALTAR, FAINTING, POISONING, SICK_ALL,
-    SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT,
-} from './const.js';
+import { A_CON, FAINTING, POISONING, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, TIMEOUT } from './const.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { withIndefiniteArticle } from './objnam.js';
 
 import { definiteName } from './objnam.js';
-import { nameToMonster } from './mondata.js';
+import { nameToMonster, heroCannotVomit } from './mondata.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { currentHungerState, spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition, openingTinMaySaveHero, vomitHero } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
-import { openingTinMaySaveHero } from './tin.js';
-import { meltIce } from './ice.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL,
-} from './monster_data.js';
-import { heroMonsterForm } from './polyself.js';
-import { altarWrath } from './pray.js';
+import { MONSTER_FLAGS2, MONSTER_GENO } from './monster_data.js';
 import { d, rn2 } from './rng.js';
 import { propertyIsActive } from './properties.js';
-import {
-    heroAcidBreathAttack, hitHeroWithRay,
-} from './hero_breath.js';
-
-const S_RODENT = 18;
-const M1_ACID = 0x08000000;
-const PM_ROCK_MOLE = 92;
-const PM_WOODCHUCK = 93;
-const PM_PONY = 100;
-const PM_HORSE = 104;
-const PM_WARHORSE = 105;
 
 export function heroIsSick(state = game) {
     return !!state.u?.sick || (state.u?.sickTurns ?? 0) > 0;
@@ -158,90 +135,6 @@ export function cureHeroIllness(state = game) {
         sicknessCured: cureHeroSickness(state),
         nauseaCured: cureHeroVomiting(state),
     };
-}
-
-function heroCannotVomit(state: GameState) {
-    const form = heroMonsterForm(state);
-    if (form == null) return false;
-    if (MONSTER_SYMBOL[form] === S_RODENT
-        && form !== PM_ROCK_MOLE && form !== PM_WOODCHUCK) return true;
-    return form === PM_PONY || form === PM_HORSE || form === PM_WARHORSE;
-}
-
-function installVomitingHelplessness(state: GameState) {
-    if (currentMulti(state) < -2) return;
-    nomul(-2, state);
-    state._helplessReason = 'vomiting';
-    state._helplessDoneMessage = 'You can move again.';
-}
-
-async function cureFoodPoisoningByVomiting(state: GameState, publish: MessagePublisher) {
-    const hero = state.u;
-    if (!((hero.sickType ?? 0) & SICK_VOMITABLE)) return false;
-    // potion.c make_sick(0): the cure line pages before Sick is cleared and
-    // botl is raised, so the --More-- it raises still shows the old status.
-    return cureHeroSicknessWithMessages(state, SICK_VOMITABLE, publish);
-}
-
-interface VomitOptions {
-    state?: GameState;
-    publish?: MessagePublisher;
-    angerAltar?: typeof altarWrath;
-    melt?: typeof meltIce;
-    random?: typeof rn2;
-    rollDice?: typeof d;
-}
-
-export async function vomitHero({
-    state = game,
-    publish = pline,
-    angerAltar = altarWrath,
-    melt = meltIce,
-    random = rn2,
-    rollDice = d,
-}: VomitOptions = {}) {
-    const hero = state.u;
-    const cannotVomit = heroCannotVomit(state);
-    const hungerState = currentHungerState(state);
-    hero.uhs = hungerState;
-
-    if (cannotVomit) {
-        await publish('Your jaw gapes convulsively.');
-    } else {
-        await cureFoodPoisoningByVomiting(state, publish);
-        if (hungerState >= FAINTING)
-            await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
-    }
-
-    installVomitingHelplessness(state);
-    if (cannotVomit || hungerState >= FAINTING)
-        return { spewed: false, cannotVomit };
-
-    const x = hero.ux, y = hero.uy;
-    const acidBreath = heroAcidBreathAttack(state);
-    if (acidBreath) {
-        await publish('You breathe acid on yourself...');
-        const breath = await hitHeroWithRay({
-            state,
-            attack: acidBreath,
-            publish,
-            random,
-            rollDice,
-        });
-        if (breath.heroDied)
-            return { spewed: true, cannotVomit: false, heroDied: true };
-    }
-    if (state.level?.at(x, y)?.typ === ALTAR)
-        await angerAltar(x, y, state);
-    const form = heroMonsterForm(state);
-    if (form != null
-        && ((MONSTER_FLAGS1[form] ?? 0) & M1_ACID)
-        && isIceAt(x, y, state)) {
-        await melt(x, y, {
-            message: 'Your stomach acid melts straight through the ice!',
-        });
-    }
-    return { spewed: true, cannotVomit: false };
 }
 
 function vomitingMessage(state: GameState, nextTurns: number) {

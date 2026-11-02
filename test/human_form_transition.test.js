@@ -8,7 +8,7 @@ import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { beginMealMimicry } from '../js/meal_mimic.js';
+import { beginMealMimicry } from '../js/eat.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ROCK, WAN_LIGHT } from '../js/object_data.js';
 import { nearCapacity } from '../js/weight.js';

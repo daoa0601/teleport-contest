@@ -43,7 +43,7 @@ import {
 import { selectHeroDisenchantmentTarget } from './do_wear.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
-import { eatHeroBrain, eatMonsterBrain } from './eat.js';
+import { eatHeroBrain, eatMonsterBrain, spendHeroNutrition } from './eat.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { woundHeroLegs } from './hero_legs.js';
@@ -89,15 +89,16 @@ import {
     requireMonsterData,
 } from './monster_data.js';
 import {
-    monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance,
-    monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterPossessive,
+    monsterCombatDefense, monsterFireDescription, monstersForgetHeroResistance,
+    monstersObserveHeroResistance, monsterHasAcidResistance, monsterHasColdResistance,
+    monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance,
+    monsterHasShockResistance, monsterHasStoneResistance, monsterPossessive, monsterIsHelpless,
+    monsterResistsSleep,
 } from './mondata.js';
 import { monsterName, monsterName as displayedMonsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterHasLineOfSightToHero, cansee } from './vision.js';
 import { recordRandom } from './monster_action_types.js';
-import { monsterIsHelpless, monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
@@ -135,7 +136,6 @@ import { burnAwayHeroSlime } from './slime.js';
 import { contactIsProtected, formCanBecomeStoneGolem, touchPetrifies } from './stoning.js';
 import { setHeroGrip } from './hero_grip.js';
 import { attrcurse } from './throne.js';
-import { spendHeroNutrition } from './hunger.js';
 import { stopHeroOccupation } from './occupation.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory, destroyMonsterInventoryByElement, monsterResistsEffect, drainObjectEnchantment } from './zap.js';
 import {

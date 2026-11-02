@@ -31,8 +31,9 @@ import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
-    monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage,
+    monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance,
+    monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive,
+    seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun,
 } from './mondata.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
@@ -99,7 +100,7 @@ import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
-import { disturbMealMimicry } from './meal_mimic.js';
+
 import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './muse.js';
 import { isPoolAt } from './terrain_properties.js';
@@ -152,7 +153,6 @@ import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { objectTypeKnown } from './shk.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
 import {
     AKLYS_LIM,
     P_AXE,
@@ -181,6 +181,10 @@ import {
 } from './object_data.js';
 import { hasIntrinsicProperty, hasInvokedProperty } from './properties.js';
 import { isMissileObject, isWeaponTool } from './object_properties.js';
+import { finishHeroHelplessness } from './allmain.js';
+import { M_AP_OBJECT } from './const.js';
+import { GOLD_PIECE } from './object_data.js';
+import { mimicObjectName } from './objnam.js';
 
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
@@ -3396,4 +3400,32 @@ export function magicNegation(defender: Hero | Monster, state: GameState = game)
         || (hero && ((hasIntrinsicProperty('protection', null, state) && (state.u.ublessed ?? 0) > 0)
             || (state.u.uspellprot ?? 0) > 0));
     return innateProtection ? Math.max(1, cancellation) : cancellation;
+}
+
+// C mhitu.c:mattacku().
+export async function disturbMealMimicry(monster: Monster, { state = game }: { state?: GameState } = {}): Promise<boolean> {
+    requirePlayingGame(state);
+    const hero = state.u;
+    if (!state._mimicMealMessage || hero.m_ap_type !== M_AP_OBJECT || hero.uswallow
+        || monster.mux !== hero.ux || monster.muy !== hero.uy
+        || Math.max(Math.abs(monster.mx - hero.ux), Math.abs(monster.my - hero.uy)) > 1)
+        return false;
+    if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
+    if (!canSeeMonster(monster)) {
+        const picksUpGold = requireMonsterData(MONSTER_FLAGS2, monster.mnum) & 0x10000000
+            && hero.mappearance === GOLD_PIECE;
+        await plineWithContinuation(`Something ${picksUpGold ? 'tries to pick you up' : 'disturbs you'}!`);
+    } else {
+        const name = monsterName(monster, { state, article: 'none', exact: true });
+        const shape = mimicObjectName(hero, state);
+        await plineWithContinuation(`Wait, ${name}!  That ${shape} is really ${
+            withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))
+        } named ${state.plname}!`);
+    }
+    if ((state._helplessTurns ?? 0) > 0) {
+        const shape = Upolyd(hero)
+            ? withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female)) : 'yourself';
+        await finishHeroHelplessness(`You appear to be ${shape} again.`, state);
+    }
+    return true;
 }

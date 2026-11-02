@@ -4,11 +4,11 @@
 // potion.c make_stoned(), and timeout.c stoned_dialogue().
 import { heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn, nomul } from './hack.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
-import { A_CHA, A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH, } from './const.js';
+import { A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
 import { canSpotMonster, randomDisplayMonsterSubject } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -28,7 +28,7 @@ import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './slime.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { openingTinMaySaveHero } from './tin.js';
+import { openingTinMaySaveHero } from './eat.js';
 import { releaseWeaponSlots } from './wield.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { rn2 } from './rng.js';
@@ -169,16 +169,6 @@ export function clearHeroPetrification(state = game) {
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
     return wasPetrifying;
-}
-// C eat.c:fix_petrification(): the timeout stops before its cure feedback.
-export async function fixHeroPetrification({ state = game } = {}) {
-    if (!heroIsPetrifying(state))
-        return false;
-    const message = heroIsHallucinating(state)
-        ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
-        : 'You feel limber!';
-    await setHeroPetrificationTimeout(0, { state, message });
-    return true;
 }
 function removeHeroSpeed(state) {
     setPropertyTimeout('fast', 0, state);

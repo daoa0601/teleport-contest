@@ -19,9 +19,9 @@ import {
     DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY,
     RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL,
 } from './object_data.js';
-import { TIMEOUT, TT_PIT, Upolyd,
-    W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
+import { TT_PIT, Upolyd, W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
 import type { PropertyName } from './property_types.js';
+import { temporaryResistance } from './eat.js';
 
 export type EnlightenmentFinal = 0 | 1 | 2;
 interface PiousnessOptions { showNegative?: boolean; suffix?: string }
@@ -73,10 +73,6 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (active('shockResistance')) are('shock resistant', 'shockResistance');
     lines.push(...itemResistanceLines('shockResistance', 'electric shocks', final));
     if (active('poisonResistance')) are('poison resistant', 'poisonResistance');
-    // C eat.c:temp_resist(): a property held only by a timeout.
-    const temporaryResistance = (property: PropertyName) =>
-        propertyTimeout(property) && !(intrinsicPropertyMask(property) & ~TIMEOUT)
-            && !extrinsicPropertyMask(property) && !propertyIsBlocked(property) ? 'temporarily ' : '';
     if (active('acidResistance')) are(`${temporaryResistance('acidResistance')}acid resistant`, 'acidResistance');
     lines.push(...itemResistanceLines('acidResistance', 'acid', final));
     if (active('drainResistance')) are('level-drain resistant', 'drainResistance');

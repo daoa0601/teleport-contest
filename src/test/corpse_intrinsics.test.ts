@@ -9,11 +9,8 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { moveloop_core } from '../js/allmain.js';
 import { A_STR, TIMEOUT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import {
-    advanceCorpseResistanceTimeouts,
-    corpseEnergyBuzz,
-    grantCorpseIntrinsic,
-} from '../js/corpse_intrinsics.js';
+import { advanceCorpseResistanceTimeouts } from '../js/timeout.js';
+import { corpseEnergyBuzz, grantCorpseIntrinsic } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

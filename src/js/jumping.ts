@@ -32,7 +32,7 @@ import { hurtleJumpTo } from './hero_hurtle.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { heroPassesWalls, heroSpecies } from './hero_species.js';
 import { triggerHeroTrap } from './hero_traps.js';
-import { spendHeroNutrition } from './hunger.js';
+import { spendHeroNutrition } from './eat.js';
 import { gotoLevel } from './level_change.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2 } from './monster_data.js';

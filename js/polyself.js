@@ -20,7 +20,7 @@ import { makeBlinded } from './sight_change.js';
 import { minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
-import { updateHeroHunger } from './hunger.js';
+import { updateHeroHunger } from './eat.js';
 import { isLavaAt, isPoolAt } from './terrain_properties.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { removeEyewear } from './eyewear.js';

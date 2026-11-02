@@ -15,7 +15,8 @@ import { isLavaAt, isPoolAt, levelHasCeiling } from './terrain_properties.js';
 import { minimalObjectName } from './objnam.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY, RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL, } from './object_data.js';
-import { TIMEOUT, TT_PIT, Upolyd, W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
+import { TT_PIT, Upolyd, W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
+import { temporaryResistance } from './eat.js';
 export function piousness(record, { showNegative = true, suffix = '' } = {}) {
     const description = record >= 20 ? 'piously' : record > 13 ? 'devoutly'
         : record > 8 ? 'fervently' : record > 3 ? 'stridently'
@@ -68,9 +69,6 @@ export function attributeEnlightenmentLines(final = 0) {
     lines.push(...itemResistanceLines('shockResistance', 'electric shocks', final));
     if (active('poisonResistance'))
         are('poison resistant', 'poisonResistance');
-    // C eat.c:temp_resist(): a property held only by a timeout.
-    const temporaryResistance = (property) => propertyTimeout(property) && !(intrinsicPropertyMask(property) & ~TIMEOUT)
-        && !extrinsicPropertyMask(property) && !propertyIsBlocked(property) ? 'temporarily ' : '';
     if (active('acidResistance'))
         are(`${temporaryResistance('acidResistance')}acid resistant`, 'acidResistance');
     lines.push(...itemResistanceLines('acidResistance', 'acid', final));
