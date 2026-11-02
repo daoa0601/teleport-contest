@@ -6,51 +6,39 @@ import z3
 import prove
 import queries
 from core import Machine, World
-from queries import QueryContext, solve
-from specs import SPECS
+from queries import QueryContext
+from specs import SPECS, Spec
 
 
-class SolverRetryTests(unittest.TestCase):
-    def test_a_tuned_solver_timeout_is_answered_by_the_default_configuration(self):
-        x, r = z3.Ints('retry_x retry_r')
-        unsat_case = [x >= 1, x <= 50, (r % x) >= x]
-        sat_case = [x >= 4, x <= 40, (r % x) == 3]
-        # The probe budget must make the tuned configuration give up on both
-        # propositions for real; otherwise the fallback below would never
-        # run and the test would pass vacuously.
-        for case in (unsat_case, sat_case):
-            tuned = z3.SolverFor('QF_UFLIA')
-            tuned.set('timeout', 1)
-            tuned.add(z3.simplify(z3.And(*case)))
-            self.assertEqual(tuned.check(), z3.unknown,
-                             'probe budget no longer forces a tuned give-up')
-        self.assertEqual(solve(unsat_case, 60_000, probe_ms=1)[0], z3.unsat)
-        result, solver = solve(sat_case, 60_000, probe_ms=1)
-        self.assertEqual(result, z3.sat)
-        model = solver.model()
-        self.assertGreaterEqual(model[x].as_long(), 4)
-        self.assertEqual(model[r].as_long() % model[x].as_long(), 3)
+class LuckSplitTests(unittest.TestCase):
+    FRAGILE_MAGNITUDES = (0, 1, 2, 3, 4, 5, 13)
 
-    def test_rnl_output_obligations_hold_under_every_solver_seed(self):
-        # The pre-change single solver configuration proved rnl or gave up
-        # on one obligation depending on the z3 seed and process memory
-        # layout: it failed three of three pre-change runs on one machine
-        # and twice on Linux CI, while passing elsewhere. This sweep cannot
-        # reproduce a fragile layout on demand; it keeps the staged
-        # configuration honest by proving the claim for every seed through
-        # the production query pipeline, with no speed expectation.
+    def test_rnl_split_queries_hold_under_every_solver_seed(self):
+        # The unsplit rnl obligation coupled the luck-dependent rn2 draw
+        # modulus with the RND(x) draw, and z3 proved or gave up on that
+        # nonlinear query depending on the random seed and process memory
+        # layout (CI failed twice before a solver retry and once, at seed
+        # 10, through it). specs.luck_partitions fixes the luck-sum
+        # magnitude, which makes every divisor concrete and every split
+        # query linear integer arithmetic, decided deterministically. Sweep
+        # the seeds over the split queries whose unsplit form used to stall.
         spec = next(s for s in SPECS if s.name == 'rnl')
         recorder = prove.recorder_dir()
         front = prove.CFront(recorder, [recorder / 'src' / file for file in prove.C_FILES]
                              + list((prove.HERE / 'harness').glob('*.c')))
         modules = prove.load_modules()
+        fragile = [entry for index, entry in enumerate(spec.partitions(front))
+                   if index in self.FRAGILE_MAGNITUDES]
+        split_spec = Spec(spec.name, spec.c, spec.js, spec.params, pre=spec.pre,
+                          state=spec.state, partitions=lambda front: fragile,
+                          js_file=spec.js_file)
         previous_seed = z3.get_param('smt.random_seed')
         try:
             for seed in range(21):
                 with self.subTest(seed=seed):
                     z3.set_param('smt.random_seed', seed)
                     queries._UNSAT.clear()
-                    proved, report = prove.check(spec, front, modules, spec.pre)
+                    proved, report = prove.check(split_spec, front, modules, split_spec.pre)
                     self.assertTrue(proved, report)
         finally:
             z3.set_param('smt.random_seed', previous_seed)

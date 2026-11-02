@@ -217,8 +217,17 @@ def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool
         return _check(spec, front, modules, pre_fn, pairwise_outputs)
     covered = 0
     for label, fixed in spec.partitions(front):
+        # A partition either fixes symbols to values (the species tables) or
+        # adds arbitrary domain constraints (the rnl luck-sum split); both
+        # must cover the whole domain between them.
+        if callable(fixed):
+            constraints, fixed = fixed, {}
+        else:
+            def constraints(s, _fixed=fixed):
+                return [s[key] == value for key, value in _fixed.items()]
+
         def partition(s):
-            return pre_fn(s) + [s[key] == value for key, value in fixed.items()]
+            return pre_fn(s) + constraints(s)
         partition.unrelated_state = getattr(pre_fn, 'unrelated_state', ())
         partition.fixed_inputs = fixed
         proved, report = _check(spec, front, modules, partition, pairwise_outputs)
@@ -226,10 +235,10 @@ def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool
             return False, f'{label}: {report}'
         covered += 1
         if covered % 64 == 0:
-            print(f'    {spec.name}: {covered} species domains checked')
+            print(f'    {spec.name}: {covered} domains checked')
     if not covered:
         return False, 'domain is empty'
-    return True, f'{covered} species partitions, log=off and log=on'
+    return True, f'{covered} partitions, log=off and log=on'
 
 
 def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, str]:

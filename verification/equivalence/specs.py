@@ -109,8 +109,25 @@ def _d_loops():
             ('js', 'd', 0): LoopSpec(js_inv, lambda v, e: e['n'] - v['i'], js_facts)}
 
 
-LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
+def luck_partitions(front):
+    """Exhaustively split the rnl luck sum by magnitude.
 
+    Both luck fields are signed chars, so u.uluck + u.moreluck lies in
+    [-256, 254] and every value has the magnitude of exactly one partition:
+    k = |sum| with sum in {k, -k} (k = 0 allows only 0). Fixing the
+    magnitude makes every luck-dependent divisor concrete -- the rn2 draw
+    modulus 37 + abs(adjustment) and, for x <= 15, the (abs(sum) + 1) / 3
+    adjustment -- so each partition's obligations are linear integer
+    arithmetic that z3 decides deterministically instead of a nonlinear
+    query whose outcome depended on the solver's seed and memory layout.
+    """
+    return [(f'luck sum magnitude {k}',
+             lambda s, _k=k: [z3.Or(s['u.uluck'] + s['u.moreluck'] == _k,
+                                    s['u.uluck'] + s['u.moreluck'] == -_k)])
+            for k in range(257)]
+
+
+LUCK = [('u.uluck', SCHAR, 'game.u.uluck'), ('u.moreluck', SCHAR, 'game.u.moreluck')]
 ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
 HACKLIB = 'js/hacklib.js'
@@ -130,7 +147,7 @@ SPECS = [
     Spec('rn1', 'rn1_macro', 'rn1', [('x', INT), ('y', INT)],
          pre=lambda s: [s['x'] >= 1, s['y'] + s['x'] - 1 <= INT_MAX],
          probes=[('any y', lambda s: [s['x'] >= 1])]),
-    Spec('rnl', 'rnl', 'rnl', [('x', INT)], state=LUCK,
+    Spec('rnl', 'rnl', 'rnl', [('x', INT)], state=LUCK, partitions=luck_partitions,
          pre=lambda s: [s['x'] >= 1, s['x'] <= INT_MAX - 256],
          probes=[('x == 0', lambda s: [s['x'] == 0]), ('x < 0', lambda s: [s['x'] < 0]),
                  ('x near INT_MAX', lambda s: [s['x'] > INT_MAX - 256])],

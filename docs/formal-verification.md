@@ -71,7 +71,7 @@ this batch's complete run.
 | `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields | 13×18 | 1.6 s |
 | `d` | `rnd.c:d` ↔ `rng.js:d` | `n >= 0`, `x >= 0`, `x >= 1` or `n = 0`, `n*x <= INT_MAX` | 1×1; induction for unbounded n | 0.4 s |
 | `rne` | `rnd.c:rne` ↔ `rng.js:rne` | `x >= 1`, `0 <= ulevel <= 30` | 20×25 | 0.7 s |
-| `rnz` | `rnd.c:rnz` ↔ `rng.js:rnz` | `abs(i) <= 1e8`, `0 <= ulevel <= 30` | 40×50 | 2.5 s |
+| `rnl` | `rnd.c:rnl` ↔ `rng.js:rnl` | `1 <= x <= INT_MAX-256`; any `schar` Luck fields; exhaustive luck-sum-magnitude partitions | 257 partitions of ≤13×18 | 168.2 s |
 | `rn2_on_display_rng` | `rnd.c:rn2_on_display_rng` ↔ `rng.js:rn2Display` | `x >= 1` | 1×1 | 0.1 s |
 | `distmin` | `hacklib.c:distmin` ↔ `hacklib.js:distmin` | Coordinates in [-16384, 16383] | 4×1 | 0.1 s |
 | `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.5 s |
@@ -170,38 +170,31 @@ do not escape, cached contradictions do not cross domains, and changing an
 entry constraint changes feasibility. No proof domain, logging mode, safety
 obligation, probe or mutant was removed.
 
-**Solver robustness.** `rnl`'s per-path-pair output-equality obligations sit
-close to the search limit of both z3 configurations: the identical
-proposition was proved or timed out depending only on the z3 random seed,
-accumulated AST state, or process memory layout, and the Linux CI build hit
-the timeout twice in a row under the default configuration (the branch's own
-macOS runs proved `rnl` in about a second). A query dump confirmed the branch
-and the integration base construct byte-identical `rnl` propositions, so the
-port edits were not the cause. Later reproduction showed the fragility is not
-one-sided: layouts that stall the default configuration prove instantly under
-the tuned one, and a reproduced layout stalled the tuned configuration on the
-same claim instead. `solve()` therefore runs every proposition under the
-`QF_UFLIA` logic-tuned configuration with a five-second probe budget first,
-then the default configuration with the full budget, and finally the tuned
-configuration with the full budget; whichever answers decides. The tuned
-configuration discharged all 144 distinct `rnl` propositions in at most 0.3 s
-for every seed of a standalone 0-to-7 matrix, and the whole claim proved for
-every seed from 0 to 20 inside one process (worst run 6.2 s). The claims,
-domains, and outputs are unchanged: an `unsat` answer from either
-configuration is an ordinary Z3 proof, and `sat`/`unknown` results still
-return immediately from the producing solver. A regression test runs the
-whole `rnl` claim under seeds 0 through 20 through the production query
-pipeline and asserts only that every seed proves -- it cannot reproduce a
-fragile memory layout on demand, but it keeps the staged configuration
-honest for every seed, with no speed expectation. On the pre-change
-configuration the same sweep failed in three of three processes on one
-machine (one obligation reaching the per-query timeout each time) and twice
-on Linux CI, while passing on other hosts; after the change every seed
-proves in a few seconds -- a fragile layout costs the probe budget once,
-not a 120-second timeout. A second test first asserts that a one-millisecond
-budget really makes the tuned configuration give up on its two propositions
-(guarding against a vacuous pass), then checks that the default
-configuration answers a genuine z3 `unknown` with both proofs and models.
+**Solver robustness.** `rnl`'s per-path-pair output-equality obligations
+coupled two symbolic divisors -- `RND(x)` drawn through `mod (R_core 0) x`
+and the luck-dependent `rn2(37 + abs(adjustment))` modulus -- and z3 proved
+or gave up on that nonlinear query depending only on the random seed,
+accumulated AST state, or process memory layout. Linux CI hit the 120-second
+timeout three times: twice under the plain solver and once at seed 10 through
+a two-configuration retry, while macOS proved the byte-identical propositions
+in about a second (a query dump confirmed the branch and the integration
+base construct identical `rnl` queries, so the port edits were not the
+cause). Retrying between incomplete configurations only moved the failing
+seed around, so the nondeterminism is removed instead: `specs.luck_partitions`
+splits the domain exhaustively by the magnitude of the luck sum (both fields
+are `schar`, so `u.uluck + u.moreluck` lies in [-256, 254] and every value
+belongs to exactly one of 257 magnitude partitions). Fixing the magnitude
+makes every luck-dependent divisor concrete, so each partition's obligations
+are linear integer arithmetic that z3 decides deterministically; the domain,
+outputs, stream positions and log entries are unchanged, and every partition
+must be satisfiable. The split claim takes 168.2 s over 257 partitions (each
+at most 13 C x 18 JS paths, most fewer), the probes and mutants still
+short-circuit on the first failing partition with concrete witnesses, and a
+regression test sweeps seeds 0 through 20 over the split queries whose
+unsplit form used to stall (magnitudes 0, 1, 2, 3, 4, 5 and 13), requiring
+every seed to prove; all 21 seeds passed with a worst sweep-set time of
+14.0 s, and the full claim also proves at seed 10. `queries.py` is back to
+a single default solver configuration.
 
 An initial full run exited 1 because experience's grouped mutant query timed
 out without a model. That was a failed negative check, not a killed mutant.

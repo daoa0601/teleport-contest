@@ -234,15 +234,17 @@ existing armor helpers. Four added executor tests cover these behaviors;
 three failed before the corresponding verifier extensions. See
 `docs/formal-verification.md` for per-claim domains, paths and measured times.
 
-Every `solve()` query first runs a short-budget `QF_UFLIA` logic-tuned
-attempt, then the default configuration with the full budget, and finally the
-tuned configuration with the full budget. Both searches are heuristic: `rnl`'s
-output-equality obligations sit close enough to either search's limit that a
-seed, term-construction order, or process memory layout could flip one to a
-120-second timeout (the November 2026 CI failure), while the tuned
-configuration discharges all of them in under a second for every seed tried.
-Whichever configuration answers decides the query; an `unsat` from either is
-an ordinary Z3 proof.
+The `rnl` claim splits its domain exhaustively by the magnitude of the luck
+sum (`u.uluck + u.moreluck`, both `schar`, so 257 magnitude partitions).
+Fixing the magnitude makes every luck-dependent divisor concrete -- the
+`rn2(37 + abs(adjustment))` draw modulus and, for `x <= 15`, the
+`(abs(luck) + 1) / 3` adjustment -- so every obligation is linear integer
+arithmetic that z3 decides deterministically. The unsplit query coupled the
+two symbolic divisors, and z3 proved or gave up on it depending on the
+random seed, term-construction order, or process memory layout: Linux CI
+timed it out at 120 seconds three times, including once through a two-stage
+solver retry. A regression test sweeps seeds 0 through 20 over the split
+queries whose unsplit form used to stall and requires every seed to prove.
 
 The complete 41-claim run passed in 704.66 s, including all 45 domain probes
 and 49 mutant checks. It wrote the 41-row equivalence ledger only after the
@@ -250,9 +252,7 @@ complete run succeeded. All 62 executor/query/selection tests passed in
 8.594 s, all 37 ledger CLI tests passed in 129.197 s, and `npm run compile`
 passed. The ledger tests include a complete fast-claim run against the new
 ledger. The eight added claims remain `fast`; the two existing slow claims
-retain their domains and negative checks. After the solver-configuration
-change the same 41 claims completed in 689.27 s with all 64
-executor/query/selection tests passing in 53.261 s.
+retain their domains and negative checks.
 
 Run the language, solver-isolation and command-selection tests
 (64 tests; no game sessions):
