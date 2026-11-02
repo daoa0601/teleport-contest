@@ -118,7 +118,7 @@ import { beginObjectBurn, lightDamage } from './light.js';
 import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem } from './mthrowu.js';
 import { castNativeRay, hitMonsterWithRay } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
 

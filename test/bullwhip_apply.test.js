@@ -21,7 +21,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { UNENCUMBERED, nearCapacity } from '../js/hack.js';
 import { objectWeight } from '../js/mkobj.js';
 void test('a blind hero flicks a whip toward it without naming the unseen monster', async () => {

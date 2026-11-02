@@ -17,10 +17,10 @@ import { monsterPossessive } from './mondata.js';
 import type { Monster } from './monster_types.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { heroIsUnchanging } from './polyself.js';
-import { heroIsSliming, PM_GREEN_SLIME, setHeroSlimingTimeout } from './slime.js';
-import {
-    fleshPetrifies, heroIsPetrifying, heroResistsStoning, setHeroPetrificationTimeout,
-} from './stoning.js';
+import { heroIsSliming, PM_GREEN_SLIME } from './slime.js';
+import { setHeroSlimingTimeout } from './potion.js';
+import { fleshPetrifies, heroIsPetrifying, heroResistsStoning } from './stoning.js';
+import { setHeroPetrificationTimeout } from './potion.js';
 
 export async function applyHeroNaturalBrain(
     monster: Monster, context: HeroNaturalEffectContext,

@@ -4,7 +4,7 @@ import { LAVAPOOL, POOL, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty, levitationAtWill, refreshProperty, setInvokedProperty, } from '../js/properties.js';
 import { advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue, } from '../js/levitation_timeout.js';
-import { applyLevitationPotion } from '../js/levitation_potion.js';
+import { applyLevitationPotion } from '../js/potion.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { knownObject } from './support/game-objects.js';

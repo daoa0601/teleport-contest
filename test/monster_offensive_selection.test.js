@@ -13,7 +13,7 @@ import { addObjectToContainer } from '../js/mkobj.js';
 import { CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { applyPotionEffect } from '../js/potion.js';
 import { dopray } from '../js/pray.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

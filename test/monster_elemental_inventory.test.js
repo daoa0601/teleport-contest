@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { OBJECT_NAMES, RIN_PROTECTION, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

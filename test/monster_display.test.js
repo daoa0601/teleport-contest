@@ -12,7 +12,7 @@ import { setMonsterSpecies } from '../js/mondata.js';
 import { changeHeroSex } from '../js/hero_species.js';
 import { CORPSE, POT_HEALING, POT_SPEED, STATUE } from '../js/object_data.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { ATR_INVERSE, CLR_BLUE, CLR_BROWN, CLR_CYAN, CLR_GRAY, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -35,9 +35,8 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { MapLocation } from './map_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import {
-    countLevelFeatures, deleteFloorTrap, makemonNear, splitHeroMonsterForm,
-} from './mklev.js';
+import { countLevelFeatures, deleteFloorTrap, makemonNear } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import {
     mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState,
 } from './mkobj.js';
@@ -99,7 +98,7 @@ import { objectQuantity } from './mkobj.js';
 import { observeObject } from './o_init.js';
 import { polymorphSink } from './ring_sink.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
-import { drinkPotion } from './quaff.js';
+import { drinkPotion } from './potion.js';
 import { createPoisonGasCloud } from './regions.js';
 import { updateUnpaidObjectPrice } from './shk.js';
 import { deleteObject } from './shk.js';

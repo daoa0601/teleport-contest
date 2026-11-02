@@ -45,7 +45,7 @@ import { heroResistsStoning, resolveImmediatePetrification, touchPetrifies } fro
 import { W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
 import { artifactEmitsLight, setWornArtifactProperties, setArtifactWarningWielded, } from './artifacts.js';
 import { recalculateTelepathyRange } from './worn.js';
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeHallucinated } from './potion.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { heroIsBlind } from './senses.js';
 import { cancelSlotTakeoff } from './do_wear.js';

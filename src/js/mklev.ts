@@ -403,18 +403,6 @@ export function findMonsterNearPosition(
     );
 }
 
-// C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
-export async function splitHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
-    const maximum = state.u.mhmax;
-    if (maximum === undefined) return null;
-    const clone = await cloneHeroMonsterForm(state);
-    if (clone) {
-        clone.mhpmax = Math.trunc(maximum / 2);
-        state.u.mhmax = maximum - clone.mhpmax;
-    }
-    return clone;
-}
-
 // C refs: mhitu.c:cloneu() and dog.c:initedog().
 // The actor is a fresh makemon birth rather than a copy of youmonst: it owns
 // ordinary placement, HP, gender, attitude, and identity RNG before cloneu()

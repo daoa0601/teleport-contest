@@ -5,7 +5,7 @@ import { NOT_HUNGRY } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { makeConfused } from '../js/hero_mental_status.js';
+import { makeConfused } from '../js/potion.js';
 import { POT_BLINDNESS, POT_CONFUSION } from '../js/object_data.js';
 import { applySupportedPotionVapor } from '../js/potion.js';
 import { uninitializedObject } from './support/game-objects.js';

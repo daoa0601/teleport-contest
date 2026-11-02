@@ -5,13 +5,13 @@ import { M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MI
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { AD_FIRE, AD_RBRE, AD_SLEE, AT_BREA } from '../js/monster_attack_types.js';
 import { resolveMonsterCombatBreath } from '../js/mthrowu.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

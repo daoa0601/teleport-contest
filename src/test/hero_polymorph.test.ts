@@ -11,8 +11,9 @@ import {
 } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-
-import { heroIsSick, startHeroSickness } from '../js/hero_illness.js';
+import { loseHeroHp } from '../js/hack.js';
+import { heroIsSick } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
@@ -38,7 +39,6 @@ import {
 } from './support/hero-state.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { loseHeroHp } from '../js/hack.js';
 
 function requiredRole(predicate: (role: (typeof roles)[number]) => boolean) {
     const role = roles.find(predicate);

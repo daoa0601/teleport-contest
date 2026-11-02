@@ -7,7 +7,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { doeat } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { startHeroVomiting } from '../js/hero_illness.js';
-import { makeConfused } from '../js/hero_mental_status.js';
+import { makeConfused } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, FOOD_RATION } from '../js/object_data.js';

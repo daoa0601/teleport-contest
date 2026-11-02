@@ -6,7 +6,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT, POOL, WATER } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

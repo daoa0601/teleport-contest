@@ -1,63 +1,67 @@
-// potion.js — the potion.c owner: the quaff effect switch (peffects() and its
-// peffect_* helpers), bottle occupants (ghost_from_bottle(),
-// djinni_from_bottle(), mongrantswish()), thrown-potion impact and vapor
-// (bottlename(), H2Opotion_dip(), potionhit(), potionbreathe()), dipping and
-// mixing (dodip(), dip_into(), potion_dip(), mixtype(), hold_potion(), poof(),
-// dip_potion_explosion()), and split_mon().  The drink transaction itself
-// (dodrink()/dopotion()) lives in quaff.ts; the hero's own potion impact
+// potion.js — the potion.c owner: the make_* status setters (make_confused(),
+// make_stunned(), make_sick(), make_slimed(), make_stoned(), make_blinded(),
+// toggle_blindness(), make_hallucinated(), make_deaf(), make_glib()), the
+// drink transaction (drink_ok(), dodrink(), dopotion()), the quaff effect
+// switch (peffects() and its peffect_* helpers, healup(), speed_up()), bottle
+// occupants (ghost_from_bottle(), djinni_from_bottle(), mongrantswish(),
+// split_mon()), thrown-potion impact and vapor (bottlename(), H2Opotion_dip(),
+// impact_arti_light(), potionhit(), potionbreathe()), and dipping and mixing
+// (dodip(), dip_into(), potion_dip(), mixtype(), hold_potion(), poof(),
+// dip_potion_explosion(), strange_feeling()).  The hero's own potion impact
 // (potionhit(mon == &youmonst)) in hero_potion_hit.ts; spell reuse of the
 // effect switch in spell_potion_effects.ts; the dothrow.c throwit() flight in
 // dothrow.ts; inaccessible_equipment()'s covering test in
 // equipment_selection.ts.
 
-import { armorSlotFor, heroHasFreeAction } from './do_wear.js';
+import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
+import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet } from './do_wear.js';
+import { setBallAndChainFelt } from './ball.js';
 
-import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, restoreHeroBaseAttributes } from './attrib.js';
-import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName } from './body_parts.js';
-import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { nomul } from './hack.js';
-import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, Is_airlevel, Is_waterlevel, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
+import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, requireAttributeIndex } from './attrib.js';
+import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
+import { commandResultCancelled, commandResultFailed, setMulti, travelStairs } from './cmd.js';
+import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
+import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
 import { impossible } from './diagnostics.js';
-import { fingersOrGloves, washHands } from './fountain.js';
+import type { PropertyObject, WornPropertySlot } from './property_types.js';
 import type { DipTarget } from './fountain.js';
-import { canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, map_invisible, newsym, randomDisplayMonsterName, see_monsters, shieldeff, show_glyph_cell, unmap_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, map_invisible, newsym, randomDisplayMonsterName, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
 import { monsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
-import { canHeroRiseUp, levelAtDepth } from './dungeon.js';
+import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
-import { gainExperienceLevel, randomExperience } from './exper.js';
+import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
 import { coveringEquipment, reportCoveredEquipment } from './do_wear.js';
 
 import { fireDamageObject } from './fire_damage.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './floor_reach.js';
-import { dipFountain } from './fountain.js';
+import { useUpFloorObject } from './floor_consumption.js';
+import { dipFountain, dipSink, drinkFountain, drinkSink, fingersOrGloves, washHands } from './fountain.js';
 import { fruitName } from './fruit.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth, dist2, ledgerNo, possessiveName } from './hacklib.js';
 
 import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { healHero } from './hero_healing.js';
-import { makeDeaf } from './hero_hearing.js';
+import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { cureHeroSicknessWithMessages, heroIsSick, heroIsVomiting } from './hero_illness.js';
-import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
-import { applyPotionLikeInvisibility, hasInternalInvisibility, heroIsInvisible } from './hero_invisibility.js';
+import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsVomiting } from './hero_illness.js';
+import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
+import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { healHeroLegs } from './hero_legs.js';
-import { makeConfused, makeHallucinated } from './hero_mental_status.js';
+import type { Hero } from './hero_types.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import { reportHeroThrownMiss } from './hero_physical_messages.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
 import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
-import { heroFormSticks } from './hero_species.js';
+import { heroFormSticks, heroSpecies } from './hero_species.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { speedUpHero } from './hero_speed.js';
 import { heroIsStrangled } from './hero_strangulation.js';
-import { updateHeroHunger, fixHeroPetrification } from './eat.js';
+import { updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
 import { peekCommandResponse } from './input.js';
 import { doEnlightenmentEffect, showEnlightenment } from './insight.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -65,16 +69,15 @@ import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
 import { gotoLevel } from './level_change.js';
 import { floatingAbove } from './levitation_commands.js';
-import { applyLevitationPotion } from './levitation_potion.js';
 import { pickupBurden } from './lift_object.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
 import type { CloneOptions } from './makemon.js';
-import type { MapLocation, Position } from './map_types.js';
+import type { MapLocation, Position, Stairway } from './map_types.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { makemonNear } from './mklev.js';
-import { mkobj, blessObjectState, curseObject, curseObjectState, unblessObjectState, uncurseObjectState, unlinkObject } from './mkobj.js';
+import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
+import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject } from './mkobj.js';
 import { finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
@@ -84,11 +87,11 @@ import type { Monster } from './monster_types.js';
 import { tryCallObjectType } from './do.js';
 import type { ObjectCallResult } from './do_name.js';
 import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { hitFloorWithObject } from './dothrow.js';
+import { hitFloorWithObject, staggerVerb } from './dothrow.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';
 
-import { ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN } from './object_data.js';
+import { ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN } from './object_data.js';
 
 import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 
@@ -99,17 +102,16 @@ import { plineWithContinuation, plineWithContinuation as pline } from './pline.j
 import type { MessagePublisher } from './pline.js';
 import { poisonAttributeMessage } from './poison.js';
 import { heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';
-import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
+import { captureLevitationState, grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice, deleteObject } from './shk.js';
-import { makeBlinded } from './sight_change.js';
-import { dipSink } from './fountain.js';
-import { burnAwayHeroSlime, heroIsFlaming, heroIsSliming } from './slime.js';
+import { clearHeroSliming, burnAwayHeroSlime, heroIsFlaming, heroIsSliming } from './slime.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
+import { floatHeroUp } from './terrain_movement.js';
 import { isPoolAt } from './dbridge.js';
 
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
@@ -120,15 +122,13 @@ import { tossObjectUp } from './toss_up.js';
 import { waterDamageObject, erodeObject, objectIsVulnerableToErosion } from './trap.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
-import { cansee } from './vision.js';
-
+import { cansee, vision_recalc } from './vision.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';
 import { makeWish } from './wish.js';
 import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
-import { polymorphMonsterFromMagic, obj_unpolyable, poly_obj } from './zap.js';
-import { loseHeroHp, nearCapacity } from './hack.js';
+import { polymorphMonsterFromMagic, obj_unpolyable, objectResistsDestruction, poly_obj } from './zap.js';
 
 export interface PotionEffectOptions {
     state?: GameState;
@@ -147,6 +147,282 @@ export interface PotionEffectResult {
     unknown: number;
     nothing: boolean;
     heroDied: boolean;
+}
+
+// ---- make_confused() through make_deaf() (C potion.c:89-459) ----
+
+interface MentalStatusOptions {
+    state?: GameState;
+    talk?: boolean;
+    publish?: MessagePublisher;
+}
+
+interface HallucinationOptions extends MentalStatusOptions {
+    resistanceSource?: { object: PropertyObject; slot: WornPropertySlot } | null;
+}
+
+// C potion.c:make_confused().
+export async function makeConfused(turns: number, {
+    state = game, talk = true, publish = plineWithContinuation,
+}: MentalStatusOptions = {}) {
+    const old = state.u.confusionTurns ?? 0;
+    if (!turns && state.u.confusionTurns && talk && !heroIsUnaware(state)) {
+        await publish(formatFeltMessage(`less ${heroIsHallucinating(state) ? 'trippy' : 'confused'} now.`, state));
+    }
+    if (!!turns !== !!old) state.context.botl = true;
+    setPropertyTimeout('confusion', turns, state);
+}
+
+// C potion.c:make_stunned().
+export async function makeStunned(turns: number, {
+    state = game, talk = true, publish = plineWithContinuation,
+}: MentalStatusOptions = {}) {
+    const old = propertyIsActive('stunned', state);
+    if (talk && !heroIsUnaware(state)) {
+        if (!turns && old) {
+            await publish(formatFeltMessage(`${heroIsHallucinating(state) ? 'less wobbly' : 'a bit steadier'} now.`, state));
+        } else if (turns && !old) {
+            await publish(state.u.usteed ? 'You wobble in the saddle.'
+                : `You ${staggerVerb(heroSpecies(state)).replace(/s$/, '')}...`);
+        }
+    }
+    if (!!turns !== old) state.context.botl = true;
+    state.u.stunnedTurns = Math.max(0, Math.min(0x00ffffff, Math.trunc(turns)));
+    refreshProperty('stunned', state);
+}
+
+interface SicknessOptions {
+    state?: GameState;
+    turns: number;
+    cause?: string;
+    type?: number;
+    talk?: boolean;
+    publish?: MessagePublisher;
+}
+
+// C potion.c:make_sick().
+// The onset line can page before the sickness timeout or cause changes.
+export async function startHeroSickness({
+    state = game,
+    turns,
+    cause = 'illness',
+    type = SICK_VOMITABLE,
+    talk = true,
+    publish = plineWithContinuation,
+}: SicknessOptions) {
+    const hero = state.u;
+    if (hero.sicknessResistance) return { started: false, newlySick: false };
+    const oldTurns = hero.sickTurns ?? 0;
+    const newlySick = !oldTurns;
+    if (newlySick) {
+        await publish(formatFeltMessage('deathly sick.', state));
+    } else if (talk) {
+        const severity = turns <= oldTurns / 2 ? 'much' : 'even';
+        await publish(formatFeltMessage(`${severity} worse.`, state));
+    }
+    hero.sickTurns = Math.min(TIMEOUT, Math.max(0, Math.trunc(turns)));
+    hero.sick = hero.sickTurns > 0;
+    hero.sickType = (hero.sickType ?? 0) | type;
+    state.context.botl = true;
+    await exerciseAttribute(A_CON, false, state);
+    hero.sickCause = cause;
+    return { started: hero.sick, newlySick };
+}
+
+// C potion.c:make_slimed(). This directly sets the timeout; the caller
+// separately decides whether a body admits infection and records its killer.
+export async function setHeroSlimingTimeout(turns: number, {
+    state = game, message = null, publish = plineWithContinuation,
+}: { state?: GameState; message?: string | null; publish?: MessagePublisher } = {}): Promise<void> {
+    requireLiveGame(state);
+    if (!Number.isFinite(turns)) throw new RangeError('Sliming timeout must be finite.');
+    const requested = Math.trunc(turns);
+    const hero = state.u;
+    const old = hero.slimedTurns ?? 0;
+    hero.slimedTurns = Math.max(0, Math.min(TIMEOUT, requested));
+    hero.slimed = hero.slimedTurns > 0;
+    if ((requested !== 0) !== (old !== 0)) {
+        state.context.botl = true;
+        if (message !== null) await publish(message);
+    }
+    // The fake late-countdown appearance and cause survive the cure message.
+    if (!hero.slimedTurns) clearHeroSliming(state);
+}
+
+export type PetrificationKillerFormat =
+    | typeof KILLED_BY_AN | typeof KILLED_BY | typeof NO_KILLER_PREFIX;
+
+interface PetrificationTimeoutOptions {
+    state?: GameState;
+    message?: string | null;
+    killer?: string | null;
+    killerFormat?: PetrificationKillerFormat;
+    publish?: MessagePublisher;
+}
+
+// C potion.c:make_stoned(). Admission belongs to the attack or command;
+// replacing an active timeout must retain its original delayed killer.
+export async function setHeroPetrificationTimeout(turns: number, {
+    state = game, message = null, killer = null,
+    killerFormat = KILLED_BY_AN, publish = plineWithContinuation,
+}: PetrificationTimeoutOptions = {}): Promise<void> {
+    requireLiveGame(state);
+    if (!Number.isFinite(turns)) throw new RangeError('Petrification timeout must be finite.');
+    const requested = Math.trunc(turns);
+    const hero = state.u;
+    const old = hero.stonedTurns ?? 0;
+    hero.stonedTurns = Math.max(0, Math.min(TIMEOUT, requested));
+    hero.stoned = hero.stonedTurns > 0;
+    if ((requested !== 0) !== (old !== 0)) {
+        state.context.botl = true;
+        if (message !== null) await publish(message);
+    }
+    // Native killer bookkeeping follows the transition message's input pause.
+    if (!hero.stonedTurns) {
+        delete hero.stoneKiller;
+        delete hero.stoneKillerFormat;
+    } else if (!old) {
+        hero.stoneKiller = killer ?? '';
+        hero.stoneKillerFormat = killerFormat;
+    }
+}
+
+// C potion.c:make_blinded(). The probe must not change live sight or its caches.
+export async function makeBlinded(turns: number, {
+    state = game, talk = true, publish = plineWithContinuation,
+}: { state?: GameState; talk?: boolean; publish?: MessagePublisher } = {}) {
+    requireLiveGame(state);
+    const old = state.u.blindTurns ?? 0;
+    const couldSee = !heroIsBlind(state);
+    const canSee = !heroWouldBeBlindWithTimeout(state, turns ? 1 : 0);
+    const speaking = talk && !heroIsUnaware(state);
+    const hallucinating = heroIsHallucinating(state);
+
+    if (canSee && !couldSee) {
+        if (speaking) await publish(hallucinating
+            ? 'Far out!  Everything is all cosmic again!'
+            : 'You can see again.');
+    } else if (old && !turns && speaking) {
+        await publish(maskedBlindnessMessage(true, state));
+    }
+
+    if (couldSee && !canSee) {
+        if (speaking) await publish(hallucinating
+            ? 'Oh, bummer!  Everything is dark!  Help!'
+            : 'A cloud of darkness falls upon you.');
+        if (state.uball || state.u.uball)
+            await setBallAndChainFelt(false, state);
+    } else if (!old && turns && speaking) {
+        await publish(maskedBlindnessMessage(false, state));
+    }
+
+    setHeroBlindnessTurns(turns, state);
+    if (couldSee !== canSee) await toggleBlindness(state);
+}
+
+function maskedBlindnessMessage(clearing: boolean, state: GameState) {
+    const hallucinating = heroIsHallucinating(state);
+    if (!heroHasEyes(state) || permanentBlind(state)) {
+        return `You have a ${hallucinating ? 'normal' : 'strange'} feeling `
+            + 'for a moment, then it passes.';
+    }
+    if (blindfolded(state)) {
+        const eye = heroEyeName(state);
+        const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+        return `Your ${eyes} momentarily ${
+            verbForSubject(eyes, clearing ? 'itch' : 'twitch')}.`;
+    }
+    return `Your vision seems to ${clearing ? 'brighten' : 'dim'} `
+        + `for a moment but is ${hallucinating
+            ? clearing ? 'sadder' : 'happier' : 'normal'} now.`;
+}
+
+// C potion.c:toggle_blindness(). Call only after effective sight has changed.
+export async function toggleBlindness(state = game) {
+    requireLiveGame(state);
+    const stinging = wieldedArtifactWarns(state);
+    state.context.botl = true;
+    state.vision_full_recalc = 1;
+    await vision_recalc(0);
+    if (propertyIsActive('telepathy', state)
+        || propertyIsActive('infravision', state) || stinging) {
+        await see_monsters();
+    }
+    if (stinging) await artifactWarningFeedback(-1);
+    if (!heroIsBlind(state)) await learnUnseenInventory(state);
+}
+
+// C potion.c:make_hallucinated().
+// A resistance source changes EHalluc_resistance, not the intrinsic timeout.
+// Native reports a change whenever a nonzero timeout accompanies that mask
+// operation, even if another source still masks the effect.
+export async function makeHallucinated(turns: number, {
+    state = game, talk = true, publish = plineWithContinuation,
+    resistanceSource = null,
+}: HallucinationOptions = {}) {
+    requireLiveGame(state);
+    const hero = state.u;
+    const old = hero.hallucinationTurns ?? 0;
+    const speaking = talk && !heroIsUnaware(state);
+    const verb = heroIsBlind(state) ? 'feels' : 'looks';
+    let changed;
+    if (resistanceSource) {
+        changed = !!old;
+        const { object, slot } = resistanceSource;
+        if (turns)
+            removeWornProperty('hallucinationResistance', object, slot, state);
+        else
+            grantWornProperty('hallucinationResistance', object, slot, state);
+    } else {
+        const extrinsic = hasWornProperty('hallucinationResistance', state)
+            || hasCarriedProperty('hallucinationResistance', null, state)
+            || hasInvokedProperty('hallucinationResistance', state);
+        changed = !extrinsic && (!!old !== !!turns);
+        hero.hallucinationTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
+        if (!changed && !hero.hallucinationTurns && old && speaking) {
+            if (!heroHasEyes(state)) {
+                const feeling = heroIsHallucinating(state) ? 'normal' : 'strange';
+                await publish(`You have a ${feeling} feeling for a moment, then it passes.`);
+            } else if (heroIsBlind(state)) {
+                const eye = heroEyeName(state);
+                const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+                await publish(`Your ${eyes} momentarily ${verbForSubject(eyes, 'itch')}.`);
+            } else {
+                await publish('Your vision seems to flatten for a moment but is normal now.');
+            }
+        }
+    }
+    if (changed) {
+        if (!heroIsHallucinating(state)) await updateMealMimicry(state);
+        if (hero.uswallow) await swallowed(false);
+        else {
+            await see_monsters();
+            await see_objects();
+            await see_traps();
+        }
+        // The pinned TTY port has no persistent inventory window to refresh.
+        state.context.botl = true;
+        if (speaking) await publish(turns
+            ? `Oh wow!  Everything ${verb} so cosmic!`
+            : `Everything ${verb} SO boring now.`);
+    }
+    return changed;
+}
+
+// Native potion.c:make_deaf(). Commit the timeout before publishing its change.
+export async function makeDeaf(turns: number, {
+    state = game, talk = true, publish = plineWithContinuation,
+}: { state?: GameState; talk?: boolean; publish?: MessagePublisher } = {}) {
+    requireLiveGame(state);
+    const old = state.u.deafTurns || 0;
+    state.u.deafTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
+    syncDeafness(state);
+    if (!!old !== !!state.u.deafTurns) {
+        state.context.botl = true;
+        if (talk && !heroIsUnaware(state))
+            await publish(old && !heroIsDeaf(state)
+                ? 'You can hear again.' : 'You are unable to hear anything.');
+    }
 }
 
 // ---- ghost_from_bottle() and the dopotion() occupant check (C potion.c:481, 617-644) ----
@@ -189,7 +465,127 @@ export async function releasePotionOccupant(source: GameObject, { state = game }
     return { released: true, heroDied: !!state.program_state?.gameover };
 }
 
+// ---- drink_ok()/dodrink()/dopotion() (C potion.c:505-645) ----
+
+export interface QuaffResult {
+    spentTime: boolean;
+    heroDied: boolean;
+    object: GameObject | null;
+    cancelled: boolean;
+}
+
+// C potion.c:drink_ok().
+// C potion.c:dodrink().
+export async function quaff({ state = game }: PotionEffectOptions = {}): Promise<QuaffResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (heroIsStrangled(state)) {
+        await pline("If you can't breathe air, how can you drink liquid?");
+        return outcome(false, state);
+    }
+    const hero = state.u;
+    const location = state.level.at(hero.ux, hero.uy);
+    if (!location) throw new Error('Drinking requires the hero to stand on the map.');
+    let declinedSource = false;
+    if (!state.iflags.menu_requested) {
+        if (heroCanReachFloor(state) && [FOUNTAIN, SINK].includes(location.typ)) {
+            const fountain = location.typ === FOUNTAIN;
+            if (await promptYesNo(`Drink from the ${fountain ? 'fountain' : 'sink'}?`, 'n') === 'y') {
+                if (fountain) await drinkFountain(location);
+                else await drinkSink({ state });
+                return outcome(true, state);
+            }
+            declinedSource = true;
+        }
+        if ((hero.uinwater || state.underwater) && !hero.uswallow) {
+            if (await promptYesNo('Drink the water around you?', 'n') === 'y') {
+                await pline('Do you know what lives in this water?');
+                return outcome(true, state);
+            }
+            declinedSource = true;
+        }
+    }
+    // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
+    let source = await chooseInventoryObject('drink', object =>
+        object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
+    { hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
+    if (!source) return { ...outcome(false, state), cancelled: true };
+    if (source.owornmask) {
+        if (objectQuantity(source) > 1) {
+            const original = source;
+            source = splitObjectStack(original, 1, state);
+            if (!source) throw new Error('The selected potion stack could not release one bottle.');
+        } else await removeWornHeroItem(source, state);
+    }
+    source.in_use = true;
+    const occupant = await releasePotionOccupant(source, { state });
+    if (occupant.released) {
+        if (!occupant.heroDied) await consumePotion(source, state);
+        return outcome(true, state, source);
+    }
+    return drinkPotion(source, { state });
+}
+
+// C potion.c:dopotion(). Effects are shared with spells and digestion.
+// consume:false is native eatspecial's extra useup boundary: digestion owns
+// its final carried/floor consumption, while dopotion still owns discovery.
+export async function drinkPotion(source: GameObject, { state = game, consume = true }: PotionEffectOptions & { consume?: boolean } = {}): Promise<QuaffResult> {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    source.in_use = true;
+    const effect = await applyPotionEffect(source, { state });
+    if (effect.heroDied) return outcome(true, state, source);
+    if (effect.result > 0) {
+        // Detection's strange_feeling() bypasses dopotion discovery.
+        if (source.dknown) await tryCallObjectType(source, state);
+    } else {
+        let unknown = effect.unknown;
+        if (effect.nothing) {
+            unknown++;
+            await pline(`You have a ${heroIsHallucinating(state) ? 'normal' : 'peculiar'} feeling for a moment, then it passes.`);
+        }
+        if (source.dknown && !OBJECT_INITIAL_KNOWN[source.otyp]
+            && !state._knownObjectTypes?.has(source.otyp)) {
+            if (unknown) await tryCallObjectType(source, state);
+            else {
+                learnObjectType(source.otyp, state);
+                addExperience(0, 10, state);
+            }
+        }
+    }
+    if (consume) await consumePotion(source, state);
+    else source.in_use = false;
+    return outcome(effect.result !== 0, state, source);
+}
+
+async function consumePotion(source: GameObject, state: GameState) {
+    if (source.where === 'inventory' || state.inventory.includes(source))
+        await consumeInventoryItem(source, state);
+    else await useUpFloorObject(source, 1, { state });
+}
+
+function outcome(spentTime: boolean, state: GameState, object: GameObject | null = null): QuaffResult {
+    return { spentTime, heroDied: !!state.program_state.gameover, object, cancelled: false };
+}
+
 // ---- peffect_* helpers (C potion.c:646-1332) ----
+
+// C potion.c:peffect_restore_ability(). This restores the base directly,
+// bypassing fixed abilities while preserving temporary penalties and exercise.
+export function restoreHeroBaseAttributes({ all = false, state = game }: { all?: boolean; state?: GameState } = {}): void {
+    requirePlayingGame(state);
+    const hero = state.u;
+    const start = rn2(A_MAX);
+    for (let offset = 0; offset < A_MAX; offset++) {
+        const attribute = (start + offset) % A_MAX;
+        requireAttributeIndex(attribute);
+        if (hero.acurr.a[attribute] >= hero.amax.a[attribute]) continue;
+        hero.acurr.a[attribute] = hero.amax.a[attribute];
+        state.context.botl = true;
+        if (hero._exercise && hero._exercise[attribute] < 0) hero._exercise[attribute] = 0;
+        if (!all) break;
+    }
+}
 
 async function restoreAbility(source: GameObject, state: PlayingGameState) {
     if (source.cursed) {
@@ -348,6 +744,77 @@ async function seeInvisible(source: GameObject, state: PlayingGameState) {
         return 0;
     }
     return 1;
+}
+
+// C potion.c:self_invis_message().
+export async function showInvisibilityMessage(state = game) {
+    const hallucinating = heroIsHallucinating(state);
+    const seesInvisible = !!(state.u?.seeInvisible
+        || (state.u?.seeInvisibleTurns ?? 0) > 0);
+    const lead = hallucinating
+        ? 'Far out, man!  You' : 'Gee!  All of a sudden, you';
+    const effect = seesInvisible
+        ? 'can see right through yourself' : "can't see yourself";
+    await pline(`${lead} ${effect}.`);
+}
+
+// C potion.c:peffect_invisibility(), shared with SPE_INVISIBILITY through
+// peffects() (C potion.c:1352-1354).
+export async function applyPotionLikeInvisibility({
+    state = game,
+    blessed = false,
+    cursed = false,
+    spell = false,
+    random = rn2,
+    rollDice = d,
+} = {}) {
+    const cloak = state.uarmc || state.u.uarmc;
+    if (spell && invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
+        await pline(formatFeltMessage(`rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`, state));
+        return {
+            blocked: true,
+            showedInvisibility: false,
+            aggravates: false,
+        };
+    }
+
+    const wasInvisible = heroIsInvisible(state);
+    const showedInvisibility = !wasInvisible && !heroIsBlind(state)
+        && !invisibilityIsBlocked(state);
+    if (showedInvisibility) await showInvisibilityMessage(state);
+
+    const blessing = blessed ? 1 : cursed ? -1 : 0;
+    let duration = 0;
+    let permanent = false;
+    if (blessed && random(hasInternalInvisibility(state) ? 15 : 30) === 0) {
+        grantIntrinsicProperty('invisible', 'outside', state);
+        permanent = true;
+    } else {
+        duration = rollDice(6 - 3 * blessing, 100) + 100;
+        state.u.invisibleTurns = Math.min(
+            TIMEOUT,
+            (state.u.invisibleTurns ?? 0) + duration,
+        );
+    }
+
+    syncHeroInvisibility(state);
+    // The hero's square is redrawn before the cursed message can page.
+    await newsym(state.u.ux, state.u.uy);
+
+    let aggravates = false;
+    if (cursed) {
+        await pline('For some reason, you feel your presence is known.');
+        revokeIntrinsicProperty('invisible', 'outside', state);
+        syncHeroInvisibility(state);
+        aggravates = true;
+    }
+    return {
+        blocked: false,
+        showedInvisibility,
+        aggravates,
+        duration,
+        permanent,
+    };
 }
 
 // C potion.c:peffect_paralysis().
@@ -767,6 +1234,125 @@ export async function applyPotionEffect(source: GameObject, { state = game }: Po
     return { result, unknown, nothing, heroDied: !!state.program_state.gameover };
 }
 
+// ---- healup() (C potion.c:1428) ----
+//
+// ---- peffect_levitation() (C potion.c:1165-1223) ----
+
+// C potion.c:healup(). Healing applies to the body currently occupied.
+export async function healHero(amount: number, extraMaximum: number, {
+    state = game, cureSickness = false, cureBlindness = false,
+}: { state?: GameState; cureSickness?: boolean; cureBlindness?: boolean } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    const polymorphed = Upolyd(hero);
+    if (amount) {
+        const hp = polymorphed ? 'mh' : 'uhp';
+        const maximum = polymorphed ? 'mhmax' : 'uhpmax';
+        hero[hp] += amount;
+        if (hero[hp] > hero[maximum]) {
+            hero[maximum] += extraMaximum;
+            hero[hp] = hero[maximum];
+            if (!polymorphed) hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
+        }
+    }
+    if (cureBlindness) {
+        hero.ucreamed = 0;
+        await makeBlinded(0, { state });
+        await makeDeaf(0, { state });
+    }
+    if (cureSickness) {
+        if (cureHeroVomiting(state) && !heroIsUnaware(state))
+            await plineWithContinuation(formatFeltMessage('much less nauseated now.', state));
+        await cureHeroSicknessWithMessages(state);
+    }
+    state.context.botl = true;
+}
+
+// C potion.c:itimeout()/itimeout_incr(): the timeout caps at TIMEOUT.
+function increaseLevitationTimeout(hero: Hero, amount: number): void {
+    const current = hero.levitationTurns ?? 0;
+    hero.levitationTurns = Math.min(TIMEOUT, current + amount);
+}
+
+function upStairwayAt(x: number, y: number, state: GameState): Stairway | null {
+    let stairs = state.stairs;
+    while (stairs && (stairs.sx !== x || stairs.sy !== y))
+        stairs = stairs.next;
+    return stairs?.up ? stairs : null;
+}
+
+// C potion.c:peffect_levitation().
+export async function applyLevitationPotion(
+    potion: GameObject,
+    { state = game, publish = plineWithContinuation }: {
+        state?: GameState;
+        publish?: MessagePublisher;
+    } = {},
+): Promise<{ nothingHappened: boolean }> {
+    // The quaff lifecycle owns the live world: stair climbs, float_up, and
+    // spot effects all run through singleton owners.
+    requireLiveGame(state);
+    const hero = state.u;
+    let potionNothing = false;
+    // BLevitation does not prevent setting or incrementing the timeout; it
+    // only suppresses the float-up feedback (C potion.c:1167-1183).
+    const blocked = propertyIsBlocked('levitation', state);
+    const previous = captureLevitationState(state);
+    if (!propertyIsActive('levitation', state) && !blocked) {
+        // Kludge: C set_itimeout(&HLevitation, 1L) so float_up() sees the
+        // property active; blessed and uncursed get one extra turn out of it.
+        hero.levitationTurns = 1;
+        refreshProperty('levitation', state);
+        await floatHeroUp(state, previous);
+    } else {
+        potionNothing = true;
+    }
+
+    if (potion.cursed) {
+        // 'already levitating' no longer blocks the cursed effects (3.6.1);
+        // either way the hero can no longer descend upon demand.  BLevitation
+        // is re-read here: a float_up over a floor trap has just blocked the
+        // property (C potion.c:1192 reads it after float_up's side effects).
+        revokeIntrinsicProperty('levitation', 'potion', state);
+        if (!blocked && !propertyIsBlocked('levitation', state)) {
+            if (upStairwayAt(hero.ux, hero.uy, state)) {
+                await travelStairs(true);
+                potionNothing = false; /* not nothing after all */
+            } else if (levelHasCeiling(state)) {
+                const helmet = state.uarmh || hero.uarmh;
+                let damage = rnd(!helmet ? 10
+                    : !objectIsHardHelmet(helmet) ? 6 : 3);
+                if (hero.halfPhysicalDamage)
+                    damage = Math.trunc((damage + 1) / 2);
+                await publish(`You hit your ${heroHeadName(state)} on the ${
+                    ceilingName(hero.ux, hero.uy, state)}.`);
+                await loseHeroHp(damage, 'colliding with the ceiling',
+                    { state, publish, deathCause: 'killed by colliding with the ceiling' });
+                potionNothing = false; /* not nothing after all */
+            }
+        }
+    } else if (potion.blessed) {
+        /* at this point, timeout is already at least 1 */
+        increaseLevitationTimeout(hero, rn1(50, 250));
+        // Can descend at will ('>') provided the timeout is the only source
+        // keeping the hero aloft: no worn ring or boots (C I_SPECIAL).
+        grantIntrinsicProperty('levitation', 'potion', state);
+    } else {
+        /* timeout is already at least 1 */
+        increaseLevitationTimeout(hero, rn1(140, 10));
+    }
+
+    if (propertyIsActive('levitation', state)
+        && IS_SINK(requireGameLevel(state).requireAt(hero.ux, hero.uy).typ)) {
+        await applyHeroLocationEffects(publish, { pick: false });
+    }
+    /* levitating blocks flying */
+    refreshMovementProperties(state);
+    state.context.botl = true;
+    return { nothingHappened: potionNothing };
+}
+
 // ---- bottlename() (C potion.c:1488) ----
 
 const ORDINARY_BOTTLE_NAMES = [
@@ -838,6 +1424,39 @@ async function dipInWater(object: GameObject, potion: GameObject): Promise<boole
         if (object.lamplit) await adjustObjectLightAfterBlessing(object, oldRadius);
     }
     return true;
+}
+
+// C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
+// object is part of the native effect, including its construction draws.
+export async function impactArtifactLight(object: GameObject, worsen: boolean): Promise<void> {
+    if ((worsen ? object.cursed : object.blessed)
+        || objectResistsDestruction(object, 25, 75)) return;
+    const water = await mksobj(POT_WATER, true, false);
+    if (worsen) curseObjectState(water);
+    else blessObjectState(water);
+    const oldRadius = objectLightRadius(object);
+    const removeBlessing = worsen && object.blessed;
+    const removeCurse = !worsen && object.cursed;
+    const blind = heroIsBlind();
+    if (!blind) {
+        const phrase = ownedObjectAction(object, 'glow');
+        const color = displayColorName(removeBlessing ? 'brown' : removeCurse ? 'amber'
+            : worsen ? 'black' : 'light blue');
+        await plineWithContinuation(`${phrase}${
+            removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
+        object.bknown = !heroIsHallucinating();
+    } else if (!water.bknown || !water.dknown) object.bknown = false;
+    if (removeBlessing) unblessObjectState(object);
+    else if (removeCurse) uncurseObjectState(object);
+    else if (worsen) curseObjectState(object);
+    else blessObjectState(object);
+    const delta = objectLightRadius(object) - oldRadius;
+    if (delta) {
+        game.vision_full_recalc = 1;
+        if (!blind) await plineWithContinuation(`${object.quan === 1 ? 'It shines' : 'They shine'} `
+            + `${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
+    }
+    deallocateObject(water);
 }
 
 // ---- potionhit() (C potion.c:1625) ----
@@ -2512,6 +3131,32 @@ export async function splitMonster(
     return clone;
 }
 
+// C potion.c:split_mon() halves maximum HP after cloneu() divides current HP.
+export async function splitHeroMonsterForm(state: GameState = game): Promise<Monster | null> {
+    const maximum = state.u.mhmax;
+    if (maximum === undefined) return null;
+    const clone = await cloneHeroMonsterForm(state);
+    if (clone) {
+        clone.mhpmax = Math.trunc(maximum / 2);
+        state.u.mhmax = maximum - clone.mhpmax;
+    }
+    return clone;
+}
+
+// C potion.c:speed_up().
+export async function speedUpHero(duration: number, state = game) {
+    requireLiveGame(state);
+    const hero = state.u;
+    if (!hero.veryFast) {
+        const alreadyFast = hero.fast || hero.veryFastFromArmor;
+        await plineWithContinuation(`You are suddenly moving ${alreadyFast ? '' : 'much '}faster.`);
+    } else {
+        await plineWithContinuation(`Your ${makePlural(heroLegName(state))} get new energy.`);
+    }
+    await exerciseAttribute(A_DEX, true, state);
+    setPropertyTimeout('fast', propertyTimeout('fast', state) + duration, state);
+}
+
 // C potion.c:strange_feeling(). Detection already owns its result message;
 // both paths finish through the same object naming and single-use boundary.
 export async function strangeFeeling(source: GameObject | null, text: string | null, {
@@ -2534,6 +3179,15 @@ export async function finishStrangeFeeling(source: GameObject | null, {
     if (source?.dknown) await tryCallObjectType(source, state);
     if (source) await consumeInventoryItem(source, state);
     return { known: false, consumed: !!source, heroDied: !!state.program_state.gameover };
+}
+
+// C potion.c:strange_feeling(), message half, as detect.c's detectors call
+// it; the trycall/useup half stays with the callers' effectResult handling.
+// The owning full port is strangeFeeling() above.
+export async function strangeFeelingMessage(message: string, state: GameState, forceMessage = false) {
+    await plineWithContinuation(state.flags.beginner && !forceMessage
+        ? `You have a ${heroIsHallucinating(state) ? 'normal' : 'strange'} feeling for a moment, then it passes.`
+        : message);
 }
 
 // C potion.c:make_glib().

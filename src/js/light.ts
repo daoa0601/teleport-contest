@@ -23,11 +23,11 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
 import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, displayColorName } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { makemonNear } from './mklev.js';
-import { mksobj, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, deallocateObject } from './mkobj.js';
+import { unblessObjectState, uncurseObjectState } from './mkobj.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import {
     monsterDigests, monsterIsWhirly,
@@ -41,6 +41,7 @@ import { objectsInTimerGraph, scheduleObjectTimer, stopObjectTimer } from './tim
 import { rn2, rnd } from './rng.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType } from './o_init.js';
+import { impactArtifactLight } from './potion.js';
 
 
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
@@ -50,8 +51,7 @@ import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, obj
 import { objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
 
 import { useUpInventoryStack } from './hero_inventory.js';
-import { objectResistsDestruction, getObjectLocation } from './zap.js';
-import { ownedObjectAction } from './objnam.js';
+import { getObjectLocation } from './zap.js';
 import { finishMonsterKilled, maybeUnhideAt } from './mon.js';
 import { loseHeroHp, roomForRoomno } from './hack.js';
 import { objectWeight } from './mkobj.js';
@@ -335,39 +335,6 @@ export async function snuffMonsterInventoryLights(
         }
         endObjectBurn(object, state);
     }
-}
-
-// C potion.c:impact_arti_light()/H2Opotion_dip(). The temporary water
-// object is part of the native effect, including its construction draws.
-async function impactArtifactLight(object: GameObject, worsen: boolean): Promise<void> {
-    if ((worsen ? object.cursed : object.blessed)
-        || objectResistsDestruction(object, 25, 75)) return;
-    const water = await mksobj(POT_WATER, true, false);
-    if (worsen) curseObjectState(water);
-    else blessObjectState(water);
-    const oldRadius = objectLightRadius(object);
-    const removeBlessing = worsen && object.blessed;
-    const removeCurse = !worsen && object.cursed;
-    const blind = heroIsBlind();
-    if (!blind) {
-        const phrase = ownedObjectAction(object, 'glow');
-        const color = displayColorName(removeBlessing ? 'brown' : removeCurse ? 'amber'
-            : worsen ? 'black' : 'light blue');
-        await plineWithContinuation(`${phrase}${
-            removeBlessing || removeCurse ? ` ${color}` : ` with ${withIndefiniteArticle(color)} aura`}.`);
-        object.bknown = !heroIsHallucinating();
-    } else if (!water.bknown || !water.dknown) object.bknown = false;
-    if (removeBlessing) unblessObjectState(object);
-    else if (removeCurse) uncurseObjectState(object);
-    else if (worsen) curseObjectState(object);
-    else blessObjectState(object);
-    const delta = objectLightRadius(object) - oldRadius;
-    if (delta) {
-        game.vision_full_recalc = 1;
-        if (!blind) await plineWithContinuation(`${object.quan === 1 ? 'It shines' : 'They shine'} `
-            + `${Math.abs(delta) > 1 ? 'much ' : ''}${delta > 0 ? 'brighter' : 'less brightly'}.`);
-    }
-    deallocateObject(water);
 }
 
 export function lightHitsGremlin(

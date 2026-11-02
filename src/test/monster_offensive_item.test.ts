@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { AIR, DOOR, D_CLOSED, MM_NOGRP, NO_MINVENT, STONE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { useMonsterOffensiveItem } from '../js/muse.js';
@@ -14,7 +14,7 @@ import {
 } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind } from '../js/senses.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

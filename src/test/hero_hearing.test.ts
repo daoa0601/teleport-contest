@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { TIMEOUT } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { makeDeaf } from '../js/hero_hearing.js';
+import { makeDeaf } from '../js/potion.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { resetInputState } from '../js/input.js';
 import { heroIsDeaf, syncDeafness } from '../js/senses.js';

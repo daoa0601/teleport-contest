@@ -16,7 +16,7 @@ import { heroHasNoHead } from './hero_species.js';
 import {
     heroIsBlind, isEyesOfTheOverworld, syncBlindness,
 } from './senses.js';
-import { toggleBlindness } from './sight_change.js';
+import { toggleBlindness } from './potion.js';
 import { releaseWeaponSlots } from './wield.js';
 import { cancelSlotTakeoff } from './do_wear.js';
 

@@ -363,24 +363,8 @@ const EXERCISE_EXPLANATIONS: Partial<Record<AttributeIndex, readonly [string, st
     [A_CON]: ['leading a healthy life-style', 'watching your health'],
 };
 
-// C potion.c:peffect_restore_ability(). This restores the base directly,
-// bypassing fixed abilities while preserving temporary penalties and exercise.
-export function restoreHeroBaseAttributes({ all = false, state = game }: { all?: boolean; state?: GameState } = {}): void {
-    requirePlayingGame(state);
-    const hero = state.u;
-    const start = rn2(A_MAX);
-    for (let offset = 0; offset < A_MAX; offset++) {
-        const attribute = (start + offset) % A_MAX;
-        requireAttributeIndex(attribute);
-        if (hero.acurr.a[attribute] >= hero.amax.a[attribute]) continue;
-        hero.acurr.a[attribute] = hero.amax.a[attribute];
-        state.context.botl = true;
-        if (hero._exercise && hero._exercise[attribute] < 0) hero._exercise[attribute] = 0;
-        if (!all) break;
-    }
-}
 
-function requireAttributeIndex(attribute: number): asserts attribute is AttributeIndex {
+export function requireAttributeIndex(attribute: number): asserts attribute is AttributeIndex {
     if (!Number.isInteger(attribute) || attribute < A_STR || attribute > A_CHA)
         throw new RangeError(`Unknown hero attribute ${attribute}`);
 }

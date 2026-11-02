@@ -12,7 +12,7 @@ import type { MessagePublisher } from './pline.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import { applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
 import {
     AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN,

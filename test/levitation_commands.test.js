@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { terrain_glyph } from '../js/display.js';
 import { grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, refreshProperty, } from '../js/properties.js';
 import { descendFromLevitation } from '../js/levitation_commands.js';
-import { applyLevitationPotion } from '../js/levitation_potion.js';
+import { applyLevitationPotion } from '../js/potion.js';
 import { artifactByName } from '../js/artifacts.js';
 import { invokeArtifactPower } from '../js/artifacts.js';
 import { POT_LEVITATION } from '../js/object_data.js';

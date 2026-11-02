@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { makeConfused, makeStunned } from '../js/hero_mental_status.js';
+import { makeConfused, makeStunned } from '../js/potion.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';

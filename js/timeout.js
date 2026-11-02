@@ -9,9 +9,9 @@ import { advanceBodyTimeouts, advanceGallopingTimeout } from './timeout_body.js'
 import { breathingDialogue, wallPassageDialogue, finishBreathingTimeout, finishWallPassageTimeout } from './timeout_warnings.js';
 import { levitationDialogue, advanceLevitationTimeout, advanceFlyingTimeout } from './levitation_timeout.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { makeBlinded } from './sight_change.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
-import { makeDeaf } from './hero_hearing.js';
+import { makeBlinded } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
+import { makeDeaf } from './potion.js';
 import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game } from './gstate.js';

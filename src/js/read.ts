@@ -23,7 +23,7 @@ import { doClassGenocide, doGenocide } from './genocide.js';
 import { applyLightScrollEffect } from './light.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { makeConfused } from './hero_mental_status.js';
+import { makeConfused } from './potion.js';
 import { heroSpecies } from './hero_species.js';
 import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
 import { freeHeroFromBuriedBall } from './hero_traps.js';
@@ -94,7 +94,7 @@ import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './m
 import { addExperience } from './exper.js';
 
 import { enchantWeapon } from './enchant_weapon.js';
-import { makeStunned } from './hero_mental_status.js';
+import { makeStunned } from './potion.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';

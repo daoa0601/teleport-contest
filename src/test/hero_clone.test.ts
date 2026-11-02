@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { G_EXTINCT, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { splitHeroMonsterForm } from '../js/mklev.js';
+import { splitHeroMonsterForm } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 

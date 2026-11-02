@@ -9,7 +9,7 @@ import { setTopline } from '../js/pline.js';
 import { canHeroRiseUp, levelAtDepth } from '../js/dungeon.js';
 import { newExperienceThreshold } from '../js/exper.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { startHeroSickness } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

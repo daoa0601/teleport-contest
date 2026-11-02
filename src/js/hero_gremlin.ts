@@ -10,7 +10,7 @@ import { dryFountainAt } from './fountain.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { heroMonsterForm } from './polyself.js';
 

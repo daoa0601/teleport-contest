@@ -6,7 +6,7 @@ import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { POT_ACID, POT_HEALING, POT_WATER } from '../js/object_data.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

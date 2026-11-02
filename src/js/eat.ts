@@ -1,9 +1,7 @@
 // Hero eating and nutrition. Ports from eat.c.
 import { heroCannotVomit, sameMonsterRace } from './mondata.js';
-import {
-    setHeroPetrificationTimeout, eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem,
-    heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons,
-} from './stoning.js';
+import { setHeroPetrificationTimeout } from './potion.js';
+import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
 import { removeHeroAccessory } from './do_wear.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { finishHeroHelplessness } from './allmain.js';
@@ -60,15 +58,13 @@ import { hasNonArtifactConflict } from './hero_conflict.js';
 import { gainCorpseDisplacement } from './hero_displacement.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { makeDeaf } from './hero_hearing.js';
-import {
-    cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, startHeroSickness, startHeroVomiting,
-} from './hero_illness.js';
+import { makeDeaf } from './potion.js';
+import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, startHeroVomiting } from './hero_illness.js';
+import { startHeroSickness } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
-import {
-    heroIsInvisible, invisibilityIsBlocked, showInvisibilityMessage, syncHeroInvisibility,
-} from './hero_invisibility.js';
-import { makeConfused, makeHallucinated, makeStunned } from './hero_mental_status.js';
+import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
+import { showInvisibilityMessage } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
 import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
 import { heroIsUnaware, putHeroToSleep } from './hero_sleep.js';
@@ -129,7 +125,7 @@ import {
 } from './properties.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import { unpunishHero } from './punishment.js';
-import { drinkPotion } from './quaff.js';
+import { drinkPotion } from './potion.js';
 import { paranoidQuery, promptYesNo, promptYesNoQuit } from './query.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumor.js';
@@ -138,7 +134,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {
     SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition,
 } from './shk.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { PM_GREEN_SLIME, heroCanBeSlimed, heroIsSlimeproof, startHeroSliming } from './slime.js';
 import { dismountHero } from './steed.js';
 import { floatHeroUp } from './terrain_movement.js';

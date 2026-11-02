@@ -9,7 +9,8 @@ import { A_STR, BEAR_TRAP, M_AP_F_DKNOWN, M_AP_OBJECT, M_SEEN_COLD, M_SEEN_FIRE,
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { zapHeroWithObject } from '../js/hero_self_zap.js';
-import { heroHasRemovableSpeed, speedUpHero } from '../js/hero_speed.js';
+import { heroHasRemovableSpeed } from '../js/mhitu.js';
+import { speedUpHero } from '../js/potion.js';
 import { heroStatusLine } from '../js/hero_status.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
@@ -17,7 +18,7 @@ import { AMULET_OF_UNCHANGING, CHEST, DIAMOND, MEATBALL, OBJECT_NAMES, POT_FRUIT
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyTimeout, setPropertyTimeout } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';
 import { heroIsBlind } from '../js/senses.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, knownObject, unopenedCatBox } from './support/game-objects.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

@@ -27,7 +27,7 @@ import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { igniteItems } from './light.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './apply.js';
-import { splitHeroMonsterForm } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ATTACKS, requireMonsterData, monsterIsAmorphous, MONSTER_BODY_META, monsterIsNoncorporeal, monsterIsWhirly, monsterIsUnsolid, monsterIsVerySmall, } from './monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, requireObjectData } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';

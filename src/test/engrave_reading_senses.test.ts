@@ -4,7 +4,7 @@ import { BURN, DUST, ENGRAVE, ENGR_BLOOD, GRAVE, HEADSTONE, MARK } from '../js/c
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { autopickupAtHero } from '../js/pickup.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';

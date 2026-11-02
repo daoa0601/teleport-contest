@@ -11,7 +11,7 @@ import { placeMonsterAt } from '../js/steed.js';
 import { placeMonsterWormTailRandomly } from '../js/worm.js';
 import { BOULDER, CORPSE, DAGGER, FOOD_RATION, GOLD_PIECE, ROCK, SCR_SCARE_MONSTER, TRIPE_RATION } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { monsterLearnsTrap } from '../js/mondata.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';

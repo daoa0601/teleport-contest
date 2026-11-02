@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, DUNCE_CAP, HELMET, STATUE } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';

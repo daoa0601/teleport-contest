@@ -5,7 +5,7 @@ import { newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -7,7 +7,9 @@ import { touchArtifactByHero } from '../js/artifacts.js';
 import { A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB, } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { heroIsSick, startHeroSickness } from '../js/hero_illness.js';
+import { loseHeroHp } from '../js/hack.js';
+import { heroIsSick } from '../js/hero_illness.js';
+import { startHeroSickness } from '../js/potion.js';
 import { spendHeroNutrition } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/hero_traps.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
@@ -27,7 +29,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installHeroChainedToBuriedBall, installPolymorphedHero, installPunishedHero, installSwallowedHero, } from './support/hero-state.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { loseHeroHp } from '../js/hack.js';
 function requiredRole(predicate) {
     const role = roles.find(predicate);
     assert.ok(role, 'native role exists');

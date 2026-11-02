@@ -80,7 +80,7 @@ import type { HeroHurtleOptions } from './hero_hurtle.js';
 import { buriedBallNear, buriedBallToPunishment } from './dig.js';
 
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { makeConfused } from './hero_mental_status.js';
+import { makeConfused } from './potion.js';
 import { refreshMovementProperties, setPropertyTimeout } from './properties.js';
 import { levelTeleport } from './level_teleport.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
@@ -94,9 +94,8 @@ import {
     placeCreatedObject, placeObject, placeObjectSynchronously, remove_object,
     stack_object,
 } from './floor_object.js';
-import {
-    canFallThrough, splitHeroMonsterForm,
-} from './mklev.js';
+import { canFallThrough } from './mklev.js';
+import { splitHeroMonsterForm } from './potion.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import {

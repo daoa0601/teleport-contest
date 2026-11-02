@@ -8,7 +8,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { prepareAppliedWeaponAttack } from '../js/hero_attack_preflight.js';
 import { dodiscovered } from '../js/o_init.js';
 import { ARROW, BOULDER, CLUB, POT_HEALING } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryWeapon } from './support/game-objects.js';

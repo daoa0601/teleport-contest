@@ -81,7 +81,7 @@ import {
     setArtifactWarningWielded,
 } from './artifacts.js';
 import { recalculateTelepathyRange } from './worn.js';
-import { makeHallucinated } from './hero_mental_status.js';
+import { makeHallucinated } from './potion.js';
 import { endObjectBurn, equipmentLightMessage } from './light.js';
 import { heroIsBlind } from './senses.js';
 import { cancelSlotTakeoff } from './do_wear.js';

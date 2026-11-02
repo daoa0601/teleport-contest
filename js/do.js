@@ -4,7 +4,12 @@
 import { setHeroBlindnessTimeout } from './senses.js';
 import { game, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { makeBlinded } from './sight_change.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1 } from './monster_data.js';
+import { monsterIsScaredAt } from './monmove.js';
+import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
+import { AT_BOOM } from './monster_attack_types.js';
+import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE } from './const.js';
+import { makeBlinded } from './potion.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';
 import { CRYSKNIFE, OBJECT_NAMES, WORM_TOOTH } from './object_data.js';

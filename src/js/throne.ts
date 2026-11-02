@@ -3,8 +3,8 @@
 // and rndcurse().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { makeConfused } from './hero_mental_status.js';
-import { makeBlinded } from './sight_change.js';
+import { makeConfused } from './potion.js';
+import { makeBlinded } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import {

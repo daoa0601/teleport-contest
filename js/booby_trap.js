@@ -4,7 +4,7 @@ import { exerciseAttribute } from './attrib.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { level_difficulty } from './dungeon.js';
 import { plineWithContinuation } from './pline.js';
-import { makeStunned } from './hero_mental_status.js';
+import { makeStunned } from './potion.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { rnd } from './rng.js';
 import { loseHeroHp } from './hack.js';

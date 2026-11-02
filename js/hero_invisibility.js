@@ -1,5 +1,6 @@
-// Temporary and intrinsic hero invisibility.
-// C refs: potion.c peffect_invisibility() and zap.c zapyourself().
+// Temporary and intrinsic hero invisibility helpers; zap.c zapyourself()'s
+// invisibility case.  potion.c self_invis_message() and peffect_invisibility()
+// live in potion.ts.
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { TIMEOUT } from './const.js';
@@ -8,9 +9,10 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { ownedObjectName } from './objnam.js';
-import { grantIntrinsicProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, propertyIsBlocked, refreshProperty, revokeIntrinsicProperty, } from './properties.js';
-import { d, rn2 } from './rng.js';
+import { hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, propertyIsBlocked, refreshProperty, } from './properties.js';
+import { rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
+import { showInvisibilityMessage } from './potion.js';
 export function invisibilityIsBlocked(state = game) {
     return propertyIsBlocked('invisible', state);
 }
@@ -28,61 +30,6 @@ export function heroIsInvisible(state = game) {
 }
 export function syncHeroInvisibility(state = game) {
     return refreshProperty('invisible', state);
-}
-// C potion.c:self_invis_message().
-export async function showInvisibilityMessage(state = game) {
-    const hallucinating = heroIsHallucinating(state);
-    const seesInvisible = !!(state.u?.seeInvisible
-        || (state.u?.seeInvisibleTurns ?? 0) > 0);
-    const lead = hallucinating
-        ? 'Far out, man!  You' : 'Gee!  All of a sudden, you';
-    const effect = seesInvisible
-        ? 'can see right through yourself' : "can't see yourself";
-    await pline(`${lead} ${effect}.`);
-}
-export async function applyPotionLikeInvisibility({ state = game, blessed = false, cursed = false, spell = false, random = rn2, rollDice = d, } = {}) {
-    const cloak = state.uarmc || state.u.uarmc;
-    if (spell && invisibilityIsBlocked(state) && cloak?.otyp === MUMMY_WRAPPING) {
-        await pline(formatFeltMessage(`rather itchy under ${ownedObjectName(cloak, state, { capitalized: false })}.`, state));
-        return {
-            blocked: true,
-            showedInvisibility: false,
-            aggravates: false,
-        };
-    }
-    const wasInvisible = heroIsInvisible(state);
-    const showedInvisibility = !wasInvisible && !heroIsBlind(state)
-        && !invisibilityIsBlocked(state);
-    if (showedInvisibility)
-        await showInvisibilityMessage(state);
-    const blessing = blessed ? 1 : cursed ? -1 : 0;
-    let duration = 0;
-    let permanent = false;
-    if (blessed && random(hasInternalInvisibility(state) ? 15 : 30) === 0) {
-        grantIntrinsicProperty('invisible', 'outside', state);
-        permanent = true;
-    }
-    else {
-        duration = rollDice(6 - 3 * blessing, 100) + 100;
-        state.u.invisibleTurns = Math.min(TIMEOUT, (state.u.invisibleTurns ?? 0) + duration);
-    }
-    syncHeroInvisibility(state);
-    // The hero's square is redrawn before the cursed message can page.
-    await newsym(state.u.ux, state.u.uy);
-    let aggravates = false;
-    if (cursed) {
-        await pline('For some reason, you feel your presence is known.');
-        revokeIntrinsicProperty('invisible', 'outside', state);
-        syncHeroInvisibility(state);
-        aggravates = true;
-    }
-    return {
-        blocked: false,
-        showedInvisibility,
-        aggravates,
-        duration,
-        permanent,
-    };
 }
 export async function zapHeroInvisible(state = game, random = rn2) {
     const cloak = state.uarmc || state.u.uarmc;

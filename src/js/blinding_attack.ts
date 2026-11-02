@@ -24,7 +24,7 @@ import { makePlural, verbForSubject } from './objnam.js';
 import { objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
 import { blindfolded, heroIsBlind } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { monsterName } from './do_name.js';

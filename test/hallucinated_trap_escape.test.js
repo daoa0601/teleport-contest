@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { BEAR_TRAP, PIT, SPIKED_PIT, WEB } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { makeHallucinated } from '../js/hero_mental_status.js';
+import { makeHallucinated } from '../js/potion.js';
 import { BOULDER } from '../js/object_data.js';
 import { fillPitWithBoulderAt } from '../js/pit_fill.js';
 import { initRng } from '../js/rng.js';

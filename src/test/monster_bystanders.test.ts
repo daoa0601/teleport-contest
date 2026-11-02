@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { makeMonsterFlee } from '../js/monmove.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { initRng } from '../js/rng.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { angerMonster } from '../js/mon.js';

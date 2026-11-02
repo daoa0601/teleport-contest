@@ -13,7 +13,7 @@ import { clearDetectionMap } from '../js/detect.js';
 import { blockMonsterNotices, unblockMonsterNotices } from '../js/hack.js';
 import { EXPENSIVE_CAMERA, FOOD_RATION, WAN_DIGGING } from '../js/object_data.js';
 import { runSegment } from '../js/jsmain.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { cleanupTransientLight, showTransientLight } from '../js/transient_light.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

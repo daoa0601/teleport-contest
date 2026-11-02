@@ -46,10 +46,7 @@ import { announceTerrainRescue, nomul } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { angerTemplePriest } from './priest.js';
-import {
-    makeConfused, makeHallucinated, makeStunned,
-} from './hero_mental_status.js';
-
+import { makeConfused, makeHallucinated, makeStunned } from './potion.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { cureHeroSickness, heroIsSick } from './hero_illness.js';
 import { healHeroLegs } from './hero_legs.js';
@@ -119,7 +116,7 @@ import {
     blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,
     permanentBlind, setHeroBlindnessTurns, syncDeafness,
 } from './senses.js';
-import { makeBlinded } from './sight_change.js';
+import { makeBlinded } from './potion.js';
 import {
     adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill,
 } from './skills.js';

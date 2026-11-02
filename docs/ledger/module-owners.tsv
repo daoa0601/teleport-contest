@@ -2,6 +2,7 @@
 src/js/achievements.ts	insight.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
+src/js/attrib.ts	attrib.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
@@ -22,6 +23,7 @@ src/js/context_menu.ts	cmd.c
 src/js/corpse_revival.ts	zap.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
+src/js/detect.ts	detect.c
 src/js/do.ts	do.c
 src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c
@@ -67,16 +69,13 @@ src/js/hero_gaze.ts	polyself.c
 src/js/hero_genocide.ts	polyself.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
-src/js/hero_healing.ts	potion.c
-src/js/hero_hearing.ts	potion.c
 src/js/hero_hide.ts	insight.c
 src/js/hero_hurtle.ts	dothrow.c
+src/js/hero_illness.ts	timeout.c
 src/js/hero_inventory.ts	invent.c
-src/js/hero_invisibility.ts	potion.c
 src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_melee.ts	uhitm.c
-src/js/hero_mental_status.ts	potion.c
 src/js/hero_mind_blast.ts	polyself.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_natural_damage.ts	uhitm.c
@@ -109,7 +108,6 @@ src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/levitation_drop.ts	artifact.c
-src/js/levitation_potion.ts	potion.c
 src/js/levitation_timeout.ts	timeout.c
 src/js/lift_object.ts	pickup.c
 src/js/lock.ts	lock.c
@@ -154,7 +152,6 @@ src/js/projectile_bars.ts	monmove.c
 src/js/projectile_trap.ts	trap.c
 src/js/properties.ts	trap.c
 src/js/punishment.ts	read.c
-src/js/quaff.ts	potion.c
 src/js/quest.ts	quest.c
 src/js/ray_attack.ts	zap.c
 src/js/ray_name.ts	mthrowu.c
@@ -169,7 +166,9 @@ src/js/rock_breakage.ts	trap.c
 src/js/rumor.ts	rumors.c
 src/js/scatter.ts	explode.c
 src/js/shknam.ts	shknam.c
+src/js/sight_change.ts	zap.c
 src/js/skills.ts	weapon.c
+src/js/slime.ts	timeout.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flush_screen, newsym } from '../js/display.js';
 import { IRONBARS, PLNMSG_ENVELOPED_IN_GAS } from '../js/const.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { createGasCloudSelection, createHarmlessGasCloudSelection, createPoisonGasCloud, runLevelRegions } from '../js/regions.js';
 import { pushKeys } from '../js/input.js';

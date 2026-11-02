@@ -11,7 +11,7 @@ import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, DUNCE_CAP, HELMET } from '../js/object_data.js';
 import { propertyIsActive } from '../js/properties.js';
 import { d, rn2, rnd } from '../js/rng.js';
-import { setHeroPetrificationTimeout } from '../js/stoning.js';
+import { setHeroPetrificationTimeout } from '../js/potion.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

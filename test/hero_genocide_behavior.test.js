@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { doClassGenocide, doGenocide } from '../js/genocide.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { makeConfused, makeHallucinated } from '../js/hero_mental_status.js';
+import { makeConfused, makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

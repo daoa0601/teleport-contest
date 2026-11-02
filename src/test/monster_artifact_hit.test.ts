@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { DAGGER } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';

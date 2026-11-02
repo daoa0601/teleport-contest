@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { grantHeroSeeInvisible } from '../js/hero_seeing.js';
-import { applyPotionLikeInvisibility } from '../js/hero_invisibility.js';
+import { applyPotionLikeInvisibility } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 const heroCell = () => game.nhDisplay?.grid[game.u.uy + 1]?.[game.u.ux - 1]?.ch;

@@ -12,8 +12,7 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { createRoom } from './support/topology.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { initRng } from '../js/rng.js';
-
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';

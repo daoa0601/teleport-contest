@@ -6,7 +6,7 @@ import { SICK_ALL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { healHero } from '../js/hero_healing.js';
+import { healHero } from '../js/potion.js';
 import { putHeroToSleep } from '../js/hero_sleep.js';
 import { woundHeroLegs } from '../js/hero_legs.js';
 import { resetInputState } from '../js/input.js';

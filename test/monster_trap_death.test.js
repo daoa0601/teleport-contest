@@ -12,7 +12,7 @@ import { resetInputState } from '../js/input.js';
 import { hurtleMonster } from '../js/dothrow.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, POT_OIL, RED_DRAGON_SCALE_MAIL } from '../js/object_data.js';
-import { makeBlinded } from '../js/sight_change.js';
+import { makeBlinded } from '../js/potion.js';
 import { vision_recalc } from '../js/vision.js';
 import { knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
