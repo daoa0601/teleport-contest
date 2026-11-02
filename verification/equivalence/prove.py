@@ -17,6 +17,7 @@ import csv
 import functools
 import json
 import os
+import re
 import subprocess
 import sys
 import time
@@ -116,7 +117,8 @@ def build_world(spec, logging: bool, pre_fn, front) -> World:
                                            (z3.Not(active), V('null'))])
     return World(logging=logging, pre=pre, params=params, c_state=c_state, js_state=js_state,
                  c_globals=c_globals, js_choices=choices,
-                 loops=spec.loops, js_values=js_values)
+                 loops=spec.loops, js_values=js_values,
+                 unrelated_state=getattr(pre_fn, 'unrelated_state', ()))
 
 
 def js_module_env(logging: bool) -> dict:
@@ -154,7 +156,7 @@ def coalesce_returns(paths):
     """
     groups = []
     for path in paths:
-        if path.events:
+        if path.events or path.heap:
             groups.append(path)
             continue
         value = returned_integer(path)
@@ -164,7 +166,7 @@ def coalesce_returns(paths):
         value = z3.simplify(value)
         for other in groups:
             other_value = returned_integer(other)
-            if (not other.events and other_value is not None and z3.eq(value, z3.simplify(other_value))
+            if (not other.events and not other.heap and other_value is not None and z3.eq(value, z3.simplify(other_value))
                     and all(z3.eq(path.pos[s], other.pos[s]) for s in STREAMS)):
                 other.pc = [z3.Or(z3.And(*other.pc), z3.And(*path.pc))]
                 break
@@ -194,7 +196,7 @@ def describe_model(model, world, extra=()):
               for key, value in world.c_globals.items()
               if isinstance(value, CPtr) and isinstance(value.nonnull, z3.BoolRef)]
     parts += [f'{name}()={model.eval(value.v, model_completion=True)}'
-              for name, (_, value) in world.c_calls.items() if isinstance(value, CVal)]
+              for name, cases in world.c_calls.items() for _, value in cases if isinstance(value, CVal)]
     parts.append(f'logging={world.logging}')
     for s, fn in world.streams.items():
         draws = [f'{model.eval(fn(k), model_completion=True)}' for k in range(3)]
@@ -216,6 +218,7 @@ def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool
     if spec.partitions is None:
         return _check(spec, front, modules, pre_fn, pairwise_outputs)
     covered = 0
+    path_counts = []
     for label, fixed in spec.partitions(front):
         # A partition either fixes symbols to values (the species tables) or
         # adds arbitrary domain constraints (the rnl luck-sum split); both
@@ -233,12 +236,19 @@ def check(spec, front, modules, pre_fn, *, pairwise_outputs=False) -> tuple[bool
         proved, report = _check(spec, front, modules, partition, pairwise_outputs)
         if not proved:
             return False, f'{label}: {report}'
+        path_counts.extend((int(c), int(j)) for c, j in re.findall(r'(\d+) C x (\d+) JS paths', report))
         covered += 1
         if covered % 64 == 0:
             print(f'    {spec.name}: {covered} domains checked')
     if not covered:
         return False, 'domain is empty'
-    return True, f'{covered} partitions, log=off and log=on'
+    if covered == 1:
+        return True, report
+    shape = ''
+    if path_counts:
+        shape = (f'; paths per partition: C {min(c for c, _ in path_counts)}..{max(c for c, _ in path_counts)}, '
+                 f'JS {min(j for _, j in path_counts)}..{max(j for _, j in path_counts)}')
+    return True, f'{covered} partitions, log=off and log=on{shape}'
 
 
 def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, str]:
@@ -269,8 +279,54 @@ def _check(spec, front, modules, pre_fn, pairwise_outputs=False) -> tuple[bool, 
             if spec.arguments is not None:
                 c_args, j_args = spec.arguments(world, front)
             c_paths = CExec(cm, front).run(spec.c, c_args)
-            j_paths = JSExec(jm, modules, env).run(spec.js, j_args, spec.js_file)
+            executor = JSExec(jm, modules, env)
+            j_paths = (executor.run_initializer(spec.js, spec.js_initializer, world.js_locals, spec.js_file)
+                       if spec.js_initializer else executor.run(spec.js, j_args, spec.js_file))
+            # A store whose final value equals the entry term leaves the
+            # observable state unchanged; dropping it lets equal outcomes
+            # merge and leaves only genuine changes under restored_state.
+            def entry_term(key):
+                value = world.c_globals.get(key)
+                if isinstance(value, CVal):
+                    return value.v
+                return world.c_state[key][0] if key in world.c_state else None
+
+            for c in c_paths:
+                for key in list(c.heap):
+                    original = entry_term(key)
+                    if original is not None and z3.eq(z3.simplify(c.heap[key].v),
+                                                      z3.simplify(original)):
+                        del c.heap[key]
             c_paths, j_paths = coalesce_returns(c_paths), coalesce_returns(j_paths)
+            for key in spec.restored_state:
+                original = entry_term(key)
+                if original is None:
+                    return False, f'restored state {key} has no entry value'
+                storage_key = re.sub(r'\[([A-Z_]+)\]',
+                                     lambda match: f'[{front.enum_value(match[1])}]', key)
+                for c in c_paths:
+                    final = c.heap.get(storage_key)
+                    if final is not None:
+                        cm.oblige(c, final.v == original,
+                                  f'final {key} differs from its entry value', f'restored {key}')
+            for c in c_paths:
+                for key, final in c.heap.items():
+                    if key in spec.native_only_state:
+                        continue
+                    original = entry_term(key)
+                    if original is None:
+                        raise Unsupported(f'C exit state {key} has no entry value')
+                    cm.oblige(c, final.v == original,
+                              f'final {key} differs from its entry value', f'restored {key}')
+            if spec.result_range is not None:
+                low, high = spec.result_range
+                for machine, paths in ((cm, c_paths), (jm, j_paths)):
+                    for path in paths:
+                        value = returned_integer(path)
+                        if value is None:
+                            raise Unsupported('result-range contract needs an integer result')
+                        machine.oblige(path, z3.And(value >= low, value <= high),
+                                       'result outside proved call-summary range', spec.name)
         except Unsupported as error:
             return False, f'unsupported: {error}'
         for machine in (cm, jm):
@@ -356,16 +412,28 @@ def main() -> int:
     modules = load_modules()
     print(f'C sources: {recorder}/src   Leaf JavaScript: {REPO}/js   z3 {z3.get_version_string()}')
     failures = 0
+    selected = set(args.only) if args.only else {spec.name for spec in SPECS}
+    for spec in reversed(SPECS):
+        if spec.name in selected:
+            selected.update(spec.dependencies)
+    established = set()
     for spec in SPECS:
-        if args.only and spec.name not in args.only:
+        if spec.name not in selected:
             continue
         if (args.skip_slow and spec.slow) or (args.slow_only and not spec.slow):
             print(f'SKIPPED {spec.name} ({"slow" if spec.slow else "fast"})')
+            continue
+        missing = set(spec.dependencies) - established
+        if missing:
+            print(f'FAILED  {spec.name}: unproved call summaries: {", ".join(sorted(missing))}')
+            failures += 1
             continue
         start = time.monotonic()
         proved, report = check(spec, front, modules, spec.pre)
         print(f'{"PROVED " if proved else "FAILED "} {spec.name:<20} {time.monotonic() - start:6.1f}s  {report}')
         failures += not proved
+        if proved:
+            established.add(spec.name)
         if not args.no_probes:
             for label, pre_fn in spec.probes:
                 proved, report = check(spec, front, modules, pre_fn, pairwise_outputs=True)
@@ -413,6 +481,8 @@ def domain_summary(spec) -> str:
     types = [(name, t) for name, t in spec.params] + [(name, t) for name, t, _ in spec.state]
     types.extend((name, t) for name, t, _, _ in spec.enum_state)
     summary = [f'C function: {spec.c}', f'JS function: {spec.js_file}:{spec.js}']
+    if spec.js_initializer:
+        summary.append('JS expression slice: initializer of ' + spec.js_initializer)
     summary.extend(f'{name}: {"int" if signed else "uint"}{bits}' for name, (bits, signed) in types)
     summary.extend(f'{name} == {js_path}' for name, _, js_path in spec.state if js_path is not None)
     for name, _, js_path, choices in spec.enum_state:
@@ -428,6 +498,14 @@ def domain_summary(spec) -> str:
         if function is not None and function.__name__ != '<lambda>':
             summary.append(f'{label}: {function.__module__}.{function.__qualname__}')
     summary.extend(spec.assumptions)
+    if spec.dependencies:
+        summary.append('proved call summaries: ' + ', '.join(spec.dependencies))
+    if spec.restored_state:
+        summary.append('restored C state: ' + ', '.join(spec.restored_state))
+    if spec.native_only_state:
+        summary.append('native-only exit state: ' + ', '.join(spec.native_only_state))
+    if spec.result_range is not None:
+        summary.append(f'proved result range: {spec.result_range[0]}..{spec.result_range[1]}')
     summary.extend(' '.join(term.sexpr().split()) for term in spec.pre(symbols))
     if spec.js_args:
         summary.append('JS extra arguments: ' + json.dumps(spec.js_args))

@@ -7,6 +7,8 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import unittest
 
+import z3
+
 from cfront import CFront
 from jssym import parse_module
 from prove import REPO, check, recorder_dir
@@ -23,7 +25,7 @@ GLIBC_ASSERT = '''
 class ExecutorTests(unittest.TestCase):
     def compare(self, c, js, *, params=(), pre=lambda s: [], state=(), modules=None,
                 references=(), configure=lambda world, front, modules: None,
-                partitions=None, pairwise_outputs=False):
+                partitions=None, pairwise_outputs=False, restored_state=(), js_initializer=None):
         with TemporaryDirectory(prefix='fv-language-', dir=REPO / '.cache') as directory:
             c_file = Path(directory) / 'example.c'
             c_file.write_text(c)
@@ -33,7 +35,8 @@ class ExecutorTests(unittest.TestCase):
                 parsed[label] = (raw, *parse_module(raw))
             spec = Spec('example', 'example', 'example', list(params), pre=pre,
                         state=list(state), js_file='js/example.js',
-                        references=list(references), configure=configure, partitions=partitions)
+                        references=list(references), configure=configure, partitions=partitions,
+                        restored_state=tuple(restored_state), js_initializer=js_initializer)
             return check(spec, CFront(recorder_dir(), [c_file]), parsed, pre,
                          pairwise_outputs=pairwise_outputs)
 
@@ -289,9 +292,26 @@ class ExecutorTests(unittest.TestCase):
                       'const snapshot = game.u.value; function example() { return snapshot; }',
                       state=[('u.value', INT, 'game.u.value')], reason='is not constant data')
 
-    def test_global_writes_are_rejected(self):
+    def test_global_state_writes_are_tracked_and_restored(self):
+        # Writes to declared global state keys are modeled per path, and
+        # restored_state can require them to equal their entry values at exit.
+        c = ('struct { int value; } u; '
+             'int example(void) { int save = u.value; u.value = save + 3; u.value = save; return u.value; }')
+        js = 'function example() { return game.u.value; }'
+        self.equivalent(c, js, state=[('u.value', INT, 'game.u.value')],
+                        restored_state=('u.value',),
+                        pre=lambda s: [s['u.value'] >= 0, s['u.value'] <= 9])
+        broken = ('struct { int value; } u; '
+                  'int example(void) { int save = u.value; u.value = save + 3; return u.value; }')
+        self.rejected(broken, js, state=[('u.value', INT, 'game.u.value')],
+                      restored_state=('u.value',),
+                      pre=lambda s: [s['u.value'] >= 0, s['u.value'] <= 9],
+                      reason='final u.value differs from its entry value')
+
+    def test_global_writes_outside_declared_state_are_rejected(self):
         self.rejected('struct { int value; } u; int example(void) { u.value = 3; return 3; }',
-                      'function example() { game.u.value = 3; return 3; }', reason='non-local lvalue')
+                      'function example() { return 3; }',
+                      reason='C write to unmodeled global')
 
     def test_uninitialized_c_read_is_rejected(self):
         self.rejected('int example(void) { int value; return value; }',
@@ -421,6 +441,244 @@ class ExecutorTests(unittest.TestCase):
             'function example(same, present) { return game.first === game.second ? 1 : 0; }',
             params=[('same', INT), ('present', INT)], configure=configure,
             pre=lambda s: [s['same'] >= 0, s['same'] <= s['present'], s['present'] <= 1])
+
+    def test_fixed_member_array_pointer_scan_matches_some_callback(self):
+        c = ('struct attack { int aatyp; int adtyp; };'
+             'struct permonst { struct attack mattk[4]; };'
+             'const struct permonst table[1] = { { { {1, 0}, {2, 7}, {0, 0}, {0, 0} } } };'
+             'int example(int atyp) {'
+             '  const struct permonst *ptr = &table[0];'
+             '  struct attack *a;'
+             '  for (a = &ptr->mattk[0]; a < &ptr->mattk[4]; a++)'
+             '    if (a->aatyp == atyp && a->adtyp == 7) return 1;'
+             '  return 0; }')
+        js = ('function example(atyp) {'
+              '  return [[1, 0], [2, 7], [0, 0], [0, 0]].some(([a, d]) => a === atyp && d === 7) ? 1 : 0; }')
+        self.equivalent(c, js, params=[('atyp', INT)],
+                        pre=lambda s: [s['atyp'] >= 0, s['atyp'] <= 9])
+        self.rejected(c, js.replace('d === 7', 'd === 8'), params=[('atyp', INT)],
+                      pre=lambda s: [s['atyp'] >= 0, s['atyp'] <= 9], reason='outputs differ')
+
+    def test_fixed_member_array_pointer_deref_bounds_are_obligations(self):
+        c = ('struct attack { int aatyp; };'
+             'struct permonst { struct attack mattk[2]; };'
+             'const struct permonst table[1] = { { { {1}, {2} } } };'
+             'int example(int atyp) {'
+             '  const struct permonst *ptr = &table[0];'
+             '  struct attack *a;'
+             '  for (a = &ptr->mattk[0]; a < &ptr->mattk[3]; a++)'
+             '    if (a->aatyp == atyp) return 1;'
+             '  return 0; }')
+        self.rejected(c, 'function example(atyp) { return atyp > 0 ? 1 : 0; }',
+                      params=[('atyp', INT)], reason='array index outside')
+
+    def test_array_some_short_circuit_matches_c_scan_effects(self):
+        """The callback runs only while earlier elements were false, so a
+        draw inside it consumes stream positions exactly like C's scan."""
+        c = ('extern unsigned long long isaac64_next_uint64(void *);'
+             'struct { long rng_state; } rnglist[1];'
+             'int example(int a, int b) {'
+             '  if (a % 2 == (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 2u)) return 1;'
+             '  if (b % 2 == (int) (isaac64_next_uint64(&rnglist[0].rng_state) % 2u)) return 1;'
+             '  return 0; }')
+        js = ('function example(a, b) {'
+              '  return [a, b].some(x => x % 2 === Number(isaac64_next_uint64(game.coreCtx) % 2n)) ? 1 : 0; }')
+        pre = lambda s: [s['a'] >= 0, s['a'] <= 3, s['b'] >= 0, s['b'] <= 3]
+        self.equivalent(c, js, params=[('a', INT), ('b', INT)], pre=pre)
+
+    def test_array_pattern_hole_binds_the_later_element_only(self):
+        c = ('int example(int x, int y) {'
+             '  if (x > 0) return 1;'
+             '  if (y > 0) return 1;'
+             '  return 0; }')
+        js = ('function example(x, y) {'
+              '  return [[0, x], [0, y]].some(([, second]) => second > 0) ? 1 : 0; }')
+        pre = lambda s: [s['x'] >= 0, s['x'] <= 3, s['y'] >= 0, s['y'] <= 3]
+        self.equivalent(c, js, params=[('x', INT), ('y', INT)], pre=pre)
+        self.rejected(c, js.replace('([, second]) => second > 0', '([first]) => first > 0'),
+                      params=[('x', INT), ('y', INT)], pre=pre, reason='outputs differ')
+
+
+    def test_object_keys_set_has_reduce_and_record_subscript(self):
+        js_modules = {'js/records.js': (
+            'export const WORN_SLOTS = new Set([2, 4]);\n'
+            'export function wornNonBoot(sources) {\n'
+            '  return sources.some(source => WORN_SLOTS.has(source.slot));\n'
+            '}\n'
+            'export function hasIntrinsic(record) {\n'
+            '  return Object.keys(record.intrinsic).length > 0;\n'
+            '}\n'
+            'export function timeoutOf(hero, fields) {\n'
+            '  return (hero[fields.levitation] ?? 0) > 0;\n'
+            '}\n'
+            'export function totalWeight(items) {\n'
+            '  return items.reduce((total, item) => total + item.w, 0);\n'
+            '}\n')}
+
+        # Object.keys over a nonempty and an empty record.
+        self.equivalent(
+            'int example(void) { return 1; }',
+            'import { hasIntrinsic } from "./records.js";\n'
+            'function example() { return hasIntrinsic({ intrinsic: { role: 1 } }) ? 1 : 0; }',
+            modules=js_modules)
+        self.equivalent(
+            'int example(void) { return 0; }',
+            'import { hasIntrinsic } from "./records.js";\n'
+            'function example() { return hasIntrinsic({ intrinsic: {} }) ? 1 : 0; }',
+            modules=js_modules)
+        # Set.has over a literal member set.
+        self.equivalent(
+            'int example(int slot) { return slot == 2 || slot == 4; }',
+            'import { wornNonBoot } from "./records.js";\n'
+            'function example(slot) { return wornNonBoot([{ slot: slot }, { slot: 9 }]) ? 1 : 0; }',
+            params=[('slot', INT)], modules=js_modules,
+            pre=lambda s: [s['slot'] >= 0, s['slot'] <= 9])
+        # reduce threads the accumulator through every element.
+        self.equivalent(
+            'int example(int a, int b, int c) { return a + b + c; }',
+            'import { totalWeight } from "./records.js";\n'
+            'function example(a, b, c) { return totalWeight([{ w: a }, { w: b }, { w: c }]); }',
+            params=[('a', INT), ('b', INT), ('c', INT)], modules=js_modules,
+            pre=lambda s: [s['a'] >= 0, s['b'] >= 0, s['c'] >= 0,
+                           s['a'] + s['b'] + s['c'] <= 100])
+        # A subscript on a record by a string key picks the field.
+        self.equivalent(
+            'int example(int turns) { return turns > 0; }',
+            'import { timeoutOf } from "./records.js";\n'
+            'const FIELDS = { levitation: "levitationTurns" };\n'
+            'function example(turns) { return timeoutOf({ levitationTurns: turns }, FIELDS) ? 1 : 0; }',
+            params=[('turns', INT)], modules=js_modules,
+            pre=lambda s: [s['turns'] >= 0, s['turns'] <= 9])
+
+    def test_callback_parameters_do_not_overwrite_enclosing_bindings(self):
+        self.equivalent(
+            'int example(int x) { return x; }',
+            'function example(x) { [1, 2].some(x => x > 0); return x; }',
+            params=[('x', INT)])
+        self.equivalent(
+            'int example(int x) { return x; }',
+            'function example(x) { [1, 2].reduce((x, item) => x + item, 0); return x; }',
+            params=[('x', INT)])
+
+    def test_some_receives_the_element_index_and_array(self):
+        self.equivalent(
+            'int example(int x) { return x == 0 || x == 1; }',
+            'function example(x) { return [9, 9].some((item, index, items) => index === x && items[index] === item); }',
+            params=[('x', INT)])
+
+    def test_equal_contents_do_not_make_distinct_arrays_alias(self):
+        self.equivalent(
+            'struct holder { int slots[1]; };'
+            'const struct holder table[2] = { { {7} }, { {7} } };'
+            'int example(void) {'
+            '  const struct holder *a = &table[0], *b = &table[1];'
+            '  return &a->slots[0] == &b->slots[0]; }',
+            'function example() { return 0; }')
+
+    def test_pointer_formation_is_bounded_even_without_a_dereference(self):
+        self.rejected(
+            'struct holder { int slots[2]; };'
+            'const struct holder table[1] = { { {7, 8} } };'
+            'int example(void) { const struct holder *p = &table[0];'
+            '  int *beyond = &p->slots[3]; return 0; }',
+            'function example() { return 0; }', reason='pointer outside fixed array')
+
+    def test_saved_mask_restoration_is_checked_with_an_unchanged_return(self):
+        c = ('struct { long mask; } u; int example(int flag) {'
+             'long saved = u.mask; if (flag) u.mask &= ~32L;'
+             'u.mask = saved; return 0; }')
+        js = 'function example(flag) { return 0; }'
+        def configure(world, front, modules):
+            world.join_paths = True
+        options = dict(params=[('flag', INT)], state=[('u.mask', LONG, None)],
+                       pre=lambda s: [s['u.mask'] >= 0, s['u.mask'] <= 63],
+                       configure=configure, restored_state=('u.mask',))
+        self.equivalent(c, js, **options)
+        self.rejected(c.replace('u.mask = saved;', ''), js, **options,
+                      reason='final u.mask differs from its entry value')
+
+    def test_joining_preserves_branch_values_and_overflow_obligations(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+        self.equivalent(
+            'int example(int x) { int value; if (x > 0) value = 3; else value = 5; return value; }',
+            'function example(x) { return x > 0 ? 3 : 5; }',
+            params=[('x', INT)], configure=configure)
+        self.rejected(
+            'int example(int x) { int value; if (x > 0) value = 2147483647; else value = 5; return value + 1; }',
+            'function example(x) { return x > 0 ? 2147483648 : 6; }',
+            params=[('x', INT)], configure=configure, reason='C signed overflow in +')
+
+    def test_indexof_keeps_the_first_matching_position(self):
+        self.equivalent(
+            'int example(int x) { return x == 7 ? 0 : x == 3 ? 1 : -1; }',
+            'function example(x) { return [7, 3, 7].indexOf(x); }',
+            params=[('x', INT)])
+
+    def test_initializer_slice_uses_explicit_locals_and_excludes_the_caller(self):
+        from jssym import V
+        def configure(world, front, modules):
+            world.js_locals['x'] = V('num', world.params[0][1])
+        c = 'int example(int x) { return x + 1; }'
+        js = 'function example(x) { const value = x + 1; return 0; }'
+        options = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 9],
+                       configure=configure, js_initializer='value')
+        self.equivalent(c, js, **options)
+        self.rejected(c, js.replace('x + 1', 'x + 2'), **options, reason='outputs differ')
+
+    def test_bounded_object_chain_matches_an_array_including_empty_inventory(self):
+        from csym import CPtr
+        from jssym import V
+        def configure(world, front, modules):
+            world.join_paths = True
+            length = world.params[0][1].as_long()
+            world.c_globals['head'] = CPtr(length > 0, 'item0')
+            items = []
+            for index in range(length):
+                world.c_globals[f'item{index}.next'] = CPtr(index + 1 < length, f'item{index + 1}')
+                items.append(V('record', {'weight': V('num', world.c_state[f'item{index}.weight'][0])}))
+            world.js_values['game.items'] = V('array', tuple(items))
+        c = ('struct item { int weight; struct item *next; }; struct item *head;'
+             'int example(int length) { int sum = 0; struct item *p = head;'
+             'while (p) { sum += p->weight; p = p->next; } return sum; }')
+        js = 'function example(length) { return game.items.reduce((sum, item) => sum + item.weight, 0); }'
+        options = dict(params=[('length', INT)], configure=configure,
+                       state=[(f'item{i}.weight', INT, None) for i in range(4)],
+                       pre=lambda s: [z3.And(s[f'item{i}.weight'] >= 0, s[f'item{i}.weight'] <= 100)
+                                      for i in range(4)],
+                       partitions=lambda front: [(str(n), {'length': n}) for n in range(5)])
+        self.equivalent(c, js, **options)
+        self.rejected(c, js.replace('return game.items', 'return (length === 4 ? 1 : 0) + game.items'),
+                      **options, reason='outputs differ')
+
+    def test_related_table_still_needs_a_declared_module_binding(self):
+        from jssym import V
+        def configure(world, front, modules):
+            world.js_constants[('js/example.js', 'DATA')] = V('array', (V('num', world.params[0][1]),))
+        c = 'int example(int x) { return x; }'
+        js = 'function example(x) { return DATA[0]; }'
+        self.equivalent(c, 'const DATA = [0]; ' + js, params=[('x', INT)], configure=configure)
+        self.rejected(c, js, params=[('x', INT)], configure=configure,
+                      reason='entry-state table DATA has no immutable binding')
+
+    def test_scalar_global_reads_observe_temporary_writes(self):
+        from csym import CVal
+        def configure(world, front, modules):
+            world.c_globals['count'] = CVal(world.params[0][1], INT)
+        self.equivalent(
+            'int count; int example(int x) { int saved = count;'
+            'count += 1; int result = count; count = saved; return result; }',
+            'function example(x) { return x + 1; }',
+            params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 9], configure=configure)
+
+    def test_writes_reject_a_state_model_with_the_wrong_native_field_type(self):
+        from csym import CVal
+        def configure(world, front, modules):
+            world.c_globals['u.flag'] = CVal(z3.IntVal(1), (32, False))
+        self.rejected(
+            'struct { signed char flag; } u; int example(void) { u.flag = 1; return 0; }',
+            'function example() { return 0; }', configure=configure,
+            reason='C heap type mismatch for u.flag')
 
 
 if __name__ == '__main__':

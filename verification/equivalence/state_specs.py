@@ -1,9 +1,17 @@
 """Claims over explicit hero, monster and read-only call correspondences."""
-from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT, SCHAR,
-                   Spec, ULEVEL, UnrelatedState, WEAPON_DAMAGE)
-from state_world import (experience_arguments, experience_state, hero_state,
-                         hit_bonus_state, movement_arguments, movement_state,
-                         species_predicate_arguments, species_predicate_state)
+import z3
+
+from csym import CVal
+from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
+                   SCHAR, Spec, ULEVEL, UnrelatedState, WEAPON_DAMAGE)
+from state_world import (AT_ENGL, AT_WEAP,
+                         capacity_state, experience_arguments, experience_state,
+                         hero_state, hit_bonus_state, inventory_state,
+                         movement_arguments, movement_state,
+                         species_predicate_arguments, species_predicate_state,
+                         symbolic_attacks, symbolic_attack_arguments, capacity_arguments,
+                         sign_state, sign_arguments)
+UINT = (32, False)
 
 WORN = [(slot, (f'game.{slot}', f'game.u.{slot}')) for slot in ('uarmg', 'uarmh', 'uwep')]
 ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
@@ -11,11 +19,13 @@ ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
                ('uwep.oartifact', SCHAR, 'game.uwep.oartifact')]
 HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
-STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c', 'mondata.c')
+STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
+                 'mondata.c', 'polyself.c', 'dungeon.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/hero_species.js',
-    'js/dungeon.js', 'js/mon.js',
+    'js/dungeon.js', 'js/mon.js', 'js/monmove.js', 'js/weight.js',
+    'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
 )
 
 
@@ -44,7 +54,7 @@ MOVEMENT_ASSUMPTIONS = (
 )
 
 STATE_SPECS = [
-    Spec('acurr:all', 'acurr', 'currentAttribute', [('chridx', INT)],
+    Spec('acurr:all', 'acurr', 'currentAttribute', [('chridx', INT)], result_range=(3, 125),
          assumptions=HERO_ASSUMPTIONS,
          require_counterexamples=True, js_file=ATTRIB, state=HERO, references=WORN, configure=hero_state,
          pre=full_attributes,
@@ -118,6 +128,48 @@ STATE_SPECS += [
     )
 ]
 
+# The emitted helpers fix their query constants. These claims range over
+# all six attack records instead of assuming the initial species tables.
+ATTACK_STATE = [(f'attack[{i}].{field}', (8, False), None)
+                for i in range(6) for field in ('aatyp', 'adtyp', 'damn', 'damd')]
+ATTACK_ASSUMPTIONS = (
+    'permonst.h: mattk has exactly NATTK=6 initialized records; all four fields range over every uchar value',
+    'the emitted MONSTER_ATTACKS row corresponds field-for-field to the symbolic native mattk array',
+    'only the fixed query types used by these emitted helpers are claimed; pointer-returning scans are observed for presence, not slot identity',
+    'the emitted mnum is zero, selecting the one related symbolic row; the argument is a monster reference or species index as the helper requires',
+)
+
+STATE_SPECS += [
+    Spec(name, native, port, [('native_pointer_present', INT)],
+         js_file=js_file, state=ATTACK_STATE, assumptions=ATTACK_ASSUMPTIONS + (
+             'C extra int32 query arguments: ' + (', '.join(str(value.v.as_long()) for value in c_args) or 'none'),),
+         require_counterexamples=True, configure=symbolic_attacks,
+         arguments=symbolic_attack_arguments(c_args, record_arg),
+         pre=lambda s: [s['native_pointer_present'] == 1],
+         probes=[('null native permonst pointer', lambda s: [s['native_pointer_present'] == 0])],
+         mutants=[(js_file, old, new)])
+    for name, native, port, js_file, c_args, record_arg, old, new in (
+        ('attacktype:engulfs', 'attacktype', 'monsterCanEngulf', MONSTER_DATA,
+         [CVal(z3.IntVal(AT_ENGL), INT)], True,
+         'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);',
+         'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_WEAP);'),
+        ('attacktype:armed', 'attacktype', 'speciesHasWeaponAttack', 'js/monmove.js',
+         [CVal(z3.IntVal(AT_WEAP), INT)], False,
+         'attackType === AT_WEAP);', 'attackType === AT_MAGC);'),
+        ('dmgtype_fromattack:digests', 'verification_digests', 'monsterDigests', MONSTER_DATA,
+         [], True, 'attackType === AT_ENGL && damageType === AD_DGST',
+         'attackType === AT_ENGL && damageType === AD_WRAP'),
+        ('dmgtype_fromattack:enfolds', 'verification_enfolds', 'monsterEnfolds', MONSTER_DATA,
+         [], True, 'method === AT_ENGL && damage === AD_WRAP',
+         'method === AT_ENGL && damage === AD_DGST'),
+        ('attacktype_fordmg:digests', 'verification_attacktype_digests', 'monsterDigests', MONSTER_DATA,
+         [], True, 'attackType === AT_ENGL && damageType === AD_DGST',
+         'attackType === AT_ENGL && damageType === AD_WRAP'),
+        ('dmgtype:sticks', 'sticks', 'monsterSpeciesSticks', MONSTER_DATA,
+         [], False, 'attackType === AT_HUGS', 'attackType === AT_WEAP'),
+    )
+]
+
 
 def experience_domain(s):
     return [s['nk'] >= 0, s['nk'] <= 255,
@@ -167,4 +219,113 @@ STATE_SPECS += [
                      s['u.ugallop'] == -1, s['svc.context.mv'] == 1])],
          mutants=[('js/mon.js', 'random(NORMAL_SPEED) < adjustment',
                    'random(NORMAL_SPEED) <= adjustment')]),
+]
+
+
+# hack.c:weight_cap() temporarily clears property bits; the claim proves the
+# C exit state equals its entry state for every mask it touches, so the
+# read-only JavaScript port computes over the same effective state.
+CAPACITY_ASSUMPTIONS = HERO_ASSUMPTIONS + (
+    'acurr:all supplies equal pure Strength/Constitution in 3..125; acurrstr/currentStrength still execute their native/emitted condensation',
+    'hack.c:weight_cap: ga.afternmv == Boots_on corresponds to the pending wear of the boot object',
+    'youprop.h property masks: W_ARMF boot bit, one lumped other-extrinsic slot, intrinsic-or-timed sources, FROMOUTSIDE terrain and I_SPECIAL trap bits',
+    'polyself.c:float_vs_flight/steed_vs_stealth: entry block bits satisfy their invariants; all four modified property masks are restored',
+    'properties.js records: worn uarmf source is the only boot slot; intrinsic record nonempty and the timeout field cover HLevitation/HFlying',
+    'disp.botl is TRUE at entry; weight_cap may request the same native redraw flag',
+    'do_wear.c:Boots_on defers the encumbrance benefit exactly while the port sees pendingArmorAction wear of the boots',
+)
+
+CAPACITY_STATE = [
+        ('h_lev', INT, None), ('e_boot', INT, None), ('e_other', INT, None),
+    ('terr_lev', INT, None), ('trap_lev0', INT, None),
+    ('h_fly', INT, None), ('e_fly', INT, None),
+    ('terr_fly', INT, None), ('trap_fly0', INT, None),
+    ('legs_left', INT, None), ('legs_right', INT, None),
+    ('u.utrap', UINT, 'game.u.utrap'),
+    ('u.utraptype', UINT, 'game.u.utraptype'),
+    ('u.uz.dnum', (16, True), None),
+    ('u.uz.dlevel', (16, True), None),
+    ('svd.dungeon_topology.d_air_level.dnum', (16, True), None),
+    ('svd.dungeon_topology.d_air_level.dlevel', (16, True), None),
+]
+
+
+def whole_domain(front):
+    # One partition covering the whole domain: the grouped output query
+    # case-splits internally instead of one query per path pair.
+    return [('whole domain', {})]
+
+
+def capacity_domain(s):
+    flags = ('h_lev', 'e_boot', 'e_other', 'terr_lev', 'trap_lev0', 'h_fly',
+             'e_fly', 'terr_fly', 'trap_fly0', 'legs_left', 'legs_right')
+    return [s[key] >= 0 for key in flags] + [s[key] <= 1 for key in flags]
+
+
+RESTORED_PROPERTIES = ('u.uprops[LEVITATION].extrinsic', 'u.uprops[LEVITATION].blocked',
+                       'u.uprops[FLYING].blocked', 'u.uprops[STEALTH].blocked')
+
+STATE_SPECS += [
+    Spec('weight_cap:state', 'weight_cap', 'weightCapacity', [],
+         js_file='js/weight.js', js_args=[('obj', 'game')],
+         state=HERO + CAPACITY_STATE, references=WORN, configure=capacity_state,
+         pre=capacity_domain, assumptions=CAPACITY_ASSUMPTIONS,
+         dependencies=('acurr:all',), restored_state=RESTORED_PROPERTIES, result_range=(1, 1000), partitions=whole_domain,
+         require_counterexamples=True,
+         probes=[('summarized Strength correspondence omitted', UnrelatedState(
+             capacity_domain, ('capacity-strength',)))],
+         mutants=[('js/weight.js', 'capacity -= 200;', 'capacity -= 100;')]),
+]
+
+INVENTORY_FIELDS = [(f'invent[{i}].{field}', declared, None)
+                    for i in range(4) for field, declared in (
+                        ('otyp', (16, True)), ('oclass', (8, True)),
+                        ('quan', (64, True)), ('owt', (32, False)), ('oeaten', (32, False)))]
+
+
+def inventory_partitions(front):
+    return [(f'chain length {length}', {'chain': length}) for length in range(5)]
+
+
+def inventory_domain(s):
+    return capacity_domain(s) + [s['chain'] >= 0, s['chain'] <= 4] + [
+        s[f'invent[{i}].oeaten'] == 0 for i in range(4)] + (
+            [s['xtra_wt'] >= -1000000, s['xtra_wt'] <= 1000000] if 'xtra_wt' in s else [])
+
+
+STATE_SPECS += [
+    Spec(name, native, port, params, js_file='js/weight.js',
+         arguments=capacity_arguments,
+         state=HERO + CAPACITY_STATE + [('chain', INT, None)] + INVENTORY_FIELDS,
+         references=WORN, configure=inventory_state,
+         pre=inventory_domain, assumptions=CAPACITY_ASSUMPTIONS + (
+             'inventory is an acyclic, unshared nobj chain of length 0..4; JS array has the same order and length',
+             'weights and quantities are 0..100000; types are GOLD_PIECE, BOULDER, DAGGER or FOOD_RATION; classes correspond; no partly eaten food',
+             'for each non-coin, non-skipped object, cached native owt equals the emitted objectWeight reconstruction at entry',
+             'weight_cap/weightCapacity use the separately proved weight_cap:state summary with equal capacity in 1..1000 and restored property state',
+             'gw.wc is a native-only cache; its writes are tracked for calc_capacity but excluded from the cross-language exit projection',
+         ),
+         dependencies=('weight_cap:state',), native_only_state=('gw.wc',),
+         partitions=inventory_partitions, require_counterexamples=True,
+         probes=[('native cache correspondence omitted', UnrelatedState(
+             inventory_domain, ('inventory-cache',)))],
+         mutants=[('js/weight.js', old, new)])
+    for name, native, port, params, old, new in (
+        ('inv_weight:chain4', 'inv_weight', 'invWeight', [],
+         '(quantity(object) + 50) / 100);', '(quantity(object) + 49) / 100);'),
+        ('calc_capacity:chain4', 'calc_capacity', 'calcCapacity', [('xtra_wt', INT)],
+         'excess * 2 / capacity', 'excess * 3 / capacity'),
+        ('near_capacity:chain4', 'near_capacity', 'nearCapacity', [],
+         'return calcCapacity(state, 0);', 'return calcCapacity(state, 1);'),
+    )
+]
+
+STATE_SPECS += [
+    Spec('sgn:inline', 'sgn', 'aimedDirection', [], js_file='js/muse.js', js_initializer='dx',
+         state=[('target.x', INT, 'target.x')], configure=sign_state, arguments=sign_arguments,
+         assumptions=('muse.js:aimedDirection dx initializer only; target.x is an arbitrary int delta and monster.mx is zero; enclosing caller excluded',),
+         require_counterexamples=True,
+         probes=[('inline delta correspondence omitted', UnrelatedState(lambda s: [], ('target.x',)))],
+         mutants=[('js/muse.js', 'const dx = Math.sign(target.x - monster.mx), dy =',
+                   'const dx = Math.sign(monster.mx - target.x), dy =')]),
 ]

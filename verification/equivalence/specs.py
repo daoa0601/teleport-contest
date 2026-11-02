@@ -35,6 +35,7 @@ class Spec:
     probes: list = field(default_factory=list)    # [(label, weaker pre)]
     mutants: list = field(default_factory=list)   # [(file, old, new[, 'equivalent'])]
     js_file: str = 'js/rng.js'
+    js_initializer: str | None = None  # prove this local initializer, not its enclosing function
     js_args: list = field(default_factory=list)   # additional (kind, value) arguments
     nulls: list = field(default_factory=list)     # [(C global pointer, JS paths)]
     enum_state: list = field(default_factory=list)  # [(C key, type, JS path, [(C enumerator, JS string)])]
@@ -42,7 +43,11 @@ class Spec:
     configure: Callable = lambda world, front, modules: None
     arguments: Callable | None = None  # explicit C/JS API argument correspondence
     partitions: Callable | None = None # finite, exhaustive subdomains; each must be satisfiable
+    restored_state: tuple[str, ...] = ()  # C state keys that must equal entry values at exit
+    native_only_state: tuple[str, ...] = ()  # modeled caches outside the related exit state
+    result_range: tuple[int, int] | None = None
     require_counterexamples: bool = False
+    dependencies: tuple[str, ...] = ()  # proved before using their call summaries
     slow: bool = False
     assumptions: tuple[str, ...] = ()
 

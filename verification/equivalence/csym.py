@@ -93,6 +93,20 @@ class CElement:
 
 
 @dataclass(frozen=True)
+class CSlot:
+    """A pointer to one element of one fixed array value (no other arithmetic).
+
+    The values are the immutable executor contents of a record's fixed array
+    member, such as permonst.mattk[NATTK]; two slots compare only inside the
+    same array, and only by index.
+    """
+
+    values: tuple
+    index: object
+    origin: tuple
+
+
+@dataclass(frozen=True)
 class CRecord:
     fields: dict
     file: object
@@ -216,6 +230,30 @@ def _assigned(n) -> set:
     return names
 
 
+def _fixed_slot(v):
+    """The bounded array slot carried by a pointer, if present."""
+    if isinstance(v, CPtr) and isinstance(v.key, CSlot):
+        return v.key
+    return None
+
+
+def _one_fixed_array(a, b):
+    x, y = _fixed_slot(a), _fixed_slot(b)
+    if x is None or y is None:
+        return None
+    member_a, owner_a = x.origin
+    member_b, owner_b = y.origin
+    if isinstance(owner_a, CElement) and isinstance(owner_b, CElement):
+        return z3.And(member_a == member_b, owner_a.table == owner_b.table,
+                      owner_a.index == owner_b.index)
+    if isinstance(owner_a, CSlot) and isinstance(owner_b, CSlot):
+        same = _one_fixed_array(CPtr(True, owner_a), CPtr(True, owner_b))
+        return z3.And(member_a == member_b, same, owner_a.index == owner_b.index)
+    if isinstance(owner_a, str) and isinstance(owner_b, str):
+        return z3.BoolVal(member_a == member_b and owner_a == owner_b)
+    return z3.BoolVal(False)
+
+
 class CExec:
     def __init__(self, machine: Machine, front):
         self.m = machine
@@ -235,6 +273,10 @@ class CExec:
 
     def conv(self, path, v, src, dst):
         """convert(), skipping the wrap when the path already proves the value fits."""
+        source_low, source_high = bounds(src)
+        target_low, target_high = bounds(dst)
+        if target_low <= source_low and source_high <= target_high:
+            return v
         if dst != (1, False) and self.m.proves(path, in_range(v, dst)):
             return v
         return convert(v, src, dst)
@@ -242,6 +284,29 @@ class CExec:
     def where(self, node) -> str:
         _, file, _ = self.stack[-1]
         return self.front.line(file, node)
+
+    @staticmethod
+    def merge_value(guard, a, b):
+        if a is b:
+            return a
+        if isinstance(a, CVal) and isinstance(b, CVal) and a.t == b.t:
+            return CVal(z3.simplify(z3.If(guard, a.v, b.v)), a.t)
+        if isinstance(a, CUninit) and isinstance(b, CUninit) and a.name == b.name:
+            return a
+        if isinstance(a, CPtr) and isinstance(b, CPtr) and isinstance(a.key, str) and a.key == b.key:
+            if a.identity is None and b.identity is None:
+                return CPtr(z3.If(guard, a.nonnull, b.nonnull), a.key)
+        raise Unsupported('C values cannot be joined')
+
+    def _entry_value(self, key):
+        if key in self.m.world.c_globals:
+            return self.m.world.c_globals[key]
+        if key in self.m.world.c_state:
+            return CVal(*self.m.world.c_state[key])
+        return None
+
+    def join(self, paths):
+        return self.m.join(paths, self.merge_value, self._entry_value)
 
     def call(self, path, name, args):
         decl, file = self.front.function(name)
@@ -270,6 +335,14 @@ class CExec:
             q.frames.pop()
             q.ret, q.returned = None, False
             results.append((q, value))
+        if not self.m.world.join_paths:
+            return results
+        for q, value in results:
+            q.ret = value
+        joined = self.join([q for q, _ in results])
+        results = [(q, q.ret) for q in joined]
+        for q, _ in results:
+            q.ret = None
         return results
 
     # ---- statements --------------------------------------------------------
@@ -281,6 +354,7 @@ class CExec:
             paths = [path]
             for c in n.get('inner', []):
                 paths = seq(paths, lambda p, c=c: self.exec(p, c))
+                paths = self.join(paths)
             for p in paths:
                 for name in set(p.env) - outer:
                     del p.env[name]
@@ -450,6 +524,8 @@ class CExec:
 
         def havoc_fn(p, name):
             old = p.env[name]
+            if not isinstance(old, CVal):
+                raise Unsupported(f'annotated C loop havocs the non-scalar {name}')
             v = self.m.world.fresh(name)
             p.pc.append(in_range(v, old.t))
             p.env[name] = CVal(v, old.t)
@@ -513,10 +589,14 @@ class CExec:
                         array = self.m.world.c_globals[base.key.table]
                         self.m.array_bounds(p, base.key.index, len(array.values), self.where(n))
                         base = self._select(array.values, base.key.index)
+                    elif isinstance(base.key, CSlot):
+                        slot = base.key
+                        self.m.array_bounds(p, slot.index, len(slot.values), self.where(n))
+                        base = self._select(slot.values, slot.index)
                     else:
                         base = CState(base.key)
                 if isinstance(base, CState):
-                    out.append((p, self._state(f'{base.key}.{n["name"]}', n)))
+                    out.append((p, self._state(p, f'{base.key}.{n["name"]}', n)))
                 elif isinstance(base, (CRecord, CSelected)):
                     out.append((p, self._record_member(p, base, n['name'])))
                 else:
@@ -574,6 +654,8 @@ class CExec:
                 if isinstance(value, CUninit):
                     raise Unsupported(f'C read of uninitialized local {name}')
                 return value
+            if name in path.heap:
+                return path.heap[name]
             if name in self.m.world.c_globals:
                 return self.m.world.c_globals[name]
             if any(key.startswith(name + '.') for key in (*self.m.world.c_state, *self.m.world.c_globals)):
@@ -589,7 +671,12 @@ class CExec:
             return CFn(name)
         raise Unsupported(decl['kind'])
 
-    def _state(self, key, node):
+    def _state(self, path, key, node):
+        if key in path.heap:
+            value = path.heap[key]
+            if value.t != ctype(node['type']):
+                raise Unsupported(f'C heap type mismatch for {key}')
+            return value
         if key in self.m.world.c_globals:
             value = self.m.world.c_globals[key]
             if isinstance(value, CVal) and value.t != ctype(node['type']):
@@ -615,6 +702,47 @@ class CExec:
         if any(k.startswith(key + '.') for k in (*fields, *self.m.world.c_globals)):
             return CState(key)
         raise Unsupported(f'unmodeled C state {key}')
+
+    def _state_key(self, path, node):
+        """Resolve a global-state lvalue (member chains and fixed subscripts
+        over named aggregates) to its flattened key, for a write."""
+        node = _unwrap(node)
+        if node['kind'] == 'DeclRefExpr':
+            name = node['referencedDecl']['name']
+            if name in path.env:
+                raise Unsupported('C write names a local')
+            if name not in self.m.world.c_globals and not any(
+                    k.startswith(name + '.') or k.startswith(name + '[')
+                    for k in (*self.m.world.c_state, *self.m.world.c_globals)):
+                raise Unsupported(f'C write to unmodeled global {name}')
+            return name
+        if node['kind'] == 'MemberExpr':
+            return f'{self._state_key(path, node["inner"][0])}.{node["name"]}'
+        if node['kind'] == 'ArraySubscriptExpr':
+            results = self.eval(path, node['inner'][1])
+            if len(results) != 1 or not isinstance(results[0][1], CVal):
+                raise Unsupported('C write through a non-constant subscript')
+            index = z3.simplify(results[0][1].v)
+            if not z3.is_int_value(index):
+                raise Unsupported('C write through a symbolic subscript')
+            return f'{self._state_key(path, node["inner"][0])}[{index.as_long()}]'
+        raise Unsupported('C write to this lvalue shape')
+
+    def _store(self, path, node, value):
+        """Write a CVal to one flattened global-state key."""
+        key = self._state_key(path, node)
+        if key in path.heap:
+            declared = path.heap[key].t
+        elif key in self.m.world.c_globals and isinstance(self.m.world.c_globals[key], CVal):
+            declared = self.m.world.c_globals[key].t
+        elif key in self.m.world.c_state:
+            declared = self.m.world.c_state[key][1]
+        else:
+            raise Unsupported(f'C write to unmodeled state {key}')
+        if declared != ctype(node['type']):
+            raise Unsupported(f'C heap type mismatch for {key}: model {declared}, field {ctype(node["type"])}')
+        path.heap[key] = CVal(self.conv(path, value.v, value.t, declared), declared)
+        return path.heap[key]
 
     def _select(self, values, index):
         if not values:
@@ -671,6 +799,10 @@ class CExec:
         where = self.where(node)
         bits, signed = t
         if op in ('&', '|', '^', '<<', '>>'):
+            if op in ('&', '|', '^'):
+                folded = self._distribute_bits(op, a, b, t)
+                if folded is not None:
+                    return folded
             av, bv = z3.Int2BV(a, bits), z3.Int2BV(b, bits)
             if op in ('<<', '>>'):
                 self.m.oblige(path, z3.And(b >= 0, b < bits), 'C shift count outside type width', where)
@@ -712,13 +844,42 @@ class CExec:
             return r
         return r if self.m.proves(path, in_range(r, t)) else r % (2 ** bits)
 
+    def _distribute_bits(self, op, a, b, t):
+        """&, |, ^ distributed over If so mask tests over flag-defined state
+        fold to plain conditions; None falls back to the bit-vector path."""
+        if z3.is_app_of(a, z3.Z3_OP_ITE):
+            left = self._distribute_bits(op, a.arg(1), b, t)
+            right = self._distribute_bits(op, a.arg(2), b, t)
+            if left is None or right is None:
+                return None
+            return z3.simplify(z3.If(a.arg(0), left, right))
+        if z3.is_app_of(b, z3.Z3_OP_ITE):
+            left = self._distribute_bits(op, a, b.arg(1), t)
+            right = self._distribute_bits(op, a, b.arg(2), t)
+            if left is None or right is None:
+                return None
+            return z3.simplify(z3.If(b.arg(0), left, right))
+        if not (z3.is_int_value(a) and z3.is_int_value(b)):
+            return None
+        bits, signed = t
+        result = bit_operation(op, z3.Int2BV(a, bits), z3.Int2BV(b, bits))
+        return z3.simplify(bit_int(result, bits, signed))
+
     def _binary(self, path, n):
         op = n['opcode']
         left, right = n['inner']
         if op == '=':
             target = _unwrap(left)
             if target['kind'] != 'DeclRefExpr' or target['referencedDecl']['name'] not in path.env:
-                raise Unsupported('C assignment to a non-local lvalue')
+                if target['type']['qualType'].endswith('*'):
+                    raise Unsupported('C pointer assignment to a non-local lvalue')
+                out = []
+                for p, v in self.eval(path, right):
+                    if not isinstance(v, CVal):
+                        raise Unsupported('C state assignment from a non-scalar')
+                    stored = self._store(p, left, v)
+                    out.append((p, stored))
+                return out
             out = []
             for p, v in self.eval(path, right):
                 if target['type']['qualType'].endswith('*'):
@@ -748,11 +909,22 @@ class CExec:
                 out.append((p, b))
                 continue
             if op in ('<', '<=', '>', '>=', '==', '!='):
+                if op in ('==', '!=') and isinstance(a, CFn) != isinstance(b, CFn):
+                    fn, ptr = (a, b) if isinstance(a, CFn) else (b, a)
+                    identity = self.m.world.fn_identities.get(fn.name)
+                    if identity is None or not isinstance(ptr, CPtr) or ptr.identity is None:
+                        raise Unsupported(f'C comparison of function {fn.name} with an unmodeled pointer')
+                    equal = z3.And(self.truth(ptr), ptr.identity == identity)
+                    out.append((p, CVal(z3.If(equal if op == '==' else z3.Not(equal), 1, 0), (32, True))))
+                    continue
                 if isinstance(a, CPtr) and isinstance(b, CPtr) and op in ('==', '!='):
                     if a.identity is not None or b.identity is not None:
                         if a.identity is None or b.identity is None:
                             raise Unsupported('comparison of pointers from different identity domains')
                         same = a.identity == b.identity
+                    elif _one_fixed_array(a, b) is not None:
+                        x, y = _fixed_slot(a), _fixed_slot(b)
+                        same = z3.And(_one_fixed_array(a, b), x.index == y.index)
                     elif isinstance(a.key, CElement) and isinstance(b.key, CElement):
                         same = z3.And(a.key.table == b.key.table, a.key.index == b.key.index)
                     else:
@@ -760,6 +932,16 @@ class CExec:
                     equal = z3.Or(z3.And(z3.Not(self.truth(a)), z3.Not(self.truth(b))),
                                   z3.And(self.truth(a), self.truth(b), same))
                     out.append((p, CVal(z3.If(equal if op == '==' else z3.Not(equal), 1, 0), (32, True))))
+                    continue
+                if isinstance(a, CPtr) and isinstance(b, CPtr) and op in ('<', '<=', '>', '>='):
+                    same_array = _one_fixed_array(a, b)
+                    if same_array is None:
+                        raise Unsupported('C ordered comparison of pointers outside one fixed array')
+                    self.m.oblige(p, same_array, 'C ordered pointers belong to different arrays', self.where(n))
+                    x, y = _fixed_slot(a), _fixed_slot(b)
+                    c = {'<': x.index < y.index, '<=': x.index <= y.index,
+                         '>': x.index > y.index, '>=': x.index >= y.index}[op]
+                    out.append((p, CVal(z3.If(c, 1, 0), (32, True))))
                     continue
                 c = {'<': a.v < b.v, '<=': a.v <= b.v, '>': a.v > b.v, '>=': a.v >= b.v,
                      '==': a.v == b.v, '!=': a.v != b.v}[op]
@@ -773,7 +955,20 @@ class CExec:
         op = n['opcode'][:-1]
         target = _unwrap(n['inner'][0])
         if target['kind'] != 'DeclRefExpr' or target['referencedDecl']['name'] not in path.env:
-            raise Unsupported('C assignment to a non-local lvalue')
+            lhs_t, res_t = ctype(n['computeLHSType']), ctype(n['computeResultType'])
+            out = []
+            for p, b in self.eval(path, n['inner'][1]):
+                reads = self.eval(p, n['inner'][0])
+                if len(reads) != 1 or not isinstance(reads[0][1], CVal):
+                    raise Unsupported('C compound assignment needs one scalar global state value')
+                q, old = reads[0]
+                a = self.conv(q, old.v, old.t, lhs_t)
+                right = b.v if op in ('<<', '>>') else self.conv(q, b.v, b.t, res_t)
+                r = self._arith(q, op, a, right, res_t, n)
+                v = CVal(self.conv(q, r, res_t, old.t), old.t)
+                stored = self._store(q, n['inner'][0], v)
+                out.append((q, stored))
+            return out
         name = target['referencedDecl']['name']
         lhs_t, res_t = ctype(n['computeLHSType']), ctype(n['computeResultType'])
         out = []
@@ -793,13 +988,25 @@ class CExec:
         op = n['opcode']
         operand = n['inner'][0]
         if op == '&':
-            return [(path, self._address(path, operand))]
+            result = self._address(path, operand)
+            return result if isinstance(result, list) else [(path, result)]
         if op in ('++', '--'):
             target = _unwrap(operand)
             if target['kind'] != 'DeclRefExpr' or target['referencedDecl']['name'] not in path.env:
                 raise Unsupported('C update of a non-local lvalue')
             name = target['referencedDecl']['name']
             old = path.env[name]
+            if isinstance(old, CPtr):
+                slot = _fixed_slot(old)
+                if slot is None:
+                    raise Unsupported(f'C update of a pointer outside one fixed array: {name}')
+                step = 1 if op == '++' else -1
+                index = z3.simplify(slot.index + step)
+                self.m.oblige(path, z3.And(index >= 0, index <= len(slot.values)),
+                              'C pointer outside fixed array or one-past end', self.where(n))
+                new = CPtr(True, CSlot(slot.values, index, slot.origin))
+                path.env[name] = new
+                return [(path, old if n.get('isPostfix') else new)]
             if not isinstance(old, CVal):
                 raise Unsupported(f'C update reads uninitialized or non-scalar {name}')
             promoted = (32, True) if old.t[0] < 32 else old.t
@@ -816,25 +1023,57 @@ class CExec:
             elif op == '!':
                 out.append((p, CVal(z3.If(self.truth(v), 0, 1), t)))
             elif op == '~':
-                out.append((p, CVal(bit_int(bit_operation('~', z3.Int2BV(v.v, t[0])), *t), t)))
+                out.append((p, CVal(z3.simplify(
+                    bit_int(bit_operation('~', z3.Int2BV(v.v, t[0])), *t)), t)))
             else:
                 raise Unsupported(f'C unary {op}')
         return out
 
     def _address(self, path, operand):
-        """&rnglist[i].rng_state names random stream i (rnd.c's rnglist[])."""
+        """&rnglist[i].rng_state names random stream i (rnd.c's rnglist[]);
+        &record.member[i] is a bounded slot into one fixed array value."""
         node = _unwrap(operand)
         if node['kind'] == 'ArraySubscriptExpr':
             base = _unwrap(node['inner'][0])
             if base['kind'] == 'DeclRefExpr':
                 name = base['referencedDecl']['name']
-                if isinstance(self.m.world.c_globals.get(name), CArray):
+                array = self.m.world.c_globals.get(name)
+                if not isinstance(array, CArray):
+                    reference = self._ref(path, base)
+                    array = reference if isinstance(reference, CArray) else None
+                if isinstance(array, CArray):
                     results = self.eval(path, node['inner'][1])
                     if len(results) != 1 or results[0][0] is not path:
                         raise Unsupported('branching C address index')
                     index = results[0][1].v
-                    self.m.array_bounds(path, index, len(self.m.world.c_globals[name].values), self.where(node))
-                    return CPtr(True, CElement(name, index))
+                    if isinstance(self.m.world.c_globals.get(name), CArray):
+                        self.m.array_bounds(path, index, len(array.values), self.where(node))
+                        return CPtr(True, CElement(name, index))
+                    self.m.oblige(path, z3.And(index >= 0, index <= len(array.values)),
+                                  'C pointer outside fixed array or one-past end', self.where(node))
+                    return CPtr(True, CSlot(array.values, index,
+                                           ('local', base['referencedDecl']['id'])))
+            raw = node['inner'][0]
+            if (raw['kind'] == 'ImplicitCastExpr' and raw.get('castKind') == 'ArrayToPointerDecay'
+                    and _unwrap(raw['inner'][0])['kind'] == 'MemberExpr'):
+                member = _unwrap(raw['inner'][0])
+                slots = []
+                bases = self.eval(path, member['inner'][0])
+                if len(bases) != 1 or not isinstance(bases[0][1], CPtr):
+                    raise Unsupported('fixed member array needs one modeled owner pointer')
+                owner = bases[0][1].key
+                for p, array in self.eval(path, member):
+                    if not isinstance(array, CArray):
+                        raise Unsupported('C address-of a non-array record member')
+                    results = self.eval(p, node['inner'][1])
+                    if len(results) != 1 or results[0][0] is not p:
+                        raise Unsupported('branching C address index')
+                    index = results[0][1].v
+                    self.m.oblige(p, z3.And(index >= 0, index <= len(array.values)),
+                                  'C pointer outside fixed array or one-past end', self.where(node))
+                    slots.append((p, CPtr(True, CSlot(array.values, index,
+                                                     (member['name'], owner)))))
+                return slots
         if node['kind'] == 'MemberExpr' and node['name'] == 'rng_state':
             sub = _unwrap(node['inner'][0])
             if sub['kind'] == 'ArraySubscriptExpr' and _unwrap(sub['inner'][0])['referencedDecl']['name'] == 'rnglist':
@@ -842,6 +1081,10 @@ class CExec:
                 index = z3.simplify(index.v)
                 if z3.is_int_value(index):
                     return CCtx(index.as_long())
+        if node['kind'] in ('MemberExpr', 'DeclRefExpr'):
+            # &aggregate or &aggregate.member: a pointer to modeled state,
+            # dereferenced through -> by the callee's member accesses.
+            return CPtr(True, self._state_key(path, node))
         raise Unsupported(f'address-of at {self.where(operand)}')
 
     def _call_expr(self, path, n):
@@ -858,10 +1101,10 @@ class CExec:
     def _invoke(self, p, name, args, arg_nodes, n):
         where = self.where(n)
         if name in self.m.world.c_calls:
-            expected, result = self.m.world.c_calls[name]
-            if len(args) != len(expected) or any(a != b for a, b in zip(args, expected)):
-                raise Unsupported(f'C call contract argument mismatch for {name}')
-            return [(p, result)]
+            for expected, result in self.m.world.c_calls[name]:
+                if len(args) == len(expected) and all(a == b for a, b in zip(args, expected)):
+                    return [(p, result)]
+            raise Unsupported(f'C call contract argument mismatch for {name}')
         if name == '__builtin_expect':
             return [(p, args[0])]  # branch prediction hint; both arguments were evaluated
         if name == 'abs':

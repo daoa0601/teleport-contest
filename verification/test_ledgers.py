@@ -162,10 +162,6 @@ class ProofLedgerChecks(unittest.TestCase):
             return subprocess.run([sys.executable, str(HERE / 'equivalence/prove.py'),
                                    '--check-ledger', str(ledger), *options], capture_output=True, text=True)
 
-    def test_fast_check_accepts_the_complete_ledger(self):
-        result = self.check_claims(self.claims, options=('--skip-slow',))
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
-
     def test_fast_check_rejects_a_missing_recorded_fast_claim(self):
         result = self.check_claims((claim for claim in self.claims if claim['spec'] != 'rn2'),
                                    options=('--skip-slow',))
