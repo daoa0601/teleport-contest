@@ -2,6 +2,7 @@
 // water effects, and the sink terrain.  Folded from fountain_effects/
 // fountain_sword/sink_dipping/sink_drinking/sink_terrain/dip_water
 // (pure move, no behavior change).
+import { distmin } from './hacklib.js';
 import { armorSimpleName } from './armor.js';
 import { heroArmName, heroFaceName, heroFingerName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import {
@@ -227,10 +228,6 @@ export async function gushForthFromFountain({ drinking = false, state = game }: 
             ? 'Your thirst is quenched.'
             : 'Water sprays all over you.');
     }
-}
-
-function distmin(x1: number, y1: number, x2: number, y2: number): number {
-    return Math.max(Math.abs(x1 - x2), Math.abs(y1 - y2));
 }
 
 function nextToDoor(x: number, y: number, state: GameState): boolean {

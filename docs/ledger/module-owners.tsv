@@ -33,10 +33,6 @@ src/js/corpse_meal.ts	eat.c
 src/js/cream_pie.ts	apply.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
-src/js/dig.ts	dig.c
-src/js/digging_watch.ts	dig.c
-src/js/divine_gifts.ts	pray.c
-src/js/divine_wrath.ts	pray.c
 src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c
 src/js/dogmove.ts	dogmove.c
@@ -70,7 +66,6 @@ src/js/floor_object_display.ts	invent.c
 src/js/food_conduct.ts	eat.c
 src/js/food_edibility.ts	eat.c
 src/js/food_lifecycle.ts	eat.c
-src/js/fountain_effects.ts	fountain.c
 src/js/fruit.ts	objnam.c
 src/js/fumbling.ts	timeout.c
 src/js/genocide.ts	read.c
@@ -124,7 +119,6 @@ src/js/hero_weapon_impact.ts	uhitm.c
 src/js/hero_weapon_poison.ts	uhitm.c
 src/js/hero_web.ts	polyself.c
 src/js/hero_web_fight.ts	hack.c
-src/js/hole.ts	dig.c
 src/js/hole_destination.ts	trap.c
 src/js/horn_of_plenty.ts	mkobj.c
 src/js/hunger.ts	eat.c
@@ -172,16 +166,7 @@ src/js/music.ts	music.c
 src/js/nonfood_eating.ts	eat.c
 src/js/novel_titles.ts	do_name.c
 src/js/o_init.ts	o_init.c
-src/js/object_call.ts	do_name.c
-src/js/object_class_query.ts	pickup.c
-src/js/object_description.ts	objnam.c
-src/js/object_drop.ts	do.c
-src/js/object_grammar.ts	objnam.c
-src/js/object_inscription.ts	read.c
-src/js/object_knowledge.ts	shk.c
 src/js/object_properties.ts	artifact.c
-src/js/object_stack.ts	mkobj.c
-src/js/object_wear_message.ts	do_wear.c
 src/js/occupation.ts	allmain.c
 src/js/occupation_reset.ts	cmd.c
 src/js/option_editors.ts	botl.c
@@ -201,8 +186,6 @@ src/js/poison.ts	attrib.c
 src/js/polearm.ts	apply.c
 src/js/posix_regex.ts	cmd.c
 src/js/potion.ts	potion.c
-src/js/pray.ts	pray.c
-src/js/prayer_trouble.ts	pray.c
 src/js/priest.ts	priest.c
 src/js/projectile.ts	dothrow.c
 src/js/projectile_trap.ts	trap.c
@@ -226,10 +209,6 @@ src/js/rumor.ts	rumors.c
 src/js/runmode.ts	hack.c
 src/js/scatter.ts	explode.c
 src/js/shknam.ts	shknam.c
-src/js/sink_dipping.ts	fountain.c
-src/js/sink_drinking.ts	fountain.c
-src/js/sink_fall.ts	hack.c
-src/js/sink_terrain.ts	fountain.c
 src/js/skills.ts	weapon.c
 src/js/slippery_hands.ts	do_wear.c
 src/js/sp_lev.ts	sp_lev.c
