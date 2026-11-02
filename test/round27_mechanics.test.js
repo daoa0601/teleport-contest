@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { heroHasFreeAction } from '../js/armor.js';
 import { STONE, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { continueHeroDigging, startHeroDigging } from '../js/hero_digging.js';
+import { continueHeroDigging, startHeroDigging } from '../js/dig.js';
 import { resetInputState } from '../js/input.js';
 import { HEAVY_IRON_BALL, PICK_AXE } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasTimedProperty, setPropertyTimeout } from '../js/properties.js';

@@ -10,9 +10,7 @@ import {
     ROOM, SDOOR, SHOP_DOOR_COST, SHOP_WALL_COST, STONE, TREE,
     TT_PIT, W_NONDIGGABLE,
 } from '../js/const.js';
-import { addBuriedObject } from '../js/buried_object.js';
-import { zapDigWithObject } from '../js/digging_magic.js';
-import { digActualHole } from '../js/digging_terrain.js';
+import { addBuriedObject, digActualHole, zapDigWithObject } from '../js/dig.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

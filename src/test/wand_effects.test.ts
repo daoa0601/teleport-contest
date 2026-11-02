@@ -13,7 +13,7 @@ import {
 } from '../js/const.js';
 import { map_invisible } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/hero_hide.js';

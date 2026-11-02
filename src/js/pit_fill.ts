@@ -1,5 +1,5 @@
 // C trap.c:fill_pit() and do.c:flooreffects()'s boulder/pit branch.
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { TRAPDOOR, HOLE, is_hole, is_pit } from './const.js';
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';

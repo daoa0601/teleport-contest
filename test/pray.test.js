@@ -1,14 +1,14 @@
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { angryGodMaximum } from '../js/divine_wrath.js';
+import { angryGodMaximum } from '../js/pray.js';
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
 import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LAVA, W_NONPASSWALL, W_TOOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/accessory.js';
 import { findArmorClass, wearHeroArmor } from '../js/armor.js';
 import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
-import { grantPrayerFavor } from '../js/divine_gifts.js';
+import { grantPrayerFavor } from '../js/pray.js';
 import { magicNegation } from '../js/mhitu.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hero_damage.js';

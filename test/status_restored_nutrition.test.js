@@ -4,7 +4,7 @@ import { HUNGRY } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
+import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
 void test('prayer displays restored nutrition after curing hunger', async () => {

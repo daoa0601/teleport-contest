@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { artifactByName, artifactInfoLines, createRandomArtifact, initializeArtifacts, setArtifactOrigin, uncreateArtifact, } from '../js/artifacts.js';
 import { prepareBonesObjectForRestore } from '../js/bones_object.js';
-import { grantPrayerFavor } from '../js/divine_gifts.js';
+import { grantPrayerFavor } from '../js/pray.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';

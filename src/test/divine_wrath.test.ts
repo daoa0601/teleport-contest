@@ -8,7 +8,7 @@ import { wearHeroAccessory } from '../js/accessory.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/armor.js';
 import { A_NONE, A_WIS } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
-import { angryGods, godsUpset, godZapsHero } from '../js/divine_wrath.js';
+import { angryGods, godsUpset, godZapsHero } from '../js/pray.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import {

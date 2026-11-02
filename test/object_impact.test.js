@@ -5,7 +5,7 @@ import { BOULDER, CORPSE, SACK } from '../js/object_data.js';
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from '../js/timeout.js';
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { disturbBuriedZombies, impactDisturbsZombies } from '../js/hack.js';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

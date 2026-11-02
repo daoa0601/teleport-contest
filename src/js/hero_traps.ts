@@ -42,7 +42,7 @@ import type { Trap, Position } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { DisplayGlyph } from './display.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';
-import { buriedBallNear, buriedBallToPunishment } from './buried_object.js';
+import { buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { loseHeroHp } from './hero_damage.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { makeConfused } from './hero_mental_status.js';

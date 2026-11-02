@@ -49,7 +49,7 @@ import {
     W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, isok, WEB,
     WT_TOOMUCH_DIAGONAL,
 } from './const.js';
-import { watchDigging } from './digging_watch.js';
+import { watchDigging } from './dig.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { loseHeroHp } from './hero_damage.js';
 import { propertyIsActive } from './properties.js';
@@ -262,7 +262,7 @@ import {
 } from './teleport_rules.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { stopHeroOccupation } from './occupation.js';
-import { diggingTimeToHole } from './hero_digging.js';
+import { diggingTimeToHole } from './dig.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
 import { migrateMonsterOffLevel } from './dog.js';
 

@@ -155,14 +155,13 @@ import { climbOutOfPit, triggerHeroTrapAt } from './hero_traps.js';
 
 import { ledgerNo } from './hacklib.js';
 import { nearCapacity, SLT_ENCUMBER } from './weight.js';
-import { dopray } from './pray.js';
-import { dosacrifice } from './sacrifice.js';
+import { dopray, dosacrifice } from './pray.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doborn, doquit, finishHeroDeath } from './end.js';
 import { heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { continueTrapSetting } from './apply.js';
 import { applyPickAxeDirection } from './pick_axe.js';
-import { continueHeroDigging } from './hero_digging.js';
+import { continueHeroDigging } from './dig.js';
 import { dowear, doputon, removeWornItem } from './do_wear.js';
 import { doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { dofire, dothrow } from './dothrow.js';

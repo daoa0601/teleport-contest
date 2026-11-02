@@ -145,8 +145,8 @@ src/js/bullwhip.ts	escapePit	rn2	"[""proficiency + 2""]"	guarded
 src/js/bullwhip.ts	snagFloorObject	rnl	"[""6""]"	constant
 src/js/bullwhip.ts	useBullwhip	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	useBullwhip	rn2	"[""proficiency + 2""]"	guarded
-src/js/buried_object.ts	buryObject	rn1	"[""50"", ""20""]"	constant
-src/js/buried_object.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
+src/js/dig.ts	buryObject	rn1	"[""50"", ""20""]"	constant
+src/js/dig.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
 src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/camera.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/camera.ts	useCamera	rn2	"[""2""]"	constant
@@ -239,12 +239,12 @@ src/js/detect.ts	senseDetectedTrap	rn2	"[""OBJECT_NAMES.length - firstObject""]"
 src/js/detect.ts	senseDetectedTrap	rnd	"[""10""]"	constant
 src/js/detect.ts	senseDetectedTrap	rnd	"[""2""]"	constant
 src/js/detect.ts	showMapSpot	rn2	"[""7""]"	constant
-src/js/digging_magic.ts	digVertically	rnd	"[""objectIsHardHelmet(helmet) ? 2 : 6""]"	constant
-src/js/digging_magic.ts	zapDigWithObject	rn2	"[""18""]"	constant
-src/js/digging_terrain.ts	digActualHole	rn2	"[""4""]"	constant
-src/js/digging_terrain.ts	digHole	d	"[""3"", ""6""]"	constant
-src/js/digging_terrain.ts	digHole	rn2	"[""2""]"	constant
-src/js/digging_terrain.ts	digUpGrave	rn2	"[""5""]"	constant
+src/js/dig.ts	digVertically	rnd	"[""objectIsHardHelmet(helmet) ? 2 : 6""]"	constant
+src/js/dig.ts	zapDigWithObject	rn2	"[""18""]"	constant
+src/js/dig.ts	digActualHole	rn2	"[""4""]"	constant
+src/js/dig.ts	digHole	d	"[""3"", ""6""]"	constant
+src/js/dig.ts	digHole	rn2	"[""2""]"	constant
+src/js/dig.ts	digUpGrave	rn2	"[""5""]"	constant
 src/js/display.ts	displayColorName	rn2Display	"[""HALLUCINATED_COLORS.length""]"	constant
 src/js/display.ts	displayLiquidName	rn2Display	"[""HALLUCINATED_LIQUIDS.length + (fallback ? 1 : 0)""]"	constant
 src/js/display.ts	displayMonsterAtCell	rn2Display	"[""MONSTER_COLOR.length""]"	constant
@@ -261,13 +261,13 @@ src/js/display.ts	randomHallucinatedObjectGlyph	rn2Display	"[""OBJECT_COLOR.leng
 src/js/display.ts	swallowed	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	transientMonsterGlyph	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	warningProjection	rn2Display	"[""def_warnsyms.length - 1""]"	unproved
-src/js/divine_gifts.ts	giveSpell	rn2	"[""100""]"	constant
-src/js/divine_gifts.ts	giveSpell	rn2	"[""4""]"	constant
-src/js/divine_gifts.ts	grantDivineProperty	rn1	"[""3"", ""2""]"	constant
-src/js/divine_wrath.ts	angryGods	rn2	"[""maximum""]"	guarded
-src/js/divine_wrath.ts	angryGods	rnz	"[""300""]"	constant
-src/js/divine_wrath.ts	curseHero	rn2	"[""2""]"	constant
-src/js/divine_wrath.ts	godVoice	rn2	"[""GOD_VOICES.length""]"	constant
+src/js/pray.ts	giveSpell	rn2	"[""100""]"	constant
+src/js/pray.ts	giveSpell	rn2	"[""4""]"	constant
+src/js/pray.ts	grantDivineProperty	rn1	"[""3"", ""2""]"	constant
+src/js/pray.ts	angryGods	rn2	"[""maximum""]"	guarded
+src/js/pray.ts	angryGods	rnz	"[""300""]"	constant
+src/js/pray.ts	curseHero	rn2	"[""2""]"	constant
+src/js/pray.ts	godVoice	rn2	"[""GOD_VOICES.length""]"	constant
 src/js/dog.ts	abusePet	rn2	"[""monster.mtame""]"	guarded
 src/js/dog.ts	abusePetAfterHeroHit	rnd	"[""damage""]"	guarded
 src/js/dog.ts	makePetWary	random	"[""(dog.abuse ?? 0) + 1""]"	unproved
@@ -410,11 +410,11 @@ src/js/fountain.ts	drinkFountain	rnd	"[""30""]"	constant
 src/js/fountain.ts	drinkFountain	rnd	"[""4""]"	constant
 src/js/fountain.ts	dryFountainAt	random	"[""3""]"	constant
 src/js/fountain.ts	gushForthFromFountain	rn2	"[""1 + distmin(ux, uy, x, y)""]"	guarded
-src/js/fountain_effects.ts	applyFountainDemonActor	random	"[""100""]"	constant
-src/js/fountain_effects.ts	applyFountainSnakeActors	random	"[""5""]"	constant
-src/js/fountain_effects.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
-src/js/fountain_sword.ts	dipFountainSword	rn2	"[""3""]"	constant
-src/js/fountain_sword.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant
+src/js/fountain.ts	applyFountainDemonActor	random	"[""100""]"	constant
+src/js/fountain.ts	applyFountainSnakeActors	random	"[""5""]"	constant
+src/js/fountain.ts	resolveDippedCoinFate	random	"[""amountRange""]"	unproved
+src/js/fountain.ts	dipFountainSword	rn2	"[""3""]"	constant
+src/js/fountain.ts	dipFountainSword	rn2	"[""game.urole.key === 'knight' ? 6 : 30""]"	constant
 src/js/fruit.ts	addFruit	rnd	"[""127""]"	constant
 src/js/fumbling.ts	checkSlipperyIce	rn2	"[""propertyIsActive('coldResistance', game) ? 3 : 2""]"	constant
 src/js/fumbling.ts	slipOrTrip	rn2	"[""10 + currentAttribute(A_DEX, game)""]"	invariant
@@ -472,18 +472,18 @@ src/js/hero_combat_engulf.ts	engulfDamage	random	"[""2""]"	constant
 src/js/hero_combat_engulf.ts	engulfDamage	random	"[""4""]"	constant
 src/js/hero_combat_engulf.ts	resolveHeroCombatEngulf	rollDice	"[""dice"", ""sides""]"	unproved
 src/js/hero_combat_explosion.ts	resolveHeroCombatExplosion	rollDice	"[""dice"", ""sides""]"	unproved
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""2""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""3""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""4""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""5""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""5""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rn2	"[""6""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rnd	"[""5""]"	constant
-src/js/hero_digging.ts	continueHeroDigging	rnl	"[""7""]"	constant
-src/js/hero_digging.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""2""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""3""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""4""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""5""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""5""]"	constant
+src/js/dig.ts	continueHeroDigging	rn2	"[""6""]"	constant
+src/js/dig.ts	continueHeroDigging	rnd	"[""5""]"	constant
+src/js/dig.ts	continueHeroDigging	rnl	"[""7""]"	constant
+src/js/mkobj.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
 src/js/hero_displacement.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
 src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
 src/js/hero_energy.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
@@ -652,9 +652,9 @@ src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""10""]"	constant
 src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	random	"[""wearOffChance""]"	constant
 src/js/hero_weapon_poison.ts	resolveHeroWeaponPoison	rollOne	"[""6""]"	constant
 src/js/hero_web_fight.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2""]"	unproved
-src/js/hole.ts	liquidForHole	random	"[""lava + 1""]"	guarded
-src/js/hole.ts	liquidForHole	random	"[""moats + 1""]"	guarded
-src/js/hole.ts	liquidForHole	random	"[""pools + 1""]"	guarded
+src/js/dig.ts	liquidForHole	random	"[""lava + 1""]"	guarded
+src/js/dig.ts	liquidForHole	random	"[""moats + 1""]"	guarded
+src/js/dig.ts	liquidForHole	random	"[""pools + 1""]"	guarded
 src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""13""]"	constant
 src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""7""]"	constant
 src/js/hunger.ts	chokeHeroOnFood	rn2	"[""20""]"	constant
@@ -2002,9 +2002,9 @@ src/js/pray.ts	pleaseGod	rnz	"[""1000""]"	constant
 src/js/pray.ts	pleaseGod	rnz	"[""350""]"	constant
 src/js/pray.ts	prayerOutcome	rn2	"[""10""]"	constant
 src/js/pray.ts	punishEarlyPrayer	rnz	"[""250""]"	constant
-src/js/prayer_trouble.ts	fixPrayerTrouble	d	"[""4"", ""4""]"	constant
-src/js/prayer_trouble.ts	fixPrayerTrouble	rnd	"[""5""]"	constant
-src/js/prayer_trouble.ts	fixPrayerTrouble	rnd	"[""5""]"	constant
+src/js/pray.ts	fixPrayerTrouble	d	"[""4"", ""4""]"	constant
+src/js/pray.ts	fixPrayerTrouble	rnd	"[""5""]"	constant
+src/js/pray.ts	fixPrayerTrouble	rnd	"[""5""]"	constant
 src/js/priest.ts	ghodHitsu	rn2	"[""3""]"	constant
 src/js/priest.ts	ghodHitsu	rn2	"[""4""]"	constant
 src/js/priest.ts	intemple	d	"[""10"", ""100""]"	constant
@@ -2103,14 +2103,14 @@ src/js/rumor.ts	outRumor	rn2	"[""2""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""3""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""4""]"	constant
 src/js/rust_trap.ts	finishMonsterRustTrap	random	"[""3""]"	constant
-src/js/sacrifice.ts	bestowArtifact	rn2	"[""6 + 2 * (hero.ugifts || 0) * count""]"	unproved
-src/js/sacrifice.ts	bestowArtifact	rnz	"[""300 + 50 * count""]"	constant
-src/js/sacrifice.ts	consumeOffering	rn2	"[""messages.length""]"	constant
-src/js/sacrifice.ts	offerToAnotherGod	rn2	"[""8 + hero.ulevel""]"	invariant
-src/js/sacrifice.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
-src/js/sacrifice.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
-src/js/sacrifice.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
-src/js/sacrifice.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
+src/js/pray.ts	bestowArtifact	rn2	"[""6 + 2 * (hero.ugifts || 0) * count""]"	unproved
+src/js/pray.ts	bestowArtifact	rnz	"[""300 + 50 * count""]"	constant
+src/js/pray.ts	consumeOffering	rn2	"[""messages.length""]"	constant
+src/js/pray.ts	offerToAnotherGod	rn2	"[""8 + hero.ulevel""]"	invariant
+src/js/pray.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
+src/js/pray.ts	offerToAnotherGod	rnd	"[""hero.ualign.record""]"	guarded
+src/js/pray.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
+src/js/pray.ts	offerToAnotherGod	rnl	"[""hero.ulevel""]"	invariant
 src/js/read.ts	amnesiaEffect	rn2	"[""2""]"	constant
 src/js/read.ts	amnesiaEffect	rnd	"[""source.blessed ? 3 : 5""]"	constant
 src/js/read.ts	fireEffect	rn1	"[""3"", ""3""]"	constant
@@ -2159,14 +2159,14 @@ src/js/shk.ts	dopay	rn2	"[""2""]"	constant
 src/js/shk.ts	settleEmptyBill	rn2	"[""3""]"	constant
 src/js/shk.ts	embellish	rn2	"[""3""]"	constant
 src/js/shk.ts	embellish	rn2	"[""5""]"	constant
-src/js/sink_dipping.ts	dipSink	rn2	"[""looted ? 15 : 25""]"	constant
-src/js/sink_drinking.ts	drinkSink	rn1	"[""30 - currentAttribute(A_CON, state)"", ""11""]"	invariant
-src/js/sink_drinking.ts	drinkSink	rn2	"[""20""]"	constant
-src/js/sink_drinking.ts	drinkSink	rnd	"[""6""]"	constant
-src/js/sink_drinking.ts	ordinarySip	rn2	"[""2""]"	constant
-src/js/sink_drinking.ts	ordinarySip	rn2	"[""3""]"	constant
-src/js/sink_fall.ts	fallIntoSink	rn1	"[""8"", ""25 - currentAttribute(A_CON, state)""]"	constant
-src/js/sink_fall.ts	fallIntoSink	rnd	"[""3""]"	constant
+src/js/fountain.ts	dipSink	rn2	"[""looted ? 15 : 25""]"	constant
+src/js/fountain.ts	drinkSink	rn1	"[""30 - currentAttribute(A_CON, state)"", ""11""]"	invariant
+src/js/fountain.ts	drinkSink	rn2	"[""20""]"	constant
+src/js/fountain.ts	drinkSink	rnd	"[""6""]"	constant
+src/js/fountain.ts	ordinarySip	rn2	"[""2""]"	constant
+src/js/fountain.ts	ordinarySip	rn2	"[""3""]"	constant
+src/js/hack.ts	fallIntoSink	rn1	"[""8"", ""25 - currentAttribute(A_CON, state)""]"	constant
+src/js/hack.ts	fallIntoSink	rnd	"[""3""]"	constant
 src/js/sit.ts	dosit	d	"[""dice"", ""10""]"	constant
 src/js/sit.ts	eggTypeFromParent	rn2	"[""77""]"	constant
 src/js/sit.ts	sitInWater	rn2	"[""10""]"	constant

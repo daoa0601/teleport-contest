@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { ROOM, STONE } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { continueHeroDigging, startHeroDigging } from '../js/hero_digging.js';
+import { continueHeroDigging, startHeroDigging } from '../js/dig.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

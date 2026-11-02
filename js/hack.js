@@ -4,7 +4,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { BURNING, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, Is_earthlevel, Is_juiblex_level, Is_waterlevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, def_warnsyms, A_CON, A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND } from './const.js';
+import { BURNING, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_LAVA, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, isok, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND } from './const.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove, } from './ball.js';
 import { displayLiquidName, docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_location, terrain_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, } from './display.js';
 import { impossible } from './diagnostics.js';
@@ -18,8 +18,8 @@ import { clearHeroTrap, setHeroTrap, heroCanMoveFromTrap } from './hero_traps.js
 import { monsterName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, } from './end.js';
-import { placeObject, stack_object } from './floor_object.js';
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { placeObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsUnaware } from './hero_sleep.js';
 import { resetHeroFaint } from './hunger.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -30,10 +30,10 @@ import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes } from './leash_apply.js';
 import { splitHeroMonsterForm } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ATTACKS, requireMonsterData, monsterIsAmorphous, MONSTER_BODY_META, } from './monster_data.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE } from './object_data.js';
-import { ownedObjectAction, simpleObjectNameWithArticle } from './objnam.js';
+import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE } from './object_data.js';
+import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming } from './objnam.js';
 import { heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, } from './polyself.js';
-import { d, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain } from './trap.js';
 import { objectMaterial } from './o_init.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement } from './steed.js';
@@ -41,10 +41,10 @@ import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleport
 import { goodPosition, heroTeleportRestricted } from './teleport_rules.js';
 import { vision_recalc, vision_reset, couldsee } from './vision.js';
 import { inventoryWeight, nearCapacity, SLT_ENCUMBER, UNENCUMBERED, OVERLOADED } from './weight.js';
-import { destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, } from './armor.js';
+import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, } from './armor.js';
 import { clearHeroSliming, heroIsSliming } from './slime.js';
 import { isLavaAt, isPoolAt, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, isPoolOrLavaAt, } from './terrain_properties.js';
-import { propertyIsActive, refreshMovementProperties, setPropertyTimeout } from './properties.js';
+import { captureLevitationState, clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, } from './properties.js';
 import { waterbodyName } from './terrain_name.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { backOnGroundMessage, iceDescriptionAt } from './dungeon_feature.js';
@@ -88,7 +88,7 @@ import { finishDestinationSpotEffects } from './location_effects.js';
 import { checkHeroLeashes } from './leash_apply.js';
 import { isPick, isFlimsyObject } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
-import { diggingTarget } from './hero_digging.js';
+import { diggingTarget } from './dig.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay } from './shk.js';
 import { maybeSmudgeEngravings } from './engrave.js';
 import { announceInvocationSquare } from './invocation.js';
@@ -96,7 +96,10 @@ import { announceInvocationSquare } from './invocation.js';
 import { xyToDirection } from './cmd.js';
 import { doopen } from './lock.js';
 import { askTeleportDestination } from './teleport.js';
-import { objectTimers, stopObjectTimer, scheduleObjectTimer } from './timeout.js';
+import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
+import { removeHeroAccessory } from './accessory.js';
+import { floorObjectDescription } from './floor_object_display.js';
+import { selfTouchPetrifyingWeapons } from './stoning.js';
 // C hack.c:escape_from_sticky_mon(). True means this attempt was spent
 // struggling; release clears the grip directly, without unstuck's cooldown.
 export async function escapeFromStickyMonster(x, y) {
@@ -2835,5 +2838,144 @@ export function disturbBuriedZombies(x, y, state = game) {
         stopObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON);
         scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, moves + Math.max(1, Math.floor((remaining * 2) / 3)), state);
     }
+}
+// C hack.c may_dig(): only ROCKs and TREEs carry W_NONDIGGABLE.
+export function mayDig(x, y, state = game) {
+    const location = state.level?.at(x, y);
+    if (!location)
+        return false;
+    return !((IS_STWALL(location.typ) || IS_TREE(location.typ))
+        && ((location.wall_info ?? 0) & W_NONDIGGABLE));
+}
+// C hack.c:spot_checks().  Stale ice timers and ice-held object state must go
+// when terrain stopped being ice.
+export function spotChecks(x, y, oldTyp, state = game) {
+    const location = state.level?.at?.(x, y);
+    if (!location)
+        return;
+    const newTyp = location.typ;
+    const dbIceBefore = oldTyp === DRAWBRIDGE_UP
+        && ((location.drawbridgemask ?? 0) & DB_UNDER) === DB_ICE;
+    const changed = newTyp !== oldTyp
+        || (oldTyp === DRAWBRIDGE_UP && !dbIceBefore);
+    if (!((oldTyp === ICE) || dbIceBefore) || !changed)
+        return;
+    stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, state);
+    updateIceObjectTimersAt(x, y, state);
+}
+const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
+const FELL_ON_SINK = 'fell onto a sink';
+function wornAt(slot, state) {
+    return state[slot] || state.u?.[slot] || null;
+}
+// C HFlying || EFlying: the hero's own flight sources before the Flying
+// macro applies the blocked mask or a flying steed.  A steed therefore does
+// not prevent the fall, and neither does flight overridden by levitation.
+function heroHasOwnFlight(state) {
+    return hasIntrinsicProperty('flying', null, state)
+        || hasWornProperty('flying', state)
+        || hasInvokedProperty('flying', state)
+        || (state.u.flyingTurns ?? 0) > 0;
+}
+// C Maybe_Half_Phys().
+function maybeHalfPhysicalDamage(amount, state) {
+    const hero = state.u;
+    return hero.halfPhysicalDamage
+        ? Math.trunc((amount + 1) / 2) : amount;
+}
+function isWeaponOrWeaponTool(object) {
+    return object.oclass === 2
+        || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0);
+}
+export async function fallIntoSink(state = game, { publish = plineWithContinuation, die = finishHeroDeath } = {}) {
+    // World side effects are singleton-only: every production caller uses
+    // the live game, so a stale fixture must fail before any source stash.
+    requireLiveGame(state);
+    const hero = state.u;
+    let levBoots = wornAt('uarmf', state)?.otyp === LEVITATION_BOOTS;
+    // innate_lev: HLevitation & (FROMOUTSIDE | FROMFORM).  Timeout and the
+    // blessed-potion at-will flag do not count.
+    const innateLev = hasIntrinsicProperty('levitation', 'outside', state)
+        || hasIntrinsicProperty('levitation', 'form', state);
+    // blockd_lev: BLevitation == I_SPECIAL, a floor-trap hold on live
+    // levitation sources (buried iron ball), not solid terrain.
+    const levitation = captureLevitationState(state);
+    const blockdLev = levitation.blockedByTrap
+        && !levitation.blockedByTerrain;
+    const ufall = !innateLev && !blockdLev && !heroHasOwnFlight(state);
+    if (!ufall) {
+        await publish(innateLev || blockdLev
+            ? 'You wobble unsteadily for a moment.'
+            : 'You gain control of your flight.');
+    }
+    else {
+        // Fake removal of levitation in advance so that final disclosure
+        // will be right if the crash is fatal; the worn items really stay
+        // equipped until the forced removal below (C save/zero/restore).
+        const stash = stashLevitationSources(state, { clear: true });
+        await publish('You crash to the floor!');
+        const damage = rn1(8, 25 - currentAttribute(A_CON, state));
+        if (await loseHeroHp(maybeHalfPhysicalDamage(damage, state), FELL_ON_SINK, { state, publish, die, killerFormat: NO_KILLER_PREFIX }))
+            return { fell: true, died: true };
+        await exerciseAttribute(A_DEX, false, state);
+        const touch = await selfTouchPetrifyingWeapons({
+            messageStart: 'Falling, you', state, publish, die,
+        });
+        if (touch.died)
+            return { fell: true, died: true };
+        const pile = state.level?.objects?.[hero.ux]?.[hero.uy] || [];
+        for (const object of pile) {
+            if (!isWeaponOrWeaponTool(object))
+                continue;
+            observeObjectForNaming(object, { state });
+            await publish(`You fell on ${await floorObjectDescription(object)}.`);
+            if (await loseHeroHp(maybeHalfPhysicalDamage(rnd(3), state), FELL_ON_SINK, { state, publish, die, killerFormat: NO_KILLER_PREFIX })) {
+                return { fell: true, died: true };
+            }
+            await exerciseAttribute(A_CON, false, state);
+        }
+        restoreLevitationSources(stash, state);
+    }
+    // Interrupt multi-turn donning/doffing when the hero fell, or when the
+    // removal below will take levitation boots off an still-floating hero.
+    if (ufall || levBoots) {
+        await stopDonning(levBoots ? wornAt('uarmf', state) : null, state);
+        // stopDonning() may have unworn partially-donned boots.
+        levBoots = wornAt('uarmf', state)?.otyp === LEVITATION_BOOTS;
+    }
+    // Remove worn levitation items: invoked artifact, at-will origin and
+    // timeout first, then a one-turn timeout keeps Levitation true so the
+    // forced Ring_off()/Boots_off() transitions skip float_down().
+    clearLevitationMasks(I_SPECIAL | TIMEOUT, W_ARTI, state);
+    hero.levitationTurns = 1; // C HLevitation++
+    refreshProperty('levitation', state);
+    const left = wornAt('uleft', state);
+    if (left?.otyp === RIN_LEVITATION) {
+        await removeHeroAccessory(left, state);
+        const message = await armorOffMessage(left, state);
+        if (message)
+            await publish(message);
+    }
+    const right = wornAt('uright', state);
+    if (right?.otyp === RIN_LEVITATION) {
+        await removeHeroAccessory(right, state);
+        const message = await armorOffMessage(right, state);
+        if (message)
+            await publish(message);
+    }
+    if (levBoots) {
+        const boots = wornAt('uarmf', state);
+        if (!boots)
+            throw new Error('The levitation boots disappeared before forced removal');
+        await removeHeroArmor(boots, state);
+        const message = await armorOffMessage(boots, state);
+        if (message)
+            await publish(message);
+    }
+    hero.levitationTurns = 0; // C HLevitation--
+    refreshProperty('levitation', state);
+    refreshMovementProperties(state); // C float_vs_flight()
+    state.context.botl = true;
+    return { fell: ufall, died: false };
 }
 //# sourceMappingURL=hack.js.map

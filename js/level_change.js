@@ -58,7 +58,7 @@ import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPorta
 import { fumaroles } from './mkmaze.js';
 import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
 import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, } from './const.js';
-import { buriedBallToPunishment } from './buried_object.js';
+import { buriedBallToPunishment } from './dig.js';
 import { resurrectWizard } from './wizard.js';
 import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

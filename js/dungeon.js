@@ -1,15 +1,15 @@
 // dungeon.js — Dungeon graph and special-level placement.
 // C ref: dungeon.c — init_dungeons(), init_level(), place_level().
 // Data ref: dat/dungeon.lua.
-import { game, requirePlayingGame } from './gstate.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { ALTAR, AM_MASK, Amask2align, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd, } from './const.js';
 import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './quest_pager.js';
 import { addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
@@ -21,6 +21,9 @@ import { monsterAtPosition } from './steed.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { findDrawbridgeAt } from './dbridge.js';
 import { heroIsBlind } from './senses.js';
+import { heroFootName } from './body_parts.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { plineWithContinuation } from './pline.js';
 const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
 const DUNGEON_FLAG_BITS = {
     town: TOWN, hellish: HELLISH, mazelike: MAZELIKE,
@@ -1142,5 +1145,22 @@ export async function doDungeonOverview() {
     }
     game._pending_message = '';
     game.context.move = 0;
+}
+// C dungeon.c:earth_sense(), after placing the hero but before spot effects.
+// Moved from buried_object.js (pure move).
+export async function senseBuriedObjects(state = game) {
+    const hero = state.u;
+    if (state.urace?.mnum !== MONSTER_NAME.indexOf('dwarf')
+        || hero.usteed || Upolyd(hero)
+        || propertyIsActive('flying', state)
+        || propertyIsActive('levitation', state))
+        return;
+    const level = requireGameLevel(state);
+    const typ = level.at(hero.ux, hero.uy)?.typ;
+    if (typ !== CORR && typ !== ROOM)
+        return;
+    if (level.buriedObjects?.some(object => object.ox === hero.ux && object.oy === hero.uy)) {
+        await plineWithContinuation(`You sense something below your ${makePlural(heroFootName(state))}.`);
+    }
 }
 //# sourceMappingURL=dungeon.js.map

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { buryFloorObjectsAt, buryObject, unearthFloorObjectsAt } from '../js/buried_object.js';
+import { buryFloorObjectsAt, buryObject, unearthFloorObjectsAt } from '../js/dig.js';
 import { DB_FLOOR, DRAWBRIDGE_UP, POOL, ROOM, TT_BURIEDBALL, LEVEL_TIMER_KIND } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { applyFloorEffects } from '../js/floor_effects.js';

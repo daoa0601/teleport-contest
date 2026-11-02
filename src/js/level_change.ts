@@ -75,7 +75,7 @@ import {
     Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS,
     UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL,
 } from './const.js';
-import { buriedBallToPunishment } from './buried_object.js';
+import { buriedBallToPunishment } from './dig.js';
 import { resurrectWizard } from './wizard.js';
 import { forgetTempleEntry } from './priest.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

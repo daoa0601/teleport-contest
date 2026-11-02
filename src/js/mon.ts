@@ -128,7 +128,7 @@ import { moveVaultGuard } from './vault.js';
 import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { recordAchievement } from './achievements.js';
 import { SHOP_TYPES } from './shknam.js';
-import { buryObject } from './buried_object.js';
+import { buryObject } from './dig.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { meldNearbyFloorGlobs } from './glob.js';
 import { mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer } from './mkobj.js';

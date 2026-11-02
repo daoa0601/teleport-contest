@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { POT_HEALING } from '../js/object_data.js';
-import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
+import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

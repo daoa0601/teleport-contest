@@ -23,7 +23,7 @@ import { rn1, rn2, rnd, rnl } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { shopDig } from './shk.js';
-import { sinkBacksUp } from './sink_dipping.js';
+import { sinkBacksUp } from './fountain.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { bringLeashedFollowers } from './teleport.js';
 import { impactDrop } from './dokick.js';

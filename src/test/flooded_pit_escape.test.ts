@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { PIT, POOL, STONE, TT_PIT } from '../js/const.js';
-import { liquidFlow } from '../js/digging_terrain.js';
+import { liquidFlow } from '../js/dig.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { FOOD_RATION } from '../js/object_data.js';

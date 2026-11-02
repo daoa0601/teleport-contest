@@ -1,7 +1,7 @@
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addBuriedObject } from '../js/buried_object.js';
+import { addBuriedObject } from '../js/dig.js';
 import { W_BALL, W_CHAIN, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

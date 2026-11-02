@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { buryObject } from '../js/buried_object.js';
+import { buryObject } from '../js/dig.js';
 import { game } from '../js/gstate.js';
 import { WAN_CANCELLATION } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';

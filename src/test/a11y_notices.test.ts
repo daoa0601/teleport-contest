@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { CORR, DOOR, D_NODOOR, FOUNTAIN, GETOBJ_SUGGEST, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { zapDigWithObject } from '../js/digging_magic.js';
+import { zapDigWithObject } from '../js/dig.js';
 import { flush_screen, newsym, newsym_force } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { doBlindingRay } from '../js/flash.js';

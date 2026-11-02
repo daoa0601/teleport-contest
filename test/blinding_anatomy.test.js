@@ -5,7 +5,7 @@ import { finishHeroThrownBlindness, prepareHeroThrownBlindness } from '../js/bli
 import { heroEyeCount } from '../js/body_parts.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
-import { fixPrayerTrouble, Trouble } from '../js/prayer_trouble.js';
+import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE } from '../js/object_data.js';

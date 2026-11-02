@@ -60,7 +60,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './armor.js';
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
-import { diggingTimeToHole } from './hero_digging.js';
+import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { dropHeroInventoryForBones } from './bones_death.js';

@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { ALTAR, LADDER, LAVAWALL, VWALL } from '../js/const.js';
 import { APPLE, BULLWHIP, DAGGER, PICK_AXE, SACK } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { startHeroDigging, continueHeroDigging } from '../js/hero_digging.js';
+import { startHeroDigging, continueHeroDigging } from '../js/dig.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

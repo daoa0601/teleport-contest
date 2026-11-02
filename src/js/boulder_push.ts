@@ -1,7 +1,7 @@
 // Hero boulder pushes. C hack.c:moverock(), moverock_core(), and dopush().
 import { exerciseAttribute } from './attrib.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
-import { buryFloorObjectsAt } from './buried_object.js';
+import { buryFloorObjectsAt } from './dig.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import {
     A_STR, DOOR, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, HOLE, IN_SIGHT, IRONBARS, IS_OBSTRUCTED, Is_airlevel, Is_rogue_level,

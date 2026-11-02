@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { artifactByName, nameArtifact, uncreateArtifact } from '../js/artifacts.js';
 import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { grantPrayerFavor } from '../js/divine_gifts.js';
+import { grantPrayerFavor } from '../js/pray.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

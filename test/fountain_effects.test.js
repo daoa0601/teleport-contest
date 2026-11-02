@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { LEATHER_ARMOR, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { resolveDippedSensationFate } from '../js/fountain_effects.js';
+import { resolveDippedSensationFate } from '../js/fountain.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';
 import { freshObjectRoom } from './support/object-room.js';

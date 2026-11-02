@@ -13,7 +13,7 @@ import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { terrain_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
-import { digActualHole } from '../js/digging_terrain.js';
+import { digActualHole } from '../js/dig.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game } from '../js/gstate.js';

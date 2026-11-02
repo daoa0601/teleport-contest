@@ -2,7 +2,7 @@
 // C ref: music.c do_earthquake() and do_pit().
 import { publishHeardMessage } from './hero_speech.js';
 import { monsterAtPosition } from './steed.js';
-import { desecrateAltar } from './divine_wrath.js';
+import { desecrateAltar } from './pray.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME, DOOR, D_NODOOR, FOUNTAIN, GRAVE, LAVAPOOL, PIT, ROOM, ROWNO, NO_KILLER_PREFIX, SCORR, SDOOR, SHOPBASE, SINK, THRONE, TT_BURIEDBALL, TT_PIT, is_pit, } from './const.js';
 import { newsym } from './display.js';
@@ -11,9 +11,8 @@ import { loseHeroHp } from './hero_damage.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { heroLiquidEffects } from './hack.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill, } from './hero_monster_death.js';
-import { liquidForHole } from './hole.js';
+import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
-import { unearthFloorObjectsAt } from './buried_object.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { deleteFloorTrap, maketrap } from './mklev.js';
 import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster } from './mon.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { STONE } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { startHeroDigging, continueHeroDigging } from '../js/hero_digging.js';
+import { startHeroDigging, continueHeroDigging } from '../js/dig.js';
 import { resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

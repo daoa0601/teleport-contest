@@ -23,7 +23,7 @@ import { tablePoint } from './lua/des.js';
 import { luaString } from './lua/arguments.js';
 import { objectToLuaTable } from './lua/runtime.js';
 import { remove_object, stack_object } from './floor_object.js';
-import { buryObject } from './buried_object.js';
+import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { rnd_rect, get_rect, split_rects } from './rect.js';
 import { depth as depth_of_level } from './hacklib.js';

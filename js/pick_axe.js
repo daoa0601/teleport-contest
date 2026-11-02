@@ -15,7 +15,7 @@ import { heroCanReachFloor } from './floor_reach.js';
 import { game, requireGameLevel } from './gstate.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { loseHeroHp } from './hero_damage.js';
-import { diggingTarget, startHeroDigging } from './hero_digging.js';
+import { diggingTarget, startHeroDigging } from './dig.js';
 import { triggerHeroTrap } from './hero_traps.js';
 import { gotoLevel } from './level_change.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './monster_data.js';

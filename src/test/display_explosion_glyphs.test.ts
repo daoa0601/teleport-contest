@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_DARK, EXPL_FIERY, MAGIC_TRAP, NO_MINVENT } from '../js/const.js';
-import { digHole } from '../js/digging_terrain.js';
+import { digHole } from '../js/dig.js';
 import { glyphAt } from '../js/display.js';
 import { explode } from '../js/explosion.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';

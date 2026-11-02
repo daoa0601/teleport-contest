@@ -6,7 +6,7 @@ import type { ObjectRoomOptions } from './object-room.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/accessory.js';
 import { setHeroSpecies } from '../../js/hero_species.js';
-import { addBuriedObject } from '../../js/buried_object.js';
+import { addBuriedObject } from '../../js/dig.js';
 import { unplaceBallAndChain } from '../../js/ball.js';
 import { swallowed } from '../../js/display.js';
 import { monsterEmitsLight, vision_recalc } from '../../js/vision.js';

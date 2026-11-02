@@ -168,6 +168,6 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | `src/js/read.ts:313` enchantArmor | guarded | `read.c:1114 seffect_enchant_armor` |
 | `src/js/selvar.ts:266` selection_rndcoord | guarded | `selvar.c:283 selection_rndcoord` |
 | `src/js/shk.ts` payForShopDamage | guarded | `shk.c:5173 pay_for_damage` |
-| `src/js/sink_drinking.ts:98` drinkSink | invariant | `fountain.c:594 drinksink` |
+| `src/js/fountain.ts:1075` drinkSink | invariant | `fountain.c:594 drinksink` |
 | `src/js/teleport.ts:822` teleportHeroToRandomPet | guarded | `teleport.c:813 tele_to_rnd_pet` |
 | `src/js/write.ts:197` findWritingType | guarded | `write.c:73 dowrite` |

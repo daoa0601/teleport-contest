@@ -28,7 +28,7 @@ import {
 import { clearHeroTrap, triggerHeroTrap } from './hero_traps.js';
 import { moveObject } from './floor_object.js';
 import { fillPitWithBoulderAt } from './pit_fill.js';
-import { buriedBallNear } from './buried_object.js';
+import { buriedBallNear } from './dig.js';
 import { heroLegName } from './body_parts.js';
 import { makePlural } from './objnam.js';
 
