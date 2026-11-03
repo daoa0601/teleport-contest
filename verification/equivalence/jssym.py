@@ -881,6 +881,12 @@ class JSExec:
             elif op == '~' and v.kind == 'num':
                 out.append((p, V('num', z3.simplify(
                     bit_int(bit_operation('~', z3.Int2BV(v.v, 32)), 32, True)))))
+            elif op == 'typeof':
+                # ECMAScript typeof: 'object' for null and every composite
+                # value, the primitive boxes by kind.
+                names = {'num': 'number', 'big': 'bigint', 'str': 'string',
+                         'bool': 'boolean', 'undef': 'undefined', 'fn': 'function'}
+                out.append((p, V('str', names.get(v.kind, 'object'))))
             else:
                 raise Unsupported(f'unary {op}')
         return out

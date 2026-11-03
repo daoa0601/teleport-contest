@@ -16,6 +16,12 @@ from state_world import (AT_ENGL, AT_WEAP,
                          symbolic_attacks, symbolic_attack_arguments,
                          capacity_arguments, sign_state, sign_arguments,
                          weight_arguments, weight_domain, weight_state)
+from core import select_int
+from state_world import (_objects_member, erosion_matters_guard, monster_state,
+                         object_predicate_arguments,
+                         object_predicate_state, present_monster_arguments,
+                         real_object_precondition, resistance_state,
+                         weapon_type_arguments, weapon_type_state)
 UINT = (32, False)
 
 WORN = [(slot, (f'game.{slot}', f'game.u.{slot}')) for slot in ('uarmg', 'uarmh', 'uwep')]
@@ -25,13 +31,13 @@ ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
 HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
 STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
-                 'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c')
+                 'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c', 'objnam.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
-    'js/cmd.js', 'js/skills.js', 'js/mondata.js',
+    'js/cmd.js', 'js/skills.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
 )
 
 
@@ -516,4 +522,206 @@ STATE_SPECS += [
              weight_domain, ('obj.quan',)))],
          mutants=[('js/mkobj.js', 'Math.max(1, Math.trunc((quantity(object) + 50) / 100));',
                    'Math.max(1, Math.trunc((quantity(object) + 49) / 100));')]),
+]
+
+
+# ---- fv-equivalence-batch-4: species, monster and object leaf predicates ----
+
+SHIFTER_ASSUMPTIONS = (
+    'mondata.c:mon_hates_blessings: monster.data points to mons[species]; emitted mnum equals species',
+    'monst.c:monst_globals_init: native mons[] rows and the emitted MONSTER_FLAGS2/MONSTER_SYMBOL tables retain their initial values',
+    'monst.h:is_vampshifter compares cham with the three vampire species; the emitted test reads MONSTER_SYMBOL[cham], so the claim keeps cham a valid species index: cham == NON_PM (-1) and an absent cham field both return false at runtime through an out-of-bounds undefined read and stay outside the symbolic domain',
+    'makemon.c:newcham and mon.c:set_mon_data keep cham at NON_PM or the shapeshifter species; the emitted vampire test covers the whole species table',
+)
+
+UHITM_ASSUMPTIONS = PREDICATE_ASSUMPTIONS + (
+    'uhitm.c keeps mondata.h:haseyes() as one private helper; other haseyes call sites inline the M1_NOEYES test',
+)
+
+
+def shifter_state(world, front, modules):
+    monster_state(world, front, modules)
+    world.pre.append(world.c_state['monster.cham'][0] < front.enum_value('NUMMONS'))
+
+
+STATE_SPECS += [
+    Spec('verysmall:tables', 'verification_verysmall', 'monsterIsVerySmall',
+         [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, 'return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;',
+                   'return (MONSTER_SIZE[mnum] ?? MZ_SMALL) <= MZ_SMALL;')]),
+    Spec('haseyes:tables', 'verification_haseyes', 'hasEyes',
+         [('species', INT), ('native_pointer_present', INT)], js_file='js/uhitm.js',
+         assumptions=UHITM_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_record_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[('js/uhitm.js', 'return !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);',
+                   'return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);')]),
+    Spec('hates_silver:tables', 'hates_silver', 'monsterSpeciesHatesSilver',
+         [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS + (
+             'mondata.c:hates_silver: the native pointer identity tests (PM_SHADE, PM_TENGU) correspond to the emitted species-index comparisons',
+         ), require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, '|| mnum === PM_SHADE', '|| mnum === PM_SHADE + 1'),
+                  (MONSTER_DATA, '(symbol === S_IMP && mnum !== PM_TENGU);',
+                   '(symbol === S_IMP && mnum === PM_TENGU);')]),
+    Spec('mon_hates_blessings:state', 'mon_hates_blessings', 'monsterHatesBlessings',
+         [('species', INT), ('native_monster_present', INT)],
+         js_file=MONSTER_DATA, state=[('monster.cham', (16, True), 'monster.cham')],
+         assumptions=SHIFTER_ASSUMPTIONS, require_counterexamples=True,
+         configure=shifter_state, arguments=present_monster_arguments,
+         pre=lambda s: [s['monster.cham'] >= 0, s['native_monster_present'] == 1],
+         probes=[('null native monster pointer', lambda s: [s['monster.cham'] >= 0,
+                                                           s['native_monster_present'] == 0]),
+                 ('shifter species correspondence omitted', UnrelatedState(
+                     lambda s: [s['monster.cham'] >= 0, s['native_monster_present'] == 1],
+                     ('monster.cham',)))],
+         mutants=[(MONSTER_DATA, '!!(flags & (M2_UNDEAD | M2_DEMON));',
+                   '!!(flags & M2_UNDEAD);')]),
+    Spec('mon_resistancebits:state', 'verification_mon_resistancebits', 'monsterResistanceBits',
+         [('species', INT), ('native_monster_present', INT)], js_file='js/mondata.js',
+         state=[('monster.mextrinsics', (16, False), 'monster.mextrinsics'),
+                ('monster.mintrinsics', (16, False), 'monster.mintrinsics')],
+         assumptions=SHIFTER_ASSUMPTIONS[:2] + (
+             'monst.h:mon_resistancebits reads data->mresists | mextrinsics | mintrinsics; the two monst masks are unsigned short, so the emitted int32 \'|\' is exact',
+         ), require_counterexamples=True,
+         configure=resistance_state, arguments=present_monster_arguments,
+         pre=lambda s: [s['native_monster_present'] == 1],
+         probes=[('null native monster pointer', lambda s: [s['native_monster_present'] == 0]),
+                 ('intrinsic mask correspondence omitted', UnrelatedState(
+                     lambda s: [s['native_monster_present'] == 1],
+                     ('monster.mintrinsics',)))],
+         mutants=[('js/mondata.js',
+                   '| (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);',
+                   '| (monster?.mextrinsics ?? 0);')]),
+]
+
+OBJECT_PREDICATE_ASSUMPTIONS = (
+    'objects.c:objects_globals_init and object_data.js tables retain their initial values; o_init.js:objectMaterial reads the emitted per-game material map first, so the claim relates the initial emitted OBJECT_MATERIAL entries and leaves the o_init.c:shuffle correspondence (same algorithm on both sides) outside the entry relation',
+    'mkobj.c/mksobj only create objects whose otyp carries a real material (objclass.h materials start at LIQUID); the zero-material rows are the illegal object and class markers',
+)
+
+
+def object_table_index_precondition(world, front, otyp):
+    """Keep otyp inside both tables: the native objects[] carries one
+    terminator row past NUM_OBJECTS, and the emitted per-otyp arrays stop
+    at NUM_OBJECTS, so both sides read in bounds exactly below it."""
+    world.pre.extend([otyp >= 0, otyp < front.enum_value('NUM_OBJECTS')])
+
+
+def erosion_state(world, front, modules):
+    object_predicate_state('obj')(world, front, modules)
+    object_table_index_precondition(world, front, world.c_state['obj.otyp'][0])
+
+
+def damageable_state(world, front, modules):
+    object_predicate_state('otmp')(world, front, modules)
+    object_table_index_precondition(world, front, world.c_state['otmp.otyp'][0])
+    world.pre.append(real_object_precondition(
+        world, front, world.c_state['otmp.otyp'][0]))
+
+
+def guarded_erosion_state(world, front, modules):
+    damageable_state(world, front, modules)
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    # mkobj keeps oclass equal to objects[otyp].oc_class (the same entry
+    # invariant the weight:stack claim assumes); a candle typed as chain
+    # mail, where C's is_flammable exclusion and the port's material test
+    # disagree, is not a reachable object.
+    classes = _objects_member(world, front, 'oc_class')
+    world.pre.append(symbols['otmp.oclass']
+                     == select_int(classes, symbols['otmp.otyp']))
+    world.pre.append(erosion_matters_guard(
+        world, front, symbols['otmp.otyp'], symbols['otmp.oclass']))
+
+
+def weapon_type_domain(world, front, modules):
+    weapon_type_state(world, front, modules)
+    object_table_index_precondition(world, front, world.c_state['weapon.otyp'][0])
+
+
+STATE_SPECS += [
+    Spec('erosion_matters:tables', 'erosion_matters', 'erosionMatters', [],
+         js_file='js/objnam.js', state=[('obj.oclass', (8, True), 'obj.oclass'),
+                                        ('obj.otyp', (16, True), 'obj.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
+             'objnam.c:erosion_matters covers every otyp in 0..NUM_OBJECTS-1 and any oclass; otyp NUM_OBJECTS is the native terminator row and reads out of bounds in the port',
+         ),
+         require_counterexamples=True, configure=erosion_state,
+         arguments=object_predicate_arguments('obj'),
+         pre=lambda s: [],
+         probes=[('oclass correspondence omitted', UnrelatedState(
+             lambda s: [], ('obj.oclass',)))],
+         mutants=[('js/objnam.js',
+                   'if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]\n        .includes(object.oclass))',
+                   'if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS]\n        .includes(object.oclass))')]),
+    Spec('is_damageable:tables', 'verification_damageable', 'objectIsDamageable', [],
+         js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
+                                        ('otmp.otyp', (16, True), 'otmp.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
+             'objclass.h:is_damageable expands is_flammable (mkobj.c, with its candle and fire-resistance exclusions), is_rottable, is_rustprone, is_corrodeable and is_crackable; every real-material row agrees, so the class-marker rows are the only divergence',
+         ),
+         require_counterexamples=True, configure=damageable_state,
+         arguments=object_predicate_arguments('otmp'),
+         pre=lambda s: [],
+         probes=[('otyp correspondence omitted', UnrelatedState(
+             lambda s: [], ('otmp.otyp',)))],
+         mutants=[('js/objnam.js',
+                   'return flammable || rottable || rustprone || corrodeable || crackable;',
+                   'return flammable || rustprone || corrodeable || crackable;')]),
+    Spec('primary_erosion:tables', 'verification_primary_erosion',
+         'objectAcceptsPrimaryErosion', [],
+         js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
+                                        ('otmp.otyp', (16, True), 'otmp.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
+             'objnam.c:readobjnam evaluates is_flammable(o) || is_rustprone(o) || is_crackable(o) only inside its erosion_matters guard, and oclass equals objects[otyp].oc_class (mkobj.c), so the candle rows (TOOL_CLASS with zero oc_skill), wands and every fire-resistance oprop row with a flammable material stay outside the entry domain; there C\'s is_flammable exclusions and the port\'s material test agree',
+         ),
+         require_counterexamples=True, configure=guarded_erosion_state,
+         arguments=object_predicate_arguments('otmp'),
+         pre=lambda s: [],
+         probes=[('otyp correspondence omitted', UnrelatedState(
+             lambda s: [], ('otmp.otyp',)))],
+         mutants=[('js/objnam.js', 'return flammable || rustprone || crackable;',
+                   'return flammable || crackable;')]),
+    Spec('secondary_erosion:tables', 'verification_secondary_erosion',
+         'objectAcceptsSecondaryErosion', [],
+         js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
+                                        ('otmp.otyp', (16, True), 'otmp.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
+             'objnam.c:readobjnam evaluates is_corrodeable(o) || is_rottable(o) only inside its erosion_matters guard, with oclass equal to objects[otyp].oc_class (mkobj.c)',
+         ),
+         require_counterexamples=True, configure=guarded_erosion_state,
+         arguments=object_predicate_arguments('otmp'),
+         pre=lambda s: [],
+         probes=[('otyp correspondence omitted', UnrelatedState(
+             lambda s: [], ('otmp.otyp',)))],
+         mutants=[('js/objnam.js', 'return rottable || corrodeable;',
+                   'return corrodeable;')]),
+    Spec('weapon_type:tables', 'weapon_type', 'weaponSkillType',
+         [('weapon_present', INT)],
+         js_file='js/skills.js', state=[('weapon.oclass', (8, True), 'weapon.oclass'),
+                                        ('weapon.otyp', (16, True), 'weapon.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+             'weapon.c:weapon_type reads objects[otyp].oc_skill; object_data.js OBJECT_SUBTYPE keeps that column, including the negative launcher/ammo entries the port passes through Math.abs',
+             'the null argument is unwielding bare-handed combat; otyp stays inside the emitted subtype table (NUM_OBJECTS rows) while the native table carries one terminator row more',
+         ),
+         require_counterexamples=True, configure=weapon_type_domain,
+         arguments=weapon_type_arguments,
+         pre=lambda s: [s['weapon_present'] >= 0, s['weapon_present'] <= 1],
+         probes=[('otyp correspondence omitted', UnrelatedState(
+             lambda s: [s['weapon_present'] >= 0, s['weapon_present'] <= 1,
+                        s['weapon_present'] == 1], ('weapon.otyp',)))],
+         mutants=[('js/skills.js', 'if (![2, 6, 13].includes(weapon.oclass))',
+                   'if (![2, 6].includes(weapon.oclass))'),
+                  ('js/skills.js', 'return Math.abs(skill);', 'return skill;')]),
 ]

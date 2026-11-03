@@ -694,5 +694,30 @@ class ExecutorTests(unittest.TestCase):
             reason='C heap type mismatch for u.flag')
 
 
+    def test_typeof_classifies_each_value_kind(self):
+        self.equivalent(
+            'int example(int x) { return x == 1 ? 2 : 1; }',
+            "const kinds = [typeof 1, typeof 'a', typeof true, typeof undefined,"
+            " typeof null, typeof {}, typeof 10n];"
+            '\nfunction example(x) {'
+            '\n    let count = 0;'
+            '\n    for (let i = 0; i < 7; i++)'
+            "\n        if (kinds[i] === (x === 0 ? 'number' : x === 1 ? 'object' : 'bigint'))"
+            '\n            count++;'
+            '\n    return count;'
+            '\n}',
+            params=[('x', INT)])
+        self.rejected(
+            'int example(int x) { return x == 1 ? 2 : 1; }',
+            "const kinds = [typeof 1, typeof 'a', typeof true, typeof undefined,"
+            " typeof null, typeof {}, typeof 10n];"
+            '\nfunction example(x) {'
+            '\n    let count = 0;'
+            '\n    for (let i = 0; i < 7; i++)'
+            "\n        if (kinds[i] === (x === 0 ? 'number' : x === 1 ? 'object' : 'function'))"
+            '\n            count++;'
+            '\n    return count;'
+            '\n}',
+            params=[('x', INT)], reason='outputs differ')
 if __name__ == '__main__':
     unittest.main()
