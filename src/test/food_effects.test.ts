@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { heroHasDrainResistance } from '../js/do_wear.js';
 
 import { currentAttribute } from '../js/attrib.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { A_DEX, A_STR, SICK_VOMITABLE } from '../js/const.js';
 import { requireGameLevel, game } from '../js/gstate.js';

@@ -10,7 +10,7 @@ import { hitHeroWithFallingArtifact } from './falling_artifact.js';
 import { requirePlayingGame } from './gstate.js';
 
 import { addObjectToMonsterInventory } from './steal.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { makePlural } from './objnam.js';
 
 import { shipObject } from './dokick.js';

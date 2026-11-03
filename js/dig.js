@@ -25,10 +25,9 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpotEffects, inTown, roomsAt, switchHeroTerrain } from './hack.js';
 import { depth, dist2, possessiveName, upstart } from './hacklib.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { expelHero } from './hero_expulsion.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { woundHeroLegs } from './hero_legs.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';

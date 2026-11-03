@@ -14,7 +14,7 @@ import { MONSTER_FLAGS1, MONSTER_NAME, monsterHatesBlessings } from './monster_d
 import { breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import { BLINDING_VENOM, CORPSE, CREAM_PIE, EGG } from './object_data.js';
 import { objectDescription, withIndefiniteArticle } from './objnam.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { objectMaterial } from './o_init.js';
 import { observeObjectForNaming, simpleObjectName } from './objnam.js';

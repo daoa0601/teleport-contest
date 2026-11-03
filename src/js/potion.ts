@@ -50,7 +50,7 @@ import { hurtleHero } from './hero_hurtle.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { healHeroLegs } from './hero_legs.js';
+
 import type { Hero } from './hero_types.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import { reportHeroThrownMiss } from './dothrow.js';
@@ -84,7 +84,7 @@ import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHer
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster } from './monster_data.js';
 import type { Monster } from './monster_types.js';
-import { tryCallObjectType } from './do.js';
+import { tryCallObjectType, healHeroLegs } from './do.js';
 import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
 import { hitFloorWithObject, staggerVerb } from './dothrow.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';

@@ -13,7 +13,7 @@ import {
 } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { dropObjectAtHero } from '../js/hero_drop.js';
+import { dropObjectAtHero } from '../js/do.js';
 import { hitFloorWithObject } from '../js/dothrow.js';
 
 import { AMULET_OF_LIFE_SAVING, CORPSE, OBJECT_NAMES, POT_OIL, STATUE } from '../js/object_data.js';

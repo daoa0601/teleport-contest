@@ -11,7 +11,7 @@ import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { displayLiquidName, newsym, canSeeMonster, canSpotMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { dropBoulderIntoLiquid } from './do.js';
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game, requireGameLevel } from './gstate.js';
 import { remove_object } from './floor_object.js';

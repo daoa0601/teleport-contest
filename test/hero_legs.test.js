@@ -10,7 +10,7 @@ import { pushKeys } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { game } from '../js/gstate.js';
-import { healHeroLegs, woundHeroLegs } from '../js/hero_legs.js';
+import { healHeroLegs, woundHeroLegs } from '../js/do.js';
 import { FOOD_RATION, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { addInventoryObject } from './support/game-objects.js';

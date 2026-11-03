@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { strikeSteed } from '../js/steed.js';

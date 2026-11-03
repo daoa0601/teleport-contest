@@ -11,7 +11,7 @@ import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
-import { woundHeroLegs } from './hero_legs.js';
+import { woundHeroLegs } from './do.js';
 import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';

@@ -39,7 +39,7 @@ import {
     removeIntrinsicProperty, setPropertyTimeout,
 } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
-import { healHeroLegs } from './hero_legs.js';
+import { healHeroLegs } from './do.js';
 import { isPoolAt, isIceAt, isPoolOrLavaAt } from './dbridge.js';
 import {
     ACCESSIBLE, A_CON, A_DEX, A_STR, CLOUD, COLNO, DIED, DISMOUNT_FELL, FAINTING, FULL_MOON,

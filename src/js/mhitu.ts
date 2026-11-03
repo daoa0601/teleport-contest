@@ -72,7 +72,7 @@ import type { Hero } from './hero_types.js';
 import { setHeroGrip } from './hero_grip.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { woundHeroLegs } from './hero_legs.js';
+import { woundHeroLegs } from './do.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';

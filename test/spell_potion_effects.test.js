@@ -9,7 +9,7 @@ import { canSeeMonster, map_invisible } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroIsInvisible } from '../js/hero_invisibility.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { LONG_SWORD, MUMMY_WRAPPING, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, SPEED_BOOTS, } from '../js/object_data.js';
 import { levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, setPropertyTimeout, } from '../js/properties.js';

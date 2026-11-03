@@ -37,7 +37,7 @@ import { makePlural, verbForSubject } from './objnam.js';
 
 import { cureHeroSickness } from './potion.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
-import { healHeroLegs } from './hero_legs.js';
+import { healHeroLegs } from './do.js';
 import { takeHeroGold } from './hero_gold.js';
 import { scheduleLevelChange } from './level_change.js';
 import { identifyPack } from './invent.js';

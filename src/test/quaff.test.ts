@@ -10,7 +10,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { canSeeMonster } from '../js/display.js';
 import { heroIsInvisible } from '../js/hero_invisibility.js';
 import { grantHeroSeeInvisible } from '../js/hero_seeing.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 
 import { recordObjectKnowledge } from '../js/o_init.js';

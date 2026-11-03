@@ -22,7 +22,7 @@ import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILL
 import { dist2, distmin } from './hacklib.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
-import { woundHeroLegs } from './hero_legs.js';
+import { woundHeroLegs } from './do.js';
 import { fillPitWithBoulderAt, resetHeroTrap } from './trap.js';
 import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './uhitm.js';

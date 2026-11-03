@@ -28,7 +28,7 @@ import { uncurseObjectState } from './mkobj.js';
 import { rnd } from './rng.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero, monsterSaddle } from './steed.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { dropInventoryObjectAtHero } from './do.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { hitFloorWithObject } from './dothrow.js';
 

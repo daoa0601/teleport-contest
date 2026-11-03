@@ -2,7 +2,6 @@
 // C ref: do.c flooreffects() object landing branches.
 import { ALTAR, CORR, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
@@ -21,7 +20,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectWeight } from './mkobj.js';
-import { applyBoulderPitEffects } from './do.js';
+import { applyBoulderPitEffects, dropBoulderIntoLiquid } from './do.js';
 const POTION_CLASS = 8;
 function squareIsVisible(state, x, y) {
     if (state === game)

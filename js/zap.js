@@ -92,7 +92,7 @@ import { setArtifactOrigin } from './artifacts.js';
 import { heroIsPunished } from './ball.js';
 import { heroResistsBlindingLight, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
-import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { dropBoulderIntoLiquid } from './do.js';
 import { xyToDirection } from './cmd.js';
 import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';

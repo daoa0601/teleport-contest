@@ -16,7 +16,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame } from './gstate.js';
 import { cureHeroVomiting } from './potion.js';
-import { healHeroLegs } from './hero_legs.js';
+import { healHeroLegs } from './do.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';

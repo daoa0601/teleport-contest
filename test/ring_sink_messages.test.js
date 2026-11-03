@@ -5,7 +5,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { dropRingIntoSink } from '../js/ring_sink.js';
+import { dropRingIntoSink } from '../js/do.js';
 // do.c:dosinkring(): each ring type produces its own observable reaction
 // when dropped into the sink. Effects noticable without eyes come first;
 // the sight-only group only fires when ideed stays false.

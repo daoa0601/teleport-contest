@@ -9,9 +9,7 @@ import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import {
-    dropHeroObject, dropInventoryObjectAtHero,
-} from '../js/hero_drop.js';
+import { dropHeroObject, dropInventoryObjectAtHero } from '../js/do.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { shopkeeperName } from '../js/shknam.js';

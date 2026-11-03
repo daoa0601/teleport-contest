@@ -38,7 +38,7 @@ import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resol
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
 import { dist2 } from './hacklib.js';
 import { hurtleHero } from './hero_hurtle.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName } from './terrain_name.js';
