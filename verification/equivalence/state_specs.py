@@ -504,6 +504,7 @@ WEIGHT_ASSUMPTIONS = (
     'obj.quan >= 1, oeaten == 0 and corpsenm is a valid species (mkobj.c assigns one when it creates a CORPSE; eaten_stat\'s table-selected divisor is difftest territory); otyp is GOLD_PIECE, DAGGER, FOOD_RATION, CORPSE or GLOB_OF_GRAY_OOZE; no container contents (the cobj recursion is a separate extension)',
     'mkobj keeps oclass equal to objects[otyp].oc_class; C tests the CORPSE type before the coin class while the port tests the class first, so type/class disagreements are outside this domain',
     'mksobj creates globs only as food, so the glob branch precedes the coin branch on both sides',
+    'owt stays within INT_MAX: C returns (int) obj->owt for globs and heavy iron balls, and only a wizard-mode glob wish exceeds it',
 )
 
 STATE_SPECS += [

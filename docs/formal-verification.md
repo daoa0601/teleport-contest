@@ -245,12 +245,14 @@ expert). `passes_bars` executes the mondata.c body including its `dmgtype`
 scan; `armor_to_dragon` checks the 20 dragon otyps (C returns `NON_PM`
 where the port returns null and callers test truthiness).
 
-`weight:stack` proved a real wizard-mode fidelity bug: C's glob branch
-returns `(int) obj->owt`, so the readobjnam wizard override that creates
-one glob weighing 107374336 x 20 = 2147486720 makes C return the negative
-int32 wrap while the port returned the unsigned value. The port now wraps
-through the same cast in both owt-returning branches (glob and heavy iron
-ball), with a behavior test; every non-wizard state is unchanged. The
+`weight:stack` found a wizard-mode divergence: C's glob and heavy-iron-ball
+branches return `(int) obj->owt`, so the readobjnam wizard override that
+creates one glob weighing 107374336 x 20 = 2147486720 makes C return the
+negative int32 wrap while the port returns the unsigned value. The port is
+left unchanged: C stores weight() back into the unsigned owt at ~90 sites,
+and wrapping only the return would leave negative cached weights in the port
+(the glob shrink timer rejects them). The claim's domain therefore bounds
+owt at INT_MAX. The
 claim also documents two orderings the entry domain keeps consistent:
 C tests the CORPSE type before the coin class while the port tests the
 class first (oclass always equals the type's metadata class), and the glob

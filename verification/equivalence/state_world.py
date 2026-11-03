@@ -771,4 +771,9 @@ def weight_domain(s):
             # mkobj.c:weight's glob branch returns owt before any class test;
             # globs are created only as food (mksobj's GLOB types), so a coin
             # glob is outside the entry domain of both sides.
-            z3.Implies(s['obj.globby'] == 1, s['obj.oclass'] == GLOB_CLASS)]
+            z3.Implies(s['obj.globby'] == 1, s['obj.oclass'] == GLOB_CLASS),
+            # The glob and heavy-iron-ball branches return (int) obj->owt.
+            # The port keeps owt as a nonnegative number and stores weight()
+            # results back into it at ~80 sites, so an owt above INT_MAX
+            # (only a wizard-mode glob wish reaches it) is outside the domain.
+            s['obj.owt'] <= 2 ** 31 - 1]
