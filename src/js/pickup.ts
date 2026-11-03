@@ -7,7 +7,7 @@ import {
     heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
 import { monsterStagger } from './mondata.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterIsBig, monsterThrowsRocks } from './monster_data.js';
+import { MONSTER_NAME, monsterIsBig, monsterThrowsRocks } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
