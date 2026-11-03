@@ -71,3 +71,26 @@ void test('an oversized terrain capture switches the recorded cursor to raw mode
     assert.deepEqual(final.slice(0, 2), [0, 3],
         'the latched raw mode keeps the empty separator row and ends three rows down');
 });
+
+void test('a latched raw row keeps the score notice painting from that row', async () => {
+    const engine = await runSegment({
+        seed: 924506948, datetime: '20000417080000', nethackrc: NETHACKRC,
+        moves: SETUP + '#te\rd \x1b', storage: memoryStorage(),
+    });
+    // Simulate a capture that also clobbered nomux_raw_row (a
+    // 6150-byte serialization): the latch is set and the raw cursor
+    // sits on row 2 when the game tears down the windows.
+    engine.display?.nomux.capture('x'.repeat(6146) + '2' + '\0\0\0'
+        + '\x02' + '\0\0\0');
+    engine.inputGate.feed(',#quit\ryn ');
+    await engine.runUntilInputNeeded();
+
+    const endRows = screenText(engine.getScreens().at(-1) ?? '').split('\n');
+    assert.equal(endRows[0], '');
+    assert.equal(endRows[1], '');
+    assert.equal(endRows[2], '', 'the separator prints at the latched row');
+    assert.equal(endRows[3], '');
+    assert.match(endRows[4] ?? '', /^Since you were in wizard mode, the score list will not be checked\./);
+    assert.deepEqual(engine.getCursors().at(-1)?.slice(0, 2), [0, 5],
+        'the notice ends two rows further down than the unlatched quit');
+});

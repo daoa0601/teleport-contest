@@ -8,6 +8,7 @@ import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
 import { parseNethackOptions, parseNethackrc } from './options.js';
+import { nomuxCaptureBytes } from './tty_nomux.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { rawPrint } from './pline.js';
 import { parseCharacterName } from './character_name.js';
@@ -143,11 +144,13 @@ export function serializeCapture(term) {
 // The recorder's marker (termcap.c nomux_emit_marker) serializes the
 // shadow screen first and only then reads the cursor to report, so an
 // oversized serialization latches the raw-mode cursor before this
-// boundary's own cursor value is chosen.
-function captureCursor(display, screen) {
+// boundary's own cursor value is chosen. The latch is measured on the
+// serializer's own byte stream (nomuxCaptureBytes), not on the stored
+// wire form, which compresses space runs and drops trailing blank rows.
+function captureCursor(display) {
     if (!display)
         return null;
-    display.nomux.captureRle(screen);
+    display.nomux.capture(nomuxCaptureBytes(display.captureGrid, /^DECgraphics$/i.test(game.symset || '')));
     const [col, row] = display.nomux.cursor(display.cursorCol ?? 0, display.cursorRow ?? 0);
     return [col, row, 1];
 }
@@ -177,7 +180,7 @@ class SegmentCapture {
         const display = this.engine.display;
         const screen = serializeCapture(display);
         this.screens.push(screen);
-        this.cursors.push(captureCursor(display, screen));
+        this.cursors.push(captureCursor(display));
         this.animationFramesByStep.push(this.pendingAnimationFrames);
         this.pendingAnimationFrames = [];
     }
@@ -186,7 +189,7 @@ class SegmentCapture {
         const animScreen = serializeCapture(display);
         this.pendingAnimationFrames.push({
             screen: animScreen,
-            cursor: captureCursor(display, animScreen),
+            cursor: captureCursor(display),
         });
         if (typeof requestAnimationFrame === 'function') {
             await new Promise(resolve => requestAnimationFrame(resolve));
