@@ -1239,7 +1239,7 @@ function achievementLines(final: boolean): string[] {
     return lines;
 }
 
-// achievements.js — Ordered, event-time achievement state.
+// Achievements — ordered, event-time achievement state.
 // C refs: include/you.h enum achievements; insight.c record_achievement(),
 // achieve_rank(), achieve_msg[]; do.c:goto_level() branch achievements;
 // botl.c:rank_to_xlev().
