@@ -434,9 +434,6 @@ STATE_SPECS += [
         ('noncorporeal:tables', 'verification_noncorporeal', 'monsterIsNoncorporeal',
          MONSTER_DATA, 'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST;',
          'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST + 1;'),
-        ('breathless:tables', 'verification_breathless', 'monsterIsBreathless',
-         'js/mondata.js', 'MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS);',
-         'MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOHEAD);'),
         ('passes_bars:tables', 'passes_bars', 'monsterPassesBars',
          'js/mondata.js', '(M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))',
          '(M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))'),
@@ -475,7 +472,6 @@ STATE_SPECS += [
          mutants=[('js/polyself.js', 'return firstDragon + type - GRAY_DRAGON_SCALE_MAIL;',
                    'return firstDragon + type - GRAY_DRAGON_SCALE_MAIL + 1;')]),
 ]
-
 
 
 def weight_partitions(front):
@@ -534,10 +530,6 @@ SHIFTER_ASSUMPTIONS = (
     'makemon.c:newcham and mon.c:set_mon_data keep cham at NON_PM or the shapeshifter species; the emitted vampire test covers the whole species table',
 )
 
-UHITM_ASSUMPTIONS = PREDICATE_ASSUMPTIONS + (
-    'uhitm.c keeps mondata.h:haseyes() as one private helper; other haseyes call sites inline the M1_NOEYES test',
-)
-
 
 def shifter_state(world, front, modules):
     monster_state(world, front, modules)
@@ -554,15 +546,24 @@ STATE_SPECS += [
                                                            s['native_pointer_present'] == 0])],
          mutants=[(MONSTER_DATA, 'return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;',
                    'return (MONSTER_SIZE[mnum] ?? MZ_SMALL) <= MZ_SMALL;')]),
-    Spec('haseyes:tables', 'verification_haseyes', 'hasEyes',
-         [('species', INT), ('native_pointer_present', INT)], js_file='js/uhitm.js',
-         assumptions=UHITM_ASSUMPTIONS, require_counterexamples=True,
-         configure=species_predicate_state, arguments=species_record_arguments,
+    Spec('haseyes:tables', 'verification_haseyes', 'monsterHasEyes',
+         [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
          pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
          probes=[('null native species pointer', lambda s: [s['species'] >= 0,
                                                            s['native_pointer_present'] == 0])],
-         mutants=[('js/uhitm.js', 'return !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);',
-                   'return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);')]),
+         mutants=[(MONSTER_DATA, 'return !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES);',
+                   'return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES);')]),
+    Spec('breathless:tables', 'verification_breathless', 'monsterIsBreathless',
+         [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, 'return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_BREATHLESS);',
+                   'return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOHEAD);')]),
     Spec('hates_silver:tables', 'hates_silver', 'monsterSpeciesHatesSilver',
          [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
          assumptions=PREDICATE_ASSUMPTIONS + (
