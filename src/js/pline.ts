@@ -140,10 +140,10 @@ export async function setTopline(msg: string) {
     game._lastPlineKind = PLNMSG_UNKNOWN;
 }
 
-function writeRawText(text: string) {
+function writeRawText(text: string, { throughCapture = true }: { throughCapture?: boolean } = {}) {
     const display = game.nhDisplay;
     if (!display) return;
-    if (display.nomux.isLatched()) {
+    if (throughCapture && display.nomux.isLatched()) {
         // C nomux_raw_emit(): once the capture latched raw mode, every
         // raw print paints at the raw cursor even while the windows are
         // still up — nomux_raw_putch() drops control characters other
@@ -193,8 +193,10 @@ export function rawPrint(message: string) {
 export async function beginPanicOutput() {
     if (!game.nhDisplay) return;
     rawPrint('\r\nOops...');
-    writeRawText('\nHit space to continue: ');
-    game._suppressMessagesUntilInput = false;
+    // wintty.c:getret() prompts through xputs(), which never reaches
+    // nomux_raw_emit(): the shadow stays untouched and the raw cursor
+    // does not move, even after the capture latched raw mode.
+    writeRawText('\nHit space to continue: ', { throughCapture: false });
     let key;
     do key = await nhgetch();
     while (![27, 32, 10, 13].includes(key));

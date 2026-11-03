@@ -1146,11 +1146,13 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
             const paint = nomuxRawPaintText(line.text, at.col, display.cols);
             terminalLine(at.row, paint.col, paint.text, line.attr || 0);
         }
-        if (display && row === display.rows) {
+        // nomux_raw_putch() only clips: a latched list never scrolls the
+        // shadow, so the port's scroll stays with the unlatched overflow.
+        if (display && !latched && row === display.rows) {
             display.scrollUp();
             row--;
         }
-        display?.setCursor(0, row);
+        display?.setCursor(0, Math.min(row, (display?.rows ?? 24) - 1));
     }
     if (stopPrinting) {
         const display = game.nhDisplay;
