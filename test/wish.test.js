@@ -6,7 +6,7 @@ import { pushKey, pushKeys } from '../js/input.js';
 import { identifyPack, inventoryItemDescription } from '../js/invent.js';
 import { AMULET_OF_YENDOR, BELL, FAKE_AMULET_OF_YENDOR, OIL_LAMP, ROCK, SPE_BLANK_PAPER, TALLOW_CANDLE, WAX_CANDLE, } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
-import { makeWish } from '../js/wish.js';
+import { makeWish } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function wishObject(...args) {
     const result = await readObjectName(...args);

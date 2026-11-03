@@ -23,7 +23,8 @@ import { heroHeadName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
 
-import { zapHeroWithObject } from './hero_self_zap.js';
+import { zapHeroWithObject } from './zap.js';
+
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
 import { mksobj } from './mkobj.js';
@@ -58,7 +59,8 @@ import { objectMaterial } from './o_init.js';
 import { walkPathCells } from './path_walk.js';
 import { applyPotionEffect } from './potion.js';
 import { propertyIsActive } from './properties.js';
-import { paintRayCell } from './ray.js';
+import { paintRayCell } from './zap.js';
+
 import { rn2, rnd, rnl, rn2Display } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroIsSliming } from './potion.js';

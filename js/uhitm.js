@@ -106,7 +106,7 @@ import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './query.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { heroReflectionSource, heroReflectsRay } from './ray.js';
+import { heroReflectionSource, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, deleteObject, dopay, objectTypeKnown, tendedShop } from './shk.js';

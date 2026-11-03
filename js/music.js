@@ -9,7 +9,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
-import { zapHeroWithObject } from './hero_self_zap.js';
+import { zapHeroWithObject } from './zap.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';

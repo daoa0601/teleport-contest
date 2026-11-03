@@ -35,7 +35,9 @@ import { snapshotMenuUnderlay } from './windows.js';
 import { promptDirection } from './tty_prompts.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
+
 import type { ProjectileFlightCapture } from './thrown_object.js';
+
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster } from './mon.js';
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { canLetGo } from './hero_inventory.js';

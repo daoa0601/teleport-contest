@@ -13,7 +13,9 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';
 import { hitMonsterWithForce } from './force_bolt.js';
 import { impossible } from './diagnostics.js';
-import { releaseHold, releaseHeroFromMonster } from './hero_expulsion.js';
+import { releaseHold } from './zap.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
+
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks } from './polyself.js';
 import { isSteadfast } from './uhitm.js';
@@ -54,7 +56,8 @@ import {
 } from './zap.js';
 import { surfaceName } from './terrain_name.js';
 import { closeHoldingTrap, openFallingTrap, openHoldingTrap } from './trap.js';
-import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './undead_turning.js';
+import { turnCarriedObjects, turnMonsterWithUndeadMagic } from './zap.js';
+
 import { cansee } from './vision.js';
 import { finishMonsterEating } from './dogmove.js';
 import { monsterHasDrainResistance } from './mondata.js';

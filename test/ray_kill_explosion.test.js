@@ -3,7 +3,7 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

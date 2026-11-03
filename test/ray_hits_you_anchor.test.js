@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 // C zap.c:dobuzz() anchors its "hits you!" line with

@@ -7,6 +7,7 @@ import { dochat } from './ambient_sounds.js';
 import { doloot, pickupAtHero, tipCommand, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
+
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce } from './lock.js';
@@ -65,7 +66,8 @@ import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { doprevMessage, messageWindowMode } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
-import { heroBreathAttack } from './hero_breath.js';
+import { heroBreathAttack } from './zap.js';
+
 import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroFormSticks, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
 import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';

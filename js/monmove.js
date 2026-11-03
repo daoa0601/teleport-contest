@@ -86,7 +86,7 @@ import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
 import { touchPetrifies } from './stoning.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
-import { monsterReflectsRay } from './ray.js';
+import { monsterReflectsRay } from './muse.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { rndmonstAdj, growMonster } from './makemon.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { NO_MINVENT, PIT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { releaseHold } from '../js/hero_expulsion.js';
+import { releaseHold } from '../js/zap.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';

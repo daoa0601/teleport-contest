@@ -5,7 +5,8 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hitHeroWithRay } from '../js/hero_breath.js';
+import { hitHeroWithRay } from '../js/zap.js';
+
 import { resetInputState } from '../js/input.js';
 import { AD_DISN, AT_BREA, AT_MAGC } from '../js/monster_attack_types.js';
 import { CLOAK_OF_DISPLACEMENT } from '../js/object_data.js';

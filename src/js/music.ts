@@ -14,7 +14,8 @@ import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
 
-import { zapHeroWithObject } from './hero_self_zap.js';
+import { zapHeroWithObject } from './zap.js';
+
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_SYMBOL,
@@ -27,6 +28,7 @@ import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
+
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {
     BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM,

@@ -23,7 +23,8 @@ import { visibleCommandKey, setMulti } from './cmd.js';
 import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, objectNeedsFullIdentification, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
-import { makeWish } from './wish.js';
+import { makeWish } from './zap.js';
+
 import { polymorphHero, heroSpecies, heroHasOlfaction } from './polyself.js';
 import { createParticularMonster } from './read_creation.js';
 import { findit, mapMagicLevel } from './detect.js';

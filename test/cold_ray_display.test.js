@@ -4,7 +4,7 @@ import { LAVAPOOL, ROOM } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 void test('cooling lava preserves a cold beam across the hero during hit acknowledgment', async () => {

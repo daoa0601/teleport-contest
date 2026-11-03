@@ -14,6 +14,7 @@ import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf } from './senses.js';
 import { snuffThrownCandle } from './thrown_object.js';
+
 import { CLR_BROWN } from './terminal.js';
 import { cansee } from './vision.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
@@ -21,6 +22,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { ProjectileFlight } from './thrown_object.js';
+
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 
 export interface BoomerangFlight extends ProjectileFlight {

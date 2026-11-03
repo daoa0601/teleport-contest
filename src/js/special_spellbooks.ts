@@ -5,6 +5,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { ACH_INVK, ACH_NOVL, recordAchievement } from './achievements.js';
 import { heroSpineName } from './body_parts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
+
 import { plineWithContinuation as pline } from './pline.js';
 import { level_difficulty } from './dungeon.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -30,7 +31,8 @@ import { NO_MINVENT } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { chargeUnpaidUsage } from './shk.js';
-import { turnCarriedObjects } from './undead_turning.js';
+import { turnCarriedObjects } from './zap.js';
+
 import { cansee } from './vision.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

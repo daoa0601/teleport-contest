@@ -16,7 +16,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { EXPENSIVE_CAMERA, WAN_LIGHT } from './object_data.js';
-import { rayPositionIsOpen } from './ray.js';
+import { rayPositionIsOpen } from './zap.js';
 import { visibleRegionAt } from './regions.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';

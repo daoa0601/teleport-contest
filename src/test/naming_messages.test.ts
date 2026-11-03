@@ -47,7 +47,8 @@ import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap } from '../js/sleep
 import { bookCursed, studyBook } from '../js/spellbook_study.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
-import { turnObjectWithUndeadMagic } from '../js/undead_turning.js';
+import { turnObjectWithUndeadMagic } from '../js/zap.js';
+
 import { untrap } from '../js/trap.js';
 import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from '../js/vibrating_square_trap.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';

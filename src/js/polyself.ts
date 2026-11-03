@@ -27,10 +27,15 @@ import type { Position } from './map_types.js';
 import type { PropertyName } from './property_types.js';
 import type { HeroCoordinates } from './hero_types.js';
 import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
+
 import type { ProjectileFlightCapture } from './thrown_object.js';
-import { heroBreathAttack, hitHeroWithRay } from './hero_breath.js';
-import type { HeroRayResult } from './hero_breath.js';
-import type { NativeRayResult } from './ray_attack.js';
+
+import { heroBreathAttack, hitHeroWithRay } from './zap.js';
+
+import type { HeroRayResult } from './zap.js';
+
+import type { NativeRayResult } from './zap.js';
+
 import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
 import type { HeroWereChangeOptions } from './were.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
@@ -92,6 +97,7 @@ import { unpunishHero } from './punishment.js';
 import { handleRidingAfterFormChange } from './steed.js';
 import { angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster } from './mon.js';
 import { expelHero } from './hero_expulsion.js';
+
 import { clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { golemHitPoints, isHomeElemental } from './makemon.js';
 

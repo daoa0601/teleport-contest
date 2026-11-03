@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ICE, ICED_POOL, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { meltIce } from '../js/ice.js';
+import { meltIce } from '../js/zap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, NO_MINVENT, W_ARM, W_ARMC } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { releaseHold } from '../js/hero_expulsion.js';
+import { releaseHold } from '../js/zap.js';
 import { setHeroGrip } from '../js/hero_grip.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';

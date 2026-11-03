@@ -5,7 +5,7 @@ import { game } from '../js/gstate.js';
 import { monsterName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { pushKeys } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { initRng } from '../js/rng.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

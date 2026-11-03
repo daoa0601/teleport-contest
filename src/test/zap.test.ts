@@ -20,7 +20,8 @@ import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { meltIce } from '../js/ice.js';
+import { meltIce } from '../js/zap.js';
+
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import {

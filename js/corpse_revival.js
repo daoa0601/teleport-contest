@@ -2,7 +2,7 @@ import { withIndefiniteArticle, corpseName as corpseObjectName, objectCombatName
 import { objectQuantity, splitObjectStack, riderRevivalTime, set_corpsenm, linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
 import { rotCorpse } from './corpse_rot.js';
 import { setMonsterGivenName, monsterName } from './do_name.js';
-import { RLOC_NOMSG, CORR, G_GENOD, GRAVE, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, ROOM, OBJECT_TIMER_KIND } from './const.js';
+import { RLOC_NOMSG, G_GENOD, IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOMSG, MM_NOWAIT, NO_MINVENT, PIT, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -15,14 +15,14 @@ import { delobjCore } from './invent.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDisplacer, monsterTypeName } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, monsterIsDisplacer } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance, changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { upstart } from './hacklib.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue, deleteObject } from './shk.js';
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
-import { objectTimers, objectsInTimerGraph, scheduleObjectTimer, stopAllObjectTimers } from './timeout.js';
+import { objectTimers, objectsInTimerGraph, scheduleObjectTimer } from './timeout.js';
 import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
@@ -96,12 +96,6 @@ function revivalLocation(corpse, state, buriedReviver) {
     if (corpse.where === 'buried' && !buriedReviver)
         return null;
     return objectLocation(corpse, state);
-}
-function zombieCanDig(x, y, state) {
-    if (state.level?.traps?.some(trap => trap.tx === x && trap.ty === y))
-        return false;
-    const location = state.level?.at(x, y);
-    return !!location && [ROOM, CORR, GRAVE].includes(location.typ);
 }
 function revivalMessage(corpse, monster, location, originalWhere, wasWielded, state) {
     if (originalWhere === 'inventory') {
@@ -474,4 +468,5 @@ export async function runClaimedCorpseRevivalTimer(claimed, state = game, curren
     const retry = await retryRevival(corpse, state, currentTurn);
     return { kind: 'failed', corpse, ...event, messages: [], retry };
 }
+import { zombieCanDig } from './zap.js';
 //# sourceMappingURL=corpse_revival.js.map

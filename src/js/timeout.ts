@@ -9,7 +9,9 @@
 
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
+
 import type { CorpseRevivalTimerEvent } from './corpse_revival.js';
+
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import {
     clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming,
@@ -89,7 +91,8 @@ import {
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
 import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
 import { runClaimedGlobTimer, finishGlobTimer } from './glob.js';
-import { meltIce } from './ice.js';
+import { meltIce } from './zap.js';
+
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import { objectWeight } from './mkobj.js';
 import { useUpInventoryStack } from './hero_inventory.js';

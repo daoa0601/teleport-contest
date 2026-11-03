@@ -5,7 +5,8 @@ import { flush_screen, glyphAt } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
+
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { applyRayFloorFeatures } from '../js/zap.js';
 import { createMonsterAt } from './support/monsters.js';

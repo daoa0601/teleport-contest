@@ -25,7 +25,7 @@ import { NO_MINVENT } from './const.js';
 import { d, rnd, rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { chargeUnpaidUsage } from './shk.js';
-import { turnCarriedObjects } from './undead_turning.js';
+import { turnCarriedObjects } from './zap.js';
 import { cansee } from './vision.js';
 import { tameMonster } from './dog.js';
 import { heroIsOnStairs, isInvocationPosition } from './hack.js';

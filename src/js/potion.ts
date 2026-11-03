@@ -43,6 +43,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth, dist2, ledgerNo, possessiveName } from './hacklib.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
+
 import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero } from './hero_hurtle.js';
@@ -60,7 +61,9 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsStrangled } from './do_wear.js';
 import { heroCanBeSlimed, updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
 import { peekCommandResponse } from './input.js';
-import { doEnlightenmentEffect, showEnlightenment } from './insight.js';
+import { doEnlightenmentEffect } from './zap.js';
+import { showEnlightenment } from './insight.js';
+
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
@@ -105,13 +108,16 @@ import { isPoolAt } from './dbridge.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
+
 import type { ProjectileFlightCapture } from './thrown_object.js';
+
 import { tossObjectUp } from './toss_up.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { cansee, vision_recalc } from './vision.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';
-import { makeWish } from './wish.js';
+import { makeWish } from './zap.js';
+
 import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';

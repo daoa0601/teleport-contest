@@ -61,6 +61,7 @@ import { tipWornHelmet } from './tip_hat.js';
 import { currency } from './currency.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
+
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsUnaware } from './senses.js';

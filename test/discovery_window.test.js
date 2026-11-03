@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { zapHeroWithObject } from '../js/hero_self_zap.js';
+import { zapHeroWithObject } from '../js/zap.js';
 import { resetInputState } from '../js/input.js';
 import { dodiscovered } from '../js/o_init.js';
 import { DAGGER, FOOD_RATION, LEATHER_ARMOR, LEATHER_GLOVES, MAGIC_HARP, POT_BOOZE, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_HEALING, POT_SICKNESS, POT_WATER, RIN_PROTECTION, SACK, SCR_IDENTIFY, WAN_CANCELLATION, WOODEN_HARP, } from '../js/object_data.js';

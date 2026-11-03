@@ -16,7 +16,7 @@ import { races, roles } from './roles.js';
 import { objectClassForType, recordObjectEncounter, objectMaterial } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
-import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, OBJECT_PROPERTY, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, MONSTER_SOUND } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
@@ -54,7 +54,6 @@ import { useCrystalBall } from './crystal_ball.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { doBlindingRay } from './flash.js';
-import { flashBurn } from './sight_change.js';
 import { makeBlinded, makeHallucinated } from './potion.js';
 import { promptDirection } from './tty_prompts.js';
 import { castSpell, spellSkillType } from './spell.js';
@@ -68,6 +67,7 @@ import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './hero_hold_object.js';
+import { flashBurn } from './zap.js';
 const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_ELF = 0x00000010;
@@ -1657,5 +1657,14 @@ export async function doinvoke() {
     }
     await pline('Nothing happens.');
     game.context.move = 1;
+}
+// ── moved from src/js/ray.ts ──
+// C artifact.c:arti_reflects(): a monster gets reflection from an
+// artifact — the wielded/worn SPFX_REFLECT bit, or a carried cspfx one
+// (no current artifact carries reflection).
+export function weaponReflects(object, state) {
+    if (!object)
+        return false;
+    return !!artifactById(object?.oartifact, state)?.flags.includes('SPFX_REFLECT');
 }
 //# sourceMappingURL=artifacts.js.map

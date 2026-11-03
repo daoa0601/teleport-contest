@@ -13,7 +13,7 @@ import { lightDamage } from '../js/light.js';
 import { EXPENSIVE_CAMERA, TOWEL, BLINDFOLD, LENSES, TWO_HANDED_SWORD, LEATHER_GLOVES, BOULDER, WAN_LIGHT, } from '../js/object_data.js';
 import { seeMonsterCloseup } from '../js/mon.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
-import { flashBurn } from '../js/sight_change.js';
+import { flashBurn } from '../js/zap.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { initRng } from '../js/rng.js';

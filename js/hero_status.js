@@ -7,7 +7,7 @@ import { heroIsSick, heroIsVomiting } from './potion.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroFormSticks } from './polyself.js';
 import { heroIsStrangled } from './do_wear.js';
-import { piousness } from './insight.js';
+import { piousness } from './enlightenment_attributes.js';
 import { MONSTER_LEVEL, monsterDigests } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { makePlural } from './objnam.js';

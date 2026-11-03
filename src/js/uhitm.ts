@@ -68,6 +68,7 @@ import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero } from './hero_drop.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
+
 import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
 import { setHeroGrip } from './hero_grip.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -126,7 +127,8 @@ import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './query.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { heroReflectionSource, heroReflectsRay } from './ray.js';
+import { heroReflectionSource, heroReflectsRay } from './muse.js';
+
 import { d, rn2, rnd, rnl } from './rng.js';
 import type { rnd as RndType } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { makeWish } from '../js/wish.js';
+import { makeWish } from '../js/zap.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C zap.c:makewish() livelogs every granted wish; the first one reads
 // 'made his first wish - "<text>", got "<doname>"' and declining with an

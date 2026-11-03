@@ -108,3 +108,10 @@ export function ordinalSuffix(number: number): string {
     if (digit === 0 || digit > 3 || Math.trunc((number % 100) / 10) === 1) return 'th';
     return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
 }
+
+// C hacklib.c:mungspaces() over one getlin line: tabs become spaces, runs
+// collapse, and leading/trailing spaces vanish.
+export function mungWishSpaces(text: string): string {
+    return text.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
+}
+

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_AP_OBJECT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { ARROW } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

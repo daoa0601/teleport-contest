@@ -81,7 +81,8 @@ import {
     petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack,
     resolveMonsterPhysicalDamage, tryKnockback, applyMonsterCombatEffect, physicalEffect, effectResult,
 } from './uhitm.js';
-import { monsterReflectionSource } from './ray.js';
+import { monsterReflectionSource } from './muse.js';
+
 import { contactIsProtected, touchPetrifies } from './stoning.js';
 import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';

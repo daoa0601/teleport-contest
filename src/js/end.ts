@@ -15,6 +15,7 @@ import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
 import { achievementEntries, recordAchievement } from './achievements.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
+
 import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { scheduleLevelChange } from './level_change.js';
@@ -29,6 +30,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects } from './invent.js';
 import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
+
 import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow } from './windows.js';
 import type { InventoryMenuItem, TextMenuEntry, TextMenuLine, TextPage } from './windows.js';
 import { artifactById } from './artifacts.js';

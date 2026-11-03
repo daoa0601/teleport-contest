@@ -44,7 +44,7 @@ import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
 import { setSlipperyHands } from './potion.js';
 import { cansee } from './vision.js';
-import { makeWish } from './wish.js';
+import { makeWish } from './zap.js';
 import { aggravateMonsters } from './wizard.js';
 import { loseHeroHp } from './hack.js';
 const COIN_CLASS = 12;

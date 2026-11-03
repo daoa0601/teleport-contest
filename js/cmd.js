@@ -55,7 +55,7 @@ import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { doprevMessage, messageWindowMode } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
-import { heroBreathAttack } from './hero_breath.js';
+import { heroBreathAttack } from './zap.js';
 import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroFormSticks, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
 import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';

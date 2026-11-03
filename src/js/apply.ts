@@ -17,6 +17,7 @@ import { commandResultCancelled, commandResultFailed, commandResultSpentTime, se
 import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, isok, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir } from './const.js';
 import { isContainer, useContainer } from './container.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
+
 import { isRider } from './corpse_species.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { convertSecretDoor, findit, openit } from './detect.js';
@@ -45,7 +46,8 @@ import { applyCaitiffPenalty } from './uhitm.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { releaseHold } from './hero_expulsion.js';
+import { releaseHold } from './zap.js';
+
 import { setHeroGrip } from './hero_grip.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded } from './potion.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -58,7 +60,8 @@ import { attackHostileMonster } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { zapHeroWithObject } from './hero_self_zap.js';
+import { zapHeroWithObject } from './zap.js';
+
 import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
@@ -67,8 +70,11 @@ import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImme
 import { requireInitializedHero } from './hero_types.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
 import { spendHeroNutrition, vomitHero, setTinVariety, useTinOpener } from './eat.js';
-import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand } from './immediate_zap.js';
+import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
+import { hitMonsterWithWand } from './immediate_monster_magic.js';
+
 import { monsterStatusLine } from './insight.js';
+
 import { consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
@@ -103,11 +109,14 @@ import type { MessagePublisher } from './pline.js';
 import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './punishment.js';
 import { paranoidQuery, promptChoice, promptYesNo } from './query.js';
-import { monsterReflectionSource, rayPositionIsOpen } from './ray.js';
+import { monsterReflectionSource } from './muse.js';
+import { rayPositionIsOpen } from './zap.js';
+
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
 import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, objectTypeKnown, payForShopDamage, shopkeeperIsMuted } from './shk.js';
-import { flashBurn } from './sight_change.js';
+import { flashBurn } from './zap.js';
+
 import { ensureHeroSkills } from './skills.js';
 import { castSpell, knownSpell } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';

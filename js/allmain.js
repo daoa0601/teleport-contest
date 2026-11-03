@@ -11,7 +11,7 @@ import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt,
 import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages } from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
-import { flashBurn } from './sight_change.js';
+import { flashBurn } from './zap.js';
 import { makeBlinded, makeStunned } from './potion.js';
 import { finishMealMimicry, finishHeroDigestion, getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
@@ -76,7 +76,7 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource } from './muse.js';
 import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeSourceStartup } from './startup.js';

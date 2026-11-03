@@ -23,7 +23,6 @@ src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
 src/js/confused_loot.ts	pickup.c
 src/js/context_menu.ts	cmd.c
-src/js/corpse_revival.ts	zap.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
@@ -45,6 +44,7 @@ src/js/encumbrance.ts	pickup.c
 src/js/engrave.ts	engrave.c
 src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
+src/js/enlightenment_attributes.ts	insight.c
 src/js/enlightenment_background.ts	insight.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
@@ -63,8 +63,8 @@ src/js/gold_throw.ts	dothrow.c
 src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
-src/js/hero_breath.ts	zap.c
 src/js/hero_drop.ts	do.c
+src/js/hero_expulsion.ts	monmove.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
@@ -79,13 +79,10 @@ src/js/hero_polymorph_trap.ts	trap.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
-src/js/hero_self_zap.ts	zap.c
 src/js/hero_status.ts	insight.c
 src/js/horn_of_plenty.ts	mkobj.c
-src/js/ice.ts	zap.c
 src/js/ident.ts	mkobj.c
 src/js/immediate_monster_magic.ts	mon.c
-src/js/immediate_zap.ts	zap.c
 src/js/individual_naming.ts	do_name.c
 src/js/input.ts	cmd.c
 src/js/isaac64.ts	isaac64.c
@@ -142,7 +139,6 @@ src/js/projectile.ts	dothrow.c
 src/js/projectile_bars.ts	monmove.c
 src/js/punishment.ts	read.c
 src/js/quest.ts	quest.c
-src/js/ray_attack.ts	zap.c
 src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
 src/js/rebind_keys.ts	cmd.c
@@ -159,7 +155,6 @@ src/js/rust_trap.ts	trap.c
 src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
 src/js/shknam.ts	shknam.c
-src/js/sight_change.ts	zap.c
 src/js/skills.ts	weapon.c
 src/js/sleep_gas_trap.ts	trap.c
 src/js/sp_lev.ts	sp_lev.c
@@ -178,7 +173,6 @@ src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c
 src/js/throne.ts	sit.c
-src/js/thrown_object.ts	zap.c
 src/js/timeout.ts	timeout.c
 src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
@@ -188,14 +182,12 @@ src/js/transient_light.ts	light.c
 src/js/trap.ts	trap.c
 src/js/tty_prompts.ts	cmd.c
 src/js/two_weapon.ts	wield.c
-src/js/undead_turning.ts	zap.c
 src/js/vault.ts	vault.c
 src/js/vibrating_square_trap.ts	trap.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
 src/js/wield.ts	wield.c
 src/js/wintty.ts	wintty.c
-src/js/wish.ts	zap.c
 src/js/wizard.ts	wizard.c
 src/js/worm.ts	worm.c
 src/js/worn.ts	worn.c

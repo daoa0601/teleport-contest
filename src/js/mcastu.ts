@@ -23,8 +23,10 @@ import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, 
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { discoverHeroReflectionSource, heroReflectionSource } from './ray.js';
-import { flashBurn } from './sight_change.js';
+import { discoverHeroReflectionSource, heroReflectionSource } from './muse.js';
+
+import { flashBurn } from './zap.js';
+
 import { makeBlinded } from './potion.js';
 import { rndcurse } from './throne.js';
 import { returnHeroToHumanForm } from './polyself.js';

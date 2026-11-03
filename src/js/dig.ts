@@ -27,6 +27,7 @@ import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpo
 import { depth, dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { expelHero } from './hero_expulsion.js';
+
 import { freeInventoryObject } from './hero_inventory.js';
 import { woundHeroLegs } from './hero_legs.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
@@ -70,7 +71,8 @@ import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import { captureRayTraversalFrame } from './ray.js';
+import { captureRayTraversalFrame } from './zap.js';
+
 import { endObjectBurn } from './timeout.js';
 import { displayMessageWindow } from './tty_topline.js';
 import type { MapLocation, Position, Stairway, Trap } from './map_types.js';

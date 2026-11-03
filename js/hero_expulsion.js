@@ -2,15 +2,12 @@
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 import { moveMonsterNextToHero } from './teleport.js';
 import { setHeroGrip } from './hero_grip.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
 import { heroFormSticks } from './polyself.js';
-import { heroIsBlind } from './senses.js';
 import { RLOC_NOMSG } from './const.js';
-import { MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly, monsterHasNoHands, } from './monster_data.js';
+import { MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly, } from './monster_data.js';
 import { AD_COLD, AD_ELEC, AD_STCK, AT_ENGL, AT_HUGS, } from './monster_attack_types.js';
 import { docrt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -43,34 +40,6 @@ export function holdingMonsterName(monster, state = game) {
 export function holdingMonsterSubject(monster, state = game) {
     const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
-}
-// C zap.c:release_hold(). Magical opening releases either creature's grip,
-// or expels the hero with the ordinary landing effects when swallowed.
-export async function releaseHold(state = game) {
-    requireLiveGame(state);
-    const monster = state.u.ustuck;
-    if (!monster) {
-        await impossible('release_hold when not held?', { state });
-        return { died: false };
-    }
-    if (state.u.uswallow) {
-        if (monsterDigests(monster))
-            await plineWithContinuation(heroIsBlind(state)
-                ? formatFeltMessage('a sudden rush of air!', state)
-                : `${monsterName(monster, { state, capitalized: true })} opens its mouth!`);
-        return await expelHero(monster, { state });
-    }
-    if (heroFormSticks(state)) {
-        setHeroGrip(null, state);
-        await plineWithContinuation(`You release ${monsterName(monster, { state })}.`);
-    }
-    else {
-        await releaseHeroFromMonster(monster, { state });
-        const name = monsterName(monster, { state });
-        await plineWithContinuation(`You are released ${monsterHasNoHands(monster.mnum)
-            ? `by ${name}` : `from ${possessiveName(name)} grasp`}.`);
-    }
-    return { died: !!state.program_state.gameover };
 }
 // C mon.c:unstuck(). Release a hold without moving the monster or applying
 // expulsion landing effects; death and departure use this same boundary.

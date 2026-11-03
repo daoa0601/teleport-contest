@@ -27,7 +27,7 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { requireInitializedGame } from './gstate.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { rn2, rnd } from './rng.js';
-import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
+import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
 import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './dothrow.js';
 import { offerThrownFood } from './thrown_food.js';

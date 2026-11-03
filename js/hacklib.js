@@ -96,4 +96,9 @@ export function ordinalSuffix(number) {
         return 'th';
     return digit === 1 ? 'st' : digit === 2 ? 'nd' : 'rd';
 }
+// C hacklib.c:mungspaces() over one getlin line: tabs become spaces, runs
+// collapse, and leading/trailing spaces vanish.
+export function mungWishSpaces(text) {
+    return text.replace(/\t/g, ' ').replace(/ +/g, ' ').trim();
+}
 //# sourceMappingURL=hacklib.js.map

@@ -26,6 +26,7 @@ import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { drainHeroEnergy, petrifyMonsterImmediately, resetHeroTrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
+
 import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
 import { resetOccupations } from './occupation_reset.js';
 import { endObjectBurn } from './timeout.js';

@@ -16,6 +16,7 @@ import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { heroHandName, monsterStomachName } from './body_parts.js';
 import { monsterDigests } from './monster_data.js';
 import { holdingMonsterName } from './hero_expulsion.js';
+
 import { inventoryItemDescription } from './invent.js';
 import {
     objectMonsterName, ownedObjectAction, observeObjectForNaming,
