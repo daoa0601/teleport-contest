@@ -17,7 +17,7 @@ import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { buryObject } from '../js/dig.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
-import { useHeroHide } from '../js/hero_hide.js';
+import { useHeroHide } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import {
     CHEST, DAGGER, HELMET, POT_FRUIT_JUICE, POT_SICKNESS, ROCK,

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { recordAchievement } from '../js/achievements.js';
+import { recordAchievement } from '../js/insight.js';
 import { ACH_MINE_PRIZE, ACH_SHOP } from '../js/const.js';
 import { LUCKSTONE } from '../js/object_data.js';
 import { freshTurnRoom } from './support/playable-room.js';

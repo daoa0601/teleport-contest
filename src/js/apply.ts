@@ -67,7 +67,7 @@ import { zapHeroWithObject } from './zap.js';
 import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { heroStatusLine } from './hero_status.js';
+import { heroStatusLine } from './insight.js';
 import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetHeroTrap, maketrap } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';

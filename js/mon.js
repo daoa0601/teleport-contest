@@ -65,7 +65,7 @@ import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { finishScheduledLevelChange } from './level_change.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
 import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
 import { displayMessageWindow } from './tty_topline.js';

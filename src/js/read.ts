@@ -48,7 +48,8 @@ import { chargeAlteredUnpaidObject, deleteObject, objectTypeKnown, updateUnpaidO
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { cansee, couldsee } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
-import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath, listGenocided } from './end.js';
+import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
+import { listGenocided } from './insight.js';
 import type { DeathHandler } from './end.js';
 import { mksobj } from './mkobj.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

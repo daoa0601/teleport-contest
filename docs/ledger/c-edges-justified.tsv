@@ -987,7 +987,7 @@ rhack	dxdy_moveok	inlined	grid-bug diagonal rejection in dispatchMovement (cmd.t
 rhack	end_of_input	inlined	empty/ESC input returns via resetCommandVariables (cmd.ts rhack)
 rhack	set_occupation	inlined	prepareTimedCommand installs game._occupation (cmd.ts)
 status_enlightenment	cause_known	inlined	fromWhat(...) suffixes report the cause (insight.ts, attribute_provenance.ts)
-status_enlightenment	enlght_combatinc	inlined	combatIncrement rows (insight.ts, enlightenment_attributes.ts)
+status_enlightenment	enlght_combatinc	inlined	combatIncrement rows (insight.ts)
 status_enlightenment	enlght_line	inlined	message() closure pushes contracted rows (insight.ts statusEnlightenmentLines)
 status_enlightenment	enlght_out	inlined	section rows are printed by the enlightenment overlay (insight.ts)
 status_enlightenment	udeadinside	inlined	"feel X inside" phrase after self-genocide (insight.ts, polyself.ts)
@@ -1332,8 +1332,8 @@ use_towel	Blindf_off	inlined	removeEyewear(null) removes the worn towel (weapon.
 use_towel	gulp_blnd_check	inlined	gulpBlindnessCheck (weapon.ts)
 weight_cap	acurr	inlined	currentAttribute(A_STR) in the capacity formula (weight.ts via properties.ts)
 weight_cap	acurrstr	inlined	currentStrength for exceptional strength (weight.ts)
-youhiding	enlght_line	inlined	hiding rows push contracted lines (hero_hide.ts)
-youhiding	t_at	inlined	traps.find for the pit description (hero_hide.ts)
+youhiding	enlght_line	inlined	hiding rows push contracted lines (insight.ts)
+youhiding	t_at	inlined	traps.find for the pit description (insight.ts)
 adjattrib	encumber_msg	inlined	reportHeroEncumbrance after STR changes; CON cannot change the band (attrib.ts)
 adjust_split	digit	inlined	digit keys parsed in readInventorySplitCount (cmd.ts)
 Armor_off	dragon_armor_handling	inlined	removeArmorProperties drops color-specific extras (armor.ts)
@@ -1796,7 +1796,7 @@ grapple_range	uwep_skill_type	inlined	Callers pass hookSkill to hookRange; hookS
 use_grapple	uwep_skill_type	inlined	hookSkill selects active two-weapon proficiency or the wielded hook's flail proficiency for range and aim (apply.ts)
 basics_enlightenment	enlght_line	inlined	basicsEnlightenmentLines constructs the present/past lines; insight.ts contracts and displays them
 basics_enlightenment	enlght_out	inlined	basicsEnlightenmentLines returns the ordered headings and lines to insight.ts for display
-basics_enlightenment	money_cnt	inlined	goldInsightLines uses heroGoldAmount to find the carried coin stack (enlightenment_background.ts)
+basics_enlightenment	money_cnt	inlined	goldInsightLines uses heroGoldAmount to find the carried coin stack (insight.ts)
 can_hide_under_obj	t_at	inlined	canMonsterHideUnderObjectAt finds the coordinate-matching trap in level.traps
 can_twoweapon	cant_wield_corpse	n/a	TWOWEAPOK rejects corpses before this branch, as the native comment states
 can_twoweapon	drop_uswapwep	inlined	canBeginTwoWeaponCombat calls dropSecondaryWeapon for cursed or slippery offhand weapons (two_weapon.ts)
@@ -1842,8 +1842,8 @@ stop_occupation	maybe_finished_meal	inlined	stopHeroOccupation checks the food o
 tiphat	dist2	inlined	acknowledgeHelmetTip uses adjacent coordinate differences, equivalent to next2u squared distance below three
 untwoweapon	update_inventory	n/a	The pinned 80x24 tty has no permanent inventory window
 update_mlstmv	iter_mons	inlined	updateMonsterLastMove visits only positive-HP monsters with MON_FLOOR state, matching iter_mons admission
-ustatusline	align_str	inlined	heroStatusLine formats lawful, neutral, chaotic or unaligned from the hero alignment (hero_status.ts)
-ustatusline	fingers_or_gloves	inlined	heroStatusLine chooses the equipped gloves simple name or plural current-form fingers (hero_status.ts)
+ustatusline	align_str	inlined	heroStatusLine formats lawful, neutral, chaotic or unaligned from the hero alignment (insight.ts)
+ustatusline	fingers_or_gloves	inlined	heroStatusLine chooses the equipped gloves simple name or plural current-form fingers (insight.ts)
 watch_dig	get_iter_mons	inlined	watchDigging finds the newest living on-map watch member that sees the hero and is peaceful (digging_watch.ts)
 CapitalMon	init_CapMons	inlined	CAPITALIZED_MONSTER_TITLES builds the real and bogus capitalized type-name table in objnam.ts; native allocation and the DEBUGFILES-only name dump have no runtime counterpart
 cmdbind_add	alloc	n/a	CommandBindings.add constructs managed binding records instead of allocating a native list node
@@ -2056,7 +2056,7 @@ dodown	glyph_to_cmap	n/a	stairway records replace glyph inspection (cmd.ts)
 dodown	goto_hell	inlined	the Gehennom descent resolves through gotoLevel (level_change.ts)
 fmt_elapsed_time	getnow	n/a	fixed recorder clock leaves realtime at zero, the line reads "none" (insight.ts)
 fmt_elapsed_time	timet_delta	n/a	fixed recorder clock leaves realtime at zero, the line reads "none" (insight.ts)
-attributes_enlightenment	reorder_fruit	n/a	wizard-mode display sort of carried fruit; inventory order unchanged (enlightenment_attributes.ts)
+attributes_enlightenment	reorder_fruit	n/a	wizard-mode display sort of carried fruit; inventory order unchanged (insight.ts)
 find_montype	rn2	inlined	the neutral-name gender draw happens at creation (randomGender, sp_lev.ts createLuaMonster), not at name resolution (des.ts monsterTypeForName)
 find_objtype	def_char_to_objclass	inlined	the class letter resolves through OBJECT_CLASS_SYMBOLS/objectClassForType (des.ts objectTypeForName)
 get_table_align	get_table_option	inlined	the align option is a direct string mapping (sp_lev.ts luaSpecialAlignment)

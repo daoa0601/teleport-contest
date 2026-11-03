@@ -12,7 +12,7 @@ import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import { exerciseWisdom } from './attrib.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { BOGUS_MONSTERS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS, TRUE_RUMORS } from './random_text_data.js';
 import { showTextWindow } from './windows.js';
 import { flushPendingTopline } from './tty_topline.js';

@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { MENU_TRADITIONAL, STONING } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { useHeroHide } from '../js/hero_hide.js';
+import { useHeroHide } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { autopickupAtHero, pickupAtHero } from '../js/pickup.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

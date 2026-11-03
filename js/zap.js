@@ -114,7 +114,7 @@ import { setHeroGrip } from './hero_grip.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
-import { heroStatusLine } from './hero_status.js';
+import { heroStatusLine } from './insight.js';
 import { mergeObjectStacks } from './invent.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep } from './mhitm.js';

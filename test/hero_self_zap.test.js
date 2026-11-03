@@ -11,7 +11,7 @@ import { game } from '../js/gstate.js';
 import { zapHeroWithObject } from '../js/zap.js';
 import { heroHasRemovableSpeed } from '../js/mhitu.js';
 import { speedUpHero } from '../js/potion.js';
-import { heroStatusLine } from '../js/hero_status.js';
+import { heroStatusLine } from '../js/insight.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_UNCHANGING, CHEST, DIAMOND, MEATBALL, OBJECT_NAMES, POT_FRUIT_JUICE, POT_SICKNESS, ROCK, SPE_EXTRA_HEALING, SPE_HEALING, SPE_STONE_TO_FLESH, SPEED_BOOTS, WAN_CANCELLATION, WAN_COLD, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_OPENING, WAN_PROBING, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STRIKING, } from '../js/object_data.js';

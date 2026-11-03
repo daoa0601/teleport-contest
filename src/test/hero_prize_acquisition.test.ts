@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { achievementEntries } from '../js/achievements.js';
+import { achievementEntries } from '../js/insight.js';
 import { rhack } from '../js/cmd.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { remove_object } from '../js/floor_object.js';

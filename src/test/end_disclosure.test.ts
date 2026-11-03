@@ -6,7 +6,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { finishOrdinaryDeath, listGenocided, vanquishedLines } from '../js/end.js';
+import { finishOrdinaryDeath } from '../js/end.js';
+import { listGenocided, vanquishedLines } from '../js/insight.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

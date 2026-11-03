@@ -9,10 +9,10 @@ import { formatFeltMessage } from './hero_speech.js';
 import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
-import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE } from './const.js';
-import { verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
+import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT } from './const.js';
+import { corpseName, simpleObjectTypeName, verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-import { ACID_VENOM, BLINDING_VENOM, OBJECT_SUBTYPE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, CORPSE, OBJECT_SUBTYPE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS } from './object_data.js';
 import { heroNeckName } from './body_parts.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
@@ -33,6 +33,8 @@ import { monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
+import { levelHasCeiling } from './dungeon.js';
+import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { removeEyewear } from './eyewear.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
@@ -54,7 +56,7 @@ import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
 import { reportHeroEncumbrance } from './pickup.js';
-import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, monsterHasEyes, monsterHasProperName, monsterIsAmphibious, monsterIsBreathless, monsterIsEel, monsterIsHumanoid, monsterPassesWalls, monsterPerceives } from './monster_data.js';
+import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, monsterHasEyes, monsterHasProperName, monsterIsAmphibious, monsterIsBreathless, monsterIsEel, monsterIsHumanoid, monsterPassesWalls, monsterPerceives, monsterDigests } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
 import { isFlimsyObject } from './object_properties.js';
@@ -67,7 +69,7 @@ import { nameToMonster, resolveMonsterClass, speciesCanBlow } from './mondata.js
 import { getLine, promptYesNo } from './query.js';
 import { yn_function } from './cmd.js';
 import { cureHeroSickness, heroIsSick } from './potion.js';
-import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
+import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './do.js';
@@ -2352,5 +2354,139 @@ export function genocideDeathOptions(cause) {
             break;
     }
     return { killer, deathCause: `killed by ${description}`, deathType: GENOCIDED, deathLineShown: true };
+}
+// Hiding with #monster while polymorphed.
+// C refs: cmd.c domonability(), polyself.c dohide(), insight.c youhiding().
+// C polyself.c:dohide(): the #monster hide action (cmd.c:domonability()).
+// C insight.c:youhiding() lives in insight.js; dohide() calls it for the
+// "already hiding"/"now hiding" feedback, as in C.
+const M1_HUMANOID = 0x00020000;
+function heroHidingAbility(state) {
+    const form = heroMonsterForm(state);
+    if (form == null)
+        return null;
+    const hidesUnder = heroFormHidesUnderObjects(state);
+    const hidesWithoutCover = heroFormHidesWithoutCover(state);
+    if (!hidesUnder && !hidesWithoutCover)
+        return null;
+    const flying = heroIsFlying(state);
+    return {
+        form,
+        hidesUnder,
+        mimic: MONSTER_SYMBOL[form] === S_MIMIC,
+        flying,
+        onCeiling: flying || heroFormClings(state),
+    };
+}
+export function heroHasHidingAbility(state = game) {
+    return !!heroHidingAbility(state);
+}
+async function revealHero(ability, state, refresh) {
+    state.u.uundetected = 0;
+    if (ability.mimic)
+        state.u.m_ap_type = M_AP_NOTHING;
+    await refresh(state.u.ux, state.u.uy);
+}
+function heldReason(state) {
+    const holder = state.u.ustuck;
+    if (!holder)
+        return 'trapped';
+    if (state.u.uswallow)
+        return monsterDigests(holder) ? 'swallowed' : 'engulfed';
+    if (!heroFormSticks(state))
+        return 'being held';
+    return ((MONSTER_FLAGS1[holder.mnum] ?? 0) & M1_HUMANOID)
+        ? 'holding someone' : 'holding that creature';
+}
+export function floorObjects(state) {
+    return state.level?.objects?.[state.u.ux]?.[state.u.uy] || [];
+}
+function petrifyingCorpseCover(objects) {
+    const first = objects[0];
+    if (!first || first.corpsenm === undefined || objects.some(object => object.otyp !== CORPSE || object.corpsenm === undefined
+        || !touchPetrifies(object.corpsenm))) {
+        return null;
+    }
+    const count = objects.reduce((total, object) => total + (object.quan ?? object.quantity ?? 1), 0);
+    // C polyself.c:dohide() appends plur(count) to cxname(top), even when
+    // the top object's own quantity already pluralized the corpse name.
+    const corpse = corpseName(first);
+    return count === 1 ? withIndefiniteArticle(corpse) : `${corpse}s`;
+}
+function sameLevel(left, right) {
+    return !!left && !!right
+        && left.dnum === right.dnum && left.dlevel === right.dlevel;
+}
+function isAirLevel(state) {
+    return sameLevel(state.u.uz, state.air_level);
+}
+function isWaterLevel(state) {
+    return sameLevel(state.u.uz, state.water_level);
+}
+export async function useHeroHide({ state = game, publish = plineWithContinuation, die = finishHeroDeath, refresh = newsym, } = {}) {
+    const ability = heroHidingAbility(state);
+    if (!ability)
+        return { used: false, spentTime: false };
+    const trapped = state.u.utrap
+        && (state.u.utraptype !== TT_PIT || ability.onCeiling);
+    if (state.u.ustuck || trapped) {
+        await publish(`You can't hide while you're ${heldReason(state)}.`);
+        if (state.u.uundetected
+            || (ability.mimic
+                && (state.u.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING)) {
+            await revealHero(ability, state, refresh);
+        }
+        return { used: true, spentTime: false, reason: 'blocked' };
+    }
+    const objects = floorObjects(state);
+    if (ability.hidesUnder && !objects.length) {
+        state.u.uundetected = 0;
+        await publish('There is nothing to hide under here.');
+        return { used: true, spentTime: false, reason: 'no-cover' };
+    }
+    const corpseCover = ability.hidesUnder
+        && !state.u.stoneResistance
+        ? petrifyingCorpseCover(objects) : null;
+    if (corpseCover) {
+        await publish(`Hiding under ${corpseCover} is a fatal mistake...`);
+        await publish('You turn to stone...');
+        const died = await die({
+            killer: `hiding under ${corpseCover}`,
+            deathVerb: 'turned to stone',
+            deathLineShown: true,
+            deathType: STONING,
+        });
+        if (!died)
+            state.u.uundetected = 0;
+        return { used: true, spentTime: true, died: !!died };
+    }
+    if (ability.onCeiling && !levelHasCeiling(state)) {
+        state.u.uundetected = 0;
+        await publish('There is nowhere to hide above you.');
+        return { used: true, spentTime: false, reason: 'no-ceiling' };
+    }
+    if (!ability.flying && heroFormHidesWithoutCover(state)
+        && (isAirLevel(state) || isWaterLevel(state))) {
+        state.u.uundetected = 0;
+        await publish('There is nowhere to hide beneath you.');
+        return { used: true, spentTime: false, reason: 'no-floor' };
+    }
+    const alreadyHidden = state.u.uundetected
+        || (ability.mimic
+            && (state.u.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING);
+    if (alreadyHidden) {
+        await publish(`You are already ${heroHidingStatus(state)}.`);
+        return { used: true, spentTime: false, reason: 'already-hidden' };
+    }
+    if (ability.mimic) {
+        state.u.m_ap_type = M_AP_OBJECT;
+        state.u.mappearance = STRANGE_OBJECT;
+    }
+    else {
+        state.u.uundetected = 1;
+    }
+    await refresh(state.u.ux, state.u.uy);
+    await publish(`You are now ${heroHidingStatus(state)}.`);
+    return { used: true, spentTime: true };
 }
 //# sourceMappingURL=polyself.js.map
