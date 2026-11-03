@@ -7,7 +7,8 @@ import { messageTypeFor } from './message_types.js';
 import { truncatePlineMessage, truncateRawMessage } from './pline_text.js';
 import { displayMessageWindow, rememberToplines, replaceTopline, updateTopline, } from './tty_topline.js';
 import { nhgetch } from './input.js';
-import { BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir, isok, } from './const.js';
+import { BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
+import { isok } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
 // C pline.c:set_msg_dir(). The next vpline consumes the location, even when hidden.
 export function set_msg_dir(direction) {

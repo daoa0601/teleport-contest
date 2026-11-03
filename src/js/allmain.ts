@@ -3,7 +3,7 @@ import type { ArmorCompletion } from './cmd.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
-import { dolookaround } from './lookaround.js';
+import { dolookaround } from './cmd.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';

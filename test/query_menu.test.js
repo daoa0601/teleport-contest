@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { chooseSpiderAbility } from '../js/polyself.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { promptYesNo, promptYesNoAllQuit, yn_function } from '../js/query.js';
+import { promptYesNo, promptYesNoAllQuit } from '../js/query.js';
+import { yn_function } from '../js/cmd.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function enableQueryMenu() {
     freshPlayableRoom();

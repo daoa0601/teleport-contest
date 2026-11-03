@@ -15,7 +15,7 @@ import { clearMessageWindow } from './tty_topline.js';
 import { consumeHallucinatedMenuObjectGlyph } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
-import { yn_function } from './query.js';
+import { yn_function } from './cmd.js';
 import { heroHandName } from './body_parts.js';
 
 import { possessiveName } from './hacklib.js';

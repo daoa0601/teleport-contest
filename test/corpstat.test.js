@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, MM_FEMALE, MM_MALE, NO_MINVENT, isok, } from '../js/const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_GENDER, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, MM_FEMALE, MM_MALE, NO_MINVENT } from '../js/const.js';
+import { isok } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { mkcorpstat } from '../js/mkobj.js';
 import { createMonsterRemains, finishEnvironmentalMonsterDeath } from '../js/mon.js';

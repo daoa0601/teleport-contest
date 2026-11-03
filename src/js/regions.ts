@@ -5,9 +5,8 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 
-import {
-    ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, isok,
-} from './const.js';
+import { ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd } from './const.js';
+import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';

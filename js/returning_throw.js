@@ -2,7 +2,8 @@
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { artifactById } from './artifacts.js';
 import { heroArmName, heroFootName } from './body_parts.js';
-import { KILLED_BY, W_QUIVER, W_WEP, isok } from './const.js';
+import { KILLED_BY, W_QUIVER, W_WEP } from './const.js';
+import { isok } from './cmd.js';
 import { flush_screen, newsym, transientObjectGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';

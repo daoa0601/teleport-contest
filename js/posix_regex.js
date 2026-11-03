@@ -4,7 +4,7 @@
 export class PosixRegex {
     expression;
     constructor(pattern) {
-        this.expression = new EreParser(cStringBytes(pattern)).parse();
+        this.expression = new EreParser(cStringBytes(pattern)).parseExpression();
     }
     test(text) {
         const bytes = cStringBytes(text);
@@ -28,7 +28,7 @@ class EreParser {
     constructor(pattern) {
         this.pattern = pattern;
     }
-    parse() {
+    parseExpression() {
         return this.alternatives(false);
     }
     alternatives(inGroup) {

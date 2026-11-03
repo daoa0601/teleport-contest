@@ -24,10 +24,8 @@ export interface GoldThrowOptions extends GoldContactCallbacks {
     dz?: number;
     captureFlight?: ProjectileFlightCapture | null;
 }
-import {
-    A_CHA, DOOR, D_CLOSED, D_LOCKED, Is_airlevel, Is_waterlevel,
-    LOST_THROWN, ZAP_POS, isok,
-} from './const.js';
+import { A_CHA, DOOR, D_CLOSED, D_LOCKED, Is_airlevel, Is_waterlevel, LOST_THROWN, ZAP_POS } from './const.js';
+import { isok } from './cmd.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { withIndefiniteArticle } from './objnam.js';
 

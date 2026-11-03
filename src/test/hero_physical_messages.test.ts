@@ -17,7 +17,7 @@ import {
 } from '../js/object_data.js';
 import { deleteObject } from '../js/shk.js';
 import { setMonsterSpecies } from '../js/mondata.js';
-import { terrainCommand } from '../js/terrain_view.js';
+import { terrainCommand } from '../js/cmd.js';
 import { rayMissMessage } from '../js/ray_hit_message.js';
 import { makeBlinded } from '../js/potion.js';
 import { artifactObject, knownObject } from './support/game-objects.js';

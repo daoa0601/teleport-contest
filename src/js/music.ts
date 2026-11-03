@@ -46,7 +46,7 @@ import { askForTune, playTune } from './passtune.js';
 import { heroCanBlow, heroFormSticks } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection } from './cmd.js';
 import { zapRayWithObject, monsterResistsEffect } from './zap.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

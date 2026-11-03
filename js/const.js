@@ -1917,11 +1917,6 @@ export const MAXDUNGEON = 16;
 export const MAXLEVEL = 32;
 // MAXOCLASSES: canonical home is objects.js; MAXMCLASSES: canonical home is symbols.js
 export const ROOMOFFSET = 3;
-// Check if position is within map bounds
-// C ref: cmd.c isok() — x >= 1 && x <= COLNO-1 && y >= 0 && y <= ROWNO-1
-export function isok(x, y) {
-    return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
-}
 // Check terrain type helpers (rm.h)
 export function IS_WALL(typ) {
     // C ref: rm.h — IS_WALL(typ) ((typ) && (typ) <= DBWALL)

@@ -143,10 +143,12 @@ ULEVEL = [('u.ulevel', INT, 'game.u.ulevel')]
 RNG = 'js/rng.js'
 CONST = 'js/const.js'
 HACKLIB = 'js/hacklib.js'
+CMD = 'js/cmd.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
 JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
-            'js/uhitm.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js')
+            'js/uhitm.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js',
+            CMD)
 
 SPECS = [
     Spec('rn2', 'rn2', 'rn2', [('x', INT)], pre=lambda s: [s['x'] >= 1],
@@ -211,11 +213,11 @@ def coordinate_domain(s, names):
 
 SPECS += [
     Spec('isok', 'isok', 'isok', [('x', INT), ('y', INT)],
-         require_counterexamples=True, js_file=CONST,
+         require_counterexamples=True, js_file=CMD,
          pre=lambda s: coordinate_domain(s, ('x', 'y')),
          probes=[('x narrows to coordxy', lambda s: [s['x'] == 65537, s['y'] == 0])],
-         mutants=[(CONST, 'return x >= 1 && x <= COLNO - 1',
-                   'return x >= 0 && x <= COLNO - 1')]),
+         mutants=[(CMD, 'return x >= 1 && x <= COLNO - 1',
+                  'return x >= 0 && x <= COLNO - 1')]),
     Spec('online2', 'online2', 'pointsOnline', [(name, INT) for name in ('x0', 'y0', 'x1', 'y1')],
          require_counterexamples=True, js_file=HACKLIB,
          pre=lambda s: coordinate_domain(s, ('x0', 'y0', 'x1', 'y1')),

@@ -1,5 +1,6 @@
 // C ref: sp_lev.c get_location(), get_location_coord(), is_ok_location().
-import { IS_OBSTRUCTED, Is_waterlevel, SPACE_POS, COLNO, ROWNO, isok } from './const.js';
+import { IS_OBSTRUCTED, Is_waterlevel, SPACE_POS, COLNO, ROWNO } from './const.js';
+import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { somexy } from './mkroom.js';

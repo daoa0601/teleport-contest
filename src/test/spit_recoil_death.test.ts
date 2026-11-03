@@ -10,7 +10,7 @@ import assert from 'node:assert/strict';
 import { STONE } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import type { DirectionSelection } from '../js/tty_prompts.js';
+import type { DirectionSelection } from '../js/cmd.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { heroSpitAttack, useHeroSpit } from '../js/polyself.js';

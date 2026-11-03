@@ -3,7 +3,8 @@ import { currency } from './currency.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 import { deleteTrap } from './trap.js';
-import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS, isok, } from './const.js';
+import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';
+import { isok } from './cmd.js';
 import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';

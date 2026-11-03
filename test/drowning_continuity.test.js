@@ -10,7 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
-import { promptDirection } from '../js/tty_prompts.js';
+import { promptDirection } from '../js/cmd.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { startRun } from '../js/cmd.js';

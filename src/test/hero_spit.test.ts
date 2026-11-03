@@ -1,6 +1,6 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { requireFixtureGame } from './support/game-state.js';
-import type { DirectionSelection } from '../js/tty_prompts.js';
+import type { DirectionSelection } from '../js/cmd.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

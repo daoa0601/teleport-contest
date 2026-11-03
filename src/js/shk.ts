@@ -45,51 +45,8 @@ import {
     mnearto,
     resistConflict
 } from './mon.js';
-import {
-    A_CHA,
-    A_WIS,
-    M_AP_NOTHING,
-    M_AP_MONSTER,
-    M_AP_TYPE,
-    MMOVE_NOTHING,
-    PL_NSIZ,
-    ROOMOFFSET,
-    SHOPBASE,
-    Upolyd,
-    MGIVENNAME,
-    LL_ACHIEVE,
-    G_GONE,
-    isok,
-    MM_NOMSG,
-    LOW_PM,
-    DOOR,
-    D_BROKEN,
-    HUNGRY,
-    QBUFSZ,
-    MENU_FULL,
-    MENU_TRADITIONAL,
-    MIGR_APPROX_XY,
-    IS_DOOR,
-    SVALL,
-    SDOOR,
-    IS_STWALL,
-    IS_TREE,
-    IS_ROOM,
-    BOLT_LIM,
-    RLOC_NOMSG,
-    RLOC_MSG,
-    D_CLOSED,
-    ZAP_POS,
-    LANDMINE,
-    BEAR_TRAP,
-    HOLE,
-    PIT,
-    SPIKED_PIT,
-    IS_WALL,
-    TT_PIT,
-    W_SWAPWEP,
-    W_QUIVER
-} from './const.js';
+import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER } from './const.js';
+import { isok } from './cmd.js';
 
 
 import { moveSpecial, specialMoverSeesHero } from './priest.js';

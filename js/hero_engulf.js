@@ -19,7 +19,7 @@ import { burnAwayHeroSlime } from './hack.js';
 import { drainHeroEnergy, petrifyMonsterImmediately, resetHeroTrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
 import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
-import { resetOccupations } from './occupation_reset.js';
+import { resetOccupations } from './cmd.js';
 import { endObjectBurn } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { monsterName } from './do_name.js';

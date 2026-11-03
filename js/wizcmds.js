@@ -11,8 +11,9 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, 
 import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { getLine, paranoidQuery, promptYesNoQuit, yn_function, promptChoice, promptYesNo } from './query.js';
-import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
+import { paranoidQuery, yn_function } from './cmd.js';
+import { promptDirection, readDirectionKey } from './cmd.js';
 import { visibleCommandKey, setMulti } from './cmd.js';
 import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, objectNeedsFullIdentification, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { askTeleportDestination } from './teleport.js';

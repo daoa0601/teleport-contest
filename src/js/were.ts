@@ -22,7 +22,7 @@ import {
     heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero,
     returnHeroToHumanForm,
 } from './polyself.js';
-import { paranoidQuery } from './query.js';
+import { paranoidQuery } from './cmd.js';
 import { rn2, rnd } from './rng.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import { heroIsDeaf } from './senses.js';

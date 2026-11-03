@@ -42,7 +42,7 @@ import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { detectTraps } from './detect.js';
-import { ynSingleKey } from './tty_prompts.js';
+import { ynSingleKey } from './cmd.js';
 import { loseHeroHp } from './hack.js';
 
 const ROCK_CLASS = 14;

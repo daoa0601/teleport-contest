@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CommandBindings } from '../js/command_bindings.js';
 import { pushKeys } from '../js/input.js';
-import { promptDirection } from '../js/tty_prompts.js';
+import { promptDirection } from '../js/cmd.js';
 import { selectMapPosition } from '../js/getpos.js';
 import { doOptions } from '../js/options.js';
 import { startLuaCore } from './support/lua-game.js';

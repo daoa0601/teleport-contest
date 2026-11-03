@@ -1,8 +1,7 @@
 // Terrain generation shared by ordinary mazes and Lua maze instructions.
 // C ref: mkmaze.c:create_maze(), walkfrom(), maze_remove_deadends().
-import {
-    ACCESSIBLE, COLNO, CORR, HWALL, IS_DOOR, ROOM, ROWNO, STONE, isok,
-} from './const.js';
+import { ACCESSIBLE, COLNO, CORR, HWALL, IS_DOOR, ROOM, ROWNO, STONE } from './const.js';
+import { isok } from './cmd.js';
 import { game, requireGameLevel } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';

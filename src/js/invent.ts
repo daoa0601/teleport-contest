@@ -13,15 +13,16 @@ import { clearMessageWindow, flushPendingTopline, putMessageHistory, showMessage
 import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { showChoiceWindow, showInventoryWindow, showMultiSelectWindow } from './windows.js';
 import type { InventoryMenuItem, InventorySection, InventorySelection, MultiSelectSection } from './windows.js';
-import { nhgetch, readchar } from './input.js';
+import { nhgetch } from './input.js';
+import { readchar } from './cmd.js';
 import { chooseInventoryObject, compactInventoryLetters, reassignInventoryLetters } from './inventory_prompt.js';
 import { commandResultCancelled, commandResultFailed } from './cmd.js';
 import { assignInventoryLetter, inventoryLetterRank } from './u_init.js';
 
 import { unlinkObject, deallocateObject, absorbGlob } from './mkobj.js';
 
-import { ynSingleKey } from './tty_prompts.js';
-import { keyText } from './prevmsg.js';
+import { ynSingleKey } from './cmd.js';
+import { keyText } from './cmd.js';
 
 import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, LOST_THROWN } from './const.js';
 import type { GameFlags } from './flags.js';
@@ -35,7 +36,8 @@ import { definiteName, objectCombatName, objectLooksUnique, objectName, objectNa
 import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, objectClassForType, observeObject, objectMaterial } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { recorderSort } from './recorder_sort.js';
-import { getLine, promptYesNoAllQuit, yn_function } from './query.js';
+import { getLine, promptYesNoAllQuit } from './query.js';
+import { yn_function } from './cmd.js';
 import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, ammunitionMatchesLauncher, isBlade, isPolearm } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';

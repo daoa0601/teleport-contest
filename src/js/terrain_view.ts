@@ -1,4 +1,5 @@
-// C cmd.c:doterrain(), detect.c:reveal_terrain()/reveal_terrain_getglyph().
+// C detect.c:reveal_terrain()/reveal_terrain_getglyph(); cmd.c:doterrain()
+// lives in cmd.ts.
 import {
     COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE,
     TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE,
@@ -27,38 +28,8 @@ import {
     tty_end_menu, tty_select_menu, tty_start_menu,
 } from './tty_menu.js';
 
-// C cmd.c:doterrain().
-export async function terrainCommand(): Promise<void> {
-    recordMappedOverviewState();
-    const window = tty_create_nhwindow<number>(NHW_MENU);
-    await tty_start_menu(window);
-    const choices = ['known map without monsters, objects, and traps',
-        'known map without monsters and objects', 'known map without monsters'];
-    if (game.flags.explore || game.flags.debug)
-        choices.push('full map without monsters, objects, and traps');
-    if (game.flags.debug) choices.push('internal levl[][].typ codes in base-36',
-        'legend of base-36 levl[][].typ codes');
-    for (const [index, text] of choices.entries()) tty_add_menu(window, {
-        identifier: index + 1, text,
-        itemflags: index === 0 ? MENU_ITEMFLAGS_SELECTED : 0,
-    });
-    tty_end_menu(window, 'View which?');
-    const result = await tty_select_menu(window, PICK_ONE);
-    await tty_destroy_nhwindow(window);
-    if (!result.cancelled) {
-        const which = result.selections.find(selection => selection.identifier !== 1)?.identifier ?? 1;
-        if (which === 5) await showTerrainCodes();
-        else if (which === 6) await showTerrainCodeLegend();
-        else {
-            const subset = which === 4 ? TER_MAP | TER_FULL
-                : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
-            await revealTerrain(subset);
-        }
-    }
-    game.context.move = 0;
-}
 
-async function revealTerrain(subset: number): Promise<void> {
+export async function revealTerrain(subset: number): Promise<void> {
     const hero = game.u;
     const full = !!(subset & TER_FULL);
     if (!full && (heroIsHallucinating(game) || hero.stunned || hero.stunnedTurns

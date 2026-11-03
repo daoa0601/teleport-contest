@@ -67,11 +67,12 @@ import { findDrawbridgeAt } from './dbridge.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
-import { promptDirection, promptKey, readDirectionKey, restoreCommandMap } from './tty_prompts.js';
+import { promptKey } from './tty_prompts.js';
+import { promptDirection, readDirectionKey, restoreCommandMap } from './cmd.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
-import { showExtendedCommandList } from './extended_commands.js';
+import { showExtendedCommandList } from './cmd.js';
 import { option_help } from './options.js';
 import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
@@ -80,6 +81,16 @@ import { shouldShowGetposTip, showGetposTip } from './hack.js';
 // getpos.c:getpos(), pager.c:do_screen_description().
 // Farlook spends no game time. Ordinary look retains its cursor between
 // selections; quick look returns after describing one selection.
+// C do_screen_description(looked=TRUE) supplies the same firstmatch to
+// #lookaround and show_glyph()'s accessibility notice.
+export async function describeMapLocation(x: number, y: number): Promise<string> {
+    const screen = screenDescription(x, y, '');
+    return screen.needsDetail
+        ? await farlookLocationDescription(x, y) || screen.firstMatch
+        : screen.firstMatch;
+}
+
+
 // C pager.c:doquickwhatis(): the quick-glance command.
 export async function doFarlook(quick = true): Promise<void> {
     const savedVerbose = game.flags.verbose;

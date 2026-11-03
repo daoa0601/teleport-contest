@@ -1,6 +1,7 @@
 // C display.c:xy_set_wall_state() and set_wall_state().
 import { game, requireGameLevel } from './gstate.js';
-import { BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, HWALL, IS_STWALL, ROWNO, SCORR, SDOOR, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, WM_MASK, WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR, isok, } from './const.js';
+import { BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, HWALL, IS_STWALL, ROWNO, SCORR, SDOOR, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, WM_MASK, WM_X_BL, WM_X_BLTR, WM_X_BR, WM_X_TL, WM_X_TLBR, WM_X_TR } from './const.js';
+import { isok } from './cmd.js';
 export function setWallStateAt(x, y) {
     const loc = requireGameLevel().at(x, y);
     if (!loc)

@@ -57,7 +57,8 @@ import { stopObjectTimer } from './timeout.js';
 import { heroHasNoHands } from './polyself.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { d, rn2 } from './rng.js';
-import { paranoidYesNoQuit, promptChoice, tty_yn_function } from './query.js';
+import { promptChoice, tty_yn_function } from './query.js';
+import { paranoidYesNoQuit } from './cmd.js';
 
 
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';

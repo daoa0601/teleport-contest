@@ -62,7 +62,7 @@ import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './breath_ray.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection } from './cmd.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero } from './hero_hurtle.js';
@@ -85,7 +85,8 @@ import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius 
 import { endObjectBurn, learnEggType } from './timeout.js';
 import { heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { nameToMonster, resolveMonsterClass, speciesCanBlow } from './mondata.js';
-import { getLine, promptYesNo, yn_function } from './query.js';
+import { getLine, promptYesNo } from './query.js';
+import { yn_function } from './cmd.js';
 import { cureHeroSickness, heroIsSick } from './potion.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
 import { retouchEquipment } from './hero_retouch.js';

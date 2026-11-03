@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doprevMessage } from '../js/prevmsg.js';
+import { doprevMessage } from '../js/cmd.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';

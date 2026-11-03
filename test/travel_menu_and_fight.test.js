@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
-import { doprevMessage } from '../js/prevmsg.js';
+import { doprevMessage } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroArmor } from '../js/do_wear.js';

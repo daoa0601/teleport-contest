@@ -1,6 +1,7 @@
 // Native display.c:tmp_at(). Each active effect owns its saved positions,
 // so nested effects keep independent trails without global display state.
-import { COLNO, isok } from './const.js';
+import { COLNO } from './const.js';
+import { isok } from './cmd.js';
 import { flush_screen, newsym, show_glyph_cell, zapdir_to_glyph } from './display.js';
 import { game } from './gstate.js';
 import { cansee } from './vision.js';

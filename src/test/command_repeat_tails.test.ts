@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { readCommandInput } from '../js/cmd.js';
-import { readchar } from '../js/input.js';
+import { readchar } from '../js/cmd.js';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { freshTurnRoom } from './support/playable-room.js';

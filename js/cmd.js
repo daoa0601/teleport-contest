@@ -1,58 +1,54 @@
-import { selectContextMenu } from './context_menu.js';
-import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, bringLeashedFollowers } from './apply.js';
+import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
+import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { doname, monsterName } from './do_name.js';
-import { doannotate, doDungeonOverview } from './dungeon.js';
+import { doannotate, doDungeonOverview, recordMappedOverviewState } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
 import { doloot, pickupAtHero, tipCommand, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
-import { doclose, doopen, continuePicking, continueForceLock, doforce } from './lock.js';
+import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick } from './lock.js';
 import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, bucAdjectiveForName, ddoinv, dolook } from './invent.js';
-import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, GETOBJ_SUGGEST, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, isok } from './const.js';
-import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, readchar, takeCommandResponse } from './input.js';
+import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, GETOBJ_SUGGEST, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM } from './const.js';
+import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, takeCommandResponse, MAP_CLICK_KEY, inputGate } from './input.js';
 import { setHeroGrip } from './hero_grip.js';
-import { resetOccupations } from './occupation_reset.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spellbook_study.js';
-import { clearMessageWindow } from './tty_topline.js';
+import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { surfaceName } from './terrain_name.js';
-import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile } from './pager.js';
+import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { attackHostileMonster } from './uhitm.js';
-import { monsterAtPosition, doride, stuckSteed } from './steed.js';
-import { observeBucForNaming, withIndefiniteArticle } from './objnam.js';
+import { monsterAtPosition, doride, stuckSteed, monsterSaddle } from './steed.js';
+import { observeBucForNaming, withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
 import { descendFromLevitation } from './levitation_commands.js';
-import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip } from './hack.js';
+import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip, shouldShowGetposTip } from './hack.js';
 import { propertyIsActive } from './properties.js';
 import { gotoLevel } from './level_change.js';
 import { inventoryReport } from './inventory_reports.js';
 import { isContainer } from './container.js';
-import { dolookaround } from './lookaround.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
-import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { stopHeroOccupation } from './occupation.js';
 import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { terrainCommand } from './terrain_view.js';
-import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition } from './getpos.js';
-import { availableExtendedCommands, commandDescription, completeExtendedCommand, extendedCommandMenu, showExtendedCommandList } from './extended_commands.js';
+import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
+import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { promptDirection, promptKey, restoreCommandMap } from './tty_prompts.js';
-import { showTextWindow } from './windows.js';
+import { paintKeyPrompt, promptKey } from './tty_prompts.js';
+import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
-import { paranoidQuery, promptYesNo } from './query.js';
-import { flush_screen, docrt } from './display.js';
-import { pline, plineWithContinuation, setTopline } from './pline.js';
-import { doprevMessage, messageWindowMode } from './prevmsg.js';
+import { promptYesNo } from './query.js';
+import { flush_screen, docrt, canSpotMonster, glyphAt } from './display.js';
+import { pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy } from './pline.js';
+import { messageWindowMode, CTRL_P, redotoplin, showMessageHistoryWindow, stepHistoryBack } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './zap.js';
@@ -73,8 +69,8 @@ import { dropHeroObject } from './hero_drop.js';
 import { dropMultipleObjects } from './drop_menu.js';
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { isPick } from './object_properties.js';
-import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY } from './object_data.js';
-import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling } from './monster_data.js';
+import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
+import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling, monsterCanBeSaddled } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -88,6 +84,17 @@ import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './skills.js';
 import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { dokick } from './dokick.js';
+import { rn1, rn2, rnd } from './rng.js';
+import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
+import { heroCanReachFloor } from './engrave.js';
+import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description } from './selvar.js';
+import { floorObjectDescription } from './floor_object_display.js';
+import { cansee, couldsee } from './vision.js';
+import { blockingTerrain } from './mthrowu.js';
+import { revealTerrain } from './terrain_view.js';
+import { truncateRawMessage } from './pline_text.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';
@@ -95,6 +102,10 @@ const DIR_DX = { h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1 };
 const DIR_DY = { h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1 };
 function isMovementKey(ch) {
     return ch.length === 1 && 'hjklyubn'.includes(ch);
+}
+// C cmd.c:isok() — x >= 1 && x <= COLNO-1 && y >= 0 && y <= ROWNO-1
+export function isok(x, y) {
+    return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
 }
 function configuredCommand(key) {
     key &= 255;
@@ -1059,6 +1070,39 @@ export async function travelStairs(up) {
         game.context.move = 1;
     return changed !== false;
 }
+// C cmd.c:doterrain().
+export async function terrainCommand() {
+    recordMappedOverviewState();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    const choices = ['known map without monsters, objects, and traps',
+        'known map without monsters and objects', 'known map without monsters'];
+    if (game.flags.explore || game.flags.debug)
+        choices.push('full map without monsters, objects, and traps');
+    if (game.flags.debug)
+        choices.push('internal levl[][].typ codes in base-36', 'legend of base-36 levl[][].typ codes');
+    for (const [index, text] of choices.entries())
+        tty_add_menu(window, {
+            identifier: index + 1, text,
+            itemflags: index === 0 ? MENU_ITEMFLAGS_SELECTED : 0,
+        });
+    tty_end_menu(window, 'View which?');
+    const result = await tty_select_menu(window, PICK_ONE);
+    await tty_destroy_nhwindow(window);
+    if (!result.cancelled) {
+        const which = result.selections.find(selection => selection.identifier !== 1)?.identifier ?? 1;
+        if (which === 5)
+            await showTerrainCodes();
+        else if (which === 6)
+            await showTerrainCodeLegend();
+        else {
+            const subset = which === 4 ? TER_MAP | TER_FULL
+                : TER_MAP | (which >= 2 ? TER_TRP : 0) | (which >= 3 ? TER_OBJ : 0);
+            await revealTerrain(subset);
+        }
+    }
+    game.context.move = 0;
+}
 async function doTerrainOverview() {
     await terrainCommand();
 }
@@ -1283,6 +1327,312 @@ function contextMenuResponses(selection) {
         case 'up':
         case 'wait': return;
     }
+}
+const FOOD_CLASS = 7;
+// C cmd.c:there_cmd_menu_common().
+// C cmd.c:there_cmd_menu_far().
+export async function selectContextMenu(x, y, click) {
+    const entries = [];
+    const add = (action, text) => entries.push({ action, text });
+    const dx = x - game.u.ux, dy = y - game.u.uy;
+    const self = dx === 0 && dy === 0;
+    const adjacent = Math.max(Math.abs(dx), Math.abs(dy)) <= 1;
+    if (self)
+        await selfEntries(add, x, y);
+    else if (adjacent)
+        adjacentEntries(add, x, y, click);
+    else if (click === CLICK_1) {
+        if (canThrowToward(x, y)
+            && dx * dx + dy * dy < 18 * 18)
+            add('throw', 'Throw something');
+        add('travel', 'Travel here');
+    }
+    if ((click === CLICK_1 || click === CLICK_2) && (!self || unusualHeroGlyph()))
+        add('look-at', 'Look at map symbol');
+    if (!entries.length) {
+        // getdir's ordinary keyboard direction has no click modifier. With
+        // no contextual action, native queues movement or travel directly.
+        return adjacent && heroTestMove(x, y) ? { action: 'move', x, y }
+            : game.flags.travel !== false ? { action: 'travel', x, y } : null;
+    }
+    if (entries.length === 1 && entries[0]?.action === 'attack')
+        return { action: 'attack', x, y };
+    clearMessageWindow();
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (const entry of entries)
+        tty_add_menu(window, { identifier: entry.action, text: entry.text });
+    tty_end_menu(window, 'What do you want to do?');
+    const result = await tty_select_menu(window, PICK_ONE);
+    await tty_destroy_nhwindow(window);
+    const action = result.selections[0]?.identifier;
+    return action ? { action, x, y } : null;
+}
+// C linedup(..., 1): boulders do not obstruct an explicitly chosen throw.
+function canThrowToward(x, y) {
+    requirePlayingGame(game);
+    const dx = game.u.ux - x, dy = game.u.uy - y;
+    if (dx && dy && Math.abs(dx) !== Math.abs(dy)
+        || Math.max(Math.abs(dx), Math.abs(dy)) >= BOLT_LIM)
+        return false;
+    if (couldsee(x, y))
+        return true;
+    do {
+        x += Math.sign(dx);
+        y += Math.sign(dy);
+        if (blockingTerrain(game, x, y))
+            return false;
+    } while (x !== game.u.ux || y !== game.u.uy);
+    return true;
+}
+// C cmd.c:there_cmd_menu_self().
+async function selfEntries(add, x, y) {
+    const level = requireGameLevel();
+    const terrain = level.requireAt(x, y).typ;
+    if ((terrain === FOUNTAIN || terrain === SINK) && heroCanReachFloor())
+        add('quaff', `Drink from the ${terrain === FOUNTAIN ? 'fountain' : 'sink'}`);
+    if (terrain === FOUNTAIN && heroCanReachFloor())
+        add('dip', 'Dip something into the fountain');
+    if (terrain === THRONE)
+        add('sit', 'Sit on the throne');
+    if (terrain === ALTAR)
+        add('offer', 'Sacrifice something on the altar');
+    for (let stair = game.stairs; stair; stair = stair.next) {
+        if (stair.sx !== x || stair.sy !== y)
+            continue;
+        add(stair.up ? 'up' : 'down', `Go ${stair.up ? 'up' : 'down'} the ${stair.isladder ? 'ladder' : 'stairs'}`);
+        break;
+    }
+    if (game.u.usteed)
+        add('dismount', `Dismount ${monsterName(game.u.usteed, { article: 'the', suppressSaddle: true })}`);
+    const pile = level.objects[x]?.[y] ?? [];
+    const first = pile[0];
+    if (first) {
+        add('pickup', `Pick up ${pile.length > 1 ? 'items' : await menuObjectName(first)}`);
+        if (isContainer(first)) {
+            add('loot', `Loot ${await menuObjectName(first)}`);
+            add('tip', `Tip ${await menuObjectName(first)}`);
+        }
+        if (first.oclass === FOOD_CLASS)
+            add('eat', `Eat ${await menuObjectName(first)}`);
+    }
+    if (game.inventory.length) {
+        add('inventory', 'Inventory');
+        add('drop', 'Drop items');
+    }
+    add('wait', 'Rest one turn');
+    add('search', 'Search around you');
+    add('look', 'Look at what is here');
+    if (game.spells.length)
+        add('cast', 'Cast a spell');
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap?.tseen && trap.ttyp !== VIBRATING_SQUARE)
+        add('untrap-here', 'Attempt to disarm trap');
+}
+async function menuObjectName(object) {
+    observeObjectForNaming(object);
+    return floorObjectDescription(object);
+}
+// C cmd.c:there_cmd_menu_next2u().
+function adjacentEntries(add, x, y, click) {
+    const level = requireGameLevel();
+    const location = level.requireAt(x, y);
+    if (location.typ === DOOR) {
+        if (location.doormask & (D_CLOSED | D_LOCKED)) {
+            add('open', 'Open the door');
+            const key = game.inventory.some(object => object.otyp === SKELETON_KEY || object.otyp === LOCK_PICK);
+            if (key || game.inventory.some(object => object.otyp === CREDIT_CARD))
+                add('lock', key ? 'Lock or unlock the door' : 'Unlock the door');
+            add('untrap-door', 'Search the door for a trap');
+            add('kick', 'Kick the door');
+        }
+        else if (location.doormask & D_ISOPEN && click === CLICK_2)
+            add('close', 'Close the door');
+    }
+    if (location.typ <= SCORR)
+        add('search', 'Search for secret doors');
+    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+    if (trap?.tseen) {
+        add('showtrap', 'Examine trap');
+        if (trap.ttyp !== VIBRATING_SQUARE)
+            add('untrap', 'Attempt to disarm trap');
+        add('move', 'Move on the trap');
+    }
+    if (location.remembered_glyph?.glyph === GlyphOffset.object + BOULDER)
+        add('move', 'Push the boulder');
+    const occupant = monsterAtPosition(level, x, y);
+    const monster = occupant && canSpotMonster(occupant) ? occupant : null;
+    if (monster && monsterSaddle(monster)) {
+        const name = monsterName(monster, { article: 'the', suppressSaddle: true });
+        if (!game.u.usteed)
+            add('ride', `Ride ${name}`);
+        add('remove-saddle', `Remove saddle from ${name}`);
+    }
+    if (monster && monsterCanBeSaddled(monster) && !monsterSaddle(monster)
+        && game.inventory.some(object => object.otyp === SADDLE))
+        add('saddle', `Put saddle on ${monsterName(monster, { article: 'the' })}`);
+    if (monster && (monster.mpeaceful || monster.mtame)) {
+        add('chat', `Talk to ${monsterName(monster, { article: 'the' })}`);
+        add('move', `Swap places with ${monsterName(monster, { article: 'the' })}`);
+        add('name', `${monster.mgivenname || monster.mextra?.mgivenname ? 'Rename' : 'Name'} ${monsterName(monster, { article: 'the' })}`);
+    }
+    if (monster && !(monster.mpeaceful || monster.mtame) || glyphAt(x, y)?.glyph === GlyphOffset.invisible)
+        add('attack', `Attack ${monster ? monsterName(monster, { article: 'the' }) : 'unseen creature'}`);
+}
+function unusualHeroGlyph() {
+    const hero = game.u;
+    if (Upolyd(hero))
+        return true;
+    const species = game.flags.showrace ? game.urace?.mnum : hero.umonnum;
+    if (species === undefined)
+        throw new Error('A contextual hero menu requires an initialized species');
+    const glyph = (game.flags.female ? GlyphOffset.monFemale : GlyphOffset.monMale) + species;
+    return glyphAt(hero.ux, hero.uy)?.glyph !== glyph;
+}
+// ── #lookaround (C cmd.c:dolookaround() and its selection helpers) ─────
+// C cmd.c:dolookaround_floodfill_findroom(): the room flood-fill boundary.
+// A missing map cell behaves like solid rock and stops the fill.
+function lookaroundFloodFillFindRoom(x, y) {
+    const typ = game.level?.at(x, y)?.typ ?? 0;
+    return !(IS_STWALL(typ) || IS_DOOR(typ) || IS_TREE(typ)
+        || IS_WATERWALL(typ) || typ === LAVAWALL || typ === IRONBARS
+        || typ === SCORR || typ === SDOOR || typ === DRAWBRIDGE_UP);
+}
+// C cmd.c:u_have_seen_whole_selection(): no selected square still shows the
+// unexplored glyph.
+function haveSeenWholeSelection(selection) {
+    const bounds = selection_getbounds(selection);
+    for (let x = bounds.lx; x <= bounds.hx; x++)
+        for (let y = bounds.ly; y <= bounds.hy; y++)
+            if (isok(x, y) && selection_getpoint(x, y, selection)) {
+                const glyph = glyphAt(x, y);
+                if (!glyph || glyph.glyph === GlyphOffset.unexplored)
+                    return false;
+            }
+    return true;
+}
+// C cmd.c:u_have_seen_bounds_selection(): the rectangular outline of the
+// selection has been seen, even when its interior has not.
+function haveSeenBoundsSelection(selection) {
+    const bounds = selection_getbounds(selection);
+    for (let x = bounds.lx; x <= bounds.hx; x++) {
+        for (const y of [bounds.ly, bounds.hy])
+            if (isok(x, y) && selection_getpoint(x, y, selection)) {
+                const glyph = glyphAt(x, y);
+                if (!glyph || glyph.glyph === GlyphOffset.unexplored)
+                    return false;
+            }
+    }
+    for (let y = bounds.ly; y <= bounds.hy; y++) {
+        for (const x of [bounds.lx, bounds.hx])
+            if (isok(x, y) && selection_getpoint(x, y, selection)) {
+                const glyph = glyphAt(x, y);
+                if (!glyph || glyph.glyph === GlyphOffset.unexplored)
+                    return false;
+            }
+    }
+    return true;
+}
+// C cmd.c:u_can_see_whole_selection().
+function canSeeWholeSelection(selection) {
+    const bounds = selection_getbounds(selection);
+    for (let x = bounds.lx; x <= bounds.hx; x++)
+        for (let y = bounds.ly; y <= bounds.hy; y++)
+            if (isok(x, y) && selection_getpoint(x, y, selection)
+                && !cansee(x, y))
+                return false;
+    return true;
+}
+// C cmd.c:lookaround_known_room(): describe the room containing x,y.
+async function lookaroundKnownRoom(x, y) {
+    const selection = selection_new();
+    selection_floodfill(selection, x, y, true, lookaroundFloodFillFindRoom);
+    const heroHere = game.u.ux === x && game.u.uy === y;
+    if (!heroHere)
+        set_msg_xy(x, y);
+    // C reads the hero's own room membership, even when describing an
+    // adjacent room from a doorway.
+    const roomNumber = (game.u.urooms?.[0] ?? 0) - ROOMOFFSET;
+    const noun = roomNumber >= 0 ? 'room' : 'area';
+    const size = withIndefiniteArticle(selection_size_description(selection));
+    if (haveSeenWholeSelection(selection)) {
+        const inside = !!selection_getpoint(x, y, selection);
+        const verb = heroHere
+            ? inside && canSeeWholeSelection(selection) ? 'are in' : 'remember this as'
+            : 'remember that as';
+        await pline(`You ${verb} ${size} ${noun}.`);
+    }
+    else if (haveSeenBoundsSelection(selection)) {
+        await pline(`You guess ${heroHere ? 'this' : 'that'} to be ${size} ${noun}.`);
+    }
+    else {
+        await pline(`You can't guess the size of ${heroHere ? 'this' : 'that'} area.`);
+    }
+}
+// C cmd.c:dolookaround(): the #lookaround extended command.  Describes the
+// hero's room (or the rooms beside a doorway, or nothing in a corridor),
+// then every seen interesting square plus remembered corridors.  Messages
+// carry the accessiblemsg "(north,3east): " location prefix.
+export async function dolookaround() {
+    const savedFilter = game.iflags.getloc_filter;
+    const savedAccessible = game.flags.accessiblemsg;
+    game.flags.accessiblemsg = true;
+    try {
+        const heroType = game.level?.at(game.u.ux, game.u.uy)?.typ;
+        let corridorNextToHero = false;
+        if (heroType === CORR) {
+            // In a corridor, mention corridors next to you.
+            corridorNextToHero = true;
+        }
+        else if (heroType !== undefined && IS_DOOR(heroType)) {
+            // In a doorway, describe the rooms next to you.
+            for (let direction = DIR_W; direction < N_DIRS; direction += 2) {
+                const dx = xdir[direction], dy = ydir[direction];
+                if (dx === undefined || dy === undefined)
+                    throw new RangeError(`Invalid direction ${direction}`);
+                const x = game.u.ux + dx;
+                const y = game.u.uy + dy;
+                if (isok(x, y) && IS_ROOM(game.level?.at(x, y)?.typ ?? 0))
+                    await lookaroundKnownRoom(x, y);
+            }
+            corridorNextToHero = true;
+        }
+        else {
+            await lookaroundKnownRoom(game.u.ux, game.u.uy);
+        }
+        game.iflags.getloc_filter = GFILTER_VIEW;
+        for (let y = 0; y < ROWNO; y++) {
+            for (let x = 1; x < COLNO; x++) {
+                const glyph = glyphAt(x, y);
+                const symbol = glyph ? glyphToCmapSymbol(glyph.glyph) : null;
+                // In a corridor or doorway, remembered corridors count even
+                // beyond the current view.  (GLOC_INTERESTING itself catches
+                // S_engrcorr.)
+                const isCorridor = corridorNextToHero && symbol !== null
+                    && (symbol === CmapSymbol.corr || symbol === CmapSymbol.litcorr);
+                if (x === game.u.ux && y === game.u.uy)
+                    continue;
+                if (!(gatherLocsInteresting(x, y, GLOC_INTERESTING) || isCorridor))
+                    continue;
+                // do_screen_description() with looked=TRUE: the detailed
+                // lookat() description replaces the symbol explanation
+                // whenever the screen symbol is ambiguous.
+                const firstMatch = await describeMapLocation(x, y);
+                await pline_xy(x, y, `${firstMatch}.`);
+            }
+        }
+    }
+    finally {
+        if (savedFilter === undefined)
+            delete game.iflags.getloc_filter;
+        else
+            game.iflags.getloc_filter = savedFilter;
+        if (savedAccessible === undefined)
+            delete game.flags.accessiblemsg;
+        else
+            game.flags.accessiblemsg = savedAccessible;
+    }
+    game.context.move = 0;
 }
 // windows.c:getlin() frees only the popped command entry, so any key or
 // direction C queued behind it stays queued for the next pop. Several
@@ -1833,6 +2183,207 @@ async function editExtendedCommand() {
         await pline(`${initiator}${normalizedCommand.slice(0, 60)}: unknown extended command.`);
     return selected ?? null;
 }
+// ── Extended-command list and autocomplete (C cmd.c:doextlist(),
+//    extcmd_via_menu(), parseautocomplete(), handler_change_autocompletions()) ──
+// C cmd.c:parseautocomplete() flips the AUTOCOMPLETE flag on individual
+// extcmdlist entries at runtime. The generated command table is immutable,
+// so configuration adjustments live in this overlay.
+const autocompleteOverrides = new Map();
+export function setCommandAutocomplete(name, enabled) {
+    const command = NATIVE_COMMANDS.find(entry => entry.name === name);
+    if (command && enabled === !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE))
+        autocompleteOverrides.delete(name);
+    else
+        autocompleteOverrides.set(name, enabled);
+}
+// One native process parses one rc file; the overrides must not outlive an
+// engine start in this port.
+export function resetCommandAutocomplete() {
+    autocompleteOverrides.clear();
+}
+export function commandAutocompletes(command) {
+    const override = command.name !== null ? autocompleteOverrides.get(command.name) : undefined;
+    return override !== undefined ? override : !!(command.flags & NATIVE_COMMAND_FLAGS.AUTOCOMPLETE);
+}
+// C cmd.c:count_autocompletions() counts changes from the compiled defaults.
+export function countCommandAutocompletions() {
+    return autocompleteOverrides.size;
+}
+// This editor includes wizard commands even during ordinary play, as C does.
+// C cmd.c:handler_change_autocompletions().
+export async function changeCommandAutocompletions() {
+    const commands = NATIVE_COMMANDS.filter(command => command.name !== null
+        && command.name.length >= 2
+        && !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE | NATIVE_COMMAND_FLAGS.INTERNALCMD)));
+    const window = tty_create_nhwindow(NHW_MENU);
+    await tty_start_menu(window);
+    for (const command of commands) {
+        tty_add_menu(window, { identifier: command,
+            text: `${autocompleteOverrides.has(command.name ?? '') ? '*' : ' '} ${command.name}: ${commandDescription(command)}`,
+            itemflags: commandAutocompletes(command) ? MENU_ITEMFLAGS_SELECTED : 0 });
+    }
+    tty_end_menu(window, 'Which commands autocomplete?');
+    const result = await tty_select_menu(window, PICK_ANY);
+    await tty_destroy_nhwindow(window);
+    if (result.cancelled)
+        return;
+    const selected = new Set(result.selections.map(item => item.identifier));
+    for (const command of commands) {
+        if (command.name !== null)
+            setCommandAutocomplete(command.name, selected.has(command));
+    }
+}
+export function availableExtendedCommands() {
+    return NATIVE_COMMANDS.filter(command => command.name !== null
+        && !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE | NATIVE_COMMAND_FLAGS.INTERNALCMD))
+        && (game.flags.debug || !(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD)));
+}
+export function commandDescription(command) {
+    // update_rest_on_space() binds its own wait entry with a distinct description.
+    if (command.name === 'wait' && command.key === 32)
+        return "rest one move via 'rest_on_space' option";
+    return COMMAND_DESCRIPTIONS.get(command.name ?? '') ?? '';
+}
+// C cmd.c:extcmd_via_menu().
+export async function extendedCommandMenu() {
+    let prefix = '';
+    let biggest = 0;
+    for (;;) {
+        const choices = availableExtendedCommands().filter(command => commandAutocompletes(command) && command.name?.startsWith(prefix));
+        if (choices.length <= 1)
+            return choices[0] ?? null;
+        biggest = Math.max(biggest, ...choices.map(command => commandDescription(command).length));
+        const window = tty_create_nhwindow(NHW_MENU);
+        await tty_start_menu(window);
+        const onePerLine = choices.length < ROWNO - 3;
+        let previous = '', text = '', count = 0, wrapped = false;
+        const flush = () => {
+            tty_add_menu(window, { identifier: previous, selector: previous,
+                text: text.padEnd(biggest + 15) });
+        };
+        for (const [index, command] of choices.entries()) {
+            const name = command.name ?? '';
+            const initial = name.charAt(prefix.length);
+            if (initial !== previous || onePerLine)
+                wrapped = false;
+            if (initial !== previous || onePerLine
+                || (count >= 2 && text.length + 4 + name.length >= COLNO - 6)) {
+                if (count) {
+                    flush();
+                    count = 0;
+                    if (initial === previous && !onePerLine)
+                        wrapped = true;
+                }
+            }
+            previous = initial;
+            if (!count || onePerLine)
+                text = `${wrapped ? 'or ' : ''}${name} [${commandDescription(command)}]`;
+            else if (count === 1)
+                text = `${wrapped ? 'or ' : ''}${choices[index - 1]?.name ?? ''} or ${name}`;
+            else
+                text += ` or ${name}`;
+            count++;
+        }
+        if (count)
+            flush();
+        tty_end_menu(window, `Extended Command: ${prefix}`);
+        const result = await tty_select_menu(window, PICK_ONE);
+        await tty_destroy_nhwindow(window);
+        const selected = result.selections[0]?.identifier;
+        if (selected)
+            prefix += selected;
+        else if (prefix)
+            prefix = '';
+        else
+            return null;
+    }
+}
+// A list entry is informational. Only the list controls are selectable.
+// C cmd.c:doc_extcmd_flagstr().
+// C cmd.c:accept_menu_prefix().
+export async function showExtendedCommandList() {
+    let autocompleteOnly = false, oneList = false, search = '';
+    for (;;) {
+        const window = tty_create_nhwindow(NHW_MENU);
+        await tty_start_menu(window);
+        const label = (text) => tty_add_menu(window, { identifier: null, text });
+        const option = (key, text, group = '') => tty_add_menu(window, { identifier: key, selector: key, group, text });
+        label('Extended Commands List');
+        label('');
+        option('a', `Switch to ${autocompleteOnly ? 'including' : 'excluding'} commands that don't autocomplete`);
+        if (!search)
+            option(':', 'Search extended commands', 's');
+        else
+            option('s', `Switch back from search ("${search}")`, ':');
+        if (game.flags.debug)
+            option('z', oneList
+                ? 'Switch to showing debugging commands in separate section'
+                : 'Switch to showing all alphabetically, including debugging commands');
+        label('');
+        let found = 0;
+        for (const wizardSection of oneList || !game.flags.debug ? [false] : [false, true]) {
+            const entries = availableExtendedCommands().map(command => ({
+                command, description: listedCommandDescription(command),
+            })).filter(({ command, description }) => (oneList || !!(command.flags & NATIVE_COMMAND_FLAGS.WIZMODECMD) === wizardSection)
+                && (!autocompleteOnly || commandAutocompletes(command))
+                && (!search || matchesSearch(command.name ?? '', search)
+                    || matchesSearch(description, search)));
+            if (!entries.length)
+                continue;
+            addMenuHeading(window, wizardSection ? 'Debugging Extended Commands' : 'Extended commands');
+            for (const { command, description } of entries) {
+                const markers = `${command.flags & NATIVE_COMMAND_FLAGS.CMD_M_PREFIX ? 'm' : ''}${commandAutocompletes(command) ? 'A' : ''}`;
+                label(` ${(command.name ?? '').padEnd(14)} ${(markers ? `[${markers}]` : '').padStart(4)} ${description}`);
+                found++;
+            }
+            label('');
+        }
+        if (search && !found)
+            label('no matches');
+        else {
+            label('[A] Command autocompletes');
+            label(`[m] Command accepts '${visibleCommandKey(game.commandBindings.keyForCommand('reqmenu'))}' prefix`);
+        }
+        tty_end_menu(window);
+        const result = await tty_select_menu(window, PICK_ONE);
+        await tty_destroy_nhwindow(window);
+        const action = result.selections[0]?.identifier;
+        if (action === 'a')
+            autocompleteOnly = !autocompleteOnly;
+        else if (action === 'z') {
+            oneList = !oneList;
+            search = '';
+        }
+        else if (action === 's')
+            search = '';
+        else if (action === ':') {
+            const phrase = await getLine('Extended command list search phrase?', (_ch, key) => key >= 32);
+            search = phrase?.trim().replace(/\s+/g, ' ') ?? '';
+            if (!search) {
+                game.context.move = 0;
+                return;
+            }
+        }
+        else {
+            game.context.move = 0;
+            return;
+        }
+    }
+}
+// C doextlist() changes the description before both searching and display.
+function listedCommandDescription(command) {
+    const description = commandDescription(command);
+    if (game.flags.debug || game.flags.explore || !(command.flags & NATIVE_COMMAND_FLAGS.GENERALCMD))
+        return description;
+    return description.replace(' been genocided or become extinct', ' been genocided');
+}
+function matchesSearch(text, pattern) {
+    if (text.toLowerCase().includes(pattern.toLowerCase()))
+        return true;
+    const expression = [...pattern].map(character => character === '*' ? '.*'
+        : character === '?' ? '.' : character.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('');
+    return new RegExp(`^${expression}$`, 'i').test(text);
+}
 // C refs: cmd.c dotravel(), getpos.c getpos(), hack.c handle_tip(), and
 // dat/nhcore.lua show_getpos_tip().  The tty message window and the Lua text
 // window own distinct input boundaries; after the tutorial, getpos retains
@@ -1988,6 +2539,174 @@ async function dodrop() {
             setSellDisposition(SELL_NORMAL);
     }
 }
+// ── Key-binding menus (C cmd.c:handler_rebind_keys*(), count_bind_keys(),
+//    get_changed_key_binds()) ────────────────────────────────────────────
+// cmd.c count_bind_keys(): user rebinds plus default keys that no longer
+// have their command bound.
+export function countBindKeys() {
+    const bound = new Set(game.commandBindings.bindings.map(binding => binding.key));
+    let count = 0;
+    for (const binding of game.commandBindings.bindings)
+        if (binding.user && binding.command && binding.command.key !== binding.key)
+            count++;
+    for (const command of NATIVE_COMMANDS)
+        if (command.key && !bound.has(command.key))
+            count++;
+    return count;
+}
+// cmd.c get_changed_key_binds(): the "BIND=key:command" config rows.
+export function changedKeyBindsLines() {
+    const bound = new Set(game.commandBindings.bindings.map(binding => binding.key));
+    const lines = [];
+    for (const binding of game.commandBindings.bindings) {
+        if (!binding.user || !binding.command || binding.command.key === binding.key)
+            continue;
+        const parameter = binding.command.flags & NATIVE_COMMAND_FLAGS.CMD_PARAM
+            && binding.parameter !== null ? `(${binding.parameter})` : '';
+        lines.push(`BIND=${keyText(binding.key)}:${binding.command.name}${parameter}`);
+    }
+    for (const command of NATIVE_COMMANDS)
+        if (command.key && !bound.has(command.key))
+            lines.push(`BIND=${keyText(command.key)}:nothing`);
+    return lines;
+}
+// cmd.c handler_rebind_keys_add(): keyfirst asks for the key before showing
+// the command list, otherwise the key is asked after a command is chosen.
+async function handlerRebindKeysAdd(keyfirst) {
+    let key = 0;
+    if (keyfirst) {
+        await pline('Bind which key? ');
+        renderKeyPrompt('Bind which key? ');
+        key = (await pgetchar()) & 255;
+        if (!key || key === 27)
+            return;
+    }
+    const rows = [];
+    if (key) {
+        const binding = game.commandBindings.lookup(key);
+        rows.push(binding?.command
+            ? { selectable: false, text: `Key '${keyText(key)}' is currently bound to "${binding.command.name}".` }
+            : { selectable: false, text: `Key '${keyText(key)}' is not bound to anything.` });
+        rows.push({ selectable: false, text: '' });
+    }
+    // The unbind row carries identifier -1; command rows keep their
+    // extcmdlist index + 1, as C's add_menu identifiers do.
+    rows.push({ value: -1, text: 'nothing: unbind the key' });
+    rows.push({ selectable: false, text: '' });
+    for (const [index, command] of NATIVE_COMMANDS.entries()) {
+        if (command.flags & (NATIVE_COMMAND_FLAGS.MOVEMENTCMD
+            | NATIVE_COMMAND_FLAGS.INTERNALCMD | NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE))
+            continue;
+        rows.push({ value: index + 1,
+            text: `${command.name}: ${COMMAND_DESCRIPTIONS.get(command.name ?? '') ?? ''}` });
+    }
+    const picks = await showMultiSelectWindow({
+        title: key ? `Bind '${keyText(key)}' to what command?` : 'Bind what command?',
+        omitHeadings: true, pickOne: true, signalEscape: true, pageLocalKeys: true,
+        sections: [{ items: rows }],
+    });
+    if (!picks || !picks.length)
+        return;
+    const pick = picks[0];
+    if (pick === undefined)
+        return;
+    let commandText;
+    let command = null;
+    if (pick === -1) {
+        commandText = 'nothing';
+    }
+    else {
+        command = NATIVE_COMMANDS[pick - 1] ?? null;
+        if (!command)
+            return;
+        if (command.flags & NATIVE_COMMAND_FLAGS.CMD_PARAM) {
+            const answer = await getLine(`Command ${command.name} requires a parameter:`, (_character, keyCode) => keyCode >= 32 && keyCode < 127);
+            // mungspaces() condenses the answer; an ESC stays in the buffer
+            // and ends up inside the binding parameter, as in C.
+            const parameter = (answer ?? '\x1b').replace(/\s+/g, ' ').trim();
+            commandText = `${command.name}(${parameter})`;
+        }
+        else {
+            commandText = command.name ?? '';
+        }
+    }
+    if (!key) {
+        await pline('Bind which key? ');
+        renderKeyPrompt('Bind which key? ');
+        key = (await pgetchar()) & 255;
+        if (!key || key === 27)
+            return;
+    }
+    const previous = game.commandBindings.lookup(key);
+    const result = game.commandBindings.bindKey(key, commandText, true);
+    if (result.error) {
+        // cfgfiles.c:config_erradd() prints interactive errors immediately;
+        // tty_wait_synch() then displays the map without waiting for a key.
+        await pline(`${result.error}${/[.!?]$/.test(result.error) ? '' : '.'}`);
+        await flush_screen(1);
+    }
+    if (result.accepted) {
+        // cmdbind_add() updates an existing binding in place. Its caller
+        // therefore sees the new command through prevcmd too.
+        if (previous?.command && previous.command !== command)
+            await pline(`Changed key '${keyText(key)}' from "${previous.command.name}" to "${commandText}".`);
+        else if (!previous?.command)
+            await pline(`Bound key '${keyText(key)}' to "${commandText}".`);
+    }
+    else {
+        await pline('Key binding failed?!');
+    }
+}
+// cmd.c handler_rebind_keys(): the "Do what?" pick list, redone after every
+// action until it is cancelled.
+export async function handlerRebindKeys() {
+    for (;;) {
+        const rows = [
+            { value: 1, text: 'bind key to a command' },
+            { value: 2, text: 'bind command to a key' },
+        ];
+        if (countBindKeys())
+            rows.push({ value: 3, text: 'view changed key binds' });
+        const picks = await showMultiSelectWindow({
+            title: 'Do what?', omitHeadings: true, pickOne: true, signalEscape: true,
+            pageLocalKeys: true,
+            sections: [{ items: rows }],
+        });
+        if (!picks || !picks.length)
+            return;
+        if (picks[0] === 1)
+            await handlerRebindKeysAdd(true);
+        else if (picks[0] === 2)
+            await handlerRebindKeysAdd(false);
+        else if (picks[0] === 3)
+            await showTextWindow(changedKeyBindsLines());
+    }
+}
+// C cmd.c:parseautocomplete(): splits on the first comma, else the first
+// colon, processes the remainder first, then requires an exact (case
+// sensitive) extended-command name.
+export function parseAutocompleteStatement(value, addRawError) {
+    let separator = value.indexOf(',');
+    if (separator < 0)
+        separator = value.indexOf(':');
+    if (separator >= 0) {
+        parseAutocompleteStatement(value.slice(separator + 1), addRawError);
+        value = value.slice(0, separator);
+    }
+    value = value.replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+    if (!value)
+        return;
+    let condition = true;
+    if (value.startsWith('!')) {
+        value = value.slice(1).replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
+        condition = false;
+    }
+    if (!NATIVE_COMMANDS.some(command => command.name === value)) {
+        addRawError(`Bad autocomplete: invalid extended command '${value}'.`);
+        return;
+    }
+    setCommandAutocomplete(value, condition);
+}
 // ── Runtime command counts and results (C cmd.c:rhack(), reset_cmd_vars()) ──
 // C command handlers return an ECMD_* status which rhack() inspects after
 // the command finishes (cmd.c:3810): ECMD_CANCEL and ECMD_FAIL make it call
@@ -2054,6 +2773,13 @@ export function resetCommandVariables(clearQueues) {
         clearCannedCommands();
         clearRepeatCommand();
     }
+}
+// C cmd.c:reset_occupations(): forget resumable occupation state whose
+// target may have changed since the occupation was interrupted.
+export function resetOccupations(state = game) {
+    resetBulkTakeoff(state);
+    resetPick(state);
+    resetTrapSetting(state);
 }
 // C cmdq_clear(CQ_CANNED): commands and their answers share one queue.
 export function clearCannedCommands(state = game) {
@@ -2128,6 +2854,44 @@ async function readCommandCount() {
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }
+    }
+}
+// C cmd.c:get_count(): only a positive typed count is passed on by getobj.
+// Backspace edits the count; counts above nine are echoed.
+export async function readInventoryCount(firstKey) {
+    let count = 0, key = firstKey, backspaced = false;
+    for (;;) {
+        let showZero = false;
+        if (key >= 48 && key <= 57) {
+            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
+            showZero = key === 48;
+        }
+        else if (key === 8 || key === 127) {
+            if (!count) {
+                putMessageHistory(`Count: ${count} ${keyText(key)}`);
+                return { key, count: 0 };
+            }
+            count = Math.trunc(count / 10);
+            backspaced = true;
+        }
+        else {
+            const finalCount = key === 27 ? 0 : count;
+            // C get_count(GC_SAVEHIST): the final count and the accepting
+            // key join the recall history; Escape breaks with a zero count.
+            putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
+            return { key, count: finalCount };
+        }
+        if (count > 9 || backspaced) {
+            const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;
+            if (count || showZero)
+                backspaced = false;
+            clearMessageWindow();
+            // The echo itself is custompline(SUPPRESS_HISTORY).
+            await setTopline(text);
+            await flush_screen(0);
+            game.nhDisplay?.setCursor(text.length, 0);
+        }
+        key = await readchar();
     }
 }
 // ── Named command keys (C cmd.c:cmd_from_ecname(), cmd_from_func()) ──────
@@ -2261,12 +3025,571 @@ export function rememberYnAnswerKey(key) {
 export function takeRepeatCommand() {
     return game._inDoAgain ? game._repeatCommands?.shift() : undefined;
 }
+const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
+const impairedDirections = [
+    [-1, 0], [0, -1], [1, 0], [0, 1],
+    [-1, -1], [1, -1], [1, 1], [-1, 1],
+];
+// C cmd.c:yn_function(query, (char *) 0, def, TRUE) for a response-free
+// single-key question: cmdq_pop() answers from CQ_REPEAT during do-again
+// without drawing anything, and a live answer is recorded back into
+// CQ_REPEAT for the next do-again.
+export async function ynSingleKey(message, cursorOffset = 0) {
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued) {
+            // A non-key entry clears CQ_CANNED and answers Escape.
+            if (queued.kind !== 'key')
+                clearCannedCommands();
+            return queued.kind === 'key' ? queued.key : 27;
+        }
+    }
+    else {
+        // C cmdq_pop() takes CQ_CANNED here and sets addcmdq FALSE, so a
+        // canned answer never lands in CQ_REPEAT. That one entry decides:
+        // a key answers, a user-input placeholder asks live, and any other
+        // entry — or a canned command reached through an empty response
+        // queue — answers Escape after cmdq_clear(CQ_CANNED).
+        const response = takeCommandResponse();
+        if (typeof response === 'number')
+            return response;
+        if (response === undefined && game._cannedCommands?.length) {
+            clearCannedCommands();
+            return 27;
+        }
+        if (response !== undefined && response !== 'user-input') {
+            clearCannedCommands();
+            return 27;
+        }
+    }
+    // The single cmdq_pop() already happened above (CQ_REPEAT during a
+    // do-again, CQ_CANNED otherwise); CMDQ_USER_INPUT reads live from the
+    // terminal, so the live question never takes another canned entry.
+    const key = await promptKey(message, cursorOffset, { canned: false });
+    rememberYnAnswerKey(key);
+    return key;
+}
+// C cmd.c:getdir() removes its query immediately after receiving a key,
+// before interpreting that key as a direction, cancellation, or help.
+// Its cmdq_pop() at function entry (cmd.c:3962) is consumed once per
+// getdir() call; after the help or redraw retry, every further key comes
+// from readchar() (repeating) or yn_function() (ordinary play), never from
+// the command queue again.
+export async function readDirectionKey(message = 'In what direction? ', retry = false) {
+    // C cmdq_pop() selects CQ_REPEAT during do-again, otherwise CQ_CANNED.
+    if (game._inDoAgain) {
+        const queued = retry ? undefined : takeRepeatCommand();
+        if (queued)
+            return queued.kind === 'key' ? queued.key : 27;
+        // C getdir() bypasses yn_function() while repeating: readchar()
+        // takes the next physical key without painting the question
+        // (cmd.c:3985-3986), and the message line is still cleared
+        // afterwards (cmd.c:4010-4011).
+        const key = (await readchar('direction')) & 255;
+        clearMessageWindow();
+        return key;
+    }
+    const queued = retry ? undefined : takeCommandResponse();
+    if (typeof queued === 'number')
+        return queued;
+    if (typeof queued === 'object')
+        return queuedDirectionKey(queued);
+    if (queued !== undefined) {
+        clearCannedCommands();
+        await impossible('getdir: command queue had no dir?');
+        return 0;
+    }
+    // tty_yn_function() skips an unread topline stopped by Escape, then
+    // clears WIN_STOP before painting its question.
+    if (game._suppressMessagesUntilInput)
+        clearMessageWindow();
+    else
+        await flushPendingTopline();
+    game._suppressMessagesUntilInput = false;
+    await paintKeyPrompt(message);
+    const key = (await readchar('direction')) & 255;
+    if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
+        rememberCommandKey(key);
+    // getdir() asks through yn_function(), whose clean_up rewrites
+    // gt.toplines with the prompt and its recorded answer.
+    game._toplines = `${message}${keyText(key)}`;
+    clearMessageWindow();
+    return key;
+}
+// C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
+// when it needs the direction; other prompts must keep its entry type.
+function queuedDirectionKey({ dx, dy, dz }) {
+    const direction = dz ? zdir.findIndex(z => z === Math.sign(dz))
+        : xdir.findIndex((x, index) => index < N_DIRS && x === dx && ydir[index] === dy);
+    // A distant vector yields DIR_ERR. The pinned recorder reads NUL at
+    // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
+    return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
+}
+export async function promptDirection(readKey = readDirectionKey, { ctrlCommandHint = false } = {}) {
+    let retry = false;
+    for (;;) {
+        const key = await readKey('In what direction? ', retry);
+        retry = true; // the entry cmdq_pop() is spent; retries read fresh keys
+        const code = (typeof key === 'number' ? key : String(key).charCodeAt(0)) & 255;
+        if (game.commandBindings.lookup(code)?.command?.handler === 'doredraw') {
+            // docrt_flags(docrtRefresh) resends the current glyphs without
+            // recalculating vision or choosing new hallucinated forms.
+            game.context.botl = true;
+            await flush_screen(1);
+            continue;
+        }
+        const direction = promptedDirectionKey(code, game.commandBindings);
+        const hero = game.u;
+        if (direction !== '.' && code === game.commandBindings.specialKey('getdir.mouse'))
+            return promptClickDirection();
+        hero.dz = 0;
+        const vector = DIRECTION_KEYS[direction];
+        if (vector) {
+            [hero.dx, hero.dy] = vector;
+            if (hero.umonnum === GRID_BUG && hero.dx && hero.dy) {
+                hero.dx = hero.dy = 0;
+                await pline("You can't orient yourself that direction.");
+                return null;
+            }
+        }
+        else if (direction === '.')
+            hero.dx = hero.dy = 0;
+        else if (direction === '<' || direction === '>') {
+            hero.dx = hero.dy = 0;
+            hero.dz = direction === '<' ? -1 : 1;
+        }
+        else {
+            // C getdir() skips invalid-direction help for all quitchars, including NUL.
+            if ([0, 27, 32, 10, 13].includes(code))
+                return null;
+            const helpRequested = code === game.commandBindings.specialKey('getdir.help');
+            if (helpRequested || game.flags?.cmdassist !== false) {
+                // cmd.c:4101 passes the typed key to help_dir() whenever the
+                // caller prompt starts with '^', explicit help included.
+                const assistPage = directionAssistPage(!helpRequested, ctrlCommandHint ? code : null);
+                await showTextPages([assistPage], {
+                    validKeys: [27, 32, 10, 13],
+                });
+                await restoreCommandMap();
+            }
+            else
+                await pline('What a strange direction!');
+            if (helpRequested)
+                continue;
+            return null;
+        }
+        if (!hero.dz)
+            confusePromptDirection(hero);
+        return { key: direction, dx: hero.dx, dy: hero.dy, dz: hero.dz };
+    }
+}
+// C getdir's simulated click returns directly from getpos: it bypasses
+// both the grid-bug movement restriction and confusion redirection.
+async function promptClickDirection() {
+    const bindings = game.commandBindings;
+    const goal = `desired location, then type '${visibleCommandKey(bindings.specialKey('getpos.pick.quick') ?? 0)}' for left click, '${visibleCommandKey(bindings.specialKey('getpos.pick') ?? 0)}' for right`;
+    const firstUse = shouldShowGetposTip();
+    if (firstUse)
+        await showGetposTip();
+    await showGetposInstructions();
+    if (firstUse)
+        await pline(`Move cursor to ${goal}:`);
+    const selected = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy },
+        prompt: game._pending_message || game._retained_message, goal,
+    });
+    const hero = game.u;
+    if (!selected) {
+        hero.dx = hero.dy = hero.dz = 0;
+        if (game.iflags.getdir_click)
+            game.iflags.getdir_click = 0;
+        return null;
+    }
+    hero.dx = selected.x - hero.ux;
+    hero.dy = selected.y - hero.uy;
+    hero.dz = 0;
+    if (game.iflags.getdir_click) {
+        game.iflags.getdir_click = selected.pickType === LOOK_QUICK
+            || selected.pickType === LOOK_ONCE ? CLICK_1 : CLICK_2;
+    }
+    else {
+        hero.dx = Math.sign(hero.dx);
+        hero.dy = Math.sign(hero.dy);
+    }
+    return { key: '_', dx: hero.dx, dy: hero.dy, dz: hero.dz };
+}
+// C getdir() calls confdir(FALSE) even for self, but never for up/down.
+export function confusePromptDirection(hero, forceImpairment = false) {
+    const stunned = hero.stunned || (hero.stunnedTurns ?? 0) > 0;
+    const confused = hero.confused || (hero.confusionTurns ?? 0) > 0;
+    if (!forceImpairment && !stunned && !(confused && !rn2(5)))
+        return;
+    const count = hero.umonnum === GRID_BUG ? 4 : 8;
+    const vector = impairedDirections[rn2(count)];
+    if (!vector)
+        throw new Error('The confused direction is outside the movement table');
+    [hero.dx, hero.dy] = vector;
+}
+export async function restoreCommandMap() {
+    // The dismissed menu or text window already restored its covered rows.
+    // Release its topline without another redraw or status update.
+    game._pending_message = '';
+    game._retained_message = '';
+}
+// C help_dir(): use the current movement bindings and hide diagonals when
+// the hero's body cannot use them. Explicit help omits the error heading.
+export function directionAssistPage(invalidDirection = true, ctrlHintKey = null) {
+    const bindings = game.commandBindings;
+    const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
+    const lines = invalidDirection ? ['cmdassist: Invalid direction key!', ''] : [];
+    if (ctrlHintKey !== null)
+        lines.push(...controlKeyHintLines(ctrlHintKey));
+    lines.push(`Valid direction keys${game.u.umonnum === GRID_BUG ? ' in your current form' : ''} are:`);
+    if (game.u.umonnum === GRID_BUG) {
+        lines.push(`             ${key(2)}   `, '             |   ', `          ${key(0)}- . -${key(4)}`, '             |   ', `             ${key(6)}   `);
+    }
+    else {
+        lines.push(`          ${key(1)}  ${key(2)}  ${key(3)}`, '           \\ | / ', `          ${key(0)}- . -${key(4)}`, '           / | \\ ', `          ${key(7)}  ${key(6)}  ${key(5)}`);
+    }
+    const self = visibleCommandKey(bindings.specialKey(bindings.numberPad ? 'getdir.self2' : 'getdir.self') ?? 0);
+    lines.push('', '          <  up', '          >  down', `       ${self.padStart(4)}  direct at yourself`);
+    if (invalidDirection)
+        lines.push('', '(Suppress this message with !cmdassist in config file.)');
+    while (lines.length < 23)
+        lines.push('');
+    lines.push('--More--');
+    return { lines, cursor: [8, 23] };
+}
+// C cmd.c:get_adjacent_loc() delegates input and command assistance to
+// getdir(), then turns its relative result into a checked map location.
+export async function getAdjacentLocation(prompt, errorMessage, x, y) {
+    const direction = await promptDirection((_message, retry) => readDirectionKey(`${prompt} `, retry));
+    if (!direction) {
+        await pline('Never mind.');
+        game.context.move = 0;
+        return null;
+    }
+    const { dx, dy, dz } = direction;
+    const target = { x: x + dx, y: y + dy, dx, dy, dz };
+    if (target.x < 1 || target.x >= COLNO
+        || target.y < 0 || target.y >= ROWNO) {
+        if (errorMessage)
+            await pline(errorMessage);
+        game.context.move = 0;
+        return null;
+    }
+    return target;
+}
+// ── Yes/no questions (C cmd.c:yn_function(), yn_function_menu(),
+//    paranoid_ynq(), paranoid_query()) ───────────────────────────────────
+// C cmd.c:yn_function() records the answer key, while yn_number remains
+// the last tty question's value. Replaying '#' does not read another count.
+// Only callers using C's shared response arrays opt into menus: equal text
+// in a local buffer or string literal does not pass yn_menuable_resp().
+export async function yn_function(query, responses, defaultAnswer = '', addCommandQueue = true, { visibleChoices = responses?.split('\x1b')[0] ?? '', menuable = false } = {}) {
+    const queued = addCommandQueue ? takeRepeatCommand() : undefined;
+    let result;
+    if (queued) {
+        // A non-key CQ_REPEAT entry keeps the ESC initializer, and
+        // cmdq_clear(CQ_CANNED) drops every canned command behind it.
+        if (queued.kind !== 'key')
+            clearCannedCommands();
+        const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
+        result = { answer, count: game._ynNumber ?? 0n };
+    }
+    else {
+        // C cmdq_pop() takes CQ_CANNED here, but never while a do-again
+        // replay owns the input. That one entry decides the outcome: a
+        // key answers, a user-input placeholder asks live, and any other
+        // entry — or a canned command reached through an empty response
+        // queue — keeps the ESC initializer while cmdq_clear(CQ_CANNED)
+        // drops the remaining canned entries, so the question is never
+        // shown.
+        const response = addCommandQueue && !game._inDoAgain
+            ? takeCommandResponse() : undefined;
+        const cannedCommand = response === undefined && addCommandQueue && !game._inDoAgain
+            ? game._cannedCommands?.shift() ?? null : null;
+        if (typeof response === 'number') {
+            result = { answer: String.fromCharCode(response), count: game._ynNumber ?? 0n };
+        }
+        else if (cannedCommand || (response !== undefined && response !== 'user-input')) {
+            clearCannedCommands();
+            result = { answer: '\x1b', count: game._ynNumber ?? 0n };
+        }
+        else {
+            result = menuable && game.flags.query_menu && game.nhDisplay && responses !== null
+                ? await queryResponseMenu(query, responses, defaultAnswer)
+                : await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
+            if (addCommandQueue)
+                rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
+        }
+    }
+    if (!responses || !result.answer || result.answer === '\0' || responses.includes(result.answer))
+        return result;
+    const alternative = defaultAnswer || '\x1b';
+    if (!game._inDoAgain || game.flags.debug)
+        await reportInvalidYnAnswer(query, responses, defaultAnswer, result.answer, alternative);
+    return { ...result, answer: alternative };
+}
+// cmd.c:yn_function_menu(): the preselected answer wins when the menu is
+// cancelled; choosing another answer overrides it. This path keeps yn_number
+// from the previous tty question because it never calls tty_yn_function().
+async function queryResponseMenu(query, responses, defaultAnswer) {
+    const choices = responses === 'rl' ? [['r', 'Right'], ['l', 'Left']]
+        : responses === 'hsq' ? [['h', 'Hide'], ['s', 'Spin a web'], ['q', 'Quit']]
+            : [['y', 'Yes'], ['n', 'No']];
+    if (responses === 'ynaq')
+        choices.push(['a', 'All']);
+    if (responses === 'ynq' || responses === 'ynaq')
+        choices.push(['q', 'Quit']);
+    const selected = await showChoiceWindow({ title: query, entries: choices.map(([key, text]) => ({
+            key, text, marker: key === defaultAnswer ? '*' : '-',
+        })) });
+    const answer = selected === 0 || selected === 27 ? defaultAnswer : String.fromCharCode(selected);
+    await pline(`${query} ${keyText(answer ? answer.charCodeAt(0) : 0)}`);
+    clearMessageWindow();
+    return { answer, count: game._ynNumber ?? 0n };
+}
+async function reportInvalidYnAnswer(query, responses, defaultAnswer, answer, alternative) {
+    const shownDefault = defaultAnswer ? visibleCommandKey(defaultAnswer.charCodeAt(0)) : '';
+    const question = query.length >= QBUFSZ ? `${query.slice(0, QBUFSZ - 4)}...` : query;
+    paniclog('yn debug', truncateRawMessage(`${question} [${responses}] (${shownDefault})`));
+    // C uses fuzzer continue mode for this known diagnostic, preventing
+    // both a panic and message-pager input while impossible() reports it.
+    const previousMode = game.flags.debug_fuzzer;
+    const previousInputFuzzer = game.iflags.debug_fuzzer;
+    game.flags.debug_fuzzer = FUZZER_IMPOSSIBLE_CONTINUE;
+    game.iflags.debug_fuzzer = true;
+    try {
+        const originalKey = visibleCommandKey(answer.charCodeAt(0));
+        const alternativeKey = visibleCommandKey(alternative.charCodeAt(0));
+        await impossible(`yn_function() returned '${originalKey}'; using '${alternativeKey}' instead`);
+    }
+    finally {
+        if (previousMode === undefined)
+            delete game.flags.debug_fuzzer;
+        else
+            game.flags.debug_fuzzer = previousMode;
+        if (previousInputFuzzer === undefined)
+            delete game.iflags.debug_fuzzer;
+        else
+            game.iflags.debug_fuzzer = previousInputFuzzer;
+    }
+}
+// A per-question paranoia bit changes affirmative input from `y` to the full
+// line `yes`.  PARANOID_CONFIRM additionally removes the default and requires
+// `no` (or Escape) to reject, retrying other committed lines up to six times.
+export async function paranoidQuery(beParanoid, prompt, paranoiaBits = game.flags?.paranoia_bits ?? 0) {
+    return await paranoidYesNoQuit(beParanoid, prompt, false, paranoiaBits) === 'y';
+}
+// C cmd.c:paranoid_ynq(). Confirmation answers are deliberately excluded
+// from command recall: every repeated dangerous action asks again.
+export async function paranoidYesNoQuit(beParanoid, prompt, acceptQuit = true, paranoiaBits = game.flags?.paranoia_bits ?? 0) {
+    if (!beParanoid)
+        return acceptQuit
+            ? promptChoice(prompt, ['y', 'n', 'q'], 'n', { addCommandQueue: false, menuable: true })
+            : promptYesNo(prompt, 'n', false);
+    const confirmAll = !!(paranoiaBits & PARANOID_CONFIRM);
+    const responseType = confirmAll ? acceptQuit ? '[yes|no|quit]' : '[yes|no]'
+        : acceptQuit ? '[yes|n|q] (n)' : '[yes|n] (n)';
+    let prefix = '', question = prompt.slice(0, 255);
+    for (let attempt = 0; attempt < 6; attempt++) {
+        const extra = prefix.length + 1 + responseType.length;
+        if (question.length + extra > QBUFSZ - 1)
+            question = question.slice(0, QBUFSZ - 1 - extra - 4) + '...?';
+        const line = await getLine(`${prefix}${question} ${responseType}`, (_ch, key) => key >= 32 && key < 127);
+        if (line === null)
+            return acceptQuit ? 'q' : 'n';
+        const answer = line.trim().replace(/\s+/g, ' ').toLowerCase();
+        if (answer === 'yes')
+            return 'y';
+        if (answer === 'quit')
+            return acceptQuit ? 'q' : 'n';
+        if (!confirmAll || answer === 'no')
+            return 'n';
+        prefix = '"Yes" or "No": ';
+    }
+    return 'n';
+}
+// ── Key input (C cmd.c:readchar(), readchar_core(), readchar_poskey(),
+//    pgetchar(), randomkey()) ────────────────────────────────────────────
+// C cmd.c:pgetchar(): one unprompted character, without readchar()'s
+// Escape-prefix or EOF translation and without a command-queue entry.
+export async function pgetchar() {
+    const key = game.iflags.debug_fuzzer
+        ? await inputGate().readKey() : await nhgetch();
+    return nativeChar(key);
+}
+export async function readchar(inputState = 'other') {
+    return (await readcharCore(inputState)).key;
+}
+// C readchar_poskey(): only position selection receives the click coordinates.
+// All readchar callers receive the same NUL character for a click.
+export function readcharPoskey() {
+    return readcharCore('position');
+}
+// C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
+// direction, and position input. Ordinary prompts keep a literal Escape.
+async function readcharCore(inputState) {
+    // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
+    if (game.iflags.debug_fuzzer)
+        return { key: await inputGate().readKey(inputState), click: null };
+    let key = await nhgetch(inputState);
+    if (key === MAP_CLICK_KEY) {
+        // C readchar_core(): clicks record their location even when getpos
+        // has temporarily cleared the mouse-button command bindings.
+        const click = inputGate().takeMapClick();
+        game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
+        const command = click ? game.commandBindings.mouseCommand(click.button) : null;
+        if (command?.name) {
+            game._cannedCommands ??= [];
+            game._cannedCommands.push({ kind: 'command', name: command.name });
+        }
+        return { key: 0, click };
+    }
+    if (key === -1) {
+        key = 27;
+    }
+    else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {
+        // pgetchar() returns char, unlike the first nh_poskey() int.
+        const next = nativeChar(await nhgetch(inputState));
+        key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
+    }
+    return { key: nativeChar(key), click: null };
+}
+function nativeChar(key) {
+    return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;
+}
+// C cmd.c:randomkey()'s function statics: the extcmdlist index and the
+// repeat key survive prompts; both reset with the input gate, as the
+// port's gate fields did, so a new game starts the table from its head.
+let fuzzerCommandIndex = 0;
+let lastFuzzerCommand = 0;
+// C cmd.c:randomkey(). The table index and repeat key survive prompts.
+export function randomKey(inputState) {
+    if (inputState === 'command' && (lastFuzzerCommand === 1 || lastFuzzerCommand === 16)
+        && rn2(5))
+        return lastFuzzerCommand;
+    let key;
+    switch (rn2(16)) {
+        case 0:
+            key = 10;
+            break;
+        case 1:
+        case 2:
+        case 3:
+        case 4:
+            key = rn1(95, 32);
+            break;
+        case 5:
+            key = rn2(2) ? 9 : 32;
+            break;
+        case 6:
+            key = rn1(26, 97);
+            break;
+        case 7:
+            key = rn1(26, 65);
+            break;
+        case 8:
+            key = NATIVE_COMMANDS[fuzzerCommandIndex++ % NATIVE_COMMANDS.length]?.key ?? 0;
+            break;
+        case 9:
+            key = 35;
+            break;
+        case 10:
+        case 11:
+        case 12: {
+            const direction = rn2(NATIVE_COMMAND_CONSTANTS.N_DIRS);
+            const mode = rn2(7) ? 0 : !rn2(3) ? 2 : 1;
+            key = game.commandBindings.keyForDirection(direction, mode);
+            break;
+        }
+        case 13:
+            key = rn1(10, 48);
+            break;
+        case 14:
+            key = rnd(game.iflags.wc_eight_bit_input ? 255 : 127);
+            break;
+        default:
+            key = 27;
+            break;
+    }
+    key = nativeChar(key);
+    if (inputState === 'command')
+        lastFuzzerCommand = key;
+    return key;
+}
+// Reset for resetInputState(); the C statics live for the whole process,
+// the port scopes them to one game.
+export function resetFuzzerCommandState() {
+    fuzzerCommandIndex = 0;
+    lastFuzzerCommand = 0;
+}
+// ── #prevmsg (C cmd.c:doprev_message()) ─────────────────────────────────
+// C cmd.c:doprev_message() -> win/tty/topl.c:tty_doprev_message(). The
+// prompt owners call this with inread set, which forces the single-message
+// branch exactly like ttyDisplay->inread does; they manage their own
+// repainting around the call. Takes no game time and draws no randomness.
+export async function doprevMessage(inread = false) {
+    const mode = messageWindowMode();
+    if (mode !== 's' && !inread) {
+        if (mode === 'f') {
+            // Full: the window lists the ring oldest-first with the pending
+            // topline last, and the walk cursor restarts.
+            game._messageHistoryCursor = null;
+            await showMessageHistoryWindow({ reversed: false });
+        }
+        else if (mode === 'c') {
+            // Combination: the first two recalls page single lines (the
+            // pending topline, then the newest remembered one), unless
+            // maxrow wrapped to zero. Only a single-line step in this call
+            // sets dismiss_more to ^P for the window's pager too.
+            let acceptCtrlP = false;
+            for (;;) {
+                const cursor = game._messageHistoryCursor;
+                let morc;
+                const newestSavedLine = cursor === game._messageHistory.length - 1
+                    && game._messageHistoryWriteIndex > 0;
+                if (cursor === null || newestSavedLine) {
+                    acceptCtrlP = true;
+                    morc = await redotoplin(cursor === null
+                        ? game._toplines : game._messageHistory[cursor] ?? '');
+                    stepHistoryBack();
+                }
+                else {
+                    game._messageHistoryCursor = null;
+                    morc = await showMessageHistoryWindow({ reversed: false, acceptCtrlP });
+                }
+                if (morc !== CTRL_P)
+                    break;
+            }
+        }
+        else {
+            // Reversed: the pending topline leads, then the ring newest-first.
+            game._messageHistoryCursor = null;
+            await showMessageHistoryWindow({ reversed: true });
+        }
+    }
+    else if (mode === 's') {
+        // Single: each ^P walks one entry further back, wrapping to the
+        // pending topline again after the oldest displayed entry.
+        for (;;) {
+            const cursor = game._messageHistoryCursor;
+            const morc = await redotoplin(cursor === null
+                ? game._toplines : game._messageHistory[cursor] ?? '');
+            stepHistoryBack();
+            if (morc !== CTRL_P)
+                break;
+        }
+    }
+}
 // ── Key help (C cmd.c:key2extcmddesc(), dokeylist(), help_dir()) ──────────
 // C misc_keys[] supplies descriptions to both key help and the bindings list.
 const miscellaneousKeys = [
     { name: 'escape', description: 'cancel current prompt or pending prefix', numberPadOnly: false },
     { name: 'count', description: 'Prefix: for digits when preceding a command with a count', numberPadOnly: true },
 ];
+// C cmd.c:key2txt().
 export function keyText(key) {
     return key === 32 ? '<space>' : key === 27 ? '<esc>'
         : key === 10 ? '<enter>' : key === 127 ? '<del>' : visibleCommandKey(key);

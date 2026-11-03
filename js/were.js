@@ -14,7 +14,7 @@ import { plineWithContinuation } from './pline.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman, } from './monster_data.js';
 import { setMonsterSpecies } from './mondata.js';
 import { heroCanControlPolymorph, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero, returnHeroToHumanForm, } from './polyself.js';
-import { paranoidQuery } from './query.js';
+import { paranoidQuery } from './cmd.js';
 import { rn2, rnd } from './rng.js';
 import { sessionIsNight } from './ambient_sounds.js';
 import { heroIsDeaf } from './senses.js';
