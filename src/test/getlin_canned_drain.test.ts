@@ -9,6 +9,7 @@ import { ARROW, BOW, CLUB, WORTHLESS_PIECE_OF_WHITE_GLASS } from '../js/object_d
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
+import { installPagerInput } from './support/pager-input.js';
 
 // C windows.c getlin() drains the one command queue before prompting:
 // queued CMDQ_KEY entries answer the query, and the first non-key entry
@@ -53,6 +54,48 @@ void test('a trycall naming prompt eats the queued fire-assist fire', async () =
         input.feed('\x1b');
         await after;
     }
+    assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
+});
+
+// C cmd.c:3962-3980: getdir()'s single cmdq_pop() takes the CQ_CANNED head
+// even when it is a queued extended command. That entry is neither
+// CMDQ_DIR nor CMDQ_KEY, so getdir() clears CQ_CANNED, leaves dirsym NUL —
+// a quitchar, so getdir returns failure without any help text — and
+// reports impossible(). Here the launcher letter freed by the naming
+// prompt is 'c', bound to #close, whose direction query pops the queued
+// fire.
+void test("close's direction query on the queued fire reports the impossible", async () => {
+    const input = freshTurnRoom();
+    await setPrimaryWeapon(await addInventoryObject(CLUB, { invlet: 'a' }));
+    const bow = await addInventoryObject(BOW, { invlet: 'c' });
+    bow.bknown = true;
+    await setQuiverObject(await addInventoryObject(ARROW, { invlet: 'd', quan: 3 }));
+    input.feed('f');
+    await moveloop_core();
+
+    const glass = await addInventoryObject(WORTHLESS_PIECE_OF_WHITE_GLASS,
+        { typeKnown: false, observed: false, dknown: true });
+    const call = tryCallObjectType(glass);
+    await input.waitUntilBlocked();
+    input.feed('wide\r');
+    await call;
+    assert.equal(game._objectCallNames?.[glass.otyp], 'wide');
+
+    const pages: string[] = [];
+    installPagerInput(input, {
+        expected: /getdir: command queue had no dir|Program in disorder|devteam@nethack\.org/,
+        limit: 3,
+        pages,
+    });
+    // The response queue holds the freed launcher letter 'c' ahead of the
+    // queued fire: one command dispatch runs #close, whose getdir() pops
+    // the fire entry and clears the queue, so the only prose is the
+    // impossible trio.
+    await moveloop_core();
+    assert.match(pages[0] ?? '', /getdir: command queue had no dir/,
+        'the queued fire reached the close direction query');
+    assert.equal(game._cannedCommands?.length ?? 0, 0,
+        'the impossible cleared the command queue');
     assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
 });
 
