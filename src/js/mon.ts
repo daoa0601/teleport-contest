@@ -1445,9 +1445,15 @@ async function executeMonsterTurns(): Promise<boolean | undefined> {
         const offensive = movement.heroAttackSequence?.offensive;
         const attackReturnedDeath = movement.heroAttackResult === 1
             || (offensive?.status === 'completed' && offensive.result.nativeResult === 1);
-        // C monmove.c:dochugw() checks the actor after dochug(), before the
-        // adjacent monster_nearby() check at the occupation boundary.
-        if (!attackReturnedDeath && (monster.mhp ?? 1) > 0)
+        // C monmove.c:dochugw() runs the notice check only when dochug()
+        // returned 0. A monster that left the map during its move returned 1
+        // (monmove.c:912 `if (mon_offmap(mtmp)) return 1;`), and so did a
+        // vault guard that vanished instead of moving (monmove.c:926), so
+        // neither may interrupt the hero's occupation however close its
+        // stale mx/my still look.
+        if (!attackReturnedDeath && (monster.mhp ?? 1) > 0
+            && (monster.mstate ?? MON_FLOOR) === MON_FLOOR
+            && !(monster.isgd && !monster.mx))
             await interruptOccupationForMonster(monster, game, sightingBefore);
         if (!movement?.moved) continue;
     }
