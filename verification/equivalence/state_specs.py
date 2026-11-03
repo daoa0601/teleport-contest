@@ -270,10 +270,20 @@ def whole_domain(front):
     return [('whole domain', {})]
 
 
+CAPACITY_FLAGS = ('h_lev', 'e_boot', 'e_other', 'terr_lev', 'trap_lev0', 'h_fly',
+                  'e_fly', 'terr_fly', 'trap_fly0', 'legs_left', 'legs_right')
+
+
 def capacity_domain(s):
-    flags = ('h_lev', 'e_boot', 'e_other', 'terr_lev', 'trap_lev0', 'h_fly',
-             'e_fly', 'terr_fly', 'trap_fly0', 'legs_left', 'legs_right')
-    return [s[key] >= 0 for key in flags] + [s[key] <= 1 for key in flags]
+    return [s[key] >= 0 for key in CAPACITY_FLAGS] + [s[key] <= 1 for key in CAPACITY_FLAGS]
+
+
+def grounded_hero(s, legs=True):
+    """A concrete corner (no levitation, flight, trap and, unless legs is
+    False, no wounded legs) for negative checks, which need one
+    counterexample, not the whole domain."""
+    keys = CAPACITY_FLAGS if legs else CAPACITY_FLAGS[:-2]
+    return [s[key] == 0 for key in keys] + [s['u.utrap'] == 0]
 
 
 RESTORED_PROPERTIES = ('u.uprops[LEVITATION].extrinsic', 'u.uprops[LEVITATION].blocked',
@@ -287,7 +297,10 @@ STATE_SPECS += [
          dependencies=('acurr:all',), restored_state=RESTORED_PROPERTIES, result_range=(1, 1000), partitions=whole_domain,
          require_counterexamples=True,
          probes=[('summarized Strength correspondence omitted', UnrelatedState(
-             capacity_domain, ('capacity-strength',)))],
+             lambda s: capacity_domain(s) + grounded_hero(s), ('capacity-strength',)))],
+         # 'capacity -= 200' is the both-legs-wounded branch
+         mutant_pre=lambda s: [*grounded_hero(s, legs=False), s['legs_left'] == 1,
+                               s['legs_right'] == 1],
          mutants=[('js/hack.js', 'capacity -= 200;', 'capacity -= 100;')]),
 ]
 
@@ -608,6 +621,9 @@ STATE_SPECS += [
                      lambda s: [s['native_monster_present'] == 1, s['species'] == 0,
                                 s['monster.mextrinsics'] == 0],
                      ('monster.mintrinsics',)))],
+         # The open-domain search for this mutant's counterexample exceeded
+         # the solver timeout on a loaded CI runner; one concrete row suffices.
+         mutant_pre=lambda s: [s['species'] == 0, s['monster.mextrinsics'] == 0],
          mutants=[('js/mondata.js',
                    '| (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);',
                    '| (monster?.mextrinsics ?? 0);')]),

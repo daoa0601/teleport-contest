@@ -450,7 +450,10 @@ def main() -> int:
                     failures += 1
                     continue
                 mutated = load_modules({file: source.replace(old.encode(), new.encode())})
-                proved, report = check(spec, front, mutated, spec.pre, pairwise_outputs=True)
+                pre = spec.pre
+                if spec.mutant_pre is not None and not equivalent:
+                    pre = lambda s, spec=spec: [*spec.pre(s), *spec.mutant_pre(s)]
+                proved, report = check(spec, front, mutated, pre, pairwise_outputs=True)
                 first = report.splitlines()[0]
                 verdict = ('equivalent' if proved else 'NOT EQUIVALENT') if equivalent else \
                     ('killed' if not proved else 'SURVIVED')

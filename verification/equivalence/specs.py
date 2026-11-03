@@ -34,6 +34,11 @@ class Spec:
     loops: dict = field(default_factory=dict)
     probes: list = field(default_factory=list)    # [(label, weaker pre)]
     mutants: list = field(default_factory=list)   # [(file, old, new[, 'equivalent'])]
+    # Extra constraints, added to pre, for finding a killed mutant's
+    # counterexample: one counterexample inside the domain kills it, so a
+    # concrete sub-domain keeps the search cheap. Equivalent mutants and the
+    # proof itself always use pre alone.
+    mutant_pre: Callable | None = None
     js_file: str = 'js/rng.js'
     js_initializer: str | None = None  # prove this local initializer, not its enclosing function
     js_args: list = field(default_factory=list)   # additional (kind, value) arguments

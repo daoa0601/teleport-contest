@@ -194,6 +194,12 @@ cd verification/equivalence && uv run prove.py
 
 `--only NAME` limits the run; `--no-probes` and `--no-mutants` skip the
 negative checks. The exit status is nonzero if any claim fails.
+Negative checks need one concrete counterexample inside the domain, not a
+proof over all of it, so a probe's weakened precondition and a spec's
+`mutant_pre` (extra constraints added to `pre` for killed mutants only) may
+pin a concrete corner. Pin any negative check whose open-domain search is
+slow: an unpinned search for `mon_resistancebits:state`'s mutant took 17 s
+locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
