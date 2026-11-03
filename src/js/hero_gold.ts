@@ -12,7 +12,7 @@ import { splitObjectStack } from './mkobj.js';
 import { unlinkObject, createObjectBase } from './mkobj.js';
 import { nextIdent } from './ident.js';
 import { delobj } from './invent.js';
-import { markJustPicked } from './just_picked.js';
+import { markJustPicked } from './pickup.js';
 import { GOLD_PIECE } from './object_data.js';
 
 import { heroGoldAmount } from './hack.js';

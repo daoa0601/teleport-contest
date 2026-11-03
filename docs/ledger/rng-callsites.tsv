@@ -172,17 +172,17 @@ src/js/hack.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""100""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""2""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""dexterity""]"	invariant
-src/js/confused_loot.ts	reverseLoot	rn2	"[""10""]"	constant
-src/js/confused_loot.ts	reverseLoot	rn2	"[""3""]"	constant
-src/js/confused_loot.ts	reverseLoot	rn2	"[""remaining + 1""]"	unproved
-src/js/confused_loot.ts	reverseLoot	rnd	"[""5""]"	constant
+src/js/pickup.ts	reverseLoot	rn2	"[""10""]"	constant
+src/js/pickup.ts	reverseLoot	rn2	"[""3""]"	constant
+src/js/pickup.ts	reverseLoot	rn2	"[""remaining + 1""]"	unproved
+src/js/pickup.ts	reverseLoot	rnd	"[""5""]"	constant
 src/js/contact_damage.ts	specialContactDamage	rnd	"[""20""]"	constant
 src/js/contact_damage.ts	specialContactDamage	rnd	"[""20""]"	constant
 src/js/contact_damage.ts	specialContactDamage	rnd	"[""4""]"	constant
-src/js/container.ts	explodeBag	d	"[""6"", ""6""]"	constant
-src/js/container.ts	loseCursedBagContents	rn2	"[""13""]"	constant
-src/js/container.ts	magicBagExplodes	rn2	"[""1 << Math.min(depth, 7)""]"	unproved
-src/js/container.ts	scatterBagContents	rn2	"[""13""]"	constant
+src/js/pickup.ts	explodeBag	d	"[""6"", ""6""]"	constant
+src/js/pickup.ts	loseCursedBagContents	rn2	"[""13""]"	constant
+src/js/pickup.ts	magicBagExplodes	rn2	"[""1 << Math.min(depth, 7)""]"	unproved
+src/js/pickup.ts	scatterBagContents	rn2	"[""13""]"	constant
 src/js/dokick.ts	containerImpactDamage	random	"[""3""]"	constant
 src/js/pickup.ts	lootCommand	rn2	"[""2""]"	constant
 src/js/pickup.ts	lootCommand	rn2	"[""6""]"	constant

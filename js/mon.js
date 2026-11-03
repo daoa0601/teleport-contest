@@ -26,7 +26,7 @@ import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMon
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName, makePlural } from './objnam.js';
 import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
 import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
-import { thawObject } from './container.js';
+import { thawObject } from './pickup.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { placeObject, placeCreatedObject, stack_object } from './floor_object.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';

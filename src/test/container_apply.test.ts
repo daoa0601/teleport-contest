@@ -8,7 +8,7 @@ import { W_AMUL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { takeFromContainer } from '../js/container.js';
+import { takeFromContainer } from '../js/pickup.js';
 import { addInventoryItem } from '../js/u_init.js';
 import {
     AMULET_OF_LIFE_SAVING,

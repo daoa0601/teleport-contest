@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { bot, timebot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
-import { reportHeroEncumbrance } from '../js/encumbrance.js';
+import { reportHeroEncumbrance } from '../js/pickup.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

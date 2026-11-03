@@ -1,6 +1,6 @@
 // C dothrow.c:thitmonst()'s special-object handoff, before the attack roll.
 import { deityName } from './alignment.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { STRAT_WAITMASK } from './const.js';
 import { isok } from './cmd.js';
 import { plineWithContinuation as pline } from './pline.js';

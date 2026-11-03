@@ -61,7 +61,7 @@ import type { PropertyName, WornPropertySlot } from './property_types.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute, attributeIsAtLimit } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { curseObjectState } from './mkobj.js';
 import { monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';

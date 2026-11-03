@@ -77,7 +77,7 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_mons
 import { grantAmuletWish } from './wish.js';
 
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { rndcurse } from './throne.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion } from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
@@ -103,7 +103,7 @@ import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { clearHeroSliming } from './potion.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';
-import { clearJustPicked } from './just_picked.js';
+import { clearJustPicked } from './pickup.js';
 import { runLevelRegions } from './regions.js';
 import { invault, moveVaultGuard } from './vault.js';
 import { automaticSearch, mapVicinity, revealWarnedMonsters } from './detect.js';

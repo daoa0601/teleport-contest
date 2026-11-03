@@ -83,7 +83,7 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { pendingArmorAction } from './do_wear.js';
 import { nomul } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

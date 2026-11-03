@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { toggleBooleanOptionPrefix } from '../js/options.js';
-import { describeDecor } from '../js/dungeon_feature.js';
+import { describeDecor } from '../js/pickup.js';
 import type { StatusHiliteRule } from '../js/flags.js';
 import { BL_HP, BL_TITLE, BL_ALIGN, BL_TH_UPDOWN, BL_TH_ALWAYS_HILITE,
     EQ_VALUE, HL_NONE, MAXBLSTATS, NO_LTEQGT, ICE, STONE } from '../js/const.js';

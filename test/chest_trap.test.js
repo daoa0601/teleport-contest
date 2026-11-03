@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { triggerChestTrap } from '../js/chest_trap.js';
 import { M_SEEN_COLD, M_SEEN_ELEC } from '../js/const.js';
-import { useContainer } from '../js/container.js';
+import { useContainer } from '../js/pickup.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

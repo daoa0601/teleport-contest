@@ -12,7 +12,7 @@ import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP,
     VIBRATING_SQUARE, WEB,
 } from '../js/const.js';
-import { useContainer } from '../js/container.js';
+import { useContainer } from '../js/pickup.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/trap.js';
@@ -21,7 +21,7 @@ import { announceGlobMerge } from '../js/glob.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { restartAmuletStrangulation } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';
-import { liftObject } from '../js/lift_object.js';
+import { liftObject } from '../js/pickup.js';
 import { lightRoom, lightWieldedArtifact } from '../js/light.js';
 import { probeObject } from '../js/zap.js';
 import { applyMonsterGolemEffects } from '../js/mon.js';

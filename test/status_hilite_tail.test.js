@@ -3,7 +3,7 @@ import test from 'node:test';
 import { bot } from '../js/botl.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { toggleBooleanOptionPrefix } from '../js/options.js';
-import { describeDecor } from '../js/dungeon_feature.js';
+import { describeDecor } from '../js/pickup.js';
 import { BL_HP, BL_TITLE, BL_ALIGN, BL_TH_UPDOWN, BL_TH_ALWAYS_HILITE, EQ_VALUE, HL_NONE, MAXBLSTATS, NO_LTEQGT, ICE, STONE } from '../js/const.js';
 import { ATR_INVERSE, CLR_RED, CLR_BLUE, CLR_GREEN, NO_COLOR } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';

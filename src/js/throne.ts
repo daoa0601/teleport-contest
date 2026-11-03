@@ -13,7 +13,7 @@ import {
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
 } from './attrib.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {

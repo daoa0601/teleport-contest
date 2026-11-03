@@ -26,7 +26,7 @@ import { canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, map
 import { monsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
 import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
 import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToErosion, captureLevitationState, floatHeroUp } from './trap.js';
@@ -58,7 +58,7 @@ import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
 import { gotoLevel } from './level_change.js';
 import { floatingAbove } from './levitation_commands.js';
-import { pickupBurden } from './lift_object.js';
+import { pickupBurden } from './pickup.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';

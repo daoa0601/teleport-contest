@@ -49,7 +49,7 @@ import { fruitName } from './fruit.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { setHeroGoldAmount } from './hero_gold.js';
 import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';

@@ -12,7 +12,7 @@ import { learnObjectType } from './o_init.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { ALTAR } from './const.js';
 import { inventoryItemDescription, consumeObjectCharge } from './invent.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { surfaceName } from './terrain_name.js';
 import { mkobj, addObjectToContainer } from './mkobj.js';
 import { rndClass } from './objnam.js';

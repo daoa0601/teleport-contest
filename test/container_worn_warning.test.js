@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { useContainer } from '../js/container.js';
+import { useContainer } from '../js/pickup.js';
 import { MENU_FULL, W_ARM, W_ARMF } from '../js/const.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

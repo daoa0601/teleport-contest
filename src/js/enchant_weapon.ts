@@ -1,7 +1,7 @@
 // enchant_weapon.js — Scroll of enchant weapon.
 // C refs: read.c seffect_enchant_weapon(); wield.c chwepon().
 
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { exerciseAttribute } from './attrib.js';
 import { artifactById, ARTIFACTS } from './artifacts.js';
 import { heroHandName } from './body_parts.js';

@@ -42,7 +42,7 @@ import { placeCreatedObject } from './floor_object.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
+import { iceDescriptionAt } from './pager.js';
 import { deleteEngravingAt } from './engrave.js';
 import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetHeroTrap, maketrap } from './trap.js';
 import type { MapLocation } from './map_types.js';

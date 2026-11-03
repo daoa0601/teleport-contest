@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { carryableObjectCount } from '../js/lift_object.js';
+import { carryableObjectCount } from '../js/pickup.js';
 import { BOULDER, DAGGER } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

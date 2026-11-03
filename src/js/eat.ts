@@ -21,7 +21,7 @@ import { canSeeMonster, canSpotMonster, displayColorName, flush_screen, newsym, 
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { monsterName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 

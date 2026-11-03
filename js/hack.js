@@ -48,7 +48,7 @@ import { levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel 
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
+import { iceDescriptionAt } from './pager.js';
 import { ingSuffix, upstart, depth } from './hacklib.js';
 import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers } from './timeout.js';
 import { resetOccupations } from './cmd.js';

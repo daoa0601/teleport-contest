@@ -7,7 +7,7 @@ import {
     PANICLOG, ROOM, ROWNO, STAIRS, VIBRATING_SQUARE,
 } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
-import { dungeonFeatureSentenceAt } from '../js/dungeon_feature.js';
+import { dungeonFeatureSentenceAt } from '../js/floor_object_display.js';
 import { game, requireGameLevel, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 
