@@ -514,8 +514,12 @@ export async function waterDamageChain(objects, messages = [], state = game, opt
     return messages;
 }
 async function damageWaterChain(objects, messages, state, options) {
-    if (!objects.length)
+    const firstObject = objects[0];
+    if (!firstObject)
         return;
+    // C water_damage_chain() uses the outer container's location for erosion visibility.
+    const position = getObjectLocation(firstObject, state, { contained: true })
+        ?? options.position;
     const context = options.acidContext ?? {
         valid: false, knownExplosions: 0, unknownExplosions: 0,
     };
@@ -523,7 +527,7 @@ async function damageWaterChain(objects, messages, state, options) {
     context.knownExplosions = context.unknownExplosions = 0;
     try {
         for (const object of [...objects]) {
-            const result = await waterDamageObject(object, messages, state, { ...options, acidContext: context });
+            const result = await waterDamageObject(object, messages, state, { ...options, acidContext: context, ...(position ? { position } : {}) });
             if (result !== 'destroyed')
                 continue;
             const index = objects.indexOf(object);
