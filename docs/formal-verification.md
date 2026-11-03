@@ -6,8 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 52 scoped C/JavaScript claims,
-including hero equipment, forms, initial monster tables, and eight ISAAC64
+`verification/equivalence/` now proves 61 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -109,6 +108,15 @@ split `rnl` row use this batch's complete runs.
 | `abon:forms` | `weapon.c:abon` ↔ `uhitm.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 43.6 s |
 | `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 415.6 s |
 | `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `mon.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 175.5 s |
+| `xytodir` | `cmd.c:xytodir` ↔ `cmd.js:xyToDirection` | Deltas inside C int; decl.c and const.js direction tables | 9×9 via `findIndex` | 0.8 s |
+| `weapon_hit_bonus:state` | `weapon.c:weapon_hit_bonus` ↔ `skills.js:weaponSkillHitBonus` | Weapon null/uwep/uswapwep/unrelated; corresponding skills, role, twoweap, steed; objects[] tables | 1×1 joined | 10.3 s |
+| `weapon_dam_bonus:state` | `weapon.c:weapon_dam_bonus` ↔ `skills.js:weaponSkillDamageBonus` | Same relation | 1×1 joined | 4.7 s |
+| `is_animal:tables` | `mondata.h:is_animal` ↔ `monster_data.js:monsterIsAnimal` | Same initial-species domain | 1×1 | 1.9 s |
+| `noncorporeal:tables` | `mondata.h:noncorporeal` ↔ `monster_data.js:monsterIsNoncorporeal` | Same domain; initial symbols | 1×1 | 3.6 s |
+| `breathless:tables` | `mondata.h:breathless` ↔ `mondata.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
+| `passes_bars:tables` | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
+| `armor_to_dragon` | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
+| `weight:stack` | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -217,6 +225,43 @@ of predicate invocations. That batch deferred carrying capacity because
 inventory chains. `dmgtype` needs attack-pointer traversal and JS callbacks;
 `sgn` had no standalone emitted counterpart; the bounded-state batch below checks an actual inline initializer. No port fidelity bug was found
 within the eight stated domains.
+
+**Gameplay-leaf batch (fv-equivalence-batch-3).** Nine more claims cover the
+direction, weapon-skill, species-table and object-weight layer. `xytodir`
+pairs cmd.c's scan over decl.c's `xdir`/`ydir` with the port's
+`Array.findIndex` (the executor now models `findIndex` with the same
+short-circuit element scan as `some`). The two weapon-skill claims execute
+the real `weapon_hit_bonus`/`weapon_dam_bonus` switches over a symbolic
+`u.weapon_skills[]` array; a fixed state array of aggregates can now be
+selected symbolically and read member by member (the skill member's
+declared width comes from the spec's state entry, since no clang node
+reaches that read). `const char[]` locals initialized by string literals
+(`weapon_hit_bonus`'s `bad_skill`) are accepted as opaque buffers. The
+weapon identity relation covers null, uwep, uswapwep and an unrelated
+object, with `u.twoweap` implying both slots wielded (wield.c) and every
+skill entry at or below expert except martial arts (u_init.c grants
+grand master only there; the switches would call `impossible()` above
+expert). `passes_bars` executes the mondata.c body including its `dmgtype`
+scan; `armor_to_dragon` checks the 20 dragon otyps (C returns `NON_PM`
+where the port returns null and callers test truthiness).
+
+`weight:stack` proved a real wizard-mode fidelity bug: C's glob branch
+returns `(int) obj->owt`, so the readobjnam wizard override that creates
+one glob weighing 107374336 x 20 = 2147486720 makes C return the negative
+int32 wrap while the port returned the unsigned value. The port now wraps
+through the same cast in both owt-returning branches (glob and heavy iron
+ball), with a behavior test; every non-wizard state is unchanged. The
+claim also documents two orderings the entry domain keeps consistent:
+C tests the CORPSE type before the coin class while the port tests the
+class first (oclass always equals the type's metadata class), and the glob
+branch precedes the coin branch on both sides because globs only exist as
+food. Partly eaten food stays with the difftest: eaten_stat's nutrition
+divisor is table-selected and the unsplit query times out. Corpses keep a
+symbolic but always-valid species (mkobj assigns one), chunked into
+48-wide intervals so the mons[] weight select stays decidable; the
+initial-table correspondence (`objects[].oc_weight` = `OBJECT_WEIGHT`,
+`mons[].cwt` = `MONSTER_BODY_META[][0]`) is the same assumption the
+inventory chain claims make for cached owt.
 
 The complete 41-claim run exited 0 in **704.66 s**, including **45 domain
 probes** and **49 mutant checks**, and wrote the reviewed equivalence ledger

@@ -1,16 +1,21 @@
 """Claims over explicit hero, monster and read-only call correspondences."""
 import z3
 
-from csym import CVal
+from csym import CElement, CPtr, CVal
+from jssym import V
 from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
-                   SCHAR, Spec, ULEVEL, UnrelatedState, WEAPON_DAMAGE)
+                   INT_MAX, LONG, SCHAR, Spec, ULEVEL, UnrelatedState,
+                   WEAPON_DAMAGE)
 from state_world import (AT_ENGL, AT_WEAP,
-                         capacity_state, experience_arguments, experience_state,
-                         hero_state, hit_bonus_state, inventory_state,
-                         movement_arguments, movement_state,
+                         capacity_state, direction_arguments, direction_state,
+                         experience_arguments,
+                         experience_state, hero_state, hit_bonus_state,
+                         inventory_state, movement_arguments, movement_state,
+                         skill_bonus_arguments, skill_bonus_domain, skill_bonus_state,
                          species_predicate_arguments, species_predicate_state,
-                         symbolic_attacks, symbolic_attack_arguments, capacity_arguments,
-                         sign_state, sign_arguments)
+                         symbolic_attacks, symbolic_attack_arguments,
+                         capacity_arguments, sign_state, sign_arguments,
+                         weight_arguments, weight_domain, weight_state)
 UINT = (32, False)
 
 WORN = [(slot, (f'game.{slot}', f'game.u.{slot}')) for slot in ('uarmg', 'uarmh', 'uwep')]
@@ -20,12 +25,13 @@ ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
 HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
 STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
-                 'mondata.c', 'polyself.c', 'dungeon.c')
+                 'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
+    'js/cmd.js', 'js/skills.js', 'js/mondata.js',
 )
 
 
@@ -328,4 +334,185 @@ STATE_SPECS += [
          probes=[('inline delta correspondence omitted', UnrelatedState(lambda s: [], ('target.x',)))],
          mutants=[('js/muse.js', 'const dx = Math.sign(target.x - monster.mx), dy =',
                    'const dx = Math.sign(monster.mx - target.x), dy =')]),
+]
+
+# ---- fv-equivalence-batch-3: direction, skill, table and weight leaves ----
+
+STATE_SPECS += [
+    Spec('xytodir', 'xytodir', 'xyToDirection', [('x', LONG), ('y', LONG)],
+         js_file='js/cmd.js', require_counterexamples=True, configure=direction_state,
+         arguments=direction_arguments,
+         assumptions=('decl.c xdir/ydir and js/const.js xdir/ydir retain their initial values; findIndex scans the same ten entries as the C loop over N_DIRS',
+                      'C int parameters narrow arbitrary long arguments; the claim keeps both deltas inside C int',),
+         pre=lambda s: [s['x'] >= -2 ** 31, s['x'] <= INT_MAX,
+                        s['y'] >= -2 ** 31, s['y'] <= INT_MAX],
+         probes=[('x wraps to the -1 offset outside C int',
+                  lambda s: [s['x'] == 2 ** 32 - 1, s['y'] == 0])],
+         mutants=[('js/cmd.js', 'return direction < 8 ? direction : -1;',
+                   'return direction < 7 ? direction : -1;')]),
+]
+
+
+ROLE_KEY = [
+    ('PM_ARCHEOLOGIST', 'archeologist'), ('PM_BARBARIAN', 'barbarian'),
+    ('PM_CAVE_DWELLER', 'caveman'), ('PM_HEALER', 'healer'), ('PM_KNIGHT', 'knight'),
+    ('PM_MONK', 'monk'), ('PM_CLERIC', 'priest'), ('PM_RANGER', 'ranger'),
+    ('PM_ROGUE', 'rogue'), ('PM_SAMURAI', 'samurai'), ('PM_TOURIST', 'tourist'),
+    ('PM_VALKYRIE', 'valkyrie'), ('PM_WIZARD', 'wizard')]
+ROLE_ENUM = [('gu.urole.mnum', (16, True), 'game.urole.key', ROLE_KEY)]
+
+WEAPON_BONUS_STATE = (
+    [('weapon.oclass', (8, True), 'weapon.oclass'),
+     ('weapon.otyp', (16, True), 'weapon.otyp'),
+     ('u.twoweap', (8, True), 'game.u.twoweap')]
+    + [(f'u.weapon_skills[{i}].skill', (16, True), None) for i in range(38)]
+)
+WEAPON_BONUS_PARAMS = [('weapon_present', INT), ('uwep_present', INT),
+                       ('uswapwep_present', INT), ('is_uwep', INT),
+                       ('is_uswapwep', INT), ('usteed_present', INT)]
+WEAPON_BONUS_ASSUMPTIONS = (
+    'weapon.c:weapon_hit_bonus/weapon_dam_bonus: the weapon argument is null, uwep, uswapwep or an unrelated held object; C pointer identity corresponds to JS reference identity',
+    'wield.c: two-weapon combat holds only with both weapons wielded; every unwield path clears u.twoweap',
+    'weapon.c:skill_init/use_skill never advance a skill past its role maximum; only u_init.c grants master/grand master and only for P_MARTIAL_ARTS, so every other entry stays <= P_EXPERT and weapon.c\'s impossible() default arms stay unreachable',
+    'objects.c:objects_globals_init and object_data.js tables retain their initial values; otyp covers every type with an emitted subtype entry',
+    'skills.h P_SKILL: u.weapon_skills and game.u.weaponSkills correspond entry for entry; role key corresponds to gu.urole.mnum',
+)
+
+STATE_SPECS += [
+    Spec('weapon_hit_bonus:state', 'weapon_hit_bonus', 'weaponSkillHitBonus',
+         WEAPON_BONUS_PARAMS, js_file='js/skills.js', require_counterexamples=True,
+         state=WEAPON_BONUS_STATE, enum_state=ROLE_ENUM, configure=skill_bonus_state,
+         arguments=skill_bonus_arguments, pre=skill_bonus_domain,
+         assumptions=WEAPON_BONUS_ASSUMPTIONS,
+         probes=[('riding skill correspondence omitted', UnrelatedState(
+             lambda s: skill_bonus_domain(s) + [s['usteed_present'] == 1],
+             ('u.weapon_skills[37].skill',)))],
+         mutants=[('js/skills.js', 'bonus = level <= P_UNSKILLED ? -4 : level === P_BASIC ? 0',
+                   'bonus = level <= P_UNSKILLED ? -5 : level === P_BASIC ? 0'),
+                  ('js/skills.js', 'if (riding <= P_UNSKILLED)\n            bonus -= 2;',
+                   'if (riding <= P_UNSKILLED)\n            bonus -= 3;')]),
+    Spec('weapon_dam_bonus:state', 'weapon_dam_bonus', 'weaponSkillDamageBonus',
+         WEAPON_BONUS_PARAMS, js_file='js/skills.js', require_counterexamples=True,
+         state=WEAPON_BONUS_STATE, enum_state=ROLE_ENUM, configure=skill_bonus_state,
+         arguments=skill_bonus_arguments, pre=skill_bonus_domain,
+         assumptions=WEAPON_BONUS_ASSUMPTIONS,
+         probes=[('riding skill correspondence omitted', UnrelatedState(
+             lambda s: skill_bonus_domain(s) + [s['usteed_present'] == 1],
+             ('u.weapon_skills[37].skill',)))],
+         mutants=[('js/skills.js', ': level === P_SKILLED ? 1 : level === P_EXPERT ? 2 : -2;',
+                   ': level === P_SKILLED ? 1 : level === P_EXPERT ? 3 : -2;'),
+                  ('js/skills.js', 'if (riding === P_SKILLED)\n            bonus++;',
+                   'if (riding === P_BASIC)\n            bonus++;')]),
+]
+
+
+def species_record_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    pointer = CPtr(values['native_pointer_present'] != 0,
+                   CElement('mons', values['species']))
+    return ([pointer], [V('record', {'mnum': V('num', values['species'])})])
+
+
+STATE_SPECS += [
+    Spec(name, native, port, [('species', INT), ('native_pointer_present', INT)],
+         js_file=js_file,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_record_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                          s['native_pointer_present'] == 0])],
+         mutants=[(js_file, old, new)])
+    for name, native, port, js_file, old, new in (
+        ('is_animal:tables', 'verification_is_animal', 'monsterIsAnimal',
+         MONSTER_DATA, '?? -1] ?? 0) & M1_ANIMAL);', '?? -1] ?? 0) & M1_HUMANOID);'),
+        ('noncorporeal:tables', 'verification_noncorporeal', 'monsterIsNoncorporeal',
+         MONSTER_DATA, 'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST;',
+         'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST + 1;'),
+        ('breathless:tables', 'verification_breathless', 'monsterIsBreathless',
+         'js/mondata.js', 'MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS);',
+         'MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOHEAD);'),
+        ('passes_bars:tables', 'passes_bars', 'monsterPassesBars',
+         'js/mondata.js', '(M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))',
+         '(M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))'),
+    )
+]
+
+
+# polyself.c's armor_to_dragon switch covers exactly the ten dragon scale
+# mails and ten dragon scales; the pinned object enum assigns them the two
+# contiguous intervals below (the DEFERRED shimmering entries are #if 0).
+def dragon_state(world, front, modules):
+    names = ('GRAY_DRAGON_SCALE_MAIL', 'YELLOW_DRAGON_SCALE_MAIL',
+             'GRAY_DRAGON_SCALES', 'YELLOW_DRAGON_SCALES')
+    values = tuple(front.enum_value(name) for name in names)
+    if values != (101, 110, 111, 120):
+        raise Unsupported(f'pinned dragon armor otyp interval changed: {values}')
+
+
+DRAGON_MIN, DRAGON_MAX = 101, 120
+
+
+def armor_arguments(world, front):
+    armotyp = next(value for name, value, _ in world.params if name == 'armotyp')
+    return ([CVal(armotyp, (32, True))], [V('record', {'otyp': V('num', armotyp)})])
+
+
+STATE_SPECS += [
+    Spec('armor_to_dragon', 'armor_to_dragon', 'dragonFormForArmor', [('armotyp', INT)],
+         js_file='js/polyself.js', require_counterexamples=True, configure=dragon_state,
+         arguments=armor_arguments,
+         assumptions=('polyself.c:armor_to_dragon and js/polyself.js:dragonFormForArmor read the initial object and monster-name tables',
+                      'C returns NON_PM (-1) where the port returns null and every caller tests that value for truthiness; the claim covers exactly the dragon scale-mail and scales otyps',),
+         pre=lambda s: [s['armotyp'] >= DRAGON_MIN, s['armotyp'] <= DRAGON_MAX],
+         probes=[('nondragon armor returns NON_PM versus null',
+                  lambda s: [s['armotyp'] == DRAGON_MIN - 1])],
+         mutants=[('js/polyself.js', 'return firstDragon + type - GRAY_DRAGON_SCALE_MAIL;',
+                   'return firstDragon + type - GRAY_DRAGON_SCALE_MAIL + 1;')]),
+]
+
+
+
+def weight_partitions(front):
+    """One proof per claimed object type: a fixed otyp makes every objects[]
+    read constant. The corpse type keeps a symbolic but always-valid species
+    (mkobj assigns one), so its mons[] weight select is chunked into
+    exhaustive species intervals."""
+    def fixed_type(otyp):
+        def constraints(s, _otyp=otyp):
+            return [s['obj.otyp'] == _otyp]
+        return constraints
+    names = ('GOLD_PIECE', 'DAGGER', 'FOOD_RATION', 'GLOB_OF_GRAY_OOZE')
+    partitions = [(f'object type {name}', fixed_type(front.enum_value(name)))
+                  for name in names]
+    corpse = front.enum_value('CORPSE')
+    species = front.enum_value('NUMMONS')
+    step = 48
+    for low in range(0, species, step):
+        high = min(low + step, species)
+        def corpse_chunk(s, _low=low, _high=high, _corpse=corpse):
+            return [s['obj.otyp'] == _corpse,
+                    s['obj.corpsenm'] >= _low, s['obj.corpsenm'] < _high]
+        partitions.append((f'corpse species {low}..{high}', corpse_chunk))
+    return partitions
+
+WEIGHT_STATE = [(f'obj.{field}', declared, f'obj.{field}') for field, declared in (
+    ('otyp', (16, True)), ('oclass', (8, True)), ('quan', (64, True)),
+    ('owt', (32, False)), ('oeaten', (32, False)), ('corpsenm', (32, True)),
+    ('globby', (32, False)))]
+WEIGHT_ASSUMPTIONS = (
+    'objects.c:objects_globals_init and monst.c:monst_globals_init: native tables retain initial values; emitted OBJECT_WEIGHT and MONSTER_BODY_META retain theirs',
+    'obj.quan >= 1, oeaten == 0 and corpsenm is a valid species (mkobj.c assigns one when it creates a CORPSE; eaten_stat\'s table-selected divisor is difftest territory); otyp is GOLD_PIECE, DAGGER, FOOD_RATION, CORPSE or GLOB_OF_GRAY_OOZE; no container contents (the cobj recursion is a separate extension)',
+    'mkobj keeps oclass equal to objects[otyp].oc_class; C tests the CORPSE type before the coin class while the port tests the class first, so type/class disagreements are outside this domain',
+    'mksobj creates globs only as food, so the glob branch precedes the coin branch on both sides',
+)
+
+STATE_SPECS += [
+    Spec('weight:stack', 'weight', 'objectWeight', [], js_file='js/mkobj.js',
+         require_counterexamples=True, state=WEIGHT_STATE, partitions=weight_partitions,
+         configure=weight_state, arguments=weight_arguments, pre=weight_domain,
+         assumptions=WEIGHT_ASSUMPTIONS,
+         probes=[('quantity correspondence omitted', UnrelatedState(
+             weight_domain, ('obj.quan',)))],
+         mutants=[('js/mkobj.js', 'Math.max(1, Math.trunc((quantity(object) + 50) / 100));',
+                   'Math.max(1, Math.trunc((quantity(object) + 49) / 100));')]),
 ]

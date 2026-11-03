@@ -197,12 +197,14 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 52 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 61 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
-ISAAC64/seed-packing claims, and eleven bounded-state/inline claims. The monster
-claims check all 383 valid native
-species with symbolic state where applicable; movement uses
+ISAAC64/seed-packing claims, eleven bounded-state/inline claims, and the
+nine gameplay-leaf claims of fv-equivalence-batch-3 (`xytodir`, the two
+weapon-skill bonuses, four mondata predicates, `armor_to_dragon` and
+`mkobj.c:weight` over ordinary stacks). The monster claims check all 383 valid
+native species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
 An empty partition fails the claim and reports its label. The regression

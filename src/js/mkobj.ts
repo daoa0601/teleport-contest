@@ -1448,7 +1448,10 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     // C mkobj.c:weight(): globs keep quantity one while absorption and
     // SHRINK_GLOB mutate their complete weight directly in owt.  This check
     // precedes partly-eaten food scaling because oeaten is also glob mass.
-    if (object.globby) return object.owt ?? base ?? 0;
+    // owt is unsigned in C and weight() returns (int) obj->owt, so a
+    // wizard-mode glob wish above INT_MAX wraps to the negative int32 value
+    // (objnam.c:readobjnam's override can reach 107374336 * 20 units).
+    if (object.globby) return (object.owt ?? base ?? 0) | 0;
     if (object.otyp === CORPSE && species !== undefined
         && Number.isInteger(species) && species >= 0 && species < MONSTER_BODY_META.length) {
         const [bodyWeight = 0, nutrition = 0]
@@ -1492,8 +1495,9 @@ export function objectWeight(object: WeightObject | null | undefined): number {
         }
         return ownWeight + contentsWeight;
     }
+    // C returns (int) obj->owt here too; owt is unsigned, so mirror the wrap.
     if (object.otyp === HEAVY_IRON_BALL && object.owt)
-        return object.owt;
+        return object.owt | 0;
     if (object.otyp === CANDELABRUM_OF_INVOCATION && object.spe)
         return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
     if (base > 0) return base * quantity(object);
