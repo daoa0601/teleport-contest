@@ -131,9 +131,20 @@ sh sys/unix/setup.sh "$HINTS_FILE"
 # --- Step 4: fetch + build Lua (NetHack 5.0 dependency) ---
 echo "[step 4] Fetching Lua..."
 cd "$RECORDER_DIR"
-if [ ! -f lib/lua-5.4.8/src/lua.h ]; then
+# fetch-Lua always exits 0 and stops at the first mirror that answers (a
+# mirror's 404 page can be saved as the tarball), so check the extracted
+# header and fall back to the nethack.org copy (same checksum).
+for attempt in 1 2 3; do
+    [ -f lib/lua-5.4.8/src/lua.h ] && break
     make fetch-lua >/dev/null
-fi
+    [ -f lib/lua-5.4.8/src/lua.h ] && break
+    rm -rf lib/lua-*
+    make fetch-lua-nhd >/dev/null
+    [ -f lib/lua-5.4.8/src/lua.h ] && break
+    rm -rf lib/lua-*
+    [ "$attempt" = 3 ] || sleep 30
+done
+[ -f lib/lua-5.4.8/src/lua.h ] || { echo "Lua 5.4.8 download failed" >&2; exit 1; }
 echo "[step 4] Building Lua..."
 ( cd lib/lua-5.4.8/src && make CC=clang SYSCFLAGS="$LUA_SYSCFLAGS" a >/dev/null )
 mkdir -p lib/lua
