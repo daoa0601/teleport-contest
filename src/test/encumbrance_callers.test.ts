@@ -6,7 +6,7 @@ import { A_CON, A_INT, A_STR, DISMOUNT_POLY, HUNGRY, OBJECT_TIMER_KIND } from '.
 import { bot } from '../js/botl.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { grantPrayerFavor, fixPrayerTrouble, Trouble } from '../js/pray.js';
-import { enchantWeapon } from '../js/enchant_weapon.js';
+import { enchantWeapon } from '../js/read.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { healHeroLegs, dropInventoryObjectAtHero } from '../js/do.js';
 import { resetInputState } from '../js/input.js';

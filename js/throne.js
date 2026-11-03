@@ -18,7 +18,7 @@ import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requireInitializedGame } from './gstate.js';
-import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { makePlural, verbForSubject } from './objnam.js';
 import { cureHeroSickness } from './potion.js';

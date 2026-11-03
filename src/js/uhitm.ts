@@ -144,7 +144,7 @@ import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
 import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, finishImmediateMonsterTrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification, triggerImmediateMonsterTrap } from './trap.js';
 import type { ErosionKind } from './trap.js';
-import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './two_weapon.js';
+import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './u_init.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
 import { dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, weaponHitBonus } from './weapon.js';

@@ -11,7 +11,7 @@ import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrate
 import { explode } from './explosion.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
-import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
+import { A_CON, A_DEX, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -25,7 +25,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from './potion.js';
 import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroMonsterForm, heroSpecies, polymorphHero, rememberPolymorphGenocide, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
-import { sokobanGuilt } from './trap.js';
+import { sokobanGuilt, erosionMatters } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
@@ -45,7 +45,7 @@ import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, deleteObject, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
-import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { cansee, couldsee } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
@@ -63,7 +63,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
 import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import { addExperience } from './exper.js';
-import { enchantWeapon } from './enchant_weapon.js';
+import { chwepon, isWeldedPrimary, objectEnchantment, setWeaponEnchantment } from './wield.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
@@ -90,7 +90,6 @@ import { isWeaponTool } from './object_properties.js';
 import { questMonsterSound } from './role_monsters.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { isWeldedPrimary } from './wield.js';
 import { monsterCensus } from './minion.js';
 import type { HeroGenocideCause } from './polyself.js';
 import type { MonsterNameGender } from './mondata.js';
@@ -127,7 +126,7 @@ export interface RemoveCurseOptions {
 }
 
 const WEAPON_CLASS = 2;
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
+const SCROLL_CLASS = 9, SPBOOK_CLASS = 10, ARMOR_CLASS = 3;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const S_HUMAN = 53;
@@ -649,6 +648,76 @@ async function hardenDragonScales(armor: GameObject, source: GameObject, state: 
     if (wasLit === undefined) delete armor.lamplit;
     else armor.lamplit = wasLit;
     await adjustArmorLight(armor, oldLight, state);
+}
+
+// C read.c:seffect_enchant_weapon(). The caller has already announced the
+// read, delivered the confusion line, and exercised Wisdom for the magic scroll.
+// Returns true when this module consumed the scroll itself (the chwepon()
+// bare-hands strange_feeling() path); false when the scroll still exists
+// and the caller finishes the normal read lifecycle.
+export async function enchantWeapon(scroll: GameObject, state: GameState = game): Promise<boolean> {
+    const confused = !!(state.u?.confused
+        || (state.u?.confusionTurns ?? 0) > 0);
+    const uwep = state.uwep || state.u?.uwep || null;
+
+    // A confused reading proofs or repairs the wielded erodeable weapon
+    // instead of enchanting it; wielded armor never enters this branch.
+    if (confused && uwep && erosionMatters(uwep)
+        && uwep.oclass !== ARMOR_CLASS) {
+        await proofConfusedReading(uwep, !!scroll.cursed, state);
+        return false;
+    }
+
+    const enchantment = uwep ? objectEnchantment(uwep) : 0;
+    const amount = scroll.cursed ? -1
+        : !uwep ? 1 /* guard further tests against null pointer */
+        : enchantment >= 9
+            ? (rn2(enchantment) === 0 ? 1 : 0) /* usually 0, maybe 1 */
+        : scroll.blessed ? rnd(3 - Math.trunc(enchantment / 3))
+        : 1; /* uncursed */
+    const processed = await chwepon(scroll, amount, state);
+    const weapon = state.uwep || state.u?.uwep || null;
+    if (weapon) capEnchantment(weapon);
+    return !processed;
+}
+
+// C seffect_enchant_weapon() confused branch: set, clear, or repair
+// erosion proofing. The enchantment never changes here.
+async function proofConfusedReading(uwep: GameObject, scursed: boolean, state: GameState) {
+    const oldErodeproof = !!uwep.oerodeproof;
+    const newErodeproof = !scursed;
+    uwep.oerodeproof = false; /* for messages */
+    if (heroIsBlind(state)) {
+        uwep.rknown = false;
+        await pline('Your weapon feels warm for a moment.');
+    } else {
+        uwep.rknown = true;
+        const glow = displayColorName(scursed ? 'purple' : 'golden', state);
+        await pline(`${ownedObjectAction(uwep, 'are', state)} covered by a `
+            + `${scursed ? 'mottled' : 'shimmering'} ${glow} `
+            + `${scursed ? 'glow' : 'shield'}!`);
+    }
+    if (newErodeproof && (uwep.oeroded || uwep.oeroded2)) {
+        uwep.oeroded = 0;
+        uwep.oeroded2 = 0;
+        await pline(`${ownedObjectAction(
+            uwep, heroIsBlind(state) ? 'feel' : 'look', state,
+        )} as good as new!`);
+    }
+    if (oldErodeproof && !newErodeproof) {
+        /* restore old proofing before shop charges for losing it */
+        uwep.oerodeproof = true;
+        await chargeAlteredUnpaidObject(uwep, 'degrade', state);
+    }
+    uwep.oerodeproof = newErodeproof;
+}
+
+// C read.c:cap_spe(): max +99, min -99.
+function capEnchantment(object: GameObject) {
+    const value = objectEnchantment(object);
+    if (Math.abs(value) > SPE_LIM) {
+        setWeaponEnchantment(object, Math.sign(value) * SPE_LIM);
+    }
 }
 
 // C read.c:seffect_destroy_armor().

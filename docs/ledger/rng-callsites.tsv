@@ -337,10 +337,10 @@ src/js/elemental.ts	setupElementalBubbles	rn2	"[""3""]"	constant
 src/js/elemental.ts	setupElementalBubbles	rn2	"[""4""]"	constant
 src/js/elemental.ts	setupElementalBubbles	rn2	"[""4""]"	constant
 src/js/elemental.ts	setupElementalBubbles	rn2	"[""7""]"	constant
-src/js/enchant_weapon.ts	chwepon	rn2	"[""3""]"	constant
-src/js/enchant_weapon.ts	chwepon	rn2	"[""7""]"	constant
-src/js/enchant_weapon.ts	enchantWeapon	rn2	"[""enchantment""]"	guarded
-src/js/enchant_weapon.ts	enchantWeapon	rnd	"[""3 - Math.trunc(enchantment / 3)""]"	guarded
+src/js/wield.ts	chwepon	rn2	"[""3""]"	constant
+src/js/wield.ts	chwepon	rn2	"[""7""]"	constant
+src/js/read.ts	enchantWeapon	rn2	"[""enchantment""]"	guarded
+src/js/read.ts	enchantWeapon	rnd	"[""3 - Math.trunc(enchantment / 3)""]"	guarded
 src/js/end.ts	finishLivingGame	d	"[""adjustedMonsterLevel(MONSTER_NAME.indexOf('housecat'))"", ""8""]"	unproved
 src/js/end.ts	identifyLifeSavingAmulet	random	"[""19""]"	constant
 src/js/engrave.ts	makeEngravingAt	rnd	"[""N_ENGRAVE - 1""]"	constant
@@ -2341,7 +2341,7 @@ src/js/apply.ts	continueTrapSetting	rnl	"[""10""]"	constant
 src/js/apply.ts	useSettableTrap	rnl	"[""10""]"	constant
 src/js/cmd.ts	confusePromptDirection	rn2	"[""5""]"	constant
 src/js/cmd.ts	confusePromptDirection	rn2	"[""count""]"	constant
-src/js/two_weapon.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
+src/js/wield.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
 src/js/u_init.ts	adjustStartingItem	rn2	"[""4""]"	constant
 src/js/u_init.ts	adjustStartingItem	rne	"[""3""]"	constant
 src/js/u_init.ts	collectNearbyCoords	random	"[""n""]"	guarded

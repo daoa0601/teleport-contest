@@ -61,7 +61,7 @@ import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { setTwoWeaponCombat } from './wield.js';
-import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 
