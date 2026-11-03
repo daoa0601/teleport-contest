@@ -124,6 +124,18 @@ export function nomuxCaptureBytes(grid, decGraphics) {
     }
     return rows.join('\n');
 }
+/**
+ * C termcap.c:nomux_raw_putch() clipping for the characters of one raw
+ * line: characters typed before column 0 or past the last column are
+ * dropped, and the first one that fits paints at the column it reached.
+ */
+export function nomuxRawPaintText(text, col, cols) {
+    if (col < 0)
+        return { col: 0, text: text.slice(-col) };
+    if (col >= cols)
+        return { col, text: '' };
+    return { col, text: text.slice(0, cols - col) };
+}
 export class NomuxCapture {
     rawActive = 0;
     rawRow = 0;
@@ -137,6 +149,10 @@ export class NomuxCapture {
         this.rawActive = clobberedInt(rawScreen, RAW_ACTIVE_AT, this.rawActive);
         this.rawRow = clobberedInt(rawScreen, RAW_ROW_AT, this.rawRow);
         this.rawCol = clobberedInt(rawScreen, RAW_COL_AT, this.rawCol);
+    }
+    /** Whether the capture latch is set (nomux_raw_active != 0). */
+    isLatched() {
+        return this.rawActive !== 0;
     }
     /** C termcap.c:nomux_get_cursor(). */
     cursor(col, row) {
@@ -166,7 +182,8 @@ export class NomuxCapture {
             this.rawRow = 0;
             this.rawCol = 0;
         }
-        const at = this.rawRow >= 24 ? null : { row: this.rawRow, col: this.rawCol };
+        const at = this.rawRow < 24 && this.rawRow >= 0
+            ? { row: this.rawRow, col: this.rawCol } : null;
         this.rawRow++;
         this.rawCol = 0;
         return at;

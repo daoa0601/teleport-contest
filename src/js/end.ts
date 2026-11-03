@@ -68,6 +68,7 @@ import { restoreBallAndChainPlacement } from './ball.js';
 import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './monmove.js';
 import { resetHeroTrap } from './trap.js';
+import { nomuxRawPaintText } from './tty_nomux.js';
 
 export interface DeathDamage {
     hpKey: 'mh' | 'uhp';
@@ -1109,6 +1110,10 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
         }
         game.nhDisplay?.clearScreen();
         game.nhDisplay?.setCursor(0, 0);
+        // C end.c:really_done() tears the windows down after a windowed
+        // topten, so tty_suspend_nhwindows()'s empty separator still
+        // reaches nomux_raw_emit() — and prints once the latch is set.
+        game.nhDisplay?.nomux.suspendSeparator();
     } else {
         const display = game.nhDisplay;
         display?.clearScreen();
@@ -1117,7 +1122,8 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
         // latched one keeps its row — so tty_suspend_nhwindows()'s empty
         // separator only prints then, above the notice — and each line's
         // characters run from the raw column with nomux_raw_putch()'s
-        // bounds: nothing paints once the row reaches the screen height.
+        // bounds: nothing paints outside rows 0..23 and columns 0..79.
+        const latched = display ? display.nomux.isLatched() : false;
         if (display) display.nomux.suspendSeparator();
         let row = 0;
         for (const line of lines) {
@@ -1128,18 +1134,17 @@ async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false }
             }
             const at = display.nomux.rawEmitLine();
             if (at === null) {
-                // The raw cursor has left the shadow buffer; the port
-                // keeps scrolling the longer list like the terminal's
-                // own puts() output.
+                if (latched) continue;
+                // An unlatched list longer than the screen: the port
+                // keeps scrolling it like the terminal's own output.
                 display.scrollUp();
                 terminalLine(display.rows - 1, 0, line.text, line.attr || 0);
                 row = display.rows;
                 continue;
             }
-            if (at.row < 0) continue;
             row = at.row + 1;
-            terminalLine(at.row, at.col, line.text.slice(0, display.cols - at.col),
-                line.attr || 0);
+            const paint = nomuxRawPaintText(line.text, at.col, display.cols);
+            terminalLine(at.row, paint.col, paint.text, line.attr || 0);
         }
         if (display && row === display.rows) {
             display.scrollUp();

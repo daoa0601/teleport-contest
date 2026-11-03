@@ -72,25 +72,38 @@ void test('an oversized terrain capture switches the recorded cursor to raw mode
         'the latched raw mode keeps the empty separator row and ends three rows down');
 });
 
-void test('a latched raw row keeps the score notice painting from that row', async () => {
+void test('a latched raw row past the screen paints no score notice', async () => {
+    // showexp lengthens the status line, so the same terrain view
+    // serializes past +6150 as well: the capture clobbers nomux_raw_row
+    // and nomux_raw_col with status-line text (0x3A333434 here), and
+    // nomux_raw_putch() paints nothing once the row is 24 or beyond —
+    // the recorder's final screen stays blank with the raw cursor
+    // reported as clobbered plus the three endgame lines.
     const engine = await runSegment({
-        seed: 924506948, datetime: '20000417080000', nethackrc: NETHACKRC,
-        moves: SETUP + '#te\rd \x1b', storage: memoryStorage(),
+        seed: 924506948, datetime: '20000417080000',
+        nethackrc: NETHACKRC.replace('time,', 'time,showexp,'),
+        moves: SETUP + '#te\rd \x1b,#quit\ryn ', storage: memoryStorage(),
     });
-    // Simulate a capture that also clobbered nomux_raw_row (a
-    // 6150-byte serialization): the latch is set and the raw cursor
-    // sits on row 2 when the game tears down the windows.
-    engine.display?.nomux.capture('x'.repeat(6146) + '2' + '\0\0\0'
-        + '\x02' + '\0\0\0');
-    engine.inputGate.feed(',#quit\ryn ');
-    await engine.runUntilInputNeeded();
+    const cursors = engine.getCursors();
+    assert.deepEqual(cursors.at(-2)?.slice(0, 2), [50, 978591792],
+        'the browsing boundaries report the clobbered raw cursor');
+    assert.equal(screenText(engine.getScreens().at(-1) ?? '').trim(), '',
+        'nothing paints when the latched raw row is past the screen');
+    assert.deepEqual(cursors.at(-1)?.slice(0, 2), [0, 978591795],
+        'the separator and two notice lines still advance the raw row');
+});
 
-    const endRows = screenText(engine.getScreens().at(-1) ?? '').split('\n');
-    assert.equal(endRows[0], '');
-    assert.equal(endRows[1], '');
-    assert.equal(endRows[2], '', 'the separator prints at the latched row');
-    assert.equal(endRows[3], '');
-    assert.match(endRows[4] ?? '', /^Since you were in wizard mode, the score list will not be checked\./);
-    assert.deepEqual(engine.getCursors().at(-1)?.slice(0, 2), [0, 5],
-        'the notice ends two rows further down than the unlatched quit');
+void test('a latched windowed topten still prints the teardown separator', async () => {
+    // C end.c:really_done() tears the windows down after a windowed
+    // topten, so tty_suspend_nhwindows()'s empty separator reaches
+    // nomux_raw_emit() and advances the latched raw row by one.
+    const engine = await runSegment({
+        seed: 924506948, datetime: '20000417080000',
+        nethackrc: NETHACKRC.replace('runmode:run', 'runmode:run,toptenwin'),
+        moves: SETUP + '#te\rd \x1b,#quit\ryn  ', storage: memoryStorage(),
+    });
+    assert.ok(engine.getScreens().some(s => /Since you were in wizard mode/.test(screenText(s))),
+        'the windowed score notice must be shown');
+    assert.deepEqual(engine.getCursors().at(-1)?.slice(0, 2), [0, 1],
+        'the teardown separator leaves the latched raw cursor one row down');
 });
