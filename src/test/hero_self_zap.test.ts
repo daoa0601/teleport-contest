@@ -14,7 +14,8 @@ import {
 } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { zapHeroWithObject } from '../js/hero_self_zap.js';
+import { zapHeroWithObject } from '../js/zap.js';
+
 import { heroHasRemovableSpeed } from '../js/mhitu.js';
 import { speedUpHero } from '../js/potion.js';
 import { heroStatusLine } from '../js/hero_status.js';

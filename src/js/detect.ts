@@ -66,6 +66,7 @@ import { terrainCoversObjectsAt } from './display.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { expelHero } from './hero_expulsion.js';
+
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './currency.js';
 import { MONSTER_NAME } from './monster_data.js';

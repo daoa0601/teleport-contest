@@ -5,7 +5,8 @@ import assert from 'node:assert/strict';
 import { IRONBARS, ROOM, ROOMOFFSET, W_ARMH, W_ARMS, W_WEP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { heroBreathAttack } from '../js/hero_breath.js';
+import { heroBreathAttack } from '../js/zap.js';
+
 import type { HeroBreathOptions } from '../js/polyself.js';
 import { useHeroBreath } from '../js/polyself.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

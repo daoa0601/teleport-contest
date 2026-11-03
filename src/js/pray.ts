@@ -12,6 +12,7 @@ import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomac
 import { heroIsPunished } from './ball.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseForHero, reviveCorpseImmediately } from './corpse_revival.js';
+
 import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, isok } from './const.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
@@ -57,7 +58,8 @@ import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProp
 import { punishHero, unpunishHero } from './punishment.js';
 import { paranoidQuery, promptYesNo, promptYesNoQuit } from './query.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './muse.js';
+
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';

@@ -30,9 +30,8 @@ import { rnd } from './rng.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES } from './potion.js';
 import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
-import {
-    detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget, snuffThrownCandle,
-} from './thrown_object.js';
+import { detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget, snuffThrownCandle } from './thrown_object.js';
+
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 
 interface SwallowedThrowOptions {

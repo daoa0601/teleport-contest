@@ -4,6 +4,7 @@ import { game, requireInitializedGame } from './gstate.js';
 import { currentAttribute, maximumAttribute, ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import type { EnlightenmentFinal } from './enlightenment_attributes.js';
+
 import { heroHandedName } from './body_parts.js';
 import { artifactById } from './artifacts.js';
 import { recorderLocalHour } from './calendar.js';

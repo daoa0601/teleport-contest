@@ -16,7 +16,7 @@ import { monsterHasMagicResistance } from './anti_magic_trap.js';
 import { touchPetrifies } from './stoning.js';
 import { fillPitWithBoulderAt, finishImmediateMonsterTrap, seeTrap, trapAt, triggerImmediateMonsterTrap, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
-import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, speciesEatsCorpses } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter } from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
 import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_SUBTYPE, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING } from './object_data.js';
@@ -62,18 +62,18 @@ import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn } from './timeout.js';
 import { lightDamage } from './light.js';
 import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem } from './mthrowu.js';
-import { castNativeRay, hitMonsterWithRay } from './ray_attack.js';
+
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
-import { hitObjectWithWand } from './immediate_zap.js';
+
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
-import { turnCarriedObjects, turnHeroWithUndeadMagic } from './undead_turning.js';
+
 import { randomTeleportDepth } from './level_teleport.js';
 import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough } from './mklev.js';
@@ -95,6 +95,15 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterOffensiveChoice, MonsterOffensiveOptions, MonsterOffensiveResult } from './monster_offensive_types.js';
 import { migrateMonsterOffLevel } from './dog.js';
+import { weaponReflects } from './artifacts.js';
+import { exerciseWisdom } from './attrib.js';
+import { W_AMUL, W_ARMS } from './const.js';
+import { recordObjectKnowledge } from './o_init.js';
+import { SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL } from './object_data.js';
+import { castNativeRay, hitMonsterWithRay } from './zap.js';
+import { hitObjectWithWand } from './zap.js';
+import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
+
 
 // ---------------------------------------------------------------------------
 // Shared muse.c constants.
@@ -2354,3 +2363,84 @@ function splitOilPotion(oil: GameObject, state: GameState): GameObject {
     return single;
 }
 
+// ── moved from src/js/ray.ts ──
+function monsterWornObject(monster: Monster, mask: number) {
+    const inventory = monster?.minvent || monster?.inventory || [];
+    return inventory.find(object => ((object.owornmask ?? 0) & mask) !== 0)
+        || null;
+}
+
+export interface ReflectionSource { object: GameObject | null; noun: string; }
+
+// C muse.c:ureflects(): finds the reflecting worn item; callers print the
+// "It bounces off your ..." line ureflects() used to print itself, and
+// discoverHeroReflectionSource below performs its makeknown()
+// (discover_object()) for a reflecting shield or amulet.
+export function heroReflectionSource(state: GameState = game): ReflectionSource | null {
+    if (state.uarms?.otyp === SHIELD_OF_REFLECTION)
+        return { object: state.uarms, noun: 'shield' };
+    const weapon = state.uwep || state.u?.uwep;
+    if (weaponReflects(weapon, state))
+        return { object: weapon, noun: 'weapon' };
+    const amulet = state.uamul || state.u?.uamul;
+    if (amulet?.otyp === AMULET_OF_REFLECTION)
+        return { object: amulet, noun: 'medallion' };
+    const armor = state.uskin || state.uarm || state.u?.uarm;
+    if (armor && [SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL]
+        .includes(armor.otyp)) {
+        return { object: armor, noun: state.uskin ? 'luster' : 'armor' };
+    }
+    if (MONSTER_NAME[state.u.umonnum ?? -1] === 'silver dragon')
+        return { object: null, noun: 'scales' };
+    return null;
+}
+
+export function heroReflectsRay(state: GameState = game) {
+    return !!(state.u?.reflection
+        || heroReflectionSource(state));
+}
+
+export function monsterReflectionSource(monster: Monster, state: GameState = game): ReflectionSource | null {
+    const shield = monsterWornObject(monster, W_ARMS);
+    if (shield?.otyp === SHIELD_OF_REFLECTION)
+        return { noun: 'shield', object: shield };
+
+    const weapon = monsterWieldedWeapon(monster);
+    if (weaponReflects(weapon, state)) {
+        return { noun: 'weapon', object: weapon };
+    }
+
+    const amulet = monsterWornObject(monster, W_AMUL);
+    if (amulet?.otyp === AMULET_OF_REFLECTION)
+        return { noun: 'amulet', object: amulet };
+    const suit = monsterWornObject(monster, W_ARM);
+    if (suit && [SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL]
+        .includes(suit.otyp)) {
+        return { noun: 'armor', object: suit };
+    }
+
+    const species = MONSTER_NAME[monster?.mnum];
+    if (species === 'silver dragon' || species === 'Chromatic Dragon')
+        return { noun: 'scales', object: null };
+    return null;
+}
+
+export function monsterReflectsRay(monster: Monster, state: GameState = game) {
+    return monsterReflectionSource(monster, state) !== null;
+}
+
+export function discoverHeroReflectionSource(
+    source: ReflectionSource | null = heroReflectionSource(), state: GameState = game,
+) {
+    const object = source?.object;
+    if (!object || ![SHIELD_OF_REFLECTION, AMULET_OF_REFLECTION].includes(object.otyp)
+        || state._knownObjectTypes?.has(object.otyp)) return;
+    exerciseWisdom(true, state);
+    recordObjectKnowledge(object.otyp, state);
+}
+
+export function discoverReflectingShield(state: GameState = game) {
+    const shield = state.uarms;
+    if (!shield || shield.otyp !== SHIELD_OF_REFLECTION) return;
+    discoverHeroReflectionSource({ object: shield, noun: 'shield' }, state);
+}

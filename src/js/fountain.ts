@@ -44,6 +44,7 @@ import { floatingAbove } from './levitation_commands.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { spendHeroNutrition, updateHeroHunger, vomitHero } from './eat.js';
 import { showEnlightenment } from './insight.js';
+
 import { fruitName } from './fruit.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { detectMonsters } from './detect.js';

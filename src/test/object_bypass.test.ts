@@ -4,7 +4,8 @@ import test from 'node:test';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
-import { hitFloorPileWithWand } from '../js/immediate_zap.js';
+import { hitFloorPileWithWand } from '../js/zap.js';
+
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { CLUB, DAGGER, POT_WATER, ROCK, STATUE, WAN_CANCELLATION, WAN_STRIKING } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';

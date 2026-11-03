@@ -5,7 +5,7 @@ import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
-import { A_STR, BOLT_LIM, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
+import { A_STR, BOLT_LIM, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit, isok, } from './const.js';
 import { monsterName } from './do_name.js';
 import { artifactById } from './artifacts.js';
 import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
@@ -36,7 +36,7 @@ import { closedDoor } from './monmove.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
 import { shipObject } from './dokick.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rn2, rnd } from './rng.js';
+import { rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
@@ -455,13 +455,6 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     }
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
-// C zap.c:skiprange().
-function rockSkipRange(range) {
-    const quarter = Math.trunc(range / 4);
-    const start = range - (quarter > 0 ? rnd(quarter) : 0);
-    const end = start - Math.trunc(start / 4) * rnd(3);
-    return { start, end: end >= start ? start - 1 : end };
-}
 function rockSkipsOverMonster(monster) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const swimming = 0x00000002;
@@ -540,4 +533,5 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
             await newsym(transientCell.x, transientCell.y);
     }
 }
+import { rockSkipRange } from './zap.js';
 //# sourceMappingURL=thrown_object.js.map

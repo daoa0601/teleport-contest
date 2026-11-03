@@ -5,7 +5,6 @@ import { game } from './gstate.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
 import { magicNegation } from './mhitu.js';
-import { simpleArmorName } from './do_wear.js';
 
 import { confersLuck } from './hero_inventory.js';
 import { fromWhat, extrinsicPropertyMask, intrinsicPropertyMask, veryFast } from './attribute_provenance.js';
@@ -16,7 +15,6 @@ import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
 
-import { minimalObjectName } from './objnam.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
 import {
@@ -284,25 +282,6 @@ function itemResistanceLines(property: PropertyName, damage: string, final: Enli
     return [`  Your items ${final ? 'were' : 'are'}${partial ? ' somewhat' : ''} protected from ${damage}${cause}.`];
 }
 
-// C zap.c:item_what(): wizard-mode source of the item-protection line,
-// naming the worn piece whose extrinsic protects the inventory.
-function itemResistanceCause(property: PropertyName): string {
-    // C zap.c:adtyp_to_prop() already applied: callers pass the property.
-    const sources = game.u._propertySources?.[property]?.worn ?? [];
-    for (const slot of ['uarmc', 'uarm', 'uarmu', 'uarmh', 'uarmg', 'uarmf', 'uarms'] as const) {
-        const object = game[slot];
-        if (object && sources.some(source => source.slot === slot)) return ` by your ${simpleArmorName(object, slot, game)}`;
-    }
-    for (const slot of ['uamul', 'ublindf', 'uleft', 'uright', 'uwep'] as const) {
-        if (!sources.some(source => source.slot === slot)) continue;
-        if ((slot === 'uleft' || slot === 'uright')
-            && sources.some(source => source.slot === 'uleft') && sources.some(source => source.slot === 'uright')) return ' by your rings';
-        const object = game[slot];
-        if (object) return ` by your ${minimalObjectName(object)}`;
-    }
-    return '';
-}
-
 // C insight.c:enlght_combatinc(): the size word for a to-hit, damage, or
 // defense modifier; defense shrinks by a third to stretch the ranges, and
 // the exact amount shows only when final or in wizard mode.
@@ -318,7 +297,6 @@ function times(count: number): string {
     return count === 1 ? 'once' : count === 2 ? 'twice' : count === 3 ? 'thrice' : `${count} times`;
 }
 
-
 // C insight.c:enlght_line(): the contraction pass of the sentence builder
 // ("are not" becomes "aren't" and friends).
 export function contractEnlightenment(line: string): string {
@@ -332,3 +310,4 @@ export function monkArmorPenalty(): number {
     return game.uarm && game.urole?.key === 'monk' && !Upolyd(game.u)
         ? game.urole.spellcasting.armor : 0;
 }
+import { itemResistanceCause } from './zap.js';

@@ -78,7 +78,8 @@ import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './currency.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource } from './muse.js';
+
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';

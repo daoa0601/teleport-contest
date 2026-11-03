@@ -9,9 +9,6 @@ import { TemporaryMapEffect } from './temporary_map_effect.js';
 import {
     A_STR,
     BOLT_LIM,
-    DOOR,
-    D_CLOSED,
-    D_LOCKED,
     IRONBARS,
     IS_SOFT,
     IS_WATERWALL,
@@ -47,7 +44,7 @@ import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { MapLocation, Position, Trap } from './map_types.js';
+import type {  Position, Trap } from './map_types.js';
 import type { DisplayGlyph } from './display.js';
 import type { MessagePublisher } from './pline.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
@@ -75,9 +72,8 @@ import {
 } from './object_properties.js';
 import { shipObject } from './dokick.js';
 
-
 import { projectileHitsIronBars } from './projectile_bars.js';
-import { rn2, rnd } from './rng.js';
+import { rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './shk.js';
@@ -144,7 +140,6 @@ const GEM_CLASS = 13;
 function objectClass(object: GameObject): number {
     return object?.oclass || objectClassForType(object?.otyp);
 }
-
 
 function liveMonsterAt(state: GameState, x: number, y: number): Monster | null {
     if (!state.level) return null;
@@ -596,14 +591,6 @@ async function flyPhysicalObject({
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 
-// C zap.c:skiprange().
-function rockSkipRange(range: number): { start: number; end: number } {
-    const quarter = Math.trunc(range / 4);
-    const start = range - (quarter > 0 ? rnd(quarter) : 0);
-    const end = start - Math.trunc(start / 4) * rnd(3);
-    return { start, end: end >= start ? start - 1 : end };
-}
-
 function rockSkipsOverMonster(monster: Monster): boolean {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const swimming = 0x00000002;
@@ -691,3 +678,4 @@ export async function captureThrownObjectFlight(
             await newsym(transientCell.x, transientCell.y);
     }
 }
+import { rockSkipRange } from './zap.js';

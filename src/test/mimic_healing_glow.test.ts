@@ -4,7 +4,8 @@ import { M_AP_OBJECT } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { pushKeys } from '../js/input.js';
 import { game } from '../js/gstate.js';
-import { hitMonsterWithWand } from '../js/immediate_zap.js';
+import { hitMonsterWithWand } from '../js/immediate_monster_magic.js';
+
 import { SCR_MAGIC_MAPPING, SPE_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

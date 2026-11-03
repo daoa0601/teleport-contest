@@ -3,7 +3,8 @@ import test from 'node:test';
 import { glyphAt } from '../js/display.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { game } from '../js/gstate.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
 

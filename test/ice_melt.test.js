@@ -6,7 +6,7 @@ import { buryObject } from '../js/dig.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { meltIce } from '../js/ice.js';
+import { meltIce } from '../js/zap.js';
 import { pushKeys } from '../js/input.js';
 import { BEARTRAP, BELL_OF_OPENING, BOULDER, GOLD_PIECE } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';

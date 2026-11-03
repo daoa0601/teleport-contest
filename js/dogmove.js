@@ -41,7 +41,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';
 import { touchPetrifies } from './stoning.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterLocomotion, } from './mondata.js';
-import { monsterReflectsRay } from './ray.js';
+import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { getTrack } from './track.js';
 import { d, rn2, rnd } from './rng.js';

@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { docrt, flush_screen } from '../js/display.js';
-import { makeWish } from '../js/wish.js';
+import { makeWish } from '../js/zap.js';
+
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenCell, requireScreenRow } from './support/screen.js';

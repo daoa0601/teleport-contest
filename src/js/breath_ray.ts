@@ -2,10 +2,13 @@
 // C refs: polyself.c dobreathe(), mthrowu.c breamm(), and buzzmu().
 import type { MonsterAttack } from './data_types.js';
 import type { Monster } from './monster_types.js';
-import type { NativeRayOptions } from './ray_attack.js';
+import type { NativeRayOptions } from './zap.js';
+
 import { game } from './gstate.js';
-import { effectiveBreathDamage } from './hero_breath.js';
-import { castNativeRay } from './ray_attack.js';
+import { effectiveBreathDamage } from './zap.js';
+
+import { castNativeRay } from './zap.js';
+
 
 const DIRECTIONS = Object.freeze({
     h: [-1, 0], l: [1, 0], j: [0, 1], k: [0, -1],

@@ -10,7 +10,8 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { meltIce } from '../js/ice.js';
+import { meltIce } from '../js/zap.js';
+
 import { createCorpstatAt } from '../js/mkobj.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterGivenName } from '../js/do_name.js';

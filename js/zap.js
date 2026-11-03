@@ -9,29 +9,27 @@ import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, isok, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
-import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_KNOCK, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_WIZARD_LOCK, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_OPENING, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
-import { zapHeroWithObject } from './hero_self_zap.js';
+import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, displayColorName, displayLiquidName, docrt, glyphAt, newsym, randomDisplayMonsterName, shieldeff, unmap_invisible } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
+import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetHeroTrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
+import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing } from './recharge.js';
 import { finishHeroDeath } from './end.js';
-import { meltIce } from './ice.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { lightDamage, lightRoom } from './light.js';
@@ -53,8 +51,6 @@ import { promptDirection } from './tty_prompts.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasWornProperty } from './properties.js';
-import { closedRayDoor } from './ray.js';
-import { hitMonsterWithRay, zapRayWithObject } from './ray_attack.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { isContainer } from './container.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
@@ -73,13 +69,10 @@ import { forceDescribeDecor } from './dungeon_feature.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
 import { addExperience } from './exper.js';
 import { explode } from './explosion.js';
-import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand, hitMonsterWithWand, hitObjectWithWand } from './immediate_zap.js';
-import { doEnlightenmentEffect, monsterStatusLine } from './insight.js';
+import { monsterStatusLine, showEnlightenment } from './insight.js';
 import { gotoLevel } from './level_change.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
-import { goodPosition } from './teleport_rules.js';
-import { makeWish } from './wish.js';
 import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
@@ -94,6 +87,68 @@ import { updateInventoryPresentation } from './u_init.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
+import { setArtifactOrigin } from './artifacts.js';
+import { heroIsPunished } from './ball.js';
+import { heroResistsBlindingLight, monsterResistsBlindingLight } from './blinding_attack.js';
+import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
+import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { xyToDirection } from './cmd.js';
+import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
+import { reviveCorpseByMagic } from './corpse_revival.js';
+import { unearthFloorObjectsAt } from './dig.js';
+import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph } from './display.js';
+import { namelessMonsterName } from './do_name.js';
+import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
+import { finishMonsterEating } from './dogmove.js';
+import { restartEggHatchTimer } from './egg.js';
+import { reportHeroEncumbrance } from './encumbrance.js';
+import { loseHeroExperience } from './exper.js';
+import { remove_object, sweepFloorPile } from './floor_object.js';
+import { hitFloorObjectWithForce } from './force_bolt.js';
+import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
+import { requireGameLevel } from './gstate.js';
+import { applyHeroLocationEffects, burnAwayHeroSlime, endVoluntaryMultiTurn } from './hack.js';
+import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { setHeroGrip } from './hero_grip.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { zapHeroInvisible } from './hero_invisibility.js';
+import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
+import { heroStatusLine } from './hero_status.js';
+import { mergeObjectStacks } from './invent.js';
+import { monsterSpellDeathReason } from './mcastu.js';
+import { putMonsterToSleep } from './mhitm.js';
+import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
+import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
+import { wornMonsterLifeSaver } from './mondeath.js';
+import { makeMonsterFlee } from './monmove.js';
+import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
+import { findMonsterArmorClass } from './monworn.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource, monsterReflectsRay } from './muse.js';
+import { BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING } from './object_data.js';
+import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
+import { poisonHero } from './poison.js';
+import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
+import { propertyIsActive } from './properties.js';
+import { unpunishHero } from './punishment.js';
+import { getLine } from './query.js';
+import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
+import { displayRayName, realRayName } from './ray_name.js';
+import { liveSpellSkill } from './spell.js';
+import { activateStatueTrapAt } from './statue_trap.js';
+import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
+import { relocateObjectRandomly } from './teleport.js';
+import { TemporaryMapEffect } from './temporary_map_effect.js';
+import { putHeroToSleep } from './timeout.js';
+import { burnArmorByFire, burnHeroArmorByFire, damageObjectWithAcid, erodeArmor, fillPitWithBoulderAt } from './trap.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { flushPendingTopline } from './tty_topline.js';
+import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
+import { monsterWieldedWeapon } from './weapon.js';
+import { showTextWindow } from './windows.js';
+import { hitMonsterWithWand } from './immediate_monster_magic.js';
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
@@ -1145,7 +1200,6 @@ export function applyFireToFloorAt(x, y, state = game) {
 export function monsterHasElementalResistance(monster, mask) {
     return !!(monsterResistanceBits(monster) & mask);
 }
-export { hitMonsterWithRay, zapRayWithObject };
 function destroyable(object, damageType) {
     if (!object || object.artifact || object.oartifact)
         return false;
@@ -2661,5 +2715,1998 @@ function representedSpecies(object) {
     if (object.corpsenm === undefined)
         throw new Error(`Object ${object.o_id} has no represented monster species`);
     return object.corpsenm;
+}
+// ── moved from src/js/hero_expulsion.ts ──
+// C zap.c:release_hold(). Magical opening releases either creature's grip,
+// or expels the hero with the ordinary landing effects when swallowed.
+export async function releaseHold(state = game) {
+    requireLiveGame(state);
+    const monster = state.u.ustuck;
+    if (!monster) {
+        await impossible('release_hold when not held?', { state });
+        return { died: false };
+    }
+    if (state.u.uswallow) {
+        if (monsterDigests(monster))
+            await plineWithContinuation(heroIsBlind(state)
+                ? formatFeltMessage('a sudden rush of air!', state)
+                : `${monsterName(monster, { state, capitalized: true })} opens its mouth!`);
+        return await expelHero(monster, { state });
+    }
+    if (heroFormSticks(state)) {
+        setHeroGrip(null, state);
+        await plineWithContinuation(`You release ${monsterName(monster, { state })}.`);
+    }
+    else {
+        await releaseHeroFromMonster(monster, { state });
+        const name = monsterName(monster, { state });
+        await plineWithContinuation(`You are released ${monsterHasNoHands(monster.mnum)
+            ? `by ${name}` : `from ${possessiveName(name)} grasp`}.`);
+    }
+    return { died: !!state.program_state.gameover };
+}
+// ── moved from src/js/corpse_revival.ts ──
+export function zombieCanDig(x, y, state) {
+    if (state.level?.traps?.some(trap => trap.tx === x && trap.ty === y))
+        return false;
+    const location = state.level?.at(x, y);
+    return !!location && [ROOM, CORR, GRAVE].includes(location.typ);
+}
+function eggCanHatch(egg, state) {
+    const mnum = egg?.corpsenm;
+    if (mnum === undefined || !Number.isInteger(mnum) || mnum < 0)
+        return false;
+    const younger = monsterYoungerForm(mnum);
+    return [mnum, younger].filter(Number.isInteger).every(species => !((state.mvitals?.[species]?.mvflags ?? 0) & G_GENOD));
+}
+async function announceRevival(event, state) {
+    const x = event?.location?.x ?? event?.monster?.mx;
+    const y = event?.location?.y ?? event?.monster?.my;
+    if (!event?.monster || !cansee(x, y))
+        return;
+    const name = namelessMonsterName(event.monster, { state, article: 'the' });
+    await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
+}
+// C zap.c:revive_egg().
+export async function turnObjectWithUndeadMagic(object, state = game) {
+    if (object.otyp === EGG) {
+        if (eggCanHatch(object, state))
+            restartEggHatchTimer(object);
+        return true;
+    }
+    if (object.otyp !== CORPSE) {
+        // NetHack counts another floor object as a beam hit even though
+        // undead turning leaves that object unchanged.
+        return true;
+    }
+    const event = await reviveCorpseByMagic(object, state);
+    if (event?.kind !== 'revived')
+        return false;
+    for (const message of event.messages || [])
+        await plineWithContinuation(message);
+    await announceRevival(event, state);
+    return true;
+}
+export async function turnCarriedObjects(inventory, state = game) {
+    requirePlayingGame(state);
+    let revived = 0;
+    const heroInventory = inventory === state.inventory;
+    for (const object of [...(inventory || [])]) {
+        if (object.otyp === EGG) {
+            if (eggCanHatch(object, state))
+                restartEggHatchTimer(object);
+            continue;
+        }
+        if (object.otyp !== CORPSE)
+            continue;
+        const carrier = object.ocarry || state.level.monsters.find(monster => (monster.minvent || monster.inventory || []).includes(object));
+        const visible = heroInventory || carrier && canSeeMonster(carrier);
+        const plural = (object.quan ?? object.quantity ?? 1) > 1;
+        const corpse = visible ? `${plural ? 'One of ' : ''}${ownedObjectName(object, state, { capitalized: !plural })}` : '';
+        const species = object.corpsenm;
+        const event = await reviveCorpseByMagic(object, state, { byHero: !state.context.mon_moving });
+        if (event?.kind !== 'revived')
+            continue;
+        revived++;
+        for (const message of event.messages || [])
+            await plineWithContinuation(message);
+        if (visible) {
+            const alive = !monsterIsNonliving(event.monster.mnum);
+            const different = species !== event.monster.mnum;
+            const form = different ? ` as ${withIndefiniteArticle(monsterTypeName(event.monster.mnum, event.monster.female))}` : '';
+            const subject = state._lastPlineKind === PLNMSG_OBJ_GLOWS ? 'It' : corpse;
+            await plineWithContinuation(`${subject} suddenly ${alive ? 'comes alive' : 'reanimates'}${form}!`);
+        }
+        else if (canSeeMonster(event.monster)) {
+            await plineWithContinuation(`${monsterName(event.monster, { state, article: 'a', capitalized: true })} suddenly appears!`);
+        }
+    }
+    if (heroInventory && revived)
+        await reportHeroEncumbrance(state);
+    return revived;
+}
+export async function turnMonsterWithUndeadMagic(monster, source, state, options) {
+    const inventory = monster.minvent || monster.inventory || [];
+    const revived = await turnCarriedObjects(inventory, state);
+    const affected = monsterIsUndead(monster.mnum)
+        || monsterIsVampireShifter(monster);
+    if (!affected) {
+        if (revived)
+            await options.wakeMonster(monster);
+        return;
+    }
+    let damage = options.roll(8);
+    if (state.urole?.key === 'knight' && state.u?.uhave?.questart)
+        damage *= 2;
+    if (source === 'spell')
+        damage = adjustSpellDamage(damage, state);
+    state.context.bypasses = true;
+    const attackLevel = source === 'wand' ? 12 : state.u?.ulevel ?? 1;
+    const resisted = monsterResistsEffect(monster, attackLevel, options.random);
+    if (resisted) {
+        damage = Math.ceil(damage / 2);
+    }
+    monster.mhp -= damage;
+    if (monster.mhp <= 0) {
+        await options.finishMonsterKill(monster, monster.mx, monster.my);
+        if (monster.dead || monster.mhp <= 0)
+            return;
+    }
+    if (!resisted) {
+        const flight = await makeMonsterFlee(monster, {
+            state, random: options.random, rollOne: options.roll,
+        });
+        if (flight.heroDied)
+            return true;
+    }
+    await options.wakeMonster(monster);
+    return false;
+}
+// C zap.c:unturn_you().
+export async function turnHeroWithUndeadMagic(state = game, { roll = rnd } = {}) {
+    requirePlayingGame(state);
+    await turnCarriedObjects(state.inventory, state);
+    if (monsterIsUndead(state.u?.umonnum)) {
+        const alreadyStunned = (state.u?.stunnedTurns ?? 0) > 0;
+        await plineWithContinuation(formatFeltMessage(`frightened and ${alreadyStunned ? 'even more ' : ''}stunned.`, state));
+        await makeStunned((state.u.stunnedTurns ?? 0) + roll(30), { state, talk: false });
+    }
+    else {
+        await plineWithContinuation('You shudder in dread.');
+    }
+}
+// ── moved from src/js/immediate_zap.ts ──
+const WAN_OPENING = OBJECT_NAMES.indexOf('opening');
+const WAN_LOCKING = OBJECT_NAMES.indexOf('locking');
+const WAN_PROBING = OBJECT_NAMES.indexOf('probing');
+const WAN_NOTHING = OBJECT_NAMES.indexOf('nothing');
+const SPE_KNOCK = OBJECT_NAMES.indexOf('knock');
+const SPE_WIZARD_LOCK = OBJECT_NAMES.indexOf('wizard lock');
+const SPE_DRAIN_LIFE = OBJECT_NAMES.indexOf('drain life');
+// C zap.c:zapsetup(): clear obj_zapped before a wand effect runs.
+export function beginImmediateZap(state = game) {
+    state.context.obj_zapped = false;
+}
+// C zap.c:zapwrapup(): report the poly-shock shudder once the effect is
+// done, then clear obj_zapped again.
+export async function finishImmediateZap(state = game) {
+    if (state.context?.obj_zapped)
+        await plineWithContinuation(formatFeltMessage('shuddering vibrations.', state));
+    state.context.obj_zapped = false;
+}
+export async function hitFloorPileWithWand(wand, x, y, { state = game, direction = 0 } = {}) {
+    requirePlayingGame(state);
+    const column = state.level.objects[x];
+    const original = column?.[y] || [];
+    if (!column || !original.length)
+        return 0;
+    const hiding = direction !== 0 && state.u.uundetected && heroFormHidesUnderObjects(state);
+    let first = true;
+    if ([WAN_STRIKING, SPE_FORCE_BOLT].includes(wand.otyp)) {
+        const top = original[0];
+        if (await activateStatueTrapAt(x, y, { state, shatter: true }))
+            learnWand(wand, { state });
+        if (column[y]?.[0] !== top)
+            first = false;
+    }
+    state.context.poly_zapped = -1;
+    let affected = 0;
+    await sweepFloorPile(x, y, state, async (object) => {
+        if (hiding) {
+            if (first) {
+                first = false;
+                if (direction > 0)
+                    return true;
+            }
+            else if (direction < 0)
+                return true;
+        }
+        affected += await hitObjectWithWand(object, wand, { state });
+        return !state.program_state.gameover;
+    });
+    if (state.program_state.gameover)
+        return affected;
+    if (state.context.poly_zapped >= 0)
+        await createPolymorphMonsterFromPile(x, y, { state });
+    const pile = column[y] || [];
+    // Recreate the native pile order only if polymorph left a boulder below
+    // another object. Both groups retain their existing internal order.
+    if (pile.some((object, index) => object.otyp === BOULDER
+        && pile.slice(0, index).some(earlier => earlier.otyp !== BOULDER))) {
+        column[y] = [
+            ...pile.filter(object => object.otyp === BOULDER),
+            ...pile.filter(object => object.otyp !== BOULDER),
+        ];
+    }
+    if (hiding)
+        await maybeUnhideAt(x, y, state);
+    await fillPitWithBoulderAt(x, y, state);
+    return affected;
+}
+export async function hitObjectWithWand(object, wand, { state = game } = {}) {
+    requirePlayingGame(state);
+    if (object === wand)
+        return 0;
+    if (object.bypass) {
+        if (state.context?.bypasses)
+            return 0;
+        object.bypass = false;
+    }
+    if (object.where !== 'floor' && wand.otyp !== SPE_STONE_TO_FLESH)
+        throw new Error('Immediate object magic requires a floor object or stone to flesh');
+    if (object === state.uball || object === state.u.uball)
+        return 0;
+    if (object === state.uchain || object === state.u.uchain) {
+        if (![WAN_OPENING, SPE_KNOCK].includes(wand.otyp))
+            return 0;
+        await unpunishHero(state);
+        learnWand(wand, { state });
+        return 1;
+    }
+    let affected = 1, learned = false;
+    switch (wand.otyp) {
+        case WAN_POLYMORPH:
+        case SPE_POLYMORPH: {
+            const result = await polymorphFloorObject(object, { state });
+            affected = Number(result.affected);
+            learned = result.learned;
+            break;
+        }
+        case WAN_PROBING:
+            learned = await probeObject(object, { state });
+            affected = Number(learned);
+            break;
+        case WAN_STRIKING:
+        case SPE_FORCE_BOLT: {
+            const result = await hitFloorObjectWithForce(object, { state });
+            learned = result.learned;
+            affected = result.affected;
+            break;
+        }
+        case WAN_CANCELLATION:
+        case SPE_CANCELLATION:
+            await cancelObjectMagic(object, { state });
+            await newsym(object.ox, object.oy);
+            break;
+        case SPE_DRAIN_LIFE:
+            await drainObjectEnchantment(object, { state, byHero: true });
+            break;
+        case WAN_TELEPORTATION:
+        case SPE_TELEPORT_AWAY: {
+            const x = object.ox, y = object.oy;
+            await relocateObjectRandomly(object, { state });
+            await maybeUnhideAt(x, y, state);
+            break;
+        }
+        case WAN_MAKE_INVISIBLE:
+            break;
+        case WAN_UNDEAD_TURNING:
+        case SPE_TURN_UNDEAD:
+            if (object.otyp === CORPSE) {
+                const result = await reviveFloorCorpse(object, state);
+                affected = Number(result.affected);
+                learned = result.learned;
+            }
+            else
+                affected = Number(await turnObjectWithUndeadMagic(object, state));
+            break;
+        case WAN_OPENING:
+        case SPE_KNOCK:
+        case WAN_LOCKING:
+        case SPE_WIZARD_LOCK:
+            learned = [CHEST, LARGE_BOX].includes(object.otyp)
+                && await changeBoxLockByMagic(object, wand, { state });
+            affected = Number(learned);
+            break;
+        case WAN_SLOW_MONSTER:
+        case SPE_SLOW_MONSTER:
+        case WAN_SPEED_MONSTER:
+        case WAN_NOTHING:
+        case SPE_HEALING:
+        case SPE_EXTRA_HEALING:
+            affected = 0;
+            break;
+        case SPE_STONE_TO_FLESH:
+            affected = await stone_to_flesh_obj(object, { state });
+            break;
+        default:
+            throw new Error(`No immediate object effect for ${OBJECT_NAMES[wand.otyp] || wand.otyp}`);
+    }
+    if (learned)
+        learnWand(wand, { state });
+    return affected;
+}
+async function reviveFloorCorpse(object, state) {
+    const x = object.ox, y = object.oy, species = object.corpsenm ?? -1;
+    const corpseName = singularObjectName(object, state);
+    const event = await reviveCorpseByMagic(object, state);
+    if (event?.kind !== 'revived')
+        return { affected: false, learned: false };
+    for (const message of event.messages || [])
+        await plineWithContinuation(message);
+    const monster = event.monster;
+    let learned = false;
+    if (cansee(x, y)) {
+        if (canSpotMonster(monster)) {
+            const name = namelessMonsterName(monster, { state, article: 'the' });
+            await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} is resurrected!`);
+            learned = !state.context?.mon_moving || !!state.context.zap_oseen;
+        }
+        else {
+            const name = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
+                ? corpseName : capitalizedDefiniteName(corpseName, state);
+            await plineWithContinuation(`${name} disappears.`);
+        }
+    }
+    else {
+        if (state.urole.key === 'healer' && !heroIsDeaf(state) && !monsterIsNonliving(species)) {
+            const corpse = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
+                ? corpseName : withIndefiniteArticle(corpseName);
+            await publishHeardMessage(`${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`, pline, state);
+            learned = !state.context?.mon_moving || !!state.context.zap_oseen;
+        }
+        if (canSpotMonster(monster))
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} appears.`);
+    }
+    if (learned)
+        await exerciseAttribute(A_WIS, true, state);
+    return { affected: true, learned };
+}
+// ── moved from src/js/insight.ts ──
+export async function doEnlightenmentEffect() {
+    await pline(formatFeltMessage('self-knowledgeable...'));
+    // zap.c displays WIN_MESSAGE before opening the enlightenment menu.
+    await flushPendingTopline();
+    await showEnlightenment({ basic: false, magic: true });
+    await pline('The feeling subsides.');
+    await exerciseAttribute(A_WIS, true);
+}
+// ── moved from src/js/hero_self_zap.ts ──
+const CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
+const STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
+const FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
+export async function zapHeroWithObject(object, { ordinary = true, state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    let learn = false, damage = 0;
+    switch (object.otyp) {
+        case WAN_STRIKING:
+        case SPE_FORCE_BOLT:
+            learn = true;
+            if (hero.antimagic || heroHasArtifactDefense('magic', state)) {
+                await shieldeff(hero.ux, hero.uy);
+                await plineWithContinuation('Boing!');
+                monstersObserveHeroResistance(M_SEEN_MAGR, state);
+            }
+            else {
+                if (ordinary)
+                    await plineWithContinuation('You bash yourself!');
+                damage = ordinary ? d(2, 12) : d(1 + object.spe, 6);
+                await exerciseAttribute(A_STR, false, state);
+                monstersForgetHeroResistance(M_SEEN_MAGR, state);
+            }
+            break;
+        case WAN_LIGHTNING:
+            learn = true;
+            damage = await elementalSelfZap('electric', AD_ELEC, M_SEEN_ELEC, 'shockResistance', state);
+            if (!state.program_state.gameover)
+                await flashBurn(rnd(100), true, { state });
+            break;
+        case WAN_FIRE:
+        case FIRE_HORN:
+            learn = true;
+            damage = await elementalSelfZap('fire', AD_FIRE, M_SEEN_FIRE, 'fireResistance', state);
+            break;
+        case WAN_COLD:
+        case SPE_CONE_OF_COLD:
+        case FROST_HORN:
+            learn = true;
+            damage = await elementalSelfZap('cold', AD_COLD, M_SEEN_COLD, 'coldResistance', state);
+            break;
+        case SPE_FIREBALL:
+            await plineWithContinuation('You explode a fireball on top of yourself!');
+            await explode(hero.ux, hero.uy, 11, d(6, 6), WAND_CLASS, EXPL_FIERY, { state });
+            break;
+        case WAN_MAGIC_MISSILE:
+        case SPE_MAGIC_MISSILE:
+            learn = true;
+            if (hero.antimagic || heroHasArtifactDefense('magic', state)) {
+                await shieldeff(hero.ux, hero.uy);
+                await plineWithContinuation('The missiles bounce!');
+                monstersObserveHeroResistance(M_SEEN_MAGR, state);
+            }
+            else {
+                damage = d(4, 6);
+                await plineWithContinuation("Idiot!  You've shot yourself!");
+                monstersForgetHeroResistance(M_SEEN_MAGR, state);
+            }
+            break;
+        case WAN_POLYMORPH:
+        case SPE_POLYMORPH:
+            if (!heroIsUnchanging(state)) {
+                learn = true;
+                await polymorphHero();
+            }
+            break;
+        case WAN_CANCELLATION:
+        case SPE_CANCELLATION:
+            await cancelHeroMagic(state);
+            break;
+        case SPE_DRAIN_LIFE:
+            if (!heroHasDrainResistance(state))
+                await loseHeroExperience('life drainage', { state });
+            break;
+        case WAN_MAKE_INVISIBLE:
+            learn = await zapHeroInvisible(state);
+            break;
+        case WAN_SPEED_MONSTER:
+            await speedUpHero(rn1(25, 50), state);
+            learn = true;
+            break;
+        case WAN_SLEEP:
+        case SPE_SLEEP:
+            learn = true;
+            if (hero.sleepResistance) {
+                await shieldeff(hero.ux, hero.uy);
+                await plineWithContinuation("You don't feel sleepy!");
+                monstersObserveHeroResistance(M_SEEN_SLEEP, state);
+            }
+            else {
+                await plineWithContinuation(ordinary ? 'The sleep ray hits you!' : 'You fall asleep!');
+                monstersForgetHeroResistance(M_SEEN_SLEEP, state);
+                await putHeroToSleep(rnd(50), { state });
+            }
+            break;
+        case WAN_SLOW_MONSTER:
+        case SPE_SLOW_MONSTER:
+            if (heroHasRemovableSpeed(state)) {
+                await slowHero(state);
+                learn = true;
+            }
+            break;
+        case WAN_TELEPORTATION:
+        case SPE_TELEPORT_AWAY: {
+            const x = hero.ux, y = hero.uy;
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            learn = (heroControlsTeleport(state) && !(hero.stunned || (hero.stunnedTurns ?? 0) > 0))
+                || !couldsee(x, y) || (hero.ux - x) ** 2 + (hero.uy - y) ** 2 >= 16;
+            break;
+        }
+        case WAN_DEATH:
+        case SPE_FINGER_OF_DEATH:
+            if (monsterIsNonliving(heroSpecies(state)) || ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & 0x100)) {
+                await plineWithContinuation(object.otyp === WAN_DEATH
+                    ? 'The wand shoots an apparently harmless beam at you.' : 'You seem no deader than before.');
+                break;
+            }
+            learn = true;
+            await plineWithContinuation('You irradiate yourself with pure energy!', { urgent: true });
+            await plineWithContinuation('You die.', { urgent: true });
+            await finishHeroDeath({ killer: 'death ray', deathType: DIED,
+                deathCause: `shot ${state.flags.female ? 'herself' : 'himself'} with a death ray`,
+                deathLineShown: true });
+            break;
+        case WAN_UNDEAD_TURNING:
+        case SPE_TURN_UNDEAD:
+            learn = true;
+            await turnHeroWithUndeadMagic(state);
+            break;
+        case SPE_HEALING:
+        case SPE_EXTRA_HEALING: {
+            const extra = object.otyp === SPE_EXTRA_HEALING;
+            await healHero(d(6, extra ? 8 : 4), 0, { state, cureBlindness: object.blessed || extra });
+            await plineWithContinuation(formatFeltMessage(`${extra ? 'much ' : ''}better.`, state));
+            break;
+        }
+        case WAN_LIGHT:
+        case EXPENSIVE_CAMERA: {
+            const amount = object.otyp === WAN_LIGHT ? d(object.spe, 25) : 5;
+            const light = await lightDamage(object, ordinary, amount || 5, { state });
+            if (!state.program_state.gameover)
+                learn = await flashBurn(light + rnd(25), false, { state });
+            break;
+        }
+        case WAN_OPENING:
+        case SPE_KNOCK: {
+            if (hero.ustuck) {
+                await releaseHold(state);
+                learn = true;
+            }
+            if (state.program_state.gameover)
+                break;
+            if (heroIsPunished(state)) {
+                await unpunishHero(state);
+                learn = true;
+            }
+            const opening = hero.utrap ? await openHoldingTrap(hero, { state }) : null;
+            learn ||= !!opening?.noticed;
+            if (!opening?.changed && !state.program_state.gameover) {
+                await affectCarriedBoxes(object, state);
+                const falling = await openFallingTrap(hero, { state, trapdoorOnly: true });
+                learn ||= falling.noticed;
+            }
+            break;
+        }
+        case WAN_LOCKING:
+        case SPE_WIZARD_LOCK: {
+            const closing = !hero.utrap ? await closeHoldingTrap(hero, { state }) : null;
+            learn = !!closing?.noticed;
+            if (!closing?.changed && !state.program_state.gameover)
+                await affectCarriedBoxes(object, state);
+            break;
+        }
+        case WAN_PROBING:
+            probeObjectChain(state.inventory, { state });
+            learn = true;
+            await plineWithContinuation(heroStatusLine(state));
+            break;
+        case SPE_STONE_TO_FLESH:
+            await restoreFlesh(object, state);
+            break;
+        case WAN_DIGGING:
+        case SPE_DIG:
+        case SPE_DETECT_UNSEEN:
+        case WAN_NOTHING:
+            break;
+        default:
+            await impossible(`zapyourself: object ${object.otyp} used?`, { state });
+    }
+    const heroDied = !!state.program_state.gameover;
+    if (learn && !heroDied)
+        learnWand(object, { state });
+    return { damage: heroDied ? 0 : damage, heroDied };
+}
+async function elementalSelfZap(kind, damageType, memory, resistance, state) {
+    const hero = state.u;
+    const damage = d(12, 6);
+    const defense = kind === 'electric' ? 'shock' : kind;
+    const resisted = !!hero[resistance] || heroHasArtifactDefense(defense, state);
+    if (resisted) {
+        await shieldeff(hero.ux, hero.uy);
+        await plineWithContinuation(kind === 'electric' ? 'You zap yourself, but seem unharmed.'
+            : formatFeltMessage(kind === 'fire' ? 'rather warm.' : 'a little chill.', state));
+        monstersObserveHeroResistance(memory, state);
+        await applyHeroGolemEffects(damageType, damage, { state });
+    }
+    else {
+        await plineWithContinuation(kind === 'electric' ? 'You shock yourself!'
+            : kind === 'fire' ? "You've set yourself afire!" : 'You imitate a popsicle!');
+        if (kind === 'electric')
+            await exerciseAttribute(A_CON, false, state);
+        monstersForgetHeroResistance(memory, state);
+    }
+    if (kind === 'fire') {
+        await burnAwayHeroSlime(state, pline);
+        await burnHeroArmorByFire(state, pline);
+        if (state.program_state.gameover)
+            return 0;
+    }
+    const items = await destroyInventoryByElement(kind, damage, { state, publish: pline });
+    if (items.heroDied)
+        return 0;
+    if (kind === 'fire')
+        await igniteItems(state.inventory, { state, publish: pline });
+    return resisted ? 0 : damage;
+}
+export async function cancelHeroMagic(state = game) {
+    requirePlayingGame(state);
+    for (const object of [...state.inventory]) {
+        await cancelObjectMagic(object, { state });
+        if (state.program_state.gameover)
+            return;
+    }
+    findArmorClass(state);
+    if (!Upolyd(state.u))
+        return;
+    if (state.u.umonnum === CLAY_GOLEM) {
+        await plineWithContinuation(heroIsBlind(state)
+            ? formatFeltMessage(`${heroIsHallucinating(state) ? 'dark' : 'light'} headed.`, state)
+            : 'Some writing vanishes from your head!');
+        state.u.mh = 0;
+    }
+    if (heroIsUnchanging(state) && state.u.mh > 0)
+        await plineWithContinuation('Your amulet grows hot for a moment, then cools.');
+    else
+        await returnHeroToHumanForm(state);
+}
+// C zap.c:boxlock_invent(): (un)lock every carried box with the zapped
+// wand's magic, then refresh the inventory display.
+async function affectCarriedBoxes(source, state) {
+    for (const object of [...state.inventory]) {
+        if (object.otyp === CHEST || object.otyp === LARGE_BOX)
+            await changeBoxLockByMagic(object, source, { state });
+        if (state.program_state.gameover)
+            return;
+    }
+}
+async function restoreFlesh(source, state) {
+    if (state.u.umonnum === STONE_GOLEM)
+        await polymonHero(FLESH_GOLEM);
+    if (state.program_state.gameover)
+        return;
+    if (heroIsPetrifying(state)) {
+        clearHeroPetrification(state);
+        await plineWithContinuation(heroIsHallucinating(state)
+            ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
+            : 'You feel limber!');
+    }
+    for (const object of [...state.inventory]) {
+        await hitObjectWithWand(object, source, { state });
+        if (state.program_state.gameover)
+            return;
+    }
+    // A transformed stack can merge with one checked earlier in the chain.
+    // Restart after each merge, keeping every worn identity separate.
+    let merged;
+    do {
+        merged = false;
+        for (let i = 0; i < state.inventory.length && !merged; i++) {
+            const first = state.inventory[i];
+            if (!first)
+                throw new Error(`Inventory object ${i} disappeared during flesh restoration`);
+            if (first.owornmask)
+                continue;
+            for (const next of state.inventory.slice(i + 1)) {
+                if (await mergeObjectStacks(first, next, state)) {
+                    merged = true;
+                    break;
+                }
+            }
+        }
+    } while (merged);
+}
+// ── moved from src/js/sight_change.ts ──
+// C zap.c:flashburn(). The duration is rolled by the caller even when resisted.
+export async function flashBurn(duration, viaLightning = false, { state = game, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    if (!heroResistsBlindingLight(state)) {
+        await publish('You are blinded by the flash!');
+        await makeBlinded(duration, { state, talk: false, publish });
+        if (!heroIsBlind(state))
+            await publish('Your vision clears.');
+        return true;
+    }
+    if (!viaLightning && heroHasArtifactDefense('blindness', state)) {
+        await shieldeff(state.u.ux, state.u.uy, state);
+        return true;
+    }
+    return false;
+}
+const DIRECTION_X = Object.freeze({
+    h: -1, l: 1, j: 0, k: 0, y: -1, u: 1, b: -1, n: 1,
+});
+const DIRECTION_Y = Object.freeze({
+    h: 0, l: 0, j: 1, k: -1, y: -1, u: -1, b: 1, n: 1,
+});
+export function rayPositionIsValid(x, y) {
+    return x >= 1 && x < COLNO && y >= 0 && y < ROWNO;
+}
+export function closedRayDoor(location) {
+    return location?.typ === DOOR
+        && !!(location.doormask & (D_CLOSED | D_LOCKED));
+}
+export function rayPositionIsOpen(x, y, state = game) {
+    if (!rayPositionIsValid(x, y))
+        return false;
+    const location = state.level?.at(x, y);
+    return !!location && ZAP_POS(location.typ) && !closedRayDoor(location);
+}
+export function rayMonsterAt(x, y, state = game) {
+    return state.level ? monsterAtPosition(state.level, x, y) : null;
+}
+// C zap.c:spell_hit_bonus().
+// C zap.c:zap_hit().
+export function rayHitsMonster(monster, random = rn2, rollOne = rnd, { state = game, spellType = 0, } = {}) {
+    const armorClass = findMonsterArmorClass(monster);
+    const chance = random(20);
+    let bonus = 0;
+    if (spellType) {
+        const skill = liveSpellSkill(spellType, state);
+        bonus = skill === P_EXPERT ? 3 : skill === P_SKILLED ? 2 : skill === P_BASIC ? 0 : -4;
+        const dexterity = currentAttribute(A_DEX, state);
+        bonus += dexterity < 4 ? -3 : dexterity < 6 ? -2 : dexterity < 8 ? -1
+            : dexterity < 14 ? 0 : dexterity - 14;
+    }
+    if (!chance)
+        return rollOne(10) < armorClass + bonus;
+    const effectiveArmorClass = armorClass >= 0 ? armorClass : -rollOne(-armorClass);
+    return 3 - chance < effectiveArmorClass + bonus;
+}
+// C zap.c:zap_hit().
+export function rayHitsHero(state = game, random = rn2, rollOne = rnd) {
+    const armorClass = typeof state.u.uac === 'number' && Number.isFinite(state.u.uac) ? state.u.uac : 10;
+    const chance = random(20);
+    if (!chance)
+        return rollOne(10) < armorClass;
+    const effectiveArmorClass = armorClass >= 0
+        ? armorClass : -rollOne(-armorClass);
+    return 3 - chance < effectiveArmorClass;
+}
+// C zap.c:bounce_dir().
+export function rayBounceDirection(x, y, dx, dy, bounceback, state = game, random = rn2) {
+    if (!dx || !dy || (bounceback > 0 && random(bounceback) === 0))
+        return { dx: -dx, dy: -dy };
+    const previousX = x - dx;
+    const previousY = y - dy;
+    let bounce = 0;
+    const vertical = state.level?.at(x, previousY);
+    const verticalAhead = state.level?.at(x + dx, previousY);
+    if (vertical && rayPositionIsOpen(x, previousY, state)
+        && (IS_ROOM(vertical.typ)
+            || rayPositionIsValid(x + dx, previousY)
+                && !!verticalAhead && ZAP_POS(verticalAhead.typ))) {
+        bounce = 1;
+    }
+    const horizontal = state.level?.at(previousX, y);
+    const horizontalAhead = state.level?.at(previousX, y + dy);
+    if (horizontal && rayPositionIsOpen(previousX, y, state)
+        && (IS_ROOM(horizontal.typ)
+            || rayPositionIsValid(previousX, y + dy)
+                && !!horizontalAhead && ZAP_POS(horizontalAhead.typ))
+        && (!bounce || random(2))) {
+        bounce = 2;
+    }
+    if (bounce === 2)
+        return { dx: -dx, dy };
+    if (bounce === 1)
+        return { dx, dy: -dy };
+    return { dx: -dx, dy: -dy };
+}
+export async function runRay({ state = game, direction, range, beamType, originX = state.u.ux, originY = state.u.uy, random = rn2, canSee = (x, y) => cansee(x, y), onCell, stopAtObstacle = false, onObstacle = null, onBounce = async () => undefined, onVanish = async () => undefined, }) {
+    let dx = DIRECTION_X[direction] || 0;
+    let dy = DIRECTION_Y[direction] || 0;
+    let x = originX;
+    let y = originY;
+    const beamCells = new TemporaryMapEffect('beam', zapdir_to_glyph(dx, dy, beamType));
+    await beamCells.start();
+    let heroDied = false;
+    try {
+        while (range-- > 0) {
+            const previousX = x;
+            const previousY = y;
+            x += dx;
+            y += dy;
+            const valid = rayPositionIsValid(x, y);
+            const location = valid ? state.level?.at(x, y) : null;
+            let cell = {};
+            if (valid && location?.typ !== STONE) {
+                if (canSee(x, y)) {
+                    const monster = rayMonsterAt(x, y, state);
+                    if (monster && !canSpotMonster(monster))
+                        await map_invisible(x, y);
+                    else if (!monster)
+                        await unmap_invisible(x, y);
+                }
+                if (canSee(x, y)
+                    && (rayPositionIsOpen(x, y, state)
+                        || (rayPositionIsValid(previousX, previousY)
+                            && canSee(previousX, previousY)))) {
+                    await paintRayCell(beamCells, x, y, dx, dy, beamType);
+                    await captureRayTraversalFrame(state);
+                }
+                state.bhitpos = { x, y };
+                cell = await onCell({
+                    x, y, dx, dy, location: location ?? null, remainingRange: range,
+                }) || {};
+                range += cell.rangeChange || 0;
+                if (cell.reflected) {
+                    dx = -dx;
+                    dy = -dy;
+                }
+                if (cell.stop) {
+                    heroDied = !!cell.result?.heroDied;
+                    return cell.result;
+                }
+            }
+            if (!rayPositionIsOpen(x, y, state)) {
+                if (cell.absorbed)
+                    break;
+                range--;
+                if ((range > 0 && rayPositionIsValid(previousX, previousY) && canSee(previousX, previousY)
+                    || stopAtObstacle) && Is_airlevel(state.u?.uz)) {
+                    await onVanish({ x, y, previousX, previousY });
+                    break;
+                }
+                if (stopAtObstacle) {
+                    await onObstacle?.({ x, y, previousX, previousY });
+                    break;
+                }
+                if (range > 0 && rayPositionIsValid(previousX, previousY)
+                    && canSee(previousX, previousY)) {
+                    await onBounce({ x, y, previousX, previousY });
+                }
+                const bounceback = rayBouncebackChance(valid, location, state);
+                ({ dx, dy } = rayBounceDirection(x, y, dx, dy, bounceback, state, random));
+            }
+        }
+    }
+    finally {
+        if (!heroDied && !state.program_state?.gameover)
+            await beamCells.clear();
+    }
+    return undefined;
+}
+export async function captureRayTraversalFrame(state = game) {
+    const frameCursor = lastDirtyMapCursor();
+    const messageCursor = state._pending_message
+        ? [state._pending_message.length, 0] : null;
+    await flush_screen(1);
+    if (frameCursor)
+        state.nhDisplay?.setCursor(...frameCursor);
+    else if (messageCursor)
+        state.nhDisplay?.setCursor(...messageCursor);
+    await state.animationFrame?.();
+}
+export async function paintRayCell(effect, x, y, dx, dy, beamType) {
+    const glyph = zapdir_to_glyph(dx, dy, beamType);
+    effect.changeGlyph(glyph);
+    await effect.draw(x, y);
+}
+function rayBouncebackChance(valid, location, state) {
+    if (!valid || location?.typ === STONE)
+        return 10;
+    if (In_mines(state.u?.uz) && IS_WALL(location?.typ ?? STONE))
+        return 20;
+    return 75;
+}
+// ── moved from src/js/thrown_object.ts ──
+// C zap.c:skiprange().
+export function rockSkipRange(range) {
+    const quarter = Math.trunc(range / 4);
+    const start = range - (quarter > 0 ? rnd(quarter) : 0);
+    const end = start - Math.trunc(start / 4) * rnd(3);
+    return { start, end: end >= start ? start - 1 : end };
+}
+// zhitm uses this value to request disintegration from its caller.
+const MAGIC_COOKIE = 1000;
+const MR_FIRE = 0x01;
+const MR_COLD = 0x02;
+const DIRECTIONS = Object.freeze({
+    h: [-1, 0], l: [1, 0], j: [0, 1], k: [0, -1],
+    y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],
+    '<': [0, 0], '>': [0, 0],
+});
+// Actual source objects retain spell strength and horn death attribution.
+export async function zapRayWithObject(object, { state = game } = {}) {
+    requirePlayingGame(state);
+    let nativeType;
+    let dice;
+    const type = object.otyp;
+    if (type >= SPE_MAGIC_MISSILE && type <= SPE_FINGER_OF_DEATH) {
+        nativeType = 10 + type - SPE_MAGIC_MISSILE;
+        dice = Math.trunc(state.u.ulevel / 2) + 1;
+    }
+    else if (type >= WAN_MAGIC_MISSILE && type <= WAN_LIGHTNING) {
+        nativeType = type - WAN_MAGIC_MISSILE;
+        dice = nativeType === 0 ? 2 : 6;
+    }
+    else if (type === FIRE_HORN || type === FROST_HORN) {
+        nativeType = type === FIRE_HORN ? 1 : 2;
+        dice = 6 + rn2(6);
+    }
+    else {
+        throw new Error(`Object ${type} does not produce a ray`);
+    }
+    const { dx = 0, dy = 0, dz = 0 } = state.u;
+    const direction = dx || dy
+        ? Object.entries(DIRECTIONS).find(([, delta]) => delta[0] === dx && delta[1] === dy)?.[0]
+        : dz < 0 ? '<' : '>';
+    return castNativeRay(nativeType, dice, direction, { state, sourceObject: object });
+}
+// The numeric result is native zhitm's applied damage, including MAGIC_COOKIE
+// for disintegration. The caller owns death, wake-up, and hit messages.
+export async function hitMonsterWithRay(monster, nativeType, dice, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
+    requirePlayingGame(state);
+    const hit = await damageRayMonster(monster, nativeType, dice, {
+        state, publish, random, rollDice, rollOne,
+    });
+    return hit.damage;
+}
+// C zap.c:dobuzz(): the wand/spell/breath ray engine. traceRay() drives the
+// beam through ray.ts runRay() (the tmp_at() beam display, the closed_door()
+// and ZAP_POS obstacle tests, and bounce_dir() as rayBounceDirection);
+// zap_hit() is rayHitsMonster()/rayHitsHero() (ray.ts); zhitm() is
+// damageRayMonster() below; zhitu() is hitHeroWithRay() (hero_breath.ts);
+// disintegrate_mon() is disintegrateMonster(); flashburn() is
+// blindHeroWithLightning(); shieldeff(), stop_occupation() as
+// stopHeroOccupation, ureflects() as heroReflectionSource, and
+// monstseesu()/monstunseesu() as monstersObserveHeroResistance/
+// monstersForgetHeroResistance all live along the hit paths; the hero hit
+// anchors its line like pline_dir(xytodir(-dx, -dy)) through
+// set_msg_dir(xyToDirection()).
+// C zap.c:buzz() and zap.c:ubuzz(): the monster/hero entry wrappers that
+// call dobuzz() with the caller's position, direction and physical=TRUE;
+// the origin/monster-vs-hero dispatch lives in this function's options.
+export async function castNativeRay(nativeType, dice, direction, { state = game, sourceMonster = null, sourceObject = null, originX = state.u.ux, originY = state.u.uy, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, die = finishHeroDeath, finishMonsterKill = finishHeroMonsterKill, sayHit = true, sayMiss = false, forceMiss = false, } = {}) {
+    requirePlayingGame(state);
+    if (!isRayDirection(direction))
+        return { used: false, heroDied: false, hits: 0 };
+    const rayType = normalizedRayType(nativeType);
+    const damageType = rayDamageType(rayType);
+    const kind = rayType < 10 ? 'wand' : rayType < 20 ? 'spell' : 'breath';
+    const context = {
+        state, nativeType, attack: [0, damageType, dice, 6], damageType,
+        floorNoun: kind === 'wand' ? 'bolt' : kind === 'spell' ? 'spell' : 'blast',
+        name: realRayName(damageType, kind), sourceObject,
+        source: `${nativeType < 0 ? 'monster' : 'hero'}-${kind}`, sourceMonster,
+        displayName: () => displayRayName(damageType, kind, { state, random }),
+        displayDamageType: heroIsHallucinating(state) ? AD_MAGM + random(6) : damageType,
+        publish, random, rollDice, rollOne, die, finishMonsterKill,
+        sayHit, sayMiss, forceMiss, hits: 0, shopDamage: false,
+    };
+    if (state.u.uswallow) {
+        if (nativeType < 0)
+            return { used: false, heroDied: false, hits: 0 };
+        return hitSwallowingMonster(context);
+    }
+    if (nativeType < 0)
+        await newsym(state.u.ux, state.u.uy);
+    const savedHitPosition = state.bhitpos;
+    try {
+        return await traceRay(direction, originX, originY, context);
+    }
+    finally {
+        state.bhitpos = savedHitPosition;
+    }
+}
+// C zap.c:zaptype().
+function normalizedRayType(type) {
+    return type <= -30 ? -type - 30 : Math.abs(type);
+}
+async function traceRay(direction, originX, originY, context) {
+    const { state, random, publish } = context;
+    const [dx, dy] = DIRECTIONS[direction];
+    const range = 7 + random(7);
+    const fireball = context.nativeType === 11;
+    let endpoint = { x: originX, y: originY };
+    let vanishedAt = null;
+    const stopped = await runRay({
+        state, direction, range: dx || dy ? range : 1,
+        beamType: context.displayDamageType - 1, originX, originY, random,
+        canSee: (x, y) => cellIsVisible(state, x, y),
+        onCell: async (cell) => {
+            endpoint = cell;
+            if (fireball)
+                return { stop: !!rayMonsterAt(cell.x, cell.y, state) };
+            return hitRayCell(cell, context);
+        },
+        stopAtObstacle: fireball,
+        onObstacle: ({ previousX, previousY }) => {
+            endpoint = { x: previousX, y: previousY };
+        },
+        onBounce: () => publish(`${raySubject(context.displayName())} bounces!`),
+        onVanish: async ({ x, y }) => {
+            vanishedAt = { x, y };
+            await publish(`${raySubject(context.displayName())} vanishes into the aether!`);
+        },
+    });
+    if (fireball && !state.program_state.gameover) {
+        // dobuzz(): a fireball that "vanishes into the aether" on the Plane
+        // of Air still detonates, coerced to a wand-style fire blast at the
+        // cell it entered before rebounding off the open sky.
+        const spot = vanishedAt ?? endpoint;
+        const blastType = vanishedAt !== null ? 1 : 11;
+        await explode(spot.x, spot.y, blastType, context.rollDice(12, 6), 0, EXPL_FIERY, { state, publish, heroCaused: true });
+    }
+    if (context.shopDamage && !state.program_state.gameover) {
+        const verb = context.damageType === AD_FIRE ? 'burn away'
+            : context.damageType === AD_COLD ? 'shatter'
+                : context.damageType === AD_ACID ? 'damage'
+                    : context.damageType === AD_DISN ? 'disintegrate' : 'destroy';
+        await payForShopDamage(verb, { state });
+    }
+    return stopped || { used: true, heroDied: !!state.program_state.gameover, hits: context.hits };
+}
+async function hitRayCell({ x, y, dx, dy, remainingRange }, context) {
+    const { state, attack, damageType, publish, random, rollDice, rollOne, finishMonsterKill, } = context;
+    let floor = { absorbed: false, rangeChange: 0 };
+    let reflected = false;
+    let leavesPoisonCloud = damageType === AD_DRST;
+    let rangeChange = 0;
+    if (damageType !== AD_DRST) {
+        floor = await applyRayFloorFeatures(floorKind(damageType, context.nativeType), x, y, state, { rayNoun: context.floorNoun, random, publish, heroCaused: context.nativeType >= 0 });
+        if (state.program_state.gameover)
+            return { stop: true, result: { used: true, heroDied: true, hits: context.hits } };
+        rangeChange += floor.rangeChange;
+        context.shopDamage ||= !!floor.shopDamage;
+    }
+    const monster = rayTargetAt(x, y, remainingRange + floor.rangeChange, context);
+    if (monster) {
+        if (context.nativeType >= 0)
+            monster.mstrategy = (monster.mstrategy || 0) & ~STRAT_WAITMASK;
+        state.notonhead = monster.mx !== x || monster.my !== y;
+        if (!context.forceMiss && rayHitsMonster(monster, random, rollOne, {
+            state, spellType: context.nativeType >= 10 && context.nativeType < 20
+                ? SPE_MAGIC_MISSILE + context.nativeType % 10 : 0,
+        })) {
+            context.hits++;
+            rangeChange -= 2;
+            if (monsterReflectsRay(monster, state)) {
+                await showMonsterReflection(monster, context);
+                reflected = true;
+                if (cansee(monster.mx, monster.my))
+                    leavesPoisonCloud = false;
+            }
+            else {
+                const hit = await damageRayMonster(monster, context.nativeType, attack[2], {
+                    state, publish, random, rollDice, rollOne,
+                });
+                const aftermath = await finishMonsterRayHit(monster, hit, {
+                    state, displayName: context.displayName, finishMonsterKill, publish,
+                    random, source: context.source, sayHit: context.sayHit, x, y,
+                });
+                if (aftermath.heroDied || hit.reintegrated || hit.absorbedDeath) {
+                    return {
+                        stop: true,
+                        result: {
+                            used: true,
+                            heroDied: aftermath.heroDied,
+                            hits: context.hits,
+                        },
+                    };
+                }
+            }
+        }
+        else if (context.sayMiss || canSeeMonster(monster)
+            && (canSenseMonster(monster)
+                || [M_AP_NOTHING, M_AP_MONSTER].includes(M_AP_TYPE(monster)))) {
+            await publish(rayMissMessage(context.displayName(), monster, { x, y, state }));
+        }
+    }
+    else if (x === state.u.ux && y === state.u.uy
+        && remainingRange + floor.rangeChange >= 0) {
+        const heroHit = await hitHeroOnRay(x, y, dx, dy, context);
+        context.hits += heroHit.hit ? 1 : 0;
+        rangeChange -= heroHit.hit ? 2 : 0;
+        reflected = heroHit.reflected;
+        leavesPoisonCloud = leavesPoisonCloud && !reflected;
+        if (heroHit.heroDied) {
+            return {
+                stop: true,
+                result: {
+                    used: true,
+                    heroDied: true,
+                    hits: context.hits,
+                },
+            };
+        }
+    }
+    if (leavesPoisonCloud) {
+        floor = await applyRayFloorFeatures('poison', x, y, state, {
+            rayNoun: context.floorNoun, random, publish, heroCaused: context.nativeType >= 0,
+        });
+        context.shopDamage ||= !!floor.shopDamage;
+    }
+    return { absorbed: damageType !== AD_DRST && floor.absorbed, rangeChange, reflected };
+}
+async function hitSwallowingMonster(context) {
+    const { state, attack, publish, random, rollDice, rollOne } = context;
+    const engulfer = state.u.ustuck;
+    if (!engulfer)
+        throw new Error('A swallowed ray requires its engulfing monster.');
+    const hit = await damageRayMonster(engulfer, context.nativeType, attack[2], {
+        state, publish, random, rollDice, rollOne,
+    });
+    const monster = state.u.ustuck;
+    if (!monster) {
+        state.u.uswallow = 0;
+    }
+    else {
+        const punctuation = hit.damage > 4 ? '!' : '.';
+        await publish(`${raySubject(context.displayName())} rips into ${monsterName(monster, { state })}${punctuation}`);
+        if (hit.disintegrated)
+            monster.mhp = 0;
+        if (monster.mhp <= 0) {
+            // The inside hole leaves ordinary remains, unlike an outside
+            // disintegration hit. The swallowed branch never wakes its target.
+            await context.finishMonsterKill(monster, monster.mx, monster.my, {
+                deathContext: { kind: 'swallowed-breath' },
+            });
+        }
+    }
+    return { used: true, heroDied: !!state.program_state?.gameover, hits: 1 };
+}
+function rayTargetAt(x, y, remainingRange, context) {
+    const { state, random } = context;
+    const monster = rayMonsterAt(x, y, state);
+    if (monster)
+        return monster;
+    if (x !== state.u.ux || y !== state.u.uy || remainingRange < 0)
+        return null;
+    endVoluntaryMultiTurn(state);
+    const steed = state.u.usteed;
+    if (steed && random(3) === 0 && !monsterReflectsRay(steed, state))
+        return steed;
+    return null;
+}
+async function showMonsterReflection(monster, context) {
+    const { state, publish } = context;
+    if (!cansee(monster.mx, monster.my))
+        return;
+    await publish(rayHitMessage(context.displayName(), monster, {
+        x: monster.mx, y: monster.my, state,
+    }));
+    await shieldeff(monster.mx, monster.my, state);
+    const reflection = monsterReflectionSource(monster, state);
+    if (!reflection)
+        throw new Error('A reflecting monster has no reflection source.');
+    await publish(`But it reflects from ${possessiveName(monsterName(monster, { state }))} ${reflection.noun}!`);
+    discoverHeroReflectionSource(reflection, state);
+}
+async function hitHeroOnRay(x, y, rayDx, rayDy, context) {
+    const { state, damageType, publish, random, rollOne } = context;
+    const canSeeHero = (monster) => monsterHasLineOfSightToHero(monster, state);
+    endVoluntaryMultiTurn(state);
+    const hit = !context.forceMiss && rayHitsHero(state, random, rollOne);
+    let reflected = false;
+    let heroDied = false;
+    if (hit) {
+        // C zap.c:dobuzz() anchors the hit line with pline_dir(xytodir(-dx,-dy)),
+        // naming the square the ray arrived from for accessiblemsg prefixes.
+        set_msg_dir(xyToDirection(-rayDx, -rayDy));
+        await publish(`${raySubject(context.displayName())} hits you!`);
+        if (state.iflags.messageLocation)
+            delete state.iflags.messageLocation;
+        if (heroReflectsRay(state)) {
+            const source = heroReflectionSource(state);
+            if (heroIsBlind(state)) {
+                await publish('For some reason you are not affected.');
+            }
+            else {
+                await publish(`But it reflects from your ${source?.noun || 'shield'}!`);
+                if (source)
+                    discoverHeroReflectionSource(source, state);
+            }
+            monstersObserveHeroResistance(M_SEEN_REFL, state, canSeeHero);
+            await shieldeff(x, y, state);
+            reflected = true;
+        }
+        else {
+            const result = await hitHeroWithRay(context);
+            heroDied = !!result.heroDied;
+            if (!heroDied)
+                monstersForgetHeroResistance(M_SEEN_REFL, state, canSeeHero);
+        }
+    }
+    else if (!heroIsBlind(state)) {
+        await publish(`${raySubject(context.displayName())} whizzes by you!`);
+    }
+    else if (damageType === AD_ELEC) {
+        await publish(`Your ${heroArmName(state)} tingles.`);
+    }
+    if (!heroDied) {
+        if (damageType === AD_ELEC)
+            await blindHeroWithLightning(context);
+        await stopHeroOccupation(state, publish);
+        endVoluntaryMultiTurn(state);
+    }
+    return { hit, reflected, heroDied };
+}
+async function damageRayMonster(monster, nativeType, dice, { state, publish, random, rollDice, rollOne, }) {
+    const rayType = normalizedRayType(nativeType);
+    const damageType = rayDamageType(rayType);
+    const spell = nativeType >= 10 && nativeType < 20;
+    const inside = nativeType >= 0 && state.u.uswallow && state.u.ustuck === monster;
+    const spellDamage = (damage) => spell ? adjustSpellDamage(damage, state) : damage;
+    const options = { state, publish, random, rollOne, visible: canSeeMonster(monster) };
+    let hit = { damage: 0, resisted: false };
+    let savingThrow = nativeType >= 0;
+    let sourceDamage = 0;
+    if (damageType === AD_SLEE) {
+        const duration = rollDice(dice, 25);
+        if (MONSTER_SYMBOL[monster.mnum] === 13 && !monster.msleeping && !monster.mfrozen)
+            await revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+        const resisted = monsterResistsSleep(monster)
+            || monsterResistsEffect(monster, nativeType === 3 ? 12 : state.u.ulevel, random);
+        if (resisted)
+            await shieldeff(monster.mx, monster.my, state);
+        const slept = !resisted && monster.mcanmove !== 0;
+        if (slept) {
+            await finishMonsterEating(monster, state);
+            await putMonsterToSleep(monster, duration);
+        }
+        return { damage: 0, sleepEffect: true, resisted, slept };
+    }
+    if (damageType === AD_DISN) {
+        savingThrow = false;
+        if (rayType === 24) {
+            hit = await disintegrateMonster(monster, state);
+        }
+        else if (MONSTER_NAME[monster.mnum] === 'Death') {
+            const maximum = monster.mhpmax;
+            healMonster(monster, Math.trunc(maximum * 3 / 2), Math.trunc(maximum / 2));
+            monster.mhpmax = Math.min(MAGIC_COOKIE - 1, monster.mhpmax);
+            return { damage: 0, absorbedDeath: true };
+        }
+        else if (monsterIsNonliving(monster.mnum)
+            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x100)
+            || monsterIsVampireShifter(monster) || monsterHasMagicResistance(monster)) {
+            hit.resisted = true;
+        }
+        else {
+            hit.damage = monster.mhp + 1;
+        }
+    }
+    else if (damageType === AD_ELEC) {
+        sourceDamage = spellDamage(rollDice(dice, 6));
+        hit.resisted = monsterHasShockResistance(monster);
+        hit.damage = hit.resisted ? 0 : sourceDamage;
+        if (!inside && dice > 2 && !monsterResistsBlindingLight(monster, state)) {
+            monster.mcansee = 0;
+            monster.mblinded = Math.min(127, (monster.mblinded ?? 0) + rollOne(50));
+        }
+        if (random(3) === 0)
+            hit.damage += await destroyMonsterInventoryByElement(monster, INVENTORY_DAMAGE.ELECTRIC, sourceDamage, options);
+    }
+    else {
+        hit.resisted = rayResistance(monster, damageType, state);
+        if (!hit.resisted) {
+            hit.damage = rollDice(dice, 6);
+            if ([AD_MAGM, AD_FIRE, AD_COLD].includes(damageType))
+                hit.damage = spellDamage(hit.damage);
+            sourceDamage = hit.damage;
+            if (damageType === AD_FIRE) {
+                if (monsterResistanceBits(monster) & MR_COLD)
+                    hit.damage += 7;
+                if (await burnArmorByFire(monster, state, publish, [], random, { visible: options.visible })
+                    && random(3) === 0) {
+                    hit.damage += await destroyMonsterInventoryByElement(monster, INVENTORY_DAMAGE.FIRE, sourceDamage, options);
+                    await igniteItems(monster.minvent || monster.inventory, {
+                        ...options,
+                    });
+                }
+            }
+            else if (damageType === AD_COLD) {
+                if (monsterResistanceBits(monster) & MR_FIRE)
+                    hit.damage += rollDice(dice, 3);
+                if (random(3) === 0)
+                    hit.damage += await destroyMonsterInventoryByElement(monster, INVENTORY_DAMAGE.COLD, sourceDamage, options);
+            }
+            else if (damageType === AD_ACID) {
+                if (random(6) === 0)
+                    await damageObjectWithAcid(monsterWieldedWeapon(monster), { state, publish, random });
+                if (random(6) === 0)
+                    await erodeArmor(monster, 'corrosion', { state, publish, random });
+            }
+        }
+    }
+    if (hit.resisted)
+        await shieldeff(monster.mx, monster.my, state);
+    // Death and disintegration suppress both the spell bonus and saving throw.
+    if (savingThrow && spell && state.urole?.key === 'knight' && state.u.uhave?.questart)
+        hit.damage *= 2;
+    if (savingThrow && hit.damage > 0 && monsterResistsEffect(monster, nativeType < 10 ? 12 : state.u.ulevel, random))
+        hit.damage = Math.trunc(hit.damage / 2);
+    hit.damage = Math.max(0, hit.damage);
+    monster.mhp -= hit.damage;
+    if (!inside && rayType === 24 && monsterIsRider(monster)) {
+        monster.mhp = monster.mhpmax;
+        hit.reintegrated = true;
+    }
+    if (nativeType >= 0 && damageType === AD_FIRE && ['paper golem', 'straw golem'].includes(MONSTER_NAME[monster.mnum] ?? ''))
+        hit.noCorpse = true;
+    return hit;
+}
+function rayResistance(monster, damageType, state) {
+    if (damageType === AD_MAGM)
+        return monsterHasMagicResistance(monster);
+    if (damageType === AD_FIRE)
+        return monsterHasFireResistance(monster);
+    if (damageType === AD_COLD)
+        return monsterHasColdResistance(monster);
+    if (damageType === AD_DRST)
+        return monsterHasPoisonResistance(monster)
+            || artifactById(monsterWieldedWeapon(monster)?.oartifact, state)?.defense === 'poison';
+    if (damageType === AD_ACID)
+        return monsterHasAcidResistance(monster);
+    return false;
+}
+// C zap.c:disintegrate_mon(). The ray destroys armor, then the monster.
+async function disintegrateMonster(monster, state) {
+    if (monsterHasDisintegrationResistance(monster)) {
+        return { damage: 0, resisted: true };
+    }
+    const shield = monsterWornObject(monster, W_ARMS);
+    if (shield)
+        return { damage: 0, armorToDisintegrate: shield, resisted: false };
+    const suit = monsterWornObject(monster, W_ARM);
+    if (suit) {
+        const cloak = monsterWornObject(monster, W_ARMC);
+        if (cloak)
+            await destroyObjectFromMonsterInventory(monster, cloak, state);
+        return { damage: 0, armorToDisintegrate: suit, resisted: false };
+    }
+    for (const mask of [W_ARMC, W_ARMU]) {
+        const object = monsterWornObject(monster, mask);
+        if (object)
+            await destroyObjectFromMonsterInventory(monster, object, state);
+    }
+    return { damage: MAGIC_COOKIE, disintegrated: true, noCorpse: true };
+}
+async function finishMonsterRayHit(monster, hit, { state, displayName, finishMonsterKill, publish, random, source = 'hero-breath', deathContext = null, sayHit = true, x, y, }) {
+    const visible = canSeeMonster(monster);
+    // Native Monnam chooses a fresh hallucinated identity only when a
+    // message names the target. Ordinary hit() owns its own name lookup.
+    const nameTarget = () => monsterName(monster, { state, capitalized: true });
+    if (hit.absorbedDeath) {
+        if (visible) {
+            await publish(rayHitMessage(displayName(), monster, { x, y, state }));
+            await publish(`${nameTarget()} absorbs the deadly ray!`);
+            await publish('It seems even stronger than before.');
+        }
+        return { heroDied: false };
+    }
+    if (hit.reintegrated) {
+        if (visible) {
+            await publish(rayHitMessage(displayName(), monster, { x, y, state }));
+            await publish(`${nameTarget()} disintegrates.`);
+            // zap.c:dobuzz() names one eye for a one-eyed hero form.
+            const eye = heroEyeName(state);
+            const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+            await publish(`${possessiveName(nameTarget())} body reintegrates before your ${eyes}!`);
+            await publish(`${nameTarget()} resurrects!`);
+        }
+        return { heroDied: false };
+    }
+    if (hit.armorToDisintegrate) {
+        if (visible) {
+            const owner = possessiveName(nameTarget());
+            const armor = await distantObjectName(hit.armorToDisintegrate, object => objectName(object, state), state);
+            await publish(`${owner} ${armor} is disintegrated!`);
+        }
+        await destroyObjectFromMonsterInventory(monster, hit.armorToDisintegrate, state);
+        return wakeMonster(monster, { attacked: source.startsWith('hero-') });
+    }
+    if ((monster.mhp ?? 0) <= 0) {
+        if (hit.disintegrated) {
+            // zap.c evaluates disintegrate_mon()'s flash_str() argument
+            // before the call, so a hallucinating hero draws one
+            // hallucinated blast name here even when the monster is
+            // unseen or its death message never names the ray.
+            const blastName = displayName();
+            if (visible) {
+                await publish(wornMonsterLifeSaver(monster)
+                    ? rayHitMessage(blastName, monster, { x, y, damage: hit.damage, state })
+                    : `${nameTarget()} is disintegrated!`);
+            }
+            await destroyDisintegratedMonsterInventory(monster, state, random);
+            if (source.startsWith('monster-')) {
+                // disintegrate_mon() finishes with monkilled(mon, NULL, ...).
+                await finishMonsterKilled(monster, state, {
+                    damageType: 'disintegration', cause: null, publish, random,
+                });
+                return { heroDied: !!state.program_state?.gameover };
+            }
+            await finishMonsterKill(monster, monster.mx, monster.my, {
+                // disintegrate_mon() always passes XKILL_NOMSG|XKILL_NOCORPSE.
+                noCorpse: true,
+                showKillMessage: false,
+                deathContext,
+            });
+            return { heroDied: !!state.program_state?.gameover };
+        }
+        if (source.startsWith('monster-')) {
+            // zap.c's DEADMONSTER branch passes flash_str() to monkilled();
+            // the argument is evaluated even when the message is suppressed.
+            const effect = displayName();
+            await finishMonsterKilled(monster, state, {
+                damageType: AD_RBRE, cause: effect, publish, random,
+            });
+            return { heroDied: !!state.program_state?.gameover };
+        }
+        await finishMonsterKill(monster, monster.mx, monster.my, {
+            // dobuzz() passes XKILL_NOCORPSE only for burned-up golems;
+            // species without corpses still roll treasure and corpse_chance().
+            noCorpse: !!hit.noCorpse,
+            showKillMessage: true,
+            deathContext,
+        });
+        return { heroDied: !!state.program_state?.gameover };
+    }
+    if (sayHit || visible)
+        await publish(rayHitMessage(displayName(), monster, {
+            x, y, damage: hit.damage, state,
+        }));
+    if (hit.slept && state.u.ustuck === monster && !state.u.uswallow && !heroFormSticks(state)) {
+        await publish(`${possessiveName(nameTarget())} grip relaxes.`);
+        await releaseHeroFromMonster(monster, { state, publish });
+    }
+    if (!hit.sleepEffect)
+        return wakeMonster(monster, { attacked: source.startsWith('hero-') });
+    return { heroDied: false };
+}
+async function destroyDisintegratedMonsterInventory(monster, state, random) {
+    const lifeSaver = wornMonsterLifeSaver(monster) ?? null;
+    const inventory = [...(monster.minvent || monster.inventory || [])];
+    for (const object of inventory) {
+        if (objectSurvivesDisintegration(object, lifeSaver, state, random))
+            continue;
+        await destroyObjectFromMonsterInventory(monster, object, state);
+    }
+}
+function objectSurvivesDisintegration(object, lifeSaver, state, random) {
+    if ([BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES]
+        .includes(object.otyp))
+        return true;
+    if (objectResistsDestruction(object, 5, 50, random))
+        return true;
+    const artifact = artifactById(object.oartifact, state);
+    if (object.questArtifact
+        || artifact?.questArtifact || object === lifeSaver)
+        return true;
+    return false;
+}
+function monsterWornObject(monster, mask) {
+    const inventory = monster.minvent || monster.inventory || [];
+    return inventory.find(object => ((object.owornmask ?? 0) & mask) !== 0)
+        || null;
+}
+async function blindHeroWithLightning({ state, attack, rollDice, publish }) {
+    // dobuzz rolls the duration even when flashburn resists blindness.
+    await flashBurn(rollDice(attack[2], 50), true, { state, publish });
+}
+function floorKind(damageType, nativeType) {
+    if (damageType === AD_FIRE)
+        return 'fire';
+    if (damageType === AD_COLD)
+        return 'cold';
+    if (damageType === AD_DISN)
+        return Math.abs(nativeType) === 24 ? 'disintegration' : 'death';
+    if (damageType === AD_ELEC)
+        return 'lightning';
+    if (damageType === AD_ACID)
+        return 'acid';
+    return 'breath';
+}
+function cellIsVisible(state, x, y) {
+    return !state.blind && !!((state.viz_array?.[y]?.[x] ?? 0) & 0x2);
+}
+function raySubject(value) {
+    return `The ${value}`;
+}
+function isRayDirection(value) {
+    return value !== undefined && Object.hasOwn(DIRECTIONS, value);
+}
+// ── moved from src/js/hero_breath.ts ──
+export function heroBreathAttack(state = game, damageType = null) {
+    const form = heroMonsterForm(state);
+    if (form == null)
+        return null;
+    return (MONSTER_ATTACKS[form] || []).find(([attackType, attackDamage]) => attackType === AT_BREA
+        && (damageType == null || attackDamage === damageType)) || null;
+}
+export function heroAcidBreathAttack(state = game) {
+    return heroBreathAttack(state, AD_ACID);
+}
+// C zap.c:zhitu(): the per-element ray switch for the hero; the damage
+// tail is applyRayDamage() with losehp().
+export async function hitHeroWithRay({ state = game, attack = heroBreathAttack(state), publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, die = finishHeroDeath, source = 'hero-breath', sourceMonster = null, name = null, nativeType = null, sourceObject = null, } = {}) {
+    if (!attack)
+        return { hit: false, damage: 0, heroDied: false };
+    requirePlayingGame(state);
+    const damageType = effectiveBreathDamage(attack[1]);
+    const context = {
+        state, attack, damageType, publish, random, rollDice, rollOne, die,
+        source, sourceMonster, sourceObject, nativeType, name,
+    };
+    let result;
+    if (damageType === AD_MAGM)
+        result = await hitWithMagic(context);
+    else if (damageType === AD_FIRE)
+        result = await hitWithFire(context);
+    else if (damageType === AD_COLD)
+        result = await hitWithCold(context);
+    else if (damageType === AD_SLEE)
+        result = await hitWithSleep(context);
+    else if (damageType === AD_DISN)
+        result = await hitWithDisintegration(context);
+    else if (damageType === AD_ELEC)
+        result = await hitWithLightning(context);
+    else if (damageType === AD_DRST)
+        result = await hitWithPoison(context);
+    else if (damageType === AD_ACID)
+        result = await hitWithAcid(context);
+    else
+        result = await applyRayDamage(context, 0, '');
+    return { hit: true, damageType, ...result };
+}
+async function hitWithMagic(context) {
+    const { state, attack, publish, rollDice } = context;
+    if (heroResistsRay(state, 'antimagic', 'magic')) {
+        await shieldHero(state);
+        await publish('The missiles bounce off!');
+        noteRayResistance(context, true);
+        return applyRayDamage(context, 0, 'blast of missiles', true);
+    }
+    const damage = rollDice(attack[2], 6);
+    await exerciseAttribute(A_STR, false, state);
+    noteRayResistance(context, false);
+    return applyRayDamage(context, damage, 'blast of missiles');
+}
+async function hitWithFire(context) {
+    const { state, attack, publish, random, rollDice, rollOne } = context;
+    const sourceDamage = rollDice(attack[2], 6);
+    const resisted = heroResistsRay(state, 'fireResistance', 'fire');
+    if (resisted) {
+        await shieldHero(state);
+        await publish("You don't feel hot!");
+        noteRayResistance(context, true);
+        await applyHeroGolemEffects(AD_FIRE, sourceDamage, { state, publish });
+    }
+    if (!resisted)
+        noteRayResistance(context, false);
+    if (clearHeroSliming(state))
+        await publish('The slime that covers you is burned away!');
+    const bodyHit = await burnHeroArmorByFire(state, publish, [], random);
+    if (bodyHit && random(3) === 0) {
+        const items = await destroyFireInventory(sourceDamage, {
+            state, publish, random, rollOne, die: context.die,
+        });
+        if (items.heroDied)
+            return { resisted, heroDied: true };
+    }
+    if (bodyHit && random(3) === 0) {
+        await igniteItems(state.inventory, {
+            state, publish, random,
+        });
+    }
+    return applyRayDamage(context, resisted ? 0 : sourceDamage, 'blast of fire', resisted);
+}
+async function hitWithCold(context) {
+    const { state, attack, publish, random, rollDice, rollOne } = context;
+    const sourceDamage = rollDice(attack[2], 6);
+    const resisted = heroResistsRay(state, 'coldResistance', 'cold');
+    if (resisted) {
+        await shieldHero(state);
+        await publish("You don't feel cold.");
+        noteRayResistance(context, true);
+        await applyHeroGolemEffects(AD_COLD, sourceDamage, { state, publish });
+    }
+    else {
+        noteRayResistance(context, false);
+    }
+    if (random(3) === 0) {
+        const items = await destroyColdInventory(sourceDamage, {
+            state, publish, random, rollOne, die: context.die,
+        });
+        if (items.heroDied)
+            return { resisted, heroDied: true };
+    }
+    return applyRayDamage(context, resisted ? 0 : sourceDamage, 'blast of frost', resisted);
+}
+async function hitWithSleep(context) {
+    const { state, attack, publish, rollDice } = context;
+    const resisted = heroResistsRay(state, 'sleepResistance', 'sleep');
+    if (resisted) {
+        await shieldHero(state);
+        await publish("You don't feel sleepy.");
+        noteRayResistance(context, true);
+    }
+    else {
+        noteRayResistance(context, false);
+        await putHeroToSleep(rollDice(attack[2], 25), { state, publish });
+    }
+    return { resisted, damage: 0, heroDied: false };
+}
+async function hitWithDisintegration(context) {
+    const { state, publish, random, die } = context;
+    if (context.nativeType != null ? Math.abs(context.nativeType) !== 24
+        : !context.source.endsWith('breath')) {
+        const form = state.u.umonnum;
+        if (monsterIsNonliving(form) || ((MONSTER_FLAGS2[form] ?? 0) & 0x00000100)) {
+            await shieldHero(state);
+            await publish('You seem unaffected.');
+            return { resisted: true, damage: 0, heroDied: false };
+        }
+        if (heroResistsRay(state, 'antimagic', 'magic')) {
+            await shieldHero(state);
+            noteRayResistance(context, true);
+            await publish("You aren't affected.");
+            return { resisted: true, damage: 0, heroDied: false };
+        }
+        noteRayResistance(context, false);
+        state.u.ugrave_arise = NON_PM;
+        // C zhitu() calls done() directly, without an ordinary HP-death line.
+        const heroDied = await die({ killer: context.name || 'finger of death', deathLineShown: true });
+        return { resisted: false, damage: 0, heroDied };
+    }
+    // Native rolls inventory protection before checking the hero's resistance.
+    const protectedItems = hasWornProperty('disintegrationResistance', state)
+        && random(100) < 99;
+    if (state.u.disintegrationResistance) {
+        await publish('You are not disintegrated.');
+        noteRayResistance(context, true);
+        return { resisted: true, damage: 0, heroDied: false };
+    }
+    if (protectedItems) {
+        return { resisted: true, damage: 0, heroDied: false };
+    }
+    noteRayResistance(context, false);
+    const shield = wornObject(state, 'uarms');
+    if (shield) {
+        await disintegrateWornArmor(shield, { state, publish });
+        return { resisted: false, damage: 0, heroDied: false };
+    }
+    const suit = wornObject(state, 'uarm');
+    if (suit) {
+        const cloak = wornObject(state, 'uarmc');
+        if (cloak) {
+            await disintegrateWornArmor(cloak, { state, publish });
+        }
+        await disintegrateWornArmor(suit, { state, publish });
+        return { resisted: false, damage: 0, heroDied: false };
+    }
+    const cloak = wornObject(state, 'uarmc');
+    if (cloak) {
+        await disintegrateWornArmor(cloak, { state, publish });
+    }
+    const shirt = wornObject(state, 'uarmu');
+    if (shirt) {
+        await disintegrateWornArmor(shirt, { state, publish });
+    }
+    state.u.ugrave_arise = context.nativeType === -24 ? -3 : NON_PM;
+    monstersForgetHeroResistance(M_SEEN_MAGR, state, monster => monsterHasLineOfSightToHero(monster, state));
+    // zhitu() calls done(DIED) directly; only losehp() prints "You die...".
+    const heroDied = await die({ killer: context.name || 'blast of disintegration', deathLineShown: true });
+    return { resisted: false, damage: 0, heroDied };
+}
+async function hitWithLightning(context) {
+    const { state, attack, publish, random, rollDice, rollOne } = context;
+    const sourceDamage = rollDice(attack[2], 6);
+    const resisted = heroResistsRay(state, 'shockResistance', 'shock');
+    if (resisted) {
+        await shieldHero(state);
+        await publish("You aren't affected.");
+        noteRayResistance(context, true);
+        await applyHeroGolemEffects(AD_ELEC, sourceDamage, { state, publish });
+    }
+    else {
+        await exerciseAttribute(A_CON, false, state);
+        noteRayResistance(context, false);
+    }
+    if (random(3) === 0) {
+        const items = await destroyElectricInventory(sourceDamage, {
+            state, publish, random, rollOne, die: context.die,
+        });
+        if (items.heroDied)
+            return { resisted, heroDied: true };
+    }
+    return applyRayDamage(context, resisted ? 0 : sourceDamage, 'blast of lightning', resisted);
+}
+async function hitWithPoison(context) {
+    const { state, random, rollDice, publish, die } = context;
+    const poison = await poisonHero({
+        reason: 'blast',
+        killer: 'poisoned blast',
+        attribute: A_DEX,
+        fatal: 15,
+        state,
+        random,
+        rollDice,
+        publish,
+        die,
+    });
+    return {
+        resisted: !!poison.resisted,
+        damage: poison.damage ?? 0,
+        heroDied: poison.died,
+    };
+}
+async function hitWithAcid(context) {
+    const { state, attack, publish, random, rollDice } = context;
+    const resisted = heroResistsRay(state, 'acidResistance', 'acid');
+    let damage = 0;
+    if (resisted) {
+        await publish(`The ${displayLiquidName('acid', state)} doesn't hurt.`);
+        noteRayResistance(context, true);
+    }
+    else {
+        await publish(`The ${displayLiquidName('acid', state)} burns!`);
+        damage = rollDice(attack[2], 6);
+        await exerciseAttribute(A_STR, false, state);
+        noteRayResistance(context, false);
+    }
+    const hero = state.u;
+    const twoWeapons = !!hero.twoweap;
+    if (random(twoWeapons ? 3 : 6) === 0) {
+        await damageObjectWithAcid(state.uwep || hero.uwep, { state, publish, random });
+    }
+    if (twoWeapons && random(3) === 0) {
+        await damageObjectWithAcid(state.uswapwep || hero.uswapwep, { state, publish, random });
+    }
+    if (random(6) === 0)
+        await erodeArmor(state.u, 'corrosion', { state, publish, random });
+    return applyRayDamage(context, damage, 'blast of acid', resisted);
+}
+function heroResistsRay(state, property, element) {
+    return !!state.u[property] || propertyIsActive(property, state)
+        || heroHasArtifactDefense(element, state);
+}
+function noteRayResistance(context, resisted) {
+    const observe = resisted ? monstersObserveHeroResistance : monstersForgetHeroResistance;
+    const damageType = !context.source.endsWith('breath') && context.damageType === AD_DISN
+        ? AD_MAGM : context.damageType;
+    observe(seenResistanceForDamage(damageType), context.state, (monster) => monsterHasLineOfSightToHero(monster, context.state));
+}
+async function applyRayDamage(context, damage, name, resisted = false) {
+    const { state, publish, die, source, sourceMonster } = context;
+    const breath = source.endsWith('breath');
+    if (!breath && heroHasHalfSpellDamage(state))
+        damage = Math.trunc((damage + 1) / 2);
+    const rayName = context.name || name;
+    const verb = breath ? 'exhaled' : source.endsWith('spell') ? 'cast'
+        : context.sourceObject?.oclass === 6 ? 'played' : 'zapped';
+    const reflexive = state.flags?.female ? 'herself' : 'himself';
+    const killer = sourceMonster
+        ? monsterSpellDeathReason(sourceMonster, rayName).replace('inflicted', verb)
+        : source.startsWith('monster-') ? rayName : `${rayName} ${verb} by ${reflexive}`;
+    const heroDied = await loseHeroHp(damage, killer, { state, publish, die });
+    return { resisted, damage, heroDied };
+}
+export function effectiveBreathDamage(damageType) {
+    // BZ_OFS_AD(AD_RBRE) maps the Chromatic Dragon's hero breath to fire.
+    return damageType === AD_RBRE ? AD_FIRE : damageType;
+}
+function wornObject(state, slot) {
+    return state[slot] || state.u?.[slot] || null;
+}
+function shieldHero(state) {
+    return shieldeff(state.u.ux, state.u.uy, state);
+}
+export async function meltIce(x, y, { announce = plineWithContinuation, message = 'The ice crackles and melts.', } = {}) {
+    const level = requireGameLevel(game);
+    const location = level.at(x, y);
+    if (!location)
+        throw new RangeError(`Cannot melt ice outside the map: ${x},${y}`);
+    if (location.typ === DRAWBRIDGE_UP || location.typ === DRAWBRIDGE_DOWN) {
+        // A lowered bridge hides its ice, but its existing timer still expires.
+        location.drawbridgemask = (location.drawbridgemask ?? 0) & ~DB_ICE;
+    }
+    else {
+        if (location.typ !== ICE)
+            throw new Error(`cannot melt non-ice position ${x},${y}`);
+        location.typ = location.icedpool === ICED_POOL ? POOL : MOAT;
+        location.flags = 0;
+        location.icedpool = 0;
+    }
+    stopLevelTimer(x, y, LEVEL_TIMER_KIND.MELT_ICE_AWAY, game);
+    await meltIceTrap(x, y);
+    if (game.program_state.gameover)
+        return;
+    updateIceObjectTimersAt(x, y, game);
+    await unearthFloorObjectsAt(x, y, game);
+    if (game.program_state.gameover)
+        return;
+    if (game.underwater)
+        await vision_recalc(1);
+    await newsym(x, y);
+    if (cansee(x, y) || game.u.ux === x && game.u.uy === y)
+        await announce(message || 'The ice crackles and melts.', { noRepeat: true });
+    let boulder = floorBoulderAt(x, y);
+    if (boulder) {
+        if (cansee(x, y)) {
+            const subject = withIndefiniteArticle(objectName(boulder));
+            await announce(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} settles...`);
+        }
+        do {
+            remove_object(boulder, game);
+            if (!await dropBoulderIntoLiquid(boulder, x, y, game, { publish: announce }))
+                await impossible('melt_ice: no pool?');
+            if (game.program_state.gameover)
+                return;
+        } while (isPoolAt(x, y) && (boulder = floorBoulderAt(x, y)));
+        await newsym(x, y);
+    }
+    if (game.u.ux === x && game.u.uy === y) {
+        await applyHeroLocationEffects(announce, { pick: true });
+    }
+    else if (isPoolAt(x, y)) {
+        const monster = monsterAtPosition(requireGameLevel(game), x, y);
+        if (monster) {
+            await resolveMonsterLiquid(monster, game, {
+                announce, finishDeath: game.context.mon_moving
+                    ? finishMonsterLiquidDeath : finishHeroLiquidMonsterDeath,
+                monsterMoving: !!game.context.mon_moving,
+            });
+        }
+    }
+}
+function floorBoulderAt(x, y) {
+    return requireGameLevel(game).objects[x]?.[y]?.find(object => object.otyp === BOULDER);
+}
+// ── moved from src/js/enlightenment_attributes.ts ──
+// C zap.c:item_what(): wizard-mode source of the item-protection line,
+// naming the worn piece whose extrinsic protects the inventory.
+export function itemResistanceCause(property) {
+    // C zap.c:adtyp_to_prop() already applied: callers pass the property.
+    const sources = game.u._propertySources?.[property]?.worn ?? [];
+    for (const slot of ['uarmc', 'uarm', 'uarmu', 'uarmh', 'uarmg', 'uarmf', 'uarms']) {
+        const object = game[slot];
+        if (object && sources.some(source => source.slot === slot))
+            return ` by your ${simpleArmorName(object, slot, game)}`;
+    }
+    for (const slot of ['uamul', 'ublindf', 'uleft', 'uright', 'uwep']) {
+        if (!sources.some(source => source.slot === slot))
+            continue;
+        if ((slot === 'uleft' || slot === 'uright')
+            && sources.some(source => source.slot === 'uleft') && sources.some(source => source.slot === 'uright'))
+            return ' by your rings';
+        const object = game[slot];
+        if (object)
+            return ` by your ${minimalObjectName(object)}`;
+    }
+    return '';
+}
+// ── moved from src/js/wish.ts ──
+async function showWishHelp(triesLeft) {
+    const countNames = ['zero', 'one', 'two', 'three', 'four', 'five'];
+    const count = countNames[triesLeft] ?? String(triesLeft);
+    const retry = triesLeft < 5 ? ' more' : '';
+    const lines = [
+        'Wish details:',
+        '',
+        'Enter the name of an object, such as "potion of monster detection",',
+        '"scroll labeled README", "elven mithril-coat", or "Grimtooth"',
+        '(without the quotes).',
+        '',
+        'For object types which come in stacks, you may specify a plural name',
+        'such as "potions of healing", or specify a count, such as "1000 gold',
+        'pieces", although that aspect of your wish might not be granted.',
+        '',
+        'You may also specify various prefix values which might be used to',
+        'modify the item, such as "uncursed" or "rustproof" or "+1".',
+        'Most modifiers shown when viewing your inventory can be specified.',
+        '',
+        "You may specify 'nothing' to explicitly decline this wish.",
+    ];
+    if (!(game.u?.uconduct?.wishes ?? 0))
+        lines.push("Doing so will preserve 'wishless' conduct.");
+    lines.push('', `If you specify an unrecognized object name ${count}${retry} time${triesLeft === 1 ? '' : 's'},`, 'a randomly chosen item will be granted.', '');
+    if (game.flags?.cmdassist !== false) {
+        lines.push('(Suppress this assistance with !cmdassist in your config file.)');
+    }
+    await showTextWindow(lines);
+}
+export async function makeWish() {
+    requirePlayingGame(game);
+    if (game.flags.verbose !== false) {
+        await plineWithContinuation('You may wish for an object.');
+        await flushPendingTopline();
+    }
+    let value = '';
+    let result = null;
+    let failedAttempts = 0;
+    // zap.c captures the artifact-wish conduct before readobjnam() so the
+    // livelog can report a first artifact wish.
+    const oldWishArti = game.u.uconduct.wisharti ?? 0;
+    while (failedAttempts < 5) {
+        const assistance = failedAttempts > 0
+            && game.flags?.cmdassist !== false
+            ? " (enter 'help' for assistance)" : '';
+        value = failedAttempts === 0 && game.iflags.menu_requested && game._wishHistory?.length
+            ? await choosePastWish()
+            : await getLine(`For what do you wish${assistance}?`, (_ch, key) => key >= 32 && key < 127);
+        // zap.c:makewish() mungspaces() the typed line before comparing it,
+        // parsing it, recording it in the history, and livelogging it.
+        value = mungWishSpaces(value ?? '');
+        if ((value ?? '').trim().toLowerCase() === 'help') {
+            await showWishHelp(5 - failedAttempts);
+            continue;
+        }
+        result = await readObjectName(value ?? '', {
+            wizardWish: !!game.flags.debug,
+        });
+        if (result)
+            break;
+        await pline('Nothing fitting that description exists in the game.');
+        failedAttempts++;
+    }
+    if (!result) {
+        await pline("That's enough tries!");
+        result = await readObjectName('', { wizardWish: !!game.flags.debug });
+        if (!result) {
+            game.context.move = 0;
+            return;
+        }
+    }
+    if (result.noWish) {
+        if (!['nothing', 'nil', 'none'].includes((value ?? '').trim().toLowerCase()))
+            rememberWish(value ?? '');
+        else
+            recordGameLogEvent('declined to make a wish', { flags: LL_WISH });
+        game.context.move = 0;
+        return;
+    }
+    const object = result.object;
+    rememberWish(value ?? '');
+    if (object.oartifact)
+        setArtifactOrigin(object, 'wish', { knownOrigin: true });
+    const previousWishes = game.u.uconduct.wishes ?? 0;
+    game.u.uconduct.wishes = previousWishes + 1;
+    // zap.c:makewish() livelogs the granted wish before dropping the object;
+    // its doname() -> xname() observes the object first.
+    observeObjectForNaming(object);
+    const wish = `"${value ?? ''}", got "${await objectDescription(object)}"`;
+    const his = game.flags.female ? 'her' : 'his';
+    const artifactFlags = oldWishArti < (game.u.uconduct.wisharti ?? 0) ? LL_ARTIFACT : 0;
+    if (!previousWishes)
+        recordGameLogEvent(`made ${his} first wish - ${wish}`, { flags: LL_CONDUCT | LL_WISH | artifactFlags });
+    else if (!oldWishArti && game.u.uconduct.wisharti)
+        recordGameLogEvent(`made ${his} first artifact wish - ${wish}`, { flags: LL_CONDUCT | LL_WISH | LL_ARTIFACT });
+    else
+        recordGameLogEvent(`wished for ${wish}`, { flags: LL_WISH | artifactFlags });
+    if (object.otyp === CORPSE && !(game.uarmg || game.u.uarmg)
+        && touchPetrifies(object.corpsenm) && !heroResistsStoning(game))
+        object.wishedfor = true;
+    const held = await holdAnotherObject(object, { dropMessage: wishDropMessage(object) });
+    if (held.heroDied)
+        return;
+    game.u.ublesscnt = (game.u.ublesscnt || 0) + 50 + rn2(100);
+    game.context.move = 0;
+}
+// C zap.c:wish_history_add()/wish_history_menu(). History belongs to the
+// running game, is limited to twenty entries, and omits repeated prefixes.
+function rememberWish(value) {
+    if (!game.flags.debug)
+        return;
+    const wish = value.trim().replace(/\s+/g, ' ');
+    const history = game._wishHistory ?? [];
+    if (history.some(previous => wish.toLowerCase().startsWith(previous.toLowerCase())))
+        return;
+    game._wishHistory = [wish, ...history].slice(0, 20);
+}
+async function choosePastWish() {
+    const window = tty_create_nhwindow(NHW_MENU);
+    try {
+        await tty_start_menu(window);
+        for (const wish of game._wishHistory ?? [])
+            tty_add_menu(window, { identifier: wish, text: wish });
+        tty_end_menu(window, 'Wish what?');
+        const result = await tty_select_menu(window, PICK_ONE);
+        return result.selections[0]?.identifier ?? '';
+    }
+    finally {
+        await tty_destroy_nhwindow(window);
+    }
+}
+function wishDropMessage(object) {
+    const hero = game.u;
+    const airLevel = Is_airlevel(hero.uz);
+    const slips = airLevel || !!hero.uinwater;
+    const dangerous = object.otyp === CORPSE && !!object.wishedfor;
+    const verb = slips ? 'slip' : dangerous ? 'materialize' : 'drop';
+    observeObjectForNaming(object);
+    const quantity = object.quan;
+    const noun = object.otyp === CORPSE ? corpseName(object) : objectName(object);
+    const plural = object.otyp === CORPSE ? noun : pluralizeObjectNoun(object, noun);
+    const subject = definiteName(quantity === 1 ? noun : `${quantity} ${plural}`);
+    const action = `${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${verb}${quantity === 1 ? 's' : ''}`;
+    if (hero.uswallow)
+        return `Oops!  ${action} out of your reach!`;
+    const terrain = game.level?.at(hero.ux, hero.uy)?.typ;
+    if (airLevel || Is_waterlevel(hero.uz) || terrain !== undefined && (terrain < IRONBARS || terrain >= ICE))
+        return `Oops!  ${action} away from you!`;
+    return dangerous ? `Careful! ${action} on the floor!` : `Oops!  ${action} to the floor!`;
 }
 //# sourceMappingURL=zap.js.map

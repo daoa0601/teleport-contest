@@ -69,6 +69,7 @@ import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
 import { releaseHeroFromMonster, expelHero } from './hero_expulsion.js';
+
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import type { MonsterMigrationOptions, MonsterMigrationResult } from './dog.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -95,6 +96,7 @@ import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
+
 import type { GameMap } from './game.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';

@@ -67,7 +67,7 @@ import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import { captureRayTraversalFrame } from './ray.js';
+import { captureRayTraversalFrame } from './zap.js';
 import { endObjectBurn } from './timeout.js';
 import { displayMessageWindow } from './tty_topline.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and

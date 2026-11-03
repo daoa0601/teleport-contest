@@ -67,7 +67,7 @@ import { shouldMulchMissile } from './projectile.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType } from './zap.js';
 import { displayRayName } from './ray_name.js';
-import { castNativeRay } from './ray_attack.js';
+import { castNativeRay } from './zap.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

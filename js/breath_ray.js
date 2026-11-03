@@ -1,6 +1,6 @@
 import { game } from './gstate.js';
-import { effectiveBreathDamage } from './hero_breath.js';
-import { castNativeRay } from './ray_attack.js';
+import { effectiveBreathDamage } from './zap.js';
+import { castNativeRay } from './zap.js';
 const DIRECTIONS = Object.freeze({
     h: [-1, 0], l: [1, 0], j: [0, 1], k: [0, -1],
     y: [-1, -1], u: [1, -1], b: [-1, 1], n: [1, 1],

@@ -10,7 +10,8 @@ import {
     ROCK, SPE_BLANK_PAPER, TALLOW_CANDLE, WAX_CANDLE,
 } from '../js/object_data.js';
 import { readObjectName } from '../js/objnam.js';
-import { makeWish } from '../js/wish.js';
+import { makeWish } from '../js/zap.js';
+
 import { freshObjectRoom } from './support/object-room.js';
 
 async function wishObject(...args: Parameters<typeof readObjectName>) {

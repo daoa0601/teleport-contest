@@ -4,7 +4,7 @@ import { SLP_GAS_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { triggerHeroTrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
-import { castNativeRay } from '../js/ray_attack.js';
+import { castNativeRay } from '../js/zap.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C timeout.c fall_asleep() begins with stop_occupation(), which reports

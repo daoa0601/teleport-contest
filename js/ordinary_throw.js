@@ -26,7 +26,7 @@ import { ceilingName } from './terrain_name.js';
 import { addInventoryItemBefore } from './u_init.js';
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
-import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, snuffThrownCandle, } from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, snuffThrownCandle } from './thrown_object.js';
 export async function throwOrdinaryObject({ state = game, item, quantity, splitObjectId = null, dx, dy, volley, }) {
     requirePlayingGame(state);
     const weaponMask = item.owornmask ?? 0;

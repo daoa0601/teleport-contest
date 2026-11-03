@@ -3,7 +3,8 @@ import test from 'node:test';
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { game } from '../js/gstate.js';
-import { hitHeroWithRay } from '../js/hero_breath.js';
+import { hitHeroWithRay } from '../js/zap.js';
+
 import { resetInputState } from '../js/input.js';
 import { AD_DISN, AT_BREA } from '../js/monster_attack_types.js';
 import { CLOAK_OF_DISPLACEMENT } from '../js/object_data.js';

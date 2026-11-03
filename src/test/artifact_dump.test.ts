@@ -13,7 +13,8 @@ import { mksobj } from '../js/mkobj.js';
 import { readObjectName } from '../js/objnam.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
-import { makeWish } from '../js/wish.js';
+import { makeWish } from '../js/zap.js';
+
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -4,6 +4,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { ProjectileFlightCapture } from './thrown_object.js';
 
+
 interface GoldContactCallbacks {
     wakeMonster?: ((monster: Monster) => unknown) | null;
     angerMonster?: ((monster: Monster) => unknown) | null;
@@ -60,11 +61,8 @@ import { applyFloorEffects } from './floor_effects.js';
 
 import { rn2, rnd } from './rng.js';
 
-import {
-    finishHeroThrownObjectLanding, flyHeroThrownObject,
-    heroDirectGoldThrowRange, heroThrowTrajectory,
-    prepareHeroThrownTarget,
-} from './thrown_object.js';
+import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
+
 import { cansee } from './vision.js';
 import { reportHeroThrownMiss } from './dothrow.js';
 import { offerThrownFood } from './thrown_food.js';

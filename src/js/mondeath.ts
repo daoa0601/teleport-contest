@@ -12,6 +12,7 @@ import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';
 import { expelHero } from './hero_expulsion.js';
+
 import { releaseHeroGrip } from './polyself.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { monsterName, namelessMonsterName } from './do_name.js';

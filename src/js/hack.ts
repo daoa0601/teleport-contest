@@ -102,6 +102,7 @@ import { randomTeleportDepth } from './level_teleport.js';
 import { launchRollingBoulder } from './rolling_boulder.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
+
 import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './achievements.js';

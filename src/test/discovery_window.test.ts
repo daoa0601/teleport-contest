@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { zapHeroWithObject } from '../js/hero_self_zap.js';
+import { zapHeroWithObject } from '../js/zap.js';
+
 import { resetInputState } from '../js/input.js';
 import { dodiscovered } from '../js/o_init.js';
 import {

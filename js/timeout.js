@@ -52,7 +52,7 @@ import { captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmedi
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
 import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
 import { runClaimedGlobTimer, finishGlobTimer } from './glob.js';
-import { meltIce } from './ice.js';
+import { meltIce } from './zap.js';
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import { objectWeight } from './mkobj.js';
 import { useUpInventoryStack } from './hero_inventory.js';

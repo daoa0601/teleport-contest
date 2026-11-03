@@ -1,22 +1,18 @@
 import { fromWhat, heroHasNoEyes, intrinsicPropertyMask } from './attribute_provenance.js';
 import { levitationAtWill, propertyTimeout } from './properties.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { formatFeltMessage } from './hero_speech.js';
 // insight.js — Basic enlightenment / attributes command.
 // C ref: insight.c — doattributes(), enlightenment().
 import { heroIsHallucinating } from './senses.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { game } from './gstate.js';
 import { expiredFatally } from './timeout.js';
-import { bot } from './botl.js';
-import { displayLiquidName, docrt, flush_screen } from './display.js';
-import { flushPendingTopline } from './tty_topline.js';
+import { displayLiquidName } from './display.js';
 import { pline } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow } from './windows.js';
 import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
 import { listGenocided, listVanquished } from './end.js';
-import { A_WIS, G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, } from './const.js';
-import { exerciseAttribute } from './attrib.js';
+import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, } from './const.js';
 import { simpleArmorName } from './do_wear.js';
 import { attributeEnlightenmentLines, contractEnlightenment, combatIncrement, monkArmorPenalty } from './enlightenment_attributes.js';
 export { piousness } from './enlightenment_attributes.js';
@@ -412,14 +408,6 @@ export async function doattributes() {
     const magic = !!(game.flags?.debug || game.flags?.explore);
     await showEnlightenment({ magic });
     game.context.move = 0;
-}
-export async function doEnlightenmentEffect() {
-    await pline(formatFeltMessage('self-knowledgeable...'));
-    // zap.c displays WIN_MESSAGE before opening the enlightenment menu.
-    await flushPendingTopline();
-    await showEnlightenment({ basic: false, magic: true });
-    await pline('The feeling subsides.');
-    await exerciseAttribute(A_WIS, true);
 }
 // C insight.c:enlightenment() "Miscellaneous" section.  The recorder's
 // fixed clock leaves urealtime.realtime at zero, so elapsed time is " none".

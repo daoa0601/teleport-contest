@@ -53,7 +53,7 @@ import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProp
 import { punishHero, unpunishHero } from './punishment.js';
 import { paranoidQuery, promptYesNo, promptYesNoQuit } from './query.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './ray.js';
+import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './muse.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';

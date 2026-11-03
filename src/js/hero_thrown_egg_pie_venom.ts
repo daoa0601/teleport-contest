@@ -9,6 +9,7 @@ import { reportHeroThrownMiss } from './dothrow.js';
 import { ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EGG } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { prepareHeroThrownTarget } from './thrown_object.js';
+
 import { offerThrownFood } from './thrown_food.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';

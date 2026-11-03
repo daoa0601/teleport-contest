@@ -32,7 +32,8 @@ import { learnObjectType } from './o_init.js';
 
 import { drainObjectEnchantment } from './zap.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { monsterReflectionSource } from './ray.js';
+import { monsterReflectionSource } from './muse.js';
+
 import { d, rn2 } from './rng.js';
 import { contactIsProtected } from './stoning.js';
 import {

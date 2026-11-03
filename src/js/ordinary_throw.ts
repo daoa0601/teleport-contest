@@ -12,6 +12,7 @@ import { plineWithContinuation } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { ProjectileFlight } from './thrown_object.js';
+
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import {
     hitMonsterWithThrownEggPieOrVenom,
@@ -44,11 +45,8 @@ import {
     isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo,
 } from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
-import {
-    captureThrownObjectFlight, detachThrownUnit,
-    finishHeroThrownObjectLanding, flyHeroThrownObject,
-    heroThrowTrajectory, snuffThrownCandle,
-} from './thrown_object.js';
+import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, snuffThrownCandle } from './thrown_object.js';
+
 
 export interface OrdinaryThrowOptions {
     state?: GameState;
