@@ -197,17 +197,23 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 71 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 91 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
 nine gameplay-leaf claims of fv-equivalence-batch-3 (`xytodir`, the two
 weapon-skill bonuses, four mondata predicates, `armor_to_dragon` and
-`mkobj.c:weight` over ordinary stacks), and the ten predicate claims of
+`mkobj.c:weight` over ordinary stacks), the ten predicate claims of
 fv-equivalence-batch-4 (`verysmall`, `haseyes`, `hates_silver`,
 `mon_hates_blessings`, `mon_resistancebits`, `erosion_matters`,
 `is_damageable`, the two guarded readobjnam erosion tests, and
-`weapon_type`). The monster claims check all 383 valid
+`weapon_type`), and the twenty claims of fv-equivalence-batch-5: the
+nineteen PR 610 mondata predicates (`bigmonst`, `is_flyer`, `is_floater`,
+`is_clinger`, `is_swimmer`, `amphibious`, `passes_walls`, `can_teleport`,
+`control_teleport`, `perceives`, `hides_under`, `is_hider`, `is_demon`,
+`is_golem`, `is_giant`, `is_female`, `throws_rocks`, `type_is_pname`,
+`is_silent`) and `mondata.c:can_track` with a wielded-Excalibur state
+relation. The monster claims check all 383 valid
 native species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
@@ -297,7 +303,7 @@ final suite of 63 executor/query/selection tests passing in 83.1 s and the
 same 37 ledger CLI tests in 140.1 s.
 
 Run the language, solver-isolation and command-selection tests
-(83 tests; no game sessions):
+(86 tests; no game sessions):
 
 ```sh
 cd verification/equivalence
