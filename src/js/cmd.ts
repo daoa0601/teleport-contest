@@ -2896,11 +2896,12 @@ export async function readDirectionKey(message = 'In what direction? ', retry = 
     const queued = retry ? undefined : takeCommandResponse();
     if (typeof queued === 'number') return queued;
     if (typeof queued === 'object') return queuedDirectionKey(queued);
-    // C getdir() pops one entry from CQ_CANNED (cmd.c:3962): a key or a
-    // direction answers, a user-input placeholder asks live, and any other
-    // entry — including a queued extended command reached through an empty
-    // response queue — is neither CMDQ_DIR nor CMDQ_KEY, so getdir clears
-    // CQ_CANNED and reports the impossible (cmd.c:3974-3977).
+    // C getdir() pops one entry from CQ_CANNED (cmd.c:3962) and only
+    // CMDQ_KEY and CMDQ_DIR answer it. Every other popped entry — a
+    // user-input placeholder or a queued extended command reached through
+    // an empty response queue — makes getdir clear CQ_CANNED and report
+    // the impossible (cmd.c:3974-3977); getdir has no live-input case
+    // for a popped entry, unlike yn_function().
     if (queued !== undefined || (!retry && game._cannedCommands?.length)) {
         clearCannedCommands();
         await impossible('getdir: command queue had no dir?');
