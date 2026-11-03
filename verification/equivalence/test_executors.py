@@ -758,5 +758,36 @@ class ExecutorTests(unittest.TestCase):
                               classifier.replace(f't === {kind} ?', f't === {wrong} ?'),
                               **domain, reason='outputs differ')
 
+    def test_symbolic_string_array_read_selects_by_index(self):
+        names = ('const names = ["leather", "iron", "rubber hose", null];\n'
+                 'function example(i) { return names[i] === "rubber hose"; }')
+        mirror = 'int example(int i) { return i == 2; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 3])
+        self.equivalent(mirror, names, **domain)
+        # the null entry never equals a string, and a different literal
+        # selects a different row
+        self.rejected(mirror, names.replace('"rubber hose"', '"iron"'), **domain,
+                      reason='outputs differ')
+        self.rejected('int example(int i) { return i == 2 || i == 3; }', names,
+                      **domain, reason='outputs differ')
+
+    def test_symbolic_string_array_read_truthiness_distinguishes_null(self):
+        names = ('const names = ["leather", null];\n'
+                 'function example(i) { return names[i] ? 1 : 0; }')
+        mirror = 'int example(int i) { return i == 0; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent(mirror, names, **domain)
+
+    def test_symbolic_string_array_read_rejects_typeof_and_coercive_equality(self):
+        for body, why in (('typeof names[i]', 'unsupported: typeof of a symbolic string'),
+                          ('names[i] == null',
+                           'unsupported: JavaScript coercive equality on a symbolic string')):
+            with self.subTest(body=body):
+                self.rejected(
+                    'int example(int i) { return 0; }',
+                    f'const names = ["leather", null];\nfunction example(i) {{ return {body} ? 1 : 0; }}',
+                    params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+                    reason=why)
+
 if __name__ == '__main__':
     unittest.main()

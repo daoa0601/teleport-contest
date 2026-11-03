@@ -149,6 +149,14 @@ class JSExec:
             raise Unsupported('JavaScript values cannot be joined')
         if a.kind in ('num', 'bool', 'big'):
             return V(a.kind, z3.simplify(z3.If(guard, a.v, b.v)))
+        if a.kind == b.kind == 'str' and (isinstance(a.v, z3.ExprRef)
+                                          or isinstance(b.v, z3.ExprRef)):
+            # z3 String terms (symbolic string-array reads) merge by guard;
+            # the python-value comparison below must not see them (a z3
+            # equality is truthy even when it varies).
+            left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
+            right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
+            return V('str', z3.simplify(z3.If(guard, left, right)))
         if a.kind in ('str', 'obj', 'null', 'undef', 'ctx', 'fn') and a.v == b.v:
             return a
         raise Unsupported('JavaScript values cannot be joined')
@@ -459,6 +467,9 @@ class JSExec:
         if v.kind in ('undef', 'null'):
             return z3.BoolVal(False)
         if v.kind == 'str':
+            if isinstance(v.v, z3.ExprRef):
+                # Only the empty string (the null-entry encoding) is falsy.
+                return z3.simplify(v.v) != z3.StringVal('')
             return z3.BoolVal(bool(v.v))
         raise Unsupported(f'truthiness of {v.kind}')
 
@@ -760,7 +771,18 @@ class JSExec:
         if values and all(v.kind == 'record' and v.v.keys() == values[0].v.keys() for v in values):
             return V('record', {key: self._select_values(tuple(v.v[key] for v in values), index)
                                 for key in values[0].v})
-        raise Unsupported('JavaScript symbolic array read needs numeric or rectangular array elements')
+        if values and all(v.kind in ('str', 'null') for v in values):
+            # A symbolic read of a name table: build one z3 String term. Null
+            # entries encode as the empty string, which keeps ===, !== and
+            # truthiness exact; typeof and coercive == reject the term.
+            if any(v.kind == 'str' and v.v == '' for v in values):
+                raise Unsupported('JavaScript string-array read cannot encode an empty name')
+            picked = z3.StringVal(values[-1].v if values[-1].kind == 'str' else '')
+            for i in reversed(range(len(values) - 1)):
+                entry = values[i]
+                term = z3.StringVal(entry.v if entry.kind == 'str' else '')
+                picked = z3.If(index == i, term, picked)
+            return V('str', picked)
 
     def _arith(self, path, op, a: V, b: V, node):
         where = self.where(node)
@@ -845,6 +867,11 @@ class JSExec:
         out = []
         for p, (a, b) in self.eval_list(path, [left, right]):
             if op in ('==', '!='):
+                if any(isinstance(x.v, z3.ExprRef) and x.kind == 'str' for x in (a, b)):
+                    # Null entries of a symbolic string-array read are encoded
+                    # as empty strings, so `value == null` cannot be decided
+                    # from the kind alone.
+                    raise Unsupported('JavaScript coercive equality on a symbolic string')
                 if b.kind not in ('null', 'undef'):
                     raise Unsupported('JavaScript coercive equality except nullish comparison')
                 equal = z3.BoolVal(a.kind in ('null', 'undef'))
@@ -867,6 +894,14 @@ class JSExec:
         if a.kind in ('num', 'big', 'bool'):
             return a.v == b.v
         if a.kind in ('str', 'obj', 'undef', 'null'):
+            # A symbolic string-array read yields a z3 String term (with the
+            # null entries encoded as the empty string); only String-sorted
+            # equality is modeled for those.
+            if a.kind == 'str' and (isinstance(a.v, z3.ExprRef)
+                                    or isinstance(b.v, z3.ExprRef)):
+                left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
+                right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
+                return left == right
             return z3.BoolVal(a.v == b.v)
         raise Unsupported(f'JavaScript equality on {a.kind}')
 
@@ -884,6 +919,10 @@ class JSExec:
             elif op == 'typeof':
                 # ECMAScript typeof: 'object' for null and every composite
                 # value, the primitive boxes by kind.
+                if v.kind == 'str' and isinstance(v.v, z3.ExprRef):
+                    # Null entries of a symbolic string-array read are encoded
+                    # as empty strings, so the classification is undecided.
+                    raise Unsupported('typeof of a symbolic string')
                 names = {'num': 'number', 'big': 'bigint', 'str': 'string',
                          'bool': 'boolean', 'undef': 'undefined', 'fn': 'function'}
                 out.append((p, V('str', names.get(v.kind, 'object'))))

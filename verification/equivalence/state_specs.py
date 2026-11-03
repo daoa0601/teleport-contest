@@ -31,13 +31,15 @@ ITEM_FIELDS = [('uarmg.otyp', (16, True), 'game.uarmg.otyp'),
 HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
 STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
-                 'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c', 'objnam.c')
+                 'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c', 'objnam.c',
+                 'dothrow.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
     'js/cmd.js', 'js/skills.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
+    'js/object_properties.js',
 )
 
 
@@ -729,6 +731,323 @@ STATE_SPECS += [
          mutants=[('js/skills.js', 'if (![2, 6, 13].includes(weapon.oclass))',
                    'if (![2, 6].includes(weapon.oclass))'),
                   ('js/skills.js', 'return Math.abs(skill);', 'return skill;')]),
+]
+
+# ---- fv-equivalence-batch-6: the obj.h/objclass.h object-class predicates ----
+
+# obj.h/objclass.h define these predicates as macros over objects[] columns
+# that object_data.js keeps as per-otyp arrays; the correspondence holds at
+# every initial row (checked concretely over the whole table before proving):
+# oc_skill = OBJECT_SUBTYPE, oc_dir = OBJECT_DIR, oc_bimanual (the oc_big
+# alias) = OBJECT_BIMANUAL, oc_charged = OBJECT_CHARGED, oc_material =
+# OBJECT_MATERIAL, and OBJECT_NAMES names only RUBBER_HOSE "rubber hose".
+OBJ_FILE = 'js/object_properties.js'
+
+OBJECT_MACRO_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS + (
+    'obj.h reads objects[otyp].oc_skill, oc_dir, oc_bimanual, oc_charged and oc_material; object_data.js OBJECT_SUBTYPE, OBJECT_DIR, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_MATERIAL and OBJECT_NAMES keep those initial columns at every otyp in 0..NUM_OBJECTS-1 (checked concretely over the whole table), and OBJECT_NAMES names only RUBBER_HOSE "rubber hose"',
+)
+
+CLASS_INVARIANT_ASSUMPTION = (
+    'mkobj.c keeps oclass equal to objects[otyp].oc_class on every struct obj and no initial row carries class 0, so the port\'s objectClass fallback (o_init.js:objectClassForType and its OBJECT_BASES loop) never fires inside these entry domains',
+)
+
+ARTIFACT_OBJECT_ASSUMPTIONS = (
+    'obj.h oartifact is the artifact index (obj.h char); artifact.c:is_art compares it with ART_GRIMTOOTH/ART_SNICKERSNEE, and artifacts.js:artifactById reads the emitted ARTIFACT_DATA runtime map (initializeArtifacts copies identity/name/invokePower) in which only id ART_GRIMTOOTH carries invokePower "fling-poison" and only id ART_SNICKERSNEE is named "Snickersnee" (checked concretely)',
+)
+
+
+def classed_object_state(prefix):
+    """object_predicate_state plus the mkobj oclass invariant. obj.h's
+    class-guarded macros read otmp->oclass; the port routes them through
+    objectClass(), whose fallback fires only when oclass is zero, which no
+    initial row and no mkobj-made object has."""
+    def state(world, front, modules):
+        object_predicate_state(prefix)(world, front, modules)
+        object_table_index_precondition(world, front, world.c_state[f'{prefix}.otyp'][0])
+        symbols = {name: value for name, (value, _) in world.c_state.items()}
+        classes = _objects_member(world, front, 'oc_class')
+        world.pre.append(symbols[f'{prefix}.oclass']
+                         == select_int(classes, symbols[f'{prefix}.otyp']))
+        # Only the domain probes reach objectClass's fallback branch, whose
+        # objectClassForType scans the whole OBJECT_BASES array (17 exits).
+        world.unroll = 20
+    return state
+
+
+def plain_object_state(prefix):
+    """object_predicate_state with only the table-index restriction: the
+    predicate reads the object's own oclass directly, as the macro does."""
+    def state(world, front, modules):
+        object_predicate_state(prefix)(world, front, modules)
+        object_table_index_precondition(world, front, world.c_state[f'{prefix}.otyp'][0])
+    return state
+
+
+def artifact_runtime(world, front, modules):
+    """The emitted artifact identity/name/invokePower map artifactById reads
+    through its default game argument, as can_track:state relates it."""
+    artifacts = module_constant(world, modules, 'js/artifact_data.js', 'ARTIFACT_DATA')
+    world.js_values['game._artifactRuntime'] = V('map', tuple(
+        (artifact.v['id'], artifact) for artifact in artifacts.v))
+
+
+def artifact_object_state(prefix):
+    def state(world, front, modules):
+        plain_object_state(prefix)(world, front, modules)
+        symbols = {name: value for name, (value, _) in world.c_state.items()}
+        world.c_globals[f'{prefix}.oartifact'] = CVal(
+            symbols[f'{prefix}.oartifact'], SCHAR)
+        artifact_runtime(world, front, modules)
+    return state
+
+
+def wet_towel_state(world, front, modules):
+    """obj.h:is_wet_towel reads only otyp and spe; no objects[] row is read,
+    so otyp spans the whole short range and spe the whole schar range."""
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    for field, declared in (('otyp', (16, True)), ('spe', SCHAR)):
+        world.c_globals[f'otmp.{field}'] = CVal(symbols[f'otmp.{field}'], declared)
+
+
+def graystone_state(world, front, modules):
+    """obj.h:is_graystone compares otyp with four constants; no table read."""
+    world.c_globals['obj.otyp'] = CVal(world.c_state['obj.otyp'][0], (16, True))
+
+
+def permapoisoned_state(world, front, modules):
+    """artifact.c:permapoisoned accepts a null object; otyp/oclass are
+    unread, so only the artifact index is related."""
+    world.c_globals['otmp.oartifact'] = CVal(world.c_state['otmp.oartifact'][0], SCHAR)
+    artifact_runtime(world, front, modules)
+
+
+def permapoisoned_arguments(world, front):
+    present = next(value for name, value, _ in world.params if name == 'native_object_present')
+    return ([CPtr(present != 0, 'otmp')],
+            [V('choice', [(present == 1, V('obj', 'otmp')),
+                          (present != 1, V('null'))])])
+
+
+def ammo_launcher_state(world, front, modules):
+    """obj.h:ammo_and_launcher reads the ammo's oclass/otyp and (when the
+    launcher is non-null) the launcher's otyp skill column; matching_launcher
+    accepts a null launcher and is_ammo does not."""
+    classed_object_state('ammo')(world, front, modules)
+    launcher_typ = world.c_state['launcher.otyp'][0]
+    world.c_globals['launcher.otyp'] = CVal(launcher_typ, (16, True))
+    world.pre.extend([launcher_typ >= 0, launcher_typ < front.enum_value('NUM_OBJECTS')])
+
+
+def ammo_launcher_arguments(world, front):
+    present = next(value for name, value, _ in world.params if name == 'launcher_present')
+    return ([CPtr(True, 'ammo'), CPtr(present != 0, 'launcher')],
+            [V('obj', 'ammo'),
+             V('choice', [(present == 1, V('obj', 'launcher')),
+                          (present != 1, V('null'))])])
+
+
+def unrelated(pin, field):
+    """A domain probe pinned to one concrete row (the pinned species-probe
+    pattern of mon_resistancebits) so z3 finds its counterexample at once."""
+    return UnrelatedState(pin, (field,))
+
+
+OBJECT_STATE = [('obj.oclass', (8, True), 'obj.oclass'),
+                ('obj.otyp', (16, True), 'obj.otyp')]
+
+STATE_SPECS += [
+    Spec('is_weptool:tables', 'verification_is_weptool', 'isWeaponTool', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION,
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned pick-axe)',
+                  unrelated(lambda s: [s['obj.otyp'] == 259], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, '&& OBJECT_SUBTYPE[object.otyp] !== 0;',
+                   '&& OBJECT_SUBTYPE[object.otyp] === 0;')]),
+    Spec('bimanual:tables', 'verification_bimanual', 'isBimanualObject', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
+            'obj.h bimanual reads objects[otyp].oc_bimanual, the oc_big bit objclass.h aliases to heavy armor; the class guard keeps armor rows out, and OBJECT_BIMANUAL keeps the same bit at every otyp',),
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned two-handed sword)',
+                  unrelated(lambda s: [s['obj.otyp'] == 55], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, '&& !!OBJECT_BIMANUAL[object.otyp];',
+                   '&& !OBJECT_BIMANUAL[object.otyp];')]),
+    Spec('is_missile:tables', 'verification_is_missile', 'isMissileObject', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION,
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned dart)',
+                  unrelated(lambda s: [s['obj.otyp'] == 24], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, 'skill >= -P_BOOMERANG && skill <= -P_DART;',
+                   'skill >= -P_BOOMERANG && skill <= 0;')]),
+    Spec('is_ammo:tables', 'verification_is_ammo', 'isLauncherAmmunition', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
+            'obj.h:is_ammo is the one C macro behind both isLauncherAmmunition and isAmmunition; this claim proves isLauncherAmmunition, which the callers keep, and the duplicate is recorded in .cache/agents/followups.md',),
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned arrow)',
+                  unrelated(lambda s: [s['obj.otyp'] == 18], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, '(kind === WEAPON_CLASS || kind === GEM_CLASS)\n        && skill >= -P_CROSSBOW && skill <= -P_BOW;',
+                   '(kind === WEAPON_CLASS || kind === GEM_CLASS)\n        && skill >= -P_DART && skill <= -P_BOW;')]),
+    Spec('ammo_and_launcher:tables', 'verification_ammo_and_launcher',
+         'launcherMatchesAmmo', [('launcher_present', INT)],
+         js_file=OBJ_FILE, state=[('ammo.oclass', (8, True), 'ammo.oclass'),
+                                  ('ammo.otyp', (16, True), 'ammo.otyp'),
+                                  ('launcher.otyp', (16, True), 'launcher.otyp')],
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
+            'obj.h:matching_launcher accepts a null launcher (the macro tests l first); the ammo object itself must be non-null because is_ammo dereferences it, and launcher otyp stays inside the emitted subtype table',
+            'obj.h:ammo_and_launcher is the one C macro behind both launcherMatchesAmmo and ammunitionMatchesLauncher; this claim proves launcherMatchesAmmo, which the callers keep'),
+         require_counterexamples=True, configure=ammo_launcher_state,
+         arguments=ammo_launcher_arguments,
+         pre=lambda s: [s['launcher_present'] >= 0, s['launcher_present'] <= 1],
+         probes=[('launcher otyp correspondence omitted (pinned arrow)',
+                  unrelated(lambda s: [s['launcher_present'] == 1,
+                                       s['ammo.otyp'] == 18], 'launcher.otyp'))],
+         mutants=[(OBJ_FILE, '=== -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);',
+                   '=== (OBJECT_SUBTYPE[launcher.otyp] ?? 0);')]),
+    Spec('is_poisonable:tables', 'verification_is_poisonable', 'isPoisonableObject', [],
+         js_file=OBJ_FILE,
+         state=OBJECT_STATE + [('obj.oartifact', SCHAR, 'obj.oartifact')],
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + ARTIFACT_OBJECT_ASSUMPTIONS,
+         require_counterexamples=True, configure=artifact_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oartifact correspondence omitted (pinned elven dagger)',
+                  unrelated(lambda s: [s['obj.otyp'] == 35,
+                                       s['obj.oartifact'] == 5], 'obj.oartifact'))],
+         mutants=[(OBJ_FILE, "|| artifactById(object.oartifact)?.invokePower === 'fling-poison';",
+                   '|| false;')]),
+    Spec('permapoisoned:tables', 'permapoisoned', 'isPermanentlyPoisonedObject',
+         [('native_object_present', INT)],
+         js_file=OBJ_FILE, state=[('otmp.oartifact', SCHAR, 'otmp.oartifact')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + ARTIFACT_OBJECT_ASSUMPTIONS + (
+            'artifact.c:permapoisoned accepts a null object and so does the port guard; otyp/oclass are unread on both sides',
+         ),
+         require_counterexamples=True, configure=permapoisoned_state,
+         arguments=permapoisoned_arguments,
+         pre=lambda s: [s['native_object_present'] >= 0, s['native_object_present'] <= 1],
+         probes=[('oartifact correspondence omitted (pinned Grimtooth)',
+                  unrelated(lambda s: [s['native_object_present'] == 1,
+                                       s['otmp.oartifact'] == 5], 'otmp.oartifact'))],
+         mutants=[(OBJ_FILE, "return artifactById(object.oartifact)?.invokePower === 'fling-poison';",
+                   "return artifactById(object.oartifact)?.invokePower === 'snowstorm';")]),
+    Spec('is_blunt_weapon:tables', 'verification_is_blunt_weapon', 'isBluntWeapon', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION,
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned mace)',
+                  unrelated(lambda s: [s['obj.otyp'] == 73], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, 'return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & WHACK);',
+                   'return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & 2);')]),
+    Spec('is_flimsy:tables', 'verification_is_flimsy', 'isFlimsyObject', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + (
+            'obj.h:is_flimsy reads oc_material and otyp only, so the free oclass is never read; the zero-material generic rows agree with the port (0 <= LEATHER on both sides), unlike is_damageable whose port test is material > WOOD-with-LIQUID-exception',
+            'the claim calls the port with the default game state, whose objectMaterials map holds the initial emitted OBJECT_MATERIAL entries (the same relation the material claims assume)',
+         ),
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned leather armor)',
+                  unrelated(lambda s: [s['obj.otyp'] == 134], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return objectMaterial(object, state) <= LEATHER',
+                   'return objectMaterial(object, state) < LEATHER')]),
+    Spec('is_pick:tables', 'verification_is_pick', 'isPick', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned pick-axe)',
+                  unrelated(lambda s: [s['obj.otyp'] == 259], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;',
+                   'OBJECT_SUBTYPE[object.otyp] === P_AXE;')]),
+    Spec('is_axe:tables', 'verification_is_axe', 'isAxe', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned axe)',
+                  unrelated(lambda s: [s['obj.otyp'] == 44], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'OBJECT_SUBTYPE[object.otyp] === P_AXE;',
+                   'OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;')]),
+    Spec('is_blade:tables', 'verification_is_blade', 'isBlade', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned dagger)',
+                  unrelated(lambda s: [s['obj.otyp'] == 34], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, '&& skill >= P_DAGGER && skill <= P_SABER;',
+                   '&& skill > P_DAGGER && skill <= P_SABER;')]),
+    Spec('is_wet_towel:state', 'verification_is_wet_towel', 'isWetTowel', [],
+         js_file=OBJ_FILE,
+         state=[('otmp.otyp', (16, True), 'otmp.otyp'),
+                ('otmp.spe', SCHAR, 'otmp.spe')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+            'obj.h:is_wet_towel reads otyp and spe only; no objects[] row is read, so otyp spans the whole short range and spe the whole schar range, and the port\'s spe ?? 0 never fires because a modeled object always carries spe',
+         ),
+         require_counterexamples=True, configure=wet_towel_state,
+         arguments=object_predicate_arguments('otmp'),
+         probes=[('spe correspondence omitted (pinned towel)',
+                  unrelated(lambda s: [s['otmp.otyp'] == 234], 'otmp.spe'))],
+         mutants=[(OBJ_FILE, 'return object?.otyp === TOWEL && (object.spe ?? 0) > 0;',
+                   'return object?.otyp === TOWEL && (object.spe ?? 0) >= 0;')]),
+    Spec('is_pole:tables', 'verification_is_pole', 'isPolearm', [],
+         js_file=OBJ_FILE,
+         state=OBJECT_STATE + [('obj.oartifact', SCHAR, 'obj.oartifact')],
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + ARTIFACT_OBJECT_ASSUMPTIONS,
+         require_counterexamples=True, configure=artifact_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oartifact correspondence omitted (pinned Snickersnee short sword)',
+                  unrelated(lambda s: [s['obj.otyp'] == 46,
+                                       s['obj.oartifact'] == 19], 'obj.oartifact'))],
+         mutants=[(OBJ_FILE, 'return skill === P_POLEARMS || skill === P_LANCE',
+                   'return skill === P_POLEARMS')]),
+    Spec('is_sword:tables', 'verification_is_sword', 'isSword', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned short sword)',
+                  unrelated(lambda s: [s['obj.otyp'] == 46], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;',
+                   'return object.oclass === 2 && skill > P_SHORT_SWORD && skill <= P_SABER;')]),
+    Spec('is_graystone:tables', 'verification_is_graystone', 'isGrayStone', [],
+         js_file=OBJ_FILE,
+         state=[('obj.otyp', (16, True), 'obj.otyp')],
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+            'obj.h:is_graystone compares otyp with four constants; no objects[] row is read, so otyp spans the whole short range',
+         ),
+         require_counterexamples=True, configure=graystone_state,
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned touchstone)',
+                  unrelated(lambda s: [s['obj.otyp'] == 472], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, '[LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE].includes(object.otyp);',
+                   '[LUCKSTONE, LOADSTONE, FLINT].includes(object.otyp);')]),
+    Spec('throwing_weapon:tables', 'throwing_weapon', 'isThrowingWeapon', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
+            'dothrow.c:throwing_weapon composes is_missile, is_spear, is_blade, is_sword and the oc_dir PIERCE bit with the two special otyps; the port\'s skill >= P_DAGGER && skill < P_SHORT_SWORD equals is_blade && !is_sword because P_SHORT_SWORD <= P_SABER',
+         ),
+         require_counterexamples=True, configure=classed_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned dagger)',
+                  unrelated(lambda s: [s['obj.otyp'] == 34], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, '|| object.otyp === WAR_HAMMER\n        || object.otyp === AKLYS;',
+                   '|| object.otyp === WAR_HAMMER;')]),
+    Spec('is_multigen:tables', 'verification_is_multigen', 'isMultiGeneratedWeapon', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=OBJECT_MACRO_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned dart)',
+                  unrelated(lambda s: [s['obj.otyp'] == 24], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return object.oclass === WEAPON_CLASS\n        && skill >= -P_SHURIKEN && skill <= -P_BOW;',
+                   'return object.oclass === WEAPON_CLASS\n        && skill >= -P_BOOMERANG && skill <= -P_BOW;')]),
 ]
 
 # ---- fv-equivalence-batch-5: the named mondata.h/mondata.c predicates ----
