@@ -92,7 +92,7 @@ import { offerThrownFood } from './thrown_food.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
 import { tossObjectUp } from './dothrow.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { cansee, vision_recalc } from './vision.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';
 import { makeWish } from './zap.js';

@@ -16,14 +16,14 @@ import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js'
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
-import { insideShopRoomAt } from './shk.js';
-import { mksobj, objectWeight } from './mkobj.js';
+import { insideShopRoomAt, objectTypeKnown } from './shk.js';
+import { mksobj, objectWeight, objectQuantity } from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races, roles } from './roles.js';
 import { objectClassForType, recordObjectEncounter, objectMaterial } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
-import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
+import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
@@ -296,6 +296,42 @@ export function nameArtifact(
     object.quan = 1;
     object.quantity = 1;
     return true;
+}
+
+// C artifact.c:restrict_name(). Artifacts.js owns the artilist flags; the
+// same-type test covers undiscovered siblings sharing this description
+// (weapons share no shuffled pool, so equal descriptions are the range).
+export function restrictName(object: GameObject, name: string, state: GameState) {
+    if (!name) return false;
+    let wanted = name;
+    if (/^the /iu.test(wanted)) wanted = wanted.slice(4);
+    const otyp = object.otyp;
+    const sameTypes = new Set([otyp]);
+    const description = state.objectDescriptions?.[otyp]
+        ?? OBJECT_DESCRIPTIONS[otyp];
+    if (!objectTypeKnown(object, state) && description) {
+        const oclass = objectClassForType(otyp);
+        const { first, last } = getObjectClassBounds(oclass);
+        for (let candidate = first; candidate <= last; candidate++) {
+            const other = state.objectDescriptions?.[candidate]
+                ?? OBJECT_DESCRIPTIONS[candidate];
+            if (candidate !== otyp && other === description
+                && !state._knownObjectTypes?.has(candidate)) {
+                sameTypes.add(candidate);
+            }
+        }
+    }
+    for (const artifact of ARTIFACTS) {
+        if (!sameTypes.has(artifact.baseType)) continue;
+        let artifactName = artifact.name;
+        if (/^the /iu.test(artifactName)) artifactName = artifactName.slice(4);
+        if (artifactName === wanted) {
+            /* don't name multiple elven daggers "Sting" */
+            return artifact.noGeneration || artifact.restricted
+                || objectQuantity(object) > 1;
+        }
+    }
+    return false;
 }
 
 // C artifact.c:artifact_origin(). A wish or gift can replace the random

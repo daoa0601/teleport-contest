@@ -31,7 +31,6 @@ src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
 src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
-src/js/enchant_weapon.ts	wield.c
 src/js/engrave.ts	engrave.c
 src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
@@ -82,6 +81,7 @@ src/js/menu_coloring.ts	windows.c
 src/js/mhitm.ts	mhitm.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
+src/js/mkobj.ts	mkobj.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
 src/js/mondeath.ts	mon.c
@@ -142,7 +142,6 @@ src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
 src/js/trap.ts	trap.c
-src/js/two_weapon.ts	wield.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c

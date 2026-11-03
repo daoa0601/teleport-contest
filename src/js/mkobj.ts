@@ -7,7 +7,7 @@ import type { GameState } from './game_state.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION } from './object_data.js';
 import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import type { ObjectDefinition } from './object_data.js';
-import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
+import { game, requireLiveGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
 import { setTinVariety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
@@ -19,7 +19,7 @@ import { placeCreatedObject, remove_object } from './floor_object.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
-import { In_quest, Is_rogue_level, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, ALTAR, OBJECT_TIMER_KIND } from './const.js';
+import { In_quest, Is_rogue_level, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
@@ -33,26 +33,24 @@ import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './
 import { rndmonstAdj } from './makemon.js';
 import { objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
-import { rndClass, ownedObjectName } from './objnam.js';
+import { rndClass } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './read.js';
 import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
 
 
-import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld, dropObjectAtHero } from './do.js';
+import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld } from './do.js';
 import { deleteObject, splitObjectBill, settleGlobAbsorptionBilling } from './shk.js';
 import { startGlobTimeout } from './glob.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { landObjectOnAltar } from './altar_object.js';
-import { heroHandName } from './body_parts.js';
-import { shipObject } from './dokick.js';
-import { updateCarriedLuck, freeInventoryObject } from './hero_inventory.js';
+import { updateCarriedLuck } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 
 import { bookCursed } from './spellbook_study.js';
 import { resetBulkTakeoff } from './do_wear.js';
+import { dropCursedAlternateWeapon } from './wield.js';
 
 
 const RANDOM_CLASS = 0;
@@ -134,23 +132,6 @@ export async function curseObject(
         await bookCursed(object, { state });
     if (object?.lamplit) await adjustObjectLightAfterBlessing(object, oldLight, state);
     return changed;
-}
-
-// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
-// then handle shipping and altar contact before placing the dropped weapon.
-async function dropCursedAlternateWeapon(object: GameObject, state: GameState): Promise<void> {
-    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${
-        ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
-    await freeInventoryObject(object, state);
-    if (!state.u.uswallow) {
-        const initialized = requireInitializedGame(state);
-        if (await shipObject(object, state.u.ux, state.u.uy, {
-            state: initialized, publish: plineWithContinuation,
-        })) return;
-        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
-            await landObjectOnAltar(object, { state });
-    }
-    await dropObjectAtHero(object, { state });
 }
 
 export function uncurseObjectState(object: GameObject | null | undefined, state: GameState = game): boolean {

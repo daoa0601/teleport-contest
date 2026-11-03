@@ -30,7 +30,7 @@ import { getLine, promptYesNoAllQuit } from './query.js';
 import { yn_function } from './cmd.js';
 import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots } from './wield.js';
-import { heroCanUseTwoWeapons } from './two_weapon.js';
+import { heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 import { discoverArtifact } from './artifacts.js';

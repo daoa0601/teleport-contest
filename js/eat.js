@@ -81,7 +81,7 @@ import { addInventoryItem } from './u_init.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone } from './wield.js';
-import { wieldTool } from './wield_tool.js';
+import { wieldTool } from './wield.js';
 import { captureLevitationState, floatHeroUp } from './trap.js';
 const M2_ELF = 0x00000010, M2_DWARF = 0x00000020, M2_ORC = 0x00000080;
 const M1_METALLIVORE = 0x80000000;

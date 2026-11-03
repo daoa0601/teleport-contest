@@ -2,31 +2,31 @@
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), and finish_splitting().
 
-import { game, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import type { GameObject } from './object_types.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, W_ACCESSORY, W_ARMOR, W_SADDLE, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
-import { LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE } from './object_data.js';
-import { monsterIsHumanoid, MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
+import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SPE_LIM, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
+import { LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData } from './object_data.js';
+import { monsterIsHumanoid, MONSTER_ATTACKS, MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
+import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroHandName } from './body_parts.js';
-import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName } from './objnam.js';
-import { clearSplitObjects, rejoinObjectStack, splitObjectStack } from './mkobj.js';
-import { objectClassForType } from './o_init.js';
+import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
+import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
+import { learnObjectType, objectClassForType } from './o_init.js';
 import { inventoryItemDescription } from './invent.js';
 import { getobj } from './inventory_prompt.js';
-import { freeInventoryObject } from './hero_inventory.js';
+import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { addInventoryItem } from './u_init.js';
 import { isBimanualObject, isWeaponTool, isWetTowel, isLauncherAmmunition, isMissileObject, isPolearm } from './object_properties.js';
 import type { WeaponCandidate } from './object_properties.js';
-import { stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { resetBulkTakeoff, cancelSlotTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
-import { objectOwnershipPrefix, insideShopRoomAt, shopResident } from './shk.js';
+import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, setWornArtifactProperties, setArtifactWarningWielded, restrictName } from './artifacts.js';
+import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
-import { artifactById, speakArtifact, artifactEmitsLight, setWornArtifactProperties, setArtifactWarningWielded } from './artifacts.js';
-import { rn2 } from './rng.js';
+import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
@@ -34,12 +34,19 @@ import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { resolveImmediatePetrification } from './trap.js';
+import { erosionMatters, resolveImmediatePetrification } from './trap.js';
 import { setnotworn, setworn, recalculateTelepathyRange } from './worn.js';
-import { heroIsBlind } from './senses.js';
-import { makeHallucinated } from './potion.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { makeHallucinated, strangeFeeling } from './potion.js';
+import { displayColorName } from './do_name.js';
+import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
+import { shipObject } from './dokick.js';
+import { AT_WEAP } from './monster_attack_types.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { reportHeroEncumbrance } from './pickup.js';
 
 const WEAPON_CLASS = 2;
+const SCROLL_CLASS = 9;
 
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
@@ -670,4 +677,439 @@ export async function mergeHeroWeaponSlots(
     if (((survivor.owornmask ?? 0) & ~wmask) !== 0) await setnotworn(survivor, state);
     await setworn(survivor, wmask, state);
     await setnotworn(incoming, state);
+}
+
+// ── Two-weapon combat (folded from two_weapon.js) ──
+// C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
+// untwoweapon().
+
+// C mondata.h could_twoweap() examines only the first three attacks.
+export function heroCanUseTwoWeapons(state: GameState = game): boolean {
+    return requireMonsterData(MONSTER_ATTACKS, heroSpecies(state)).slice(0, 3)
+        .filter(([type]) => type === AT_WEAP).length > 1;
+}
+
+function weaponName(object: GameObject, state: GameState): string {
+    // C Yname2() omits ownership for personal, non-quest artifact names.
+    if (object.where === 'inventory' && objectHasPersonalName(object, state)
+        && object.oartifact !== undefined) {
+        const firstQuestArtifact = artifactByName('The Orb of Detection', state);
+        if (!firstQuestArtifact) throw new Error('The Orb of Detection is missing from the artifact table.');
+        if (object.oartifact < firstQuestArtifact.id) return objectName(object, state);
+    }
+    return ownedObjectName(object, state);
+}
+
+export async function toggleTwoWeaponCombat(state: GameState = game): Promise<boolean> {
+    if (state.u.twoweap) {
+        await plineWithContinuation('You switch to your primary weapon.');
+        setTwoWeaponCombat(false, state);
+        return false;
+    }
+    if (!await canBeginTwoWeaponCombat(state)) return false;
+    await plineWithContinuation('You begin two-weapon combat.');
+    setTwoWeaponCombat(true, state);
+    return rnd(20) > currentAttribute(A_DEX, state);
+}
+
+// C wield.c:can_twoweapon().
+export async function canBeginTwoWeaponCombat(state: GameState): Promise<boolean> {
+    const primary = state.uwep || state.u.uwep;
+    const secondary = state.uswapwep || state.u.uswapwep;
+    if (!heroCanUseTwoWeapons(state)) {
+        if (Upolyd(state.u)) {
+            await plineWithContinuation("You can't use two weapons in your current form.");
+        } else {
+            if (!state.urole) throw new Error('Two-weapon combat requires the hero role.');
+            const role = state.flags?.female && state.urole.name.f
+                ? state.urole.name.f : state.urole.name.m;
+            await plineWithContinuation(`${makePlural(role)} aren't able to use two weapons at once.`);
+        }
+        return false;
+    }
+    if (!primary || !secondary) {
+        const hand = heroHandName(state);
+        const hands = !primary && !secondary ? makePlural(hand) : hand;
+        const side = primary ? 'left ' : secondary ? 'right ' : '';
+        await plineWithContinuation(`Your ${side}${hands} ${verbForSubject(hands, 'are')} empty.`);
+        return false;
+    }
+    if (!isTwoWeaponObject(primary) || !isTwoWeaponObject(secondary)) {
+        const object = !isTwoWeaponObject(primary) ? primary : secondary;
+        const slot = object === primary ? 'primary' : 'secondary';
+        const plural = objectNameIsPlural(object, state);
+        await plineWithContinuation(`${weaponName(object, state)} ${
+            plural ? "aren't" : "isn't a"} suitable ${slot} weapon${object.quan === 1 ? '' : 's'}.`);
+        return false;
+    }
+    if (isBimanualObject(primary) || isBimanualObject(secondary)) {
+        const object = isBimanualObject(primary) ? primary : secondary;
+        await plineWithContinuation(`${weaponName(object, state)} isn't one-handed.`);
+        return false;
+    }
+    if (state.uarms || state.u.uarms) {
+        await plineWithContinuation("You can't use two weapons while wearing a shield.");
+        return false;
+    }
+    if (secondary.oartifact) {
+        await plineWithContinuation(`${ownedObjectAction(secondary, 'resist', state)} being held second to another weapon!`);
+        return false;
+    }
+    // Corpses fail TWOWEAPOK above, before the Native stoning branch.
+    const slippery = (state.u.glibTurns ?? 0) > 0 || !!state.u.glib;
+    if (slippery || secondary.cursed) {
+        if (!slippery) secondary.bknown = true;
+        await dropSecondaryWeapon(state);
+        return false;
+    }
+    return true;
+}
+
+// C curse(): this equipment reaction does not reveal BUC knowledge.
+export async function dropCursedSecondaryWeapon(
+    object: GameObject, state: GameState = game,
+): Promise<void> {
+    if (state.u.twoweap && object.cursed
+        && object === (state.uswapwep || state.u.uswapwep))
+        await dropSecondaryWeapon(state);
+}
+
+export async function dropSecondaryWeapon(state: GameState = game): Promise<void> {
+    const object = state.uswapwep || state.u.uswapwep;
+    if (!object) throw new Error('Dropping the secondary weapon requires an equipped object.');
+    const hand = `left ${heroHandName(state)}`;
+    if (!object.cursed) {
+        await plineWithContinuation(`${ownedObjectAction(object, 'slip', state)} from your ${hand}!`);
+    } else if (!state.u.twoweap) {
+        const drop = objectNameIsPlural(object, state) ? 'drop' : 'drops';
+        await plineWithContinuation(`${ownedObjectAction(object, 'evade', state)} your grasp and ${drop} from your ${hand}!`);
+    } else {
+        const name = ownedObjectAction(object, null, state, { capitalized: false });
+        await plineWithContinuation(`Your ${hand} spasms and drops ${name}!`);
+    }
+    await dropInventoryObjectAtHero(object, { state });
+}
+
+// C wield.c:untwoweapon().
+export async function stopTwoWeaponCombat(state: GameState = game): Promise<void> {
+    if (!state.u.twoweap) return;
+    await plineWithContinuation('You can no longer wield two weapons at once.');
+    setTwoWeaponCombat(false, state);
+}
+
+// C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
+// then handle shipping and altar contact before placing the dropped weapon.
+export async function dropCursedAlternateWeapon(object: GameObject, state: GameState): Promise<void> {
+    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${
+        ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
+    await freeInventoryObject(object, state);
+    if (!state.u.uswallow) {
+        const initialized = requireInitializedGame(state);
+        if (await shipObject(object, state.u.ux, state.u.uy, {
+            state: initialized, publish: plineWithContinuation,
+        })) return;
+        if (state.level?.at(state.u.ux, state.u.uy)?.typ === ALTAR)
+            await landObjectOnAltar(object, { state });
+    }
+    await dropObjectAtHero(object, { state });
+}
+
+// ── Weapon enchantment (folded from enchant_weapon.js) ──
+
+// C wield.c:chwepon(). Returns true when the wielded weapon was processed,
+// false after the bare-hands strange_feeling() path consumed the scroll.
+export async function chwepon(scroll: GameObject, amount: number, state: GameState): Promise<boolean> {
+    const color = displayColorName(amount < 0 ? 'black' : 'blue', state);
+    const uwep = state.uwep || state.u?.uwep || null;
+    const scrollType = scroll?.oclass === SCROLL_CLASS ? scroll.otyp : null;
+
+    if (!uwep || (uwep.oclass !== WEAPON_CLASS && !isWeaponTool(uwep))) {
+        await strangeFeelingOn(scroll, amount, state);
+        return false;
+    }
+
+    if (uwep.otyp === WORM_TOOTH && amount >= 0) {
+        await sharpenWormTeeth(uwep, scrollType, state);
+        return true;
+    } else if (uwep.otyp === CRYSKNIFE && amount < 0) {
+        await dullCrysknife(uwep, scroll?.bknown, scrollType, state);
+        return true;
+    }
+
+    const weaponName = uwep.oextra?.oname || uwep.oname || '';
+    if (amount < 0 && uwep.oartifact
+        && restrictName(uwep, weaponName, state)) {
+        if (!heroIsBlind(state)) {
+            await pline(`${ownedObjectAction(uwep, 'faintly glow', state)} ${color}.`);
+        }
+        return true;
+    }
+    /* there is a (soft) upper and lower limit to uwep->spe */
+    const enchantment = objectEnchantment(uwep);
+    if (((enchantment > 5 && amount >= 0)
+        || (enchantment < -5 && amount < 0)) && rn2(3)) {
+        if (!heroIsBlind(state)) {
+            await pline(`${ownedObjectAction(uwep, 'violently glow', state)} ${color} `
+                + `for a while and then ${
+                    objectQuantity(uwep) > 1 ? 'evaporate' : 'evaporates'}.`);
+        } else {
+            await pline(`${ownedObjectAction(uwep, 'evaporate', state)}.`);
+        }
+        await useUpInventoryStack(uwep, state);
+        return true;
+    }
+    if (!heroIsBlind(state)) {
+        const duration = amount * amount === 1 ? 'moment' : 'while';
+        await pline(`${ownedObjectAction(
+            uwep, amount === 0 ? 'violently glow' : 'glow', state,
+        )} ${color} for a ${duration}.`);
+        if (scrollType !== null && uwep.known
+            && (amount > 0 || (amount < 0 && scroll.bknown))) {
+            learnObjectType(scrollType, state);
+        }
+    }
+    if (amount < 0) {
+        await chargeAlteredUnpaidObject(uwep, 'disenchant', state);
+    }
+    setWeaponEnchantment(uwep, objectEnchantment(uwep) + amount);
+    if (amount > 0) {
+        if (uwep.cursed) uncurseObjectState(uwep);
+        /* update shop bill to reflect the new higher price */
+        if (uwep.unpaid) updateUnpaidObjectPrice(uwep, state);
+    }
+
+    /* Enchantment has an adverse, spe dependent reaction on Magicbane;
+       give an obscure clue here. */
+    if (heroWieldsMagicbane(state) && objectEnchantment(uwep) >= 0) {
+        const sting = amount > 1 && objectEnchantment(uwep) > 1
+            ? 'flin' : 'it';
+        await pline(`Your right ${heroHandName(state)} ${sting}ches!`);
+    }
+
+    /* Elven weapons vibrate warningly when enchanted beyond a limit. */
+    if (objectEnchantment(uwep) > 5
+        && (isElvenWeapon(uwep) || uwep.oartifact || rn2(7) === 0)) {
+        await pline(`${ownedObjectAction(
+            uwep, 'suddenly vibrate', state,
+        )} unexpectedly.`);
+    }
+    return true;
+}
+
+// C chwepon() worm tooth branch: fusion into one uncursed crysknife.
+async function sharpenWormTeeth(uwep: GameObject, scrollType: number | null, state: GameState) {
+    const multiple = objectQuantity(uwep) > 1;
+    /* order: message, transformation, shop handling */
+    await pline(`Your ${simpleonames(uwep)} `
+        + `${multiple ? 'fuse, and become' : 'is'} much sharper now.`);
+    uwep.otyp = CRYSKNIFE;
+    uwep.oerodeproof = false;
+    renameTransformedWeapon(uwep, 'crysknife');
+    if (multiple) {
+        uwep.quan = 1;
+        uwep.quantity = 1;
+        uwep.owt = objectWeight(uwep);
+    }
+    if (uwep.cursed) uncurseObjectState(uwep);
+    /* update shop bill to reflect the new higher value */
+    if (uwep.unpaid) updateUnpaidObjectPrice(uwep, state);
+    if (scrollType !== null) learnObjectType(scrollType, state);
+    if (multiple) await reportHeroEncumbrance(state, pline);
+}
+
+// C chwepon() crysknife branch: degradation back into one worm tooth.
+async function dullCrysknife(uwep: GameObject, scrollBknown: boolean | undefined, scrollType: number | null, state: GameState) {
+    const multiple = objectQuantity(uwep) > 1;
+    /* order matters: message, shop handling, transformation */
+    await pline(`Your ${simpleonames(uwep)} `
+        + `${multiple ? 'fuse, and become' : 'is'} much duller now.`);
+    await chargeAlteredUnpaidObject(uwep, 'degrade', state);
+    uwep.otyp = WORM_TOOTH;
+    uwep.oerodeproof = false;
+    renameTransformedWeapon(uwep, 'worm tooth');
+    if (multiple) {
+        uwep.quan = 1;
+        uwep.quantity = 1;
+        uwep.owt = objectWeight(uwep);
+    }
+    if (scrollType !== null && scrollBknown) learnObjectType(scrollType, state);
+    if (multiple) await reportHeroEncumbrance(state, pline);
+}
+
+// C chwepon() bare-hands branch, including the cursed welded tin opener.
+async function strangeFeelingOn(scroll: GameObject, amount: number, state: GameState) {
+    const uwep = state.uwep || state.u?.uwep || null;
+    let text;
+    if (amount >= 0 && uwep && willWeld(uwep)) { /* cursed tin opener */
+        if (!heroIsBlind(state)) {
+            const aura = displayColorName('amber', state);
+            text = `${ownedObjectAction(uwep, 'glow', state)} with `
+                + `${withIndefiniteArticle(aura)} aura.`;
+            uwep.bknown = !heroIsHallucinating(state);
+        } else {
+            /* the cursed tin opener is wielded in the right hand */
+            text = `Your right ${heroHandName(state)} tingles.`;
+        }
+        uncurseObjectState(uwep);
+    } else {
+        text = `Your ${makePlural(heroHandName(state))} `
+            + `${amount >= 0 ? 'twitch' : 'itch'}.`;
+    }
+    await strangeFeeling(scroll, text, { state });
+    await exerciseAttribute(A_DEX, amount >= 0, state);
+}
+
+function objectQuantity(object: GameObject) {
+    return object.quan ?? object.quantity ?? 1;
+}
+
+// The inventory description reads the object's stored name for weapons,
+// so a type change must rewrite it, as other type-changing owners do.
+function renameTransformedWeapon(uwep: GameObject, name: string) {
+    if (uwep.name !== undefined) uwep.name = name;
+    if (uwep.plural !== undefined) uwep.plural = makePlural(name);
+}
+
+export function objectEnchantment(object: GameObject) {
+    return object.spe ?? object.enchantment ?? 0;
+}
+
+export function setWeaponEnchantment(object: GameObject, value: number) {
+    object.spe = value;
+    object.enchantment = value;
+}
+
+// C wield.c u_wield_art(ART_MAGICBANE).
+function heroWieldsMagicbane(state: GameState) {
+    return artifactById(
+        (state.uwep || state.u?.uwep)?.oartifact,
+    )?.name === 'Magicbane';
+}
+
+// C include/obj.h is_elven_weapon().
+function isElvenWeapon(object: GameObject) {
+    return [ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD,
+        ELVEN_BROADSWORD, ELVEN_BOW].includes(object.otyp);
+}
+
+// Only the tooth/crysknife transformations use simpleonames here. C omits
+// individual names and call names from that transformation message.
+function simpleonames(object: GameObject): string {
+    const name = requireObjectData(OBJECT_NAMES, object.otyp);
+    if (name === null) throw new Error(`Transformed weapon type ${object.otyp} has no name`);
+    return objectQuantity(object) > 1 ? makePlural(name) : name;
+}
+
+// ── Wielding a tool for another command (folded from wield_tool.js) ──
+
+// C wield.c:wield_tool().
+
+export interface WieldToolOptions {
+    swapWeapons?: (() => unknown) | undefined;
+}
+
+export type WieldToolResult =
+    | { ready: false; newlyWielded: false }
+    | { ready: true; newlyWielded: boolean };
+
+function quantityOf(object: GameObject): number {
+    return object.quan ?? object.quantity ?? 1;
+}
+
+function isWeapon(object: GameObject): boolean {
+    return object.oclass === 2;
+}
+
+function isTwoHanded(object: GameObject): boolean {
+    // C wield.c:wield_tool() checks bimanual(obj) at both the welded message
+    // and the shield refusal.
+    return isBimanualObject(object);
+}
+
+function weldedPrimary(state: GameState): GameObject | null {
+    const primary = state.uwep || state.u?.uwep || null;
+    return willWeld(primary) ? primary : null;
+}
+
+async function explainWeldedPrimary(
+    primary: GameObject, verb: string, name: string, plural: boolean, state: GameState,
+): Promise<void> {
+    primary.bknown = true;
+    if (state.flags?.verbose === false) {
+        await pline("You can't do that.");
+        return;
+    }
+    const noun = heroHandName(state);
+    const hand = isTwoHanded(primary) ? makePlural(noun) : noun;
+    const demonstrative = plural && !/pair of /i.test(name) ? 'those' : 'that';
+    await pline(
+        `Since your weapon is welded to your ${hand}, `
+        + `you cannot ${verb} ${demonstrative} ${name}.`,
+    );
+}
+
+export async function wieldTool(
+    object: GameObject,
+    verb = 'wield',
+    { swapWeapons }: WieldToolOptions = {},
+    state: GameState = game,
+): Promise<WieldToolResult> {
+    const current = state.uwep || state.u?.uwep || null;
+    if (object === current)
+        return { ready: true, newlyWielded: false };
+
+    const name = objectCombatName(object, { state, includeCorpseSpecies: false });
+    const plural = quantityOf(object) > 1 || /pair of |s of /i.test(name);
+    if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
+        await pline(
+            `You can't ${verb} ${ownedObjectName(object, state, { capitalized: false })} while wearing ${
+                plural ? 'them' : 'it'}.`,
+        );
+        return { ready: false, newlyWielded: false };
+    }
+
+    const welded = weldedPrimary(state);
+    if (welded) {
+        await explainWeldedPrimary(welded, verb, name, plural, state);
+        return { ready: false, newlyWielded: false };
+    }
+
+    if (heroHasNoHands(state) || heroIsVerySmall(state)) {
+        await pline(`You can't hold ${plural ? 'them' : 'it'} strongly enough.`);
+        return { ready: false, newlyWielded: false };
+    }
+
+    if ((state.uarms || state.u?.uarms) && isTwoHanded(object)) {
+        await pline(
+            `You cannot ${verb} a two-handed ${
+                isWeapon(object) ? 'weapon' : 'tool'} while wearing a shield.`,
+        );
+        return { ready: false, newlyWielded: false };
+    }
+
+    if (state.uquiver === object || state.u?.uquiver === object)
+        await setQuiverObject(null, state);
+
+    if (state.uswapwep === object || state.u?.uswapwep === object) {
+        if (!swapWeapons)
+            return { ready: false, newlyWielded: false };
+        await swapWeapons();
+        if ((state.uwep || state.u?.uwep) !== object)
+            return { ready: false, newlyWielded: false };
+    } else {
+        if (willWeld(object)) {
+            await readyHeroWeapon(object, state);
+        } else {
+            await plineWithContinuation(`You now wield ${await inventoryItemDescription(object)}.`);
+            await setPrimaryWeapon(object, state);
+        }
+
+        if (state.flags?.pushweapon && current && state.uwep !== current)
+            await setSecondaryWeapon(current, state);
+    }
+    const weapon = state.uwep || state.u.uwep;
+    if (weapon && weapon !== object) return { ready: false, newlyWielded: false };
+    await stopTwoWeaponCombat(state);
+    if (!isWeapon(object)) state._unweapon = true;
+    return { ready: true, newlyWielded: true };
 }

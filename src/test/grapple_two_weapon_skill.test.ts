@@ -4,8 +4,7 @@ import { P_BASIC, P_FLAIL, P_SKILLED, P_TWO_WEAPON_COMBAT } from '../js/const.js
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GRAPPLING_HOOK } from '../js/object_data.js';
-import { canBeginTwoWeaponCombat } from '../js/two_weapon.js';
-import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
+import { canBeginTwoWeaponCombat, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';

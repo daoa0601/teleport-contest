@@ -94,7 +94,7 @@ import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, self
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './do.js';
-import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
+import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './wield.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';
 import { handleRidingAfterFormChange } from './steed.js';

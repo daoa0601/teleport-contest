@@ -31,7 +31,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
-import { dropCursedSecondaryWeapon } from './two_weapon.js';
+import { dropCursedSecondaryWeapon } from './wield.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { makePlural, verbForSubject } from './objnam.js';
 

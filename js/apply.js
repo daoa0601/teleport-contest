@@ -118,7 +118,7 @@ import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { dryTowel } from './weapon.js';
-import { wieldTool } from './wield_tool.js';
+import { wieldTool } from './wield.js';
 import { doswapweapon } from './wield.js';
 import { setnotworn } from './worn.js';
 import { showPagedPickOneMenu, snapshotMenuUnderlay } from './windows.js';
