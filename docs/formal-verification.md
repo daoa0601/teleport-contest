@@ -442,10 +442,13 @@ the candelabrum — and is not claimed.
 
 One executor extension was needed: a symbolic index into a string array
 (`OBJECT_NAMES[otyp] === 'rubber hose'`) now builds one z3 String term, with
-null entries encoded as the empty string; `===`/`!==` and truthiness stay
-exact, while `typeof` and coercive `==` on such a term are rejected. Three
-language tests pin the selection, the null distinction and both rejections;
-the focused executor/query/selection suite is now 89 passing tests. No port
+null entries encoded as the empty string; `===`/`!==` (including against
+null and undefined), `??` and truthiness stay exact — an in-bounds element
+read is never undefined and the empty encoding is exactly the null case —
+while `typeof` and coercive `==` on such a term are rejected, as is a
+symbolic read of a mixed-kind array. Five language tests pin the selection,
+the null distinctions, both rejections and the mixed-array rejection;
+the focused executor/query/selection suite is now 91 passing tests. No port
 fidelity bug was found in the eighteen stated domains.
 
 The complete 109-claim run exited 0 in **1057.5 s**, including **116 domain
@@ -453,8 +456,9 @@ probes** and **121 mutant checks** (18 claims, 18 probes and 18 mutants
 new), and validated the rewritten 109-row ledger. The CI-parity
 `--skip-slow --check-ledger` run passed in **456.3 s**; every new claim is
 fast, so the `equivalence` job keeps its slot and the two slow table claims
-are unchanged. The focused executor/query/selection suite is now **89
-passing tests**, and the **36 ledger CLI tests** passed. `npm run compile`
+are unchanged. The focused executor/query/selection suite is now **91
+passing tests** (the review round added the nullish-comparison and
+mixed-array tests), and the **36 ledger CLI tests** passed. `npm run compile`
 and `npm run check` passed. No game source, session corpus, or frozen file
 was changed beyond the citation comments.
 

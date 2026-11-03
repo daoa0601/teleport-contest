@@ -773,8 +773,9 @@ class JSExec:
                                 for key in values[0].v})
         if values and all(v.kind in ('str', 'null') for v in values):
             # A symbolic read of a name table: build one z3 String term. Null
-            # entries encode as the empty string, which keeps ===, !== and
-            # truthiness exact; typeof and coercive == reject the term.
+            # entries encode as the empty string, which keeps ===, !==,
+            # nullish comparison, ?? and truthiness exact; typeof and
+            # coercive == reject the term.
             if any(v.kind == 'str' and v.v == '' for v in values):
                 raise Unsupported('JavaScript string-array read cannot encode an empty name')
             picked = z3.StringVal(values[-1].v if values[-1].kind == 'str' else '')
@@ -783,6 +784,7 @@ class JSExec:
                 term = z3.StringVal(entry.v if entry.kind == 'str' else '')
                 picked = z3.If(index == i, term, picked)
             return V('str', picked)
+        raise Unsupported('JavaScript symbolic array read needs numeric or rectangular array elements')
 
     def _arith(self, path, op, a: V, b: V, node):
         where = self.where(node)
@@ -857,7 +859,14 @@ class JSExec:
         if op in ('||', '&&', '??'):
             out = []
             for p, a in self.eval(path, left):
-                cond = self.truth(a) if op != '??' else z3.BoolVal(a.kind not in ('undef', 'null'))
+                if op != '??':
+                    cond = self.truth(a)
+                elif a.kind == 'str' and isinstance(a.v, z3.ExprRef):
+                    # A symbolic string-array read encodes its null entries
+                    # as the empty string, so ?? falls back exactly there.
+                    cond = z3.simplify(a.v) != z3.StringVal('')
+                else:
+                    cond = z3.BoolVal(a.kind not in ('undef', 'null'))
                 for p2, taken in self.m.branch(p, cond):
                     if taken == (op != '&&'):
                         out.append((p2, a))
@@ -890,6 +899,17 @@ class JSExec:
     @staticmethod
     def _equal(a, b):
         if a.kind != b.kind:
+            # A symbolic string-array read yields a z3 String term whose null
+            # entries encode as the empty string, so comparing it with a
+            # nullish value stays decidable and exact: an in-bounds element
+            # read is never undefined, and === null is exactly the
+            # empty-string case.
+            for x, y in ((a, b), (b, a)):
+                if x.kind == 'str' and isinstance(x.v, z3.ExprRef) \
+                        and y.kind in ('null', 'undef'):
+                    if y.kind == 'null':
+                        return z3.simplify(x.v) == z3.StringVal('')
+                    return z3.BoolVal(False)
             return z3.BoolVal(False)
         if a.kind in ('num', 'big', 'bool'):
             return a.v == b.v

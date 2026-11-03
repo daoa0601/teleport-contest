@@ -789,5 +789,31 @@ class ExecutorTests(unittest.TestCase):
                     params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
                     reason=why)
 
+    def test_symbolic_string_array_read_compares_nullish_exactly(self):
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        base = 'const names = ["leather", null];\nfunction example(i) { return BODY; }'
+        for body, mirror in (
+                ('names[i] === null ? 1 : 0', 'int example(int i) { return i == 1; }'),
+                ('names[i] !== null ? 1 : 0', 'int example(int i) { return i != 1; }'),
+                ('names[i] === undefined ? 1 : 0', 'int example(int i) { return 0; }'),
+                ('(names[i] ?? "fb") === "fb" ? 1 : 0', 'int example(int i) { return i == 1; }')):
+            with self.subTest(body=body):
+                self.equivalent(mirror, base.replace('BODY', body), **domain)
+        # ?? must actually fall back at the null entry, and === null must
+        # actually see it; denying either breaks the correspondence.
+        self.rejected('int example(int i) { return 0; }',
+                      base.replace('BODY', '(names[i] ?? "fb") === "fb" ? 1 : 0'),
+                      **domain, reason='outputs differ')
+        self.rejected('int example(int i) { return 0; }',
+                      base.replace('BODY', 'names[i] === null ? 1 : 0'),
+                      **domain, reason='outputs differ')
+
+    def test_symbolic_mixed_array_read_is_rejected(self):
+        self.rejected(
+            'int example(int i) { return 0; }',
+            'const mixed = ["a", 1];\nfunction example(i) { return mixed[i] === "a"; }',
+            params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+            reason='unsupported: JavaScript symbolic array read needs numeric or rectangular array elements')
+
 if __name__ == '__main__':
     unittest.main()
