@@ -5,7 +5,7 @@ import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './rol
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
 
-import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_BREA, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_NONE, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
+import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_MAGC, AT_NONE, AT_WEAP } from './monster_attack_types.js';
 
 type SpeciesReference = Pick<Monster, 'mnum'>;
 type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;
@@ -544,14 +544,6 @@ export function monsterSpeciesSticks(mnum: number) {
     return attacks.some(([, damageType]) => damageType === AD_STCK)
         || (!engulfs && attacks.some(([, damageType]) => damageType === AD_WRAP))
         || attacks.some(([attackType]) => attackType === AT_HUGS);
-}
-
-// C mondata.c:ranged_attk(): any attack whose type is in
-// monattk.h DISTANCE_ATTK_TYPE (AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE).
-export function monsterHasRangedAttack(mnum: number) {
-    return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) =>
-        attackType === AT_SPIT || attackType === AT_BREA
-        || attackType === AT_MAGC || attackType === AT_GAZE);
 }
 
 export function monsterCanEngulf(monster: SpeciesReference | null | undefined) {
