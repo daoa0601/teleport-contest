@@ -3461,8 +3461,9 @@ function nativeChar(key) {
     return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;
 }
 // C cmd.c:randomkey()'s function statics: the extcmdlist index and the
-// repeat key survive prompts; both reset with the input gate, as the
-// port's gate fields did, so a new game starts the table from its head.
+// repeat key survive prompts. C keeps them for the whole process; the port
+// scopes them to one game — bindInputGate() and resetInputState() reset
+// both, so every newly started game begins the table from its head.
 let fuzzerCommandIndex = 0;
 let lastFuzzerCommand = 0;
 // C cmd.c:randomkey(). The table index and repeat key survive prompts.
@@ -3519,8 +3520,8 @@ export function randomKey(inputState) {
         lastFuzzerCommand = key;
     return key;
 }
-// Reset for resetInputState(); the C statics live for the whole process,
-// the port scopes them to one game.
+// Reset by bindInputGate() (every game binds a freshly built gate, as
+// jsmain's start() does) and by resetInputState().
 export function resetFuzzerCommandState() {
     fuzzerCommandIndex = 0;
     lastFuzzerCommand = 0;

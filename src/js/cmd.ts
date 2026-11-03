@@ -3355,41 +3355,42 @@ function nativeChar(key: number): number {
 }
 
 // C cmd.c:randomkey()'s function statics: the extcmdlist index and the
-// repeat key survive prompts; both reset with the input gate, as the
-// port's gate fields did, so a new game starts the table from its head.
+// repeat key survive prompts. C keeps them for the whole process; the port
+// scopes them to one game — bindInputGate() and resetInputState() reset
+// both, so every newly started game begins the table from its head.
 let fuzzerCommandIndex = 0;
 let lastFuzzerCommand = 0;
 
-    // C cmd.c:randomkey(). The table index and repeat key survive prompts.
+// C cmd.c:randomkey(). The table index and repeat key survive prompts.
 export function randomKey(inputState: InputState): number {
-        if (inputState === 'command' && (lastFuzzerCommand === 1 || lastFuzzerCommand === 16)
-            && rn2(5)) return lastFuzzerCommand;
-        let key;
-        switch (rn2(16)) {
-        case 0: key = 10; break;
-        case 1: case 2: case 3: case 4: key = rn1(95, 32); break;
-        case 5: key = rn2(2) ? 9 : 32; break;
-        case 6: key = rn1(26, 97); break;
-        case 7: key = rn1(26, 65); break;
-        case 8: key = NATIVE_COMMANDS[fuzzerCommandIndex++ % NATIVE_COMMANDS.length]?.key ?? 0; break;
-        case 9: key = 35; break;
-        case 10: case 11: case 12: {
-            const direction = rn2(NATIVE_COMMAND_CONSTANTS.N_DIRS);
-            const mode = rn2(7) ? 0 : !rn2(3) ? 2 : 1;
-            key = game.commandBindings.keyForDirection(direction, mode);
-            break;
-        }
-        case 13: key = rn1(10, 48); break;
-        case 14: key = rnd(game.iflags.wc_eight_bit_input ? 255 : 127); break;
-        default: key = 27; break;
-        }
-        key = nativeChar(key);
-        if (inputState === 'command') lastFuzzerCommand = key;
-        return key;
+    if (inputState === 'command' && (lastFuzzerCommand === 1 || lastFuzzerCommand === 16)
+        && rn2(5)) return lastFuzzerCommand;
+    let key;
+    switch (rn2(16)) {
+    case 0: key = 10; break;
+    case 1: case 2: case 3: case 4: key = rn1(95, 32); break;
+    case 5: key = rn2(2) ? 9 : 32; break;
+    case 6: key = rn1(26, 97); break;
+    case 7: key = rn1(26, 65); break;
+    case 8: key = NATIVE_COMMANDS[fuzzerCommandIndex++ % NATIVE_COMMANDS.length]?.key ?? 0; break;
+    case 9: key = 35; break;
+    case 10: case 11: case 12: {
+        const direction = rn2(NATIVE_COMMAND_CONSTANTS.N_DIRS);
+        const mode = rn2(7) ? 0 : !rn2(3) ? 2 : 1;
+        key = game.commandBindings.keyForDirection(direction, mode);
+        break;
     }
+    case 13: key = rn1(10, 48); break;
+    case 14: key = rnd(game.iflags.wc_eight_bit_input ? 255 : 127); break;
+    default: key = 27; break;
+    }
+    key = nativeChar(key);
+    if (inputState === 'command') lastFuzzerCommand = key;
+    return key;
+}
 
-// Reset for resetInputState(); the C statics live for the whole process,
-// the port scopes them to one game.
+// Reset by bindInputGate() (every game binds a freshly built gate, as
+// jsmain's start() does) and by resetInputState().
 export function resetFuzzerCommandState(): void {
     fuzzerCommandIndex = 0;
     lastFuzzerCommand = 0;

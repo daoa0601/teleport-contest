@@ -156,6 +156,10 @@ export function bindInputGate(inputGate) {
     if (!(inputGate instanceof InputGate))
         throw new TypeError('bindInputGate requires an InputGate');
     activeInputGate = inputGate;
+    // C randomkey()'s statics are process-wide; the port scopes them to one
+    // game, and every game binds a freshly built gate (jsmain start()), so
+    // the table index and repeat key start from their head again here.
+    resetFuzzerCommandState();
 }
 export function pushKey(key) {
     activeInputGate.feed(key);
