@@ -1,6 +1,6 @@
 // Monster-name and monster-class lookup.
 // C ref: mondata.c name_to_mon() and name_to_monclass().
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX, } from './monster_attack_types.js';
 import { dragonFormForArmor } from './polyself.js';
 import { artifactById } from './artifacts.js';
@@ -628,10 +628,9 @@ export function levelFollower(monster, state) {
         && (!monster.mflee || !!state.u.uhave?.amulet);
 }
 // C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
-const S_GOLEM_POLY = 55;
 const PM_STONE_GOLEM_POLY = 257;
 export function monsterPolymorphsWhenStoned(monster) {
-    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
+    return monsterIsGolem(monster.mnum)
         && monster.mnum !== PM_STONE_GOLEM_POLY
         && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
 }

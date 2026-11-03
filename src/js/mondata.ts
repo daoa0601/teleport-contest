@@ -6,7 +6,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid,
     monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
     monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS,
-    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer,
+    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
@@ -696,11 +696,10 @@ export function levelFollower(monster: Monster, state: GameState): boolean {
 }
 
 // C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
-const S_GOLEM_POLY = 55;
 const PM_STONE_GOLEM_POLY = 257;
 
 export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
-    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
+    return monsterIsGolem(monster.mnum)
         && monster.mnum !== PM_STONE_GOLEM_POLY
         && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
 }

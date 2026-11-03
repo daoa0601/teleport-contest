@@ -7,7 +7,7 @@ import {
     heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
 import { monsterStagger } from './mondata.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterThrowsRocks } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterIsBig, monsterThrowsRocks } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
@@ -2110,7 +2110,7 @@ function cannotFit(object: GameObject): boolean {
     if ([LARGE_BOX, CHEST, ICE_BOX, BOULDER].includes(object.otyp))
         return true;
     return object.otyp === STATUE
-        && (object.corpsenm === undefined ? 0 : MONSTER_SIZE[object.corpsenm] ?? 0) >= 3;
+        && object.corpsenm !== undefined && monsterIsBig(object.corpsenm);
 }
 
 function weldedPrimary(object: GameObject, state: GameState): boolean {
