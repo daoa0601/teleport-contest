@@ -79,26 +79,10 @@ export class InputGate {
     peekCommandResponse() {
         return this.commandKeys[0];
     }
-    takeCommandKey() {
-        const response = this.takeCommandResponse();
-        if (response === undefined || response === 'user-input')
-            return undefined;
-        if (typeof response === 'number')
-            return response;
-        this.clearCommandKeys();
-        return 27;
-    }
-    takeCommandPosition() {
-        const response = this.takeCommandResponse();
-        if (response === undefined)
-            return undefined;
-        // C getpos() accepts only a horizontal CMDQ_DIR, relative to the
-        // hero's position when the target is requested.
-        if (typeof response === 'object' && response.dz === 0)
-            return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
-        this.clearCommandKeys();
-        return null;
-    }
+    // The queued-key pops for prompt owners moved to cmd.ts takeQueuedKey()
+    // and takeQueuedAdjacentPosition(): their reject branches clear the
+    // whole CQ_CANNED model, including the canned commands this gate does
+    // not own.
     async readKey(inputState = 'other') {
         // tty input belongs to the player. Command owners consume canned
         // choices explicitly so message pagers cannot steal item letters.
@@ -173,9 +157,6 @@ export function queueCommandKeys(keys) {
 export function queueCommandResponses(responses) {
     activeInputGate.queueCommandResponses(responses);
 }
-export function takeCommandPosition() {
-    return activeInputGate.takeCommandPosition();
-}
 export function takeCommandResponse() {
     return activeInputGate.takeCommandResponse();
 }
@@ -184,9 +165,6 @@ export function peekCommandResponse() {
 }
 export function clearCommandKeys() {
     activeInputGate.clearCommandKeys();
-}
-export function takeCommandKey() {
-    return activeInputGate.takeCommandKey();
 }
 export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a

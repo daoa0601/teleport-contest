@@ -6,7 +6,7 @@ import { pline, setTopline } from './pline.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { CLICK_1, CLICK_2, COLNO, DIRECTION_KEYS, LOOK_ONCE, LOOK_QUICK, N_DIRS, ROWNO, xdir, ydir, zdir } from './const.js';
 import { game } from './gstate.js';
-import { takeCommandKey, takeCommandResponse } from './input.js';
+import { takeQueuedKey } from './cmd.js';
 import { readchar } from './cmd.js';
 import { promptedDirectionKey, visibleCommandKey } from './cmd.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -25,10 +25,14 @@ export async function paintKeyPrompt(message, cursorOffset = 0) {
 }
 export async function promptKey(message, cursorOffset = 0, { canned = true } = {}) {
     // C cmd.c:yn_function() answers from the command queue without ever
-    // reaching tty_yn_function(); gt.toplines is untouched then.
-    const queuedKey = canned ? takeCommandKey() : undefined;
-    if (queuedKey !== undefined)
-        return queuedKey;
+    // reaching tty_yn_function(); gt.toplines is untouched then. A queued
+    // direction or extended command is the "not CMDQ_USER_INPUT" branch
+    // (cmd.c:5496-5509): cmdq_clear(CQ_CANNED) and the ESC initializer.
+    const queued = canned ? takeQueuedKey() : 'none';
+    if (typeof queued === 'object')
+        return queued.key;
+    if (queued === 'cancel')
+        return 27;
     // tty_yn_function() with a null response list goes straight from its
     // custompline(SUPPRESS_HISTORY) prompt to readchar() and clean_up:
     // ^P has no special meaning and comes back as the answer.

@@ -7,7 +7,7 @@
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { newsym } from './display.js';
-import { clearCommandKeys, takeCommandKey } from './input.js';
+import { clearCommandKeys } from './input.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { getobj } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';

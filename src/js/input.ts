@@ -115,24 +115,10 @@ export class InputGate {
         return this.commandKeys[0];
     }
 
-    takeCommandKey(): number | undefined {
-        const response = this.takeCommandResponse();
-        if (response === undefined || response === 'user-input') return undefined;
-        if (typeof response === 'number') return response;
-        this.clearCommandKeys();
-        return 27;
-    }
-
-    takeCommandPosition(): Position | null | undefined {
-        const response = this.takeCommandResponse();
-        if (response === undefined) return undefined;
-        // C getpos() accepts only a horizontal CMDQ_DIR, relative to the
-        // hero's position when the target is requested.
-        if (typeof response === 'object' && response.dz === 0)
-            return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
-        this.clearCommandKeys();
-        return null;
-    }
+    // The queued-key pops for prompt owners moved to cmd.ts takeQueuedKey()
+    // and takeQueuedAdjacentPosition(): their reject branches clear the
+    // whole CQ_CANNED model, including the canned commands this gate does
+    // not own.
 
     async readKey(inputState: InputState = 'other'): Promise<number> {
         // tty input belongs to the player. Command owners consume canned
@@ -218,9 +204,6 @@ export function queueCommandResponses(responses: readonly CommandResponse[]): vo
     activeInputGate.queueCommandResponses(responses);
 }
 
-export function takeCommandPosition(): Position | null | undefined {
-    return activeInputGate.takeCommandPosition();
-}
 
 export function takeCommandResponse(): CommandResponse | undefined {
     return activeInputGate.takeCommandResponse();
@@ -234,9 +217,6 @@ export function clearCommandKeys(): void {
     activeInputGate.clearCommandKeys();
 }
 
-export function takeCommandKey(): number | undefined {
-    return activeInputGate.takeCommandKey();
-}
 
 export async function nhgetch(inputState: InputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a

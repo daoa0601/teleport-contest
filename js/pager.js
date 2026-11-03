@@ -14,7 +14,8 @@ import { isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { clearCommandKeys, takeCommandKey } from './input.js';
+import { clearCannedCommands, takeQueuedKey } from './cmd.js';
+import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { getLine, promptYesNo } from './query.js';
 import { commandResultCancelled, describeCommandKey, keyText, rememberCommandKey, showKeyBindings, takeRepeatCommand, visibleCommandKey, } from './cmd.js';
 import { selectMapPosition } from './getpos.js';
@@ -85,8 +86,9 @@ export async function describeMapLocation(x, y) {
         ? await farlookLocationDescription(x, y) || screen.firstMatch
         : screen.firstMatch;
 }
-// C pager.c:doquickwhatis(): the quick-glance command.
-export async function doFarlook(quick = true) {
+// The do_look() from_screen tail shared by every mode: the cursor picks a
+// location and its description pages (pager.c:1859-1936).
+async function lookFromScreen(quick = true) {
     const savedVerbose = game.flags.verbose;
     game.flags.verbose = !!savedVerbose && !quick;
     let verbose = !!game.flags.verbose;
@@ -157,10 +159,43 @@ export async function offerFarlookInformation(description, withoutAsking) {
             await showDisclosureOverlay(match.entry.lines, { restoreUnderlay: true });
     }
 }
-// C pager.c:dowhatis(), i.e. do_look(0).  The initial menu is a true PICK_ONE
-// overlay; choosing the map entry destroys it, restores the map, then hands
-// input ownership to the shared getpos/farlook transaction above.
+// C pager.c:do_look(). Its one cmdq_pop() (pager.c:1692-1702) decides the
+// mode for every caller: only CMDQ_KEY answers, and any other entry — a
+// direction, the user-input placeholder, or a queued command reached
+// through an empty response queue — clears CQ_CANNED and runs the switch
+// with i 0, whose default case ends the command without any prompt. With
+// nothing queued, mode 1 (the ';' glance) picks the cursor directly while
+// mode 0 asks through the category menu.
+async function runDoLook(mode) {
+    const queued = takeQueuedKey();
+    if (queued === 'cancel' || queued === 'user-input') {
+        if (queued === 'user-input')
+            clearCannedCommands();
+        game.context.move = 0;
+        return;
+    }
+    if (typeof queued === 'object') {
+        await doLookChoice(String.fromCharCode(queued.key), mode);
+        return;
+    }
+    if (mode === 1) {
+        await lookFromScreen(true);
+        return;
+    }
+    await doLookChoice(await chooseLookCategory(), 0);
+}
+// C pager.c:dowhatis(): do_look(0).
 export async function dowhatis() {
+    await runDoLook(0);
+}
+// C pager.c:doquickwhatis(): do_look(1, NULL) — the ';' glance.
+export async function doquickwhatis() {
+    await runDoLook(1);
+}
+// The initial menu of do_look(0) is a true PICK_ONE overlay; choosing the
+// map entry destroys it, restores the map, then hands input ownership to
+// the shared getpos/farlook transaction below.
+async function chooseLookCategory() {
     const choices = [
         { key: '/', alias: 'y', text: 'something on the map' },
         { key: 'i', alias: '', text: "something you're carrying" },
@@ -168,27 +203,24 @@ export async function dowhatis() {
     ];
     if (!game.u.uswallow && !heroIsHallucinating(game))
         choices.push({ key: 'm', alias: '', text: 'nearby monsters' }, { key: 'M', alias: '', text: 'all monsters shown on map' }, { key: 'o', alias: '', text: 'nearby objects' }, { key: 'O', alias: '', text: 'all objects shown on map' }, { key: 't', alias: '^', text: 'nearby traps' }, { key: 'T', alias: '"', text: 'all seen or remembered traps' }, { key: 'e', alias: '`', text: 'nearby engravings' }, { key: 'E', alias: '|', text: 'all seen or remembered engravings' });
-    const queuedKey = takeCommandKey();
-    let choice = queuedKey === undefined ? '' : String.fromCharCode(queuedKey);
-    if (queuedKey === undefined) {
-        const lootabc = !!game.flags.lootabc;
-        const items = [];
-        for (const [index, entry] of choices.entries()) {
-            if (index === 3)
-                items.push({ selectable: false, text: '' });
-            items.push({ text: entry.text, value: entry.key,
-                ...(lootabc ? {} : { key: entry.key }),
-                groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
-        }
-        const result = await showMultiSelectWindow({
-            title: 'What do you want to look at:', omitHeadings: true,
-            pickOne: true, pageLocalKeys: true,
-            sections: [{ items }],
-        });
-        choice = result[0] ?? '';
+    const lootabc = !!game.flags.lootabc;
+    const items = [];
+    for (const [index, entry] of choices.entries()) {
+        if (index === 3)
+            items.push({ selectable: false, text: '' });
+        items.push({ text: entry.text, value: entry.key,
+            ...(lootabc ? {} : { key: entry.key }),
+            groupAccelerator: lootabc ? ['i', 'e'].includes(entry.key) ? '' : entry.key : entry.alias });
     }
-    if (choice === 'y')
-        choice = '/';
+    const result = await showMultiSelectWindow({
+        title: 'What do you want to look at:', omitHeadings: true,
+        pickOne: true, pageLocalKeys: true,
+        sections: [{ items }],
+    });
+    return result[0] ?? '';
+}
+async function doLookChoice(rawChoice, mode) {
+    const choice = rawChoice === 'y' ? '/' : rawChoice;
     const listKind = 'mM'.includes(choice) && choice ? 'monsters'
         : 'oO'.includes(choice) && choice ? 'objects'
             : 'tT'.includes(choice) && choice ? 'traps'
@@ -199,17 +231,20 @@ export async function dowhatis() {
         return;
     }
     if (choice === '/') {
-        await doFarlook(false);
+        await lookFromScreen(mode === 1);
         return;
     }
     if (choice === 'i') {
-        const queuedLetter = takeCommandKey();
+        // C do_look's 'i' choice calls display_inventory(NULL, TRUE)
+        // (pager.c:1815): its cmdq_pop() returns a matching inventory
+        // letter, and any other entry — or an unmatched letter — clears
+        // CQ_CANNED and returns 0 (invent.c:3430-3447), so the do_look
+        // switch shows nothing for it.
+        const queuedLetter = takeQueuedInventoryChoice();
         const letter = queuedLetter ?? (await selectInventoryObject()).key;
         const item = game.inventory.find(item => item.invlet === String.fromCharCode(letter));
         if (item)
             await showEncyclopediaInformation(singularObjectName(item));
-        else if (queuedLetter !== undefined)
-            clearCommandKeys();
     }
     else if (choice === '?') {
         const typed = await getLine('Specify what? (type the word)', ch => ch >= ' ');

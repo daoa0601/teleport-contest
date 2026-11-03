@@ -2587,11 +2587,11 @@ export async function dodip() {
         commandResultCancelled();
 }
 export async function dipInto() {
-    if (peekCommandResponse() === undefined) {
-        // C potion.c:dip_into() refuses to run without the item-action
-        // potion letter queued in CQ_CANNED. A ^A do-again replay pops
-        // dip_into from CQ_REPEAT while CQ_CANNED is empty, so the
-        // replayed dip can never proceed.
+    if (peekCommandResponse() === undefined && !game._cannedCommands?.length) {
+        // C potion.c:2384 dip_into() refuses to run when cmdq_peek(
+        // CQ_CANNED) finds nothing: the item-action potion letter is
+        // queued there. A ^A do-again replay pops dip_into from CQ_REPEAT
+        // while CQ_CANNED is empty, so the replayed dip can never proceed.
         await impossible('dip_into: where is potion?');
         commandResultFailed();
         game.context.move = 0;
