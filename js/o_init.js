@@ -12,7 +12,7 @@ import { ledgerNo, maxLedgerNo } from './hacklib.js';
 import { clearMessageWindow } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL, NHW_MENU, PICK_ONE, MENU_ITEMFLAGS_SELECTED } from './const.js';
-import { yn_function } from './query.js';
+import { yn_function } from './cmd.js';
 import { callObjectType, objectTypeIsCallable } from './do_name.js';
 import { OBJECT_CLASS_LABELS, classifyLoot, inventoryClassOrder } from './invent.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';

@@ -20,7 +20,6 @@ src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
 src/js/confused_loot.ts	pickup.c
-src/js/context_menu.ts	cmd.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
@@ -80,7 +79,7 @@ src/js/horn_of_plenty.ts	mkobj.c
 src/js/ident.ts	mkobj.c
 src/js/immediate_monster_magic.ts	mon.c
 src/js/individual_naming.ts	do_name.c
-src/js/input.ts	cmd.c
+src/js/inventory_prompt.ts	invent.c
 src/js/isaac64.ts	isaac64.c
 src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
@@ -113,7 +112,6 @@ src/js/novel_titles.ts	do_name.c
 src/js/o_init.ts	o_init.c
 src/js/object_properties.ts	artifact.c
 src/js/occupation.ts	allmain.c
-src/js/occupation_reset.ts	cmd.c
 src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c
 src/js/pager.ts	pager.c
@@ -126,8 +124,8 @@ src/js/player_name.ts	do_name.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
 src/js/poison.ts	attrib.c
-src/js/posix_regex.ts	cmd.c
 src/js/potion.ts	potion.c
+src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile.ts	dothrow.c
 src/js/projectile_bars.ts	monmove.c
@@ -135,7 +133,6 @@ src/js/punishment.ts	read.c
 src/js/quest.ts	quest.c
 src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
-src/js/rebind_keys.ts	cmd.c
 src/js/recharge.ts	read.c
 src/js/rect.ts	rect.c
 src/js/revival_species.ts	read.c
@@ -161,6 +158,7 @@ src/js/takeoff_menu.ts	do_wear.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c
+src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/tip_hat.ts	sounds.c
@@ -169,7 +167,6 @@ src/js/toss_up.ts	dothrow.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
 src/js/trap.ts	trap.c
-src/js/tty_prompts.ts	cmd.c
 src/js/two_weapon.ts	wield.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c

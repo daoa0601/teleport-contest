@@ -13,7 +13,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { ARROW, BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NAMES, ROCK, SLIME_MOLD, SMALL_SHIELD, SPEAR, TOWEL, WAN_FIRE, } from '../js/object_data.js';
 import { deleteObject } from '../js/shk.js';
 import { setMonsterSpecies } from '../js/mondata.js';
-import { terrainCommand } from '../js/terrain_view.js';
+import { terrainCommand } from '../js/cmd.js';
 import { rayMissMessage } from '../js/ray_hit_message.js';
 import { makeBlinded } from '../js/potion.js';
 import { artifactObject, knownObject } from './support/game-objects.js';

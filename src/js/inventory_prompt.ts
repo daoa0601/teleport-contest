@@ -8,8 +8,9 @@ import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
-import { clearCommandKeys, readchar, takeCommandKey } from './input.js';
-import { yn_function } from './query.js';
+import { clearCommandKeys, takeCommandKey } from './input.js';
+import { readchar } from './cmd.js';
+import { yn_function } from './cmd.js';
 import { rn2 } from './rng.js';
 import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
@@ -21,8 +22,9 @@ import { splitObjectStack } from './mkobj.js';
 import { isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
 import { rememberObjectChoice, takeRepeatCommand } from './cmd.js';
-import { keyText } from './prevmsg.js';
+import { keyText } from './cmd.js';
 import { putMessageHistory } from './tty_topline.js';
+import { readInventoryCount } from './cmd.js';
 
 export type InventoryClassification = typeof GETOBJ_EXCLUDE | typeof GETOBJ_EXCLUDE_NONINVENT
     | typeof GETOBJ_EXCLUDE_INACCESS | typeof GETOBJ_EXCLUDE_SELECTABLE | typeof GETOBJ_DOWNPLAY | typeof GETOBJ_SUGGEST;
@@ -420,41 +422,6 @@ export function compactInventoryLetters(letters: string): string {
     return compact;
 }
 
-// C cmd.c:get_count(): only a positive typed count is passed on by getobj.
-// Backspace edits the count; counts above nine are echoed.
-async function readInventoryCount(firstKey: number): Promise<{ key: number; count: number }> {
-    let count = 0, key = firstKey, backspaced = false;
-    for (;;) {
-        let showZero = false;
-        if (key >= 48 && key <= 57) {
-            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
-            showZero = key === 48;
-        } else if (key === 8 || key === 127) {
-            if (!count) {
-                putMessageHistory(`Count: ${count} ${keyText(key)}`);
-                return { key, count: 0 };
-            }
-            count = Math.trunc(count / 10);
-            backspaced = true;
-        } else {
-            const finalCount = key === 27 ? 0 : count;
-            // C get_count(GC_SAVEHIST): the final count and the accepting
-            // key join the recall history; Escape breaks with a zero count.
-            putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
-            return { key, count: finalCount };
-        }
-        if (count > 9 || backspaced) {
-            const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;
-            if (count || showZero) backspaced = false;
-            clearMessageWindow();
-            // The echo itself is custompline(SUPPRESS_HISTORY).
-            await setTopline(text);
-            await flush_screen(0);
-            game.nhDisplay?.setCursor(text.length, 0);
-        }
-        key = await readchar();
-    }
-}
 
 // C getobj() has already consumed its queued selection or user-input marker.
 // Its interactive query must leave later canned answers for the caller.

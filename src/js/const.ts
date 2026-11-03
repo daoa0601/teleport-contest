@@ -2044,11 +2044,6 @@ export const MAXLEVEL = 32;
 // MAXOCLASSES: canonical home is objects.js; MAXMCLASSES: canonical home is symbols.js
 export const ROOMOFFSET = 3;
 
-// Check if position is within map bounds
-// C ref: cmd.c isok() — x >= 1 && x <= COLNO-1 && y >= 0 && y <= ROWNO-1
-export function isok(x: number, y: number): boolean {
-    return x >= 1 && x <= COLNO - 1 && y >= 0 && y <= ROWNO - 1;
-}
 
 // Check terrain type helpers (rm.h)
 export function IS_WALL(typ: number): boolean {

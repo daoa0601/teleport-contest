@@ -3,7 +3,8 @@
 import { publishHeardMessage } from './hero_speech.js';
 import { recordAchievement } from './achievements.js';
 import { exerciseAttribute } from './attrib.js';
-import { ACH_TUNE, A_WIS, Is_stronghold, isok, } from './const.js';
+import { ACH_TUNE, A_WIS, Is_stronghold } from './const.js';
+import { isok } from './cmd.js';
 import { findDrawbridgeAt, toggleDrawbridge, } from './dbridge.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';

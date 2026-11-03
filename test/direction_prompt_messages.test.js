@@ -4,7 +4,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { promptDirection } from '../js/tty_prompts.js';
+import { promptDirection } from '../js/cmd.js';
 import { moveloop_core } from '../js/allmain.js';
 import { ARROW, BOW, CLUB, OBJECT_NAMES } from '../js/object_data.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from '../js/wield.js';

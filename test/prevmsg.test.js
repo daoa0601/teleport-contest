@@ -19,7 +19,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { resetGame } from '../js/gstate.js';
 import { GameDisplay } from '../js/game_display.js';
 import { getLine, promptChoice } from '../js/query.js';
-import { readDirectionKey } from '../js/tty_prompts.js';
+import { readDirectionKey } from '../js/cmd.js';
 function rowText(row) {
     return requireGameDisplay().grid[row]?.map(cell => cell.ch).join('').trimEnd() ?? '';
 }

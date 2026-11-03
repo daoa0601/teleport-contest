@@ -23,7 +23,7 @@ cmd.c	do_run	Double run prefix, canceled.	composed	src/js/cmd.ts:applyMovementPr
 cmd.c	do_rush	Double rush prefix, canceled.	composed	src/js/cmd.ts:applyMovementPrefix; Selects rush or run inside the double-prefix cancellation.
 cmd.c	enter_explore_mode	Note: normally you wouldn't be allowed into explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
 cmd.c	enter_explore_mode	cannot access explore mode.	dead	!authorize_explore_mode() is false in the pinned recorder: install/games/lib/nethackdir/sysconf sets EXPLORERS=*.
-cmd.c	there_cmd_menu_self	Go down the	composed	src/js/context_menu.ts:selfEntries; Composes `Go ${up or down} the ${ladder or stairs}` for the self context menu, like there_cmd_menu_self().
+cmd.c	there_cmd_menu_self	Go down the	composed	src/js/cmd.ts:selfEntries; Composes `Go ${up or down} the ${ladder or stairs}` for the self context menu, like there_cmd_menu_self().
 decl.c	hexdd	00112233445566778899aAbBcCdDeEfF	diagnostic	Hex-digit lookup table, not a message; used by hex parsing helpers.
 dig.c	adj_pit_checks	The rock glows then fades.	dead	adj_pit_checks() zeroes rm.flags (wall_info aliases flags, rm.h:211) at its top, so the STONE/SCORR W_NONDIGGABLE re-test can never be true; the port's clearTerrainFlags models the same clearing.
 dig.c	use_pick_axe2	merely scratches the	composed	src/js/pick_axe.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.

@@ -12,7 +12,7 @@ import { applyNethackrc, doOptions, parseNethackrc } from '../js/options.js';
 import { ATR_BOLD, ATR_INVERSE, CLR_GREEN, CLR_RED, NO_COLOR } from '../js/terminal.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
-import { completeExtendedCommand } from '../js/extended_commands.js';
+import { completeExtendedCommand } from '../js/query.js';
 import { PosixRegex } from '../js/posix_regex.js';
 
 function screen(): string {

@@ -39,7 +39,7 @@ import type { InventoryClassification } from './inventory_prompt.js';
 import { canSelectOff } from './bulk_takeoff.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn } from './worn.js';
-import { yn_function } from './query.js';
+import { yn_function } from './cmd.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';

@@ -2,7 +2,7 @@
 // display.c:tmp_at() for the valid-location marking overlay.
 
 import {
-    COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK,
+    COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK,
     LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB,
     TER_DETECT, TER_MAP, TER_MON, TER_OBJ,
 } from './const.js';
@@ -10,7 +10,8 @@ import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from '.
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, terrain_glyph } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { readcharPoskey, takeCommandPosition } from './input.js';
+import { takeCommandPosition } from './input.js';
+import { readcharPoskey } from './cmd.js';
 
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -100,6 +101,43 @@ export function isGetposFeatureSymbol(ch: string, symset: string | null | undefi
 
 // A diagonal which crosses a map edge loses the same amount of movement on
 // its other axis.  Clamping each axis separately would slide along the edge.
+// C getpos.c:gather_locs_interesting().  #lookaround forces GFILTER_VIEW
+// before scanning, so the GFILTER_AREA flood-fill branch is unreachable here.
+export function gatherLocsInteresting(x: number, y: number, gloc: number): boolean {
+    if (game.iflags.getloc_filter === GFILTER_VIEW && !cansee(x, y))
+        return false;
+    const glyph = glyphAt(x, y);
+    const symbol = glyph ? glyphToCmapSymbol(glyph.glyph) : null;
+    if (gloc === GLOC_DOOR)
+        // C is_cmap_door(), is_cmap_drawbridge(), plus S_ndoor.
+        return symbol !== null
+            && (symbol >= CmapSymbol.vodoor && symbol <= CmapSymbol.hcdoor
+                || symbol >= CmapSymbol.vodbridge && symbol <= CmapSymbol.hcdbridge
+                || symbol === CmapSymbol.ndoor);
+    // GLOC_INTERESTING
+    if (gatherLocsInteresting(x, y, GLOC_DOOR)) return true;
+    // The uninteresting background: is_cmap_wall() (stone through trwall),
+    // tree, bars, ice, air, cloud, is_cmap_lava(), is_cmap_water(), the
+    // open-doorway marker S_ndoor, is_cmap_room() floors and
+    // is_cmap_corr() corridors, plus the nothing and unexplored markers.
+    // A missing map cell behaves like unexplored.  Everything else --
+    // monsters, objects, traps, stairs and other furniture, engravings,
+    // warning signs -- is worth mentioning.
+    const boring = !glyph
+        || glyph.kind === 'nothing' || glyph.kind === 'unexplored'
+        || symbol !== null && (symbol >= CmapSymbol.stone && symbol <= CmapSymbol.trwall
+            || symbol === CmapSymbol.tree || symbol === CmapSymbol.bars
+            || symbol === CmapSymbol.ice || symbol === CmapSymbol.air
+            || symbol === CmapSymbol.cloud
+            || symbol === CmapSymbol.lava || symbol === CmapSymbol.lavawall
+            || symbol === CmapSymbol.pool || symbol === CmapSymbol.water
+            || symbol === CmapSymbol.ndoor
+            || symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
+            || symbol >= CmapSymbol.corr && symbol <= CmapSymbol.litcorr);
+    return !boring || knownVibratingSquareAt(x, y, game);
+}
+
+
 // C getpos.c:truncate_to_map().
 export function moveGetposCursor(cursor: Position, dx: number, dy: number): void {
     if (cursor.x + dx < 1) {

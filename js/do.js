@@ -8,7 +8,8 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, monsterIsNonliving, mo
 import { monsterIsScaredAt } from './monmove.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { AT_BOOM } from './monster_attack_types.js';
-import { isok, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, HOLE, TRAPDOOR } from './const.js';
+import { M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, HOLE, TRAPDOOR } from './const.js';
+import { isok } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName } from './body_parts.js';

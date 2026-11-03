@@ -10,7 +10,8 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, isok, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
+import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
+import { isok } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js';
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -65,7 +66,7 @@ import { chooseObjectToCharge, rechargeObject } from './recharge.js';
 import { doBlindingRay } from './flash.js';
 
 import { makeBlinded, makeHallucinated } from './potion.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection } from './cmd.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { depth } from './hacklib.js';
 import { gotoLevel } from './level_change.js';

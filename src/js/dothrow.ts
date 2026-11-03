@@ -32,7 +32,7 @@ import { objectClassForType, objectMaterial } from './o_init.js';
 import { rejoinObjectStack } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
-import { promptDirection } from './tty_prompts.js';
+import { promptDirection } from './cmd.js';
 import { resolveDirectGoldThrow, resolveQuiveredGoldThrow } from './gold_throw.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
 

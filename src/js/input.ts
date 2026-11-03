@@ -7,7 +7,8 @@ import { NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS } fro
 import { rn1, rn2, rnd } from './rng.js';
 import type { TerminalReadKeyOptions } from './terminal.js';
 import type { Position } from './map_types.js';
-import { isok } from './const.js';
+import { isok } from './cmd.js';
+import { randomKey, resetFuzzerCommandState } from './cmd.js';
 
 export interface CommandDirection {
     readonly dx: number;
@@ -16,15 +17,15 @@ export interface CommandDirection {
 }
 export type CommandResponse = number | 'user-input' | CommandDirection;
 export interface MapClick extends Position { button: 1 | 2 }
-const MAP_CLICK_KEY = 256;
+export const MAP_CLICK_KEY = 256;
 
-interface CharacterInput {
+export interface CharacterInput {
     readonly key: number;
     readonly click: MapClick | null;
 }
 
 export type KeyInput = string | number;
-type InputState = 'other' | 'command' | 'direction' | 'position';
+export type InputState = 'other' | 'command' | 'direction' | 'position';
 export interface KeyReader {
     readKey(options?: TerminalReadKeyOptions): Promise<number>;
 }
@@ -47,8 +48,6 @@ export class InputGate {
     private pendingRead: ((input: number | MapClick) => void) | null;
     private mapClick: MapClick | null = null;
     private blockedWaiters: (() => void)[];
-    private fuzzerCommandIndex = 0;
-    private lastFuzzerCommand = 0;
 
     constructor({ beforeRead = null, display = null }: InputGateOptions = {}) {
         this.beforeRead = beforeRead;
@@ -140,7 +139,7 @@ export class InputGate {
         // choices explicitly so message pagers cannot steal item letters.
         await this.beforeRead?.();
         this.mapClick = null;
-        if (game.iflags.debug_fuzzer) return this.randomKey(inputState);
+        if (game.iflags.debug_fuzzer) return randomKey(inputState);
         const queued = this.queue.shift();
         if (queued !== undefined) return this.inputKey(queued);
         if (this.display) {
@@ -161,33 +160,6 @@ export class InputGate {
         return MAP_CLICK_KEY;
     }
 
-    // C cmd.c:randomkey(). The table index and repeat key survive prompts.
-    private randomKey(inputState: InputState): number {
-        if (inputState === 'command' && (this.lastFuzzerCommand === 1 || this.lastFuzzerCommand === 16)
-            && rn2(5)) return this.lastFuzzerCommand;
-        let key;
-        switch (rn2(16)) {
-        case 0: key = 10; break;
-        case 1: case 2: case 3: case 4: key = rn1(95, 32); break;
-        case 5: key = rn2(2) ? 9 : 32; break;
-        case 6: key = rn1(26, 97); break;
-        case 7: key = rn1(26, 65); break;
-        case 8: key = NATIVE_COMMANDS[this.fuzzerCommandIndex++ % NATIVE_COMMANDS.length]?.key ?? 0; break;
-        case 9: key = 35; break;
-        case 10: case 11: case 12: {
-            const direction = rn2(NATIVE_COMMAND_CONSTANTS.N_DIRS);
-            const mode = rn2(7) ? 0 : !rn2(3) ? 2 : 1;
-            key = game.commandBindings.keyForDirection(direction, mode);
-            break;
-        }
-        case 13: key = rn1(10, 48); break;
-        case 14: key = rnd(game.iflags.wc_eight_bit_input ? 255 : 127); break;
-        default: key = 27; break;
-        }
-        key = nativeChar(key);
-        if (inputState === 'command') this.lastFuzzerCommand = key;
-        return key;
-    }
 
     waitUntilBlocked(): Promise<void> {
         if (this.isBlocked) return Promise.resolve();
@@ -213,10 +185,21 @@ export class InputGate {
 
 let activeInputGate = new InputGate();
 
+// The gate itself stays private; the folded cmd.c readchar()/pgetchar()
+// ports read through this accessor, exactly like their C bodies call
+// the windowport's key entry points.
+export function inputGate(): InputGate {
+    return activeInputGate;
+}
+
 export function bindInputGate(inputGate: InputGate): void {
     if (!(inputGate instanceof InputGate))
         throw new TypeError('bindInputGate requires an InputGate');
     activeInputGate = inputGate;
+    // C randomkey()'s statics are process-wide; the port scopes them to one
+    // game, and every game binds a freshly built gate (jsmain start()), so
+    // the table index and repeat key start from their head again here.
+    resetFuzzerCommandState();
 }
 
 export function pushKey(key: KeyInput): void {
@@ -271,58 +254,9 @@ export async function nhgetch(inputState: InputState = 'other') {
     return key === 0 ? 27 : key;
 }
 
-// C cmd.c:pgetchar(): one unprompted character, without readchar()'s
-// Escape-prefix or EOF translation and without a command-queue entry.
-export async function pgetchar(): Promise<number> {
-    const key = game.iflags.debug_fuzzer
-        ? await activeInputGate.readKey() : await nhgetch();
-    return nativeChar(key);
-}
-
-export async function readchar(inputState: InputState = 'other'): Promise<number> {
-    return (await readcharCore(inputState)).key;
-}
-
-// C readchar_poskey(): only position selection receives the click coordinates.
-// All readchar callers receive the same NUL character for a click.
-export function readcharPoskey(): Promise<CharacterInput> {
-    return readcharCore('position');
-}
-
-// C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
-// direction, and position input. Ordinary prompts keep a literal Escape.
-async function readcharCore(inputState: InputState): Promise<CharacterInput> {
-    // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
-    if (game.iflags.debug_fuzzer)
-        return { key: await activeInputGate.readKey(inputState), click: null };
-    let key = await nhgetch(inputState);
-    if (key === MAP_CLICK_KEY) {
-        // C readchar_core(): clicks record their location even when getpos
-        // has temporarily cleared the mouse-button command bindings.
-        const click = activeInputGate.takeMapClick();
-        game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
-        const command = click ? game.commandBindings.mouseCommand(click.button) : null;
-        if (command?.name) {
-            game._cannedCommands ??= [];
-            game._cannedCommands.push({ kind: 'command', name: command.name });
-        }
-        return { key: 0, click };
-    }
-    if (key === -1) {
-        key = 27;
-    } else if (key === 27 && game.iflags?.altmeta && inputState !== 'other') {
-        // pgetchar() returns char, unlike the first nh_poskey() int.
-        const next = nativeChar(await nhgetch(inputState));
-        key = next === -1 || next === 0 || next === 27 ? 27 : next | 128;
-    }
-    return { key: nativeChar(key), click: null };
-}
-
-function nativeChar(key: number): number {
-    return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;
-}
 
 export function resetInputState() {
     activeInputGate = new InputGate();
+    resetFuzzerCommandState();
     return activeInputGate;
 }

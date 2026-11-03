@@ -1,7 +1,8 @@
 // C dungeon.c:u_on_newpos(), shared by hero and swallower relocation.
 import { senseBuriedObjects } from './dungeon.js';
 import { map_location, see_nearby_objects } from './display.js';
-import { COLNO, isok, MAX_TYPE, ROWNO } from './const.js';
+import { COLNO, MAX_TYPE, ROWNO } from './const.js';
+import { isok } from './cmd.js';
 import { impossible, panic } from './diagnostics.js';
 import { game, requireLiveGame } from './gstate.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';

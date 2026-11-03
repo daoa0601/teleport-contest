@@ -15,7 +15,7 @@ export class PosixRegex {
     private readonly expression: RegexNode;
 
     constructor(pattern: string) {
-        this.expression = new EreParser(cStringBytes(pattern)).parse();
+        this.expression = new EreParser(cStringBytes(pattern)).parseExpression();
     }
 
     test(text: string): boolean {
@@ -40,7 +40,7 @@ class EreParser {
 
     constructor(private readonly pattern: string) {}
 
-    parse(): RegexNode {
+    parseExpression(): RegexNode {
         return this.alternatives(false);
     }
 

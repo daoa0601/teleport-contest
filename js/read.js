@@ -6,7 +6,8 @@ import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrate
 import { explode } from './explosion.js';
 import { heroIsPunished } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName } from './body_parts.js';
-import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, PLNMSG_TOWER_OF_FLAME, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, W_ART, W_ARTI, W_BALL, isok } from './const.js';
+import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, PLNMSG_TOWER_OF_FLAME, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, W_ART, W_ARTI, W_BALL } from './const.js';
+import { isok } from './cmd.js';
 import { canSpotMonster, displayColorName, displayLiquidName, shieldeff } from './display.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';

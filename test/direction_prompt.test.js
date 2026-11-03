@@ -6,7 +6,7 @@ import { makeConfused, makeStunned } from '../js/potion.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
-import { promptDirection } from '../js/tty_prompts.js';
+import { promptDirection } from '../js/cmd.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function directionRoom() {
     freshPlayableRoom({ flags: { cmdassist: false } });

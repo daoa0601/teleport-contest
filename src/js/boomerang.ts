@@ -1,6 +1,7 @@
 // C zap.c:boomhit(). Unlike bhit(), contact need not end this flight.
 import { currentAttribute } from './attrib.js';
-import { A_DEX, DOOR, D_CLOSED, D_LOCKED, SINK, ZAP_POS, isok, xdir, ydir } from './const.js';
+import { A_DEX, DOOR, D_CLOSED, D_LOCKED, SINK, ZAP_POS, xdir, ydir } from './const.js';
+import { isok } from './cmd.js';
 import { flush_screen, lastDirtyMapCursor, newsym, show_glyph_cell } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { requirePlayingGame } from './gstate.js';

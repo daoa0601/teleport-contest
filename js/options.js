@@ -4,7 +4,7 @@ import { game } from './gstate.js';
 import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
 import { findAlignment, findGender, findRace, findRole, randomCharacterOption } from './roles.js';
 import { NATIVE_COMMANDS } from './command_data.js';
-import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './extended_commands.js';
+import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';
 import { displayHelpFile, displayPagerText } from './pager.js';
 import { setConditionOption } from './botl.js';
@@ -16,7 +16,7 @@ import { isTextOption, setTextOption, textOptionValue, cInteger, parsePickupType
 import { compoundMenuValue, editCompoundMenu } from './option_editors.js';
 import { clearStatusHilites, countStatusHilites, statusHiliteMenu } from './botl.js';
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
-import { countBindKeys, handlerRebindKeys } from './rebind_keys.js';
+import { countBindKeys, handlerRebindKeys } from './cmd.js';
 import { CommandBindings } from './command_bindings.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
@@ -31,6 +31,7 @@ import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
+import { parseAutocompleteStatement } from './cmd.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings, setVanqOrder, vanquishedOptionValue } from './end.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
@@ -751,31 +752,6 @@ function parseUcharList(bytes, size, modifyInPlace) {
             return { values, syntaxError: true };
         }
     }
-}
-// C cmd.c:parseautocomplete(): splits on the first comma, else the first
-// colon, processes the remainder first, then requires an exact (case
-// sensitive) extended-command name.
-function parseAutocompleteStatement(value, addRawError) {
-    let separator = value.indexOf(',');
-    if (separator < 0)
-        separator = value.indexOf(':');
-    if (separator >= 0) {
-        parseAutocompleteStatement(value.slice(separator + 1), addRawError);
-        value = value.slice(0, separator);
-    }
-    value = value.replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
-    if (!value)
-        return;
-    let condition = true;
-    if (value.startsWith('!')) {
-        value = value.slice(1).replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
-        condition = false;
-    }
-    if (!NATIVE_COMMANDS.some(command => command.name === value)) {
-        addRawError(`Bad autocomplete: invalid extended command '${value}'.`);
-        return;
-    }
-    setCommandAutocomplete(value, condition);
 }
 // C coloratt.c:add_menu_coloring(). The compiled pattern is kept on the
 // rule like C's ->match regex_t; the first matching rule (newest first)

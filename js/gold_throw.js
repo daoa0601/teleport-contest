@@ -1,5 +1,6 @@
 import { currency } from './currency.js';
-import { A_CHA, DOOR, D_CLOSED, D_LOCKED, Is_airlevel, Is_waterlevel, LOST_THROWN, ZAP_POS, isok, } from './const.js';
+import { A_CHA, DOOR, D_CLOSED, D_LOCKED, Is_airlevel, Is_waterlevel, LOST_THROWN, ZAP_POS } from './const.js';
+import { isok } from './cmd.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { tossObjectUp } from './toss_up.js';

@@ -4,10 +4,8 @@
 
 import { hallucinatedDeityName } from './alignment.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import {
-    ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO,
-    IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, isok, In_endgame, PLNMSG_GROWL, Upolyd,
-} from './const.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd } from './const.js';
+import { isok } from './cmd.js';
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible, randomDisplayMonsterName } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
@@ -21,7 +19,7 @@ import {
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 
-import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { promptDirection, readDirectionKey } from './cmd.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, sameMonsterRace } from './mondata.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';

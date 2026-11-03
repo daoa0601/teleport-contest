@@ -3,7 +3,7 @@ import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
-import { doprevMessage } from '../js/prevmsg.js';
+import { doprevMessage } from '../js/cmd.js';
 import { displayMessageWindow } from '../js/tty_topline.js';
 import { promptKey } from '../js/tty_prompts.js';
 import { freshPlayableRoom } from './support/playable-room.js';

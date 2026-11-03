@@ -15,7 +15,7 @@ import { heroSpecies } from './polyself.js';
 import { makePlural } from './objnam.js';
 import { objectMonsterName, objectName } from './objnam.js';
 import { heroHasNoLimbs } from './polyself.js';
-import { paranoidQuery } from './query.js';
+import { paranoidQuery } from './cmd.js';
 import { touchPetrifies } from './stoning.js';
 import { surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';

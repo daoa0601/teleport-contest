@@ -1,6 +1,7 @@
 // Lua object handles and operations. C nhlobj.c.
 
-import { isok, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, OBJECT_TIMER_KIND } from '../const.js';
+import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, OBJECT_TIMER_KIND } from '../const.js';
+import { isok } from '../cmd.js';
 import { buryObject } from '../dig.js';
 import { isContainer } from '../container.js';
 import { newsym } from '../display.js';

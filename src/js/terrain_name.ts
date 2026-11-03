@@ -1,11 +1,7 @@
 // C ref: dungeon.c surface().
 
-import {
-    ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE,
-    IS_AIR, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel,
-    Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR,
-    DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER, isok,
-} from './const.js';
+import { ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_AIR, IS_ROOM, IS_WALL, Is_waterlevel, Is_earthlevel, Is_firelevel, In_quest, SHOPBASE, TEMPLE, VAULT, SDOOR, DRAWBRIDGE_UP, LAVAPOOL, LAVAWALL, MOAT, POOL, WATER } from './const.js';
+import { isok } from './cmd.js';
 import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';

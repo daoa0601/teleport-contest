@@ -12,11 +12,8 @@ import type { Position } from './map_types.js';
 import type { MonsterFearProbe } from './monmove.js';
 import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
-import {
-    ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL,
-    GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER,
-    WATER, W_NONPASSWALL, isok,
-} from './const.js';
+import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL } from './const.js';
+import { isok } from './cmd.js';
 import {
     MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
     MONSTER_SYMBOL, monsterIsCovetous,

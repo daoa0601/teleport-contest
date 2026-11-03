@@ -1,5 +1,6 @@
 // C sounds.c:tiphat() and responsive_mon_at().
-import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH, isok } from './const.js';
+import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH } from './const.js';
+import { isok } from './cmd.js';
 import { armorSimpleName } from './do_wear.js';
 import { canSeeMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -16,7 +17,7 @@ import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { isAccessibleAt } from './monmove.js';
-import { promptDirection, readDirectionKey } from './tty_prompts.js';
+import { promptDirection, readDirectionKey } from './cmd.js';
 import { couldsee } from './vision.js';
 const M1_NOEYES = 0x00001000;
 const M1_SEE_INVIS = 0x01000000;

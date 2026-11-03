@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { DOOR, D_CLOSED } from '../js/const.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { promptDirection } from '../js/tty_prompts.js';
+import { promptDirection } from '../js/cmd.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 

@@ -3,7 +3,8 @@
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { makeFamiliar } from './familiar.js';
-import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, isok, OBJECT_TIMER_KIND } from './const.js';
+import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, OBJECT_TIMER_KIND } from './const.js';
+import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
 

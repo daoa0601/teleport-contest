@@ -5,7 +5,8 @@ import { monsterAtPosition, strikeSteed } from './steed.js';
 import { currentAttribute } from './attrib.js';
 import { definiteName, objectCombatName, observeObjectForNaming, ownedObjectName, singularObjectName, makePlural, withIndefiniteArticle } from './objnam.js';
 import { heroFootName, heroHandName, monsterHandName } from './body_parts.js';
-import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, NO_KILLER_PREFIX, TT_PIT, isok } from './const.js';
+import { A_DEX, IS_FURNITURE, IS_WATERWALL, Is_airlevel, Is_waterlevel, LAVAWALL, NO_KILLER_PREFIX, TT_PIT } from './const.js';
+import { isok } from './cmd.js';
 import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './uhitm.js';
@@ -40,7 +41,7 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
-import type { DirectionSelection } from './tty_prompts.js';
+import type { DirectionSelection } from './cmd.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
 

@@ -2,12 +2,10 @@
 
 import { clearBypasses } from './worn.js';
 import { DISMOUNT_BONES, PARANOID_BONES } from './const.js';
-import { paranoidQuery } from './query.js';
+import { paranoidQuery } from './cmd.js';
 import { monsterHasMapPosition } from './steed.js';
-import {
-    CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, isok, LEAVESTATUE,
-    MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd,
-} from './const.js';
+import { CORPSTAT_INIT, G_NOCORPSE, GRAVE, HEADSTONE, LEAVESTATUE, MM_NONAME, NON_PM, NO_MINVENT, ROOM, Upolyd } from './const.js';
+import { isok } from './cmd.js';
 import {
     completeBonesMonster, giveHeroResistancesToMonster, prepareBonesMonstersForSave,
 } from './bones_monster.js';
