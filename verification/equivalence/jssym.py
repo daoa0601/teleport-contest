@@ -43,6 +43,12 @@ class V:
 
 
 UNDEF = V('undef')
+INHERITED = V('inherited')  # a record lookup that would reach Object.prototype
+# Object.getOwnPropertyNames(Object.prototype): an object literal inherits these.
+OBJECT_PROTOTYPE_KEYS = (
+    '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
+    '__proto__', 'constructor', 'hasOwnProperty', 'isPrototypeOf',
+    'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf')
 
 
 class Modules(dict):
@@ -758,10 +764,26 @@ class JSExec:
                                 'collides with the null encoding')
                         choices = [(self._equal(index, V('str', key)), value)
                                    for key, value in obj.v.items()]
-                        missing = z3.Not(z3.Or(*(c for c, _ in choices))) \
-                            if choices else z3.BoolVal(True)
-                        out.extend(self._choices(q, choices + [(missing, UNDEF)]))
+                        # A missed own key still finds Object.prototype
+                        # members (REC['constructor'] is a function), so a
+                        # feasible inherited name cannot be modeled.
+                        inherited = [(self._equal(index, V('str', name)), INHERITED)
+                                     for name in OBJECT_PROTOTYPE_KEYS
+                                     if name not in obj.v]
+                        hits = choices + inherited
+                        missing = z3.Not(z3.Or(*(c for c, _ in hits))) \
+                            if hits else z3.BoolVal(True)
+                        for p, value in self._choices(q, hits + [(missing, UNDEF)]):
+                            if value is INHERITED:
+                                raise Unsupported(
+                                    'JavaScript record lookup that can reach an '
+                                    'inherited Object.prototype member')
+                            out.append((p, value))
                         continue
+                    if index.v not in obj.v and index.v in OBJECT_PROTOTYPE_KEYS:
+                        raise Unsupported(
+                            'JavaScript record lookup that can reach an '
+                            'inherited Object.prototype member')
                     out.append((q, obj.v.get(index.v, UNDEF)))
                     continue
                 array = obj

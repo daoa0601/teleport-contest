@@ -887,7 +887,7 @@ STATE_SPECS += [
     Spec('is_ammo:tables', 'verification_is_ammo', 'isLauncherAmmunition', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
-            'obj.h:is_ammo is the one C macro behind both isLauncherAmmunition and isAmmunition; this claim proves isLauncherAmmunition, which the callers keep, and the duplicate is recorded in .cache/agents/followups.md',),
+            'obj.h:is_ammo is the one C macro behind both isLauncherAmmunition and isAmmunition; this claim proves isLauncherAmmunition, which the callers keep, and the unclaimed duplicate is listed in docs/formal-verification.md',),
          require_counterexamples=True, configure=classed_object_state('obj'),
          arguments=object_predicate_arguments('obj'),
          probes=[('oclass correspondence omitted (pinned arrow)',

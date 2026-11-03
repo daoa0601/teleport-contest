@@ -433,9 +433,9 @@ C's `oc_material <= LEATHER` and the port's `objectMaterial(...) <= LEATHER`
 both read material 0 there and agree, unlike is_damageable's port test.
 `is_ammo`/`ammo_and_launcher` are the one C macro behind two port functions
 each; the claims prove `isLauncherAmmunition`/`launcherMatchesAmmo`, which
-more callers use, and the duplicates (`isAmmunition`,
-`ammunitionMatchesLauncher`) are recorded in
-`.cache/agents/followups.md`. `objectUsesCharges` has no single C
+more callers use. The duplicates (`isAmmunition`,
+`ammunitionMatchesLauncher`) stay unclaimed until their callers move to
+the proved functions and they are deleted. `objectUsesCharges` has no single C
 counterpart — it summarizes objnam.c:doname's `is_weptool`-routed switch,
 whose WAND/tool charge display also depends on `known`, lamplit candles and
 the candelabrum — and is not claimed.
@@ -447,14 +447,16 @@ null, undefined and the empty-string literal), `??` and truthiness stay
 exact — an in-bounds element read is never undefined, the empty encoding is
 exactly the null case, and `value === ''` is false on every row because the
 table excludes empty strings — while `typeof` and coercive `==` on such a
-term are rejected, as is a symbolic read of a mixed-kind array and a record
-lookup whose keys collide with the null coercion. Branch joins merge only
+term are rejected, as is a symbolic read of a mixed-kind array, a record
+lookup whose keys collide with the null coercion, and a record lookup whose
+key can name an inherited `Object.prototype` member (`REC['constructor']`
+is a function, not undefined) that the record does not own. Branch joins merge only
 two table terms; a literal string keeps its own path so a real empty string
 cannot become the null encoding. Equality also distinguishes a literal
-empty string from a table term simplified to the null encoding. Ten language
+empty string from a table term simplified to the null encoding. Eleven language
 tests pin the selection, the null distinctions, the empty-string comparison,
 the record lookup, branch joins, and the rejections. The focused
-executor/query/selection suite is now 96 passing tests. No port fidelity bug
+executor/query/selection suite is now 97 passing tests. No port fidelity bug
 was found in the eighteen stated domains.
 
 The complete review round 3 run proved all 109 claims in **1041.57 s**, including

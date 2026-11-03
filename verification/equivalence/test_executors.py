@@ -902,5 +902,26 @@ class ExecutorTests(unittest.TestCase):
                       reason='unsupported: JavaScript record lookup with a key '
                              'that collides with the null encoding')
 
+    def test_record_lookup_reaching_object_prototype_is_rejected(self):
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        reason = ('unsupported: JavaScript record lookup that can reach an '
+                  'inherited Object.prototype member')
+        for names in ('["a", "constructor"]', '["a", "toString"]'):
+            with self.subTest(names=names):
+                self.rejected('int example(int i) { return i == 0; }',
+                              f'const names = {names};\nconst REC = {{ a: 1 }};\n'
+                              'function example(i) { return REC[names[i]] ?? 0; }',
+                              **domain, reason=reason)
+        self.rejected('int example(void) { return 0; }',
+                      'const REC = { a: 1 };\n'
+                      'function example() { return REC["valueOf"] ?? 0; }',
+                      reason=reason)
+        # an own key shadows the inherited member and stays exact
+        self.equivalent('int example(int i) { return i == 0 ? 1 : 2; }',
+                        'const names = ["a", "constructor"];\n'
+                        'const REC = { a: 1, constructor: 2 };\n'
+                        'function example(i) { return REC[names[i]] ?? 0; }',
+                        **domain)
+
 if __name__ == '__main__':
     unittest.main()
