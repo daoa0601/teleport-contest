@@ -611,6 +611,10 @@ class JSExec:
                 if key.type not in ('property_identifier', 'shorthand_property_identifier', 'string'):
                     raise Unsupported('computed JavaScript object key')
                 name = key.text.decode()[1:-1] if key.type == 'string' else key.text.decode()
+                if name == '__proto__':
+                    # `__proto__: v` sets the prototype, not an own field;
+                    # the record model has no prototype chain.
+                    raise Unsupported('JavaScript object literal __proto__ key')
                 results = [(q, {**fields, name: value}) for p, fields in results
                            for q, value in self.eval(p, value_node)]
             return [(p, V('record', fields)) for p, fields in results]
@@ -812,6 +816,8 @@ class JSExec:
             return V('record', {key: self._select_values(tuple(v.v[key] for v in values), index)
                                 for key in values[0].v})
         if values and all(v.kind in ('str', 'null') for v in values):
+            if any(isinstance(v.v, z3.ExprRef) for v in values):
+                raise Unsupported('JavaScript string-array read of an already symbolic string')
             # A symbolic read of a name table: build one z3 String term. Null
             # entries encode as the empty string, which keeps ===, !==,
             # nullish comparison, ?? and truthiness exact; typeof and

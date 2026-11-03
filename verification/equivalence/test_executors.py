@@ -902,6 +902,24 @@ class ExecutorTests(unittest.TestCase):
                       reason='unsupported: JavaScript record lookup with a key '
                              'that collides with the null encoding')
 
+    def test_object_literal_prototype_key_is_rejected(self):
+        self.rejected('int example(int i) { return i == 0; }',
+                      'const names = ["a", "b"];\n'
+                      'const REC = { __proto__: { b: 2 }, a: 1 };\n'
+                      'function example(i) { return REC[names[i]] ?? 0; }',
+                      params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+                      reason='unsupported: JavaScript object literal __proto__ key')
+
+    def test_string_array_of_symbolic_strings_is_rejected(self):
+        self.rejected('int example(int i, int j) { return 0; }',
+                      'const names = ["a", "b"];\n'
+                      'function example(i, j) { const values = [names[i], "c"]; '
+                      'return values[j] === "a" ? 1 : 0; }',
+                      params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1, s['j'] >= 0, s['j'] <= 1],
+                      reason='unsupported: JavaScript string-array read of an already '
+                             'symbolic string')
+
     def test_record_lookup_reaching_object_prototype_is_rejected(self):
         domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
         reason = ('unsupported: JavaScript record lookup that can reach an '

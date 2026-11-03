@@ -450,13 +450,15 @@ table excludes empty strings — while `typeof` and coercive `==` on such a
 term are rejected, as is a symbolic read of a mixed-kind array, a record
 lookup whose keys collide with the null coercion, and a record lookup whose
 key can name an inherited `Object.prototype` member (`REC['constructor']`
-is a function, not undefined) that the record does not own. Branch joins merge only
+is a function, not undefined) that the record does not own. Object
+literals with a `__proto__` key (a prototype, not a field) and string
+arrays whose elements are already symbolic table reads are rejected too. Branch joins merge only
 two table terms; a literal string keeps its own path so a real empty string
 cannot become the null encoding. Equality also distinguishes a literal
-empty string from a table term simplified to the null encoding. Eleven language
+empty string from a table term simplified to the null encoding. Thirteen language
 tests pin the selection, the null distinctions, the empty-string comparison,
 the record lookup, branch joins, and the rejections. The focused
-executor/query/selection suite is now 97 passing tests. No port fidelity bug
+executor/query/selection suite is now 99 passing tests. No port fidelity bug
 was found in the eighteen stated domains.
 
 The complete review round 3 run proved all 109 claims in **1041.57 s**, including
