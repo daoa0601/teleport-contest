@@ -9,7 +9,6 @@ src/js/bones_admission.ts	bones.c
 src/js/bones_death.ts	bones.c
 src/js/bones_monster.ts	bones.c
 src/js/botl.ts	botl.c
-src/js/bulk_takeoff.ts	do_wear.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
@@ -39,7 +38,6 @@ src/js/engulf_blindness.ts	mhitu.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
-src/js/eyewear.ts	do_wear.c
 src/js/familiar.ts	dog.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
@@ -133,7 +131,6 @@ src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stoning.ts	mhitm.c
-src/js/takeoff_menu.ts	do_wear.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c
 src/js/terrain_name.ts	dungeon.c

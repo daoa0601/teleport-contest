@@ -4,7 +4,7 @@
 // (pure move, no behavior change).
 
 import { distmin } from './hacklib.js';
-import { armorSimpleName } from './do_wear.js';
+import { armorSimpleName, fingersOrGloves } from './do_wear.js';
 import { heroArmName, heroFaceName, heroFingerName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
@@ -553,10 +553,6 @@ export async function dipFountain(object: DipTarget, loc: MapLocation) {
 // ---------------------------------------------------------------------------
 
 export type DipTarget = GameObject | 'hands';
-
-export function fingersOrGloves(): string {
-    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
-}
 
 export async function washHands(): Promise<WaterDamageOutcome> {
     const glib = (game.u.glibTurns ?? 0) > 0;

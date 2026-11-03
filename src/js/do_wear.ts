@@ -14,37 +14,39 @@
 import { game, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { commandResultCancelled, setMulti, clearCannedCommands } from './cmd.js';
+import { commandResultCancelled, setMulti, clearCannedCommands, paranoidQuery } from './cmd.js';
 import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import type { GameObject } from './object_types.js';
-import { monsterIsHumanoid, MONSTER_NAME } from './monster_data.js';
-import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL } from './object_data.js';
-import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS } from './const.js';
-import { isBimanualObject, isSword } from './object_properties.js';
-import { heroFingerName, heroHandName, heroNeckName, heroHeadName } from './body_parts.js';
+import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
+import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL, BLINDFOLD, OBJECT_SUBTYPE, BATTLE_AXE } from './object_data.js';
+import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { isBimanualObject, isSword, isFlimsyObject } from './object_properties.js';
+import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
 import type { PlayingGameState, GameState } from './game_state.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging } from './polyself.js';
-import { armorWearDecision } from './armor_wear.js';
-import { isEyewear, removeEyewear, wearEyewear } from './eyewear.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging, heroMonsterForm } from './polyself.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
-import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName } from './objnam.js';
-import { inventoryItemDescription, consumeInventoryItem } from './invent.js';
+import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
+import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
 import type { InventoryClassification } from './inventory_prompt.js';
-import { canSelectOff } from './bulk_takeoff.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
-import { setworn } from './worn.js';
+import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
+import { setBallAndChainFelt } from './ball.js';
+import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { getLine, promptYesNoAllQuit } from './query.js';
+import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import type { MenuUnderlay, MultiSelectItem, MultiSelectSection } from './windows.js';
 import { yn_function } from './cmd.js';
 import { objectOwnershipPrefix, objectTypeKnown } from './shk.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { makeHallucinated, setSlipperyHands, showInvisibilityMessage } from './potion.js';
-import { newsym, see_monsters } from './display.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverworld, syncBlindness } from './senses.js';
+import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
+import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { objectResistsDestruction } from './zap.js';
 import { erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -338,6 +340,84 @@ export async function removeWornItem(action: 'remove' | 'take off', itemAction =
     game.context.move = 1;
 }
 
+// C do_wear.c:canwearobj(). Decisions precede contact and slot changes.
+const MZ_SMALL = 1;
+
+interface ArmorWearDecision { refusal: string | null; checkedWeldedWeapon: GameObject | null }
+
+export function armorWearDecision(object: GameObject, state: GameState = game): ArmorWearDecision {
+    const slot = armorSlotFor(object.otyp);
+    const form = heroMonsterForm(state);
+    const weapon = state.uwep ?? null;
+    const torso = slot === 'uarm' || slot === 'uarmc' || slot === 'uarmu';
+    let checkedWeldedWeapon: GameObject | null = null;
+    const refuse = (refusal: string | null): ArmorWearDecision => ({ refusal, checkedWeldedWeapon });
+    if (heroIsVerySmall(state) || heroHasNoHands(state))
+        return refuse("You can't wear any armor in your current form.");
+    if (torso && form !== null && (monsterBreaksArmor(form) || monsterSlipsArmor(form))
+        && !(slot === 'uarmc' && (object.otyp === MUMMY_WRAPPING
+            ? monsterWrappingAllowed(form) : MONSTER_SIZE[form] === MZ_SMALL))
+        && !(MONSTER_NAME[form] === 'hobbit' && OBJECT_NAMES[object.otyp]?.startsWith('elven '))) {
+        const noun = slot === 'uarm' ? 'suit' : slot === 'uarmu' ? 'shirt' : 'cloak';
+        return refuse(`The ${noun} will not fit on your body.`);
+    }
+    if ((object.owornmask ?? 0) & W_ARMOR) return refuse('You are already wearing that!');
+    if (isWeldedPrimary(weapon, state)) checkedWeldedWeapon = weapon;
+    if (checkedWeldedWeapon && isBimanualObject(checkedWeldedWeapon)
+        && (slot === 'uarm' || slot === 'uarmu'))
+        return refuse(`You cannot do that while holding your ${isSword(checkedWeldedWeapon) ? 'sword' : 'weapon'}.`);
+    if (!slot) return refuse("You can't wear that!");
+    if (slot === 'uarm' && state.uarmc)
+        return refuse(`You cannot wear armor over a ${armorSimpleName(state.uarmc, state)}.`);
+    const worn = state[slot];
+    // C do_wear.c:already_wearing(): "You are already wearing that!" for
+    // re-worn armor, and the simple name of the occupied slot's piece.
+    if (worn) {
+        const name = slot === 'uarm' ? 'some armor'
+            : slot === 'uarmg' ? 'gloves' : slot === 'uarmf' ? 'boots'
+                : slot === 'uarms' ? 'a shield' : withIndefiniteArticle(armorSimpleName(worn, state));
+        return refuse(`You are already wearing ${name}.`);
+    }
+    switch (slot) {
+    case 'uarmh': {
+        const horns = form === null ? 0 : monsterHornCount(form);
+        if (horns && !isFlimsyObject(object, state))
+            return refuse(`The ${armorSimpleName(object, state)} won't fit over your horn${horns === 1 ? '' : 's'}.`);
+        break;
+    }
+    case 'uarms':
+        if (weapon && isBimanualObject(weapon))
+            return refuse(`You cannot wear a shield while wielding a two-handed ${isSword(weapon) ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon'}.`);
+        if (state.u.twoweap) return refuse('You cannot wear a shield while wielding two weapons.');
+        break;
+    case 'uarmf':
+        if (form !== null && monsterIsSlithy(form)) return refuse('You have no feet...');
+        if (form !== null && monsterIsCentaur(form)) return refuse('You have too many hooves to wear boots.');
+        if (!state.u.utrap) break;
+        if (state.u.utraptype === TT_BEARTRAP) return refuse(`Your ${heroFootName(state)} is trapped!`);
+        if (state.u.utraptype === TT_INFLOOR || state.u.utraptype === TT_LAVA)
+            return refuse(`Your ${makePlural(heroFootName(state))} are stuck in the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
+        if (state.u.utraptype === TT_BURIEDBALL)
+            return refuse(`Your ${heroLegName(state)} is attached to the buried ball!`);
+        break;
+    case 'uarmg':
+        if (isWeldedPrimary(weapon, state)) {
+            checkedWeldedWeapon = weapon;
+            return refuse(`You cannot wear gloves over your ${weapon && isSword(weapon) ? 'sword' : 'weapon'}.`);
+        }
+        if (state.u.glib || (state.u.glibTurns ?? 0) > 0)
+            return refuse(`Your ${makePlural(heroFingerName(state))} are too slippery to pull on ${armorSimpleName(object, state)}.`);
+        break;
+    case 'uarmu':
+        if (state.uarm || state.uarmc)
+            return refuse(`You can't wear that over your ${state.uarmc ? armorSimpleName(state.uarmc, state) : 'armor'}.`);
+        break;
+    case 'uarm': break;
+    case 'uarmc': break;
+    }
+    return refuse(null);
+}
+
 async function putOnArmorObject(object: GameObject): Promise<void> {
     if (object.worn) {
         await pline('You are already wearing that!');
@@ -510,6 +590,479 @@ export function cancelSlotTakeoff(slot: TakeoffSlot, state: GameState = game): v
 export function isBeingTakenOff(object: GameObject, state: GameState = game): boolean {
     const slot = state.context.takeoff?.current;
     return !!slot && takeoffSlotObject(slot, state) === object;
+}
+
+// C do_wear.c:doddoremarm(): the #takeoffall command — resume an
+// interrupted disrobing, refuse when nothing is worn, then collect the
+// selection and start the occupation.
+// set_occupation() is the _occupation assignment below; wearing_armor()
+// is the TAKEOFF_ORDER scan that decides "not wearing anything".
+export async function takeOffAll(): Promise<void> {
+    game.context.move = 0;
+    const progress = game.context.takeoff;
+    if (progress && (progress.current || progress.pending.length)) {
+        await plineWithContinuation(`You continue ${progress.text}.`);
+        game._occupation = { key: 'takeoff', text: progress.text };
+        return;
+    }
+    if (!TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot))) {
+        await plineWithContinuation('You are not wearing anything.');
+        return;
+    }
+    const selected = new Set<TakeoffSlot>();
+    await selectBulkTakeoff(async object => {
+        const slot = TAKEOFF_ORDER.find(slot => takeoffSlotObject(slot) === object);
+        if (slot && await canSelectOff(object, slot)) selected.add(slot);
+    });
+    if (!selected.size) return;
+    const pending = TAKEOFF_ORDER.filter(slot => selected.has(slot));
+    const text = pending.some(slot => !['uwep', 'uswapwep', 'uquiver'].includes(slot))
+        ? 'disrobing' : 'disarming';
+    game.context.takeoff = { pending, current: null, delay: 0, text };
+    await continueBulkTakeoff();
+}
+
+// The initiating command schedules work; each later callback completes one
+// working turn. Even zero-delay armor requires one such turn in native 'A'.
+// C do_wear.c:take_off(): the 'A' occupation body — finish the current
+// piece after its delay, walk takeoff_order for the next one (covering
+// cloaks and suits over a shirt costs extra), and announce "You finish
+// disrobing." when the mask empties.
+// do_takeoff() is removeSelectedSlot(); set_occupation() is the
+// _occupation assignment at the end of each round.
+export async function continueBulkTakeoff(state: GameState = game): Promise<boolean> {
+    const progress = state.context.takeoff;
+    if (!progress) return false;
+    if (progress.current) {
+        if (progress.delay > 0) {
+            progress.delay--;
+            return true;
+        }
+        const slot = progress.current;
+        await removeSelectedSlot(slot, state);
+        progress.pending = progress.pending.filter(candidate => candidate !== slot);
+        progress.current = null;
+        if (state.program_state.gameover) return false;
+    }
+    const slot = progress.pending[0];
+    progress.delay = 0;
+    if (!slot) {
+        await plineWithContinuation(`You finish ${progress.text}.`);
+        resetBulkTakeoff(state);
+        return false;
+    }
+    progress.current = slot;
+    progress.delay = Math.max(0, removalDelay(slot, state) - 1);
+    state._occupation = { key: 'takeoff', text: progress.text };
+    return true;
+}
+
+function removalDelay(slot: TakeoffSlot, state: GameState): number {
+    const object = takeoffSlotObject(slot, state);
+    const armor = ['uarm', 'uarmc', 'uarmh', 'uarmg', 'uarms', 'uarmu', 'uarmf'].includes(slot);
+    let delay = armor && object ? OBJECT_DELAY[object.otyp] ?? 0 : 1;
+    const cloak = takeoffSlotObject('uarmc', state);
+    const suit = takeoffSlotObject('uarm', state);
+    if ((slot === 'uarm' || slot === 'uarmu') && cloak)
+        delay += 2 * (OBJECT_DELAY[cloak.otyp] ?? 0) + 1;
+    if (slot === 'uarmu' && suit) delay += 2 * (OBJECT_DELAY[suit.otyp] ?? 0);
+    return delay;
+}
+
+async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<void> {
+    const object = takeoffSlotObject(slot, state);
+    if (!object) return;
+    if (slot === 'uswapwep') {
+        const twoweap = state.u.twoweap;
+        await setSecondaryWeapon(null, state);
+        await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
+            : 'You no longer have a second weapon readied.');
+        return;
+    }
+    if (slot === 'uquiver') {
+        await setQuiverObject(null, state);
+        await plineWithContinuation('You no longer have ammunition readied.');
+        return;
+    }
+    if (await unremovableCurse(object, slot, state)) {
+        if (slot !== 'uwep' && slot !== 'ublindf') await offMessage(object, state);
+        return;
+    }
+    if (slot === 'uwep') {
+        const twoweap = state.u.twoweap;
+        await setPrimaryWeapon(null, state);
+        const hands = takeoffSlotObject('uarmg', state) ? 'empty handed'
+            : monsterIsHumanoid(heroSpecies(state)) ? 'bare handed' : 'not wielding anything';
+        await plineWithContinuation(twoweap ? 'You are no longer wielding either weapon.' : `You are ${hands}.`);
+    } else if (slot === 'ublindf') {
+        await removeEyewear(object, { state });
+    } else if (slot === 'uamul') {
+        await removeHeroAccessory(object, state);
+        // Native Amulet_off() supplies its own off_msg(); take_off() also
+        // prints the returned object's off_msg(), including this second one.
+        if (!state.program_state.gameover) await offMessage(object, state);
+    } else if (slot === 'uleft' || slot === 'uright') {
+        await removeHeroAccessory(object, state);
+        if (!state.program_state.gameover) await offMessage(object, state);
+    } else {
+        // Native armor-off functions leave AC for allmain.c:find_ac(),
+        // after the removal messages and the elapsed monster turns.
+        await removeHeroArmor(object, state, { deferArmorClass: true });
+        if (!state.program_state.gameover) {
+            await offMessage(object, state);
+        }
+    }
+}
+
+async function offMessage(object: GameObject, state: GameState): Promise<void> {
+    const message = await armorOffMessage(object, state);
+    if (message) await plineWithContinuation(message);
+}
+
+// C do_wear.c:select_off(); invent.c:carrying_stoning_corpse() is the
+// petrifying-corpse check that guards taking gloves off.
+// C do_wear.c:better_not_take_that_off(): the paranoid confirmation before
+// taking off gloves while carrying a corpse that could turn the bearer to
+// stone.
+export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
+    const weapon = takeoffSlotObject('uwep');
+    const gloves = takeoffSlotObject('uarmg');
+    const cloak = takeoffSlotObject('uarmc');
+    const suit = takeoffSlotObject('uarm');
+    const slippery = !!game.u.glib || (game.u.glibTurns ?? 0) > 0;
+    if (slot === 'uleft' || slot === 'uright') {
+        if (heroHasNoLimbs(game)) {
+            await plineWithContinuation('The ring is stuck.');
+            return false;
+        }
+        const welded = checkWeldedWeapon(weapon);
+        const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
+        if (welded && (slot === primary || isBimanualObject(weapon))) {
+            await plineWithContinuation(`You cannot free a weapon ${heroHandName(game)} to remove the ring.`);
+            return false;
+        }
+        if (gloves && (gloves.cursed || slippery)) {
+            await plineWithContinuation(`You cannot take off your ${slippery ? 'slippery ' : ''}${armorSimpleName(gloves)} to remove the ring.`);
+            if (!slippery) gloves.bknown = true;
+            return false;
+        }
+    }
+    if (slot === 'uarmg') {
+        if (checkWeldedWeapon(weapon)) {
+            await plineWithContinuation(`You are unable to take off your gloves while wielding that ${weaponNoun(weapon) === 'sword' ? 'sword' : 'weapon'}.`);
+            return false;
+        }
+        if (slippery) {
+            await plineWithContinuation(`${object.unpaid ? 'The' : 'Your'} ${armorSimpleName(object)} are too slippery to take off.`);
+            return false;
+        }
+        if (await betterNotTakeThatOff(object)) return false;
+    }
+    if (slot === 'uarmf' && game.u.utrap) {
+        if (game.u.utraptype === TT_BEARTRAP) {
+            await plineWithContinuation(`The bear trap prevents you from pulling your ${heroFootName(game)} out.`);
+            return false;
+        }
+        if (game.u.utraptype === TT_INFLOOR) {
+            await plineWithContinuation(`You are stuck in the ${surfaceName(game.u.ux, game.u.uy)}, and cannot pull your ${makePlural(heroFootName(game))} out.`);
+            return false;
+        }
+    }
+    if (slot === 'uarm' || slot === 'uarmu') {
+        const obstacle = cloak?.cursed ? cloak : slot === 'uarmu' && suit?.cursed ? suit
+            : checkWeldedWeapon(weapon) && isBimanualObject(weapon) ? weapon : null;
+        if (obstacle) {
+            const action = obstacle === cloak ? `remove your ${armorSimpleName(obstacle)}`
+                : obstacle === suit ? 'remove your suit' : `release your ${weaponNoun(obstacle)}`;
+            await plineWithContinuation(`You cannot ${action} to take off the ${objectName(object)}.`);
+            obstacle.bknown = true;
+            return false;
+        }
+    }
+    if (slot === 'uquiver' || slot === 'uswapwep' && !game.u.twoweap) return true;
+    return !await unremovableCurse(object, slot, game);
+}
+
+// C do_wear.c:better_not_take_that_off().  Gloves are the only barrier
+// between the hero and a carried stoning corpse, so taking them off asks
+// for confirmation; refusing leaves the gloves on.
+async function betterNotTakeThatOff(object: GameObject, state: GameState = game): Promise<boolean> {
+    // C invent.c:carrying_stoning_corpse(): the first inventory corpse that
+    // petrifies on touch.
+    const corpse = state.inventory.find(candidate =>
+        candidate.otyp === CORPSE && touchPetrifies(candidate.corpsenm));
+    if (!corpse) return false;
+    // C pickup.c:u_safe_from_fatal_corpse(corpse, st_corpse | st_petrifies):
+    // both tests already hold of carrying_stoning_corpse(), so this corpse
+    // is never safe to touch bare-handed.  Stone resistance is deliberately
+    // not factored in: losing it later, without the gloves on, could prove
+    // dangerous.
+    if (corpse.otyp !== CORPSE || !touchPetrifies(corpse.corpsenm)) return false;
+    return !await paranoidQuery(true,
+        `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
+}
+
+function weaponNoun(object: GameObject | null): string {
+    const skill = object ? OBJECT_SUBTYPE[object.otyp] : undefined;
+    return skill !== undefined && [P_SHORT_SWORD, P_BROAD_SWORD, P_LONG_SWORD, P_TWO_HANDED_SWORD, P_SABER].includes(skill)
+        ? 'sword' : object?.otyp === BATTLE_AXE ? 'axe' : 'weapon';
+}
+
+// C welded() reveals the curse even when the weapon does not block removal.
+function checkWeldedWeapon(object: GameObject | null, state: GameState = game): boolean {
+    if (!object || !isWeldedPrimary(object, state)) return false;
+    object.bknown = true;
+    return true;
+}
+
+// C do_wear.c:cursed(): a welded weapon or cursed worn item refuses to
+// come off, with the slippery-fingers variant, and reveals its BUC.
+// fingers_or_gloves() is the pluralized finger name in the slippery
+// refusal.
+async function unremovableCurse(object: GameObject, slot: TakeoffSlot, state: GameState): Promise<boolean> {
+    if (!(slot === 'uwep' ? checkWeldedWeapon(object, state) : object.cursed)) return false;
+    const slippery = !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
+    const gloves = takeoffSlotObject('uarmg', state);
+    if (slippery && object.bknown && (gloves ? slot === 'uwep' : ['uwep', 'uleft', 'uright'].includes(slot))) {
+        const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state));
+        await plineWithContinuation(`Despite your slippery ${fingers}, you can't.`);
+    } else {
+        const plural = slot === 'uarmf' || slot === 'uarmg' || object.otyp === LENSES || object.quan > 1;
+        await plineWithContinuation(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
+    }
+    object.bknown = true;
+    return true;
+}
+
+type Category = number | 'all' | 'u' | 'B' | 'C' | 'U' | 'X' | 'P';
+type BucCategory = 'B' | 'C' | 'U' | 'X';
+type SelectOff = (object: GameObject) => Promise<void>;
+
+const WEAPON_CLASS = 2;
+
+// C do_wear.c:menu_remarm(): the category and object pick lists for 'A',
+// including the combination-style class prompt and the BUC category
+// filter from pickup.c:query_category()/allow_category().
+export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
+    const style = game.flags.menu_style ?? MENU_FULL;
+    let categories: Category[] = ['all'];
+    if (style === MENU_TRADITIONAL || style === MENU_COMBINATION) {
+        const choice = await traditionalCategories(style === MENU_COMBINATION, selectOff);
+        if (choice === null) return;
+        categories = choice;
+        if (style === MENU_COMBINATION && !categories.length) return;
+    } else if (style === MENU_FULL) {
+        categories = await categoryMenu();
+        if (!categories.length) return;
+    }
+    const worn = wornInventory().filter(object => matchesCategories(object, categories));
+    if (!worn.length) {
+        if (style !== MENU_COMBINATION)
+            await plineWithContinuation('There is nothing else you can remove or unwield.');
+        return;
+    }
+    const sorted = sortObjects(worn, { mode: inventorySortMode() });
+    const sections: MultiSelectSection<GameObject>[] = [];
+    for (const oclass of inventoryClassOrder()) {
+        const objects = sorted.filter(object => object.oclass === oclass);
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
+            observeObjectForNaming(object);
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({
+                key: object.invlet ?? '#',
+                groupAccelerator: OBJECT_CLASS_SYMBOLS[object.oclass] ?? '',
+                text: await objectDescription(object, { withPrice: true }),
+                value: object,
+            });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
+    const underlay = snapshotMenuUnderlay();
+    const selected = await showMultiSelectWindow({
+        title: 'What do you want to take off?', sections, returnCounts: true,
+    });
+    restoreMap(underlay);
+    for (const selection of selected) await selectOff(selection.value);
+}
+
+function wornInventory(): GameObject[] {
+    return game.inventory.filter(object => TAKEOFF_ORDER.some(slot => takeoffSlotObject(slot) === object));
+}
+
+function bucCategory(object: GameObject): BucCategory {
+    if (object.oclass === 12) return game.flags.goldX ? 'X' : 'U';
+    return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
+}
+
+function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
+    // Native count_buc() grants priest knowledge before applying is_worn().
+    if (game.urole?.key === 'priest')
+        for (const object of game.inventory) object.bknown = object.oclass !== 12;
+    return new Set(worn.map(bucCategory));
+}
+
+function hasUnpaid(object: GameObject): boolean {
+    return !!object.unpaid || (object.contents || []).some(hasUnpaid);
+}
+
+function matchesCategories(object: GameObject, categories: readonly Category[]): boolean {
+    const classes = categories.filter(category => typeof category === 'number');
+    const statuses = categories.filter(category => category === 'B' || category === 'C' || category === 'U' || category === 'X');
+    // C menu_remarm(): P alone does not disable the all-worn menu.
+    const filters = categories.includes('u') || statuses.length > 0;
+    if (categories.includes('all') && !filters) return true;
+    if (object.oclass === 12 && classes.length > 0) return classes.includes(12);
+    return (!classes.length || classes.includes(object.oclass))
+        && (!categories.includes('u') || hasUnpaid(object))
+        && (!statuses.length || statuses.includes(bucCategory(object)))
+        && (!categories.includes('P') || !!object.pickup_prev);
+}
+
+async function categoryMenu(): Promise<Category[]> {
+    const worn = wornInventory();
+    const classes = inventoryClassOrder().filter(oclass => worn.some(object => object.oclass === oclass));
+    const statuses = wornBucCategories(worn);
+    const unpaid = game.inventory.some(hasUnpaid);
+    if (classes.length === 1 && !unpaid && statuses.size <= 1) {
+        const only = classes[0];
+        return only === undefined ? [] : [only];
+    }
+    const items: MultiSelectItem<Category>[] = [];
+    let letter = 97;
+    if (classes.length > 1) {
+        items.push({
+            key: 'a', text: 'All worn and wielded types', value: 'all',
+            itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        });
+        letter++;
+    }
+    for (const oclass of classes) items.push({
+        key: String.fromCharCode(letter++), groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '',
+        text: objectClassHeading(oclass), value: oclass,
+    });
+    if (unpaid || statuses.size) items.push({ text: '', selectable: false });
+    if (unpaid) items.push({
+        key: 'u', text: 'Unpaid items', value: 'u', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+    });
+    for (const status of ['B', 'C', 'U', 'X'] as const) {
+        if (statuses.has(status)) items.push({
+            key: status, value: status, itemFlags: MENU_ITEMFLAGS_SKIPINVERT, text: status === 'X'
+                ? 'Items of unknown Bless/Curse status'
+                : `Items known to be ${status === 'B' ? 'Blessed' : status === 'C' ? 'Cursed' : 'Uncursed'}`,
+        });
+    }
+    const underlay = snapshotMenuUnderlay();
+    const selected = await showMultiSelectWindow({
+        title: 'What type of things do you want to take off?',
+        sections: [{ items }], omitHeadings: true,
+    });
+    restoreMap(underlay);
+    return selected;
+}
+
+async function traditionalCategories(combo: boolean, selectOff: SelectOff): Promise<Category[] | null> {
+    const worn = wornInventory();
+    const classes = [...new Set(worn.map(object => object.oclass))];
+    const statuses = wornBucCategories(worn);
+    const promptClasses = classes.map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
+    const unpaid = game.inventory.some(hasUnpaid);
+    const picked = game.inventory.some(object => object.pickup_prev);
+    const extras = `${unpaid ? 'u' : ''}${statuses.has('B') ? 'B' : ''}${statuses.has('U') ? 'U' : ''}`
+        + `${statuses.has('C') ? 'C' : ''}${statuses.has('X') ? 'X' : ''}${picked ? 'P' : ''}ai${combo ? '' : 'm'}`;
+    let response: string | null;
+    for (;;) {
+        response = await getLine(`What kinds of thing do you want to take off? [${promptClasses} ${extras}]`,
+            (_character, key) => key >= 32 && key < 127);
+        if (response === null) return null;
+        if (!response.includes('i')) break;
+        const underlay = snapshotMenuUnderlay();
+        const inventory = await selectInventoryObject({ letters: worn.map(object => object.invlet).join('') });
+        restoreMap(underlay);
+        if (inventory.key === 27) return null;
+    }
+    const categories: Category[] = [];
+    const classChoices: number[] = [];
+    let requireUnpaid = false;
+    const all = response.includes('a');
+    const menu = response.includes('m');
+    for (const character of response) {
+        if (' aiAm'.includes(character)) continue;
+        if (character === 'u' || character === 'B' || character === 'C'
+            || character === 'U' || character === 'X' || character === 'P') {
+            // C ggetobj(): the last status selector chooses ckfn. askchain()
+            // runs that predicate before allow_category()'s coin exception.
+            requireUnpaid = character === 'u';
+            categories.push(character);
+            continue;
+        }
+        const oclass = OBJECT_CLASS_SYMBOLS.indexOf(character);
+        if (oclass < 1) {
+            await plineWithContinuation(`You don't have any ${character}'s.`);
+            continue;
+        }
+        const weaponSlots = (['uwep', 'uswapwep', 'uquiver'] as const).map(slot => takeoffSlotObject(slot));
+        const slottedClass = weaponSlots.some(object => object?.oclass === oclass);
+        if (!slottedClass && ![2, 3, 4, 5, 6].includes(oclass)) {
+            await plineWithContinuation('Not applicable.');
+            return null;
+        }
+        const hasCategory = oclass === WEAPON_CLASS
+            ? weaponSlots.some(object => object !== null) : classes.includes(oclass);
+        if (!slottedClass && !hasCategory) {
+            await plineWithContinuation(oclass === 2 ? 'You are not wielding anything.'
+                : oclass === 3 ? 'You are not wearing any armor.'
+                    : oclass === 4 ? 'You are not wearing rings.'
+                        : oclass === 5 ? 'You are not wearing an amulet.'
+                            : 'You are not wearing a blindfold.');
+            return null;
+        }
+        if (!classChoices.includes(oclass)) {
+            classChoices.push(oclass);
+            categories.push(oclass);
+        }
+    }
+    if (menu) return all ? ['all', ...categories] : categories.length ? categories : ['all'];
+    if (combo && !all) return categories;
+    let acceptAll = all;
+    let questioned = false;
+    const sorted = sortObjects(game.inventory, { mode: SORTLOOT_INVLET });
+    const passes = classChoices.length ? classChoices : [null];
+    try {
+        for (const oclass of passes) {
+            bypassObjectList(game.inventory, false);
+            let object;
+            let index = -1;
+            while ((object = nextUnbypassedObject(game.inventory, game, sorted))) {
+                index++;
+                if (!worn.includes(object) || (oclass !== null && object.oclass !== oclass)
+                    || (requireUnpaid && !hasUnpaid(object))
+                    || !matchesCategories(object, categories)) continue;
+                questioned = true;
+                observeObjectForNaming(object);
+                const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
+                const letter = game.flags.fixinv !== false ? object.invlet
+                    : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
+                const answer = acceptAll ? 'y' : await promptYesNoAllQuit(
+                    `${letter} - ${await inventoryItemDescription(object)}?`, 'n');
+                if (answer === 'q') return null;
+                if (answer === 'n') continue;
+                if (answer === 'a') acceptAll = true;
+                await selectOff(object);
+            }
+        }
+    } finally {
+        clearBypasses();
+    }
+    if (!questioned) await plineWithContinuation('No applicable objects.');
+    return null;
+}
+
+function restoreMap(underlay: MenuUnderlay | null): void {
+    game._pending_message = '';
+    game._retained_message = '';
+    restoreMenuUnderlay(underlay);
 }
 
 // C do_wear.c:equip_ok(), inaccessible_equipment(), count_worn_stuff().
@@ -1586,6 +2139,11 @@ export function armorSimpleName(
     return actualName;
 }
 
+// C do_wear.c:fingers_or_gloves().
+export function fingersOrGloves(): string {
+    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
+}
+
 export async function armorOffMessage(object: GameObject, state: GameState = game) {
     if (state.flags?.verbose === false) return '';
     observeObjectForNaming(object, { state });
@@ -2001,6 +2559,162 @@ function learnRing(ring: GameObject, observable: boolean, state: GameState): voi
     }
     if (ring.dknown && objectTypeKnown(ring, state) && OBJECT_CHARGED[ring.otyp])
         ring.known = true;
+}
+
+function currentEyewear(): GameObject | null {
+    return game.ublindf || game.u?.ublindf || null;
+}
+
+function simpleEyewearName(object: GameObject): string {
+    if (isEyesOfTheOverworld(object)) return 'the Eyes of the Overworld';
+    if (object.otyp === LENSES) return 'a pair of lenses';
+    if (object.otyp === TOWEL) return 'a towel';
+    return 'a blindfold';
+}
+
+// C do_wear.c:Blindf_on() installs eyewear with setworn(otmp, W_TOOL) after
+// releasing a wielded or quivered item through remove_worn_item(otmp, FALSE).
+async function equipEyewear(object: GameObject): Promise<void> {
+    await removeWornHeroItem(object, game, { unchainBall: false });
+    await setworn(object, W_TOOL, game);
+}
+
+// C do_wear.c:Blindf_off() clears the slot with setworn(0, otmp->owornmask).
+export async function unequipEyewear(object: GameObject, state: GameState = game): Promise<void> {
+    await setworn(null, W_TOOL, state);
+}
+
+async function announceWorn(object: GameObject): Promise<void> {
+    const message = await objectWearMessage(object);
+    if (message) await pline(message);
+}
+
+// C do_wear.c:already_wearing2(): the "can't wear X because you're wearing
+// Y there already" refusal for occupied eyewear, plus the towel's face
+// message from the same branch of accessory_or_armor_on().
+async function announceOccupiedSlot(object: GameObject, worn: GameObject): Promise<void> {
+    if (worn.otyp === TOWEL) {
+        await pline('Your face is already covered by a towel.');
+    } else if (worn.otyp === BLINDFOLD && object.otyp === LENSES) {
+        await pline(
+            "You can't wear lenses because you're wearing a blindfold there already.",
+        );
+    } else if (worn.otyp === LENSES && object.otyp === BLINDFOLD) {
+        await pline(
+            "You can't wear a blindfold because you're wearing some lenses there already.",
+        );
+    } else if (worn.otyp === LENSES) {
+        await pline('You are already wearing some lenses.');
+    } else {
+        await pline('You are already wearing a blindfold.');
+    }
+}
+
+export function isEyewear(object: Pick<GameObject, 'otyp'> | null | undefined): boolean {
+    return !!object && [BLINDFOLD, LENSES, TOWEL].includes(object.otyp);
+}
+
+// C do_wear.c:Blindf_on(): setworn() runs here, not in the caller — the
+// on_msg(), the blindness transition, and the punished ball-and-chain
+// notice all follow the slot change.
+export async function wearEyewear(object: GameObject | null | undefined, { checkHead = true }: { checkHead?: boolean } = {}): Promise<boolean> {
+    if (!object || !isEyewear(object)) return false;
+    if (checkHead && heroHasNoHead(game)) {
+        await pline(
+            `You have no head to wear ${simpleEyewearName(object)} on.`,
+        );
+        return false;
+    }
+    const worn = currentEyewear();
+    if (worn) {
+        await announceOccupiedSlot(object, worn);
+        return false;
+    }
+
+    const wasBlind = heroIsBlind(game);
+    await equipEyewear(object);
+    const blind = syncBlindness(game);
+    await announceWorn(object);
+    if (!wasBlind && blind) {
+        if (game.flags?.verbose !== false)
+            await plineWithContinuation("You can't see any more.");
+        if (game.uball || game.u.uball)
+            await setBallAndChainFelt(false, game);
+    } else if (wasBlind && !blind) {
+        if (game.u.uroleplay?.blind) {
+            await plineWithContinuation(
+                'For the first time in your life, you can see!',
+            );
+            game.u.uroleplay.blind = false;
+        } else {
+            await plineWithContinuation('You can see!');
+        }
+    }
+    if (wasBlind !== blind) await toggleBlindness(game);
+    return true;
+}
+
+// C do_wear.c:Blindf_off(): clear the eyewear slot, then report the
+// blindness transition — "still cannot see", the gulp check for regaining
+// sight, and the ball-and-chain notice when newly blinded.
+// setworn(0) is unequipEyewear() below.
+export async function removeEyewear(object: GameObject | null = null, {
+    state = game, publish = plineWithContinuation,
+}: { state?: GameState; publish?: MessagePublisher } = {}): Promise<boolean> {
+    const noOffMessage = !object;
+    const worn = state.ublindf || state.u.ublindf;
+    object ||= worn ?? null;
+    if (!object || worn !== object) return false;
+    const wasBlind = heroIsBlind(state);
+    await unequipEyewear(object, state);
+    const blind = syncBlindness(state);
+    if (!noOffMessage && state.flags?.verbose !== false)
+        await publish(await armorOffMessage(object, state));
+
+    let changed = false;
+    if (blind) {
+        if (!wasBlind) {
+            await publish("You can't see anything now!");
+            if (state.uball || state.u.uball)
+                await setBallAndChainFelt(false, state);
+            changed = true;
+        } else if (object.otyp !== LENSES) {
+            await publish('You still cannot see.');
+        }
+    } else if (wasBlind) {
+        const gulp = await gulpBlindnessCheck({ state, publish });
+        if (gulp.died) return true;
+        if (!gulp.triggered) {
+            await publish('You can see again.');
+            changed = true;
+        }
+    }
+    if (changed) await toggleBlindness(state);
+    return true;
+}
+
+export async function applyEyewear(object: GameObject): Promise<boolean> {
+    const worn = currentEyewear();
+    if (worn === object) {
+        // apply.c:doapply()'s BLINDFOLD/LENSES branch runs do_wear.c
+        // cursed() before Blindf_off(): a cursed worn item refuses with
+        // "You can't.  It is cursed." and reveals its BUC.
+        if (object.cursed) {
+            const plural = object.otyp === LENSES || (object.quan ?? 1) > 1;
+            await pline(`You can't.  ${plural ? 'They are' : 'It is'} cursed.`);
+            object.bknown = true;
+            return false;
+        }
+        return removeEyewear(object);
+    }
+    if (!worn) return wearEyewear(object, { checkHead: false });
+
+    const description = worn.otyp === TOWEL
+        ? 'covered by a towel'
+        : worn.otyp === BLINDFOLD
+            ? 'wearing a blindfold' : 'wearing lenses';
+    await pline(`You are already ${description}.`);
+    return false;
 }
 
 // C do_wear.c:glibr(). Each turn, slippery fingers shed uncursed rings and

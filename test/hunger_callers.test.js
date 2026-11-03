@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, FAINTED, HUNGRY, NOT_HUNGRY, SATIATED, WEAK } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { wearEyewear } from '../js/eyewear.js';
+import { wearEyewear } from '../js/do_wear.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { startHeroVomiting } from '../js/potion.js';

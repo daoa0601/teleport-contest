@@ -1,10 +1,9 @@
 // Clear every equipment slot an item still occupies when it leaves the hero
 // or changes type (C refs: worn.c:setnotworn(), steal.c:remove_worn_item()).
 // Command messages belong to the caller.
-import { clearHeroAccessory, removeHeroAccessory } from './do_wear.js';
+import { clearHeroAccessory, removeHeroAccessory, removeEyewear, unequipEyewear } from './do_wear.js';
 import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './do_wear.js';
 import { I_SPECIAL, W_BALL, W_CHAIN } from './const.js';
-import { removeEyewear, unequipEyewear } from './eyewear.js';
 import { game } from './gstate.js';
 import { syncBlindness } from './senses.js';
 import { uqwepgone, uswapwepgone, uwepgone } from './wield.js';

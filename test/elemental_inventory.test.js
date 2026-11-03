@@ -1,10 +1,9 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { wearHeroAccessory } from '../js/do_wear.js';
+import { wearHeroAccessory, wearEyewear } from '../js/do_wear.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { PIT, OBJECT_TIMER_KIND } from '../js/const.js';
-import { wearEyewear } from '../js/eyewear.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon } from '../js/wield.js';

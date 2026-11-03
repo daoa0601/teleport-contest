@@ -34,7 +34,7 @@ import {
     SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
 } from './const.js';
 
-import { simpleArmorName } from './do_wear.js';
+import { simpleArmorName, fingersOrGloves } from './do_wear.js';
 
 import { SHIELD_OF_REFLECTION } from './object_data.js';
 import {
@@ -52,7 +52,6 @@ import { heroFormSticks } from './polyself.js';
 import { monsterSaddle } from './steed.js';
 import { simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { heroLegName, monsterLegName } from './body_parts.js';
-import { fingersOrGloves } from './fountain.js';
 import { surfaceName } from './terrain_name.js';
 import { trapName } from './trap.js';
 import { STRAT_WAITMASK } from './const.js';

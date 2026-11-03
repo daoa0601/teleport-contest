@@ -14,7 +14,7 @@ import { EXPENSIVE_CAMERA, TOWEL, BLINDFOLD, LENSES, TWO_HANDED_SWORD, LEATHER_G
 import { seeMonsterCloseup } from '../js/mon.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { flashBurn } from '../js/zap.js';
-import { wearEyewear } from '../js/eyewear.js';
+import { wearEyewear } from '../js/do_wear.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { initRng } from '../js/rng.js';
 import { canSeeMonster, newsym } from '../js/display.js';

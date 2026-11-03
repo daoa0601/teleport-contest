@@ -6,7 +6,7 @@ import { exerciseAttribute } from './attrib.js';
 import { A_CON, DISMOUNT_THROWN, IS_ALTAR, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { removeEyewear } from './eyewear.js';
+import { removeEyewear } from './do_wear.js';
 import { game } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHatesSilver } from './polyself.js';

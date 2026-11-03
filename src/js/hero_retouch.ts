@@ -11,7 +11,7 @@ import { exerciseAttribute } from './attrib.js';
 import { A_CON, DISMOUNT_THROWN, IS_ALTAR, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
-import { removeEyewear } from './eyewear.js';
+import { removeEyewear } from './do_wear.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
