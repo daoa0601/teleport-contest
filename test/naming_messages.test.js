@@ -35,7 +35,7 @@ import { initRng } from '../js/rng.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap } from '../js/trap.js';
 import { chargeAlteredUnpaidObject } from '../js/shk.js';
 import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap } from '../js/trap.js';
-import { bookCursed, studyBook } from '../js/spellbook_study.js';
+import { bookCursed, studyBook } from '../js/spell.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
 import { turnObjectWithUndeadMagic } from '../js/zap.js';

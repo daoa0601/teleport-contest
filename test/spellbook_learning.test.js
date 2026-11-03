@@ -15,7 +15,7 @@ import { wearEyewear } from '../js/do_wear.js';
 import { SPE_LIGHT, SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_BLANK_PAPER, LENSES, GOLD_PIECE, SACK, OBJECT_DELAY } from '../js/object_data.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { currentSpellKnowledge } from '../js/spell.js';
-import { studyBook, continueSpellbookStudy, cursedBook } from '../js/spellbook_study.js';
+import { studyBook, continueSpellbookStudy, cursedBook } from '../js/spell.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';

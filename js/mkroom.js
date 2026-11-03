@@ -4,7 +4,7 @@
 // morguemon(), antholemon(), courtmon(), squadmon(), nexttodoor(),
 // shrine_pos(); plus the coordinate selectors somexy()/somexyspace() and
 // mklev.c occupied() that share this file's room table.
-import { game, requireGameLevel } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isPoolOrLavaAt } from './dbridge.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { CmapSymbol } from './glyph_numbers.js';
@@ -13,18 +13,20 @@ import { isok } from './cmd.js';
 import { CORPSE, CHEST, GOLD_PIECE, LARGE_BOX, LUMP_OF_ROYAL_JELLY, MACE, STATUE, } from './object_data.js';
 import { RANDOM_SHOP_TYPES } from './shknam.js';
 import { level_difficulty, inducedAlignment } from './dungeon.js';
-import { makemon, mkclass } from './makemon.js';
+import { makemon, makemonAt, mkclass } from './makemon.js';
 import { createToptenObject, mkgold, mkobj, mkobj_at, mksobj, mksobj_at, } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './makemon.js';
 import { monsterAtPosition } from './steed.js';
+import { reviveCorpseImmediately } from './corpse_revival.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { deleteEngravingAt } from './engrave.js';
 import { normalDemon } from './minion.js';
 import { impossible } from './diagnostics.js';
 import { addToContainer } from './sp_lev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
-import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, make_grave, topologize, } from './mklev.js';
+import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, findMonsterNearPosition, make_grave, topologize, } from './mklev.js';
 import { isRoom } from './map_types.js';
 import { objectWeight } from './mkobj.js';
 // Species constants (normally from monst.js, not in contest template)
@@ -579,6 +581,27 @@ export async function fillCourtRoom(room) {
     chest.owt = objectWeight(chest);
     chest.spe = 2;
     level.flags.has_court = true;
+}
+export async function makeUndeadNear(x, y, { state = game, reviveCorpses = false, flags = 0 } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    let count = Math.trunc((level_difficulty() + 1) / 10) + rnd(5);
+    while (count--) {
+        const species = morgueMonsterType();
+        if (species == null || species < 0)
+            continue;
+        const position = findMonsterNearPosition(species, x, y, { state });
+        if (!position)
+            continue;
+        const corpse = reviveCorpses
+            ? state.level.objects[position.x]?.[position.y]?.find(object => object.otyp === CORPSE) : undefined;
+        const revived = corpse ? await reviveCorpseImmediately(corpse, state, { announce: false }) : null;
+        for (const message of revived?.messages || [])
+            await pline(message);
+        if (revived?.kind !== 'revived')
+            await makemonAt(species, position.x, position.y, flags);
+    }
+    state.level.flags.graveyard = true;
 }
 // C mkroom.c:morguemon().
 export function morgueMonsterType() {

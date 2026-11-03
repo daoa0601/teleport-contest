@@ -2181,10 +2181,10 @@ src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	unproved
 src/js/trap.ts	beginMonsterSleepGasTrap	rollOne	"[""25""]"	constant
 src/js/special_location.ts	getLocation	rn2	"[""sx""]"	unproved
 src/js/special_location.ts	getLocation	rn2	"[""sy""]"	unproved
-src/js/special_spellbooks.ts	invokeBook	d	"[""2"", ""6""]"	constant
-src/js/special_spellbooks.ts	makeUndeadNear	rnd	"[""5""]"	constant
-src/js/special_spellbooks.ts	raiseDead	rn2	"[""3""]"	constant
-src/js/special_spellbooks.ts	readBookOfDead	rn2	"[""messages.length""]"	constant
+src/js/spell.ts	invokeBook	d	"[""2"", ""6""]"	constant
+src/js/mkroom.ts	makeUndeadNear	rnd	"[""5""]"	constant
+src/js/spell.ts	raiseDead	rn2	"[""3""]"	constant
+src/js/spell.ts	readBookOfDead	rn2	"[""messages.length""]"	constant
 src/js/spell.ts	castChainLightning	rn2Display	"[""6""]"	constant
 src/js/spell.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
 src/js/spell.ts	castSkilledElementalSpell	rnd	"[""3""]"	constant
@@ -2198,21 +2198,21 @@ src/js/spell.ts	loseHeroSpellMemory	rn2	"[""spells.length + 1""]"	constant
 src/js/spell.ts	loseHeroSpellMemory	rn2	"[""spells.length - index""]"	unproved
 src/js/spell.ts	loseHeroSpellMemory	rnd	"[""forgotten""]"	unproved
 src/js/spell.ts	loseHeroSpellMemory	rnl	"[""7""]"	constant
-src/js/spellbook_study.ts	confusedBook	rn2	"[""3""]"	constant
-src/js/spellbook_study.ts	continueSpellbookStudy	rn2	"[""2""]"	constant
-src/js/spellbook_study.ts	continueSpellbookStudy	rn2	"[""studied""]"	guarded
-src/js/spellbook_study.ts	cursedBook	rn1	"[""100"", ""250""]"	constant
-src/js/spellbook_study.ts	cursedBook	rn1	"[""2"", ""1""]"	constant
-src/js/spellbook_study.ts	cursedBook	rn1	"[""4"", ""3""]"	constant
-src/js/spellbook_study.ts	cursedBook	rn1	"[""7"", ""16""]"	constant
-src/js/spellbook_study.ts	cursedBook	rn2	"[""requireObjectData(OBJECT_SPELL_LEVEL, book.otyp)""]"	unproved
-src/js/spellbook_study.ts	cursedBook	rnd	"[""10""]"	constant
-src/js/spellbook_study.ts	cursedBook	rnd	"[""resisted ? 6 : 10""]"	constant
-src/js/spellbook_study.ts	studyBook	rn2	"[""3""]"	constant
-src/js/spellbook_study.ts	studyBook	rnd	"[""2 * level""]"	unproved
-src/js/spellbook_study.ts	studyBook	rnd	"[""20""]"	constant
-src/js/spellbook_study.ts	studyBook	rnd	"[""25""]"	constant
-src/js/spellbook_study.ts	studyBook	rnd	"[""level""]"	unproved
+src/js/spell.ts	confusedBook	rn2	"[""3""]"	constant
+src/js/spell.ts	continueSpellbookStudy	rn2	"[""2""]"	constant
+src/js/spell.ts	continueSpellbookStudy	rn2	"[""studied""]"	guarded
+src/js/spell.ts	cursedBook	rn1	"[""100"", ""250""]"	constant
+src/js/spell.ts	cursedBook	rn1	"[""2"", ""1""]"	constant
+src/js/spell.ts	cursedBook	rn1	"[""4"", ""3""]"	constant
+src/js/spell.ts	cursedBook	rn1	"[""7"", ""16""]"	constant
+src/js/spell.ts	cursedBook	rn2	"[""requireObjectData(OBJECT_SPELL_LEVEL, book.otyp)""]"	unproved
+src/js/spell.ts	cursedBook	rnd	"[""10""]"	constant
+src/js/spell.ts	cursedBook	rnd	"[""resisted ? 6 : 10""]"	constant
+src/js/spell.ts	studyBook	rn2	"[""3""]"	constant
+src/js/spell.ts	studyBook	rnd	"[""2 * level""]"	unproved
+src/js/spell.ts	studyBook	rnd	"[""20""]"	constant
+src/js/spell.ts	studyBook	rnd	"[""25""]"	constant
+src/js/spell.ts	studyBook	rnd	"[""level""]"	unproved
 src/js/startup.ts	initializeSourceStartup	rn2	"[""10""]"	constant
 src/js/startup.ts	initializeSourceStartup	rn2	"[""13""]"	constant
 src/js/startup.ts	initializeSourceStartup	rnd	"[""2""]"	constant

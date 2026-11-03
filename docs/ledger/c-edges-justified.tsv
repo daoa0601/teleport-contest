@@ -1682,11 +1682,11 @@ can_center_spell_location	distmin	inlined	chooseSpellCenter uses max of absolute
 clear_conjoined_pits	t_at	inlined	clearPitConnections searches level.traps for each neighboring pit (trap.ts)
 count_surround_traps	t_at	inlined	warnWithMasterKey searches level.traps at each adjacent position (artifacts.ts)
 create_particular_parse	digit	inlined	parseCreationRequest recognizes the leading monster count with a decimal-digit regular expression (read.ts)
-deadbook	discover_object	inlined	readBookOfDead calls learnObjectType before applying the book effect (special_spellbooks.ts)
-deadbook	iter_mons	inlined	readBookOfDead visits living monsters in monstersInFmonOrder (special_spellbooks.ts)
-deadbook	mkinvokearea	inlined	invokeBook calls makeInvocationArea for prepared, uncursed invocation relics (special_spellbooks.ts, invocation_area.ts)
-deadbook_pacify_undead	dist2	inlined	pacifyUndead computes squared coordinate offsets before testing distance below four (special_spellbooks.ts)
-deadbook_pacify_undead	sgn	inlined	pacifyUndead compares Math.sign of monster and hero alignment (special_spellbooks.ts)
+deadbook	discover_object	inlined	readBookOfDead calls learnObjectType before applying the book effect (spell.ts)
+deadbook	iter_mons	inlined	readBookOfDead visits living monsters in monstersInFmonOrder (spell.ts)
+deadbook	mkinvokearea	inlined	invokeBook calls makeInvocationArea for prepared, uncursed invocation relics (spell.ts, invocation_area.ts)
+deadbook_pacify_undead	dist2	inlined	pacifyUndead computes squared coordinate offsets before testing distance below four (spell.ts)
+deadbook_pacify_undead	sgn	inlined	pacifyUndead compares Math.sign of monster and hero alignment (spell.ts)
 dopramulet	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying the worn item (inventory_reports.ts)
 doprarm	obj_to_let	inlined	reportSubset reassigns letters when fixinv is off before displaying armor (inventory_reports.ts)
 doprarm	wearing_armor	inlined	inventoryReport collects the seven armor slots and tests whether that list is empty (inventory_reports.ts)
@@ -1717,7 +1717,7 @@ hole_destination	dng_bottom	inlined	clampHoleDestination applies the quest-locat
 in_trouble	unchanger	inlined	worstPrayerTrouble checks the worn amulet for cursed AMULET_OF_UNCHANGING before treating unusable hands as curable (prayer_trouble.ts)
 insufficient_funds	money_cnt	inlined	checkPurchaseFunds obtains the carried coin quantity with heroGoldAmount (shk.ts)
 invoke_charge_obj	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body
-learn	discover_object	inlined	continueSpellbookStudy calls learnObjectType when study identifies the book (spellbook_study.ts)
+learn	discover_object	inlined	continueSpellbookStudy calls learnObjectType when study identifies the book (spell.ts)
 learn	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body
 learnscrolltyp	discover_object	inlined	learnScrollType calls learnObjectType before granting discovery experience (read.ts)
 make_glib	update_inventory	n/a	The pinned TTY build has no permanent inventory window; tty_update_inventory has no active body

@@ -5,42 +5,64 @@ import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
 import { promptKey } from './tty_prompts.js';
 import { promptDirection } from './cmd.js';
-import { A_INT, A_STR, A_WIS, CLOUD, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
+import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroHeadName } from './body_parts.js';
+import { heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroSpineName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
 import { zapHeroWithObject } from './zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
 import { mksobj } from './mkobj.js';
-import { deleteObject } from './shk.js';
+import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
 import { findArmorClass } from './do_wear.js';
 import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { restoreCannedCommandTail } from './cmd.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, zapdir_to_glyph, } from './display.js';
-import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
+import { canSeeMonster, canSpotMonster, flush_screen, shieldeff, map_invisible, zapdir_to_glyph, } from './display.js';
+import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero } from './potion.js';
 import { heroIsSick } from './potion.js';
-import { makeConfused, makeStunned } from './potion.js';
+import { makeBlinded, makeConfused, makeStunned } from './potion.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { formatFeltMessage, heroCanChant } from './hero_speech.js';
+import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { spendHeroNutrition } from './eat.js';
 import { takeCommandResponse } from './input.js';
-import { wakeMonster } from './mon.js';
+import { wakeMonster, monstersInFmonOrder } from './mon.js';
 import { monsterHasShockResistance } from './mondata.js';
-import { MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsWhirly, } from './monster_data.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { MONSTER_ALIGNMENT, MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, requireMonsterData, } from './monster_data.js';
+import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectIsMetallic } from './object_properties.js';
 import { walkPathCells } from './path_walk.js';
 import { applyPotionEffect } from './potion.js';
 import { propertyIsActive } from './properties.js';
-import { paintRayCell } from './zap.js';
-import { rn2, rnd, rnl, rn2Display } from './rng.js';
+import { paintRayCell, turnCarriedObjects } from './zap.js';
+import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
+import { addExperience, checkExperienceLevel } from './exper.js';
+import { takeHeroGold } from './hero_gold.js';
+import { recordGameLogEvent, LL_CONDUCT } from './gamelog.js';
+import { recordAchievement } from './insight.js';
+import { makeInvocationArea } from './invocation_area.js';
+import { consumeInventoryItem } from './invent.js';
+import { tryCallObjectType } from './do.js';
+import { learnObjectType, observeObject } from './o_init.js';
+import { erodeObject } from './trap.js';
+import { putHeroToSleep } from './timeout.js';
+import { stopHeroOccupation } from './occupation.js';
+import { promptYesNo } from './query.js';
+import { teleportHero, askTeleportDestination } from './teleport.js';
+import { rndcurse } from './throne.js';
+import { aggravateMonsters } from './wizard.js';
+import { makeMonsterFlee } from './monmove.js';
+import { tameMonster } from './dog.js';
+import { readNovelTribute } from './novel_tribute.js';
+import { makemonAt, setMonsterMalign } from './makemon.js';
+import { makeUndeadNear } from './mkroom.js';
+import { plineWithContinuation as pline } from './pline.js';
+import { poisonHeroStrengthAndHp } from './poison.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroIsSliming } from './potion.js';
 import { setHeroSlimingTimeout } from './potion.js';
@@ -55,8 +77,8 @@ import { hitMonsterWithRay, adjustSpellDamage } from './zap.js';
 import { heroHasFreeHand } from './engrave.js';
 import { applyScrollEffects } from './read.js';
 import { applyWandEffect } from './zap.js';
-import { CORNUTHAUM, OBJECT_DIR, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, QUARTERSTAFF, ROBE, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
-import { loseHeroHp, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, QUARTERSTAFF, requireObjectData, ROBE, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
+import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
 import { objectWeight } from './mkobj.js';
 export function knownSpell(otyp, state = game) {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
@@ -105,6 +127,427 @@ export async function learnInitialSpell(book, state = game) {
         await impossible(`Spell ${OBJECT_NAMES[book.otyp]} already known.`, { state });
     else
         spells.push(createMemorizedSpell(book.otyp, 20000, state));
+}
+const MAX_SPELLS = 52;
+const MAX_STUDIES = 3;
+export async function cursedBook(book, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    let destroyed = false;
+    switch (rn2(requireObjectData(OBJECT_SPELL_LEVEL, book.otyp))) {
+        case 0:
+            await pline(formatFeltMessage('a wrenching sensation.', state));
+            await teleportHero({ chooseDestination: askTeleportDestination });
+            break;
+        case 1:
+            await pline(formatFeltMessage('threatened.', state));
+            aggravateMonsters(state);
+            break;
+        case 2:
+            await makeBlinded((state.u.blindTurns || 0) + rn1(100, 250), { state });
+            break;
+        case 3:
+            await takeHeroGold(state);
+            break;
+        case 4:
+            await pline('These runes were just too much to comprehend.');
+            await makeConfused((state.u.confusionTurns || 0) + rn1(7, 16), { state, talk: false });
+            break;
+        case 5: {
+            await pline('The book was coated with contact poison!');
+            const gloves = state.uarmg || state.u.uarmg;
+            if (gloves) {
+                await erodeObject(gloves, 'corrosion', { state, verbose: true, grease: true, displayName: 'gloves' });
+                break;
+            }
+            const inUse = book.in_use;
+            book.in_use = false;
+            const resisted = !!state.u.poisonResistance || propertyIsActive('poisonResistance', state);
+            const died = await poisonHeroStrengthAndHp(resisted ? rn1(2, 1) : rn1(4, 3), rnd(resisted ? 6 : 10), 'contact-poisoned spellbook', { state, deathCause: 'killed by a contact-poisoned spellbook' });
+            if (!died) {
+                if (inUse === undefined)
+                    delete book.in_use;
+                else
+                    book.in_use = inUse;
+            }
+            break;
+        }
+        case 6:
+            if (state.u.antimagic || propertyIsActive('antimagic', state)) {
+                await shieldeff(state.u.ux, state.u.uy);
+                await pline('The book radiates explosive energy, but you are unharmed!');
+            }
+            else {
+                await pline(`As you read the book, it radiates explosive energy in your ${heroFaceName(state)}!`);
+                const damage = 2 * rnd(10) + 5;
+                await loseHeroHp(state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exploding rune', { state });
+            }
+            destroyed = true;
+            break;
+        default:
+            await rndcurse();
+    }
+    return { destroyed, heroDied: !!state.program_state.gameover };
+}
+export async function confusedBook(book, { state = game } = {}) {
+    if (!rn2(3) && book.otyp !== SPE_BOOK_OF_THE_DEAD) {
+        book.in_use = true;
+        await pline('Being confused you have difficulties in controlling your actions.');
+        await flushPendingTopline();
+        clearMessageWindow();
+        await pline('You accidentally tear the spellbook to pieces.');
+        await tryCallObjectType(book, state);
+        await consumeInventoryItem(book, state);
+        return true;
+    }
+    await pline(`You find yourself reading the ${book === studyState(state).book ? 'next' : 'first'} line over and over again.`);
+    return false;
+}
+// C spell.c:deadbook().
+export async function readBookOfDead(book, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    await pline('You turn the pages of the Book of the Dead...');
+    learnObjectType(book.otyp, state);
+    observeObject(book, state);
+    book.known = true;
+    if (isInvocationPosition(state.u.ux, state.u.uy, state) && !heroIsOnStairs(state)) {
+        await invokeBook(book, state);
+    }
+    else if (book.cursed) {
+        await raiseDead(state);
+    }
+    else if (book.blessed) {
+        for (const monster of monstersInFmonOrder(state.level.monsters)) {
+            if (!monster.dead && monster.mhp > 0)
+                await pacifyUndead(monster, state);
+        }
+    }
+    else {
+        const messages = [
+            'Your ancestors are annoyed with you!',
+            'The headstones in the cemetery begin to move!',
+            'Oh my!  Your name appears in the book!',
+        ];
+        const index = rn2(messages.length);
+        const message = messages[index];
+        if (message === undefined)
+            throw new RangeError(`Unknown Book of the Dead message index ${index}`);
+        await pline(message);
+    }
+    return { heroDied: !!state.program_state.gameover };
+}
+async function invokeBook(book, state) {
+    if (book.cursed) {
+        await pline(heroIsBlind(state) ? 'The Book seems to be ignoring you!'
+            : "The runes appear scrambled.  You can't read them!");
+        return;
+    }
+    if (!state.u.uhave.bell || !state.u.uhave.menorah) {
+        await pline(`A chill runs down your ${heroSpineName(state)}.`);
+        if (!state.u.uhave.bell)
+            await publishHeardMessage('a faint chime...', pline, state);
+        if (!state.u.uhave.menorah)
+            await pline("Vlad's doppelganger is amused.");
+        return;
+    }
+    let candles = false, bell = false, cursed = false;
+    for (const object of state.inventory) {
+        const preparedCandles = object.otyp === CANDELABRUM_OF_INVOCATION
+            && object.spe === 7 && !!object.lamplit;
+        const preparedBell = object.otyp === BELL_OF_OPENING && state.moves - object.age < 5;
+        if (preparedCandles || preparedBell) {
+            if (object.cursed)
+                cursed = true;
+            else {
+                candles ||= preparedCandles;
+                bell ||= preparedBell;
+            }
+        }
+    }
+    if (cursed) {
+        await pline('The invocation fails!');
+        await pline('At least one of your relics is cursed...');
+    }
+    else if (candles && bell) {
+        const soon = d(2, 6);
+        await makeInvocationArea({ state });
+        state.u.uevent ||= {};
+        state.u.uevent.invoked = 1;
+        recordAchievement(state, ACH_INVK);
+        state.u.uevent.udemigod = 1;
+        if (!state.u.udg_cnt || state.u.udg_cnt > soon)
+            state.u.udg_cnt = soon;
+    }
+    else {
+        await pline('You have a feeling that something is amiss...');
+        await raiseDead(state);
+    }
+}
+async function raiseDead(state) {
+    await pline('You raised the dead!');
+    if (!rn2(3)) {
+        const enemy = await makemonAt(MONSTER_NAME.indexOf('master lich'), state.u.ux, state.u.uy, NO_MINVENT)
+            || await makemonAt(MONSTER_NAME.indexOf('nalfeshnee'), state.u.ux, state.u.uy, NO_MINVENT);
+        if (enemy) {
+            enemy.mpeaceful = 0;
+            setMonsterMalign(enemy, state);
+        }
+    }
+    await turnCarriedObjects(state.inventory, state);
+    await makeUndeadNear(state.u.ux, state.u.uy, { state, reviveCorpses: true, flags: NO_MINVENT });
+}
+// C spell.c:deadbook_pacify_undead().
+async function pacifyUndead(monster, state) {
+    if (!(monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster))
+        || !cansee(monster.mx, monster.my))
+        return;
+    monster.mpeaceful = 1;
+    const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
+    if (Math.sign(requireMonsterData(MONSTER_ALIGNMENT, monster.mnum)) === Math.sign(state.u.ualign.type) && distance < 4) {
+        if (monster.mtame) {
+            if (monster.mtame < 20)
+                monster.mtame++;
+        }
+        else
+            await tameMonster(monster, null, { state, announce: true });
+    }
+    else
+        await makeMonsterFlee(monster, { state, first: false });
+}
+export async function bookCursed(book, { state = game } = {}) {
+    if (!book.cursed || (state._helplessTurns ?? 0) > 0 || (state.multi || 0) < 0
+        || state._occupation?.key !== 'study-book' || state.context.spbook?.book !== book)
+        return;
+    await pline(`${definiteObjectAction(book, 'slam', state)} shut!`);
+    book.bknown = true;
+    await stopHeroOccupation(state);
+}
+// C spell.c:learn().
+export async function continueSpellbookStudy({ state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const study = studyState(state);
+    const book = study.book;
+    state.context.move = 1;
+    if (!book)
+        return false;
+    if (study.delay && (state.ublindf || state.u.ublindf)?.otyp === LENSES && rn2(2))
+        study.delay++;
+    if ((state.u.confusionTurns ?? 0) > 0) {
+        await confusedBook(book, { state });
+        study.book = null;
+        study.o_id = 0;
+        delayReading(study.delay, state);
+        study.delay = 0;
+        return false;
+    }
+    if (study.delay) {
+        study.delay++;
+        return true;
+    }
+    exerciseWisdom(true, state);
+    if (book.otyp === SPE_BOOK_OF_THE_DEAD) {
+        await readBookOfDead(book, { state });
+        return false;
+    }
+    const spells = state.spells;
+    let index = spells.findIndex(spell => spell.otyp === book.otyp);
+    const alreadyKnown = index >= 0;
+    if (!alreadyKnown)
+        index = spells.length;
+    let type = book.otyp;
+    if (index >= MAX_SPELLS)
+        await impossible('Too many spells memorized!', { state });
+    else {
+        const quoted = typeKnown(type, state) ? `"${OBJECT_NAMES[type]}"` : `the "${OBJECT_NAMES[type]}" spell`;
+        const studied = book.spestudied || 0;
+        const remembered = spells[index];
+        if (studied >= (alreadyKnown ? MAX_STUDIES + 1 : MAX_STUDIES)) {
+            await pline(alreadyKnown ? 'This spellbook is too faint to be read any more.'
+                : 'This spellbook is too faint to read even once.');
+            book.otyp = type = SPE_BLANK_PAPER;
+            book.spestudied = rn2(studied);
+        }
+        else if (remembered) {
+            await pline(`Your knowledge of ${quoted} is ${currentSpellKnowledge(remembered, state) ? 'keener' : 'restored'}.`);
+            remembered.know = 20001 + Math.max(0, (state.moves || 1) - 1);
+            book.spestudied = (book.spestudied || 0) + 1;
+            exerciseWisdom(true, state);
+        }
+        else {
+            spells.push(createMemorizedSpell(type, 20001, state));
+            book.spestudied = (book.spestudied || 0) + 1;
+            if (!index)
+                await pline(`You learn ${quoted}.`);
+            else
+                await pline(`You add ${quoted} to your repertoire, as '${index < 26 ? String.fromCharCode(97 + index) : String.fromCharCode(65 + index - 26)}'.`);
+        }
+        learnObjectType(type, state);
+    }
+    if (book.cursed) {
+        const curse = await cursedBook(book, { state });
+        if (curse.heroDied)
+            return false;
+        if (curse.destroyed) {
+            await consumeInventoryItem(book, state);
+            bookDisappears(book, { state });
+            return false;
+        }
+    }
+    await chargeUnpaidUsage(book, { state });
+    study.book = null;
+    study.o_id = 0;
+    return false;
+}
+export async function studyBook(book, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const study = studyState(state);
+    const type = book.otyp;
+    const level = requireObjectData(OBJECT_SPELL_LEVEL, type);
+    const confused = (state.u.confusionTurns ?? 0) > 0;
+    const appearance = state.objectDescriptions?.[type] ?? OBJECT_DESCRIPTIONS[type];
+    if (!confused && !propertyIsActive('sleepResistance', state)
+        && !state.u.sleepResistance && appearance === 'dull') {
+        let drowsiness = rnd(25) - currentAttribute(A_WIS, state);
+        if (study.delay && study.book === book)
+            drowsiness -= rnd(level);
+        if (drowsiness > 0) {
+            const eyes = heroEyeCount(state) > 1 ? makePlural(heroEyeName(state)) : heroEyeName(state);
+            await pline(`This book is so dull that you can't keep your ${eyes} open.`);
+            await putHeroToSleep(drowsiness + rnd(2 * level), { state });
+            return outcome(true, state);
+        }
+    }
+    if (study.delay && !confused && study.book === book && type !== SPE_BLANK_PAPER) {
+        await pline(`You continue your efforts to ${type === SPE_NOVEL ? 'read the novel' : 'memorize the spell'}.`);
+    }
+    else {
+        if (type === SPE_BLANK_PAPER) {
+            await pline('This spellbook is all blank.');
+            learnObjectType(type, state);
+            return outcome(true, state);
+        }
+        if (type === SPE_NOVEL) {
+            return readNovel(book, { state });
+        }
+        const delay = readingDelay(type);
+        if (delay === null) {
+            await impossible(`Unknown spellbook level ${level}, book ${type};`, { state });
+            study.delay = 0;
+            return outcome(false, state);
+        }
+        study.delay = delay;
+        const remembered = state.spells.find(spell => spell.otyp === type);
+        if (remembered && currentSpellKnowledge(remembered, state) > 2000) {
+            await pline(`You know "${OBJECT_NAMES[type]}" quite well already.`);
+            learnObjectType(type, state);
+            if (await promptYesNo('Refresh your memory anyway?', 'n') !== 'y')
+                return outcome(false, state);
+        }
+        book.in_use = true;
+        let tooHard = false;
+        if (!book.blessed && type !== SPE_BOOK_OF_THE_DEAD) {
+            if (book.cursed)
+                tooHard = true;
+            else {
+                const lenses = (state.ublindf || state.u.ublindf)?.otyp === LENSES;
+                const ability = currentAttribute(A_INT, state) + 4
+                    + Math.trunc(state.u.ulevel / 2) - 2 * level + (lenses ? 2 : 0);
+                if (state.urole.key === 'wizard' && ability < 20 && !confused) {
+                    const question = `This spellbook is ${ability < 12 ? 'very ' : ''}difficult to comprehend.  Continue?`;
+                    if (await promptYesNo(question, 'n') !== 'y') {
+                        book.in_use = false;
+                        return outcome(true, state);
+                    }
+                }
+                tooHard = rnd(20) > ability;
+            }
+        }
+        if (tooHard) {
+            const curse = await cursedBook(book, { state });
+            if (curse.heroDied)
+                return outcome(true, state);
+            delayReading(study.delay, state);
+            study.delay = 0;
+            if (curse.destroyed || !rn2(3)) {
+                if (!curse.destroyed)
+                    await pline('The spellbook crumbles to dust!');
+                await tryCallObjectType(book, state);
+                await consumeInventoryItem(book, state);
+            }
+            else
+                book.in_use = false;
+            return outcome(true, state);
+        }
+        if (confused) {
+            const destroyed = await confusedBook(book, { state });
+            if (!destroyed)
+                book.in_use = false;
+            delayReading(study.delay, state);
+            study.delay = 0;
+            return outcome(true, state);
+        }
+        book.in_use = false;
+        await pline(`You begin to ${type === SPE_BOOK_OF_THE_DEAD ? 'recite' : 'memorize'} the runes.`);
+    }
+    study.book = book;
+    study.o_id = book.o_id;
+    state._occupation = { key: 'study-book', text: 'studying' };
+    return outcome(true, state);
+}
+export async function readNovel(book, { state = game } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const title = novelTitle(book);
+    if (await readNovelTribute(book, title, state)) {
+        if (!state.u.uconduct.literate)
+            recordGameLogEvent(`became literate by reading ${title}`, { state, flags: LL_CONDUCT });
+        state.u.uconduct.literate = (state.u.uconduct.literate ?? 0) + 1;
+        await chargeUnpaidUsage(book, { state });
+        learnObjectType(book.otyp, state);
+        state.u.uevent ||= {};
+        if (!state.u.uevent.read_tribute) {
+            recordAchievement(state, ACH_NOVL);
+            addExperience(20, 0, state);
+            await checkExperienceLevel();
+            state.u.uevent.read_tribute = 1;
+        }
+    }
+    return { spentTime: true, heroDied: !!state.program_state.gameover };
+}
+export function bookDisappears(book, { state = game } = {}) {
+    const study = state.context?.spbook;
+    if (study?.book === book) {
+        study.book = null;
+        study.o_id = 0;
+    }
+}
+function studyState(state) {
+    return state.context.spbook ||= { book: null, o_id: 0, delay: 0 };
+}
+function readingDelay(type) {
+    const level = requireObjectData(OBJECT_SPELL_LEVEL, type);
+    const delay = requireObjectData(OBJECT_DELAY, type);
+    if (level >= 1 && level <= 2)
+        return -delay;
+    if (level <= 4 && level >= 3)
+        return -(level - 1) * delay;
+    if (level <= 6 && level >= 5)
+        return -level * delay;
+    return level === 7 ? -8 * delay : null;
+}
+function typeKnown(type, state) {
+    return OBJECT_INITIAL_KNOWN[type] || state._knownObjectTypes?.has(type);
+}
+function delayReading(delay, state) {
+    nomul(delay, state);
+    state._helplessReason = 'reading a book';
+    state._helplessDoneMessage = null;
+}
+function outcome(spentTime, state) {
+    return { spentTime, heroDied: !!state.program_state.gameover };
 }
 // Every successful cast creates the same real temporary object as C.
 // Its class/BUC/quantity control shared effects; it never enters inventory.

@@ -12,7 +12,7 @@ import { woundHeroLegs } from '../js/do.js';
 import { makeStunned } from '../js/potion.js';
 import { OBJECT_NAMES, SPE_FIREBALL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { studyBook } from '../js/spellbook_study.js';
+import { studyBook } from '../js/spell.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createSaddledSteed } from './support/monsters.js';

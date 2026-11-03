@@ -108,7 +108,7 @@ import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { maybeResetPick } from './lock.js';
 
-import { bookDisappears } from './spellbook_study.js';
+import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom,
     heroGoldAmount,
