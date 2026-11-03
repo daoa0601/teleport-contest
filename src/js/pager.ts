@@ -11,8 +11,8 @@ import {
     TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB,
 } from './const.js';
 import {
-    canSpotHeroSelf, cmapSymbolAppearance, displayLiquidName, glyphAt, howMonsterSeen,
-    monsterClassSymbol, objectClassSymbol, randomDisplayMonsterName, swallowSymbolAppearance,
+    canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen,
+    monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance,
     terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange,
 } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -57,7 +57,7 @@ import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 
-import { distantMonsterName, monsterName } from './do_name.js';
+import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { dist2 } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';

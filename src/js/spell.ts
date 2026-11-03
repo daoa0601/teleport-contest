@@ -30,10 +30,10 @@ import { findArmorClass } from './do_wear.js';
 import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { restoreCannedCommandTail } from './cmd.js';
 import {
-    canSeeMonster, canSpotMonster, displayColorName, displayLiquidName, flush_screen,
+    canSeeMonster, canSpotMonster, flush_screen,
     map_invisible, zapdir_to_glyph,
 } from './display.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero } from './potion.js';

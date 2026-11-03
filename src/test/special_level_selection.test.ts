@@ -19,7 +19,7 @@ import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { floorObjects } from './support/level-state.js';
-import { novelTitle } from '../js/novel_titles.js';
+import { novelTitle } from '../js/do_name.js';
 import { resetInputState } from '../js/input.js';
 import { moveloop_core } from '../js/allmain.js';
 import { freshTurnRoom } from './support/playable-room.js';

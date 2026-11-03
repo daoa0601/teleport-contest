@@ -12,7 +12,7 @@ import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
 import { currency } from './currency.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
@@ -31,7 +31,7 @@ import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.
 import { equipmentLightDescription } from './light.js';
 import { beginObjectBurn } from './timeout.js';
 import { isContainer } from './container.js';
-import { OBJECT_CLASS_SYMBOLS, displayColorName, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
+import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
 import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
@@ -52,7 +52,6 @@ import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { waterbodyName } from './terrain_name.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
-import { lookupNovelTitle } from './novel_titles.js';
 
 import * as objects from './object_data.js';
 

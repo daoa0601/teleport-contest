@@ -27,8 +27,8 @@ import { glyphToCmapSymbol } from './getpos.js';
 import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR } from './object_data.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterHasProperName, monsterTypeName } from './monster_data.js';
-import { rn2, rn2Display } from './rng.js';
+import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
 import { recordObjectEncounter } from './o_init.js';
 import { heroCanReachFloor } from './engrave.js';
@@ -84,29 +84,8 @@ interface MimicAppearance {
     mcorpsenm?: number;
 }
 interface MonsterProjection { wormTail: boolean; showAppearance: boolean; detected: boolean }
-interface MonsterIdentity { name: string; personal: boolean }
+export interface MonsterIdentity { name: string; personal: boolean }
 interface RedrawOptions { beforeGlow?: (() => void | Promise<void>) | null }
-
-const HALLUCINATED_LIQUIDS = [
-    'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
-    'purified water', 'instant coffee', 'tea', 'herbal infusion',
-    'liquid rainbow', 'creamy foam', 'mulled wine', 'bouillon', 'nectar',
-    'grog', 'flubber', 'ketchup', 'slow light', 'oil', 'vinaigrette',
-    'liquid crystal', 'honey', 'caramel sauce', 'ink', 'aqueous humour',
-    'milk substitute', 'fruit juice', 'glowing lava', 'gastric acid',
-    'mineral water', 'cough syrup', 'quicksilver', 'sweet vitriol',
-    'grey goo', 'pink slime', 'cosmic latte', 'bone oil', 'custard', 'lard',
-    'vinegar', 'creosote',
-];
-
-// C do_name.c:hliquid(): the hallucinated liquid name.
-export function displayLiquidName(fallback: string, state: GameState = game) {
-    if ((!heroIsHallucinating(state) || state.program_state.gameover) && fallback)
-        return fallback;
-    // do_name.c:hliquid() includes a nonempty fallback as one additional slot.
-    const index = rn2Display(HALLUCINATED_LIQUIDS.length + (fallback ? 1 : 0));
-    return HALLUCINATED_LIQUIDS[index] ?? fallback;
-}
 
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
@@ -2409,14 +2388,11 @@ export async function see_traps() {
     }
 }
 
-const M2_PNAME = 0x00080000;
-const G_NOGEN = 0x0200;
-const BOGUSMONSIZE = 100;
 
 // C rumors.c:get_rnd_line(..., MD_PAD_BOGONS).  The random offset lands in a
 // padded data-file line; the following line is the selected name.  Long lines
 // retry unless the offset falls within their final 20 characters.
-function randomBogusMonsterIdentity(): MonsterIdentity {
+export function randomBogusMonsterIdentity(): MonsterIdentity {
     let landed = 0;
     for (let tries = 0; tries < 10; tries++) {
         const offset = rn2Display(BOGUS_MONSTER_FILE_SIZE);
@@ -2444,78 +2420,6 @@ function randomBogusMonsterIdentity(): MonsterIdentity {
         // the source's explicit "has a control prefix" gate.
         personal: !!code && '-+='.includes(code),
     };
-}
-
-// C do_name.c:rndmonnam().  This is presentation-only and therefore consumes
-// the display stream even when called while resolving a core combat action.
-export function randomDisplayMonsterIdentity(): MonsterIdentity {
-    let mnum;
-    do {
-        mnum = rn2Display(SPECIAL_PM + BOGUSMONSIZE);
-    } while (mnum < SPECIAL_PM
-        && ((monsterHasProperName(mnum))
-            || ((MONSTER_GENO[mnum] ?? 0) & G_NOGEN)));
-    if (mnum >= SPECIAL_PM) return randomBogusMonsterIdentity();
-    const female = rn2Display(2) !== 0; // pmname(..., random gender)
-    const name = monsterTypeName(mnum, female);
-    if (name === undefined) throw new RangeError(`Missing display monster name ${mnum}`);
-    return { name, personal: false };
-}
-
-export function randomDisplayMonsterName() {
-    return randomDisplayMonsterIdentity().name;
-}
-
-// C do_name.c:bogusmon(), for descriptions that require a fictitious species.
-export function randomBogusMonsterName(): string {
-    return randomBogusMonsterIdentity().name;
-}
-
-const HALLUCINATED_COLORS = [
-    'ultraviolet', 'infrared', 'bluish-orange', 'reddish-green', 'dark white',
-    'light black', 'sky blue-pink', 'pinkish-cyan', 'indigo-chartreuse',
-    'salty', 'sweet', 'sour', 'bitter', 'umami',
-    'striped', 'spiral', 'swirly', 'plaid', 'checkered', 'argyle', 'paisley',
-    'blotchy', 'guernsey-spotted', 'polka-dotted', 'square', 'round',
-    'triangular', 'cabernet', 'sangria', 'fuchsia', 'wisteria', 'lemon-lime',
-    'strawberry-banana', 'peppermint', 'romantic', 'incandescent', 'octarine',
-    'excitingly dull', 'mauve', 'electric', 'neon', 'fluorescent',
-    'phosphorescent', 'translucent', 'opaque', 'psychedelic', 'iridescent',
-    'rainbow-colored', 'polychromatic', 'colorless', 'colorless green',
-    'dancing', 'singing', 'loving', 'loudy', 'noisy', 'clattery', 'silent',
-    'apocyan', 'infra-pink', 'opalescent', 'violant', 'tuneless',
-    'viridian', 'aureolin', 'cinnabar', 'purpurin', 'gamboge', 'madder',
-    'bistre', 'ecru', 'fulvous', 'tekhelet', 'selective yellow',
-];
-
-// C do_name.c:hcolor(). Hallucinated color names use the display RNG.
-export function displayColorName(preferred: string | null | undefined, state: GameState = game): string {
-    if (preferred != null && !heroIsHallucinating(state)) return preferred;
-    const color = HALLUCINATED_COLORS[rn2Display(HALLUCINATED_COLORS.length)];
-    if (color === undefined) throw new Error('Display RNG returned an invalid color index');
-    return color;
-}
-
-const OBJECT_COLOR_NAMES = [
-    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
-    'colorless', 'orange', 'bright green', 'yellow', 'bright blue',
-    'bright magenta', 'bright cyan', 'white',
-];
-
-// C do_name.c:rndcolor() draws an ordinary color even when hcolor() will
-// replace it with a hallucinated color from the display stream.
-export function randomColorName(state: GameState = game, random = rn2): string {
-    const color = OBJECT_COLOR_NAMES[random(OBJECT_COLOR_NAMES.length)];
-    if (color === undefined) throw new RangeError('Random color selection is outside the color table');
-    return displayColorName(color, state);
-}
-
-// C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
-// names suppress the article before the result is sentence-capitalized.
-export function randomDisplayMonsterSubject(forceThe = false) {
-    const { name, personal } = randomDisplayMonsterIdentity();
-    const subject = personal && !forceThe ? name : `the ${name}`;
-    return subject.charAt(0).toUpperCase() + subject.slice(1);
 }
 
 let lastSwallowedX = 0;

@@ -1803,7 +1803,7 @@ can_twoweapon	drop_uswapwep	inlined	canBeginTwoWeaponCombat calls dropSecondaryW
 can_twoweapon	undiscovered_artifact	inlined	objectNameIsPlural checks the Eyes of the Overworld against artifact discoveries (objnam.ts)
 characteristics_enlightenment	enlght_out	inlined	characteristicEnlightenmentLines returns the heading and six attributes to insight.ts for display
 create_worm_tail	alloc	n/a	initializeUnplacedMonsterWormBody uses managed segment objects and a separate head instead of a C allocation chain
-do_oname	rnd_on_display_rng	inlined	nameIndividualObject uses rn2Display(2) plus one for the inscription scuff count (individual_naming.ts)
+do_oname	rnd_on_display_rng	inlined	nameIndividualObject uses rn2Display(2) plus one for the inscription scuff count (do_name.ts)
 do_oname	undiscovered_artifact	inlined	objectNameIsPlural checks the Eyes discovery before choosing this/these in the naming prompt (objnam.ts)
 dobreathe	ubuzz	inlined	breatheInDirection passes the breath ray type, attack dice and hero origin through castNativeRay (breath_ray.ts)
 docallcmd	cmdq_pop	inlined	doname reads the repeat or canned queue and clears a non-key entry before selecting a naming category (cmd.ts)
@@ -1832,7 +1832,7 @@ m_search_items	t_at	inlined	searchMonsterItems finds the coordinate-matching tra
 mayberem	dist2	inlined	stillTogether checks that both coordinate differences are at most one, equivalent to squared distance below three
 migr_booty_item	mksobj_migr_to_species	inlined	createStolenItem constructs the object, marks MIGR_TO_SPECIES and links it to the migration list (orc_raid.ts)
 monmulti	rounddiv	inlined	monsterVolleyCount uses trunc((spe+1)/3), the native rounding for a positive launcher enchantment
-namefloorobj	call_ok	inlined	nameFloorType needs only GETOBJ_EXCLUDE from call_ok and uses objectTypeIsCallable, then checks dknown (floor_naming.ts)
+namefloorobj	call_ok	inlined	nameFloorType needs only GETOBJ_EXCLUDE from call_ok and uses objectTypeIsCallable, then checks dknown (do_name.ts)
 one_characteristic	enlght_line	inlined	characteristicLine builds the native current/final sentence; insight.ts applies contractions before display
 rloc_pos_ok	tele_jump_ok	inlined	monsterTeleportDestinationOk uses crossesTeleportBoundary after goodPosition has validated the destination (teleport.ts)
 setopt_cmd	cmd_from_func	inlined	setOptionsCommand uses CommandBindings.keyForCommand, whose handler lookup preserves the native preferred-key rules

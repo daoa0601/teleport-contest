@@ -1,7 +1,7 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 
-import { displayColorName } from './display.js';
+import { displayColorName } from './do_name.js';
 import { upstart } from './hacklib.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';

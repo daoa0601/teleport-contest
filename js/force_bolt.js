@@ -2,11 +2,11 @@ import { publishHeardMessage } from './hero_speech.js';
 // Point-target striking and force-bolt damage. C zap.c:bhitm()/bhito().
 // The wand effect owner chooses targets and handles traversal and terrain.
 import { monsterHasMagicResistance } from './trap.js';
-import { newsym, randomDisplayMonsterName, shieldeff } from './display.js';
+import { newsym, shieldeff } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { revealMonsterAppearance } from './mon.js';
-import { monsterName } from './do_name.js';
+import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { breakFloorObject } from './dothrow.js';
 import { BOULDER, STATUE } from './object_data.js';

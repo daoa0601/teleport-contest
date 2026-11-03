@@ -15,7 +15,7 @@ import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject 
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
-import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, displayColorName, displayLiquidName, docrt, glyphAt, newsym, randomDisplayMonsterName, shieldeff, unmap_invisible } from './display.js';
+import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
@@ -23,7 +23,7 @@ import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
 import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetHeroTrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { commandResultCancelled } from './cmd.js';

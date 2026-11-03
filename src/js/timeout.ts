@@ -58,7 +58,7 @@ import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { heroFootName, heroHandName, heroNeckName } from './body_parts.js';
 import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { dismountHero } from './steed.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
 import {
@@ -75,7 +75,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, requireMonsterData } from './monster_data.js';
-import { canSpotMonster, displayColorName, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
+import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';

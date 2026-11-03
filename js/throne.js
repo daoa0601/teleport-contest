@@ -11,7 +11,8 @@ import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttrib
 import { reportHeroEncumbrance } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
-import { displayColorName, map_background, newsym, newsym_force, see_monsters, shieldeff, } from './display.js';
+import { map_background, newsym, newsym_force, see_monsters, shieldeff, } from './display.js';
+import { displayColorName } from './do_name.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';

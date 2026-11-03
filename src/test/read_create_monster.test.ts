@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { glyphAt, randomDisplayMonsterIdentity, randomDisplayMonsterName } from '../js/display.js';
+import { glyphAt } from '../js/display.js';
+import { randomDisplayMonsterIdentity, randomDisplayMonsterName } from '../js/do_name.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from '../js/monster_data.js';

@@ -43,7 +43,7 @@ import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, telepo
 import { runDueTimers } from './timeout.js';
 import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';
-import { monsterName } from './do_name.js';
+import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2, dungeonDepth } from './hacklib.js';
 import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterLocomotion } from './mondata.js';
 import { resolveMonsterWeaponContact, tryKnockback, resolveMonsterContactEffect } from './uhitm.js';
@@ -81,7 +81,7 @@ import { reportHeroEncumbrance } from './pickup.js';
 import { rndcurse } from './throne.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion } from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
-import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, randomDisplayMonsterName, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff } from './display.js';
+import { canSpotMonster, docrt, redrawMap, flush_screen, newsym, map_invisible, see_monsters, see_objects, see_traps, show_glyph_cell, swallowed, under_ground, under_water, canSeeMonster, monsterVisible, shieldeff } from './display.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, rememberToplines, appendSuppressedTopline, resetToplineClip } from './tty_topline.js';
 import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset_new_level, hasLightSources } from './vision.js';
 import { nhgetch } from './input.js';

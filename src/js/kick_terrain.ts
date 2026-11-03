@@ -7,7 +7,8 @@ import {
     LA_DOWN, Luck, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR,
     SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE_LOOTED, TREE_SWARM, T_LOOTED,
 } from './const.js';
-import { displayColorName, feel_newsym, newsym } from './display.js';
+import { feel_newsym, newsym } from './display.js';
+import { displayColorName } from './do_name.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { placeCreatedObject } from './floor_object.js';

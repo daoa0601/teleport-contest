@@ -22,7 +22,7 @@ import {
 } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monstersInFmonOrder } from './mon.js';
-import { novelTitle } from './novel_titles.js';
+import { novelTitle } from './do_name.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORPSE } from './object_data.js';
 import { learnObjectType, observeObject } from './o_init.js';

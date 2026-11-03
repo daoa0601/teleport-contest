@@ -4,7 +4,6 @@
 import { objectMaterial, observeObject } from './o_init.js';
 import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
 import { exerciseAttribute } from './attrib.js';
-import { displayLiquidName } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
@@ -25,7 +24,7 @@ import { mksobj, set_corpsenm, objectWeight } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterIsEel } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterPossessive } from './mondata.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';

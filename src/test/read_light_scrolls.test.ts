@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 
-import { displayColorName, randomDisplayMonsterName } from '../js/display.js';
+import { displayColorName, randomDisplayMonsterName } from '../js/do_name.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';

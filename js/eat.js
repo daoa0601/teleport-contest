@@ -15,9 +15,9 @@ import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti,
 import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSpotMonster, displayColorName, flush_screen, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { reportHeroEncumbrance } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
