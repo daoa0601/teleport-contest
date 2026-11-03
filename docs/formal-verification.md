@@ -263,6 +263,18 @@ initial-table correspondence (`objects[].oc_weight` = `OBJECT_WEIGHT`,
 `mons[].cwt` = `MONSTER_BODY_META[][0]`) is the same assumption the
 inventory chain claims make for cached owt.
 
+The complete 61-claim run exited 0 in **980.32 s**, including **65 domain
+probes** and **71 mutant checks**, and wrote the reviewed 61-row ledger only
+after every claim, probe and mutant passed. The CI-parity
+`--skip-slow --check-ledger` command passed in 339.28 s; the two slow
+table claims keep their nightly slot and `weight:stack` is fast (16.4 s)
+after the species chunking. The focused executor/query/selection suite is
+now **84 passing tests**, and the **36 ledger CLI tests** passed. The one
+public-session screen miss (`seed2200-wizard-quaff-zap-read`, step 158) is
+the previously documented recorder-options artifact and fails identically
+without this batch; all 300 first `.cache/holdout-dev/deep/sessions`
+replays pass.
+
 The complete 41-claim run exited 0 in **704.66 s**, including **45 domain
 probes** and **49 mutant checks**, and wrote the reviewed equivalence ledger
 only after all checks passed. The eight new claims each have one concrete
