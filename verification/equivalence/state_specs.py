@@ -10,7 +10,7 @@ from state_world import (AT_ENGL, AT_WEAP,
                          capacity_state, direction_arguments, direction_state,
                          experience_arguments,
                          experience_state, hero_state, hit_bonus_state,
-                         inventory_state, movement_arguments, movement_state,
+                         inventory_state, module_constant, movement_arguments, movement_state,
                          skill_bonus_arguments, skill_bonus_domain, skill_bonus_state,
                          species_predicate_arguments, species_predicate_state,
                          symbolic_attacks, symbolic_attack_arguments,
@@ -725,4 +725,134 @@ STATE_SPECS += [
          mutants=[('js/skills.js', 'if (![2, 6, 13].includes(weapon.oclass))',
                    'if (![2, 6].includes(weapon.oclass))'),
                   ('js/skills.js', 'return Math.abs(skill);', 'return skill;')]),
+]
+
+# ---- fv-equivalence-batch-5: the named mondata.h/mondata.c predicates ----
+
+# PR 610 gave every inlined mondata.h macro a C-shaped port function in
+# monster_data.js. These claims pair each predicate with its macro-expansion
+# harness (or, for can_track, the real mondata.c body) over every valid
+# initial species, exactly as verysmall:tables/haseyes:tables do.
+STATE_SPECS += [
+    Spec(name, native, port, [('species', INT), ('native_pointer_present', INT)],
+         js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, old, new)])
+    for name, native, port, old, new in (
+        ('bigmonst:tables', 'verification_bigmonst', 'monsterIsBig',
+         '(MONSTER_SIZE[mnum] ?? MZ_MEDIUM) >= MZ_LARGE;',
+         '(MONSTER_SIZE[mnum] ?? MZ_MEDIUM) > MZ_LARGE;'),
+        ('is_flyer:tables', 'verification_is_flyer', 'monsterIsFlyer',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);'),
+        ('is_floater:tables', 'verification_is_floater', 'monsterIsFloater',
+         'MONSTER_SYMBOL[mnum] === S_EYE || MONSTER_SYMBOL[mnum] === S_LIGHT;',
+         'MONSTER_SYMBOL[mnum] === S_EEL || MONSTER_SYMBOL[mnum] === S_LIGHT;'),
+        ('is_clinger:tables', 'verification_is_clinger', 'monsterIsClinger',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);'),
+        ('is_swimmer:tables', 'verification_is_swimmer', 'monsterIsSwimmer',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_SWIM);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);'),
+        ('amphibious:tables', 'verification_amphibious_monster', 'monsterIsAmphibious',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_AMPHIBIOUS);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_SWIM);'),
+        ('passes_walls:tables', 'verification_passes_walls', 'monsterPassesWalls',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);'),
+        ('can_teleport:tables', 'verification_can_teleport', 'monsterCanTeleport',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT_CNTRL);'),
+        ('control_teleport:tables', 'verification_control_teleport', 'monsterControlsTeleport',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT_CNTRL);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);'),
+        ('perceives:tables', 'verification_perceives', 'monsterPerceives',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_SEE_INVIS);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);'),
+        ('hides_under:tables', 'verification_hides_under', 'monsterHidesUnder',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_CONCEAL);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_HIDE);'),
+        ('is_hider:tables', 'verification_is_hider', 'monsterIsHider',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_HIDE);',
+         '(MONSTER_FLAGS1[mnum] ?? 0) & M1_CONCEAL);'),
+        ('is_demon:tables', 'verification_is_demon', 'monsterIsDemon',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);'),
+        ('is_golem:tables', 'verification_is_golem', 'monsterIsGolem',
+         'MONSTER_SYMBOL[mnum] === S_GOLEM;',
+         'MONSTER_SYMBOL[mnum] === S_EEL;'),
+        ('is_giant:tables', 'verification_is_giant', 'monsterIsGiant',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);'),
+        ('is_female:tables', 'verification_is_female', 'monsterIsFemale',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_FEMALE);',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME);'),
+        ('throws_rocks:tables', 'verification_throws_rocks', 'monsterThrowsRocks',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);'),
+        ('type_is_pname:tables', 'verification_type_is_pname', 'monsterHasProperName',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME);',
+         '(MONSTER_FLAGS2[mnum] ?? 0) & M2_FEMALE);'),
+        ('is_silent:tables', 'verification_is_silent', 'monsterIsSilent',
+         'MONSTER_SOUND[mnum] === MS_SILENT;',
+         'MONSTER_SOUND[mnum] !== MS_SILENT;'),
+    )
+]
+
+
+CAN_TRACK_ASSUMPTIONS = (
+    'mondata.c:can_track: the permonst pointer argument is &mons[species]; emitted mnum equals species',
+    'monst.c:monst_globals_init: fields read retain mons_init values; emitted table fields retain initial values',
+    'wield.c:uwep is the one wielded weapon or NULL; game.uwep and game.u.uwep alias the same slot, so both are null exactly when the native uwep is NULL, and uwep.oartifact is the weapon artifact index (obj.h char)',
+    'artifacts.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
+    'obj.h:u_wield_art expands to artifact.c:is_art(uwep, ART_EXCALIBUR), which the claim executes for real',
+)
+
+
+def can_track_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    pointer = CPtr(values['native_pointer_present'] != 0,
+                   CElement('mons', values['species']))
+    return ([pointer], [V('num', values['species']), V('obj', 'game')])
+
+
+def can_track_state(world, front, modules):
+    species_predicate_state(world, front, modules)
+    present = next(value for name, value, _ in world.params
+                   if name == 'uwep_present') != 0
+    world.c_globals['uwep'] = CPtr(present, 'uwep')
+    weapon = V('choice', [(present, V('obj', 'uwep')),
+                          (z3.Not(present), V('null'))])
+    world.js_values['game.uwep'] = weapon
+    world.js_values['game.u.uwep'] = weapon
+    artifacts = module_constant(world, modules, 'js/artifact_data.js', 'ARTIFACT_DATA')
+    world.js_values['game._artifactRuntime'] = V('map', tuple(
+        (artifact.v['id'], artifact) for artifact in artifacts.v))
+
+
+def can_track_domain(s):
+    return [s['species'] >= 0, s['native_pointer_present'] == 1,
+            s['uwep_present'] >= 0, s['uwep_present'] <= 1]
+
+
+STATE_SPECS += [
+    Spec('can_track:state', 'can_track', 'canTrack',
+         [('species', INT), ('native_pointer_present', INT), ('uwep_present', INT)],
+         js_file='js/mondata.js', state=[('uwep.oartifact', SCHAR, 'uwep.oartifact')],
+         assumptions=CAN_TRACK_ASSUMPTIONS, require_counterexamples=True,
+         configure=can_track_state, arguments=can_track_arguments,
+         pre=can_track_domain,
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0,
+                                                           s['uwep_present'] >= 0,
+                                                           s['uwep_present'] <= 1]),
+                 ('wielded artifact index correspondence omitted', UnrelatedState(
+                     can_track_domain, ('uwep.oartifact',)))],
+         mutants=[('js/mondata.js', "?.name === 'Excalibur'", "?.name === 'Stormbringer'"),
+                  ('js/mondata.js', 'return monsterHasEyes(mnum);',
+                   'return !monsterHasEyes(mnum);')]),
 ]

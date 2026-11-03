@@ -408,6 +408,43 @@ class ExecutorTests(unittest.TestCase):
                         '? (game.items.get(id)?.value ?? 0) : 99; }',
                         params=[('id', INT)], configure=configure)
 
+    def test_cross_module_map_lookup_feeds_an_optional_member_chain(self):
+        # mondata.js:canTrack's shape: an imported artifacts.js helper reads
+        # the per-game runtime Map, and the caller compares the nullish
+        # chained member while a second imported helper runs the fallback.
+        from jssym import V
+        import z3
+
+        c = ('struct { int oartifact; } uwep; '
+             'int eyes(int x) { return x > 0; } '
+             'int example(int x) { if (uwep.oartifact == 1) return 1; '
+             'return eyes(x); }')
+        js = ("import { byId } from './arts.js';\n"
+              "import { eyes } from './body.js';\n"
+              'function example(x) {\n'
+              '  const a = byId(game.uwep.oartifact, game);\n'
+              "  return a?.name === 'Excalibur' ? 1 : eyes(x);\n"
+              '}')
+        modules = {
+            'js/arts.js': 'export function byId(id, state) {\n'
+                          '  if (id == null) return null;\n'
+                          '  return state.runtime.get(id) || null;\n'
+                          '}',
+            'js/body.js': 'export function eyes(x) { return x > 0; }',
+        }
+
+        def configure(world, front, modules):
+            key = V('num', z3.IntVal(1))
+            item = V('record', {'name': V('str', 'Excalibur')})
+            world.js_values['game.runtime'] = V('map', ((key, item),))
+
+        state = [('uwep.oartifact', INT, 'game.uwep.oartifact')]
+        self.equivalent(c, js, params=[('x', INT)], state=state,
+                        modules=modules, configure=configure)
+        self.rejected(c, js.replace("'Excalibur'", "'Stormbringer'"),
+                      params=[('x', INT)], state=state, modules=modules,
+                      configure=configure, reason='outputs differ')
+
     def test_integer_division_rejects_fractional_number_results(self):
         self.equivalent('int example(void) { return 36 / 2; }',
                         'function example() { return 36 / 2; }')

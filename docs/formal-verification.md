@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 71 scoped C/JavaScript
+`verification/equivalence/` now proves 91 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -127,6 +127,26 @@ split `rnl` row use this batch's complete runs.
 | `primary_erosion:tables` | `objnam.c:readobjnam` primary test ↔ `objnam.js:objectAcceptsPrimaryErosion` | Erosion-mattering objects with matching oclass; material >= LIQUID | 1×1 | 4.8 s |
 | `secondary_erosion:tables` | `objnam.c:readobjnam` secondary test ↔ `objnam.js:objectAcceptsSecondaryErosion` | Same guarded domain | 1×1 | 3.1 s |
 | `weapon_type:tables` | `weapon.c:weapon_type` ↔ `skills.js:weaponSkillType` | Null or held object; any oclass; every otyp 0..NUM_OBJECTS-1 | 1×1 | 0.2 s |
+| `bigmonst:tables` | `mondata.h:bigmonst` ↔ `monster_data.js:monsterIsBig` | Valid initial species; native/emitted size tables | 1×1 | 2.1 s |
+| `is_flyer:tables` | `mondata.h:is_flyer` ↔ `monster_data.js:monsterIsFlyer` | Valid initial species; native/emitted flag1 tables | 1×1 | 2.1 s |
+| `is_floater:tables` | `mondata.h:is_floater` ↔ `monster_data.js:monsterIsFloater` | Valid initial species; native/emitted symbol tables | 2×2 | 3.7 s |
+| `is_clinger:tables` | `mondata.h:is_clinger` ↔ `monster_data.js:monsterIsClinger` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_swimmer:tables` | `mondata.h:is_swimmer` ↔ `monster_data.js:monsterIsSwimmer` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
+| `amphibious:tables` | `mondata.h:amphibious` ↔ `monster_data.js:monsterIsAmphibious` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `passes_walls:tables` | `mondata.h:passes_walls` ↔ `monster_data.js:monsterPassesWalls` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `can_teleport:tables` | `mondata.h:can_teleport` ↔ `monster_data.js:monsterCanTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `control_teleport:tables` | `mondata.h:control_teleport` ↔ `monster_data.js:monsterControlsTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `perceives:tables` | `mondata.h:perceives` ↔ `monster_data.js:monsterPerceives` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
+| `hides_under:tables` | `mondata.h:hides_under` ↔ `monster_data.js:monsterHidesUnder` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_hider:tables` | `mondata.h:is_hider` ↔ `monster_data.js:monsterIsHider` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_demon:tables` | `mondata.h:is_demon` ↔ `monster_data.js:monsterIsDemon` | Valid initial species; native/emitted flag2 tables | 1×1 | 2.1 s |
+| `is_golem:tables` | `mondata.h:is_golem` ↔ `monster_data.js:monsterIsGolem` | Valid initial species; native/emitted symbol tables | 1×1 | 3.6 s |
+| `is_giant:tables` | `mondata.h:is_giant` ↔ `monster_data.js:monsterIsGiant` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `is_female:tables` | `mondata.h:is_female` ↔ `monster_data.js:monsterIsFemale` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `throws_rocks:tables` | `mondata.h:throws_rocks` ↔ `monster_data.js:monsterThrowsRocks` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `type_is_pname:tables` | `mondata.h:type_is_pname` ↔ `monster_data.js:monsterHasProperName` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `is_silent:tables` | `mondata.h:is_silent` ↔ `monster_data.js:monsterIsSilent` | Valid initial species; native/emitted sound tables | 1×1 | 3.3 s |
+| `can_track:state` | `mondata.c:can_track` ↔ `mondata.js:canTrack` | Valid species; uwep null or one weapon with any signed-char oartifact; initial mons and artifact identity/name tables | 2×2 | 3.4 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -330,6 +350,49 @@ correspondence to future work. No port fidelity bug was found: the
 native `oc_material`, `oc_class` and `oc_skill` columns equal the emitted
 `OBJECT_MATERIAL`, class and `OBJECT_SUBTYPE` entries at every otyp
 (checked concretely over the whole table before proving).
+
+**Named mondata predicate batch (fv-equivalence-batch-5).** Twenty more
+claims cover the predicates PR 610 named as C-shaped port functions, one
+claim per predicate over all 383 valid initial species in the
+verysmall/haseyes shape. Nineteen pair one mondata.h macro — expanded by a
+new harness wrapper each — with its `monster_data.js` function: the flag1
+bit predicates (`is_flyer`, `is_clinger`, `is_swimmer`, `amphibious`,
+`passes_walls`, `can_teleport`, `control_teleport`, `perceives`,
+`hides_under`, `is_hider`), the flag2 bit predicates (`is_demon`,
+`is_giant`, `is_female`, `throws_rocks`, `type_is_pname`), the size
+comparison `bigmonst`, and the symbol/sound comparisons `is_floater`,
+`is_golem`, `is_silent`. Every M1/M2 mask tested is below 2^31, so the
+emitted int32 `&` is exact even where a `MONSTER_FLAGS2` entry exceeds
+INT_MAX: ToInt32 wraps the stored word but preserves the tested low bits.
+
+`can_track:state` executes the real `mondata.c:can_track` body, including
+`artifact.c:is_art` through obj.h's `u_wield_art(ART_EXCALIBUR)`. The
+entry relation adds the wielded weapon to the species relation: the
+native `uwep` pointer is null exactly when both `game.uwep` and
+`game.u.uwep` are null (wield.c keeps one wielded slot), the weapon
+artifact index is a symbolic obj.h `char`, and `artifacts.js:artifactById`
+executes for real against the emitted `ARTIFACT_DATA` identity/name map
+that `initializeArtifacts` copies — the same runtime-map relation the
+`acurr:all` family assumes. `haseyes(ptr)` and `monsterHasEyes(mnum)`
+then agree by the `haseyes:tables` tables. No executor extension was
+needed; a new language test pins the composed cross-module
+Map-lookup/optional-member-chain shape `canTrack` uses. No port fidelity
+bug was found in the twenty stated domains.
+
+The complete 91-claim run exited 0 in **1015.6 s**, including **90 domain
+probes** and **103 mutant checks** (20 claims, 21 probes and 20 mutants
+new), and wrote the reviewed 91-row ledger only after every claim, probe
+and mutant passed. Every new claim is fast (worst 4.0 s for
+`is_silent`), so the `equivalence` job keeps its fast slot; the
+CI-parity `--skip-slow --check-ledger` run passed in **412 s**. One
+earlier complete attempt reported `mon_resistancebits:state`'s probe and
+mutant as "solver gave up"; that claim had passed unchanged in every
+previous batch and passes alone and in the final run — the give-up was
+contention with a concurrent local `npm run compile`/`check`, not a
+domain change. The focused executor/query/selection suite is now
+**86 passing tests**, and the **36 ledger CLI tests** passed. `npm run
+compile` and `npm run check` passed. No game source, session corpus, or
+frozen file was changed.
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
 that followed took 1037.68 s), including **77 domain probes** and **83
