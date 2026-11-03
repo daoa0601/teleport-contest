@@ -1,7 +1,7 @@
 // save.js — Web-Storage-backed save and restore.
 // C refs: save.c and restore.c.
 
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, resetErinys } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHidesUnder, monsterIsEel, resetErinys } from './monster_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, displayMessageWindow, rememberToplines } from './tty_topline.js';
@@ -785,7 +785,7 @@ const S_EEL = 57, S_MIMIC = 13;
 // changes. A saved mundetected bit alone does not establish valid cover.
 export async function restoreMonsterCover(monster: Monster, state: GameState = game): Promise<void> {
     if (monster !== state.u.usteed && monster.mundetected
-        && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+        && (monsterHidesUnder(monster.mnum)))
         await hideMonsterUnder(monster, state);
 }
 
@@ -794,7 +794,7 @@ export async function restoreMonsterCover(monster: Monster, state: GameState = g
 export async function hideMonsterOnRestore(monster: Monster, state: GameState = game): Promise<void> {
     requireLiveGame(state);
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const hiderUnder = !!(flags & M1_CONCEAL) || MONSTER_SYMBOL[monster.mnum] === S_EEL;
+    const hiderUnder = !!(flags & M1_CONCEAL) || monsterIsEel(monster.mnum);
     if (!(flags & M1_HIDE) && !hiderUnder) return;
     if (monster.mundetected || M_AP_TYPE(monster)) return;
     const row = state.viz_array?.[monster.my];

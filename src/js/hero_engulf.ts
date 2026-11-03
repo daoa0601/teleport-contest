@@ -16,7 +16,7 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { finishMonsterAttackDeath } from './end.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies, applyHeroGolemEffects } from './polyself.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsWhirly, monsterPassesWalls } from './monster_data.js';
 import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
@@ -82,7 +82,7 @@ export function monsterCanEngulfHero(monster: Monster, state: GameState = game):
     if (!heroPassesWalls(state)
         && engulfSquareBlocked(state.level.at(hero.ux, hero.uy), monster))
         return false;
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK)
+    if (!monsterPassesWalls(monster.mnum)
         && engulfSquareBlocked(state.level.at(monster.mx, monster.my), body))
         return false;
 
@@ -208,7 +208,7 @@ export async function resolveHeroEngulf(monster: Monster, damageType: number, da
         physical = true;
         if (monster.mnum === MONSTER_NAME.indexOf('fog cloud')) {
             const flaming = FLAMING_SPECIES.has(heroSpecies(state));
-            const amphibious = !!((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x200);
+            const amphibious = monsterIsAmphibious(heroSpecies(state));
             const breathless = heroIsBreathless(state);
             const effect = flaming ? 'are smoldering out!'
                 : breathless ? 'find it mildly uncomfortable.'

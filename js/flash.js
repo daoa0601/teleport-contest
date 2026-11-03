@@ -12,7 +12,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { lightHitsGremlin } from './light.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterHasEyes, monsterTypeName } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
@@ -101,7 +101,7 @@ export async function flashHitsMonster(monster, object, { state = game, onHead =
             notified = true;
         }
     }
-    if (monster.msleeping && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
+    if (monster.msleeping && monsterHasEyes(monster.mnum)) {
         monster.msleeping = 0;
         if (visible) {
             await pline(`The flash awakens ${monsterName(monster, { state })}.`);

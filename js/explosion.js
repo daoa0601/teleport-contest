@@ -14,7 +14,7 @@ import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanFo
 import { formatHeardMessage } from './hero_speech.js';
 import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsDemon, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
@@ -295,7 +295,7 @@ function occupant(x, y, state) {
         || (state.u.ux === x && state.u.uy === y ? state.u.usteed ?? null : null);
 }
 function ignoresDeathField(mnum) {
-    return monsterIsNonliving(mnum) || !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);
+    return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
 function heroResists(damageType, objectClass, state) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)

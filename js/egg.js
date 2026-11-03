@@ -11,7 +11,7 @@ import { hideMonsterUnder } from './mon.js';
 import { monsterAtPosition } from './steed.js';
 import { game } from './gstate.js';
 import { makemonNear } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
@@ -136,7 +136,7 @@ function hatchlingCry(mnum) {
         return 'grunt';
     if (sound === 21)
         return 'mumble';
-    return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
+    return monsterIsEel(mnum) ? 'gurgle' : 'chitter';
 }
 function heroIsDeaf(state) {
     return !!(state.deaf || state.u?.deaf

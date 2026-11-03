@@ -11,7 +11,7 @@ import { canSpotMonster, displayLiquidName, newsym } from './display.js';
 import { finishMonsterKilled } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterIsSwimmer, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
@@ -122,7 +122,7 @@ export function heroCanRideSteed(steed, state = game) {
     const size = MONSTER_SIZE[mnum];
     return !!steed.mtame && !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
         && size !== undefined && size >= MZ_SMALL && size < MZ_LARGE
-        && (!state.u.uinwater || !!((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM));
+        && (!state.u.uinwater || monsterIsSwimmer(steed.mnum));
 }
 export async function handleRidingAfterFormChange() {
     const steed = game.u.usteed;
@@ -338,7 +338,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     // C steed.c:mount_steed(): "under hliquid("water")".  This branch needs
     // !force, and a hallucinating hero already bounced off the designated-
     // driver check above, so the rename never fires here either.
-    if (!force && hero.uinwater && !((MONSTER_FLAGS1[steed.mnum] ?? 0) & M1_SWIM)) {
+    if (!force && hero.uinwater && !(monsterIsSwimmer(steed.mnum))) {
         await pline(`You can't ride that creature while under ${displayLiquidName('water')}.`);
         return false;
     }
@@ -591,7 +591,7 @@ async function landingSpot(state, reason, random, force = false, publish = pline
                     && state.level.traps.some(trap => trap.tseen && trap.ttyp !== VIBRATING_SQUARE
                         && trap.tx === x && trap.ty === y);
                 const boulder = pass <= 1
-                    && !((MONSTER_FLAGS2[state.u.umonnum] ?? 0) & M2_ROCKTHROW)
+                    && !(monsterThrowsRocks(state.u.umonnum))
                     && (state.level.objects[x]?.[y] || []).some(object => object.otyp === BOULDER);
                 if (knownTrap || boulder)
                     continue;

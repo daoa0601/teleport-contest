@@ -7,7 +7,7 @@ import { G_GENOD, MIN_QUEST_LEVEL } from './const.js';
 import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import { experienceRankIndex } from './exper.js';
-import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, monsterHasProperName } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 import { heroIsBlind } from './senses.js';
@@ -124,7 +124,7 @@ function roleMonsterName(mnum) {
     const name = MONSTER_NAME[mnum];
     if (name === undefined)
         return '';
-    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME) !== 0 ? name : `the ${name}`;
+    return monsterHasProperName(mnum) ? name : `the ${name}`;
 }
 export function questLeaderName(g = game) {
     return roleMonsterName(g.urole?.ldrnum);

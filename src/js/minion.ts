@@ -20,7 +20,7 @@ import { cleanupTransientLight, showTransientLight } from './transient_light.js'
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { mkclassAligned } from './makemon.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { currency } from './currency.js';
 import { getLine } from './query.js';
@@ -105,7 +105,7 @@ export async function summonMonsterAttackHelp(
     if (
         monster.mcan ||
         (monster.cham ?? -1) >= 0 ||
-        (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON)
+        (!(monsterIsDemon(monster.mnum))
             && !isWereMonster(monster))
     )
         return null;

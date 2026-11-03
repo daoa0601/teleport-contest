@@ -20,7 +20,7 @@ import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wa
 import type { MonsterExplosionOptions } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsDemon, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
@@ -329,7 +329,7 @@ function occupant(x: number, y: number, state: PlayingGameState): Monster | null
 }
 
 function ignoresDeathField(mnum: number) {
-    return monsterIsNonliving(mnum) || !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);
+    return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
 
 function heroResists(damageType: DamageType, objectClass: number, state: GameState) {

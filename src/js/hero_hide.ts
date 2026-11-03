@@ -14,9 +14,7 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { game } from './gstate.js';
 
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterIsEel } from './monster_data.js';
 import { CORPSE } from './object_data.js';
 import { withIndefiniteArticle } from './objnam.js';
 
@@ -137,7 +135,7 @@ export function heroHidingStatus(state: GameState = game): string {
     const form = heroMonsterForm(state);
     if (!state.u.uundetected || form == null) return 'hiding';
     const { ux, uy } = state.u;
-    if (MONSTER_SYMBOL[form] === S_EEL) {
+    if (monsterIsEel(form)) {
         return isPoolAt(ux, uy, state)
             ? `hiding in the ${waterbodyName(ux, uy, state)}` : 'hiding';
     }

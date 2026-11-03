@@ -30,7 +30,7 @@ import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow } from './windows.js';
 import { artifactById } from './artifacts.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { d, rn2 } from './rng.js';
@@ -333,7 +333,7 @@ function vanquishedEntries() {
                 name: MONSTER_NAME[mnum] || 'monster',
                 count,
                 unique: speciesIsUnique(mnum),
-                pname: !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME),
+                pname: monsterHasProperName(mnum),
             }];
     }).sort((a, b) => vanqsortCompare(vanqSortMode(), a.mnum, b.mnum));
 }
@@ -1593,7 +1593,7 @@ function fatalMonsterDescription(monster) {
     const imitator = current !== champion || mimicker;
     const givenName = MGIVENNAME(monster) || monster.name;
     const ghost = current === MONSTER_NAME.indexOf('ghost');
-    const personal = (species) => !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+    const personal = (species) => monsterHasProperName(species);
     const unique = (species) => !!((MONSTER_GENO[species] ?? 0) & G_UNIQ);
     const uniqueKiller = unique(current) && !(imitator && !mimicker)
         && (current !== MONSTER_NAME.indexOf('high cleric') || monster.ispriest);

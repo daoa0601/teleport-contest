@@ -1,7 +1,7 @@
 import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 // monster_data.js — mechanically transcribed NetHack 5.0 monster metadata.
 // Source: nethack-c/upstream/include/monsters.h.
-import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_ENGL, AT_HUGS, AT_MAGC, AT_NONE, AT_WEAP } from './monster_attack_types.js';
+import { AD_DGST, AD_DRST, AD_SPEL, AD_STCK, AD_WRAP, AT_BOOM, AT_BREA, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_NONE, AT_SPIT, AT_WEAP } from './monster_attack_types.js';
 export const MONSTER_DIFFICULTY = [4, 6, 7, 6, 6, 12, 2, 6, 8, 7, 8, 8, 1, 1, 2, 4, 3, 5, 5, 7, 6, 7, 7, 8, 9, 9, 14, 2, 3, 9, 9, 10, 3, 5, 6, 7, 7, 7, 8, 14, 8, 8, 11, 2, 4, 5, 6, 8, 13, 19, 3, 3, 4, 5, 7, 7, 5, 6, 8, 1, 2, 3, 4, 4, 8, 9, 11, 5, 5, 5, 1, 3, 3, 4, 5, 5, 5, 7, 4, 6, 9, 4, 7, 8, 9, 13, 15, 22, 1, 2, 4, 4, 4, 4, 3, 4, 7, 8, 12, 14, 4, 6, 6, 6, 7, 9, 4, 6, 7, 9, 9, 10, 6, 9, 10, 17, 1, 9, 5, 7, 11, 11, 12, 19, 21, 26, 2, 3, 6, 7, 6, 8, 9, 13, 13, 13, 13, 13, 13, 13, 13, 13, 13, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 9, 10, 10, 10, 10, 1, 2, 2, 2, 2, 2, 5, 3, 4, 5, 6, 8, 8, 10, 11, 13, 13, 19, 20, 17, 18, 3, 4, 5, 6, 14, 18, 21, 29, 4, 5, 6, 6, 7, 7, 8, 10, 4, 4, 4, 4, 8, 10, 13, 17, 7, 9, 11, 4, 6, 8, 12, 9, 14, 8, 14, 3, 6, 7, 8, 9, 10, 9, 12, 12, 13, 16, 12, 12, 14, 32, 8, 8, 17, 11, 4, 6, 7, 7, 8, 9, 1, 2, 3, 3, 4, 5, 7, 5, 9, 14, 4, 4, 6, 6, 7, 8, 10, 12, 15, 18, 22, 2, 3, 3, 6, 1, 6, 7, 8, 11, 11, 11, 15, 14, 14, 13, 15, 30, 8, 10, 13, 12, 14, 8, 12, 25, 34, 22, 12, 14, 11, 8, 9, 10, 11, 11, 11, 12, 13, 15, 15, 16, 15, 20, 26, 31, 36, 36, 40, 45, 53, 57, 34, 34, 34, 26, 8, 5, 7, 9, 7, 10, 22, 1, 2, 3, 4, 6, 7, 7, 12, 1, 12, 12, 12, 12, 12, 11, 12, 12, 12, 12, 12, 12, 12, 24, 24, 24, 26, 24, 30, 30, 24, 24, 24, 22, 24, 25, 23, 22, 23, 23, 22, 31, 23, 17, 20, 19, 19, 20, 7, 7, 7, 7, 7, 8, 8, 7, 7, 7, 7, 8, 7, 8];
 export const MONSTER_GENO = [163, 98, 162, 161, 35, 544, 34, 34, 34, 161, 37, 33, 163, 33, 161, 528, 33, 33, 33, 33, 162, 528, 2210, 162, 2081, 1185, 1057, 49, 37, 2098, 50, 50, 33, 33, 34, 33, 33, 33, 34, 33, 34, 34, 33, 34, 35, 33, 34, 33, 33, 33, 113, 34, 33, 1137, 34, 35, 34, 33, 34, 33, 33, 33, 33, 36, 34, 33, 33, 34, 34, 34, 34, 34, 608, 98, 97, 97, 33, 33, 36, 34, 33, 164, 33, 34, 33, 34, 34, 33, 161, 162, 33, 528, 34, 544, 162, 33, 33, 34, 34, 34, 34, 34, 33, 33, 34, 34, 50, 50, 2097, 49, 1074, 1073, 32, 32, 34, 34, 179, 35, 52, 50, 34, 2193, 2065, 2065, 2065, 2065, 161, 34, 34, 34, 33, 33, 33, 32, 32, 32, 32, 32, 32, 32, 32, 32, 32, 33, 33, 33, 33, 33, 33, 33, 33, 33, 33, 35, 17, 17, 17, 17, 36, 33, 34, 33, 33, 33, 34, 161, 34, 33, 33, 545, 161, 161, 161, 2209, 33, 161, 1, 544, 33, 608, 672, 544, 544, 49, 49, 1073, 1073, 49, 49, 49, 49, 49, 49, 49, 49, 32, 32, 32, 32, 33, 33, 33, 33, 161, 34, 34, 50, 49, 1073, 49, 35, 33, 34, 1058, 97, 34, 608, 33, 33, 33, 34, 2081, 33, 544, 33, 34, 49, 49, 4624, 49, 34, 49, 33, 33, 162, 35, 34, 33, 33, 49, 49, 177, 177, 177, 177, 49, 49, 49, 528, 17, 17, 17, 17, 17, 17, 1, 17, 17, 17, 17, 512, 1, 1, 1, 512, 162, 162, 162, 162, 33, 33, 512, 512, 512, 4608, 512, 4608, 161, 161, 35, 33, 33, 673, 545, 4608, 4608, 4608, 528, 528, 528, 17, 1042, 1170, 1170, 1041, 1170, 1170, 1170, 1042, 1041, 1042, 1041, 1041, 5648, 5648, 5648, 5648, 5648, 5648, 5648, 5648, 4608, 4608, 4608, 528, 528, 544, 672, 544, 544, 544, 544, 37, 37, 37, 32, 37, 34, 33, 1025, 4624, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4608, 4624, 4624, 4608, 4608, 4608, 4608, 4624, 4608, 4608, 4624, 4608, 4624, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512, 512];
 export const MONSTER_ALIGNMENT = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -7, 0, 0, 0, 0, 0, -7, 0, -5, -5, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, -9, -9, -12, 6, 4, -6, 5, 6, -8, -8, -7, -7, -7, -7, -7, 7, 0, 0, 0, -2, -3, -4, -4, 0, 0, 0, 0, 0, 0, 0, -3, -4, -3, -4, -5, -4, -5, -5, 0, 0, 0, 0, -2, 0, 0, 0, 0, 0, 0, 0, 0, -7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 0, -7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7, 7, 12, 15, 15, 0, 0, 0, 0, 0, -1, -3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 4, 4, -4, -5, 5, -6, -7, 6, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 2, -2, 2, -3, 0, -3, 9, 0, 0, 9, 10, 11, 12, -9, -12, -15, -15, -2, -3, -4, -4, -5, -5, -6, -7, 0, 0, 0, 0, -4, 4, 5, 7, -3, -5, -7, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, -3, -3, -3, -3, -7, 0, -8, -9, -10, -3, -6, -17, 0, 0, 0, 0, 0, 0, 2, -2, -2, -3, -3, -3, -3, -4, -2, -4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -7, -7, -7, -3, -5, -6, -7, -9, -10, 0, 0, 10, 0, 0, 0, 0, -2, -3, 0, -4, -5, -2, -4, -15, -128, 15, -5, 0, -7, -9, 11, 10, 8, -12, -9, -10, -9, -12, -11, -13, -5, -14, -15, -15, -20, 15, 15, 20, 20, -20, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -3, 0, 0, 0, 0, 0, 0, 0, -9, 0, 3, 0, 1, 0, 3, 0, 0, -3, -3, 3, 0, 1, 0, 20, 0, 20, 0, 20, 0, 0, 0, -20, 20, 0, 0, 0, -14, -14, -14, -15, -14, -20, -127, -15, 18, -13, 12, -10, 3, 0, 1, 0, 3, 0, 0, -7, -3, 3, 3, 0, 1, 0];
@@ -93,9 +93,18 @@ const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
+const M2_GIANT = 0x00002000;
+const M2_FEMALE = 0x00020000;
+const M2_PNAME = 0x00080000;
+const M2_ROCKTHROW = 0x08000000;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
 const M1_FLY = 0x00000001;
+const M1_SWIM = 0x00000002;
+const M1_WALLWALK = 0x00000008;
+const M1_CONCEAL = 0x00000080;
+const M1_BREATHLESS = 0x00000400;
+const M1_NOEYES = 0x00001000;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_REGEN = 0x00800000;
 const M1_SEE_INVIS = 0x01000000;
@@ -143,6 +152,8 @@ const CORPSE_EATERS = new Set(['purple worm', 'baby purple worm', 'ghoul',
 const S_IMP = 9;
 const S_MIMIC = 13;
 const S_QUADRUPED = 17;
+const S_EYE = 5;
+const S_LIGHT = 25;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
 const S_ANGEL = 27;
@@ -150,10 +161,12 @@ const S_CENTAUR = 29;
 const S_DRAGON = 30;
 const S_ELEMENTAL = 31;
 const S_JABBERWOCK = 36;
+const S_EEL = 57;
 const S_KOP = 37;
 const S_VAMPIRE = 48;
 export const S_GHOST = 54;
 const S_GOLEM = 55;
+const MS_SILENT = 0;
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
 export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
@@ -239,6 +252,90 @@ export function monsterHasNoHands(mnum) {
 export function monsterIsVerySmall(mnum) {
     return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;
 }
+// C mondata.h:bigmonst().  A missing size row reads as a medium body.
+export function monsterIsBig(mnum) {
+    return (MONSTER_SIZE[mnum] ?? MZ_MEDIUM) >= MZ_LARGE;
+}
+// C mondata.h:is_flyer(), M1_FLY.
+export function monsterIsFlyer(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);
+}
+// C mondata.h:is_floater(): eyes and lights float rather than fly.
+export function monsterIsFloater(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_EYE || MONSTER_SYMBOL[mnum] === S_LIGHT;
+}
+// C mondata.h:is_clinger(), M1_CLING.
+export function monsterIsClinger(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);
+}
+// C mondata.h:is_hider(), M1_HIDE.
+export function monsterIsHider(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HIDE);
+}
+// C mondata.h:is_swimmer(), M1_SWIM.
+export function monsterIsSwimmer(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SWIM);
+}
+// C mondata.h:breathless(), M1_BREATHLESS.
+export function monsterIsBreathless(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_BREATHLESS);
+}
+// C mondata.h:amphibious(), M1_AMPHIBIOUS.
+export function monsterIsAmphibious(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_AMPHIBIOUS);
+}
+// C mondata.h:passes_walls(), M1_WALLWALK.
+export function monsterPassesWalls(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK);
+}
+// C mondata.h:haseyes(): bodies without the M1_NOEYES flag have eyes.
+export function monsterHasEyes(mnum) {
+    return !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES);
+}
+// C mondata.h:hides_under(), M1_CONCEAL.  Requires an object to hide under.
+export function monsterHidesUnder(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CONCEAL);
+}
+// C mondata.h:perceives(), M1_SEE_INVIS.
+export function monsterPerceives(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SEE_INVIS);
+}
+// C mondata.h:control_teleport(), M1_TPORT_CNTRL.
+export function monsterControlsTeleport(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT_CNTRL);
+}
+// C mondata.h:can_teleport(), M1_TPORT.
+export function monsterCanTeleport(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);
+}
+// C mondata.h:is_demon(), M2_DEMON.
+export function monsterIsDemon(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);
+}
+// C mondata.h:is_golem().
+export function monsterIsGolem(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_GOLEM;
+}
+// C mondata.h:is_silent(), MS_SILENT.  A missing sound row is not silent.
+export function monsterIsSilent(mnum) {
+    return MONSTER_SOUND[mnum] === MS_SILENT;
+}
+// C mondata.h:type_is_pname(), M2_PNAME.
+export function monsterHasProperName(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME);
+}
+// C mondata.h:throws_rocks(), M2_ROCKTHROW.
+export function monsterThrowsRocks(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
+}
+// C mondata.h:is_giant(), M2_GIANT.
+export function monsterIsGiant(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);
+}
+// C mondata.h:is_female(), M2_FEMALE.
+export function monsterIsFemale(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_FEMALE);
+}
 export function monsterIsSlithy(mnum) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
 }
@@ -247,6 +344,11 @@ export function monsterIsCentaur(mnum) {
 }
 export function monsterIsKop(mnum) {
     return MONSTER_SYMBOL[mnum] === S_KOP;
+}
+// Eels are the S_EEL class; like monsterIsKop/monsterIsCentaur this is a
+// symbol-class test with no mondata.h macro of its own.
+export function monsterIsEel(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_EEL;
 }
 export function monsterCanBeSaddled(monster) {
     if (!monster || !Number.isInteger(monster.mnum))
@@ -362,6 +464,12 @@ export function monsterSpeciesSticks(mnum) {
         || (!engulfs && attacks.some(([, damageType]) => damageType === AD_WRAP))
         || attacks.some(([attackType]) => attackType === AT_HUGS);
 }
+// C mondata.c:ranged_attk(): any attack whose type is in
+// monattk.h DISTANCE_ATTK_TYPE (AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE).
+export function monsterHasRangedAttack(mnum) {
+    return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === AT_SPIT || attackType === AT_BREA
+        || attackType === AT_MAGC || attackType === AT_GAZE);
+}
 export function monsterCanEngulf(monster) {
     return (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);
 }
@@ -409,7 +517,7 @@ export function monsterIsNonliving(mnum) {
 }
 // Native mondata.h:weirdnonliving excludes undead and manes.
 export function monsterIsWeirdNonliving(mnum) {
-    return MONSTER_SYMBOL[mnum] === S_VORTEX || MONSTER_SYMBOL[mnum] === S_GOLEM;
+    return MONSTER_SYMBOL[mnum] === S_VORTEX || monsterIsGolem(mnum);
 }
 // BEGIN GENERATED MONSTER GROWTH DATA
 export const MONSTER_GROWTH_TARGET = [0, 1, 2, 3, 4, 5, 6, 7, 8, 10, 10, 11, 12, 13, 14, 15, 18, 17, 19, 19, 20, 21, 24, 23, 24, 26, 26, 27, 28, 29, 30, 31, 33, 37, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 46, 45, 47, 47, 49, 49, 53, 51, 52, 53, 54, 55, 56, 57, 58, 60, 61, 61, 62, 63, 65, 66, 66, 67, 68, 69, 70, 71, 77, 77, 77, 77, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 89, 89, 90, 91, 92, 93, 96, 95, 96, 97, 98, 99, 104, 101, 102, 103, 105, 105, 106, 107, 108, 109, 110, 111, 114, 115, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 127, 127, 128, 129, 130, 131, 132, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 166, 168, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 180, 181, 182, 182, 184, 185, 186, 186, 187, 188, 189, 190, 191, 192, 193, 194, 199, 200, 201, 202, 199, 200, 201, 202, 204, 205, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 227, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 268, 268, 268, 268, 269, 269, 270, 271, 272, 273, 274, 276, 276, 278, 280, 279, 281, 281, 283, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 328, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 331, 370, 371, 334, 335, 374, 337, 376, 377, 378, 379, 380, 381, 343];

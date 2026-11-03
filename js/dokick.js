@@ -42,7 +42,7 @@ import { kickDoor } from './kick_door.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { stairwayAt } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsBig, monsterIsFlyer } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
@@ -528,7 +528,7 @@ export async function levitatingKickMisses(monster, state = game) {
     if (!levitating || rn2(3) !== 0)
         return false;
     if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 1
-        || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY))
+        || (monsterIsFlyer(monster.mnum)))
         return false;
     return true;
 }
@@ -597,7 +597,7 @@ export async function rollKickDamage(prepared, { martial = false, state = game, 
 export async function tryKickReel(monster, dx, dy, { martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     requirePlayingGame(state);
     if ((monster.mhp ?? 1) <= 0 || !martial
-        || (MONSTER_SIZE[monster.mnum] ?? 2) >= 3)
+        || monsterIsBig(monster.mnum))
         return null;
     if (rn2(3) !== 0 || monster.mcanmove === 0
         || monster === state.u?.ustuck || monster.mtrapped)

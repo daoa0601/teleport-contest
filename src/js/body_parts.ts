@@ -4,9 +4,7 @@
 
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterHasEyes } from './monster_data.js';
 import { AT_CLAW } from './monster_attack_types.js';
 
 const M1_NOEYES = 0x00001000;
@@ -440,7 +438,7 @@ export function heroHasEyes(state: GameState = game) {
 // C mondata.h:eyecount(). Eye count is anatomy, independent of sight.
 export function heroEyeCount(state: GameState = game) {
     const mnum = currentHeroMonsterNumber(state);
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES) return 0;
+    if (!monsterHasEyes(mnum)) return 0;
     return mnum === PM_CYCLOPS || mnum === PM_FLOATING_EYE ? 1 : 2;
 }
 

@@ -26,7 +26,7 @@ import { sokobanGuilt } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsHuman, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsHuman, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterTypeName, requireMonsterData, monsterHasProperName, monsterIsDemon, monsterPassesWalls } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
@@ -1559,7 +1559,7 @@ export async function dropBoulderOnMonster(x, y, { state = game, confused = fals
 }
 function canBeHit(monster) {
     return !monsterIsAmorphous(monster) && !monsterIsNoncorporeal(monster)
-        && !monsterIsUnsolid(monster) && !(requireMonsterData(MONSTER_FLAGS1, monster.mnum) & M1_WALLWALK);
+        && !monsterIsUnsolid(monster) && !monsterPassesWalls(monster.mnum);
 }
 async function fallingRock(confused) {
     const object = await mksobj(confused ? ROCK : BOULDER, false, false);
@@ -1659,7 +1659,7 @@ export async function doClassGenocide({ finishHeroDeath = finishNativeHeroDeath,
             await plineWithContinuation(`${upstart(plural)} are already nonexistent.`);
         }
         else if (!doomed && canAnnounceImmuneSpecies(species)) {
-            const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+            const named = monsterHasProperName(species);
             const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ) && species !== PM_HIGH_CLERIC;
             await plineWithContinuation(`You aren't permitted to genocide ${unique && !named ? 'the ' : ''}${unique || named ? name : plural}.`);
         }
@@ -1748,7 +1748,7 @@ function genocidePresentation(species) {
         return { name, prefix: 'all ' };
     }
     const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ) && species !== PM_HIGH_CLERIC;
-    const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+    const named = monsterHasProperName(species);
     return { name: requireMonsterData(MONSTER_NAME, species), prefix: unique ? named ? '' : 'the ' : 'all ' };
 }
 async function revertTargetedVampireForm(species) {
@@ -1818,7 +1818,7 @@ async function requestGenocideSpecies(really) {
             return species;
         if (monsterIsHuman(species))
             adjustHeroAlignment(-Math.sign(state.u.ualign.type), state);
-        if ((MONSTER_FLAGS2[species] ?? 0) & M2_DEMON)
+        if (monsterIsDemon(species))
             adjustHeroAlignment(Math.sign(state.u.ualign.type), state);
         if (!((MONSTER_GENO[species] ?? 0) & G_GENO)) {
             if (!heroIsDeaf(state)) {

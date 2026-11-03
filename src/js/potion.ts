@@ -82,7 +82,7 @@ import { finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, 
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasEyes, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
 import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
@@ -2175,7 +2175,7 @@ async function applySupportedDirectEffect({
     }
 
     if (potion.otyp === POT_BLINDNESS) {
-        const hasEyes = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
+        const hasEyes = monsterHasEyes(monster.mnum);
         const permanentlyBlind = (monster.mcansee === 0
             || monster.mcansee === false) && !(monster.mblinded ?? 0);
         const before = monster.mblinded ?? 0;
@@ -2280,7 +2280,7 @@ async function applySupportedDirectEffect({
         monster.mblinded = 0;
         curedBlindness = true;
         if (targetSpotted
-            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)) {
+            && monsterHasEyes(monster.mnum)) {
             await publish(`${sentenceSubject(monster)} can see again.`);
         }
     }

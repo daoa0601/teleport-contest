@@ -39,7 +39,7 @@ import { randomEngraving, CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight } from './mkobj.js';
-import { MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, monsterIsPlayerMonster, monsterIsWhirly, MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, requireMonsterData, monsterIsRider } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsWhirly, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
@@ -909,7 +909,7 @@ function liquidMonsterAt(x, y, state = game) {
 async function revealStrandedSwimmer(x, y, state = game) {
     const monster = liquidMonsterAt(x, y, state);
     if (!monster || !monster.mundetected
-        || !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000002))
+        || !(monsterIsSwimmer(monster.mnum)))
         return;
     monster.mundetected = 0;
     await newsym(x, y);
@@ -2638,7 +2638,7 @@ export async function stone_to_flesh_obj(object, { state = game } = {}) {
         }
         else if (object.otyp === STATUE || object.otyp === FIGURINE) {
             const species = representedSpecies(object);
-            const golem = MONSTER_SYMBOL[species] === S_GOLEM;
+            const golem = monsterIsGolem(species);
             if (!golem && vegetarianCorpse(species)) {
                 await poly_obj(object, MEATBALL, { state });
                 smell = true;
@@ -2694,7 +2694,7 @@ async function animateStoneObject(object, x, y, golem, state) {
         }
     }
     if (monster) {
-        if (MONSTER_SYMBOL[monster.mnum] === S_GOLEM && monster.mnum !== PM_FLESH_GOLEM)
+        if (monsterIsGolem(monster.mnum) && monster.mnum !== PM_FLESH_GOLEM)
             await changeMonsterForm(monster, PM_FLESH_GOLEM);
         return 1;
     }
@@ -3053,14 +3053,14 @@ async function reviveFloorCorpse(object, state) {
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
         }
         else {
-            const name = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
+            const name = monsterHasProperName(species)
                 ? corpseName : capitalizedDefiniteName(corpseName, state);
             await plineWithContinuation(`${name} disappears.`);
         }
     }
     else {
         if (state.urole.key === 'healer' && !heroIsDeaf(state) && !monsterIsNonliving(species)) {
-            const corpse = (MONSTER_FLAGS2[species] ?? 0) & 0x80000
+            const corpse = monsterHasProperName(species)
                 ? corpseName : withIndefiniteArticle(corpseName);
             await publishHeardMessage(`${heroIsHallucinating(state) ? 'a defibrillator' : `${corpse} reviving`}.`, pline, state);
             learned = !state.context?.mon_moving || !!state.context.zap_oseen;
@@ -3195,7 +3195,7 @@ export async function zapHeroWithObject(object, { ordinary = true, state = game 
         }
         case WAN_DEATH:
         case SPE_FINGER_OF_DEATH:
-            if (monsterIsNonliving(heroSpecies(state)) || ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & 0x100)) {
+            if (monsterIsNonliving(heroSpecies(state)) || (monsterIsDemon(heroSpecies(state)))) {
                 await plineWithContinuation(object.otyp === WAN_DEATH
                     ? 'The wand shoots an apparently harmless beam at you.' : 'You seem no deader than before.');
                 break;
@@ -3940,7 +3940,7 @@ async function damageRayMonster(monster, nativeType, dice, { state, publish, ran
             return { damage: 0, absorbedDeath: true };
         }
         else if (monsterIsNonliving(monster.mnum)
-            || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x100)
+            || (monsterIsDemon(monster.mnum))
             || monsterIsVampireShifter(monster) || monsterHasMagicResistance(monster)) {
             hit.resisted = true;
         }
@@ -4314,7 +4314,7 @@ async function hitWithDisintegration(context) {
     if (context.nativeType != null ? Math.abs(context.nativeType) !== 24
         : !context.source.endsWith('breath')) {
         const form = state.u.umonnum;
-        if (monsterIsNonliving(form) || ((MONSTER_FLAGS2[form] ?? 0) & 0x00000100)) {
+        if (monsterIsNonliving(form) || (monsterIsDemon(form))) {
             await shieldHero(state);
             await publish('You seem unaffected.');
             return { resisted: true, damage: 0, heroDied: false };

@@ -13,9 +13,7 @@ import { game } from './gstate.js';
 import {
     findMonsterNearPosition,
 } from './mklev.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, monsterHidesUnder, monsterIsEel } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { scheduleObjectTimer } from './timeout.js';
@@ -205,13 +203,13 @@ async function familiarPresentation(
     let ending = '';
     if (monster.mundetected) {
         const shelter = state.level?.objects?.[monster.mx]?.[monster.my]?.[0];
-        if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL
+        if (monsterHidesUnder(monster.mnum)
             && shelter) {
             ending = ` and ${figurineLocomotion(monster.mnum, 'crawl')} under ${
                 await objectDescription(shelter, { state })
             }`;
         } else if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC
-            || MONSTER_SYMBOL[monster.mnum] === S_EEL) {
+            || monsterIsEel(monster.mnum)) {
             suppressSight = true;
         } else {
             ending = ' and vanish';

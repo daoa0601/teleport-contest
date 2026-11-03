@@ -28,7 +28,7 @@ import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
-import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
 import { splitObjectStack } from './mkobj.js';
@@ -271,7 +271,7 @@ async function hitHero(node, state, options) {
     if (!object)
         return false;
     const attack = 8 + (object.spe ?? 0)
-        + ((MONSTER_SIZE[heroSpecies(state)] ?? 2) >= 3 ? 1 : 0);
+        + (monsterIsBig(heroSpecies(state)) ? 1 : 0);
     if (state.multi)
         endVoluntaryMultiTurn(state);
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, {
@@ -479,7 +479,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
     }
     await newsym(x, y);
     if (state.u.ux === x && state.u.uy === y && state.u.uundetected
-        && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & 0x80))
+        && (monsterHidesUnder(heroSpecies(state))))
         await hideHeroUnder(state);
     const originMonster = monsterAt(state, x, y);
     if (originMonster?.mtrapped)

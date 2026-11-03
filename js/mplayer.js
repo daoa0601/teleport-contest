@@ -6,7 +6,7 @@ import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject } from '.
 import { mkobj, mksobj, blessObjectState, curseObject } from './mkobj.js';
 import { rndClass } from './objnam.js';
 import { setMonsterMalign } from './makemon.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsPlayerMonster } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsFemale, monsterIsPlayerMonster } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { monsterRank } from './botl.js';
@@ -237,7 +237,7 @@ const DEVELOPERS = [
     'Eric', 'Marvin', 'Warwick', 'Alex', 'Dion', 'Michael', 'Helge', 'Ron', 'Timo', 'Joshua', 'Pat', '',
 ];
 function namePlayerMonster(monster) {
-    const femaleKind = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x20000);
+    const femaleKind = monsterIsFemale(monster.mnum);
     const developer = unusedDeveloperName();
     const name = developer === null ? (femaleKind ? 'Eve' : 'Adam')
         : femaleKind && developer !== 'Janet' ? (rn2(2) ? 'Maud' : 'Eve') : developer;

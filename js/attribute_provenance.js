@@ -3,7 +3,7 @@ import { game } from './gstate.js';
 import { FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, I_SPECIAL, INTRINSIC, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { artifactById } from './artifacts.js';
 import { heroFaceName } from './body_parts.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterHasEyes } from './monster_data.js';
 import { CORNUTHAUM, MUMMY_WRAPPING } from './object_data.js';
 import { ownedSimpleObjectName } from './objnam.js';
 import { propertyTimeout } from './properties.js';
@@ -142,7 +142,7 @@ function blockedProvenance(property, state) {
     return '';
 }
 export function heroHasNoEyes(state = game) {
-    return !!((MONSTER_FLAGS1[state.u.umonnum ?? -1] ?? 0) & 0x00001000);
+    return !monsterHasEyes(state.u.umonnum ?? -1);
 }
 const DEFENSES = {
     fireResistance: 'fire', coldResistance: 'cold', antimagic: 'magic',

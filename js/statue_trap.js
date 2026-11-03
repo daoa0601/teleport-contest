@@ -17,7 +17,7 @@ import { revealMonsterAppearance } from './mon.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { setMonsterMalign } from './makemon.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsGolem, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { changeMonsterForm, restoreMonsterShape } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
@@ -51,7 +51,7 @@ function statueReplacement(statue, state) {
 async function createStatueMonster(statue, x, y, state, magic) {
     const savedTraits = statue.oextra?.omonst;
     const replacement = statueReplacement(statue, state)
-        ?? (magic && MONSTER_SYMBOL[statue.corpsenm] === S_GOLEM
+        ?? (magic && monsterIsGolem(statue.corpsenm)
             && statue.corpsenm !== PM_FLESH_GOLEM ? PM_FLESH_GOLEM : null);
     const useSavedTraits = replacement == null && !!savedTraits;
     const mnum = replacement ?? savedTraits?.mnum ?? statue.corpsenm;
@@ -98,7 +98,7 @@ function animationVerb(monster) {
     return 'comes to life';
 }
 async function describeAnimation(statue, monster, x, y, state, shatter, magic) {
-    const verb = magic && MONSTER_SYMBOL[statue.corpsenm] === S_GOLEM
+    const verb = magic && monsterIsGolem(statue.corpsenm)
         && statue.corpsenm !== PM_FLESH_GOLEM && canSpotMonster(monster)
         ? 'turns into flesh' : animationVerb(monster);
     const heroAtStatue = state.u?.ux === x && state.u?.uy === y;

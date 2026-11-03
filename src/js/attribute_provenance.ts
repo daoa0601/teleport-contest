@@ -11,7 +11,7 @@ import {
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import { heroFaceName } from './body_parts.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterHasEyes } from './monster_data.js';
 import { CORNUTHAUM, MUMMY_WRAPPING } from './object_data.js';
 import { ownedSimpleObjectName } from './objnam.js';
 import { propertyTimeout } from './properties.js';
@@ -137,7 +137,7 @@ function blockedProvenance(property: PropertyName, state: GameState): string {
 }
 
 export function heroHasNoEyes(state: GameState = game): boolean {
-    return !!((MONSTER_FLAGS1[state.u.umonnum ?? -1] ?? 0) & 0x00001000);
+    return !monsterHasEyes(state.u.umonnum ?? -1);
 }
 
 const DEFENSES: Readonly<Partial<Record<PropertyName, ArtifactDefense>>> = {

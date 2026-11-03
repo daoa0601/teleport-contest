@@ -57,10 +57,7 @@ export interface HatchedEgg {
 export type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
 
 import { makemonNear } from './mklev.js';
-import {
-    MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND,
-    MONSTER_SYMBOL, monsterTypeName, monsterYoungerForm,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
@@ -182,7 +179,7 @@ function hatchlingCry(mnum: number): string {
     if (sound === 7) return 'screech';
     if (sound === 11) return 'grunt';
     if (sound === 21) return 'mumble';
-    return MONSTER_SYMBOL[mnum] === S_EEL ? 'gurgle' : 'chitter';
+    return monsterIsEel(mnum) ? 'gurgle' : 'chitter';
 }
 
 function heroIsDeaf(state: GameState): boolean {

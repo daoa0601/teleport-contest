@@ -42,7 +42,7 @@ import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, displayColorName, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
@@ -653,7 +653,7 @@ export async function advanceHeroSickness({ state = game, publish = pline, die =
     await publish('You die from your illness.', { urgent: true });
     let killer = hero.sickCause || 'illness';
     const species = nameToMonster(killer);
-    const personal = species >= 0 && !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+    const personal = species >= 0 && monsterHasProperName(species);
     const unique = species >= 0 && !!((MONSTER_GENO[species] ?? 0) & 0x1000);
     // nh_timeout() resolves personal and unique monster names when the
     // delayed illness becomes fatal, before formatkiller() adds an article.

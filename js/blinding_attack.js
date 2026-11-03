@@ -7,7 +7,7 @@ import { heroSpecies } from './polyself.js';
 import { heroIsUnaware } from './senses.js';
 import { AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { game } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, monsterHasEyes } from './monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHasEyes, monsterFaceName } from './body_parts.js';
 import { makePlural, verbForSubject } from './objnam.js';
@@ -27,7 +27,7 @@ export function heroResistsBlindingLight(state = game) {
 }
 export function monsterResistsBlindingLight(monster, state = game) {
     return !!monster.mblinded || !monster.mcansee || !!monster.msleeping
-        || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+        || !monsterHasEyes(monster.mnum)
         || (MONSTER_ATTACKS[monster.mnum] || []).some(([method, damage]) => damage === AD_BLND && (method === AT_EXPL || method === AT_GAZE))
         || monsterHasArtifactDefense(monster, 'blindness', state);
 }
@@ -62,7 +62,7 @@ export function heroCanBeBlindedByContact(attacker, attackType, state = game) {
 export function monsterCanBeBlindedByObject(monster, objectType, { attackerSpecies = null, heroInsideTarget = false, state = game, } = {}) {
     if (!monster || ![CREAM_PIE, BLINDING_VENOM].includes(objectType))
         return false;
-    if ((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NOEYES)
+    if (!monsterHasEyes(monster?.mnum))
         return false;
     if (!monster?.mcansee && (monster?.mblinded ?? 0) === 0)
         return false;
@@ -96,7 +96,7 @@ export function heroBlindingObjectHitMessage(monster, object, { canBlind, state 
     return `${subject} ${plural ? 'splash' : 'splashes'} over ${target}!`;
 }
 function creamPieTarget(monster, name) {
-    const hasFace = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+    const hasFace = monsterHasEyes(monster.mnum)
         && monster.mnum !== PM_FLOATING_EYE;
     if (!hasFace)
         return name;

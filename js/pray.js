@@ -40,7 +40,7 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity } from './mkobj.js';
-import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsUnicorn, requireMonsterData } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDemon, monsterIsUnicorn, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
@@ -170,7 +170,7 @@ export function canPraySafely() {
 }
 function demonRejectsPrayer(alignment) {
     const game = requireInitializedGame();
-    return !!(requireMonsterData(MONSTER_FLAGS2, game.u.umonnum) & M2_DEMON) && alignment !== 0;
+    return monsterIsDemon(game.u.umonnum) && alignment !== 0;
 }
 function prayerOutcome(alignment, trouble) {
     const game = requireInitializedGame();
@@ -532,7 +532,7 @@ export function heroIsSurroundedByRock(state = game) {
             if (IS_OBSTRUCTED(type) && type !== SDOOR && type !== SCORR)
                 continue;
             if (blockedByBoulders(dx, dy, state)
-                && !(requireMonsterData(MONSTER_FLAGS2, state.u.umonnum) & M2_ROCKTHROW))
+                && !(monsterThrowsRocks(state.u.umonnum)))
                 continue;
             return false;
         }
@@ -1630,7 +1630,7 @@ async function offerToAnotherGod(corpse, alignment) {
 async function offerOwnRace(corpse, highAltar, alignment) {
     const game = requireInitializedGame();
     const hero = game.u;
-    if ((MONSTER_FLAGS2[hero.umonnum] ?? 0) & M2_DEMON) {
+    if (monsterIsDemon(hero.umonnum)) {
         await pline('You find the idea very satisfying.');
         await exerciseAttribute(A_WIS, true);
     }

@@ -31,7 +31,7 @@ import { dropInventoryObjectAtHero, dropBoulderIntoLiquid } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm } from './potion.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_ATTACKS, requireMonsterData, monsterIsAmorphous, MONSTER_BODY_META, monsterIsNoncorporeal, monsterIsWhirly, monsterIsUnsolid, monsterIsVerySmall } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsFlyer, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, requireObjectData } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
@@ -298,7 +298,7 @@ function boulderAt(x: number, y: number): GameObject | undefined {
 }
 
 function heroThrowsRocks(state: GameState = game): boolean {
-    return !!((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_ROCKTHROW);
+    return monsterThrowsRocks(heroSpecies(state));
 }
 
 async function stepOntoBoulder(x: number, y: number): Promise<boolean> {
@@ -915,7 +915,7 @@ export function heroTightDiagonalReason(state = game) {
     const flexible = !!(flags & (M1_AMORPHOUS | M1_SLITHY | M1_UNSOLID))
         || (mnum !== null && MONSTER_SYMBOL[mnum] === S_VORTEX)
         || mnum === PM_AIR_ELEMENTAL;
-    if (mnum !== null && (MONSTER_SIZE[mnum] ?? 2) >= 3 && !flexible)
+    if (mnum !== null && monsterIsBig(mnum) && !flexible)
         return 1;
     if (inventoryWeight(state) > WT_TOOMUCH_DIAGONAL) return 2;
     if (state.level?.flags?.sokoban_rules) return 3;
@@ -3078,8 +3078,8 @@ async function finishHeroMovement({
         disturbBuriedZombies(u.ux, u.uy);
 
     const species = heroSpecies(game);
-    if (((MONSTER_FLAGS1[species] ?? 0) & M1_CONCEAL)
-        || MONSTER_SYMBOL[species] === S_EEL || u.dx || u.dy)
+    if ((monsterHidesUnder(species))
+        || monsterIsEel(species) || u.dx || u.dy)
         await hideHeroUnder();
     if ((u.dx || u.dy) && (u.m_ap_type === M_AP_OBJECT || u.m_ap_type === M_AP_FURNITURE))
         u.m_ap_type = M_AP_NOTHING;
@@ -3661,7 +3661,7 @@ export async function petRefusesHeroSwap(monster: Monster, state: PlayingGameSta
         reason = "won't fit into the same spot that you're at";
     } else if (diagonal && petBadRock(monster, state, x, hero.uy0)
         && petBadRock(monster, state, hero.ux0, y)
-        && ((MONSTER_SIZE[monster.mnum] ?? 0) >= 3 || currentMonsterLoad(monster) > 600)) {
+        && (monsterIsBig(monster.mnum) || currentMonsterLoad(monster) > 600)) {
         reason = "won't fit through";
     } else if (monster.mpeaceful && trap) {
         const name = trapName(trap.ttyp, { state });
@@ -3702,7 +3702,7 @@ export async function settlePetHeroDisplacement(monster: Monster, state: Playing
     const name = monsterName(monster, {
         state,
         article: monster.mtame ? 'your'
-            : !givenName && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
+            : !givenName && !(monsterHasProperName(monster.mnum))
                 ? 'the' : 'none',
         adjective: monster.mpeaceful && !monster.mtame ? 'peaceful' : '',
         suppressSaddle: givenName,
@@ -3935,7 +3935,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         : game.level ? monsterAtPosition(game.level, newx, newy) : null;
     const hiddenCeilingMonster = monster?.mundetected && !game.context.forcefight
         && !canSenseMonster(monster)
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x80)
+        && !(monsterHidesUnder(monster.mnum))
         && MONSTER_SYMBOL[monster.mnum] !== 57;
     // C display.h:_is_safemon() requires a spotted peaceful monster and
     // an unimpaired hero. Concealed ceiling monsters still cancel running
@@ -4340,7 +4340,7 @@ export async function noticeMonster(
         monster.mspotted = 1;
         const named = MGIVENNAME(monster) !== '';
         const article = monster.mtame ? 'your'
-            : !named && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME) ? 'a'
+            : !named && !(monsterHasProperName(monster.mnum)) ? 'a'
             : 'none';
         // C hack.c:1727 suppresses the saddle only for a named monster, so
         // an unnamed steed is announced as "your saddled pony".
@@ -4428,7 +4428,7 @@ export function threateningMonsterNearby(state: GameState = game): boolean {
             const appearance = M_AP_TYPE(monster);
             if (appearance === M_AP_FURNITURE || appearance === M_AP_OBJECT) continue;
             if (!hallucinating && (monster.mpeaceful || !monsterHasActiveAttack(monster))) continue;
-            const hider = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HIDE;
+            const hider = monsterIsHider(monster.mnum);
             if ((hider && monster.mundetected) || monsterIsHelpless(monster)
                 || monsterIsScaredAt(monster, state, u.ux, u.uy)
                 || !canSpotMonster(monster)) continue;
@@ -4938,14 +4938,14 @@ export function flyingSupportsLoad(ignoreBoots: boolean, state: PropertyState = 
     const trapped = (hero.utrap ?? 0) > 0 && hero.utraptype !== TT_PIT;
     if (flying && trapped) return false;
     const steedFlies = hero.usteed
-        && !!((MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) & 0x01);
+        && monsterIsFlyer(hero.usteed.mnum);
     return flying || !!steedFlies;
 }
 export function inventoryWeight(state: GameState): number {
     const inventory = state.inventory || [];
     const species = state.u.umonnum;
     const throwsRocks = species !== undefined && Number.isInteger(species)
-        && !!((MONSTER_FLAGS2[species] ?? 0) & M2_ROCKTHROW);
+        && monsterThrowsRocks(species);
     const objectWeightTotal = inventory.reduce((total, object) => {
         // NetHack's only coin denomination weighs one unit per 100 coins,
         // rounded after combining the entire inventory stack.

@@ -43,7 +43,7 @@ import { heroIsDisplaced } from './do_wear.js';
 
 import { heroIsInvisible } from './hero_invisibility.js';
 import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterPerceives, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import type { MonsterArticle } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
@@ -677,7 +677,7 @@ export async function moveSpecial(
 // C priest.c:pri_move() via m_canseeu(): the special mover sees the hero
 // with its own eyes, without displacement, and not from the water.
 export function specialMoverSeesHero(monster: Monster, state: PlayingGameState) {
-    const seesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    const seesInvisible = monsterPerceives(monster.mnum);
     return (
         monster.mcansee !== 0 &&
         monster.mcansee !== false &&

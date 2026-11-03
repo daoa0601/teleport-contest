@@ -23,12 +23,7 @@ import type {
 } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE,
-    MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal,
-    monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly,
-    monsterTypeName, requireMonsterData,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, flush_screen, map_invisible, newsym,
 } from './display.js';
@@ -707,7 +702,7 @@ function gazeResult(nativeResult: number, heroDied = false): MonsterCombatDamage
 }
 
 function perceivesInvisible(monster: Monster): boolean {
-    return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    return monsterPerceives(monster.mnum);
 }
 
 // Native mon_reflects only identifies a worn shield or amulet when its
@@ -732,9 +727,9 @@ export function monsterCanEngulfMonster(
     if (defenderSize >= MZ_HUGE
         || (requireMonsterData(MONSTER_SIZE, attacker.mnum) < defenderSize && !monsterIsWhirly(attacker))
         || attacker.mtrapped || defender.mtrapped) return false;
-    if (!(requireMonsterData(MONSTER_FLAGS1, defender.mnum) & M1_WALLWALK)
+    if (!monsterPassesWalls(defender.mnum)
         && engulfSquareBlocked(state.level.at(defender.mx, defender.my), attacker)) return false;
-    return !!(requireMonsterData(MONSTER_FLAGS1, attacker.mnum) & M1_WALLWALK)
+    return !!monsterPassesWalls(attacker.mnum)
         || !engulfSquareBlocked(state.level.at(attacker.mx, attacker.my), defender);
 }
 

@@ -30,10 +30,7 @@ import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin } from './hacklib.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL,
-    monsterIsVampireShifter, monsterTypeName,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPerceives, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { petDroppableObject } from './dog.js';
 import { applyPetHunger } from './pet_hunger.js';
@@ -149,7 +146,7 @@ function targetPosition(target: PetRangedTarget, state: PlayingGameState) {
 }
 
 function petSeesInvisible(pet: Monster) {
-    return !!((MONSTER_FLAGS1[pet.mnum] ?? 0) & M1_SEE_INVIS);
+    return monsterPerceives(pet.mnum);
 }
 
 function petCanSee(pet: Monster, x: number, y: number) {
@@ -704,7 +701,7 @@ export async function performPetRangedAttack(
     if (result.heroDied || result.status === MMOVE_DIED) return result;
     if ((nativeResult & M_ATTK_HIT) && !(nativeResult & M_ATTK_DEF_DIED)
         && recordRandom(random, calls, 4) !== 0 && target.mcansee
-        && !((MONSTER_FLAGS1[target.mnum] ?? 0) & M1_NOEYES)) {
+        && monsterHasEyes(target.mnum)) {
         const response = await attackMonsterWithMonster(target, pet,
             { state, random, rollDice, rollOne, calls });
         result.counterattack = response;
@@ -1089,9 +1086,9 @@ export async function movePet(
             const avoidsEye = target.mnum === MONSTER_NAME.indexOf('floating eye')
                 && recordRandom(random, calls, 10) !== 0
                 && !!monster.mcansee
-                && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+                && monsterHasEyes(monster.mnum)
                 && !!target.mcansee
-                && (!target.minvis || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+                && (!target.minvis || monsterPerceives(monster.mnum))
                 && !monsterReflectsRay(monster, state);
             const avoidsCube = target.mnum === MONSTER_NAME.indexOf('gelatinous cube')
                 && recordRandom(random, calls, 10) !== 0;
@@ -1265,10 +1262,10 @@ const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
 export function monsterCouldReachItem(
     monster: Monster, x: number, y: number, state: PlayingGameState,
 ): boolean {
-    if (isPoolAt(x, y, state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM)) return false;
+    if (isPoolAt(x, y, state) && !(monsterIsSwimmer(monster.mnum))) return false;
     if (isLavaAt(x, y, state)
         && monster.mnum !== PM_FIRE_ELEMENTAL_REACH && monster.mnum !== PM_SALAMANDER) return false;
-    return !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW)
+    return monsterThrowsRocks(monster.mnum)
         || !(state.level.objects[x]?.[y] ?? []).some(object => object.otyp === BOULDER);
 }
 

@@ -25,7 +25,7 @@ import { GlyphOffset } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
 import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './apply.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { visibleCommandKey } from './cmd.js';
@@ -238,7 +238,7 @@ async function rejectExistingName(monster, oldName, proposed) {
     const subject = oldName.charAt(0).toUpperCase() + oldName.slice(1);
     const rider = monsterIsRider(monster);
     if (!proposed) {
-        const personal = MGIVENNAME(monster) || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x80000) || monster.isshk;
+        const personal = MGIVENNAME(monster) || (monsterHasProperName(monster.mnum)) || monster.isshk;
         await plineWithContinuation(`${subject} would rather keep ${rider ? 'its' : monsterPossessive(monster)} existing ${personal ? 'name' : 'title'}.`);
         return true;
     }
@@ -352,7 +352,7 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
         return monster.mnum === PM_SHOPKEEPER && !invisible ? name
             : `${name} the ${invisible ? 'invisible ' : ''}${typeName}`;
     }
-    const givenName = !suppressName || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME)
+    const givenName = !suppressName || (monsterHasProperName(monster.mnum))
         ? MGIVENNAME(monster) : null;
     let adjectives = adjective ? `${adjective} ` : '';
     if (invisible)
@@ -374,7 +374,7 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
         }
         else if (called) {
             name = `${typeName} called ${givenName}`;
-            personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
+            personal = monsterHasProperName(monster.mnum);
         }
         else if (monsterIsPlayerMonster(monster.mnum)
             && / the /i.test(givenName)) {
@@ -391,7 +391,7 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
     }
     else {
         name = typeName;
-        personal = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PNAME);
+        personal = monsterHasProperName(monster.mnum);
     }
     if (personal && (article === 'your' || !adjectives))
         article = monster.mnum === PM_WIZARD_OF_YENDOR ? 'the' : 'none';

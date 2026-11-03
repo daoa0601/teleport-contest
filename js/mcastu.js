@@ -6,7 +6,7 @@
 import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT } from './const.js';
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterIsNonliving, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterIsDemon, monsterIsNonliving, monsterPerceives, monsterTypeName } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName } from './display.js';
@@ -279,7 +279,7 @@ async function mcastDeathTouch(monster, ctx) {
     const nonliving = form !== null && Number.isInteger(form)
         && monsterIsNonliving(form);
     const demon = form !== null && Number.isInteger(form)
-        && !!((MONSTER_FLAGS2[form] ?? 0) & 0x00000100);
+        && monsterIsDemon(form);
     if (nonliving || demon) {
         await ctx.publish('You seem no deader than before.');
         return false;
@@ -682,7 +682,7 @@ export function monsterCurseKind(monster, undirected, state, random, calls) {
         if (undirected)
             return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        if (heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget
+        if (heroIsInvisible(state) && !(monsterPerceives(monster.mnum)) && wrongTarget
             || M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance === 0 || state.u.uundetected)
             return 'visible-general';
         if (heroIsDisplaced(state) && wrongTarget)
@@ -765,7 +765,7 @@ async function monsterSummonSpellEffect(monster, state) {
             const heroX = state?.u?.ux ?? monster?.mux;
             const heroY = state?.u?.uy ?? monster?.muy;
             const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
-            const cannotSeeInvisible = !((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_SEE_INVIS);
+            const cannotSeeInvisible = !(monsterPerceives(monster?.mnum));
             if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
                 effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
             }
@@ -843,7 +843,7 @@ async function curseDirectedSpell(monster, state, publish, random) {
         const mimicking = state.u.m_ap_type === M_AP_OBJECT
             && state.u.mappearance === STRANGE_OBJECT;
         let pointing = 'at you, then curses';
-        if ((heroIsInvisible(state) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)
+        if ((heroIsInvisible(state) && !(monsterPerceives(monster.mnum))
             && misplaced) || mimicking || state.u.uundetected) {
             pointing = 'and curses in your general direction';
         }
@@ -938,7 +938,7 @@ export async function summonMonsterInsects(caster, state) {
             message = `${subject} casts at a clump of sticks, but nothing happens.`;
         else if (monsterClass === S_SNAKE)
             message = `${subject} transforms a clump of sticks into ${what}!`;
-        else if (heroIsInvisible(state) && !((MONSTER_FLAGS1[caster.mnum] ?? 0) & M1_SEE_INVIS) && wrongTarget)
+        else if (heroIsInvisible(state) && !(monsterPerceives(caster.mnum)) && wrongTarget)
             message = `${subject} summons ${what} around a spot near you!`;
         else if (heroIsDisplaced(state) && wrongTarget)
             message = `${subject} summons ${what} around your displaced image!`;

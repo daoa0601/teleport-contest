@@ -15,7 +15,7 @@ import { dist2, possessiveName } from './hacklib.js';
 import { setHeroGrip } from './hero_grip.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsEel, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -69,7 +69,7 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
             });
             // a fish won't voluntarily swap positions when it's in water
             // and the hero is over land
-            const eelStays = MONSTER_SYMBOL[monster.mnum] === S_EEL
+            const eelStays = monsterIsEel(monster.mnum)
                 && isPoolAt(oldx, oldy, state) && !isPoolAt(hero.ux, hero.uy, state);
             if (!spot || eelStays) {
                 await placeMonsterOnMap(monster, oldx, oldy); /* put back */

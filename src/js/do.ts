@@ -13,7 +13,7 @@ import type { GameState } from './game_state.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterDigests, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { AT_BOOM, AD_POLY } from './monster_attack_types.js';
@@ -1403,5 +1403,5 @@ const M1_WALLWALK = 0x08;
 const M2_ROCKTHROW = 0x08000000;
 
 function ignoresFallingBoulder(mnum: number): boolean {
-    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK) || !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
+    return !!monsterPassesWalls(mnum) || monsterThrowsRocks(mnum);
 }

@@ -2648,6 +2648,8 @@ paranoid_ynq	yn_function
 parent_dlevel	level_range
 parent_dlevel	rn2
 parkguard	newsym
+parse	flush_screen
+parse	readchar
 parse_condition	splitsubfields
 parse_condition	str2conditionbitmask
 parse_conf_buf	choose_random_part

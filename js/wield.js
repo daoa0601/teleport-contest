@@ -471,7 +471,7 @@ export async function explainTwoWeaponEnd(wasTwoWeapon, state = game) {
 export function emptyHandedDescription(state = game) {
     if (state.uarmg || state.u.uarmg)
         return 'empty handed';
-    const humanoid = requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & 0x00020000;
+    const humanoid = monsterIsHumanoid(heroSpecies(state));
     return humanoid ? 'bare handed' : 'not wielding anything';
 }
 // The caller has already checked whether the old weapon is welded. A failed

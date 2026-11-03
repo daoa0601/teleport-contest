@@ -14,7 +14,7 @@ import { objectNoLongerHeld, dropInventoryObjectAtHero } from './do.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
-import { MONSTER_SIZE, monsterTypeName } from './monster_data.js';
+import { MONSTER_SIZE, monsterIsBig, monsterTypeName } from './monster_data.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './polyself.js';
 import { unlinkMonsterObject } from './mkobj.js';
@@ -223,7 +223,7 @@ function pitAnchor(targetX, targetY, monster, state) {
         ? 'a boulder'
         : location && IS_FURNITURE(location.typ)
             ? 'something' : null;
-    if (monster && (MONSTER_SIZE[monster.mnum] ?? 2) >= 3
+    if (monster && monsterIsBig(monster.mnum)
         && canSpotMonster(monster))
         anchor = describeMonsterName(monster, { state });
     return anchor;

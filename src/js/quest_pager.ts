@@ -9,7 +9,7 @@ import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { experienceRankIndex } from './exper.js';
-import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, monsterHasProperName } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 
@@ -127,7 +127,7 @@ function roleMonsterName(mnum: number | undefined): string {
     if (mnum === undefined || !Number.isInteger(mnum)) return '';
     const name = MONSTER_NAME[mnum];
     if (name === undefined) return '';
-    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME) !== 0 ? name : `the ${name}`;
+    return monsterHasProperName(mnum) ? name : `the ${name}`;
 }
 
 export function questLeaderName(g: GameState = game): string {

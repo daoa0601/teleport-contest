@@ -95,7 +95,7 @@ import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import type { RandomBelow } from './monster_action_types.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterDigests, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { learnObjectType, objectClassForType, objectMaterial } from './o_init.js';
@@ -423,7 +423,7 @@ async function diagnoseFloorObjects(x: number, y: number): Promise<{ found: bool
         await pline(`You determine that ${one ? here ? 'this' : 'that' : here ? 'these' : 'those'} unfortunate being${one ? '' : 's'} ${one ? 'is' : 'are'}${reviver ? ' mostly' : ''} dead.`);
     } else {
         const name = heroIsBlind(game) ? `${x === game.u.ux && y === game.u.uy ? 'This' : 'That'} ${monsterIsHumanoid(species) ? 'person' : 'creature'}`
-            : `${(MONSTER_FLAGS2[species] ?? 0) & 0x80000 ? '' : 'The '}${objectMonsterName(object)}`;
+            : `${monsterHasProperName(species) ? '' : 'The '}${objectMonsterName(object)}`;
         const health = game.urole.key === 'healer'
             ? game.level.traps.some(trap => trap.tx === x && trap.ty === y && trap.ttyp === STATUE_TRAP) ? 'extraordinary'
                 : object.contents?.length ? 'remarkable' : 'fine' : 'fine';
@@ -760,7 +760,7 @@ export async function checkHeroLeashes(oldX: number, oldY: number) {
         if (distance(game.u.ux, game.u.uy, monster) <= distance(oldX, oldY, monster)) continue;
         const separation = Math.max(Math.abs(game.u.ux - monster.mx), Math.abs(game.u.uy - monster.my));
         if (separation <= 3) continue;
-        if (leash.cursed && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x400)) {
+        if (leash.cursed && !(monsterIsBreathless(monster.mnum))) {
             if (separation > 5 || (monster.mhp -= rnd(2)) <= 0) {
                 const pacifism = game.u.uconduct.killer ?? 0;
                 await pline(`Your leash chokes ${monsterName(monster)} to death!`);
@@ -897,7 +897,7 @@ export async function useMirror(object: GameObject, { state = game }: { state?: 
         return result;
     }
     const target = mirrorTarget(direction, state);
-    if (!target || !target.onHead || ((MONSTER_FLAGS1[target.monster.mnum] ?? 0) & M1_NOEYES))
+    if (!target || !target.onHead || (!monsterHasEyes(target.monster.mnum)))
         return result;
     result.heroDied = await showMonsterReflection(target.monster, object, mirror, invisible, state);
     return result;
@@ -969,7 +969,7 @@ function mirrorTarget({ dx, dy }: Pick<DirectionSelection, 'dx' | 'dy'>, state: 
         y += dy;
         if (!isok(x, y)) return null;
         const monster = monsterAtPosition(level, x, y);
-        if (monster && (!monster.minvis || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS)))
+        if (monster && (!monster.minvis || (monsterPerceives(monster.mnum))))
             return { monster, onHead: monster.mx === x && monster.my === y };
         if (!rayPositionIsOpen(x, y, state)) return null;
     }
@@ -981,7 +981,7 @@ async function showMonsterReflection(
 ): Promise<boolean> {
     const visible = canSeeMonster(monster);
     const ways = visible ? howMonsterSeen(monster) : 0;
-    const perceives = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    const perceives = monsterPerceives(monster.mnum);
     const able = !monster.mcan && (!monster.minvis || perceives);
     const name = () => monsterName(monster, { capitalized: true, state });
     if (monster.msleeping) {
@@ -1040,7 +1040,7 @@ async function showMonsterReflection(
             if (relocation?.died) return true;
         }
     } else if (!monsterIsUnicorn(monster.mnum) && !monsterIsHumanoid(monster.mnum)
-        && !((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON) && (!monster.minvis || perceives) && rn2(5)) {
+        && !(monsterIsDemon(monster.mnum)) && (!monster.minvis || perceives) && rn2(5)) {
         if (monster.mfrozen) {
             await pline(visible ? `You discern no obvious reaction from ${monsterName(monster)}.`
                 : formatFeltMessage('a bit silly gesturing the mirror in that direction.', state));
@@ -1526,7 +1526,7 @@ function jumpRestriction(x: number, y: number, magic: number, state: PlayingGame
     if (diagonal === DIAGONAL && blocksDoor(state.level.requireAt(hero.ux, hero.uy)))
         return "You can't jump diagonally out of a doorway.";
     if (passesWalls) return null;
-    const throwsRocks = !!((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & 0x08000000);
+    const throwsRocks = monsterThrowsRocks(heroSpecies(state));
     for (const point of walkPathCells(hero.ux, hero.uy, x, y)) {
         const location = state.level.requireAt(point.x, point.y);
         const boulder = (state.level.objects[point.x]?.[point.y] || [])
@@ -3027,7 +3027,7 @@ export async function useGrapplingHook(hook: GameObject, {
                 }
             }
 
-            const large = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
+            const large = monsterIsBig(monster.mnum);
             const strong = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_STRONG);
             if ((!large && !strong) || rn2(4) !== 0) {

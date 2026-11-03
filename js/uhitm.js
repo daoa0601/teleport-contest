@@ -88,7 +88,7 @@ import { wornMonsterLifeSaver } from './mondeath.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DRDX, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHasHead, monsterHasNoAttacks, monsterHasNoHands, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsWooden, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoAttacks, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import { objectClassForType, objectMaterial, observeObject } from './o_init.js';
@@ -167,10 +167,10 @@ function hasUnrevealedAppearance(monster, state) {
         && !shapechangerProtection(state);
 }
 function hidesUnder(monster) {
-    return !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_CONCEAL);
+    return monsterHidesUnder(monster?.mnum);
 }
 function isEel(monster) {
-    return MONSTER_SYMBOL[monster?.mnum] === S_EEL;
+    return monsterIsEel(monster?.mnum);
 }
 // C dmgtype(mtmp->data, AD_STCK): any attack of the species adheres.
 function hasStickyAttack(monster) {
@@ -430,7 +430,7 @@ export async function runSafepetDisplacement(monster) {
         || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
             .includes(MONSTER_NAME[monster.mnum] ?? ''))
         || (IS_OBSTRUCTED(requireGameLevel(game).requireAt(game.u.ux, game.u.uy).typ)
-            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
+            && !monsterPassesWalls(monster.mnum));
     const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
         .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
     if ((blocked || inShop) && monster.isshk
@@ -1497,7 +1497,7 @@ async function preparePhysicalContact(monster, object, context) {
     const material = object ? objectMaterial(object, state) : 0;
     if (object && (mode === 'thrown' || mode === 'kicked') && object.oclass !== RING_CLASS
         && (material === GEMSTONE || material === MINERAL)
-        && (requireMonsterData(MONSTER_FLAGS1, monster.mnum) & M1_WALLWALK) && !monsterIsUnsolid(monster)) {
+        && (monsterPassesWalls(monster.mnum)) && !monsterIsUnsolid(monster)) {
         await showHeroHarmlessStoneHit(monster, object, { ...context });
         const wake = await wakeAttackedMonster(monster);
         return { kind: 'finished', outcome: { survived: true, heroDied: wake.heroDied } };
@@ -1953,7 +1953,7 @@ export function physicalDamage(monster, { state, damage, attack, specialDamage }
 // C mondata.c:can_blnd() for the hero's own contact attack; the monster
 // defender twin lives with mhitm_ad_blnd's monster-versus-monster branch.
 function naturalAttackCanBlind(monster, { state, attack }) {
-    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES || !monster.mcansee && !monster.mblinded)
+    if (!monsterHasEyes(monster.mnum) || !monster.mcansee && !monster.mblinded)
         return false;
     if (heroSpecies(state) === PM_RAVEN && monster.mnum === PM_RAVEN)
         return false;
@@ -2213,7 +2213,7 @@ export async function mhitmAdLegs(call) {
             state.u.levitating ||
             state.u.levitation ||
             state.u.flying);
-        const attackerFlies = !!((MONSTER_FLAGS1[attacker.mnum] ?? 0) & M1_FLY);
+        const attackerFlies = monsterIsFlyer(attacker.mnum);
         if (airborneHero && !attackerFlies) {
             await publish(`${subject} tries to reach your ${side} ${leg}!`);
             damage = 0;
@@ -2394,7 +2394,7 @@ export function isSteadfast(actor, state) {
     const mnum = species(actor, state);
     const floating = isHeroActor(actor, state)
         ? actor.levitating || actor.levitation || actor.flying
-        : ((MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY)
+        : (monsterIsFlyer(mnum))
             || [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[mnum] ?? -1);
     if (floating || Is_airlevel(state.u.uz)
         || (Is_waterlevel(state.u.uz)
@@ -2898,7 +2898,7 @@ async function polymorphDefender(attacker, defender, context) {
             if (visible)
                 await announcePolymorph(defender, before, context);
             damage = 0;
-            if (((MONSTER_FLAGS1[attacker.mnum] ?? 0) & M1_TPORT)
+            if ((monsterCanTeleport(attacker.mnum))
                 && !await reportMonsterTeleportRestriction(attacker, { state, publish })) {
                 const relocation = await randomMonsterRelocation(attacker, { state, random, rollOne, flags: RLOC_MSG });
                 if (relocation?.died || state.program_state.gameover)
@@ -3377,7 +3377,7 @@ function canBlindThroughContact(attacker, defender, attack, state) {
     }
 }
 function hasEyes(monster) {
-    return !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
+    return monsterHasEyes(monster.mnum);
 }
 function clearWaiting(monster) {
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
@@ -3997,7 +3997,7 @@ async function applyNaturalEffect(monster, context) {
 async function summonDemonPet(context) {
     const { state, random, publish } = context;
     const species = heroSpecies(state);
-    if (!((MONSTER_FLAGS2[species] ?? 0) & M2_DEMON) || random(13)
+    if (!(monsterIsDemon(species)) || random(13)
         || state.uwep || state.u.uwep || species === MONSTER_NAME.indexOf('amorous demon')
         || species === MONSTER_NAME.indexOf('balrog'))
         return false;
@@ -4146,7 +4146,7 @@ export async function resolveHeroCombatExplosion(defender, attack, { state = gam
         }
     }
     else if (damageType === AD_HALU) {
-        if (defender && !((MONSTER_FLAGS1[defender.mnum] ?? 0) & M1_NOEYES) && defender.mcansee) {
+        if (defender && monsterHasEyes(defender.mnum) && defender.mcansee) {
             await publish(`${monsterName(defender, { state, capitalized: true })} is affected by your flash of light!`);
             defender.mconf = 1;
         }
@@ -4210,7 +4210,7 @@ export async function resolveHeroCombatEngulf(defender, attack, { state = game, 
     if (fatal && !rider) {
         await publish(`You ${digests ? 'englut' : 'engulf'} ${monsterName(defender, { state })}.`);
         const rawName = monsterTypeName(species, !!defender.female);
-        const name = (requireMonsterData(MONSTER_FLAGS2, species) & M2_PNAME)
+        const name = (monsterHasProperName(species))
             ? rawName : withIndefiniteArticle(rawName);
         const death = await resolveImmediatePetrification({ state, publish,
             killer: `${digests ? 'swallowing' : enfolds ? 'enclosing' : 'engulfing'} ${name}${digests ? ' whole' : ''}` });
@@ -4257,7 +4257,7 @@ function heroCanEngulf(defender, state) {
     if (size >= MZ_HUGE || (requireMonsterData(MONSTER_SIZE, hero) < size
         && !monsterIsWhirly({ mnum: hero })) || defender.mtrapped)
         return false;
-    if (!(requireMonsterData(MONSTER_FLAGS1, defender.mnum) & M1_WALLWALK)
+    if (!monsterPassesWalls(defender.mnum)
         && engulfSquareBlocked(state.level.at(defender.mx, defender.my), hero))
         return false;
     return heroPassesWalls(state)
@@ -4349,7 +4349,7 @@ async function engulfDamage(defender, type, damage, state, { publish, random, ro
             }
             break;
         case AD_BLND:
-            if (!(requireMonsterData(MONSTER_FLAGS1, defender.mnum) & M1_NOEYES)
+            if (monsterHasEyes(defender.mnum)
                 && (defender.mcansee || defender.mblinded) && !defender.msleeping) {
                 if (defender.mcansee)
                     await publish(`${name()} can't see in there!`);
@@ -4722,7 +4722,7 @@ async function performNaturalContact(sequence, attack) {
     }
     const compatibility = state.u.uswallow ? 0 : heroSeductionCompatibility(monster, attack, state);
     if (compatibility) {
-        const sees = monster.mcansee && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES);
+        const sees = monster.mcansee && monsterHasEyes(monster.mnum);
         await plineWithContinuation(`You ${sees ? 'smile at' : 'talk to'} ${monsterName(monster)} ${compatibility === 2 ? 'engagingly' : 'seductively'}.`);
         return applyNaturalDamage(sequence, attack, 0);
     }
@@ -5529,7 +5529,7 @@ export async function startHeroPetrificationFromMonster(monster, state = game) {
             return false;
     }
     const unique = !!(requireMonsterData(MONSTER_GENO, monster.mnum) & G_UNIQ);
-    const properName = !!(requireMonsterData(MONSTER_FLAGS2, monster.mnum) & M2_PNAME);
+    const properName = monsterHasProperName(monster.mnum);
     const name = monsterTypeName(monster.mnum, monster.female);
     return startHeroPetrification({
         state, killer: unique && !properName ? `the ${name}` : name,
@@ -5713,7 +5713,7 @@ export async function applyHeroNaturalPolymorph(monster, context) {
                     await publish(`${before} undergoes a freakish metamorphosis${wasSeen ? ' and disappears' : ''}.`);
                 }
             }
-            if (!heroDied && ((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & M1_TPORT) !== 0) {
+            if (!heroDied && monsterCanTeleport(heroSpecies(state))) {
                 const teleport = await teleportHero({ chooseDestination: askTeleportDestination });
                 heroDied = teleport.died;
             }

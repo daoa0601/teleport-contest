@@ -22,7 +22,7 @@ import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { stopHeroOccupation } from './occupation.js';
-import { MONSTER_SOUND, monsterTypeName } from './monster_data.js';
+import { monsterIsSilent, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon } from './weapon.js';
@@ -160,7 +160,7 @@ export async function invault(state = game) {
         return;
     }
     if (state.u.strangled || (state.u.strangledTurns ?? 0) > 0
-        || MONSTER_SOUND[state.u.umonnum ?? state.u.umonster ?? 260] === 0 || heroHasInvoluntaryDelay(state)) {
+        || monsterIsSilent(state.u.umonnum ?? state.u.umonster ?? 260) || heroHasInvoluntaryDelay(state)) {
         await plineWithContinuation(deaf ? `${name()} huffs and turns to leave.`
             : `"I'll be back when you're ready to speak to me!"`);
         await removeMonsterFromGame(guard);

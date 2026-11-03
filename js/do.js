@@ -9,7 +9,7 @@
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterDigests, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
 import { monsterIsScaredAt } from './monmove.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { AT_BOOM, AD_POLY } from './monster_attack_types.js';
@@ -1347,6 +1347,6 @@ export async function applyBoulderPitEffects(boulder, trap, x, y, { state = game
 const M1_WALLWALK = 0x08;
 const M2_ROCKTHROW = 0x08000000;
 function ignoresFallingBoulder(mnum) {
-    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK) || !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
+    return !!monsterPassesWalls(mnum) || monsterThrowsRocks(mnum);
 }
 //# sourceMappingURL=do.js.map

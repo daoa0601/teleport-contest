@@ -15,7 +15,7 @@ import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN,
 import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight } from './mkobj.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterHasProperName, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
@@ -324,7 +324,7 @@ export function corpseName(object, { adjective = '', includeArticle = false, sin
     const glob = object.otyp !== CORPSE && object.globby;
     let name = glob ? requireObjectName(object.otyp) : objectMonsterName(object);
     const personal = !glob && object.corpsenm !== undefined
-        && !!((MONSTER_FLAGS2[object.corpsenm] ?? 0) & 0x00080000);
+        && monsterHasProperName(object.corpsenm);
     const unique = !glob && corpseMonsterIsUnique(object.corpsenm);
     if (personal || unique)
         name = possessiveName(name);
@@ -354,7 +354,7 @@ function physicalObjectNoun(object, noun, state) {
         return `${noun} of ${withIndefiniteArticle(objectMonsterName(object))}`;
     if (object.otyp === STATUE && object.corpsenm !== undefined && object.corpsenm >= 0) {
         const name = objectMonsterName(object);
-        const personal = !!((MONSTER_FLAGS2[object.corpsenm] ?? 0) & 0x00080000);
+        const personal = monsterHasProperName(object.corpsenm);
         const monster = personal ? name : corpseMonsterIsUnique(object.corpsenm)
             ? `the ${name}` : withIndefiniteArticle(name);
         const historic = state.urole?.key === 'archeologist'
@@ -419,7 +419,7 @@ export function definiteName(name, state = game) {
 const CAPITALIZED_MONSTER_TITLES = [
     ...MONSTER_NAME.flatMap((name, species) => {
         const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
-        const personal = !!((MONSTER_FLAGS2[species] ?? 0) & 0x00080000);
+        const personal = monsterHasProperName(species);
         if (unique && (personal || name === 'high cleric' || name === 'long worm tail'))
             return [];
         return [name, monsterTypeName(species), monsterTypeName(species, true)];

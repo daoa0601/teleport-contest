@@ -22,7 +22,7 @@ import { dropObjectAtHero } from './do.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, objectWeight } from './mkobj.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterIsEel } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { monsterName } from './do_name.js';
@@ -67,7 +67,7 @@ function waterEggLayer() {
     return form != null
         && (heroFormFlags(game) & (M1_OVIPAROUS | M1_SWIM))
             === (M1_OVIPAROUS | M1_SWIM)
-        && MONSTER_SYMBOL[form] === S_EEL;
+        && monsterIsEel(form);
 }
 
 function eggTypeFromParent(parent: number): number {

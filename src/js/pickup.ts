@@ -7,7 +7,7 @@ import {
     heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
 } from './hack.js';
 import { monsterStagger } from './mondata.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterThrowsRocks } from './monster_data.js';
 import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
@@ -867,7 +867,7 @@ function canMergeWithInventory(object: GameObject, count: number, state: GameSta
 function heroThrowsRocks(state: GameState): boolean {
     return heroIsPolymorphed(state)
         && state.u.umonnum !== undefined
-        && !!((MONSTER_FLAGS2[state.u.umonnum] ?? 0) & M2_ROCKTHROW);
+        && monsterThrowsRocks(state.u.umonnum);
 }
 
 export function pickupBurden(state: GameState): number {

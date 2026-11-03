@@ -25,10 +25,7 @@ import { revealMimicIdentity } from './uhitm.js';
 
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';
 import { revealMonsterAppearance } from './mon.js';
-import {
-    MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsMindless, monsterIsUndead,
-    monsterIsVampireShifter,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterIsGolem, monsterIsMindless, monsterIsUndead, monsterIsVampireShifter } from './monster_data.js';
 import { hurtleMonster } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
@@ -279,7 +276,7 @@ async function healMonsterWithMagic(monster: Monster, spell: GameObject, state: 
     if ((spell.blessed || extra) && !monster.mcansee) {
         monster.mcansee = 1;
         monster.mblinded = 0;
-        if (canSeeMonster(monster) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x1000))
+        if (canSeeMonster(monster) && monsterHasEyes(monster.mnum))
             await pline(`${monsterName(monster, { capitalized: true })} can see again.`);
     }
     if (canSeeMonster(monster)) {
@@ -349,7 +346,7 @@ async function shieldMonster(monster: Monster, state: PlayingGameState) {
 // C zap.c stone-to-flesh on a monster: mkobj.c stone_object_type() and
 // stone_furniture_type() decide which mimicked shapes revert to a mimic.
 async function fleshMonster(monster: Monster, state: PlayingGameState) {
-    if (MONSTER_SYMBOL[monster.mnum] === 55) {
+    if (monsterIsGolem(monster.mnum)) {
         const name = monsterName(monster, { capitalized: true });
         let message = 'looks rather fleshy for a moment.';
         if (MONSTER_NAME[monster.mnum] === 'stone golem'
