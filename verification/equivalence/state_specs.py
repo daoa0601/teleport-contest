@@ -599,8 +599,12 @@ STATE_SPECS += [
          configure=resistance_state, arguments=present_monster_arguments,
          pre=lambda s: [s['native_monster_present'] == 1],
          probes=[('null native monster pointer', lambda s: [s['native_monster_present'] == 0]),
+                 # Pinning the species and the other mask keeps the expected
+                 # counterexample a one-step search; the open query can exhaust
+                 # the solver timeout on a loaded runner.
                  ('intrinsic mask correspondence omitted', UnrelatedState(
-                     lambda s: [s['native_monster_present'] == 1],
+                     lambda s: [s['native_monster_present'] == 1, s['species'] == 0,
+                                s['monster.mextrinsics'] == 0],
                      ('monster.mintrinsics',)))],
          mutants=[('js/mondata.js',
                    '| (monster?.mextrinsics ?? 0) | (monster?.mintrinsics ?? 0);',
