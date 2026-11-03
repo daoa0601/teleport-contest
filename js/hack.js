@@ -85,7 +85,7 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { randomTeleportDepth } from './level_teleport.js';
-import { launchRollingBoulder } from './rolling_boulder.js';
+import { launchRollingBoulder } from './trap.js';
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';

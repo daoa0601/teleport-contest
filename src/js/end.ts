@@ -50,7 +50,7 @@ import { dungeonOverviewDisclosure } from './dungeon.js';
 import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE } from './object_data.js';
 import { createBonesFromDeath } from './bones_death.js';
 import { canMakeBones } from './bones_admission.js';
-import { restoreLaunchedObjectForBones } from './rolling_boulder.js';
+import { restoreLaunchedObjectForBones } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { currency } from './currency.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';

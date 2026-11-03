@@ -76,7 +76,7 @@ import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, 
 import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { expelHero, holdingMonsterName } from './hero_expulsion.js';
-import { monsterHasMagicResistance } from './anti_magic_trap.js';
+import { monsterHasMagicResistance } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';

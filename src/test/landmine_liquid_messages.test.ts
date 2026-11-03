@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, LAVAPOOL, MOAT, NO_MINVENT } from '../js/const.js';
-import { beginMonsterLandMine, finishMonsterLandMine } from '../js/landmine_trap.js';
+import { beginMonsterLandMine, finishMonsterLandMine } from '../js/trap.js';
 import { explodeLandMine } from '../js/landmine_explosion.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { vision_recalc } from '../js/vision.js';

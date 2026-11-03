@@ -1,13 +1,11 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
 src/js/achievements.ts	insight.c
-src/js/anti_magic_trap.ts	trap.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
-src/js/bear_trap.ts	trap.c
 src/js/bones_admission.ts	bones.c
 src/js/bones_death.ts	bones.c
 src/js/bones_monster.ts	bones.c
@@ -73,9 +71,7 @@ src/js/hero_hurtle.ts	dothrow.c
 src/js/hero_inventory.ts	invent.c
 src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
-src/js/hero_magic_trap.ts	trap.c
 src/js/hero_multishot.ts	end.c
-src/js/hero_polymorph_trap.ts	trap.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
@@ -91,7 +87,6 @@ src/js/jsmain.ts	wintty.c
 src/js/just_picked.ts	pickup.c
 src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
-src/js/landmine_trap.ts	trap.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/levitation_drop.ts	artifact.c
 src/js/lift_object.ts	pickup.c
@@ -131,7 +126,6 @@ src/js/player_name.ts	do_name.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
 src/js/poison.ts	attrib.c
-src/js/polymorph_trap.ts	trap.c
 src/js/posix_regex.ts	cmd.c
 src/js/potion.ts	potion.c
 src/js/priest.ts	priest.c
@@ -147,16 +141,12 @@ src/js/rect.ts	rect.c
 src/js/revival_species.ts	read.c
 src/js/ring_sink.ts	do.c
 src/js/rng.ts	rnd.c
-src/js/rock_trap.ts	trap.c
 src/js/roles.ts	role.c
-src/js/rolling_boulder.ts	trap.c
 src/js/rumor.ts	rumors.c
-src/js/rust_trap.ts	trap.c
 src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
 src/js/shknam.ts	shknam.c
 src/js/skills.ts	weapon.c
-src/js/sleep_gas_trap.ts	trap.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
@@ -164,7 +154,6 @@ src/js/special_location.ts	sp_lev.c
 src/js/special_spellbooks.ts	spell.c
 src/js/spell.ts	spell.c
 src/js/spellbook_study.ts	spell.c
-src/js/squeaky_board_trap.ts	trap.c
 src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
@@ -183,7 +172,6 @@ src/js/trap.ts	trap.c
 src/js/tty_prompts.ts	cmd.c
 src/js/two_weapon.ts	wield.c
 src/js/vault.ts	vault.c
-src/js/vibrating_square_trap.ts	trap.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
 src/js/wield.ts	wield.c

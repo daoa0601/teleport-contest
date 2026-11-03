@@ -7,7 +7,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
+import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
 import { initRng } from '../js/rng.js';

@@ -8,7 +8,7 @@ import { monsterName } from '../js/do_name.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
+import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { equipMonsterObject } from './support/monsters.js';

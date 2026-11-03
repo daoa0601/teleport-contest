@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { launchRollingBoulder } from '../js/rolling_boulder.js';
+import { launchRollingBoulder } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjects } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

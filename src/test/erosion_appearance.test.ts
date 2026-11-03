@@ -16,7 +16,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { equipMonsterObject } from './support/monsters.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/rust_trap.js';
+import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 
 for (const location of ['on the floor', 'held by an invisible monster']) {
     for (const wearsOff of [false, true]) {

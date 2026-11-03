@@ -5,7 +5,7 @@ import { NO_MINVENT, POOL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { launchRollingBoulder } from '../js/rolling_boulder.js';
+import { launchRollingBoulder } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -8,7 +8,7 @@ import { applyHeroNaturalPolymorph } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { magicNegation } from '../js/mhitu.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
-import { monsterHasMagicResistance } from '../js/anti_magic_trap.js';
+import { monsterHasMagicResistance } from '../js/trap.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { d, initRng, rn2, rnd } from '../js/rng.js';

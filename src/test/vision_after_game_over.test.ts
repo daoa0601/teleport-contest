@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
-import { launchRollingBoulder } from '../js/rolling_boulder.js';
+import { launchRollingBoulder } from '../js/trap.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
