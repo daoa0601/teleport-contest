@@ -569,12 +569,20 @@ export function monsterProjectileDisplay(object: GameObject, state: PlayingGameS
         await effect.clear();
     }
 
+    const begin = async (): Promise<void> => {
+        if (!first) return;
+        first = false;
+        // C mthrowu.c:m_throw() and zap.c bhit() init tmp_at() before the
+        // flight loop; the constructor's flush_screen(0) (display.c) runs
+        // before any impact can dirty the map.
+        await effect.start();
+    };
     return {
         glyph,
+        start: begin,
         async show(position: Position): Promise<void> {
             if (!isok(position.x, position.y)) return;
-            if (first) await effect.start();
-            first = false;
+            await begin();
             // Native tmp_at() stops before show_glyph() and its
             // flush_screen(0) when the flash cell cannot be seen, so an
             // impact that just blinded the hero hides its trailing frame
@@ -674,6 +682,13 @@ export async function throwMonsterProjectile(source: Monster, object: GameObject
         }
         const flightDisplay = monsterProjectileDisplay(missile, state, { tethered });
         display = flightDisplay;
+        // C mthrowu.c:m_throw() inits tmp_at(DISP_FLASH/DISP_TETHER) at
+        // line 651, before the flight loop. That init flush_screen(0) must
+        // precede the flight's impacts: when a potion of blindness breaks
+        // on the hero, vision_recalc()'s newsym changes stay unflushed, so
+        // the terminal still shows the old map at the --More-- that
+        // acknowledges the vapor message (C flushes it only at parse()).
+        await flightDisplay.start();
         while (range-- > 0) {
             const point = { x: state.bhitpos.x + dx, y: state.bhitpos.y + dy };
             state.bhitpos = point;
