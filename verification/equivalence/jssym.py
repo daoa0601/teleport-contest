@@ -43,6 +43,12 @@ class V:
 
 
 UNDEF = V('undef')
+INHERITED = V('inherited')  # a record lookup that would reach Object.prototype
+# Object.getOwnPropertyNames(Object.prototype): an object literal inherits these.
+OBJECT_PROTOTYPE_KEYS = (
+    '__defineGetter__', '__defineSetter__', '__lookupGetter__', '__lookupSetter__',
+    '__proto__', 'constructor', 'hasOwnProperty', 'isPrototypeOf',
+    'propertyIsEnumerable', 'toLocaleString', 'toString', 'valueOf')
 
 
 class Modules(dict):
@@ -149,6 +155,13 @@ class JSExec:
             raise Unsupported('JavaScript values cannot be joined')
         if a.kind in ('num', 'bool', 'big'):
             return V(a.kind, z3.simplify(z3.If(guard, a.v, b.v)))
+        if a.kind == b.kind == 'str' and (isinstance(a.v, z3.ExprRef)
+                                          or isinstance(b.v, z3.ExprRef)):
+            # Table terms encode null as ''. A literal '' must keep its
+            # distinct JS value, so leave mixed branches separate.
+            if not (isinstance(a.v, z3.ExprRef) and isinstance(b.v, z3.ExprRef)):
+                raise Unsupported('JavaScript table strings and literal strings cannot be joined')
+            return V('str', z3.simplify(z3.If(guard, a.v, b.v)))
         if a.kind in ('str', 'obj', 'null', 'undef', 'ctx', 'fn') and a.v == b.v:
             return a
         raise Unsupported('JavaScript values cannot be joined')
@@ -459,6 +472,9 @@ class JSExec:
         if v.kind in ('undef', 'null'):
             return z3.BoolVal(False)
         if v.kind == 'str':
+            if isinstance(v.v, z3.ExprRef):
+                # Only the empty string (the null-entry encoding) is falsy.
+                return z3.simplify(v.v) != z3.StringVal('')
             return z3.BoolVal(bool(v.v))
         raise Unsupported(f'truthiness of {v.kind}')
 
@@ -595,6 +611,10 @@ class JSExec:
                 if key.type not in ('property_identifier', 'shorthand_property_identifier', 'string'):
                     raise Unsupported('computed JavaScript object key')
                 name = key.text.decode()[1:-1] if key.type == 'string' else key.text.decode()
+                if name == '__proto__':
+                    # `__proto__: v` sets the prototype, not an own field;
+                    # the record model has no prototype chain.
+                    raise Unsupported('JavaScript object literal __proto__ key')
                 results = [(q, {**fields, name: value}) for p, fields in results
                            for q, value in self.eval(p, value_node)]
             return [(p, V('record', fields)) for p, fields in results]
@@ -722,6 +742,9 @@ class JSExec:
                 continue
             for q, index in self.eval(p, n.child_by_field_name('index')):
                 if obj.kind == 'obj' and index.kind == 'str':
+                    if isinstance(index.v, z3.ExprRef):
+                        raise Unsupported(
+                            'JavaScript state-object lookup by a symbolic string')
                     key = f'{obj.v}.{index.v}'
                     value = self.module_env.get(key, self.m.world.js_values.get(key))
                     if value is None and key in self.m.world.js_state:
@@ -733,6 +756,38 @@ class JSExec:
                     out.extend(self._choices(q, value.v) if value.kind == 'choice' else [(q, value)])
                     continue
                 if obj.kind == 'record' and index.kind == 'str':
+                    if isinstance(index.v, z3.ExprRef):
+                        # A symbolic string index selects the field by
+                        # String equality. The null encoding ('') matches no
+                        # key, which is only JavaScript-exact when the record
+                        # has no key that null/undefined would coerce to.
+                        if any(key in ('', 'null', 'undefined')
+                               for key in obj.v):
+                            raise Unsupported(
+                                'JavaScript record lookup with a key that '
+                                'collides with the null encoding')
+                        choices = [(self._equal(index, V('str', key)), value)
+                                   for key, value in obj.v.items()]
+                        # A missed own key still finds Object.prototype
+                        # members (REC['constructor'] is a function), so a
+                        # feasible inherited name cannot be modeled.
+                        inherited = [(self._equal(index, V('str', name)), INHERITED)
+                                     for name in OBJECT_PROTOTYPE_KEYS
+                                     if name not in obj.v]
+                        hits = choices + inherited
+                        missing = z3.Not(z3.Or(*(c for c, _ in hits))) \
+                            if hits else z3.BoolVal(True)
+                        for p, value in self._choices(q, hits + [(missing, UNDEF)]):
+                            if value is INHERITED:
+                                raise Unsupported(
+                                    'JavaScript record lookup that can reach an '
+                                    'inherited Object.prototype member')
+                            out.append((p, value))
+                        continue
+                    if index.v not in obj.v and index.v in OBJECT_PROTOTYPE_KEYS:
+                        raise Unsupported(
+                            'JavaScript record lookup that can reach an '
+                            'inherited Object.prototype member')
                     out.append((q, obj.v.get(index.v, UNDEF)))
                     continue
                 array = obj
@@ -760,6 +815,21 @@ class JSExec:
         if values and all(v.kind == 'record' and v.v.keys() == values[0].v.keys() for v in values):
             return V('record', {key: self._select_values(tuple(v.v[key] for v in values), index)
                                 for key in values[0].v})
+        if values and all(v.kind in ('str', 'null') for v in values):
+            if any(isinstance(v.v, z3.ExprRef) for v in values):
+                raise Unsupported('JavaScript string-array read of an already symbolic string')
+            # A symbolic read of a name table: build one z3 String term. Null
+            # entries encode as the empty string, which keeps ===, !==,
+            # nullish comparison, ?? and truthiness exact; typeof and
+            # coercive == reject the term.
+            if any(v.kind == 'str' and v.v == '' for v in values):
+                raise Unsupported('JavaScript string-array read cannot encode an empty name')
+            picked = z3.StringVal(values[-1].v if values[-1].kind == 'str' else '')
+            for i in reversed(range(len(values) - 1)):
+                entry = values[i]
+                term = z3.StringVal(entry.v if entry.kind == 'str' else '')
+                picked = z3.If(index == i, term, picked)
+            return V('str', picked)
         raise Unsupported('JavaScript symbolic array read needs numeric or rectangular array elements')
 
     def _arith(self, path, op, a: V, b: V, node):
@@ -835,7 +905,14 @@ class JSExec:
         if op in ('||', '&&', '??'):
             out = []
             for p, a in self.eval(path, left):
-                cond = self.truth(a) if op != '??' else z3.BoolVal(a.kind not in ('undef', 'null'))
+                if op != '??':
+                    cond = self.truth(a)
+                elif a.kind == 'str' and isinstance(a.v, z3.ExprRef):
+                    # A symbolic string-array read encodes its null entries
+                    # as the empty string, so ?? falls back exactly there.
+                    cond = z3.simplify(a.v) != z3.StringVal('')
+                else:
+                    cond = z3.BoolVal(a.kind not in ('undef', 'null'))
                 for p2, taken in self.m.branch(p, cond):
                     if taken == (op != '&&'):
                         out.append((p2, a))
@@ -845,6 +922,11 @@ class JSExec:
         out = []
         for p, (a, b) in self.eval_list(path, [left, right]):
             if op in ('==', '!='):
+                if any(isinstance(x.v, z3.ExprRef) and x.kind == 'str' for x in (a, b)):
+                    # Null entries of a symbolic string-array read are encoded
+                    # as empty strings, so `value == null` cannot be decided
+                    # from the kind alone.
+                    raise Unsupported('JavaScript coercive equality on a symbolic string')
                 if b.kind not in ('null', 'undef'):
                     raise Unsupported('JavaScript coercive equality except nullish comparison')
                 equal = z3.BoolVal(a.kind in ('null', 'undef'))
@@ -863,10 +945,37 @@ class JSExec:
     @staticmethod
     def _equal(a, b):
         if a.kind != b.kind:
+            # A symbolic string-array read yields a z3 String term whose null
+            # entries encode as the empty string, so comparing it with a
+            # nullish value stays decidable and exact: an in-bounds element
+            # read is never undefined, and === null is exactly the
+            # empty-string case.
+            for x, y in ((a, b), (b, a)):
+                if x.kind == 'str' and isinstance(x.v, z3.ExprRef) \
+                        and y.kind in ('null', 'undef'):
+                    if y.kind == 'null':
+                        return z3.simplify(x.v) == z3.StringVal('')
+                    return z3.BoolVal(False)
             return z3.BoolVal(False)
         if a.kind in ('num', 'big', 'bool'):
             return a.v == b.v
         if a.kind in ('str', 'obj', 'undef', 'null'):
+            # A symbolic string-array read yields a z3 String term (with the
+            # null entries encoded as the empty string); only String-sorted
+            # equality is modeled for those.
+            if a.kind == 'str' and (isinstance(a.v, z3.ExprRef)
+                                    or isinstance(b.v, z3.ExprRef)):
+                # The empty string is the null encoding and the table itself
+                # excludes '' entries, so JavaScript's `value === ''` is
+                # false on every row: null === '' is false, and no string
+                # entry is empty. Check for the JS literal before converting
+                # it: a table term can also simplify to StringVal('') when
+                # every branch reads null, and two such nulls are equal.
+                if any(isinstance(x.v, str) and x.v == '' for x in (a, b)):
+                    return z3.BoolVal(False)
+                left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
+                right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
+                return left == right
             return z3.BoolVal(a.v == b.v)
         raise Unsupported(f'JavaScript equality on {a.kind}')
 
@@ -884,6 +993,10 @@ class JSExec:
             elif op == 'typeof':
                 # ECMAScript typeof: 'object' for null and every composite
                 # value, the primitive boxes by kind.
+                if v.kind == 'str' and isinstance(v.v, z3.ExprRef):
+                    # Null entries of a symbolic string-array read are encoded
+                    # as empty strings, so the classification is undecided.
+                    raise Unsupported('typeof of a symbolic string')
                 names = {'num': 'number', 'big': 'bigint', 'str': 'string',
                          'bool': 'boolean', 'undef': 'undefined', 'fn': 'function'}
                 out.append((p, V('str', names.get(v.kind, 'object'))))

@@ -758,5 +758,188 @@ class ExecutorTests(unittest.TestCase):
                               classifier.replace(f't === {kind} ?', f't === {wrong} ?'),
                               **domain, reason='outputs differ')
 
+    def test_symbolic_string_array_read_selects_by_index(self):
+        names = ('const names = ["leather", "iron", "rubber hose", null];\n'
+                 'function example(i) { return names[i] === "rubber hose"; }')
+        mirror = 'int example(int i) { return i == 2; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 3])
+        self.equivalent(mirror, names, **domain)
+        # the null entry never equals a string, and a different literal
+        # selects a different row
+        self.rejected(mirror, names.replace('"rubber hose"', '"iron"'), **domain,
+                      reason='outputs differ')
+        self.rejected('int example(int i) { return i == 2 || i == 3; }', names,
+                      **domain, reason='outputs differ')
+
+    def test_symbolic_string_array_read_truthiness_distinguishes_null(self):
+        names = ('const names = ["leather", null];\n'
+                 'function example(i) { return names[i] ? 1 : 0; }')
+        mirror = 'int example(int i) { return i == 0; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent(mirror, names, **domain)
+
+    def test_symbolic_string_array_read_rejects_typeof_and_coercive_equality(self):
+        for body, why in (('typeof names[i]', 'unsupported: typeof of a symbolic string'),
+                          ('names[i] == null',
+                           'unsupported: JavaScript coercive equality on a symbolic string')):
+            with self.subTest(body=body):
+                self.rejected(
+                    'int example(int i) { return 0; }',
+                    f'const names = ["leather", null];\nfunction example(i) {{ return {body} ? 1 : 0; }}',
+                    params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+                    reason=why)
+
+    def test_symbolic_string_array_read_compares_nullish_exactly(self):
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        base = 'const names = ["leather", null];\nfunction example(i) { return BODY; }'
+        for body, mirror in (
+                ('names[i] === null ? 1 : 0', 'int example(int i) { return i == 1; }'),
+                ('names[i] !== null ? 1 : 0', 'int example(int i) { return i != 1; }'),
+                ('names[i] === undefined ? 1 : 0', 'int example(int i) { return 0; }'),
+                ('(names[i] ?? "fb") === "fb" ? 1 : 0', 'int example(int i) { return i == 1; }')):
+            with self.subTest(body=body):
+                self.equivalent(mirror, base.replace('BODY', body), **domain)
+        # ?? must actually fall back at the null entry, and === null must
+        # actually see it; denying either breaks the correspondence.
+        self.rejected('int example(int i) { return 0; }',
+                      base.replace('BODY', '(names[i] ?? "fb") === "fb" ? 1 : 0'),
+                      **domain, reason='outputs differ')
+        self.rejected('int example(int i) { return 0; }',
+                      base.replace('BODY', 'names[i] === null ? 1 : 0'),
+                      **domain, reason='outputs differ')
+
+    def test_symbolic_mixed_array_read_is_rejected(self):
+        self.rejected(
+            'int example(int i) { return 0; }',
+            'const mixed = ["a", 1];\nfunction example(i) { return mixed[i] === "a"; }',
+            params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+            reason='unsupported: JavaScript symbolic array read needs numeric or rectangular array elements')
+
+    def test_symbolic_string_array_read_never_equals_the_empty_string(self):
+        base = 'const names = ["leather", null];\nfunction example(i) { return BODY; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent('int example(int i) { return 0; }',
+                        base.replace('BODY', 'names[i] === "" ? 1 : 0'), **domain)
+        self.equivalent('int example(int i) { return 1; }',
+                        base.replace('BODY', 'names[i] !== "" ? 1 : 0'), **domain)
+        # the null encoding must not leak into the empty-string comparison:
+        # a mirror that is true exactly on the null row differs
+        self.rejected('int example(int i) { return i == 1; }',
+                      base.replace('BODY', 'names[i] === "" ? 1 : 0'), **domain,
+                      reason='outputs differ')
+
+    def test_symbolic_string_branch_joins_preserve_empty_and_null_values(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        for assignments, literal_branch, table_branch in (
+                ('let n = ""; if (j) n = names[i];', '!j', 'j'),
+                ('let n = names[i]; if (j) n = "";', 'j', '!j')):
+            for expression, expected, wrong in (
+                    ('n === ""', literal_branch, '0'),
+                    ('n === null', f'{table_branch} && i == 1',
+                     f'{literal_branch} || i == 1'),
+                    ('(n ?? "fallback") === "fallback"',
+                     f'{table_branch} && i == 1', f'{literal_branch} || i == 1')):
+                with self.subTest(assignments=assignments, expression=expression):
+                    source = ('const names = ["leather", null];\n'
+                              f'function example(i, j) {{ {assignments} '
+                              f'return {expression} ? 1 : 0; }}')
+                    self.rejected(f'int example(int i, int j) {{ return {wrong}; }}',
+                                  source, **domain, reason='outputs differ')
+                    self.equivalent(f'int example(int i, int j) {{ return {expected}; }}',
+                                    source, **domain)
+
+    def test_symbolic_string_branch_joins_preserve_two_table_reads(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        source = ('const names = ["leather", null];\n'
+                  'function example(i, j) { let n = names[i]; '
+                  'if (j) n = names[1 - i]; return n === null ? 1 : 0; }')
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        self.equivalent('int example(int i, int j) { return j ? i == 0 : i == 1; }',
+                        source, **domain)
+        self.rejected('int example(int i, int j) { return j ? i == 1 : i == 0; }',
+                      source, **domain, reason='outputs differ')
+
+    def test_joined_null_table_reads_equal_each_other(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        source = ('const names = [null, null];\n'
+                  'function example(i, j) { let n = names[i]; '
+                  'if (j) n = names[1 - i]; return n === names[i] ? 1 : 0; }')
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        self.rejected('int example(int i, int j) { return 0; }', source,
+                      **domain, reason='outputs differ')
+        self.equivalent('int example(int i, int j) { return 1; }', source, **domain)
+
+    def test_symbolic_record_lookup_by_string_key_selects_exactly(self):
+        lookup = ('const names = ["a", null];\nconst REC = { a: 1, b: 2 };\n'
+                  'function example(i) { return REC[names[i]] ?? 0; }')
+        mirror = 'int example(int i) { return i == 0 ? 1 : 0; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent(mirror, lookup, **domain)
+        # the null row misses every key, like JavaScript's REC['null']
+        self.rejected('int example(int i) { return i == 0 ? 2 : 0; }', lookup,
+                      **domain, reason='outputs differ')
+        # keys that null or undefined coerce to cannot be encoded
+        self.rejected('int example(int i) { return 0; }',
+                      'const names = ["a", null];\nconst REC = { null: 1 };\n'
+                      'function example(i) { return REC[names[i]] ?? 0; }',
+                      **domain,
+                      reason='unsupported: JavaScript record lookup with a key '
+                             'that collides with the null encoding')
+
+    def test_object_literal_prototype_key_is_rejected(self):
+        self.rejected('int example(int i) { return i == 0; }',
+                      'const names = ["a", "b"];\n'
+                      'const REC = { __proto__: { b: 2 }, a: 1 };\n'
+                      'function example(i) { return REC[names[i]] ?? 0; }',
+                      params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
+                      reason='unsupported: JavaScript object literal __proto__ key')
+
+    def test_string_array_of_symbolic_strings_is_rejected(self):
+        self.rejected('int example(int i, int j) { return 0; }',
+                      'const names = ["a", "b"];\n'
+                      'function example(i, j) { const values = [names[i], "c"]; '
+                      'return values[j] === "a" ? 1 : 0; }',
+                      params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1, s['j'] >= 0, s['j'] <= 1],
+                      reason='unsupported: JavaScript string-array read of an already '
+                             'symbolic string')
+
+    def test_record_lookup_reaching_object_prototype_is_rejected(self):
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        reason = ('unsupported: JavaScript record lookup that can reach an '
+                  'inherited Object.prototype member')
+        for names in ('["a", "constructor"]', '["a", "toString"]'):
+            with self.subTest(names=names):
+                self.rejected('int example(int i) { return i == 0; }',
+                              f'const names = {names};\nconst REC = {{ a: 1 }};\n'
+                              'function example(i) { return REC[names[i]] ?? 0; }',
+                              **domain, reason=reason)
+        self.rejected('int example(void) { return 0; }',
+                      'const REC = { a: 1 };\n'
+                      'function example() { return REC["valueOf"] ?? 0; }',
+                      reason=reason)
+        # an own key shadows the inherited member and stays exact
+        self.equivalent('int example(int i) { return i == 0 ? 1 : 2; }',
+                        'const names = ["a", "constructor"];\n'
+                        'const REC = { a: 1, constructor: 2 };\n'
+                        'function example(i) { return REC[names[i]] ?? 0; }',
+                        **domain)
+
 if __name__ == '__main__':
     unittest.main()

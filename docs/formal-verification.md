@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 91 scoped C/JavaScript
+`verification/equivalence/` now proves 109 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -147,6 +147,24 @@ split `rnl` row use this batch's complete runs.
 | `type_is_pname:tables` | `mondata.h:type_is_pname` ↔ `monster_data.js:monsterHasProperName` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
 | `is_silent:tables` | `mondata.h:is_silent` ↔ `monster_data.js:monsterIsSilent` | Valid initial species; native/emitted sound tables | 1×1 | 3.3 s |
 | `can_track:state` | `mondata.c:can_track` ↔ `mondata.js:canTrack` | Valid species; uwep null or one weapon with any signed-char oartifact; initial mons and artifact identity/name tables | 2×2 | 3.4 s |
+| `is_weptool:tables` | `obj.h:is_weptool` ↔ `object_properties.js:isWeaponTool` | Held object; otyp 0..NUM_OBJECTS-1; oclass equals the row's oc_class; initial skill column | 1×1 | 4.4 s |
+| `bimanual:tables` | `obj.h:bimanual` ↔ `object_properties.js:isBimanualObject` | Same relation; initial oc_big/oc_bimanual column | 1×1 | 1.8 s |
+| `is_missile:tables` | `obj.h:is_missile` ↔ `object_properties.js:isMissileObject` | Same relation | 1×1 | 1.8 s |
+| `is_ammo:tables` | `obj.h:is_ammo` ↔ `object_properties.js:isLauncherAmmunition` | Same relation | 1×1 | 1.9 s |
+| `ammo_and_launcher:tables` | `obj.h:ammo_and_launcher` ↔ `object_properties.js:launcherMatchesAmmo` | Non-null ammo with the class relation; launcher null or any otyp 0..NUM_OBJECTS-1 | 1×1 | 2.3 s |
+| `is_poisonable:tables` | `obj.h:is_poisonable` ↔ `object_properties.js:isPoisonableObject` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; any signed-char oartifact; emitted ARTIFACT_DATA map | 1×1 | 2.8 s |
+| `permapoisoned:tables` | `artifact.c:permapoisoned` ↔ `object_properties.js:isPermanentlyPoisonedObject` | Object present or null; any signed-char oartifact; emitted ARTIFACT_DATA map; otyp/oclass unread | 2×2 | <0.1 s |
+| `is_blunt_weapon:tables` | `obj.h:is_blunt_weapon` ↔ `object_properties.js:isBluntWeapon` | Held object with the class relation; initial dir column | 1×1 | 1.9 s |
+| `is_flimsy:tables` | `obj.h:is_flimsy` ↔ `object_properties.js:isFlimsyObject` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial material map and name table | 1×1 | 2.3 s |
+| `is_pick:tables` | `obj.h:is_pick` ↔ `object_properties.js:isPick` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 1.5 s |
+| `is_axe:tables` | `obj.h:is_axe` ↔ `object_properties.js:isAxe` | Same relation | 1×1 | 1.5 s |
+| `is_blade:tables` | `obj.h:is_blade` ↔ `object_properties.js:isBlade` | Same relation | 1×1 | 1.6 s |
+| `is_wet_towel:state` | `obj.h:is_wet_towel` ↔ `object_properties.js:isWetTowel` | Any short otyp and signed-char spe; no table read | 2×2 | 1.3 s |
+| `is_pole:tables` | `obj.h:is_pole` ↔ `object_properties.js:isPolearm` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; any signed-char oartifact; emitted ARTIFACT_DATA map | 1×1 | 2.0 s |
+| `is_sword:tables` | `obj.h:is_sword` ↔ `object_properties.js:isSword` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 1.4 s |
+| `is_graystone:tables` | `obj.h:is_graystone` ↔ `object_properties.js:isGrayStone` | Any short otyp; four constants, no table read | 2×1 | 1.5 s |
+| `throwing_weapon:tables` | `dothrow.c:throwing_weapon` ↔ `object_properties.js:isThrowingWeapon` | Held object with the class relation; initial skill and dir columns | 1×1 | 3.0 s |
+| `is_multigen:tables` | `obj.h:is_multigen` ↔ `object_properties.js:isMultiGeneratedWeapon` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 1.5 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -378,6 +396,83 @@ then agree by the `haseyes:tables` tables. No executor extension was
 needed; a new language test pins the composed cross-module
 Map-lookup/optional-member-chain shape `canTrack` uses. No port fidelity
 bug was found in the twenty stated domains.
+
+**Object-class predicate batch (fv-equivalence-batch-6).** Eighteen more
+claims pair the obj.h/objclass.h object-class macros — and the one real
+function among them, dothrow.c:throwing_weapon and artifact.c:permapoisoned —
+with `object_properties.js` over the initial objects[] table. Sixteen
+macro-expansion harness wrappers were added to
+`verification/equivalence/harness/object_predicates.c`; dothrow.c joined the
+translated C files so `throwing_weapon`'s real body executes.
+
+The entry relations come in three shapes. The class-guarded macros
+(is_weptool, bimanual, is_missile, is_ammo, ammo_and_launcher,
+is_blunt_weapon, throwing_weapon) read `otmp->oclass`, which the port routes
+through `objectClass()`'s `oclass || objectClassForType(otyp)` fallback; the
+claims assume the mkobj invariant that oclass equals
+`objects[otyp].oc_class` (and no initial row carries class 0), so the
+fallback never fires and its OBJECT_BASES loop stays outside the entry
+domains — dropping that equality is each claim's pinned probe. The
+direct-oclass macros (is_pick, is_axe, is_blade, is_sword, is_multigen,
+is_poisonable) and the class-free ones (is_flimsy, is_graystone,
+is_wet_towel) keep oclass (where read) symbolic and free. `permapoisoned`
+accepts a null object on both sides, so its claim includes the null case.
+The artifact-backed predicates (is_poisonable, permapoisoned, is_pole)
+relate a signed-char oartifact and the emitted ARTIFACT_DATA runtime map
+exactly as `can_track:state` does: only id ART_GRIMTOOTH carries
+invokePower "fling-poison" and only id ART_SNICKERSNEE is named
+"Snickersnee".
+
+The native oc_skill, oc_class, oc_dir, oc_bimanual (the oc_big alias),
+oc_charged and oc_material columns and the OBJ_NAME strings were checked
+equal to the emitted OBJECT_SUBTYPE, class, OBJECT_DIR, OBJECT_BIMANUAL,
+OBJECT_CHARGED, OBJECT_MATERIAL and OBJECT_NAMES tables at every otyp in
+0..NUM_OBJECTS-1 before proving (OBJECT_NAMES names only RUBBER_HOSE
+"rubber hose"). is_flimsy covers the zero-material generic rows 0..17 too:
+C's `oc_material <= LEATHER` and the port's `objectMaterial(...) <= LEATHER`
+both read material 0 there and agree, unlike is_damageable's port test.
+`is_ammo`/`ammo_and_launcher` are the one C macro behind two port functions
+each; the claims prove `isLauncherAmmunition`/`launcherMatchesAmmo`, which
+more callers use. The duplicates (`isAmmunition`,
+`ammunitionMatchesLauncher`) stay unclaimed until their callers move to
+the proved functions and they are deleted. `objectUsesCharges` has no single C
+counterpart — it summarizes objnam.c:doname's `is_weptool`-routed switch,
+whose WAND/tool charge display also depends on `known`, lamplit candles and
+the candelabrum — and is not claimed.
+
+One executor extension was needed: a symbolic index into a string array
+(`OBJECT_NAMES[otyp] === 'rubber hose'`) now builds one z3 String term, with
+null entries encoded as the empty string; `===`/`!==` (including against
+null, undefined and the empty-string literal), `??` and truthiness stay
+exact — an in-bounds element read is never undefined, the empty encoding is
+exactly the null case, and `value === ''` is false on every row because the
+table excludes empty strings — while `typeof` and coercive `==` on such a
+term are rejected, as is a symbolic read of a mixed-kind array, a record
+lookup whose keys collide with the null coercion, and a record lookup whose
+key can name an inherited `Object.prototype` member (`REC['constructor']`
+is a function, not undefined) that the record does not own. Object
+literals with a `__proto__` key (a prototype, not a field) and string
+arrays whose elements are already symbolic table reads are rejected too. Branch joins merge only
+two table terms; a literal string keeps its own path so a real empty string
+cannot become the null encoding. Equality also distinguishes a literal
+empty string from a table term simplified to the null encoding. Thirteen language
+tests pin the selection, the null distinctions, the empty-string comparison,
+the record lookup, branch joins, and the rejections. The focused
+executor/query/selection suite is now 99 passing tests. No port fidelity bug
+was found in the eighteen stated domains.
+
+The complete review round 3 run proved all 109 claims in **1041.57 s**, including
+**116 domain probes** and **122 mutant checks**, and checked the existing
+109-row ledger. The eighteen object claims each have one domain probe and
+one killed mutant. The prior CI-parity
+`--skip-slow --check-ledger` run passed in **456.3 s**; every new claim is
+fast, so the `equivalence` job keeps its slot and the two slow table claims
+are unchanged. The focused executor/query/selection suite is now **96
+passing tests** (the review rounds added the nullish-comparison,
+empty-string, record-lookup, mixed-array and branch-join tests), and the
+**36 ledger CLI tests** passed. `npm run compile` and `npm run check` passed.
+No game source, session corpus, or frozen file
+was changed beyond the citation comments.
 
 The complete 91-claim run exited 0 in **1015.6 s**, including **90 domain
 probes** and **103 mutant checks** (20 claims, 21 probes and 20 mutants

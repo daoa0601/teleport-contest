@@ -33,11 +33,13 @@ function objectClass(object: ObjectCandidate): number {
     return object?.oclass || objectClassForType(object?.otyp);
 }
 
+// C obj.h:is_graystone().
 export function isGrayStone(object: ObjectCandidate): boolean {
     if (!object) return false;
     return [LUCKSTONE, LOADSTONE, FLINT, TOUCHSTONE].includes(object.otyp);
 }
 
+// C obj.h:is_weptool().
 export function isWeaponTool(object: ObjectCandidate): boolean {
     if (!object) return false;
     return objectClass(object) === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
@@ -61,6 +63,7 @@ export function objectUsesCharges(object: ObjectCandidate): boolean {
             && !!OBJECT_CHARGED[object.otyp]);
 }
 
+// C obj.h:is_missile().
 export function isMissileObject(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
@@ -69,6 +72,7 @@ export function isMissileObject(object: ObjectCandidate): boolean {
         && skill >= -P_BOOMERANG && skill <= -P_DART;
 }
 
+// C obj.h:is_ammo().
 export function isLauncherAmmunition(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
@@ -77,6 +81,7 @@ export function isLauncherAmmunition(object: ObjectCandidate): boolean {
         && skill >= -P_CROSSBOW && skill <= -P_BOW;
 }
 
+// C obj.h:ammo_and_launcher().
 export function launcherMatchesAmmo(ammunition: ObjectCandidate, launcher: ObjectCandidate): boolean {
     if (!ammunition || !launcher) return false;
     return isLauncherAmmunition(ammunition)
@@ -84,6 +89,7 @@ export function launcherMatchesAmmo(ammunition: ObjectCandidate, launcher: Objec
             === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
 }
 
+// C dothrow.c:throwing_weapon().
 export function isThrowingWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
@@ -98,6 +104,7 @@ export function isThrowingWeapon(object: ObjectCandidate): boolean {
         || object.otyp === AKLYS;
 }
 
+// C obj.h:is_multigen().
 export function isMultiGeneratedWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
@@ -105,17 +112,20 @@ export function isMultiGeneratedWeapon(object: ObjectCandidate): boolean {
         && skill >= -P_SHURIKEN && skill <= -P_BOW;
 }
 
+// C obj.h:is_poisonable().
 export function isPoisonableObject(object: ObjectCandidate): boolean {
     if (!object) return false;
     return isMultiGeneratedWeapon(object)
         || artifactById(object.oartifact)?.invokePower === 'fling-poison';
 }
 
+// C artifact.c:permapoisoned().
 export function isPermanentlyPoisonedObject(object: ObjectCandidate): boolean {
     if (!object) return false;
     return artifactById(object.oartifact)?.invokePower === 'fling-poison';
 }
 
+// C obj.h:is_blunt_weapon().
 export function isBluntWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
@@ -124,6 +134,7 @@ export function isBluntWeapon(object: ObjectCandidate): boolean {
     return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & WHACK);
 }
 
+// C obj.h:is_flimsy().
 export function isFlimsyObject(
     object: ObjectCandidate, state?: Pick<GameState, 'objectMaterials'>,
 ): boolean {
@@ -136,16 +147,19 @@ export type WeaponView = Pick<GameObject, 'otyp'>
 export type WeaponCandidate = WeaponView | null | undefined;
 
 
+// C obj.h:is_pick().
 export function isPick(object: WeaponCandidate): boolean {
     return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
         && OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;
 }
 
+// C obj.h:is_axe().
 export function isAxe(object: WeaponCandidate): boolean {
     return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
         && OBJECT_SUBTYPE[object.otyp] === P_AXE;
 }
 
+// C obj.h:is_blade().
 export function isBlade(object: WeaponCandidate): boolean {
     if (!object) return false;
     const skill = OBJECT_SUBTYPE[object.otyp] || 0;
@@ -166,9 +180,11 @@ export function ammunitionMatchesLauncher(ammunition: WeaponCandidate, launcher:
     return launcherSkill !== undefined
         && OBJECT_SUBTYPE[ammunition.otyp] === -launcherSkill;
 }
+// C obj.h:is_wet_towel().
 export function isWetTowel(object: WeaponCandidate): boolean {
     return object?.otyp === TOWEL && (object.spe ?? 0) > 0;
 }
+// C obj.h:is_pole().
 // Snickersnee has the same reach as a polearm despite being a katana.
 export function isPolearm(object: WeaponCandidate): boolean {
     if (object?.oclass !== WEAPON_CLASS && object?.oclass !== 6) return false;
@@ -176,7 +192,7 @@ export function isPolearm(object: WeaponCandidate): boolean {
     return skill === P_POLEARMS || skill === P_LANCE
         || artifactById(object.oartifact)?.name === 'Snickersnee';
 }
-// C objclass.h is_sword().
+// C obj.h:is_sword().
 export function isSword(object: GameObject): boolean {
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
     return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;
