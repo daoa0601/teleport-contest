@@ -11,7 +11,7 @@ import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsBig, monsterThrowsRocks, MONSTER_BODY_META, MONSTER_NAME, monsterDigests, monsterIsWhirly, monsterTypeName } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero } from './polyself.js';
-import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
+import { isLauncherAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, A_CHA, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
@@ -125,7 +125,7 @@ export async function dofire(cannedShotLimit = null) {
     const throwWielded = weapon && isAutoReturningThrow(weapon, weapon.owornmask ?? 0, game)
         && (artifactById(weapon.oartifact, game)?.name !== 'Mjollnir'
             || currentAttribute(A_STR) >= STR19(25))
-        && (!fireObject || isAmmunition(fireObject));
+        && (!fireObject || isLauncherAmmunition(fireObject));
     if (throwWielded)
         fireObject = weapon;
     let quiverSelectionSpentTime = false;
@@ -193,7 +193,7 @@ export async function dofire(cannedShotLimit = null) {
         const matchingLauncher = (launcher) => launcherMatchesAmmo(fireObject, launcher);
         const alternate = game.uswapwep || game.u?.uswapwep || null;
         const fireassist = !throwWielded && game.flags?.fireassist !== false;
-        if (fireassist && isAmmunition(fireObject) && game.uwep && isPolearm(game.uwep)
+        if (fireassist && isLauncherAmmunition(fireObject) && game.uwep && isPolearm(game.uwep)
             && couldPoleMonster(game.uwep, { state: game })) {
             return applyPolearm(game.uwep, true);
         }

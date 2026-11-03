@@ -15,8 +15,7 @@ import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
 import { unlinkObject } from './mkobj.js';
 import { observeObjectForNaming } from './objnam.js';
-import { isMissileObject } from './object_properties.js';
-import { ammunitionMatchesLauncher } from './object_properties.js';
+import { isMissileObject, launcherMatchesAmmo } from './object_properties.js';
 import { setQuiverObject } from './wield.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -96,8 +95,8 @@ export async function holdAnotherObject(object, { state = game, dropMessage = nu
         return { object: null, heroDied: !!state.program_state?.gameover };
     }
     if (state.flags.autoquiver && !(state.uquiver || state.u.uquiver) && !object.owornmask
-        && (isMissileObject(object) || ammunitionMatchesLauncher(object, state.uwep)
-            || ammunitionMatchesLauncher(object, state.uswapwep)))
+        && (isMissileObject(object) || launcherMatchesAmmo(object, state.uwep)
+            || launcherMatchesAmmo(object, state.uswapwep)))
         await setQuiverObject(object, state);
     if (holdMessage !== null || dropMessage !== null) {
         if (state.flags.fixinv === false)

@@ -16,7 +16,7 @@ import { inventoryItemDescription } from './invent.js';
 import { getobj } from './inventory_prompt.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { addInventoryItem } from './u_init.js';
-import { isBimanualObject, isWeaponTool, isWetTowel, isAmmunition, isMissileObject, isPolearm } from './object_properties.js';
+import { isBimanualObject, isWeaponTool, isWetTowel, isLauncherAmmunition, isMissileObject, isPolearm } from './object_properties.js';
 import { stopTwoWeaponCombat, toggleTwoWeaponCombat } from './two_weapon.js';
 import { resetBulkTakeoff, cancelSlotTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
@@ -408,7 +408,7 @@ export function isTwoWeaponObject(object) {
         return isWeaponTool(object);
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
     return !(skill >= P_BOW && skill <= P_CROSSBOW)
-        && !isAmmunition(object) && !isMissileObject(object);
+        && !isLauncherAmmunition(object) && !isMissileObject(object);
 }
 // C setuwep(): an improvised weapon announces its first use in melee.
 export function weaponNeedsBashingMessage(object, state) {
@@ -420,7 +420,7 @@ export function weaponNeedsBashingMessage(object, state) {
     const launcher = skill >= P_BOW && skill <= P_CROSSBOW;
     const groundedPolearm = isPolearm(object) && !state.u.usteed
         && artifactById(object.oartifact)?.name !== 'Snickersnee';
-    return launcher || isAmmunition(object) || isMissileObject(object)
+    return launcher || isLauncherAmmunition(object) || isMissileObject(object)
         || groundedPolearm;
 }
 export function willWeld(object) {

@@ -53,7 +53,7 @@ import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSel
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { swingMonsterWeapon, advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
-import { ammunitionMatchesLauncher, isPick, isPolearm } from './object_properties.js';
+import { isPick, isPolearm, launcherMatchesAmmo } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { monsterWeaponStrengthBonus, poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
@@ -782,7 +782,7 @@ function monsterHasLauncherAndAmmo(monster) {
     if (!launcher)
         return false;
     const inventory = monster.minvent || monster.inventory || [];
-    return inventory.some(ammo => ammunitionMatchesLauncher(ammo, launcher));
+    return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
 // mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
 function monsterHasAvailableDistanceAttack(monster, random) {

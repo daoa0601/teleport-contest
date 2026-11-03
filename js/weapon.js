@@ -53,7 +53,7 @@ import { OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
 import { P_FLAIL } from './const.js';
 import { FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE } from './object_data.js';
 import { SKILL_NAMES } from './skills.js';
-import { isAmmunition } from './object_properties.js';
+import { isLauncherAmmunition } from './object_properties.js';
 const M2_GIANT = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_ROCKTHROW = 0x08000000;
@@ -641,13 +641,13 @@ export function weaponDescription(object) {
         else
             description = object.globby ? 'glob' : CLASS_NAMES[object.oclass];
     }
-    else if (skill === P_SLING && isAmmunition(object)) {
+    else if (skill === P_SLING && isLauncherAmmunition(object)) {
         description = [ROCK, LUCKSTONE, LOADSTONE, TOUCHSTONE, FLINT].includes(object.otyp)
             ? 'stone' : object.oclass === 13 ? 'gem' : CLASS_NAMES[object.oclass];
     }
-    else if (skill === P_BOW && isAmmunition(object))
+    else if (skill === P_BOW && isLauncherAmmunition(object))
         description = 'arrow';
-    else if (skill === P_CROSSBOW && isAmmunition(object))
+    else if (skill === P_CROSSBOW && isLauncherAmmunition(object))
         description = 'bolt';
     else if (skill === P_FLAIL && object.otyp === GRAPPLING_HOOK)
         description = 'hook';

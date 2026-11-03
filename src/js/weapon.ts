@@ -100,7 +100,7 @@ import { P_FLAIL } from './const.js';
 import { FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE } from './object_data.js';
 
 import { SKILL_NAMES } from './skills.js';
-import { isAmmunition } from './object_properties.js';
+import { isLauncherAmmunition } from './object_properties.js';
 
 interface WeaponMessageOptions {
     publish?: MessagePublisher;
@@ -769,11 +769,11 @@ export function weaponDescription(object: GameObject): string {
         if ([CORPSE, TIN, EGG, STATUE, BOULDER, TOWEL, TIN_OPENER].includes(object.otyp))
             description = requireObjectData(OBJECT_NAMES, object.otyp) ?? undefined;
         else description = object.globby ? 'glob' : CLASS_NAMES[object.oclass];
-    } else if (skill === P_SLING && isAmmunition(object)) {
+    } else if (skill === P_SLING && isLauncherAmmunition(object)) {
         description = [ROCK, LUCKSTONE, LOADSTONE, TOUCHSTONE, FLINT].includes(object.otyp)
             ? 'stone' : object.oclass === 13 ? 'gem' : CLASS_NAMES[object.oclass];
-    } else if (skill === P_BOW && isAmmunition(object)) description = 'arrow';
-    else if (skill === P_CROSSBOW && isAmmunition(object)) description = 'bolt';
+    } else if (skill === P_BOW && isLauncherAmmunition(object)) description = 'arrow';
+    else if (skill === P_CROSSBOW && isLauncherAmmunition(object)) description = 'bolt';
     else if (skill === P_FLAIL && object.otyp === GRAPPLING_HOOK) description = 'hook';
     else if (skill === P_PICK_AXE && object.otyp === DWARVISH_MATTOCK) description = 'mattock';
     if (!description) throw new Error(`No weapon description for object type ${object.otyp}`);

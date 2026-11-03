@@ -24,7 +24,7 @@ import { simpleArmorName, fingersOrGloves } from './do_wear.js';
 import { SHIELD_OF_REFLECTION } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType, } from './skills.js';
 import { weaponDescription } from './weapon.js';
-import { isAmmunition, isWetTowel } from './object_properties.js';
+import { isLauncherAmmunition, isWetTowel } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
@@ -488,7 +488,7 @@ function weaponInsightLines(final = 0) {
             : `wielding ${weapon.quan === 1 ? withIndefiniteArticle(what) : makePlural(what)}`);
     }
     const wtype = weaponSkillType(weapon);
-    if (wtype === P_NONE || (weapon && isAmmunition(weapon)))
+    if (wtype === P_NONE || (weapon && isLauncherAmmunition(weapon)))
         return lines;
     const sklvl = skillLevel(wtype);
     const sklvlName = skillLevelDescription(sklvl);

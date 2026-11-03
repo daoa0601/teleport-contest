@@ -431,14 +431,14 @@ OBJECT_CHARGED, OBJECT_MATERIAL and OBJECT_NAMES tables at every otyp in
 "rubber hose"). is_flimsy covers the zero-material generic rows 0..17 too:
 C's `oc_material <= LEATHER` and the port's `objectMaterial(...) <= LEATHER`
 both read material 0 there and agree, unlike is_damageable's port test.
-`is_ammo`/`ammo_and_launcher` are the one C macro behind two port functions
-each; the claims prove `isLauncherAmmunition`/`launcherMatchesAmmo`, which
-more callers use. The duplicates (`isAmmunition`,
-`ammunitionMatchesLauncher`) stay unclaimed until their callers move to
-the proved functions and they are deleted. `objectUsesCharges` has no single C
-counterpart — it summarizes objnam.c:doname's `is_weptool`-routed switch,
-whose WAND/tool charge display also depends on `known`, lamplit candles and
-the candelabrum — and is not claimed.
+`is_ammo`/`ammo_and_launcher` each had two port functions; the claims prove
+`isLauncherAmmunition`/`launcherMatchesAmmo`, and the unclaimed duplicates
+(`isAmmunition`, `ammunitionMatchesLauncher`) were deleted once every caller
+moved to the proved pair (the two forms agree because every engine object
+carries the nonzero oclass that C mksobj() assigns). `objectUsesCharges` has
+no single C counterpart — it summarizes objnam.c:doname's `is_weptool`-routed
+switch, whose WAND/tool charge display also depends on `known`, lamplit
+candles and the candelabrum — and is not claimed.
 
 One executor extension was needed: a symbolic index into a string array
 (`OBJECT_NAMES[otyp] === 'rubber hose'`) now builds one z3 String term, with

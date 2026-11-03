@@ -38,7 +38,7 @@ import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { yn_function } from './cmd.js';
-import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, ammunitionMatchesLauncher, isBlade, isPolearm } from './object_properties.js';
+import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots } from './wield.js';
 import { heroCanUseTwoWeapons } from './two_weapon.js';
 import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
@@ -528,7 +528,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
     const alreadyWorn = !!((item.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     const stack = item.quan > 1;
     const plural = objectNameIsPlural(item, state);
-    const shoot = ammunitionMatchesLauncher(item, state.uwep);
+    const shoot = launcherMatchesAmmo(item, state.uwep);
     if (item === state.uwep || item === state.uswapwep || item === state.uquiver) {
         const quivered = item === state.uquiver;
         const verb = quivered ? 'Quiver' : 'Wield';
