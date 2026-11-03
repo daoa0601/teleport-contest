@@ -615,6 +615,19 @@ class ExecutorTests(unittest.TestCase):
             'function example(x) { return [7, 3, 7].indexOf(x); }',
             params=[('x', INT)])
 
+    def test_findindex_short_circuits_like_a_c_scan(self):
+        self.equivalent(
+            'int example(int x, int y) {'
+            '  int i; for (i = 0; i < 4; i++) if (x == i - 1 && y == i) return i;'
+            '  return -1; }',
+            'const xs = [-1, 0, 1, 2]; const ys = [0, 1, 2, 3];'
+            'function example(x, y) { return xs.findIndex((x0, index) => x0 === x && ys[index] === y); }',
+            params=[('x', INT), ('y', INT)])
+        self.rejected(
+            'int example(int x) { return x == 1 ? 0 : x == 2 ? 2 : -1; }',
+            'function example(x) { return [1, 9, 2, 2].findIndex(v => v === x); }',
+            params=[('x', INT)], reason='outputs differ')
+
     def test_initializer_slice_uses_explicit_locals_and_excludes_the_caller(self):
         from jssym import V
         def configure(world, front, modules):

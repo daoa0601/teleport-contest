@@ -934,6 +934,13 @@ class JSExec:
                     for q, value in self.eval(p, arg_nodes[0]):
                         out.append((q, V('bool', z3.Or(*(self._equal(item, value) for item in array.v)))))
                 return out
+            if prop == 'findIndex' and len(arg_nodes) == 1:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript findIndex() on a non-array')
+                    out.extend(self._array_find_index(p, array, arg_nodes[0], where))
+                return out
             if prop == 'some' and len(arg_nodes) == 1:
                 out = []
                 for p, array in self.eval(path, fn.child_by_field_name('object')):
@@ -1025,28 +1032,30 @@ class JSExec:
             out.append((p, V('num', r)))
         return out
 
-    def _array_some(self, path, array, callback, where):
-        """Array.prototype.some with an expression-bodied arrow callback.
+    def _array_scan(self, path, array, callback, where, what):
+        """The shared element scan behind some() and findIndex(): evaluate
+        the expression-bodied callback in element order, short-circuiting
+        exactly as JavaScript does, so an element's callback body runs only
+        while every earlier element evaluated false and its path condition
+        and obligations carry that prefix.
 
-        The scan short-circuits exactly as JavaScript does: an element's
-        callback body runs only while every earlier element evaluated false,
-        so its path condition and obligations carry that prefix.
+        Returns ([(path, matching_index)], unmatched_paths).
         """
         cb = _strip(callback)
         if cb.type != 'arrow_function':
-            raise Unsupported(f'Array.some callback at {where} is not an arrow function')
+            raise Unsupported(f'Array.{what} callback at {where} is not an arrow function')
         parameters = cb.child_by_field_name('parameters')
         if parameters is not None:
             prm_nodes = parameters.named_children
         else:
             prm_nodes = [cb.child_by_field_name('parameter')]
             if prm_nodes[0] is None:
-                raise Unsupported(f'Array.some callback at {where} has no parameters')
+                raise Unsupported(f'Array.{what} callback at {where} has no parameters')
         body = cb.child_by_field_name('body')
         if body.type == 'statement_block':
-            raise Unsupported(f'Array.some callback at {where} has a block body')
+            raise Unsupported(f'Array.{what} callback at {where} has a block body')
         if len(prm_nodes) > 3:
-            raise Unsupported(f'Array.some callback at {where} has more than three parameters')
+            raise Unsupported(f'Array.{what} callback at {where} has more than three parameters')
         live, matched = [path], []
         for index, element in enumerate(array.v):
             following = []
@@ -1066,14 +1075,25 @@ class JSExec:
                 for p2, value in evaluated:
                     for p3, taken in self.m.branch(p2, self.truth(value)):
                         if taken:
-                            matched.append(p3)
+                            matched.append((p3, index))
                         else:
                             following.append(p3)
             live = following
             if not live:
                 break
-        return ([(p, V('bool', z3.BoolVal(True))) for p in matched]
+        return matched, live
+
+    def _array_some(self, path, array, callback, where):
+        """Array.prototype.some with an expression-bodied arrow callback."""
+        matched, live = self._array_scan(path, array, callback, where, 'some')
+        return ([(p, V('bool', z3.BoolVal(True))) for p, _ in matched]
                 + [(p, V('bool', z3.BoolVal(False))) for p in live])
+
+    def _array_find_index(self, path, array, callback, where):
+        """Array.prototype.findIndex: the first matching index, or -1."""
+        matched, live = self._array_scan(path, array, callback, where, 'findIndex')
+        return ([(p, V('num', z3.IntVal(index))) for p, index in matched]
+                + [(p, V('num', z3.IntVal(-1))) for p in live])
 
     @staticmethod
     def _parameter_names(node):

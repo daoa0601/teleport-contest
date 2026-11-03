@@ -6,7 +6,7 @@ their real ASTs, except the explicit dungeon-difficulty call contract below.
 import z3
 
 from core import Machine, Unsupported, select_int
-from csym import CArray, CElement, CExec, CPtr, CState, CVal
+from csym import CArray, CElement, CExec, CPtr, CRecord, CState, CVal
 from jssym import JSExec, V
 
 LONG = (64, True)   # C long on the recorder's LP64 target
@@ -158,26 +158,41 @@ def movement_arguments(world, front):
             [V('obj', 'monster'), V('num', moving)])
 
 
+def native_table(world, front, file, name):
+    """Evaluate one immutable global array initializer with the C executor.
+
+    monst.c:monst_globals_init and objects.c:objects_globals_init memcpy these
+    static initializer tables into their live arrays at startup; a claim that
+    reads the live array assumes it still holds these values.
+    """
+    key = (file, name)
+    if key in front.initializers:
+        return front.initializers[key]
+    decl = front.initialized_array(name, file)
+    executor = CExec(Machine(world, 'c'), front)
+    executor.stack.append(('<table>', file, {}))
+    path = executor.m.start_path()
+    results = executor.eval(path, decl['inner'][-1])
+    if len(results) != 1 or results[0][0] is not path or not isinstance(results[0][1], CArray):
+        raise Unsupported(f'native {name} initializer did not produce one array')
+    if executor.m.obligations:
+        raise Unsupported(f'native {name} initializer has unchecked arithmetic')
+    front.initializers[key] = results[0][1]
+    return results[0][1]
+
+
 def native_monsters(world, front):
     """monst.c:monst_globals_init copies mons_init into mons at startup.
 
     Assume the fields read by the claim retain those initial values. This
     excludes runtime quest retargeting and seduction-attack replacement.
     """
-    file = front.include.parent / 'src' / 'monst.c'
-    if file in front.initializers:
-        return front.initializers[file]
-    decl = front.initialized_array('mons_init', file)
-    executor = CExec(Machine(world, 'c'), front)
-    executor.stack.append(('<table>', file, {}))
-    path = executor.m.start_path()
-    results = executor.eval(path, decl['inner'][-1])
-    if len(results) != 1 or results[0][0] is not path or not isinstance(results[0][1], CArray):
-        raise Unsupported('native monster initializer did not produce one array')
-    if executor.m.obligations:
-        raise Unsupported('native monster initializer has unchecked arithmetic')
-    front.initializers[file] = results[0][1]
-    return results[0][1]
+    return native_table(world, front, front.include.parent / 'src' / 'monst.c', 'mons_init')
+
+
+def native_objects(world, front):
+    """objects.c:objects_globals_init copies obj_init into objects."""
+    return native_table(world, front, front.include.parent / 'src' / 'objects.c', 'obj_init')
 
 
 def module_constant(world, modules, label, name):
@@ -530,3 +545,235 @@ def _capacity_attributes(world):
     world.js_calls[('js/attrib.js', 'currentAttribute')] = [
         ([V('num', z3.IntVal(index)), V('obj', 'game')], V('num', value))
         for index, value in ((0, js_strength), (4, constitution))]
+
+# ---- direction helpers (cmd.c xytodir over decl.c's direction tables) ----
+
+def direction_state(world, front, modules):
+    """cmd.c's xytodir scans decl.c's const schar xdir[N_DIRS_Z]/ydir tables;
+    the emitted port scans js/const.js's copies with Array.findIndex."""
+    for name in ('xdir', 'ydir'):
+        world.c_globals[name] = native_table(
+            world, front, front.include.parent / 'src' / 'decl.c', name)
+
+
+def direction_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    return ([CVal(values['x'], LONG), CVal(values['y'], LONG)],
+            [V('num', values['x']), V('num', values['y'])])
+
+
+# ---- weapon.c skill bonuses (skills.js weaponSkillHit/DamageBonus) ----
+
+SKILL_COUNT = 38     # skills.h P_NUM_SKILLS
+P_MARTIAL_ARTS = 35  # skills.h: P_MARTIAL_ARTS is P_BARE_HANDED_COMBAT
+WEAPON_CLASSES = (2, 6, 13)   # objclass.h WEAPON_CLASS, TOOL_CLASS, GEM_CLASS
+FOOD_CLASS = 7
+
+
+def _skill_record(world, index):
+    return CState(f'u.weapon_skills[{index}]')
+
+
+def _skill_array(world, front):
+    world.c_globals['u.weapon_skills'] = CArray(
+        tuple(_skill_record(world, i) for i in range(SKILL_COUNT)))
+    skills = []
+    for i in range(SKILL_COUNT):
+        upper = 6 if i == P_MARTIAL_ARTS else 4
+        symbol = world.c_state[f'u.weapon_skills[{i}].skill'][0]
+        if f'u.weapon_skills[{i}].skill' not in world.unrelated_state:
+            js = symbol
+        else:
+            js = z3.Int(f'js:u.weapon_skills[{i}].skill')
+            world.pre.extend([js >= 0, js <= upper])
+        world.pre.extend([symbol >= 0, symbol <= upper])
+        skills.append(V('record', {'skill': V('num', js),
+                                   'maxSkill': V('num', z3.Int(f'max_skill[{i}]')),
+                                   'advance': V('num', z3.Int(f'advance[{i}]'))}))
+    world.js_values['game.u.weaponSkills'] = V('array', tuple(skills))
+
+
+def skill_bonus_state(world, front, modules):
+    """Entry relation for weapon.c:weapon_hit_bonus/weapon_dam_bonus().
+
+    The one weapon argument is null, the wielded uwep, the swapped
+    uswapwep, or an unrelated held object; C pointer equality over these
+    identities is what the port compares with reference equality. Two-weapon
+    combat requires both wield slots non-null (wield.c admits it only then;
+    every unwield path clears it). Skill entries stay at or below expert
+    except bare-handed martial arts, which u_init.c alone may raise to
+    grand master; weapon.c's switches would call impossible() above expert.
+    """
+    world.join_paths = True
+    world.c_globals['objects'] = native_objects(world, front)
+    symbols = {name: value for name, value, _ in world.params}
+    symbols.update({name: value for name, (value, _) in world.c_state.items()})
+    weapon_present = symbols['weapon_present'] == 1
+    uwep_present = symbols['uwep_present'] == 1
+    uswap_present = symbols['uswapwep_present'] == 1
+    is_uwep = symbols['is_uwep'] == 1
+    is_uswap = symbols['is_uswapwep'] == 1
+    weapon_identity = z3.If(is_uwep, 1, z3.If(is_uswap, 2, 3))
+    world.c_globals['weapon.oclass'] = CVal(symbols['weapon.oclass'], (8, True))
+    world.c_globals['weapon.otyp'] = CVal(symbols['weapon.otyp'], (16, True))
+    world.c_globals['uwep'] = CPtr(uwep_present, 'uwep', z3.If(is_uwep, 1, 4))
+    world.c_globals['uswapwep'] = CPtr(uswap_present, 'uswapwep', z3.If(is_uswap, 2, 5))
+    _skill_array(world, front)
+    world.c_globals['u.twoweap'] = CVal(symbols['u.twoweap'], (8, True))
+    world.js_state['game.u.twoweap'] = symbols['u.twoweap']
+    world.c_globals['u.usteed'] = CPtr(symbols['usteed_present'] == 1, 'steed')
+    world.js_values['game.u.usteed'] = V('choice', [
+        (symbols['usteed_present'] == 1, V('record', {'mnum': V('num', z3.IntVal(0))})),
+        (symbols['usteed_present'] == 0, V('null'))])
+    world.js_values['game.urole'] = V('obj', 'game.urole')
+    for aliases, present, related, other in (
+            (('game.uwep', 'game.u.uwep'), uwep_present, is_uwep, 'uwep_other'),
+            (('game.uswapwep', 'game.u.uswapwep'), uswap_present, is_uswap, 'uswapwep_other')):
+        value = V('choice', [(z3.And(present, related), V('obj', 'weapon')),
+                             (z3.And(present, z3.Not(related)), V('obj', other)),
+                             (z3.Not(present), V('null'))])
+        for alias in aliases:
+            world.js_values[alias] = value
+
+
+def skill_bonus_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    identity = z3.If(values['is_uwep'] != 0, 1, z3.If(values['is_uswapwep'] != 0, 2, 3))
+    return ([CPtr(values['weapon_present'] != 0, 'weapon', identity)],
+            [V('choice', [(values['weapon_present'] == 1, V('obj', 'weapon')),
+                          (values['weapon_present'] == 0, V('null'))]), V('obj', 'game')])
+
+
+def skill_bonus_domain(s):
+    flags = ('weapon_present', 'uwep_present', 'uswapwep_present', 'is_uwep',
+             'is_uswapwep', 'u.twoweap', 'usteed_present')
+    return ([s[key] >= 0 for key in flags] + [s[key] <= 1 for key in flags]
+            + [z3.Or(*(s['weapon.oclass'] == value for value in (*WEAPON_CLASSES, FOOD_CLASS))),
+               s['weapon.otyp'] >= 0, s['weapon.otyp'] <= 480,
+               # wielding relations: an identity claim needs both pointers,
+               # and one weapon cannot be both wielded and swapped.
+               z3.Implies(s['is_uwep'] == 1, z3.And(s['weapon_present'] == 1, s['uwep_present'] == 1)),
+               z3.Implies(s['is_uswapwep'] == 1,
+                          z3.And(s['weapon_present'] == 1, s['uswapwep_present'] == 1)),
+               s['is_uwep'] + s['is_uswapwep'] <= 1,
+               # wield.c admits two-weapon combat only with both weapons wielded.
+               z3.Implies(s['u.twoweap'] == 1,
+                          z3.And(s['uwep_present'] == 1, s['uswapwep_present'] == 1))])
+
+
+# ---- mkobj.c:weight over ordinary stacks (no container contents) ----
+
+GLOB_CLASS = 7  # objclass.h FOOD_CLASS; globs only exist as food
+
+
+def weight_state(world, front, modules):
+    """Entry relation for mkobj.c:weight() on one object without container
+    contents. Objects[] and mons[] retain their startup initializer values;
+    the emitted port reads OBJECT_WEIGHT and MONSTER_BODY_META."""
+    world.join_paths = True
+    world.c_globals['objects'] = native_objects(world, front)
+    world.c_globals['mons'] = native_monsters(world, front)
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    for field, declared in (('otyp', (16, True)), ('oclass', (8, True)),
+                            ('quan', (64, True)), ('owt', (32, False)),
+                            ('oeaten', (32, False)), ('corpsenm', (32, True)),
+                            ('globby', (32, False))):
+        world.c_globals[f'obj.{field}'] = CVal(symbols[f'obj.{field}'], declared)
+        # JS reads these through the spec's js_state paths, so an
+        # UnrelatedState probe can break any one relation.
+
+    def constant(name):
+        value = module_constant(world, modules, 'js/object_data.js', name)
+        return z3.simplify(value.v).as_long()
+
+    # Five ordinary stack types keep the table selects small while covering
+    # coins, globs, corpses, a weapon and food, with or without a partly
+    # eaten remainder. Container and statue weight (mkobj.c:weight's cobj
+    # recursion) is a separate extension.
+    names = ('GOLD_PIECE', 'DAGGER', 'FOOD_RATION', 'CORPSE', 'GLOB_OF_GRAY_OOZE')
+    allowed = [constant(name) for name in names]
+    world.pre.append(z3.Or(*(symbols['obj.otyp'] == otyp for otyp in allowed)))
+    # mkobj keeps oclass equal to objects[otyp].oc_class; C tests the CORPSE
+    # type before the coin class while the port tests the coin class first,
+    # so an object whose class disagrees with its type is outside this domain.
+    classes = {allowed[0]: 12, allowed[1]: 2}
+    oclass = z3.IntVal(7)
+    for native_type in reversed(allowed[:-1]):
+        oclass = z3.If(symbols['obj.otyp'] == native_type,
+                       classes.get(native_type, 7), oclass)
+    world.pre.append(symbols['obj.oclass'] == oclass)
+    # Initial-table correspondence, as the inventory chain claims assume for
+    # cached owt: the native object and monster weight fields equal the
+    # emitted OBJECT_WEIGHT and MONSTER_BODY_META entries at the claimed
+    # indices, so both sides multiply the same table value.
+    otyp = symbols['obj.otyp']
+    native_weight = select_int(_objects_member(world, front, 'oc_weight'), otyp)
+    js_weight = module_constant(world, modules, 'js/object_data.js', 'OBJECT_WEIGHT')
+    world.pre.append(native_weight == _js_cell(world, modules, js_weight, otyp))
+    corpsenm = symbols['obj.corpsenm']
+    # CORPSE objects always carry a valid species (mkobj.c/mkcorpse assign
+    # one at creation), so both sides' in-range checks hold here and the
+    # initial-table correspondence is a plain equation.
+    world.pre.extend([corpsenm >= 0, corpsenm < front.enum_value('NUMMONS')])
+    native_cwt = _mons_cwt(world, front, corpsenm)
+    body = module_constant(world, modules, 'js/monster_data.js', 'MONSTER_BODY_META')
+    world.pre.append(native_cwt == _js_cell(world, modules, body, corpsenm, 0))
+    # Partly eaten food (eaten_stat's table-selected nutrition divisor) stays
+    # outside this claim; the difftest covers it concretely, and eat.c keeps
+    # oeaten zero until the first bite.
+    world.pre.append(symbols['obj.oeaten'] == 0)
+
+
+def _objects_member(world, front, member):
+    """The constant initializer values of one objects[] member, in order."""
+    table = world.c_globals['objects']
+    executor = CExec(Machine(world, 'c'), front)
+    path = executor.m.start_path()
+    values = [z3.simplify(executor._record_member(path, record, member).v)
+              for record in table.values]
+    if not all(z3.is_int_value(value) for value in values):
+        raise Unsupported(f'native objects {member} initializer is not constant')
+    return values
+
+
+def _mons_cwt(world, front, corpsenm):
+    """mons[corpsenm].cwt, or 0 outside the valid species range."""
+    mons = world.c_globals['mons']
+    executor = CExec(Machine(world, 'c'), front)
+    path = executor.m.start_path()
+    values = [z3.simplify(executor._record_member(path, record, 'cwt').v)
+              for record in mons.values]
+    if not all(z3.is_int_value(value) for value in values):
+        raise Unsupported('native mons cwt initializer is not constant')
+    return select_int(values, z3.If(z3.And(corpsenm >= 0,
+                                            corpsenm < len(values)), corpsenm, 0))
+
+
+def _js_cell(world, modules, table, index, column=0):
+    """One numeric emitted table entry at a symbolic index; flat tables
+    select directly, table-of-arrays tables select one column of the row."""
+    executor = JSExec(Machine(world, 'js'), modules, {})
+    selected = executor._select_values(table.v, index)
+    if selected.kind != 'num':
+        selected = executor._select_values(selected.v, z3.IntVal(column))
+    if selected.kind != 'num':
+        raise Unsupported('emitted weight table entry is not numeric')
+    return selected.v
+
+
+def weight_arguments(world, front):
+    return ([CPtr(True, 'obj')], [V('obj', 'obj')])
+
+
+def weight_domain(s):
+    return [s['obj.quan'] >= 1, s['obj.quan'] <= 100000,
+            s['obj.globby'] <= 1,
+            # mkobj.c:weight's glob branch returns owt before any class test;
+            # globs are created only as food (mksobj's GLOB types), so a coin
+            # glob is outside the entry domain of both sides.
+            z3.Implies(s['obj.globby'] == 1, s['obj.oclass'] == GLOB_CLASS),
+            # The glob and heavy-iron-ball branches return (int) obj->owt.
+            # The port keeps owt as a nonnegative number and stores weight()
+            # results back into it at ~80 sites, so an owt above INT_MAX
+            # (only a wizard-mode glob wish reaches it) is outside the domain.
+            s['obj.owt'] <= 2 ** 31 - 1]

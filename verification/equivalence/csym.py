@@ -439,7 +439,13 @@ class CExec:
 
     def _declare_array(self, path, decl):
         results = []
-        for p, value in self.eval(path, decl['inner'][-1]):
+        init = decl['inner'][-1]
+        if init['kind'] == 'StringLiteral':
+            # A const char[] initialized by a string literal is an opaque
+            # buffer; element reads stay unsupported.
+            path.env[decl['name']] = CBuf()
+            return [path]
+        for p, value in self.eval(path, init):
             if not isinstance(value, CArray):
                 raise Unsupported('C array initializer is not a list')
             p.env[decl['name']] = value
@@ -757,11 +763,16 @@ class CExec:
                                 for i in range(len(values[0].values))))
         if all(isinstance(v, (CRecord, CSelected)) for v in values):
             return CSelected(values, index)
+        if all(isinstance(v, CState) for v in values):
+            return CSelected(values, index)
         raise Unsupported('C table contains mixed element types')
 
     def _record_member(self, path, record, name):
         if isinstance(record, CSelected):
-            return self._select(tuple(self._record_member(path, v, name) for v in record.values), record.index)
+            members = tuple(self._state_field(path, f'{v.key}.{name}')
+                            if isinstance(v, CState) else self._record_member(path, v, name)
+                            for v in record.values)
+            return self._select(members, record.index)
         if name not in record.fields:
             raise Unsupported(f'C record has no field {name}')
         self.stack.append(('<table>', record.file, {}))
@@ -772,6 +783,24 @@ class CExec:
         if len(results) != 1 or results[0][0] is not path:
             raise Unsupported('branching C record initializer')
         return results[0][1]
+
+    def _state_field(self, path, key):
+        """Read one flattened state member selected from a fixed state array.
+
+        The symbolically selected member has no clang node here, so the
+        declared type comes from the spec's state entry instead of the
+        field's clang type; the spec author must declare it faithfully.
+        """
+        if key in path.heap:
+            return path.heap[key]
+        if key in self.m.world.c_globals:
+            value = self.m.world.c_globals[key]
+            if isinstance(value, CVal):
+                return value
+        if key in self.m.world.c_state:
+            sym, declared = self.m.world.c_state[key]
+            return CVal(sym, declared)
+        raise Unsupported(f'unmodeled C state {key}')
 
     def _cast(self, path, n):
         kind = n['castKind']
