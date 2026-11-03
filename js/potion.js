@@ -994,8 +994,11 @@ async function drinkPolymorph(source, state) {
         return false;
     const controlled = source.blessed && !heroIsPolymorphed(state);
     const result = await polymorphHero(controlled ? POLY_CONTROLLED | POLY_LOW_CTRL : POLY_NOFLAGS);
+    // C min() is the hack.h macro ((x) < (y) ? (x) : (y)), so rn2(15) + 10
+    // is evaluated a second time when it is not smaller than mtimedone.
     if (controlled && state.u.mtimedone && heroIsPolymorphed(state))
-        state.u.mtimedone = Math.min(state.u.mtimedone, rn2(15) + 10);
+        state.u.mtimedone = state.u.mtimedone < rn2(15) + 10
+            ? state.u.mtimedone : rn2(15) + 10;
     return !!result?.died || !!state.program_state.gameover;
 }
 // ---- peffects() (C potion.c:1333) ----
