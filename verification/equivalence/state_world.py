@@ -777,3 +777,99 @@ def weight_domain(s):
             # results back into it at ~80 sites, so an owt above INT_MAX
             # (only a wizard-mode glob wish reaches it) is outside the domain.
             s['obj.owt'] <= 2 ** 31 - 1]
+
+
+# ---- fv-equivalence-batch-4: monster- and object-table leaf predicates ----
+
+def monster_record_arguments(world, front):
+    """mondata.c predicates over one struct monst whose data points at
+    mons[species]; the emitted helper reads the same fields off the
+    opaque monster object through js_state paths."""
+    return ([CPtr(True, 'monster')], [V('obj', 'monster')])
+
+
+def present_monster_arguments(world, front):
+    """The same shape with an explicit native pointer-presence flag, for
+    null-pointer domain probes."""
+    values = {name: value for name, value, _ in world.params}
+    return ([CPtr(values['native_monster_present'] != 0, 'monster')],
+            [V('obj', 'monster')])
+
+
+def resistance_state(world, front, modules):
+    """Entry relation for monst.h's mon_resistancebits(mon) macro. mon->data
+    points at mons[species]; the extrinsic/intrinsic masks are unsigned
+    short (monst.h), so every value fits the emitted int32 '|' exactly."""
+    monster_state(world, front, modules)
+    for field in ('mextrinsics', 'mintrinsics'):
+        value = world.c_state[f'monster.{field}'][0]
+        world.c_globals[f'monster.{field}'] = CVal(value, (16, False))
+
+
+OBJECT_FIELDS = (('otyp', (16, True)), ('oclass', (8, True)))
+
+
+def object_predicate_state(prefix):
+    """Entry relation for one held object with its otyp/oclass fields over
+    the initial objects[] table (mkobj.c/mksobj only assign real otyps)."""
+    def state(world, front, modules):
+        world.join_paths = True
+        world.c_globals['objects'] = native_objects(world, front)
+        symbols = {name: value for name, (value, _) in world.c_state.items()}
+        for field, declared in OBJECT_FIELDS:
+            world.c_globals[f'{prefix}.{field}'] = CVal(symbols[f'{prefix}.{field}'], declared)
+        # o_init.js:objectMaterial reads the per-game material map first, so
+        # relate the emitted initial table to the native obj_init values. The
+        # per-game material shuffle (o_init.c:shuffle over rings, potions,
+        # scrolls, spellbooks, wands and venoms) mutates both sides with the
+        # same algorithm; that correspondence is outside this entry relation.
+        materials = module_constant(world, modules, 'js/object_data.js', 'OBJECT_MATERIAL')
+        if materials.kind != 'array':
+            raise Unsupported('emitted OBJECT_MATERIAL is not an array')
+        world.js_values['game.objectMaterials'] = materials
+    return state
+
+
+def object_predicate_arguments(prefix):
+    def arguments(world, front):
+        return ([CPtr(True, prefix)], [V('obj', prefix)])
+    return arguments
+
+
+def real_object_precondition(world, front, otyp):
+    """Restrict otyp to rows with a real material. objclass.h materials start
+    at LIQUID; the zero-material rows are the illegal object and the class
+    markers, where the port's inline material tests differ from C's
+    (material 0 <= WOOD). Those rows reach a struct obj only as pager.c
+    object_from_map temporary naming objects, whose zeroed erosion fields
+    and oc_nowish status make the difference unobservable (see the claim
+    assumptions in state_specs.py)."""
+    materials = _objects_member(world, front, 'oc_material')
+    return select_int(materials, otyp) >= front.enum_value('LIQUID')
+
+
+def erosion_matters_guard(world, front, otyp, oclass):
+    """objnam.c:erosion_matters over the initial objects[] table: the four
+    erosion classes, or a weapon-tool (obj.h is_weptool: TOOL_CLASS with a
+    nonzero objects[].oc_skill)."""
+    skills = _objects_member(world, front, 'oc_subtyp')
+    weapon_tool = z3.And(oclass == front.enum_value('TOOL_CLASS'),
+                         select_int(skills, otyp) != 0)
+    return z3.Or(*[oclass == front.enum_value(name) for name in
+                   ('WEAPON_CLASS', 'ARMOR_CLASS', 'BALL_CLASS', 'CHAIN_CLASS')],
+                 weapon_tool)
+
+
+def weapon_type_state(world, front, modules):
+    """Entry relation for weapon.c:weapon_type(obj): the object argument is
+    null or a held object with oclass/otyp fields; objects[] retains its
+    initial values including the oc_skill column the port reads through
+    OBJECT_SUBTYPE."""
+    object_predicate_state('weapon')(world, front, modules)
+
+
+def weapon_type_arguments(world, front):
+    present = next(value for name, value, _ in world.params if name == 'weapon_present')
+    return ([CPtr(present != 0, 'weapon')],
+            [V('choice', [(present == 1, V('obj', 'weapon')),
+                          (present == 0, V('null'))])])

@@ -35,3 +35,13 @@ int verification_breathless(struct permonst *ptr)
 {
     return breathless(ptr);
 }
+
+int verification_verysmall(struct permonst *ptr)
+{
+    return verysmall(ptr);
+}
+
+int verification_haseyes(struct permonst *ptr)
+{
+    return haseyes(ptr);
+}

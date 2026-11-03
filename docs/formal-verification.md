@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 61 scoped C/JavaScript
+`verification/equivalence/` now proves 71 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -117,6 +117,16 @@ split `rnl` row use this batch's complete runs.
 | `passes_bars:tables` | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
 | `armor_to_dragon` | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
 | `weight:stack` | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
+| `verysmall:tables` | `mondata.h:verysmall` ↔ `monster_data.js:monsterIsVerySmall` | Valid initial species; native/emitted size tables | 1×1 | 2.3 s |
+| `haseyes:tables` | `mondata.h:haseyes` ↔ `uhitm.js:hasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
+| `hates_silver:tables` | `mondata.c:hates_silver` ↔ `monster_data.js:monsterSpeciesHatesSilver` | Valid initial species; pointer identity vs mons[PM_SHADE]/mons[PM_TENGU]; flags and symbols | 3×5 | 5.1 s |
+| `mon_hates_blessings:state` | `mondata.c:mon_hates_blessings` ↔ `monster_data.js:monsterHatesBlessings` | Valid species and shifter species cham 0..NUMMONS-1; mons[] pointer; native/emitted tables | 2×2 | 2.6 s |
+| `mon_resistancebits:state` | `monst.h:mon_resistancebits` ↔ `mondata.js:monsterResistanceBits` | Valid species; ushort extrinsic/intrinsic masks 0..65535; native/emitted resists table | 1×1 | 1.3 s |
+| `erosion_matters:tables` | `objnam.c:erosion_matters` ↔ `objnam.js:erosionMatters` | Every otyp 0..NUM_OBJECTS-1 and any oclass; native/emitted class and skill columns | 1×1 | 1.8 s |
+| `is_damageable:tables` | `objclass.h:is_damageable` ↔ `objnam.js:objectIsDamageable` | Every otyp with a real material (>= LIQUID); objects[]/OBJECT_MATERIAL initial values | 1×1 | 11.0 s |
+| `primary_erosion:tables` | `objnam.c:readobjnam` primary test ↔ `objnam.js:objectAcceptsPrimaryErosion` | Erosion-mattering objects with matching oclass; material >= LIQUID | 1×1 | 4.8 s |
+| `secondary_erosion:tables` | `objnam.c:readobjnam` secondary test ↔ `objnam.js:objectAcceptsSecondaryErosion` | Same guarded domain | 1×1 | 3.1 s |
+| `weapon_type:tables` | `weapon.c:weapon_type` ↔ `skills.js:weaponSkillType` | Null or held object; any oclass; every otyp 0..NUM_OBJECTS-1 | 1×1 | 0.2 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -264,6 +274,73 @@ symbolic but always-valid species (mkobj assigns one), chunked into
 initial-table correspondence (`objects[].oc_weight` = `OBJECT_WEIGHT`,
 `mons[].cwt` = `MONSTER_BODY_META[][0]`) is the same assumption the
 inventory chain claims make for cached owt.
+
+**Species/monster/object predicate batch (fv-equivalence-batch-4).** Ten
+more claims extend the table layer to heavily used one-function
+predicates. Five species/monster rows execute the real mondata.c bodies
+(`hates_silver`, `mon_hates_blessings`) or macro-expansion harnesses
+(`verysmall`, `haseyes`, `mon_resistancebits`): `hates_silver` compares
+the native `ptr == &mons[PM_SHADE]`/`PM_TENGU` pointer identities with
+the emitted species-index tests; `mon_hates_blessings` adds the
+`monst.cham` shifter field (monst.h `is_vampshifter` names three
+species; the emitted `MONSTER_SYMBOL[cham] === S_VAMPIRE` select agrees
+over the whole initial symbol table, and the executor models only
+in-bounds reads, so `cham == NON_PM` and an absent `cham` field — both
+runtime-false through an undefined read — stay outside the symbolic
+domain); `mon_resistancebits` ORs the native `uchar mresists` column
+with the two `unsigned short` monst masks, which fit the emitted int32
+`|` exactly. Five object rows pair objnam.c:erosion_matters and the
+objclass.h erosion macros (through `mkobj.c:is_flammable`/`is_rottable`,
+executed for real) with the emitted wish-path predicates, and
+weapon.c:weapon_type with `skills.js:weaponSkillType` (the `Math.abs`
+of the signed `objects[].oc_skill` column, including the negative
+launcher and ammo entries). The executor now models `typeof` (with its
+BigInt and `typeof null === 'object'` cases) because
+`o_init.js:objectMaterial` branches on it; a language test pins the
+classification and a mutant of it.
+
+The object claims document three domain facts. First, otyp rows 0..17
+(the illegal object and the class markers) carry material 0, where C's
+`omat <= WOOD && omat != LIQUID` is true but the port's `material > 1`
+is false. Those rows do reach a `struct obj`: pager.c:object_from_map
+builds a temporary naming object with the generic otyp when a remembered
+or hallucinated class glyph has no object at that spot, and doname's
+add_erosion_words runs is_damageable on it. The divergence is
+unobservable there and unreachable elsewhere: the fake object comes from
+mksobj(glyphotyp, FALSE, FALSE), which copies cg.zeroobj (oeroded,
+oeroded2 and oerodeproof zero, rknown false; mkobj_erosions runs only
+under init), so add_erosion_words prints nothing either way, and the
+caller deallocates the object at once (pager.c:376); the generic rows
+are oc_nowish, so readobjnam's other is_damageable call cannot name one,
+and neither mkobj nor mksobj places them. `is_damageable` therefore
+keeps only rows with a real material (>= LIQUID), while
+`erosion_matters`/`weapon_type`, which agree on every row, keep the
+whole 0..NUM_OBJECTS-1 range. Second, C's
+`is_flammable` excludes candles, `WAN_FIRE` and fire-resistance-oprop
+objects while the port's inline material test does not; inside the
+`erosion_matters` guard (weapon/armor/ball/chain or a weapon-tool, with
+oclass equal to `objects[otyp].oc_class` as mkobj keeps it) no surviving
+row disagrees, which is exactly the domain of readobjnam's two erosion
+tests and of not_fully_identified's `is_damageable` call. The
+fire-resistance oprop rows (two dragon-scale armors and one ring) all
+have non-flammable materials. Third, `objectMaterial` reads the per-game
+material map, which o_init.c:shuffle reorders identically on both sides;
+the claims relate the initial emitted table and leave that shuffle
+correspondence to future work. No port fidelity bug was found: the
+native `oc_material`, `oc_class` and `oc_skill` columns equal the emitted
+`OBJECT_MATERIAL`, class and `OBJECT_SUBTYPE` entries at every otyp
+(checked concretely over the whole table before proving).
+
+The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
+that followed took 1037.68 s), including **77 domain probes** and **83
+mutant checks** (12 probes and 12 mutants new), and wrote the reviewed
+71-row ledger only after every claim, probe and mutant passed. Every new
+claim is fast (worst single-claim time 11.0 s for `is_damageable`), so
+the `equivalence` job keeps its fast slot; the two slow table claims are
+unchanged. The CI-parity `--skip-slow --check-ledger` run passed in
+**437.35 s**, and the focused executor/query/selection suite is now
+**85 passing tests**. No game source, session corpus, or frozen file was
+changed.
 
 The complete 61-claim run exited 0 in **980.32 s**, including **65 domain
 probes** and **71 mutant checks**, and wrote the reviewed 61-row ledger only

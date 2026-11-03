@@ -694,5 +694,32 @@ class ExecutorTests(unittest.TestCase):
             reason='C heap type mismatch for u.flag')
 
 
+    def test_typeof_classifies_each_value_kind(self):
+        classifier = (
+            'function pick(i) {\n'
+            "    return i === 0 ? 1 : i === 1 ? 'a' : i === 2 ? true : i === 3 ? undefined\n"
+            '        : i === 4 ? null : i === 5 ? {} : 10n;\n'
+            '}\n'
+            'function example(i) {\n'
+            '    const t = typeof pick(i);\n'
+            "    return t === 'number' ? 1 : t === 'string' ? 2 : t === 'boolean' ? 3\n"
+            "        : t === 'undefined' ? 4 : t === 'object' ? 5 : t === 'bigint' ? 6 : 7;\n"
+            '}')
+        mirror = ('int example(int i) { switch (i) { case 0: return 1;'
+                  ' case 1: return 2; case 2: return 3; case 3: return 4;'
+                  ' case 4: case 5: return 5; case 6: return 6; } return 7; }')
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 6])
+        self.equivalent(mirror, classifier, **domain)
+        # every kind label is pinned: misrouting any one classification
+        # (number, string, boolean, undefined, the null/object case, bigint)
+        # breaks the correspondence for the value of that kind.
+        for kind, wrong in (("'number'", "'bigint'"), ("'string'", "'number'"),
+                            ("'boolean'", "'string'"), ("'undefined'", "'object'"),
+                            ("'object'", "'undefined'"), ("'bigint'", "'number'")):
+            with self.subTest(kind=kind):
+                self.rejected(mirror,
+                              classifier.replace(f't === {kind} ?', f't === {wrong} ?'),
+                              **domain, reason='outputs differ')
+
 if __name__ == '__main__':
     unittest.main()
