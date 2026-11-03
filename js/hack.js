@@ -2254,8 +2254,12 @@ export async function lookaroundRun(state = game._runState, g = game) {
 export async function continueRun(g = game) {
     const state = g._runState;
     if (state?.mode === 8) {
+        // C hack.c:lookaround() stops travel through its `stop:` label
+        // (grid-bug diagonals stop directly), and every stop runs nomul(0),
+        // whose `disp.botl |= (multi >= 0)` (hack.c:4165) marks the whole
+        // status line dirty -- not just end_running()'s time_botl.
         if (await travelLookaroundStops(g)) {
-            stopRun(g);
+            endVoluntaryMultiTurn(g);
             g.context.move = 0;
             return { attemptedMove: false, tookTime: false };
         }
@@ -2295,8 +2299,20 @@ export async function continueRun(g = game) {
             arriveTravel(g);
         return { attemptedMove: true, tookTime: moved };
     }
-    if (!state || !await lookaroundRun(state, g)) {
+    if (!state) {
         stopRun(g);
+        g.context.move = 0;
+        return { attemptedMove: false, tookTime: false };
+    }
+    // C hack.c:lookaround() funnels every rush stop (visible monster, trap,
+    // closed door, dangerous liquid, interesting terrain, the widening
+    // corridor of a `g' rush, grid-bug diagonals) through `stop: nomul(0);`.
+    // nomul(0) marks the status line dirty (`disp.botl |= (multi >= 0)',
+    // hack.c:4165), so the next bot() repaints fields changed since the
+    // last full render -- e.g. the silent chain-lightning Pw decrement of
+    // spell.c:1087, which itself never sets disp.botl.
+    if (!await lookaroundRun(state, g)) {
+        endVoluntaryMultiTurn(g);
         g.context.move = 0;
         return { attemptedMove: false, tookTime: false };
     }
