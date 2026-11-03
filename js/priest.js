@@ -10,7 +10,7 @@ import { recordTempleOverview } from './dungeon.js';
 import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
 import { nomul } from './hack.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { setMonsterMalign } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';

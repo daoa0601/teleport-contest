@@ -46,7 +46,8 @@ import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNT
 import { parseAutocompleteStatement } from './cmd.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 
-import { DISCLOSURE_CATEGORIES, parseDisclosureSettings, setVanqOrder, vanquishedOptionValue } from './end.js';
+import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
+import { setVanqOrder, vanquishedOptionValue } from './insight.js';
 import { C_ATR_INVERSE, C_ATR_NONE } from './color_attr.js';
 import { attributeName, colorName, cutConfigBytes, fuzzyMatch, matchAttributeName,
     matchColorName, queryAttributeMenu, queryColorMenu } from './color_query.js';

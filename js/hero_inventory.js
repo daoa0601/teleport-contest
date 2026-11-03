@@ -2,7 +2,7 @@
 // and attrib.c:set_moreluck().
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { artifactById } from './artifacts.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame } from './gstate.js';

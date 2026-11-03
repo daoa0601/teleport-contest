@@ -106,7 +106,7 @@ import { reviveCorpseImmediately } from './corpse_revival.js';
 
 import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { paranoidQuery } from './cmd.js';
 import { recorderLocalHour } from './calendar.js';

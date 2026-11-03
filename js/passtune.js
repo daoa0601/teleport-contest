@@ -1,7 +1,7 @@
 // The Stronghold passtune and its drawbridge hints.
 // C ref: music.c do_play_instrument().
 import { publishHeardMessage } from './hero_speech.js';
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { exerciseAttribute } from './attrib.js';
 import { ACH_TUNE, A_WIS, Is_stronghold } from './const.js';
 import { isok } from './cmd.js';

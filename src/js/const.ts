@@ -2276,6 +2276,7 @@ export const RUST_TRAP = 9;
 export const FIRE_TRAP = 10;
 export const PIT = 11;
 export const SPIKED_PIT = 12;
+export const STRANGE_OBJECT = 0; // objects.h: first object type
 export const HOLE = 13;
 export const TRAPDOOR = 14;
 export const TELEP_TRAP = 15;

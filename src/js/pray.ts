@@ -2,7 +2,7 @@
 // and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
 // sacrifice (pure move, no behavior change).
 
-import { recordAchievement } from './achievements.js';
+import { recordAchievement } from './insight.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';

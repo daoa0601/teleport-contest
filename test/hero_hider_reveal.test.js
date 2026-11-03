@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { COLNO, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROOM, ROWNO, SQKY_BOARD, STONE } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { useHeroHide } from '../js/hero_hide.js';
+import { useHeroHide } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';

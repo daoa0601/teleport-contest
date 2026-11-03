@@ -37,7 +37,7 @@ import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
 import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dragBallDownStairs, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { recordAchievement, recordDungeonEntryAchievements } from './achievements.js';
+import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';
 import { heroHasOlfaction } from './polyself.js';
 import { setShopResidency, fixShopDamage } from './shk.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest } from './quest.js';

@@ -10,7 +10,7 @@ import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { see_monsters } from './display.js';
-import { rankAchievement, recordAchievement, } from './achievements.js';
+import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
 import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty, } from './properties.js';
 import { adjustWeaponSkillSlots } from './skills.js';

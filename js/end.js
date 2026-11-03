@@ -7,12 +7,12 @@ import { reportHeroEncumbrance } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
-import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, G_EXTINCT, G_GENOD, G_GONE, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, PICK_ONE, TT_LAVA, Upolyd } from './const.js';
+import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd } from './const.js';
 import { isok } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
 import { setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
-import { achievementEntries, recordAchievement } from './achievements.js';
+import { achievementEntries, recordAchievement } from './insight.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroFormSticks } from './polyself.js';
@@ -28,17 +28,17 @@ import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects } from './invent.js';
 import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
-import { ATR_INVERSE, ATR_NONE, showDisclosureOverlay, showInventoryWindow, showTextPages, showTextWindow } from './windows.js';
+import { listGenocided, setVanqOrder, vanquishedLines, vanquishedTypeCount } from './insight.js';
+import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import { artifactById } from './artifacts.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, monsterHasProperName, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
-import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { d, rn2 } from './rng.js';
 import { mksobj } from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
-import { deepestLevelReached, depth, upstart } from './hacklib.js';
+import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { restoreHeroNutrition } from './eat.js';
@@ -233,308 +233,6 @@ export function recordHeroKillConduct(state = game) {
     conduct.killer = (conduct.killer || 0) + 1;
     if (firstKill)
         recordGameLogEvent('killed for the first time', { state, flags: LL_CONDUCT });
-}
-// C insight.c:list_vanquished()/vanqsort_cmp().  The order comes from
-// flags.vanq_sortmode, chosen through the tty sort menu below; the default
-// "traditional" order is monster level high to low, then internal index.
-const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
-const G_UNIQ = 0x1000;
-const M2_PNAME = 0x00080000;
-const VANQ_MLVL_MNDX = 0;
-const VANQ_MSTR_MNDX = 1;
-const VANQ_ALPHA_SEP = 2;
-const VANQ_ALPHA_MIX = 3;
-const VANQ_MCLS_HTOL = 4;
-const VANQ_MCLS_LTOH = 5;
-const VANQ_COUNT_H_L = 6;
-const VANQ_COUNT_L_H = 7;
-const RIDER_MONSTERS = new Set(['Death', 'Famine', 'Pestilence']
-    .map(name => MONSTER_NAME.indexOf(name)));
-const S_ZOMBIE = 52;
-// C vanqsort_cmp(): punctuation classes order after S_ZOMBIE in this
-// sequence rather than by their internal indexes.
-const PUNCTUATION_CLASS_ORDER = [58, 57, 55, 54, 56, 53];
-function vanqSortMode() {
-    return game.flags.vanqSortmode ?? VANQ_MLVL_MNDX;
-}
-function speciesIsUnique(mnum) {
-    return !!((MONSTER_GENO[mnum] ?? 0) & G_UNIQ) && mnum !== PM_HIGH_CLERIC;
-}
-function monsterClassOrder(mlet) {
-    if (mlet > S_ZOMBIE) {
-        const position = PUNCTUATION_CLASS_ORDER.indexOf(mlet);
-        if (position >= 0)
-            return S_ZOMBIE + 1 + position;
-    }
-    return mlet;
-}
-function compareCaseInsensitive(left, right) {
-    return left.toLowerCase() < right.toLowerCase() ? -1
-        : left.toLowerCase() > right.toLowerCase() ? 1 : 0;
-}
-// C insight.c:vanqsort_cmp() over internal monster indexes.
-function vanqsortCompare(mode, mnum1, mnum2) {
-    let result = 0;
-    switch (mode) {
-        case VANQ_MSTR_MNDX:
-            result = (MONSTER_DIFFICULTY[mnum2] ?? 0) - (MONSTER_DIFFICULTY[mnum1] ?? 0);
-            break;
-        case VANQ_ALPHA_SEP:
-        case VANQ_ALPHA_MIX:
-            if (mode === VANQ_ALPHA_SEP) {
-                const unique1 = speciesIsUnique(mnum1) ? 1 : 0;
-                const unique2 = speciesIsUnique(mnum2) ? 1 : 0;
-                if (unique1 !== unique2) {
-                    result = unique2 - unique1;
-                    break;
-                }
-            }
-            result = compareCaseInsensitive(MONSTER_NAME[mnum1] || '', MONSTER_NAME[mnum2] || '');
-            break;
-        case VANQ_MCLS_HTOL:
-        case VANQ_MCLS_LTOH: {
-            const class1 = monsterClassOrder(MONSTER_SYMBOL[mnum1] ?? 0);
-            const class2 = monsterClassOrder(MONSTER_SYMBOL[mnum2] ?? 0);
-            result = class1 - class2;
-            if (result === 0) {
-                // Riders share a class with major demons but sort first.
-                result = (RIDER_MONSTERS.has(mnum2) ? 1 : 0)
-                    - (RIDER_MONSTERS.has(mnum1) ? 1 : 0);
-                if (result === 0) {
-                    result = (MONSTER_LEVEL[mnum1] ?? 0) - (MONSTER_LEVEL[mnum2] ?? 0);
-                    if (mode === VANQ_MCLS_HTOL)
-                        result = -result;
-                }
-            }
-            break;
-        }
-        case VANQ_COUNT_H_L:
-        case VANQ_COUNT_L_H: {
-            const died1 = game.mvitals?.[mnum1]?.died ?? 0;
-            const died2 = game.mvitals?.[mnum2]?.died ?? 0;
-            result = died2 - died1;
-            if (mode === VANQ_COUNT_L_H)
-                result = -result;
-            break;
-        }
-        default:
-            result = (MONSTER_LEVEL[mnum2] ?? 0) - (MONSTER_LEVEL[mnum1] ?? 0);
-            break;
-    }
-    return result === 0 ? mnum1 - mnum2 : result;
-}
-function vanquishedEntries() {
-    return (game.mvitals || []).flatMap((vital, mnum) => {
-        const count = vital?.died ?? 0;
-        if (!count)
-            return [];
-        return [{
-                mnum,
-                name: MONSTER_NAME[mnum] || 'monster',
-                count,
-                unique: speciesIsUnique(mnum),
-                pname: monsterHasProperName(mnum),
-            }];
-    }).sort((a, b) => vanqsortCompare(vanqSortMode(), a.mnum, b.mnum));
-}
-function vanquishedTypeCount() {
-    return (game.mvitals || []).filter(vital => (vital?.died ?? 0) > 0).length;
-}
-// C N_times(): "once", "twice", "thrice", then "N times".
-function timesText(count) {
-    if (count === 2)
-        return 'twice';
-    if (count === 3)
-        return 'thrice';
-    return `${count} times`;
-}
-// C list_vanquished() indents each entry so its name column lines up with
-// the three-digit count prefix of multiple-kill rows.
-function vanquishedIndent(text) {
-    if (/^the /i.test(text))
-        return 0;
-    if (/^an /i.test(text))
-        return 1;
-    if (/^a /i.test(text))
-        return 2;
-    return /[0-9]/.test(text.charAt(2)) ? 0 : 4;
-}
-export function vanquishedLines(ask = false) {
-    const mode = vanqSortMode();
-    const entries = vanquishedEntries();
-    const total = entries.reduce((sum, entry) => sum + entry.count, 0);
-    const classHeaders = (mode === VANQ_MCLS_LTOH || mode === VANQ_MCLS_HTOL)
-        && entries.length > 1;
-    const uniqHeaders = mode === VANQ_ALPHA_SEP;
-    const lines = ['Vanquished creatures:', ''];
-    let previousClass = 0;
-    let wasUnique = false;
-    let riderHeader = false;
-    for (const entry of entries) {
-        const rider = RIDER_MONSTERS.has(entry.mnum);
-        const mlet = MONSTER_SYMBOL[entry.mnum] ?? 0;
-        if (classHeaders && (mlet !== previousClass || (riderHeader && !rider))) {
-            lines.push({
-                text: upstart(rider ? 'Rider' : MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
-                attr: ask ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
-            });
-            riderHeader = rider;
-            previousClass = mlet;
-        }
-        let text;
-        if (entry.unique) {
-            text = `${entry.pname ? '' : 'the '}${entry.name}`;
-            if (entry.count > 1)
-                text += ` (${timesText(entry.count)})`;
-            wasUnique = true;
-        }
-        else {
-            if (uniqHeaders && wasUnique) {
-                lines.push('');
-                wasUnique = false;
-            }
-            if (entry.count === 1) {
-                text = withIndefiniteArticle(entry.name);
-            }
-            else {
-                text = `${String(entry.count).padStart(3)} ${makePlural(entry.name)}`;
-            }
-        }
-        const indent = vanquishedIndent(text) + (classHeaders ? 1 : 0);
-        lines.push(' '.repeat(indent) + text);
-    }
-    if (entries.length > 1)
-        lines.push('');
-    if (entries.length > 1)
-        lines.push(`${total} creatures vanquished.`);
-    return lines;
-}
-// C insight.c:dovanquished() -> list_vanquished().  The 'm' command prefix
-// (iflags.menu_requested) passes 'A' and forces the sort-order choice even
-// when nothing has been vanquished yet; Escape there keeps the old order
-// and the (possibly empty) list still follows.
-export async function listVanquished(defquery = 'y') {
-    if (defquery === 'A')
-        await setVanqOrder(true);
-    if (!vanquishedTypeCount()) {
-        if (!game.program_state.gameover)
-            await pline('No creatures have been vanquished.');
-        return;
-    }
-    await showDisclosureOverlay(vanquishedLines(), {
-        restoreUnderlay: true,
-    });
-    // Only the window path replaces the topl; the empty-list pline stays up.
-    game._pending_message = '';
-}
-// C insight.c:doborn() (#wizborn): per-species born/died counters plus the
-// genocided (G), extinct (E), or otherwise-gone (X) flag, ending on a blank
-// line; native formats running totals into a buffer but never displays them.
-export async function doborn() {
-    const lines = ['died born'];
-    for (const [mnum, vital] of (game.mvitals || []).entries()) {
-        const born = vital?.born ?? 0;
-        const died = vital?.died ?? 0;
-        const gone = vital?.mvflags ?? 0;
-        if (!born && !died && (gone & G_GONE) === 0)
-            continue;
-        const flag = (gone & G_GONE) === G_EXTINCT ? 'E'
-            : (gone & G_GONE) === G_GENOD ? 'G'
-                : (gone & G_GONE) !== 0 ? 'X' : ' ';
-        lines.push(`${String(died).padStart(4)} ${String(born).padStart(4)} ${flag} ${(MONSTER_NAME[mnum] ?? '').padEnd(30)}`);
-    }
-    lines.push('');
-    await showTextWindow(lines);
-    game._pending_message = '';
-    game.context.move = 0;
-}
-// C insight.c:num_gone()/num_genocides()/num_extinct(): end-of-game
-// disclosure reports genocides and extinctions together; uniques are
-// never listed, and a species carrying both flags counts once.
-function goneSpecies(includeExtinct = true) {
-    return (game.mvitals || []).flatMap((vital, mnum) => {
-        const flags = vital?.mvflags ?? 0;
-        if (!flags || speciesIsUnique(mnum))
-            return [];
-        const genocided = !!(flags & G_GENOD);
-        const extinctOnly = (flags & (G_GENOD | G_EXTINCT)) === G_EXTINCT;
-        return genocided || (includeExtinct && extinctOnly)
-            ? [{ mnum, genocided, extinctOnly }] : [];
-    });
-}
-function genocidedLines(gone, genocided, extinct, { ask, dumping = false }) {
-    let mode = vanqSortMode();
-    // C list_genocided(): with more than one species the shared sort mode
-    // drives the order, except that counting orders degrade to plain
-    // alphabetical because every listed species counts once.
-    if (gone.length > 1
-        && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H))
-        mode = VANQ_ALPHA_MIX;
-    const ordered = gone.length > 1
-        ? [...gone].sort((a, b) => vanqsortCompare(mode, a.mnum, b.mnum))
-        : gone;
-    const classHeaders = gone.length > 1
-        && (mode === VANQ_MCLS_LTOH || mode === VANQ_MCLS_HTOL);
-    const lines = [
-        `${genocided ? 'Genocided' : 'Extinct'}${extinct && genocided ? ' or extinct' : ''} species:`,
-    ];
-    if (!dumping)
-        lines.push('');
-    let previousClass = 0;
-    for (const species of ordered) {
-        const mlet = MONSTER_SYMBOL[species.mnum] ?? 0;
-        if (classHeaders && mlet !== previousClass) {
-            lines.push({
-                text: upstart(MONSTER_CLASS_EXPLAIN[mlet] ?? ''),
-                attr: ask ? ATR_NONE : terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE),
-            });
-            previousClass = mlet;
-        }
-        const name = makePlural(MONSTER_NAME[species.mnum] || 'monster');
-        lines.push(` ${name}${species.extinctOnly ? ' (extinct)' : ''}`);
-    }
-    if (!dumping)
-        lines.push('');
-    if (genocided > 0)
-        lines.push(`${genocided} species genocided.`);
-    if (extinct > 0)
-        lines.push(`${extinct} species extinct.`);
-    return lines;
-}
-export async function listGenocided(defquery = 'y', ask = false) {
-    const dumping = defquery === 'd';
-    const genociding = defquery === 'g';
-    const defaultAnswer = defquery === 'g' || defquery === 'd' ? 'y' : defquery;
-    const includeExtinct = !genociding && !!(game.program_state.gameover
-        || game.flags.debug || game.flags.explore || game.discover);
-    const gone = goneSpecies(includeExtinct);
-    if (!gone.length) {
-        if (!game.program_state.gameover)
-            await pline(`No creatures have been genocided${genociding ? ' yet' : ''}.`);
-        if (dumping)
-            return game.program_state.gameover
-                ? ['No species were genocided or became extinct.'] : [];
-        return;
-    }
-    const genocided = gone.filter(species => species.genocided).length;
-    const extinct = gone.filter(species => species.extinctOnly).length;
-    if (dumping)
-        return genocidedLines(gone, genocided, extinct, { ask: false, dumping })
-            .map(line => typeof line === 'string' ? line : line.text);
-    const question = `Do you want a list of ${extinct && !genocided ? 'extinct ' : ''}species${genocided ? ' genocided' : ''}${extinct && genocided ? ' and extinct' : ''}?`;
-    const multiple = gone.length > 1;
-    const answer = ask ? await ynQuestion(question, multiple ? 'ynaq' : 'ynq', defaultAnswer, { hiddenAll: !multiple }) : defaultAnswer;
-    if (answer === 'q') {
-        stopDisclosure();
-        return;
-    }
-    if (answer !== 'y' && answer !== 'a')
-        return;
-    if (answer === 'a' && multiple && await setVanqOrder(false) < 0)
-        return;
-    await showDisclosureOverlay(genocidedLines(gone, genocided, extinct, { ask }), {
-        restoreUnderlay: true,
-    });
 }
 // C dungeon.c show_overview() with why > 0.  The final disclosure prints
 // every visited level in every dungeon with the full mapseen projection;
@@ -1078,82 +776,9 @@ function shouldQueryDiscloseOption(category) {
         default: return { ask: true, defquery: 'n' };
     }
 }
-// C insight.c:set_vanq_order().  A PICK_ONE menu over the vanqorders
-// table; the currently chosen order is preselected, and Escape cancels
-// by leaving the menu unanswered (select_menu returns -1).
-const VANQ_ORDER_CHOICES = [
-    [VANQ_MLVL_MNDX, 't'], [VANQ_MSTR_MNDX, 'd'], [VANQ_ALPHA_SEP, 'a'],
-    [VANQ_ALPHA_MIX, 'A'], [VANQ_MCLS_HTOL, 'C'], [VANQ_MCLS_LTOH, 'c'],
-    [VANQ_COUNT_H_L, 'n'], [VANQ_COUNT_L_H, 'z'],
-];
-// Short descriptions in options.c use column 1 of C's vanqorders table.
-export function vanquishedOptionValue(mode = vanqSortMode()) {
-    const key = 'tdaACcnz'.charAt(mode);
-    switch (mode) {
-        case VANQ_MLVL_MNDX: return `${key}: traditional: by monster level`;
-        case VANQ_MSTR_MNDX: return `${key}: by monster difficulty rating`;
-        case VANQ_ALPHA_SEP: return `${key}: alphabetically, unique monsters separate`;
-        case VANQ_ALPHA_MIX: return `${key}: alphabetically, unique monsters intermixed`;
-        case VANQ_MCLS_HTOL: return `${key}: by monster class, high to low level in class`;
-        case VANQ_MCLS_LTOH: return `${key}: by monster class, low to high level in class`;
-        case VANQ_COUNT_H_L: return `${key}: by count, high to low`;
-        default: return `${key}: by count, low to high`;
-    }
-}
-function vanqOrderDescription(mode, forVanquished) {
-    switch (mode) {
-        case VANQ_MLVL_MNDX:
-            return 'traditional: by monster level, by internal monster index';
-        case VANQ_MSTR_MNDX:
-            return 'by monster difficulty rating, by internal monster index';
-        case VANQ_ALPHA_SEP:
-            // Uniques cannot be genocided, so their separation is unlisted there.
-            return forVanquished
-                ? 'alphabetically, first unique monsters, then others'
-                : 'alphabetically';
-        case VANQ_MCLS_LTOH:
-            return 'by monster class, low to high level within class';
-        case VANQ_COUNT_H_L:
-            return 'by count, high to low, by internal index within tied count';
-        default:
-            return 'by count, low to high, by internal index within tied count';
-    }
-}
-export async function setVanqOrder(forVanquished) {
-    const current = vanqSortMode();
-    const items = [];
-    let preselectedKey = null;
-    for (const [mode, letter] of VANQ_ORDER_CHOICES) {
-        // The two uppercase orders exist in the comparator but stay
-        // unlisted; counting orders don't apply to genocided species.
-        if (mode === VANQ_ALPHA_MIX || mode === VANQ_MCLS_HTOL
-            || (!forVanquished
-                && (mode === VANQ_COUNT_H_L || mode === VANQ_COUNT_L_H)))
-            continue;
-        items.push({
-            text: vanqOrderDescription(mode, forVanquished),
-            key: letter, value: mode,
-        });
-        if (mode === current)
-            preselectedKey = letter;
-    }
-    const selected = await showInventoryWindow([{ items }], {
-        title: `Sort order for ${forVanquished
-            ? 'vanquished monster counts (also genocided types)'
-            : 'genocided monster types (also vanquished counts)'}`,
-        pickMode: PICK_ONE, preselectedKey,
-    });
-    if (selected.key === 27)
-        return -1;
-    const mode = selected.value
-        ?? items.find(item => item.key === String.fromCharCode(selected.key))?.value
-        ?? current;
-    game.flags.vanqSortmode = mode;
-    return mode;
-}
 // C yn_function(): the answer set is shown as "[ynq]"; answers hidden
 // behind ESC (the single-vanquished-species 'a') stay acceptable.
-async function ynQuestion(question, visible, defquery, { hiddenAll = false, menuable = false } = {}) {
+export async function ynQuestion(question, visible, defquery, { hiddenAll = false, menuable = false } = {}) {
     const choices = visible === 'ynaq' || hiddenAll ? ['y', 'n', 'a', 'q'] : ['y', 'n', 'q'];
     return await promptChoice(question, choices, defquery, { visibleChoices: visible, menuable });
 }
@@ -1272,7 +897,7 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     }
     return true;
 }
-function stopDisclosure() {
+export function stopDisclosure() {
     game.program_state.stopprint = (game.program_state.stopprint ?? 0) + 1;
     return false;
 }
@@ -1586,6 +1211,7 @@ async function finalPossessionLines(possessions) {
 }
 // C end.c:done_in_by(). Fatal attribution describes the real killer even
 // when its appearance, given name, or the hero's hallucination differs.
+const G_UNIQ = 0x1000;
 function fatalMonsterDescription(monster) {
     const current = monster.mnum;
     const champion = ismnum(monster.cham) ? monster.cham : current;

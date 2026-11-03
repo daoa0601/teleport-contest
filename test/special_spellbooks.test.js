@@ -3,7 +3,7 @@ import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { requirePlayingGame, requireGameDisplay, game } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { ACH_INVK, ACH_NOVL } from '../js/achievements.js';
+import { ACH_INVK, ACH_NOVL } from '../js/const.js';
 import { FIRE_TRAP, MOAT, NO_MINVENT, ROOM, STAIRS, VIBRATING_SQUARE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import { level_difficulty } from '../js/dungeon.js';

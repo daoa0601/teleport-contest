@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
-import { listVanquished } from '../js/end.js';
+import { listVanquished } from '../js/insight.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

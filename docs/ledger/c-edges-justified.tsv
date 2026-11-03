@@ -1332,7 +1332,7 @@ use_towel	Blindf_off	inlined	removeEyewear(null) removes the worn towel (weapon.
 use_towel	gulp_blnd_check	inlined	gulpBlindnessCheck (weapon.ts)
 weight_cap	acurr	inlined	currentAttribute(A_STR) in the capacity formula (weight.ts via properties.ts)
 weight_cap	acurrstr	inlined	currentStrength for exceptional strength (weight.ts)
-youhiding	enlght_line	inlined	hiding rows push contracted lines (hero_hide.ts)
+youhiding	enlght_line	inlined	hiding rows push contracted lines (insight.ts)
 youhiding	t_at	inlined	traps.find for the pit description (hero_hide.ts)
 adjattrib	encumber_msg	inlined	reportHeroEncumbrance after STR changes; CON cannot change the band (attrib.ts)
 adjust_split	digit	inlined	digit keys parsed in readInventorySplitCount (cmd.ts)

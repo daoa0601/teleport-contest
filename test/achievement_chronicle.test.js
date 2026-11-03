@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gameLogEvents } from '../js/gamelog.js';
-import { achievementEntries, recordDungeonEntryAchievements } from '../js/achievements.js';
+import { achievementEntries, recordDungeonEntryAchievements } from '../js/insight.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { game } from '../js/gstate.js';

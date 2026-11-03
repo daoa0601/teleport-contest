@@ -2,7 +2,8 @@
 // and the novel branch of study_book(). Ordinary study owns its occupation.
 
 import { publishHeardMessage } from './hero_speech.js';
-import { ACH_INVK, ACH_NOVL, recordAchievement } from './achievements.js';
+import { ACH_INVK, ACH_NOVL } from './const.js';
+import { recordAchievement } from './insight.js';
 import { heroSpineName } from './body_parts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 

@@ -1,5 +1,4 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
-src/js/achievements.ts	insight.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
 src/js/attrib.ts	attrib.c
@@ -37,8 +36,6 @@ src/js/enchant_weapon.ts	wield.c
 src/js/engrave.ts	engrave.c
 src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
-src/js/enlightenment_attributes.ts	insight.c
-src/js/enlightenment_background.ts	insight.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
@@ -56,14 +53,12 @@ src/js/hero_expulsion.ts	monmove.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
-src/js/hero_hide.ts	insight.c
 src/js/hero_inventory.ts	invent.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
-src/js/hero_status.ts	insight.c
 src/js/horn_of_plenty.ts	mkobj.c
 src/js/ident.ts	mkobj.c
 src/js/immediate_monster_magic.ts	mon.c

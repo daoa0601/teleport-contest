@@ -18,7 +18,7 @@ import { zapHeroWithObject } from '../js/zap.js';
 
 import { heroHasRemovableSpeed } from '../js/mhitu.js';
 import { speedUpHero } from '../js/potion.js';
-import { heroStatusLine } from '../js/hero_status.js';
+import { heroStatusLine } from '../js/insight.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_LEVEL, MONSTER_NAME } from '../js/monster_data.js';
 import {

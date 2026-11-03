@@ -138,7 +138,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import type { HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './hero_monster_death.js';
-import { heroStatusLine } from './hero_status.js';
+import { heroStatusLine } from './insight.js';
 import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
