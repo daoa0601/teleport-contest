@@ -11,7 +11,8 @@ import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm } from './
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { riderCannotReachMessage } from './steed.js';
-import { floorReachProblem, heroTeetersAtPit } from './trap.js';
+import { floorReachProblem } from './engrave.js';
+import { heroTeetersAtPit } from './trap.js';
 const M1_BREATHLESS = 0x00000400;
 const S_EYE = 5;
 const S_LIGHT = 25;

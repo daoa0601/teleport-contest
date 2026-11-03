@@ -32,7 +32,7 @@ import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { doBlindingRay } from './flash.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, runSafepetDisplacement, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';

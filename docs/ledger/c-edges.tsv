@@ -538,6 +538,7 @@ dismount_steed	set_wounded_legs
 dismount_steed	surface
 display_binventory	hliquid
 display_monster	cmap_to_type
+display_pickinv	reassign
 display_trap_map	cls
 display_trap_map	glyph_at
 display_trap_map	newsym
@@ -922,6 +923,7 @@ doopen_indir	rnl
 doopen_indir	stumble_on_door_mimic
 doopen_indir	update_mapseen_for
 doorganize	getobj
+doorganize	reassign
 doorganize_core	letter
 doorganize_core	yn_function
 dopay	currency
@@ -1049,6 +1051,7 @@ dotwoweapon	acurr
 dotwoweapon	rnd
 dotypeinv	yn_function
 double_punch	rn2
+dounpaid	reassign
 dounpaid	xprname
 dountrap	untrap
 doup	climb_pit
@@ -1458,6 +1461,7 @@ gethungry	near_capacity
 gethungry	rn2
 gethungry	unconscious
 getobj	readchar
+getobj	reassign
 getobj	yn_function
 getprice	corpsenm_price_adj
 getspell	rejectcasting
@@ -2037,9 +2041,14 @@ makelevel	rn2
 makelevel	rnd_rect
 makelevel	sort_rooms
 makemap_prepost	check_special_room
+makemap_prepost	cls
+makemap_prepost	docrt
 makemap_prepost	flush_screen
+makemap_prepost	kill_genocided_monsters
 makemap_prepost	maybe_reset_pick
+makemap_prepost	placebc
 makemap_prepost	unplacebc
+makemap_prepost	vision_reset
 makemon	can_saddle
 makemon	isok
 makemon	mkobj_at

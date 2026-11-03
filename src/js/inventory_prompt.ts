@@ -369,6 +369,8 @@ async function mimeInventoryAction(verb: string): Promise<void> {
     await pline(`You mime ${ingSuffix(action)}${prefix ? ' ' + prefix : ''} something${suffix ? ' ' + suffix : ''}.`);
 }
 
+// C invent.c:reassign(): give consecutive letters to every carried item
+// for !fixinv mode; gold is always forced to '$' at the head of the list.
 export function reassignInventoryLetters() {
     const goldIndex = game.inventory.findIndex(object => object.oclass === 12);
     if (goldIndex >= 0) {

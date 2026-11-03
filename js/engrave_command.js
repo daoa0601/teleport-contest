@@ -11,7 +11,7 @@ import { getLine, promptYesNoQuit } from './query.js';
 import { getobj } from './inventory_prompt.js';
 import { disturbGrave } from './grave.js';
 import { deleteEngraving, engravingAt, makeEngravingAt } from './engrave.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { drawbridgeUnderlyingType } from './dbridge.js';

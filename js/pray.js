@@ -16,7 +16,7 @@ import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription } from './floor_object_display.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { placeCreatedObject } from './floor_object.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';

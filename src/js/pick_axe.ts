@@ -9,7 +9,7 @@ import { BEAR_TRAP, DIGTYP_UNDIGGABLE, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATE
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { game, requireGameLevel } from './gstate.js';
 import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
 import { diggingTarget, startHeroDigging } from './dig.js';

@@ -4,7 +4,11 @@
 import { formatSeenMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { exerciseWisdom } from './attrib.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm } from './polyself.js';
+import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
+import { MONSTER_ATTACKS, MONSTER_SIZE } from './monster_data.js';
+import { AT_HUGS } from './monster_attack_types.js';
+import { P_RIDING } from './const.js';
 import { rn2, rnd } from './rng.js';
 import { BUFSZ, COLNO, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE, ROWNO, } from './const.js';
 import { newsym } from './display.js';
@@ -316,5 +320,55 @@ export function heroHasFreeHand(state) {
     weapon.bknown = true;
     const shield = state.uarms || state.u.uarms;
     return !isBimanualObject(weapon) && !shield?.cursed;
+}
+const MZ_HUGE = 4;
+// C engrave.c:can_reach_floor(): the shared floor-reach test;
+// pickup_checks() calls floorReachProblem() directly.
+export function floorReachProblem(state = game, { checkPit = false } = {}) {
+    const hero = state.u;
+    if (hero.uswallow)
+        return 'swallowed';
+    if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
+        return 'held';
+    const airLevel = sameDungeonLevel(hero.uz, state.air_level);
+    const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
+    if ((hero.levitating || hero.levitation || state.levitating)
+        && !airLevel && !waterLevel)
+        return 'levitating';
+    if (hero.usteed && ridingSkill(state) < 2)
+        return 'riding';
+    if (heroHidesOnCeiling(state))
+        return 'ceiling';
+    const form = heroMonsterForm(state);
+    if (heroIsFlying(state)
+        || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
+        return null;
+    }
+    const trap = checkPit ? trapAtHeroInState(state) : null;
+    if (heroTeetersAtPit(state, trap))
+        return 'pit-edge';
+    if (heroEscapedShaft(trap))
+        return 'shaft-edge';
+    return null;
+}
+// C engrave.c:can_reach_floor(). Boolean wrapper.
+export function heroCanReachFloor(state = game, options = {}) {
+    return floorReachProblem(state, options) === null;
+}
+function holderHugs(holder) {
+    return (MONSTER_ATTACKS[holder?.mnum] || [])
+        .some(([attackType]) => attackType === AT_HUGS);
+}
+function ridingSkill(state) {
+    return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
+}
+function sameDungeonLevel(current, target) {
+    return !!current && !!target
+        && current.dnum === target.dnum
+        && current.dlevel === target.dlevel;
+}
+function trapAtHeroInState(state) {
+    const hero = state.u;
+    return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 //# sourceMappingURL=engrave.js.map

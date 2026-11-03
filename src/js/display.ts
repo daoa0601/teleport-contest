@@ -31,7 +31,7 @@ import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_
 import { rn2, rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
 import { recordObjectEncounter } from './o_init.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';

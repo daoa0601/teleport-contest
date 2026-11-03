@@ -38,7 +38,7 @@ import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { useUpInventoryStack, freeInventoryObject } from './hero_inventory.js';
 import { lookHere } from './floor_object_display.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { surfaceName } from './terrain_name.js';
 import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
 import { visibleRegionAt } from './regions.js';

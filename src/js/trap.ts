@@ -1,5 +1,5 @@
 import { formatSeenMessage, formatFeltMessage, publishHeardMessage, formatHeardMessage } from './hero_speech.js';
-import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, In_endgame, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, I_SPECIAL, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, P_RIDING, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND } from './const.js';
+import {ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, isok, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, In_endgame, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, I_SPECIAL, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND} from './const.js';
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet } from './do_wear.js';
 import { delobj, consumeObjectCharge } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, killerObjectName, bareArtifactOrPlainName } from './objnam.js';
@@ -14,7 +14,7 @@ import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid, MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_FLAGS2, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, monsterIsNonliving, monsterIsVampireShifter, MONSTER_BODY_META, MONSTER_GENO, MONSTER_MOVE, monsterIsMindless, monsterTypeName, monsterDigests, monsterIsAnimal, requireMonsterData, MONSTER_ALIGNMENT } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroHidesOnCeiling, heroMonsterForm as heroMonsterFormInState } from './polyself.js';
+import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel } from './dungeon.js';
 import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
@@ -42,7 +42,7 @@ import type { Position, Trap, MapLocation } from './map_types.js';
 import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance, triggerHeroAntiMagicTrap } from './anti_magic_trap.js';
 import { beginMonsterBearTrap, finishMonsterBearTrap } from './bear_trap.js';
 import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume } from './landmine_trap.js';
-import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AT_HUGS } from './monster_attack_types.js';
+import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
 import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './rock_trap.js';
 import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume } from './sleep_gas_trap.js';
@@ -86,8 +86,7 @@ import { triggerChestTrap } from './chest_trap.js';
 import { heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { abusePet } from './dog.js';
-import { heroCanReachFloor } from './floor_reach.js';
-import type { FloorReachOptions, FloorReachProblem } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import { promptDirection } from './tty_prompts.js';
 import type { DirectionSelection } from './tty_prompts.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
@@ -2513,15 +2512,20 @@ export function clampHoleDestination(destination: DungeonLocation, state: GameSt
 }
 
 // ── moved from src/js/pit_connections.ts ──
-// C trap.c:conjoined_pits()/clear_conjoined_pits().
+// The offset between two pits: C trap.c:conjoined_pits() derives it with
+// sgn() and xytodir(); Math.sign() and the xdir/ydir table lookup are those
+// two callees inlined here.
 function pitDirection(from: Trap, to: Trap) {
     const dx = Math.sign(to.tx - from.tx);
     const dy = Math.sign(to.ty - from.ty);
     return xdir.findIndex((x, i) => i < 8 && x === dx && ydir[i] === dy);
 }
 
-// C trap.c:conjoined_pits(): both squares isok(), both pits, and the
-// conjoined direction bits found through sgn()/xytodir() in pitDirection.
+// C trap.c:conjoined_pits(): both pits must be on the map and linked by
+// their conjoined bits. C's u_entering_trap2 gate (the hero already caught
+// in a pit) is applied by the callers, as dotrap() and trapeffect_pit()
+// pass TRUE right after checking u.utrap (trap.c:1838, trap.c:3004).
+// The conjoined direction bits are found through sgn()/xytodir() in pitDirection.
 export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | null | undefined) {
     if (!first || !second || !is_pit(first.ttyp) || !is_pit(second.ttyp)
         || !isok(first.tx, first.ty) || !isok(second.tx, second.ty)) return false;
@@ -4676,6 +4680,8 @@ export function setHeroTrap(turns: number, type: number, state: GameState = game
     refreshMovementProperties(state);
 }
 
+// C trap.c:reset_utrap(FALSE): silently leave the trap, e.g. when
+// #wizmakemap replaces the level (cmd.c:makemap_prepost(pre)).
 export function clearHeroTrap(state: GameState = game) {
     setHeroTrap(0, 0, state);
 }
@@ -5918,6 +5924,8 @@ function floorTrapHoldName(hero: Pick<Hero, 'utraptype'>): string {
     return 'ground'; // TT_INFLOOR
 }
 
+// C trap.c:reset_utrap(): leave the trap, optionally announcing a regained
+// sense of levitation or flight.
 export async function resetHeroTrap(message = true, state: GameState = game): Promise<void> {
     // C trap.c:reset_utrap() snapshots the Levitation/Flying macros, which
     // read the blocked masks that only float_vs_flight() updates; after a
@@ -5944,61 +5952,9 @@ export function heroTeetersAtPit(state: GameState, trap: Trap | null): boolean {
         && !(state.u?.utrap && state.u.utraptype === TT_PIT);
 }
 
-// C trap.c:uescaped_shaft(): a seen hole or trap door underfoot.
+// C trap.c:uescaped_shaft().
 export function heroEscapedShaft(trap: Trap | null): boolean {
     return !!trap && is_hole(trap.ttyp) && !!trap.tseen;
-}
-// C trap.c:uescaped_shaft() keeps this module's ownership line; the port
-// itself is heroEscapedShaft above.
-// C engrave.c:can_reach_floor(): the shared floor-reach test; heroCanReachFloor()
-// below is the boolean wrapper, and pickup_checks() calls this directly.
-export function floorReachProblem(
-    state: GameState = game,
-    { checkPit = false }: FloorReachOptions = {},
-): FloorReachProblem | null {
-    const hero = state.u;
-    if (hero.uswallow) return 'swallowed';
-    if (hero.ustuck && !heroFormSticks(state) && holderHugs(hero.ustuck))
-        return 'held';
-
-    const airLevel = sameDungeonLevel(hero.uz, state.air_level);
-    const waterLevel = sameDungeonLevel(hero.uz, state.water_level);
-    if ((hero.levitating || hero.levitation || state.levitating)
-        && !airLevel && !waterLevel) return 'levitating';
-    if (hero.usteed && ridingSkill(state) < 2) return 'riding';
-    if (heroHidesOnCeiling(state)) return 'ceiling';
-
-    const form = heroMonsterFormInState(state);
-    if (heroIsFlying(state)
-        || (form != null && (MONSTER_SIZE[form] ?? 2) >= MZ_HUGE)) {
-        return null;
-    }
-
-    const trap = checkPit ? trapAtHeroInState(state) : null;
-    if (heroTeetersAtPit(state, trap)) return 'pit-edge';
-    if (heroEscapedShaft(trap)) return 'shaft-edge';
-    return null;
-}
-
-function holderHugs(holder: Monster): boolean {
-    return (MONSTER_ATTACKS[holder?.mnum] || [])
-        .some(([attackType]) => attackType === AT_HUGS);
-}
-
-function ridingSkill(state: GameState): number {
-    return state.u?.weaponSkills?.[P_RIDING]?.skill ?? 0;
-}
-
-function sameDungeonLevel(current: DungeonLocation | null | undefined, target: DungeonLocation | null | undefined): boolean {
-    return !!current && !!target
-        && current.dnum === target.dnum
-        && current.dlevel === target.dlevel;
-}
-
-function trapAtHeroInState(state: GameState): Trap | null {
-    const hero = state.u;
-    return state.level?.traps?.find(trap =>
-        trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
 
 // ── moved from src/js/mklev.ts ──

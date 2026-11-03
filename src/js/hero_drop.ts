@@ -22,7 +22,7 @@ import {
     definiteObjectAction,
 } from './objnam.js';
 import { possessiveName } from './hacklib.js';
-import { heroCanReachFloor } from './floor_reach.js';
+import { heroCanReachFloor } from './engrave.js';
 import {
     beginLevitatingArtifactDrop, finishLevitatingArtifactDrop,
 } from './levitation_drop.js';
