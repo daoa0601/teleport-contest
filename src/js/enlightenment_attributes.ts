@@ -21,7 +21,7 @@ import {
     DWARVISH_CLOAK, LUCKSTONE, OBJECT_PROPERTY,
     RIN_PROTECTION, AMULET_OF_GUARDING, ROBE, TOWEL,
 } from './object_data.js';
-import { TT_PIT, Upolyd, W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
+import { TT_PIT, Luck, Upolyd, W_ARMOR, W_ACCESSORY, W_WEP, W_ART } from './const.js';
 import type { PropertyName } from './property_types.js';
 import { temporaryResistance } from './eat.js';
 
@@ -236,8 +236,8 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (extrinsicPropertyMask('sustainAbility')) have('fixed abilities', 'sustainAbility');
     if (extrinsicPropertyMask('lifeSaving')) message('Your life ', 'will be', 'would have been', ' saved');
 
-    // youprop.h Luck includes the luckstone/luck item bonus.
-    const luck = (u.uluck ?? 0) + (u.moreluck ?? 0);
+    // C insight.c:1909 — youprop.h Luck includes the luckstone/luck item bonus.
+    const luck = Luck(u);
     if (luck) are(`${Math.abs(luck) >= 10 ? 'extremely ' : Math.abs(luck) >= 5 ? 'very ' : ''}${
         luck < 0 ? 'un' : ''}lucky${wizard ? ` (${luck})` : ''}`);
     else if (wizard) message('Your luck ', 'is', 'was', ' zero');

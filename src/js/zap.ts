@@ -115,7 +115,7 @@ import { heroResistsBlindingLight, monsterResistsBlindingLight } from './blindin
 import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { xyToDirection } from './cmd.js';
-import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
+import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, Luck, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
 import { reviveCorpseByMagic } from './corpse_revival.js';
 import type { CorpseRevived } from './corpse_revival.js';
 import type { MonsterAttack } from './data_types.js';
@@ -280,8 +280,8 @@ export async function zapWithoutDirection(source: GameObject, state: PlayingGame
         if (await createCritters(rn2(23) ? 1 : rn2(7) + 2)) known = !!source.dknown;
         break;
     case WAN_WISHING:
-        // zapnodir(): C tests Luck, which includes a carried luckstone's bonus.
-        if ((state.u.uluck || 0) + (state.u.moreluck || 0) + rn2(5) < 0)
+        // zapnodir(): zap.c:2576 tests Luck, which includes a carried luckstone's bonus.
+        if (Luck(state.u) + rn2(5) < 0)
             await plineWithContinuation('Unfortunately, nothing happens.');
         else {
             known = !!source.dknown;
@@ -2435,7 +2435,7 @@ export async function do_osshock(
     requirePlayingGame(state);
     state.context.obj_zapped = true;
     if ((state.context.poly_zapped ?? -1) < 0) {
-        const luck = (state.u.uluck || 0) + (state.u.moreluck || 0);
+        const luck = Luck(state.u);
         for (let remaining = objectQuantity(object); remaining > 0; remaining--) {
             if (!rn2(luck + 45)) {
                 state.context.poly_zapped = objectMaterial(object, state);

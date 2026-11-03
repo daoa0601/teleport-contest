@@ -10,7 +10,7 @@ import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrate
 import { explode } from './explosion.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
-import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
+import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
 import { canSpotMonster, displayColorName, displayLiquidName, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -1318,7 +1318,7 @@ export async function identifyEffect(source, { state = game, } = {}) {
     if (source.blessed || (!source.cursed && !rn2(5))) {
         limit = rn2(5);
         if (limit === 1 && source.blessed
-            && (state.u.uluck ?? 0) + (state.u.moreluck ?? 0) > 0)
+            && Luck(state.u) > 0)
             limit++;
     }
     return identifyPack(limit, !alreadyKnown);

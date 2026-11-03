@@ -18,7 +18,7 @@ import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
 import { unlinkObject } from './mkobj.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit } from './const.js';
+import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, Luck, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit } from './const.js';
 import { dist2, distmin } from './hacklib.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -639,7 +639,7 @@ async function jerkHeroBackToChain(plan, state) {
     const victim = monsterAtPosition(level, chain.ox, chain.oy);
     if (victim) {
         const dieRoll = rnd(20);
-        const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+        const luck = Luck(state.u);
         const threshold = -2 + luck + findMonsterArmorClass(victim)
             + rangedTargetHitBonus(ball, victim, { state, defenderNotices: true });
         if (threshold >= dieRoll) {

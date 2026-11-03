@@ -8,7 +8,7 @@ import { heroSpecies } from './polyself.js';
 import { nomul, loseHeroHp } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './do_wear.js';
-import { A_CON, A_DEX, A_STR, M_SEEN_ELEC } from './const.js';
+import { A_CON, A_DEX, A_STR, Luck, M_SEEN_ELEC } from './const.js';
 import { currency } from './currency.js';
 import { bot } from './botl.js';
 import { randomColorName, shieldeff } from './display.js';
@@ -259,7 +259,7 @@ export async function triggerChestTrap(container: GameObject | null | undefined,
     await publish(`You ${disarm ? 'set it off' : 'trigger a trap'}!`);
     await displayMessageWindow();
 
-    const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+    const luck = Luck(state.u);
     if (luck > -13 && random(13 + luck) > 7) {
         const message = luckSaveMessage(random);
         await publish(`But luckily the ${message}!`);
