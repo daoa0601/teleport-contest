@@ -136,7 +136,7 @@ All generated diagnostics are under `.cache/fv-callsites-*`.
 | Port site | New class | Native source |
 |---|---|---|
 | `src/js/allmain.ts:1057` finishInitialTurnMaintenanceAfterRegions | invariant | `allmain.c:176 moveloop_core` |
-| `src/js/anti_magic_trap.ts:127` triggerHeroAntiMagicTrap | constant | `trap.c:2322 trapeffect_anti_magic` |
+| `src/js/trap.ts:3937` triggerHeroAntiMagicTrap | constant | `trap.c:2322 trapeffect_anti_magic` |
 | `src/js/eat.ts:1103` chooseCorpseIntrinsic | guarded | `eat.c:1338 corpse_intrinsic` |
 | `src/js/eat.ts:852` shouldGiveIntrinsic | guarded | `eat.c:960 should_givit` |
 | `src/js/eat.ts:863` shouldGiveTemporaryResistance | guarded | `eat.c:991 temp_givit` |

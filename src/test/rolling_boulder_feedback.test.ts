@@ -8,7 +8,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { initializeMonsterWormBody } from '../js/worm.js';
 import { BOULDER, CORPSE, WORM_TOOTH } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { launchRollingBoulder } from '../js/rolling_boulder.js';
+import { launchRollingBoulder } from '../js/trap.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';

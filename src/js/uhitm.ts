@@ -32,7 +32,7 @@
 
 import { adjustHeroAlignment } from './alignment.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
-import { monsterHasMagicResistance } from './anti_magic_trap.js';
+import { monsterHasMagicResistance } from './trap.js';
 import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, monsterHasArtifactDefense } from './artifacts.js';
 import type { ArtifactDefender } from './artifacts.js';
 import { selectAttack } from './attack_selection.js';
