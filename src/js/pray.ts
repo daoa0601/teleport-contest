@@ -32,7 +32,7 @@ import { angerTemplePriest } from './priest.js';
 import { makeConfused, makeHallucinated, makeStunned, makeBlinded } from './potion.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { cureHeroSickness, heroIsSick } from './potion.js';
-import { healHeroLegs } from './hero_legs.js';
+import { healHeroLegs } from './do.js';
 import { confersLuck } from './hero_inventory.js';
 import { clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { clearHeroTrap, announceTerrainRescue } from './trap.js';

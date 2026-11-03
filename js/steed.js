@@ -39,7 +39,7 @@ import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from '
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { promptDirection } from './cmd.js';
 import { promptYesNo } from './query.js';
-import { healHeroLegs, woundHeroLegs } from './hero_legs.js';
+import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';

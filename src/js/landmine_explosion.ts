@@ -18,7 +18,7 @@ import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { rn2, rnd } from './rng.js';
 import { scatterFloorObjects } from './scatter.js';
 import { vision_note_blocker_change } from './vision.js';
-import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { dropBoulderIntoLiquid } from './do.js';
 import { BOULDER } from './object_data.js';
 import { unlinkObject } from './mkobj.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';

@@ -4,8 +4,8 @@ import { seeTrap, deleteTrap, clearHeroTrap } from './trap.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { monsterHasMapPosition, dismountHero } from './steed.js';
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { dismountHero } from './steed.js';
+import { game, requirePlayingGame } from './gstate.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { autopickupAtHero } from './pickup.js';
 import { runDueTimers } from './timeout.js';
@@ -21,22 +21,18 @@ import { bot, checkGoldSymbol } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { blockMonsterNotices, noticeAllMonsters, unblockMonsterNotices, heroLocomotion, loseHeroHp, switchHeroTerrain, nearCapacity, checkSpecialRoom } from './hack.js';
-import { d, rnd, rn1, rn2 } from './rng.js';
-import { gainGuardianAngel } from './guardian_angel.js';
-import { createPlayerMonsters } from './mplayer.js';
-import { monsterAlignmentType, forgetTempleEntry } from './priest.js';
-import { setMonsterMalign } from './makemon.js';
+import { d, rnd, rn2 } from './rng.js';
+import { forgetTempleEntry } from './priest.js';
 import { deliverMigratingObjects, impactDrop } from './dokick.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js';
 import { place_lregion, fumaroles } from './mkmaze.js';
 import { oinit } from './o_init.js';
 import { dungeonBuildsUp, initOverviewRecord, level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt } from './dungeon.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { moveMonsterNextToHero, randomMonsterRelocation, teleportHeroSafely } from './teleport.js';
+import { teleportHeroSafely } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
+import { monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape } from './mon.js';
 import { depth, dungeonDepth, endgameLevelName } from './hacklib.js';
 import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
@@ -46,7 +42,7 @@ import { heroHasOlfaction } from './polyself.js';
 import { setShopResidency, fixShopDamage } from './shk.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest } from './quest.js';
 import { moveElementalBubbles, restoreElementalBubbles } from './elemental.js';
-import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, RLOC_NOMSG, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL } from './const.js';
+import { CORR, ROOM, DISMOUNT_FELL, LR_UPTELE, LR_DOWNTELE, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_waterlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL } from './const.js';
 import { buriedBallToPunishment } from './dig.js';
 import { resurrectWizard } from './wizard.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -55,6 +51,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
 import type { ActiveSpecialLevel, ArrivalRegion, CachedLevelState, Position, Stairway } from './map_types.js';
 import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers } from './dog.js';
+import { finishAstralArrival, resolveHeroArrivalCollision } from './do.js';
 // C do.c:goto_level(): departure, destination creation or restoration, and arrival.
 
 export type LevelArrival = 'random' | 'stairs' | 'downstairs' | 'portal' | 'falling';
@@ -602,22 +599,6 @@ export async function deliverSpecialLevelMessages(
     active.specialMessages = [];
 }
 
-// C do.c:final_level() and priest.c:reset_hostility().
-async function finishAstralArrival(): Promise<void> {
-    requirePlayingGame(game);
-    for (const monster of game.level.monsters.slice().reverse()) {
-        if (!monster.isminion || !['Angel', 'aligned cleric'].includes(MONSTER_NAME[monster.mnum] ?? ''))
-            continue;
-        if (monsterAlignmentType(monster) !== game.u.ualign.type) {
-            monster.mpeaceful = monster.mtame = 0;
-            setMonsterMalign(monster);
-        }
-        await newsym(monster.mx, monster.my);
-    }
-    await createPlayerMonsters(rn1(4, 3), true);
-    await gainGuardianAngel(game);
-}
-
 async function arriveOnLevel(from: DungeonLocation, { arrival, ladder, followers, beforeGlow, wasInsideWizardTower, rndspotUp }: LevelArrivalOptions): Promise<boolean> {
     requirePlayingGame(game);
     const atStairs = arrival === 'stairs' || arrival === 'downstairs';
@@ -807,35 +788,4 @@ export async function placeHeroAtRandomArrival(
         up ? LR_UPTELE : LR_DOWNTELE, null);
     await switchHeroTerrain();
     return { x: game.u.ux, y: game.u.uy };
-}
-
-// C do.c:u_collide_m(). A level arrival may overlap a resident or follower.
-// Move the hero to an adjacent legal square, or let the monster's own
-// placement rules choose its destination, including flight over liquids.
-export async function resolveHeroArrivalCollision(): Promise<void> {
-    const level = requireGameLevel();
-    const collision = level.monsters.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
-        && monster.mx === game.u.ux && monster.my === game.u.uy);
-    if (!collision) return;
-
-    let movedHero = false;
-    if (!rn2(2)) {
-        const destination = findNearbyMonsterPosition(game.u.umonnum, game.u.ux, game.u.uy);
-        if (destination && Math.abs(destination.x - game.u.ux) <= 1
-            && Math.abs(destination.y - game.u.uy) <= 1) {
-            await placeHeroOnLevel(destination.x, destination.y);
-            movedHero = true;
-        }
-    }
-    if (!movedHero) await moveMonsterNextToHero(collision, game, { flags: RLOC_NOMSG });
-
-    const remaining = level.monsters.find(monster => monsterHasMapPosition(monster, game) && !monster.dead
-        && monster.mx === game.u.ux && monster.my === game.u.uy);
-    if (!remaining) return;
-    if (game.flags.debug) await plineWithContinuation("(monster in hero's way)");
-    const relocated = await randomMonsterRelocation(remaining, { flags: RLOC_NOMSG });
-    const obstruction = level.monsters.find(monster => monsterHasMapPosition(monster, game)
-        && monster.mx === game.u.ux && monster.my === game.u.uy);
-    if (!relocated) await sendMonsterToLimbo(remaining);
-    else if (obstruction) await sendMonsterToLimbo(obstruction);
 }

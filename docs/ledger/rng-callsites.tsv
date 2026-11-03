@@ -133,8 +133,8 @@ src/js/bones_death.ts	dropHeroInventoryForBones	rn2	"[""8""]"	constant
 src/js/bones_death.ts	nearbyMonsterForDeathDrop	rn2	"[""candidateCount""]"	unproved
 src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
 src/js/boomerang.ts	flyBoomerang	rn2	"[""20""]"	constant
-src/js/boulder_pool.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
-src/js/boulder_pool.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
+src/js/do.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
+src/js/do.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
 src/js/hack.ts	pushIntoTrap	rn2	"[""10""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""directions.length""]"	unproved
@@ -720,14 +720,14 @@ src/js/apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
 src/js/apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
 src/js/leprechaun_stash.ts	stashLeprechaunGold	random	"[""4""]"	constant
 src/js/level_change.ts	applyStairTravelEffects	rnd	"[""3""]"	constant
-src/js/level_change.ts	finishAstralArrival	rn1	"[""4"", ""3""]"	constant
+src/js/do.ts	finishAstralArrival	rn1	"[""4"", ""3""]"	constant
 src/js/level_change.ts	gotoLevel	d	"[""Math.max(distance, 1)"", ""6""]"	constant
 src/js/level_change.ts	gotoLevel	rn2	"[""4 + (game.context.mysteryforce ?? 0)""]"	unproved
 src/js/level_change.ts	gotoLevel	rn2	"[""4""]"	constant
 src/js/level_change.ts	gotoLevel	rn2	"[""diff + 2""]"	unproved
 src/js/level_change.ts	gotoLevel	rn2	"[""odds""]"	guarded
 src/js/level_change.ts	gotoLevel	rnd	"[""diff""]"	unproved
-src/js/level_change.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
+src/js/do.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
 src/js/level_change.ts	restoreCachedMonsterState	rnd	"[""10""]"	constant
 src/js/level_teleport.ts	levelTeleport	rn2	"[""dungeonAt(state, dnum).num_dunlevs""]"	unproved
 src/js/level_teleport.ts	levelTeleport	rn2	"[""state.dungeons.length""]"	unproved
@@ -2081,13 +2081,13 @@ src/js/returning_throw.ts	finishReturningThrow	rn2	"[""100""]"	constant
 src/js/returning_throw.ts	finishReturningThrow	rn2	"[""100""]"	constant
 src/js/returning_throw.ts	finishReturningThrow	rn2	"[""2""]"	constant
 src/js/returning_throw.ts	finishReturningThrow	rnd	"[""3""]"	constant
-src/js/ring_sink.ts	dropRingIntoSink	rn2	"[""20""]"	constant
-src/js/ring_sink.ts	dropRingIntoSink	rn2	"[""5""]"	constant
-src/js/ring_sink.ts	polymorphSink	rn2	"[""3""]"	constant
-src/js/ring_sink.ts	polymorphSink	rn2	"[""3""]"	constant
-src/js/ring_sink.ts	polymorphSink	rn2	"[""4""]"	constant
-src/js/ring_sink.ts	teleportSink	rn2	"[""ROWNO - 2""]"	constant
-src/js/ring_sink.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
+src/js/do.ts	dropRingIntoSink	rn2	"[""20""]"	constant
+src/js/do.ts	dropRingIntoSink	rn2	"[""5""]"	constant
+src/js/do.ts	polymorphSink	rn2	"[""3""]"	constant
+src/js/do.ts	polymorphSink	rn2	"[""3""]"	constant
+src/js/do.ts	polymorphSink	rn2	"[""4""]"	constant
+src/js/do.ts	teleportSink	rn2	"[""ROWNO - 2""]"	constant
+src/js/do.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
 src/js/rock_breakage.ts	fractureRock	random	"[""60""]"	constant
 src/js/trap.ts	beginMonsterRockTrap	random	"[""15""]"	constant
 src/js/trap.ts	beginMonsterRockTrap	rollDice	"[""2"", ""6""]"	constant

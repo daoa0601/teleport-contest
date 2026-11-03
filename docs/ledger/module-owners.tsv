@@ -10,7 +10,6 @@ src/js/bones_admission.ts	bones.c
 src/js/bones_death.ts	bones.c
 src/js/bones_monster.ts	bones.c
 src/js/botl.ts	botl.c
-src/js/boulder_pool.ts	do.c
 src/js/bulk_takeoff.ts	do_wear.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c
@@ -30,7 +29,6 @@ src/js/dogmove.ts	dogmove.c
 src/js/dokick.ts	dokick.c
 src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
-src/js/drop_menu.ts	do.c
 src/js/dungeon.ts	dungeon.c
 src/js/dungeon_feature.ts	pickup.c
 src/js/eat.ts	eat.c
@@ -58,7 +56,6 @@ src/js/gold_throw.ts	dothrow.c
 src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
-src/js/hero_drop.ts	do.c
 src/js/hero_expulsion.ts	monmove.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
@@ -66,7 +63,6 @@ src/js/hero_grip.ts	mon.c
 src/js/hero_hide.ts	insight.c
 src/js/hero_hurtle.ts	dothrow.c
 src/js/hero_inventory.ts	invent.c
-src/js/hero_legs.ts	do.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
@@ -85,6 +81,7 @@ src/js/just_picked.ts	pickup.c
 src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
+src/js/level_change.ts	questpgr.c
 src/js/levitation_drop.ts	artifact.c
 src/js/lift_object.ts	pickup.c
 src/js/light.ts	light.c
@@ -133,7 +130,6 @@ src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c
 src/js/regions.ts	region.c
-src/js/ring_sink.ts	do.c
 src/js/rng.ts	rnd.c
 src/js/roles.ts	role.c
 src/js/rumor.ts	rumors.c

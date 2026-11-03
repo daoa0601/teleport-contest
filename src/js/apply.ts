@@ -11,7 +11,7 @@ import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { heroFaceName, heroFingerName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterStomachName } from './body_parts.js';
 import { bot } from './botl.js';
-import { dropBoulderIntoLiquid } from './boulder_pool.js';
+import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { useBullwhip } from './bullwhip.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime, setMulti } from './cmd.js';
 import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir } from './const.js';
@@ -45,7 +45,7 @@ import { runSafepetDisplacement } from './uhitm.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty } from './uhitm.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+
 import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './zap.js';
 
@@ -56,7 +56,7 @@ import { hurtleHero, hurtleJumpTo } from './hero_hurtle.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { woundHeroLegs } from './hero_legs.js';
+
 import { attackHostileMonster } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';

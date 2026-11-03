@@ -13,7 +13,7 @@ import { spendHeroNutrition } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { stack_object } from './floor_object.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, objectWeight } from './mkobj.js';

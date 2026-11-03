@@ -81,7 +81,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
 import { putHeroToSleep } from './timeout.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { woundHeroLegs } from './hero_legs.js';
+import { woundHeroLegs } from './do.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';

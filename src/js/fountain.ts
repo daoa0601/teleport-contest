@@ -54,9 +54,9 @@ import { setHeroGoldAmount } from './hero_gold.js';
 import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { consumeInventoryItem } from './invent.js';
-import { tryCallObjectType } from './do.js';
+import { tryCallObjectType, polymorphSink } from './do.js';
 import { observeObject } from './o_init.js';
-import { polymorphSink } from './ring_sink.js';
+
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { updateUnpaidObjectPrice, deleteObject } from './shk.js';

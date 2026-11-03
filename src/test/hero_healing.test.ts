@@ -8,7 +8,7 @@ import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { healHero } from '../js/potion.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING } from '../js/object_data.js';
 import { heroIsBlind, heroIsDeaf, setHeroBlindnessTurns, syncDeafness } from '../js/senses.js';

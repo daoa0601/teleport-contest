@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LAVAPOOL, POOL, ROOM, WATER, W_AMUL } from '../js/const.js';
-import { dropBoulderIntoLiquid } from '../js/boulder_pool.js';
+import { dropBoulderIntoLiquid } from '../js/do.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 

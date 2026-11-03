@@ -12,11 +12,10 @@ import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick } from './lock.js';
 import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
-import { adjustSplit, doadjust, doPermanentInventory, bucAdjectiveForName, ddoinv, dolook } from './invent.js';
+import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import type { InventoryAction } from './invent.js';
-import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, GETOBJ_SUGGEST, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM } from './const.js';
+import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM } from './const.js';
 import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, takeCommandResponse, MAP_CLICK_KEY, inputGate } from './input.js';
-import { setHeroGrip } from './hero_grip.js';
 
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
@@ -34,8 +33,7 @@ import { surfaceName } from './terrain_name.js';
 import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { attackHostileMonster } from './uhitm.js';
 import { monsterAtPosition, doride, stuckSteed, monsterSaddle } from './steed.js';
-import { observeBucForNaming, withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
-import { objectQuantity } from './mkobj.js';
+import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip, shouldShowGetposTip } from './hack.js';
 import { propertyIsActive } from './properties.js';
@@ -53,7 +51,6 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';
 import { completeExtendedCommand, getLine, promptChoice, tty_yn_function } from './query.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
 import { paintKeyPrompt, promptKey } from './tty_prompts.js';
 import { showTextWindow, addMenuHeading, showChoiceWindow, showMultiSelectWindow, showTextPages } from './windows.js';
 import { NO_COLOR } from './terminal.js';
@@ -66,7 +63,7 @@ import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
 import { heroBreathAttack } from './zap.js';
 
-import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroFormSticks, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
+import { useHeroBreath, heroSpitAttack, useHeroSpit, heroGazeAttack, useHeroGaze, useHeroWereSummon, chooseSpiderAbility, heroCanSpinWeb, useHeroWeb, heroCanMindBlast, useHeroMindBlast, heroCanRemovePunishment, useHeroNymphAbility, useHeroVampireShift, heroIsPolymorphed, heroCanChangeVampireShape } from './polyself.js';
 import { monsterBreathAttack, performPetRangedAttack } from './dogmove.js';
 import { heroCanSplitLikeGremlin, useHeroGremlinSplit } from './hero_gremlin.js';
 import { heroCanShriek, useHeroShriek } from './hero_shriek.js';
@@ -78,13 +75,12 @@ import { continueFoodMeal, doeat, continueTinOpening } from './eat.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
-import { continueWipingFace, donull, dowipe } from './do.js';
-import { dropHeroObject } from './hero_drop.js';
-import { dropMultipleObjects } from './drop_menu.js';
+import { continueWipingFace, donull, dowipe, dodrop, monsterPreventsStairTravel, dropMultipleObjects } from './do.js';
+
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
-import { MONSTER_MOVE, MONSTER_NAME, monsterDigests, monsterSpeciesHidesOnCeiling, monsterCanBeSaddled } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_NAME, monsterSpeciesHidesOnCeiling, monsterCanBeSaddled } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -96,7 +92,7 @@ import { doborn, doquit, finishHeroDeath } from './end.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './skills.js';
-import { objectTypeKnown, dopay, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
+import { objectTypeKnown, dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
@@ -844,23 +840,6 @@ async function doquaff() {
 async function readCommand(): Promise<void> {
     const result = await doread();
     if (result.cancelled) commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
-}
-
-// C do.c:u_stuck_cannot_go(). A sticky hero releases its captive, while
-// being held or swallowed prevents even an attempt to use the floor below.
-async function monsterPreventsStairTravel(up: boolean): Promise<boolean> {
-    const holder = game.u.ustuck;
-    if (!holder) return false;
-    if (game.u.uswallow || !heroFormSticks(game)) {
-        const condition = !game.u.uswallow ? 'being held'
-            : monsterDigests(holder) ? 'swallowed' : 'engulfed';
-        await plineWithContinuation(`You are ${condition}, and cannot go ${up ? 'up' : 'down'}.`);
-        game.context.move = 1;
-        return true;
-    }
-    setHeroGrip(null);
-    await plineWithContinuation(`You release ${monsterName(holder)}.`);
-    return false;
 }
 
 // Stair traversal shared by up and down: mark the stairway traversed, then
@@ -2283,59 +2262,6 @@ async function doversion(): Promise<void> {
     if (game.iflags.menu_requested) await doextversion();
     else await pline(NATIVE_VERSION);
     game.context.move = 0;
-}
-
-function droppedObjectDescription(object: GameObject): string {
-    const quantity = objectQuantity(object);
-    // C do.c:drop() delegates to objnam.c:doname(), which keeps beatitude
-    // and enchantment knowledge independent.  Merely carrying (or wishing
-    // for) an object does not authorize either adjective.  xname_flags()
-    // also applies implicit_uncursed after any Priest BUC observation.
-    observeBucForNaming(object);
-    const buc = bucAdjectiveForName(object) || '';
-    const enchantment = object.known && [2, 3].includes(object.oclass)
-        ? (typeof object.enchantment === 'number' && Number.isInteger(object.enchantment)
-            ? object.enchantment
-            : Number.isInteger(object.spe) ? object.spe : null)
-        : null;
-    const bonus = enchantment === null ? ''
-        : `${enchantment >= 0 ? '+' : ''}${enchantment}`;
-    const name = quantity > 1 ? object.plural || `${object.name}s` : object.name;
-    const core = [buc, bonus, name].filter(Boolean).join(' ');
-    return quantity > 1 ? `${quantity} ${core}`
-        : withIndefiniteArticle(core);
-}
-
-async function dodrop(): Promise<void> {
-    const inShop = !!game.u?.ushops?.[0];
-    if (inShop) setSellDisposition(SELL_DELIBERATE);
-    try {
-        // C do.c:dodrop(): getobj("drop", any_obj_ok, PROMPT | ALLOWCNT).
-        // A cursed loadstone keeps the requested count for canletgo().
-        const object = await chooseInventoryObject('drop', () => GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
-        if (!object) {
-            commandResultCancelled(); // do.c:dodrop() getobj ECMD_CANCEL.
-            // dodrop() resets occupations for every nonzero result,
-            // cancelled prompts included.
-            resetOccupations();
-            return;
-        }
-        const spentTime = await dropHeroObject(object, {
-            state: game, publish: plineWithContinuation,
-        });
-        if (!spentTime) {
-            // do.c:drop() returns ECMD_FAIL for every refusal.
-            commandResultFailed();
-            resetOccupations();
-            return;
-        }
-        game.context.move = 1;
-        resetOccupations();
-        if (game._occupation?.key === 'pick-lock')
-            game._occupation = null;
-    } finally {
-        if (inShop) setSellDisposition(SELL_NORMAL);
-    }
 }
 
 // ── Command, repeat-queue, and result types ──────────────────────────────

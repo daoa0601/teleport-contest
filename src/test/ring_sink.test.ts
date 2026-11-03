@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { ROOM, SINK } from '../js/const.js';
-import { dropRingIntoSink } from '../js/ring_sink.js';
+import { dropRingIntoSink } from '../js/do.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

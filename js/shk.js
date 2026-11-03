@@ -34,7 +34,7 @@ import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE } from './object_data.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { paymentObjectDescription, objectDescription } from './objnam.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { mergable } from './invent.js';
 import { splitObjectStack } from './mkobj.js';
 import { ACH_SHOP, recordAchievement } from './achievements.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_DEX, NO_MINVENT, STONING } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

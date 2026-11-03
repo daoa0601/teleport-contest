@@ -6,7 +6,7 @@ import { rhack } from '../js/cmd.js';
 import { NO_MINVENT } from '../js/const.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
-import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
+import { dropInventoryObjectAtHero } from '../js/do.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

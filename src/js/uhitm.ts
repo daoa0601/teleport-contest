@@ -66,7 +66,7 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
 import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
 import { releaseHeroFromMonster } from './hero_expulsion.js';
 
@@ -76,7 +76,7 @@ import { holdAnotherObject } from './hero_hold_object.js';
 import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { woundHeroLegs } from './hero_legs.js';
+
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { FinishHeroMonsterDeath, HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { HeroNaturalDamageResult, HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';

@@ -52,7 +52,7 @@ import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, 
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SUBTYPE, TALLOW_CANDLE, WAN_FIRE, WAN_STRIKING, WAX_CANDLE, } from './object_data.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { makePlural, withIndefiniteArticle, verbForSubject } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { splitObjectStack } from './mkobj.js';

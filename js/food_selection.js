@@ -13,7 +13,7 @@ import { mksobj, objectQuantity } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_PROPERTY, OBJECT_UNIQUE, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';

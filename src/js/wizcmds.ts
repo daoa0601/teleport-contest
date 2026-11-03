@@ -38,7 +38,8 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonste
 import { hurtleHero } from './hero_hurtle.js';
 import { hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival, resolveHeroArrivalCollision } from './level_change.js';
+import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival } from './level_change.js';
+import { resolveHeroArrivalCollision } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';

@@ -7,7 +7,7 @@ import { A_DEX, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { heroSpecies } from './polyself.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { dropInventoryObjectAtHero } from './do.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';
 import { isBimanualObject } from './object_properties.js';

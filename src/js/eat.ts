@@ -18,13 +18,13 @@ import { reviveCorpseImmediately } from './corpse_revival.js';
 
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, displayColorName, flush_screen, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
-import { tryCallObjectType } from './do.js';
+import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { monsterName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { reportHeroEncumbrance } from './encumbrance.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { healHeroLegs } from './hero_legs.js';
+
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
 import { explode } from './explosion.js';
 import { useUpFloorObject } from './floor_consumption.js';
@@ -42,7 +42,7 @@ import { heroAcidBreathAttack, hitHeroWithRay } from './zap.js';
 
 import { hasNonArtifactConflict } from './hero_conflict.js';
 import { gainCorpseDisplacement } from './hero_displacement.js';
-import { dropInventoryObjectAtHero, dropObjectAtHero } from './hero_drop.js';
+
 import { removeWornHeroItem } from './hero_equipment.js';
 import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';

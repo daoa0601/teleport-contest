@@ -70,7 +70,7 @@ import { cureHeroSickness, heroIsSick } from './potion.js';
 import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons } from './stoning.js';
 import { retouchEquipment } from './hero_retouch.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+import { dropInventoryObjectAtHero } from './do.js';
 import { heroCanUseTwoWeapons, stopTwoWeaponCombat } from './two_weapon.js';
 import { heroIsPunished } from './ball.js';
 import { unpunishHero } from './read.js';

@@ -11,7 +11,7 @@ import { canSeeMonster, map_invisible } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroIsInvisible } from '../js/hero_invisibility.js';
-import { woundHeroLegs } from '../js/hero_legs.js';
+import { woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import {
     LONG_SWORD, MUMMY_WRAPPING, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE,

@@ -8,10 +8,10 @@ import { plineWithContinuation } from '../js/pline.js';
 import { grantPrayerFavor, fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { enchantWeapon } from '../js/enchant_weapon.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { healHeroLegs } from '../js/hero_legs.js';
+import { healHeroLegs, dropInventoryObjectAtHero } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { reportHeroEncumbrance } from '../js/encumbrance.js';
-import { dropInventoryObjectAtHero } from '../js/hero_drop.js';
+
 import { AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE, HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH } from '../js/object_data.js';
 import { claimNextDueObjectTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';

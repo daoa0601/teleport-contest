@@ -10,7 +10,7 @@ import { canSenseMonster, canSpotMonster, map_invisible, newsym } from './displa
 import { pline, plineWithContinuation } from './pline.js';
 import { stumbleOntoMimic } from './uhitm.js';
 import { placeObject, remove_object, stack_object } from './floor_object.js';
-import { objectNoLongerHeld } from './do.js';
+import { objectNoLongerHeld, dropInventoryObjectAtHero } from './do.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
@@ -31,7 +31,6 @@ import { heroIsBlind } from './senses.js';
 import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './do_wear.js';

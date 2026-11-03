@@ -4,7 +4,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { heroCanReachFloor } from './engrave.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { makePlural } from './objnam.js';
 import { learnObjectType } from './o_init.js';

@@ -67,7 +67,7 @@ import { monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain } from './mondata.js';
 import { refreshInvisibleMonsters } from './hero_seeing.js';
-import { tryCallObjectType } from './do.js';
+import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
@@ -75,7 +75,7 @@ import { heroIsInDangerousRegion } from './regions.js';
 import { heroCanBeStrangled } from './polyself.js';
 import { canLetGo } from './hero_inventory.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
+
 import { weaponDescription } from './weapon.js';
 
 export async function doputon(): Promise<void> {

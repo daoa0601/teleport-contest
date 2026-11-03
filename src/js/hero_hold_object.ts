@@ -9,8 +9,8 @@ import { touchArtifactByHero } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 import { placeObject } from './floor_object.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { dropInventoryObjectAtHero } from './hero_drop.js';
-import { dropObjectAtHero } from './hero_drop.js';
+import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
+
 import { hitFloorWithObject } from './dothrow.js';
 import { observeObject } from './o_init.js';
 import { objectQuantity, splitObjectStack } from './mkobj.js';

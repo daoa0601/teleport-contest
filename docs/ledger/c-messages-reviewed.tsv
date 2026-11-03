@@ -58,8 +58,8 @@ do.c	dodown	contusion from a small passage	dead	The contusion killer sits in the
 do.c	dodown	go down here	composed	src/js/cmd.ts:travelStairs; Composes up or down and the vibrating-square yet suffix.
 do.c	dodown	manage to squeeze	dead	Same unreachable squeeze block as the Try to squeeze prompt: only trap != NULL reaches it and every such path returns earlier.
 do.c	dodown	were unable to fit	dead	The squeeze block requires trap != NULL; seen holes return through uescaped_shaft(), all other traps return in the following else-if, and stairs leave trap NULL.
-do.c	dosinkring	faucet flashes brightly for a moment.	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
-do.c	dosinkring	got lost in the sink, but there it is!	composed	src/js/ring_sink.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
+do.c	dosinkring	faucet flashes brightly for a moment.	composed	src/js/do.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
+do.c	dosinkring	got lost in the sink, but there it is!	composed	src/js/do.ts:dropRingIntoSink; Searching appends got lost in the sink; fire and cold resistance select hot or cold and displayLiquidName before the faucet suffix.
 do_name.c	lookup_novel	The Color of Magic	composed	src/js/novel_titles.ts:lookupNovelTitle; Recognizes the lowercase American spelling the color of magic and returns the canonical The Colour of Magic, as lookup_novel() does.
 do_name.c	minimal_monnam	[Invalid mon->data	diagnostic	Defensive fallbacks of minimal_monnam() for an out-of-range data pointer; not reachable with valid monster state.
 do_name.c	minimal_monnam	[Null mon->data]	diagnostic	Defensive fallbacks of minimal_monnam() for a null monster or data pointer; not reachable with valid monster state.
