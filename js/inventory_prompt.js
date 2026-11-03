@@ -7,7 +7,7 @@ import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { selectInventoryObject } from './invent.js';
-import { clearCommandKeys, takeCommandKey } from './input.js';
+import { clearCannedCommands, takeQueuedKey } from './cmd.js';
 import { readchar } from './cmd.js';
 import { yn_function } from './cmd.js';
 import { rn2 } from './rng.js';
@@ -112,27 +112,52 @@ function selectedInventoryObject(selection) {
 }
 // C getobj() pops CQ_REPEAT (during #repeat) or CQ_CANNED entries before
 // reassign(): a queued letter must not become a different possession merely
-// because fixinv is disabled.  Unmatched canned keys discard the queue.
+// because fixinv is disabled.  Every entry which selects nothing — a
+// non-key entry, an unmatched letter, refused hands — clears CQ_CANNED and
+// returns NULL without any prompt (invent.c:1790-1830); only
+// CMDQ_USER_INPUT falls through to the interactive question.
 function takeQueuedInventorySelection(classify, allowCount, hands) {
     let repeated = takeRepeatCommand();
     let key;
     let count = null;
     if (repeated) {
         if (repeated.kind === 'count') {
-            if (!allowCount)
+            // C invent.c:1807-1816: a CMDQ_INT supplies the count unless
+            // one was already given or the caller refuses counts; either
+            // refusal clears CQ_CANNED and returns NULL.
+            if (!allowCount) {
+                clearCannedCommands();
                 return CANCELLED;
+            }
             count = repeated.count;
             repeated = takeRepeatCommand();
         }
-        if (repeated?.kind !== 'key')
+        if (repeated) {
+            if (repeated.kind !== 'key') {
+                // Any other CQ_REPEAT entry selects nothing, so getobj()
+                // clears CQ_CANNED (not CQ_REPEAT) and returns NULL.
+                clearCannedCommands();
+                return CANCELLED;
+            }
+            key = repeated.key;
+        }
+        else {
+            // need_more_cq found the queue empty after the count:
+            // NULL without a prompt (invent.c:1783-1785).
             return CANCELLED;
-        key = repeated.key;
+        }
     }
     else {
-        key = takeCommandKey();
-        if (key === undefined)
+        const queued = takeQueuedKey();
+        if (queued === 'cancel')
+            return CANCELLED;
+        if (queued === 'user-input')
             return undefined;
+        if (queued !== 'none')
+            key = queued.key;
     }
+    if (key === undefined)
+        return undefined;
     if (key === HANDS_SYM) {
         if (admitsChoice(hands))
             return HANDS;
@@ -147,8 +172,9 @@ function takeQueuedInventorySelection(classify, allowCount, hands) {
                 count: count !== null && count > 0 && count < object.quan ? count : null,
             };
     }
-    if (!repeated)
-        clearCommandKeys();
+    // C invent.c:1817-1818: the popped entry selected nothing, so discard
+    // any other queued commands too.
+    clearCannedCommands();
     return CANCELLED;
 }
 // The interactive loop of C getobj(), up to its final silly_thing() check.

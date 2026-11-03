@@ -22,7 +22,7 @@ import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPr
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { surfaceName } from './terrain_name.js';
-import { doFarlook, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
+import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { attackHostileMonster } from './uhitm.js';
 import { monsterAtPosition, doride, stuckSteed, monsterSaddle } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
@@ -838,7 +838,7 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         await dotravel();
     }
     else if (ch === ';') {
-        await doFarlook();
+        await doquickwhatis();
     }
     else if (ch === 'S') {
         await dosave();
@@ -1650,6 +1650,45 @@ function inventoryActionCommand({ key, item }) {
     };
     return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
 }
+// C do_wear.c:remarm_swapwep(). The one cmdq_pop() — CQ_REPEAT during a
+// do-again replay, CQ_CANNED after — must yield the '-' item-action key
+// (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
+// drops the entry and fails ECMD_FAIL; rhack() then clears both queues
+// for that result. The success path resets a pending 'A', unwields
+// uswapwep, and reports; it spends a turn only when the weapon left or
+// its curse was revealed.
+const HANDS_ITEM_KEY = '-'.charCodeAt(0);
+async function remarmSwapwep() {
+    let key;
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued?.kind === 'key')
+            key = queued.key;
+    }
+    else {
+        const response = takeCommandResponse();
+        if (typeof response === 'number')
+            key = response;
+        else if (response === undefined) {
+            // The queued command behind an empty response queue is the
+            // popped entry: dropped, with its answer tail kept in order.
+            const dropped = game._cannedCommands?.shift();
+            if (dropped)
+                restoreCannedCommandTail(dropped);
+        }
+    }
+    if (key !== HANDS_ITEM_KEY || !game.uswapwep) {
+        commandResultFailed();
+        game.context.move = 0;
+        return;
+    }
+    resetBulkTakeoff();
+    const twoweap = game.u.twoweap;
+    await setSecondaryWeapon(null, game);
+    await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
+        : 'You no longer have a second weapon readied.');
+    game.context.move = 1;
+}
 // The context-sensitive inventory item actions.  The '-' secondary-weapon
 // branch is C do_wear.c:remarm_swapwep(): reset a pending 'A', unwield
 // uswapwep, and report; it spends a turn only when the weapon left or its
@@ -1667,12 +1706,11 @@ async function executeInventoryAction({ key, item }) {
                 await dowield();
             }
             else if (item === game.uswapwep) {
-                resetBulkTakeoff();
-                const twoweap = game.u.twoweap;
-                await setSecondaryWeapon(null, game);
-                await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
-                    : 'You no longer have a second weapon readied.');
-                game.context.move = 1;
+                // iactions.c:148-153 queues [remarm_swapwep, '-']: the
+                // unwield happens only when that queued '-' answers the pop
+                // in remarmSwapwep() below.
+                queueCommandKeys('-');
+                await remarmSwapwep();
             }
             else if (item === game.uquiver) {
                 queueCommandKeys('-');
@@ -1819,7 +1857,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['whatdoes', whatDoesCommand],
     ['whatis', dowhatis],
     ['help', dohelp],
-    ['glance', doFarlook],
+    ['glance', doquickwhatis],
     ['history', () => displayHelpFile('history')],
     ['showtrap', identifyTrap],
     ['versionshort', doversion],
@@ -1878,6 +1916,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     // cmd.c:2064 internal entry; #repeat reaches it after the item-actions
     // 'T' remembers ia_dotakeoff.
     ['alttakeoff', () => removeWornItem('take off', true)],
+    ['altunwield', remarmSwapwep],
     ['levelchange', wizLevelChange],
     ['wizwhere', wizWhere],
     ['wizwish', wizWish],
@@ -2710,6 +2749,54 @@ export function resetOccupations(state = game) {
 export function clearCannedCommands(state = game) {
     state._cannedCommands = [];
     clearCommandKeys();
+}
+// C cmd.c:cmdq_pop() (cmd.c:408-419) for prompt owners which only accept
+// CMDQ_KEY answers: the shared CQ_CANNED head is the oldest response entry
+// first, then the oldest canned command with its bundled answer tail. A
+// queued direction or extended command hits every such owner's "anything
+// else" branch — the popped entry is dropped and cmdq_clear(CQ_CANNED)
+// discards the rest (invent.c:1817-1818, cmd.c:5508-5509, pager.c:1700-
+// 1703, do_name.c:516-518) — so this helper performs that clear. A
+// CMDQ_USER_INPUT entry keeps the remaining queue and reaches the
+// caller's live-input path (invent.c:1798); do-again replays pop CQ_REPEAT
+// through takeRepeatCommand() instead and never call this.
+export function takeQueuedKey() {
+    const response = takeCommandResponse();
+    if (typeof response === 'number')
+        return { key: response };
+    if (response === 'user-input')
+        return 'user-input';
+    if (typeof response === 'object') {
+        clearCannedCommands();
+        return 'cancel';
+    }
+    if (game._cannedCommands?.length) {
+        clearCannedCommands();
+        return 'cancel';
+    }
+    return 'none';
+}
+// C getpos.c:812-826: getpos()'s one cmdq_pop() answers a horizontal
+// CMDQ_DIR with the spot next to the hero; every other queued entry — a
+// key, a vertical direction, the user-input placeholder, or a queued
+// extended command — drops that entry, clears CQ_CANNED, and returns -1.
+// The whole queued fast path is skipped while a do-again replay owns the
+// input (getpos.c:814), so undefined hands the caller its cursor loop.
+export function takeQueuedAdjacentPosition() {
+    if (game._inDoAgain)
+        return undefined;
+    const response = takeCommandResponse();
+    if (response === undefined) {
+        if (game._cannedCommands?.length) {
+            clearCannedCommands();
+            return null;
+        }
+        return undefined;
+    }
+    if (typeof response === 'object' && response.dz === 0)
+        return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
+    clearCannedCommands();
+    return null;
 }
 // C has one multi counter; involuntary delays have a positive mirror here.
 export function currentMulti(state = game) {

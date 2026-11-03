@@ -12,8 +12,7 @@ import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
     M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE,
 } from './const.js';
-import { clearCannedCommands } from './cmd.js';
-import { takeCommandKey, takeCommandPosition } from './input.js';
+import { clearCannedCommands, takeQueuedAdjacentPosition, takeQueuedKey } from './cmd.js';
 import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
@@ -74,7 +73,10 @@ import { showGetposTip } from './hack.js';
 // C do_name.c:call_ok().
 export async function doname() {
     // do_name.c:docallcmd() uses a queued key as the naming category.
-    // Any other queued entry selects nothing and clears the canned queue.
+    // Only CMDQ_KEY selects one (do_name.c:511-518); any other entry —
+    // a direction, the user-input placeholder, or a queued command
+    // reached through an empty response queue — clears CQ_CANNED and
+    // leaves ch 0, whose switch case does nothing (do_name.c:558-560).
     let queuedChoice: number | undefined;
     if (game._inDoAgain) {
         const queued = takeRepeatCommand();
@@ -84,7 +86,10 @@ export async function doname() {
             clearCannedCommands();
         }
     } else {
-        queuedChoice = takeCommandKey();
+        const queued = takeQueuedKey();
+        if (queued === 'user-input') clearCannedCommands();
+        queuedChoice = typeof queued === 'object' ? queued.key
+            : queued === 'none' ? undefined : 0;
     }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);
@@ -392,7 +397,7 @@ export async function nameChosenMonster(): Promise<void> {
         await plineWithContinuation('You would never recognize it anyway.');
         return;
     }
-    const queued = game._inDoAgain ? undefined : takeCommandPosition();
+    const queued = takeQueuedAdjacentPosition();
     const goal = 'the monster you want to name';
     const tip = queued === undefined && await showGetposTip();
     if (queued === undefined && game.flags.verbose) {

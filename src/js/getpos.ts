@@ -10,8 +10,7 @@ import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from '.
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, terrain_glyph } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { takeCommandPosition } from './input.js';
-import { readcharPoskey } from './cmd.js';
+import { clearCannedCommands, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
 
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
@@ -628,7 +627,7 @@ export async function selectMapPosition({
     highlightHero = true,
     force = true,
 }: MapPositionOptions): Promise<MapPositionSelection | null> {
-    const queued = game._inDoAgain ? undefined : takeCommandPosition();
+    const queued = takeQueuedAdjacentPosition();
     if (queued !== undefined) return queued ? { ...queued, pickType: LOOK_TRADITIONAL } : null;
     const initialPrompt = typeof prompt === 'string' ? prompt : await prompt();
     const cursor = { ...start };
@@ -713,8 +712,17 @@ export async function selectMapPosition({
             if (afterPaint) await afterPaint(cursor, firstPaint);
             firstPaint = false;
 
+            // C getpos.c:871-878 pops one entry per cursor step; a non-key
+            // CQ_REPEAT entry clears CQ_CANNED and exits with -1. The
+            // loop never pops CQ_CANNED here in the port: its entry pop
+            // (takeQueuedAdjacentPosition) leaves that queue empty, and
+            // readcharPoskey() may queue a canned mouse command whose C
+            // counterpart is queued only by parse(), never mid-cursor.
             const queued = takeRepeatCommand();
-            if (queued && queued.kind !== 'key') return null;
+            if (queued && queued.kind !== 'key') {
+                clearCannedCommands();
+                return null;
+            }
             let read = queued ? { key: queued.key, click: null } : await readcharPoskey();
             let key = read.key & 255;
             if (!queued && game.iflags.remember_getpos) rememberCommandKey(key);
