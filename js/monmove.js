@@ -53,7 +53,7 @@ import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSel
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { swingMonsterWeapon, advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
-import { isPick, isPolearm, launcherMatchesAmmo } from './object_properties.js';
+import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { monsterWeaponStrengthBonus, poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
@@ -377,7 +377,7 @@ export async function feedBeeRoyalJelly(monster, object, state) {
 export async function digestGelatinousCubeInventory(monster, state, options = {}) {
     if (monster.meating)
         return false;
-    const object = monster.minvent?.find(candidate => objectMaterial(candidate, state) <= 8
+    const object = monster.minvent?.find(candidate => objectIsOrganic(candidate, state)
         && !candidate.oartifact && !isLevelPrize(candidate, state));
     if (!object)
         return false;

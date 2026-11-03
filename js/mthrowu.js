@@ -51,11 +51,11 @@ import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
-import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_PROPERTY, OBJECT_SUBTYPE, TALLOW_CANDLE, WAN_FIRE, WAN_STRIKING, WAX_CANDLE, } from './object_data.js';
+import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_SUBTYPE, WAN_STRIKING, } from './object_data.js';
 import { dropObjectAtHero } from './do.js';
 import { makePlural, withIndefiniteArticle, verbForSubject } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-import { splitObjectStack } from './mkobj.js';
+import { splitObjectStack, objectIsFlammable } from './mkobj.js';
 import { objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
@@ -95,9 +95,6 @@ const PM_SAMURAI = MONSTER_NAME.indexOf('samurai');
 const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const FIRST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
-const LIQUID = 1;
-const WOOD = 8;
-const PLASTIC = 18;
 export function objectTypeName(object) {
     return object ? OBJECT_NAMES[object.otyp] || '' : '';
 }
@@ -816,11 +813,8 @@ export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { s
         }
     }
     if (!heroIsDeaf(state) && !state.underwater && !state.u.uinwater) {
-        const material = objectMaterial(weapon, state);
-        const flammable = ![TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(weapon.otyp)
-            && OBJECT_PROPERTY[weapon.otyp] !== 'fireResistance'
-            && (material <= WOOD && material !== LIQUID || material === PLASTIC);
-        if (isPoolAt(x, y, state) || isLavaAt(x, y, state) && !flammable)
+        if (isPoolAt(x, y, state)
+            || isLavaAt(x, y, state) && !objectIsFlammable(weapon, state))
             await publish(objectWeight(weapon) > 9 ? 'Splash!' : 'Plop!');
     }
     if (objectShedsLight(weapon))

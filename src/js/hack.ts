@@ -37,7 +37,6 @@ import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming,
 import { d, rn1, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetHeroTrap, floatHeroUp, floatHeroDown, clearHeroTrap, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, triggerHeroTrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
-import { objectMaterial } from './o_init.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
@@ -82,7 +81,7 @@ import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 import { confusePromptDirection } from './cmd.js';
 import { resolveHeroCombatExplosion } from './uhitm.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
-import { isPick, isFlimsyObject, isBlade } from './object_properties.js';
+import { isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
@@ -997,7 +996,7 @@ async function burnLavaBoots(
     state: PlayingGameState, publish: MessagePublisher, protectedObject: GameObject | null,
 ) {
     const boots = state.uarmf || state.u?.uarmf;
-    if (!boots || !(boots.in_use || (!boots.oerodeproof && objectMaterial(boots, state) <= 8)))
+    if (!boots || !(boots.in_use || (!boots.oerodeproof && objectIsOrganic(boots, state))))
         return false;
     await publish(`${ownedObjectAction(boots, 'burst', state)} into flame!`);
     // destroyWornArmor() runs the full Boots_off-before-consume sequence; the
@@ -3473,7 +3472,7 @@ function trapIsClearlyHarmless(type: number, state: GameState): boolean {
                     'flaming sphere', 'fire elemental', 'salamander'].includes(MONSTER_NAME[species] ?? '');
         case RUST_TRAP:
             if (MONSTER_NAME[species] === 'iron golem') return false;
-            return !state.inventory.some(object => objectMaterial(object.otyp) === 11
+            return !state.inventory.some(object => objectIsRustprone(object)
                 && !!object.owornmask && !(object.owornmask & W_QUIVER)
                 && (!(object.owornmask & W_SWAPWEP) || state.u.twoweap));
         case VIBRATING_SQUARE:

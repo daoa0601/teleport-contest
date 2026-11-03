@@ -59,7 +59,8 @@ import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import { objectQuantity, splitObjectStack, objectWeight } from './mkobj.js';
+import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable } from './mkobj.js';
+import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
@@ -175,7 +176,7 @@ export interface FoodEffectResult {
 }
 
 const M1_HUMANOID = 0x00020000;
-const LIQUID = 1, WOOD = 8, DRAGON_HIDE = 10;
+const DRAGON_HIDE = 10;
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const BLAND_FOODS = new Set([CRAM_RATION, K_RATION, C_RATION]);
@@ -245,7 +246,6 @@ interface FoodConductOptions { state?: GameState; }
 
 const WAX = 2, FLESH = 4, LEATHER = 7, BONE = 9;
 const ANIMAL_INGREDIENTS = new Set([PANCAKE, FORTUNE_COOKIE, CREAM_PIE, CANDY_BAR, LUMP_OF_ROYAL_JELLY]);
-const IRON = 11, MITHRIL = 17;
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 
 export type FoodAdmission = { handled: true; spentTime: boolean; heroDied: boolean }
@@ -1423,9 +1423,7 @@ export async function regainHearingAfterHelplessness({ state = game }: HungerOpt
 export async function applyRottenFood(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<boolean> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const material = objectMaterial(food, state);
-    const rottable = material <= WOOD && material !== LIQUID || material === DRAGON_HIDE;
-    await pline(`Blecch!  ${rottable ? 'Rotten' : 'Awful'} ${foodWord(food, state)}!`);
+    await pline(`Blecch!  ${objectIsRottable(food, state) ? 'Rotten' : 'Awful'} ${foodWord(food, state)}!`);
     if (!rn2(4)) {
         await pline(formatFeltMessage(`rather ${heroIsHallucinating(state) ? 'trippy' : heroLightHeadedFeeling(state)}.`, state));
         await makeConfused((state.u.confusionTurns || 0) + d(2, 4), { state, talk: false });
@@ -2071,7 +2069,7 @@ function edibilityWarning(object: GameObject, state: PlayingGameState): string |
     if (corpse && (flags & M1_ACID) && !hero.acidResistance)
         return `${smell} rather acidic.`;
     if (heroIsPolymorphed(state) && hero.umonnum === RUST_MONSTER
-        && material >= IRON && material <= MITHRIL && object.oerodeproof)
+        && objectIsMetallic(object, state) && object.oerodeproof)
         return `${smell} disgusting to you right now.`;
     if (!conduct.unvegan && ([LEATHER, BONE, DRAGON_HIDE, WAX].includes(material)
         || corpse && !veganCorpse(species)))
@@ -2306,8 +2304,7 @@ export async function handleFoodAdmission(object: FoodSelection, { state = game 
         const touch = await touchArtifactByHero(object, artifactById(object.oartifact, state), { state });
         if (touch.died || touch.allowed === false) return admissionResult(true, true, state);
     }
-    const material = objectMaterial(object, state);
-    if (material >= IRON && material <= MITHRIL
+    if (objectIsMetallic(object, state)
         && state.u.umonnum === RUST_MONSTER && object.oerodeproof) {
         await spitOutRustproofObject(object, state);
         return admissionResult(true, true, state);

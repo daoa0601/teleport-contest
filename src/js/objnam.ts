@@ -17,13 +17,13 @@ import { currency } from './currency.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
 import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, Luck, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
-import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight } from './mkobj.js';
+import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterHasProperName, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition } from './eat.js';
-import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
+import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL } from './object_data.js';
@@ -872,8 +872,9 @@ function currentDescription(otyp: number): string | null | undefined {
     return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
 }
 
-// C refs: objnam.c:erosion_matters(), objclass.h:is_damageable(), and
-// mkobj.c:is_flammable()/is_rottable().  Wished proof applies only where the
+// C objclass.h:is_damageable() and objnam.c:readobjnam()'s primary and
+// secondary erosion tests, expanded through the named owners in
+// object_properties.js and mkobj.js.  Wished proof applies only where the
 // object instance can retain erosion state; an ordinary non-weapon tool does
 // not become proof merely because its material could otherwise decay.
 function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
@@ -884,28 +885,18 @@ function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
 }
 
 function objectIsDamageable(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
-    const material = objectMaterial(object.otyp);
-    const flammable = (material > 1 && material <= 8) || material === 18;
-    const rottable = (material > 1 && material <= 8) || material === 10;
-    const rustprone = material === 11;
-    const corrodeable = material === 11 || material === 13;
-    const crackable = material === 19 && object.oclass === ARMOR_CLASS;
-    return flammable || rottable || rustprone || corrodeable || crackable;
+    return objectIsRustprone(object) || objectIsFlammable(object)
+        || objectIsRottable(object) || objectIsCorrodeable(object)
+        || objectIsCrackable(object);
 }
 
 function objectAcceptsPrimaryErosion(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
-    const material = objectMaterial(object.otyp);
-    const flammable = (material > 1 && material <= 8) || material === 18;
-    const rustprone = material === 11;
-    const crackable = material === 19 && object.oclass === ARMOR_CLASS;
-    return flammable || rustprone || crackable;
+    return objectIsFlammable(object) || objectIsRustprone(object)
+        || objectIsCrackable(object);
 }
 
 function objectAcceptsSecondaryErosion(object: Pick<GameObject, 'otyp'>): boolean {
-    const material = objectMaterial(object.otyp);
-    const rottable = (material > 1 && material <= 8) || material === 10;
-    const corrodeable = material === 11 || material === 13;
-    return rottable || corrodeable;
+    return objectIsCorrodeable(object) || objectIsRottable(object);
 }
 
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain

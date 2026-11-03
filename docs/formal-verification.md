@@ -165,6 +165,13 @@ split `rnl` row use this batch's complete runs.
 | `is_graystone:tables` | `obj.h:is_graystone` ↔ `object_properties.js:isGrayStone` | Any short otyp; four constants, no table read | 2×1 | 1.5 s |
 | `throwing_weapon:tables` | `dothrow.c:throwing_weapon` ↔ `object_properties.js:isThrowingWeapon` | Held object with the class relation; initial skill and dir columns | 1×1 | 3.0 s |
 | `is_multigen:tables` | `obj.h:is_multigen` ↔ `object_properties.js:isMultiGeneratedWeapon` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 1.5 s |
+| `is_organic:tables` | `objclass.h:is_organic` ↔ `object_properties.js:objectIsOrganic` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial material column | 1×1 | 2.0 s |
+| `is_metallic:tables` | `objclass.h:is_metallic` ↔ `object_properties.js:objectIsMetallic` | Same relation and material column | 1×1 | 2.2 s |
+| `is_rustprone:tables` | `objclass.h:is_rustprone` ↔ `object_properties.js:objectIsRustprone` | Same relation and material column | 1×1 | 2.0 s |
+| `is_corrodeable:tables` | `objclass.h:is_corrodeable` ↔ `object_properties.js:objectIsCorrodeable` | Same relation and material column | 1×1 | 2.2 s |
+| `is_crackable:tables` | `objclass.h:is_crackable` ↔ `object_properties.js:objectIsCrackable` | Held object reading its own oclass, otyp 0..NUM_OBJECTS-1; initial material column | 1×1 | 2.0 s |
+| `is_flammable:tables` | `mkobj.c:is_flammable` ↔ `mkobj.js:objectIsFlammable` | Held object, otyp 0..NUM_OBJECTS-1; initial material and oprop columns; OBJECT_PROPERTY fireResistance rows | 1×1 | 0.5 s |
+| `is_rottable:tables` | `mkobj.c:is_rottable` ↔ `mkobj.js:objectIsRottable` | Held object, otyp 0..NUM_OBJECTS-1; initial material column | 1×1 | 0.5 s |
 | `lower_bits` | `isaac64.c:lower_bits` ↔ frozen `lower_bits` | Any uint64 input represented as BigInt | Straight line | 0.1 s |
 | `upper_bits` | `isaac64.c:upper_bits` ↔ frozen `upper_bits` | Any uint64 input represented as BigInt | Straight line | <0.1 s |
 | `isaac64_mix` | `isaac64.c:isaac64_mix` ↔ frozen same name | Eight initialized uint64 words | Complete unrolling; checked bound | 0.1 s |
@@ -473,6 +480,66 @@ empty-string, record-lookup, mixed-array and branch-join tests), and the
 **36 ledger CLI tests** passed. `npm run compile` and `npm run check` passed.
 No game source, session corpus, or frozen file
 was changed beyond the citation comments.
+
+**Material predicate batch (fv-equivalence-batch-7).** Seven more claims
+give each objclass.h material macro and mkobj.c's two real erosion
+predicates exactly one named port function and move every inline copy to
+call its owner. objclass.h `is_organic`, `is_metallic`, `is_rustprone`,
+`is_crackable` and `is_corrodeable` live in `object_properties.js`
+(`objectIsOrganic`, `objectIsMetallic`, `objectIsRustprone`,
+`objectIsCrackable`, `objectIsCorrodeable`); mkobj.c `is_flammable()` and
+`is_rottable()` live in `mkobj.js` (`objectIsFlammable`, `objectIsRottable`)
+beside `weight()`. Five macro-expansion wrappers were added to the
+object-predicates harness; the two mkobj.c functions are real C bodies and
+execute directly, including `is_flammable`'s candle (obj.h `Is_candle`),
+`WAN_FIRE` and `oc_oprop == FIRE_RES` exclusions, which the port reads
+through the emitted `OBJECT_PROPERTY` string column (its fireResistance
+rows are exactly the native FIRE_RES rows, checked concretely).
+
+The migrated call sites are the C callers that name the macro: trap.c
+`erode_obj` (trap.js `objectIsVulnerableToErosion` now dispatches each
+erosion kind to its owner and the local `objectCanBurn` duplicate is
+deleted, as is food_selection.js's private `objectIsFlammable`),
+`lava_effects`' organic screening, hack.js's lava boots and rust-trap
+immunity (trap.c `immune_to_trap`), dig.c rot-on-burial, mon.c
+`meatmetal`/`meatobj`, monmove.c `gelcube_digests`, eat.c `rottenfood`
+and the rust-monster smell/admission branches, dog.c `dogfood`
+(pet_food.js), eat.c `edible` (food_selection.js), do_wear.c
+`hard_helmet` and `obj_erode_type`, dothrow.c `breakobj`'s crack branch,
+insight.c's spell-casting suit, spell.c's per-slot `metallic()` helper
+(deleted), steed.c's stiff armor, zap.c's ring-shock gloves, mthrowu.c's
+lava splash, and objnam.c's `is_damageable` and readobjnam erosion tests
+(whose three helpers now expand through the owners; their claim mutants
+were updated). Callers whose C body writes the material comparison itself
+rather than the macro keep their inline mirror: dothrow.c `breaktest`'s
+glass-armor chance, trap.c `wearing_iron_shoes`, and `lava_damage`'s
+`oc_material < DRAGON_HIDE` screening.
+
+Every claim keeps the whole initial table in its domain: the
+zero-material generic rows carry material 0 on both sides and the
+C-faithful owners agree with the macros there, so unlike `is_damageable`'s
+old inline port test no real-material restriction is needed (that claim's
+domain is unchanged). Each claim's probe drops the otyp correspondence —
+oclass for `is_crackable` — pinned to one concrete row, and each mutant is
+killed by a concrete return difference. No port fidelity bug was found:
+every migrated site already matched its C caller (insight.c's suit test
+already carried both is_metallic bounds), so the rename is
+behavior-preserving; all 44 public sessions and the first 300 holdout deep
+sessions replay identically, with seed2200's known screen-only miss
+unchanged. A behavior test pins insight.c:1820's suit semantics for glass
+armor (crystal plate mail does not impair spell casting; iron plate mail
+does).
+
+The complete 116-claim run exited 0 (including the two slow table claims)
+and wrote the ledger only after success; every new claim is fast, so the
+`equivalence` CI job's `--skip-slow` selection is unchanged. The rewritten
+ledger adds the seven material rows; `is_damageable`, `primary_erosion`
+and `secondary_erosion` keep their domains and now carry their rewritten
+mutants (13.0 s, 6.0 s, 3.9 s). The CI-parity
+`--skip-slow --check-ledger` run passes against the rewritten ledger.
+`npm run compile` and `npm run check` passed, the focused
+executor/query/selection suite is 99 passing tests, and the 36 ledger CLI
+tests passed.
 
 The complete 91-claim run exited 0 in **1015.6 s**, including **90 domain
 probes** and **103 mutant checks** (20 claims, 21 probes and 20 mutants

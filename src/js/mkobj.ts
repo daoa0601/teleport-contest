@@ -31,7 +31,8 @@ import { OBJECT_WEIGHT, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCA
 import { LARGEST_INT } from './const.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
-import { objectProb } from './o_init.js';
+import { objectMaterial, objectProb } from './o_init.js';
+import { OBJECT_PROPERTY, WAN_FIRE } from './object_data.js';
 import { nameObjectFromTopten } from './topten.js';
 import { rndClass, ownedObjectName } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
@@ -70,6 +71,10 @@ const WAND_CLASS = 11;
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;
 const ROCK_CLASS = 14;
+const LIQUID = 1;
+const WOOD = 8;
+const DRAGON_HIDE = 10;
+const PLASTIC = 18;
 const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
@@ -1499,4 +1504,29 @@ export function objectWeight(object: WeightObject | null | undefined): number {
         return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
     if (base > 0) return base * quantity(object);
     return Math.trunc((count + 1) / 2);
+}
+
+// C mkobj.c:is_flammable(). Candles can be burned, but they are not
+// flammable in the erosion sense: they cannot get fire damage and it makes
+// no sense for them to be fireproofed; fire-resistant objects and the wand
+// of fire cannot burn either.
+export function objectIsFlammable(
+    object: Pick<GameObject, 'otyp'>,
+    state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE) return false;
+    if (OBJECT_PROPERTY[object.otyp] === 'fireResistance'
+        || object.otyp === WAN_FIRE)
+        return false;
+    const material = objectMaterial(object, state);
+    return (material <= WOOD && material !== LIQUID) || material === PLASTIC;
+}
+
+// C mkobj.c:is_rottable().
+export function objectIsRottable(
+    object: Pick<GameObject, 'otyp'>,
+    state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    const material = objectMaterial(object, state);
+    return (material <= WOOD && material !== LIQUID) || material === DRAGON_HIDE;
 }

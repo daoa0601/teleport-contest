@@ -7,6 +7,32 @@ int verification_damageable(struct obj *otmp)
     return is_damageable(otmp);
 }
 
+/* Expand the real objclass.h material macros. */
+int verification_is_organic(struct obj *otmp)
+{
+    return is_organic(otmp);
+}
+
+int verification_is_metallic(struct obj *otmp)
+{
+    return is_metallic(otmp);
+}
+
+int verification_is_rustprone(struct obj *otmp)
+{
+    return is_rustprone(otmp);
+}
+
+int verification_is_crackable(struct obj *otmp)
+{
+    return is_crackable(otmp);
+}
+
+int verification_is_corrodeable(struct obj *otmp)
+{
+    return is_corrodeable(otmp);
+}
+
 /* objnam.c:readobjnam()'s primary-erosion test, macro-expanded. */
 int verification_primary_erosion(struct obj *otmp)
 {

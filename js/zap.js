@@ -75,7 +75,7 @@ import { gotoLevel } from './level_change.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { bot } from './botl.js';
-import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
+import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
@@ -1261,8 +1261,7 @@ function glovesBlockRingShock(object, state) {
     const gloves = state.uarmg || state.u?.uarmg;
     if (!gloves)
         return false;
-    const material = objectMaterial(gloves.otyp);
-    return material < 11 || material > 17;
+    return !objectIsMetallic(gloves);
 }
 function destructionMessage(object, damageType, count, quantity, state = game) {
     const one = count === 1;
