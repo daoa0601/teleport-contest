@@ -143,6 +143,18 @@ export async function setTopline(msg: string) {
 function writeRawText(text: string) {
     const display = game.nhDisplay;
     if (!display) return;
+    if (display.nomux.isLatched()) {
+        // C nomux_raw_emit(): once the capture latched raw mode, every
+        // raw print paints at the raw cursor even while the windows are
+        // still up — nomux_raw_putch() drops control characters other
+        // than the newline and clips to the shadow's bounds.
+        for (const ch of text) {
+            const at = display.nomux.rawPutchar(ch);
+            if (at) display.setCell(at.col, at.row, ch, NO_COLOR, 0);
+        }
+        display.flush();
+        return;
+    }
     for (const ch of text) {
         if (ch === '\r') {
             display.setCursor(0, display.cursorRow);

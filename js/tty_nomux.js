@@ -188,5 +188,26 @@ export class NomuxCapture {
         this.rawCol = 0;
         return at;
     }
+    /**
+     * C termcap.c:nomux_raw_putch() for one character of a raw print
+     * while raw mode is latched: the newline moves to the next row,
+     * other control characters are dropped without moving, and a
+     * printable character paints inside the shadow's bounds, advancing
+     * the raw column.
+     */
+    rawPutchar(ch) {
+        if (ch === '\n') {
+            this.rawRow++;
+            this.rawCol = 0;
+            return null;
+        }
+        if (ch.charCodeAt(0) < 32)
+            return null;
+        const at = this.rawRow >= 0 && this.rawRow < 24
+            && this.rawCol >= 0 && this.rawCol < 80
+            ? { row: this.rawRow, col: this.rawCol } : null;
+        this.rawCol++;
+        return at;
+    }
 }
 //# sourceMappingURL=tty_nomux.js.map

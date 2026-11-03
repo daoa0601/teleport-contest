@@ -107,3 +107,19 @@ void test('a latched windowed topten still prints the teardown separator', async
     assert.deepEqual(engine.getCursors().at(-1)?.slice(0, 2), [0, 1],
         'the teardown separator leaves the latched raw cursor one row down');
 });
+
+void test('a latched save paints its goodbye at the raw cursor', async () => {
+    // exit_nhwindows() clears the shadow (term_end_screen), but
+    // settty()'s goodbye raw-print still runs through nomux_raw_emit():
+    // with the showexp clobber holding the raw row past the screen it
+    // paints nothing, and only its trailing newline moves the raw cursor.
+    const engine = await runSegment({
+        seed: 924506948, datetime: '20000417080000',
+        nethackrc: NETHACKRC.replace('time,', 'time,showexp,'),
+        moves: SETUP + '#te\rd \x1b,Sy', storage: memoryStorage(),
+    });
+    assert.equal(screenText(engine.getScreens().at(-1) ?? '').trim(), '',
+        'the goodbye paints nothing at a raw row past the screen');
+    assert.deepEqual(engine.getCursors().at(-1)?.slice(0, 2), [0, 978591793],
+        'the goodbye newline advances the latched raw row');
+});
