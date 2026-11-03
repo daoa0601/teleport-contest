@@ -11,7 +11,7 @@ import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, displayLiquidName, newsym, canSenseMonster, monsterKillLineVisible, unmap_invisible, swallowed } from './display.js';
 import { splitMonster } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterGrowthFamilyMatch, monsterHasNoHands, monsterIsHuman, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, monsterIsNoncorporeal, monsterIsRider, monsterSpeciesSticks, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_RESISTS, MONSTER_SOUND, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterHasHead, monsterIsAmorphous, monsterIsDisplacer, MONSTER_BODY_META, MONSTER_HAS_WEAPON_ATTACK, monsterHatesSilver, monsterIsCovetous, monsterIsKop, monsterIsNonliving, monsterIsPlayerMonster, monsterIsSlimeproof, requireMonsterData, speciesEatsCorpses } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterTypeName, monsterYoungerForm, requireMonsterData, speciesEatsCorpses } from './monster_data.js';
 import { monsterName, namelessMonsterName, setMonsterGivenName, formatMonsterName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
 import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap } from './mondata.js';
@@ -415,8 +415,8 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             return { survived: true, relocation };
         }
     }
-    if (!inPool && !inLava && MONSTER_SYMBOL[monster.mnum] === S_EEL && !waterLevel
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS)) {
+    if (!inPool && !inLava && monsterIsEel(monster.mnum) && !waterLevel
+        && !(monsterIsBreathless(monster.mnum))) {
         if (monster.mhp > 1 && random(monster.mhp) > random(8))
             monster.mhp--;
         const flight = await makeMonsterFlee(monster, {
@@ -749,7 +749,7 @@ export async function consumeMonsterObject(monster, object, state = game, { publ
     if ((curesEyes || heals) && !monster.mcansee) {
         monster.mcansee = 1;
         monster.mblinded = 0;
-        if (canSeeMonster(monster) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES))
+        if (canSeeMonster(monster) && monsterHasEyes(monster.mnum))
             await publish(`${monsterName(monster, { state, capitalized: true })} can see again.`);
     }
     if (isPet && mimic)
@@ -878,13 +878,13 @@ export function monsterCanCarryObject(monster, object, state = game, random = rn
 }
 function monsterCannotSqueezeThrough(monster, state) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    if (flags & M1_WALLWALK)
+    if (monsterPassesWalls(monster.mnum))
         return false;
     const flexible = !!(flags & (M1_AMORPHOUS | M1_SLITHY)) ||
         monsterIsWhirly(monster) ||
         monsterIsNoncorporeal(monster) ||
         monsterCanFog(monster, state);
-    if ((MONSTER_SIZE[monster?.mnum] ?? 0) >= 3 && !flexible)
+    if (monsterIsBig(monster.mnum) && !flexible)
         return true;
     return currentMonsterLoad(monster) > WT_TOOMUCH_DIAGONAL;
 }
@@ -1168,8 +1168,8 @@ export async function maybeUnhideAt(x, y, state = game) {
     if (!(monster ? monster.mundetected : state.u.uundetected))
         return;
     const actor = monster ? monsterHidingActor(monster, state) : heroHidingActor(state);
-    const hidesUnder = !!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL);
-    const eel = MONSTER_SYMBOL[actor.species] === S_EEL;
+    const hidesUnder = monsterHidesUnder(actor.species);
+    const eel = monsterIsEel(actor.species);
     const exposed = hidesUnder && (actor.trapped || !canMonsterHideUnderObjectAt(state, x, y))
         || eel && !isPoolAt(x, y, state);
     if (!exposed)
@@ -1205,14 +1205,14 @@ function hidingPlace(actor, state) {
     const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
     if (trap && !is_pit(trap.ttyp))
         return nowhere;
-    if (MONSTER_SYMBOL[actor.species] === S_EEL) {
+    if (monsterIsEel(actor.species)) {
         const heroUnderwater = !!(state.underwater || state.u.uinwater);
         const inLineOfSight = !!((state.viz_array?.[y]?.[x] ?? 0) & COULD_SEE);
         const hidden = isPoolAt(x, y, state) && !levelIsWaterLevel(state)
             && (!heroUnderwater || !inLineOfSight);
         return { undetected: hidden, cover: null, water: true };
     }
-    if (!((MONSTER_FLAGS1[actor.species] ?? 0) & M1_CONCEAL)
+    if (!(monsterHidesUnder(actor.species))
         || !canMonsterHideUnderObjectAt(state, x, y)
         || isPoolAt(x, y, state) || isLavaAt(x, y, state))
         return nowhere;
@@ -2363,7 +2363,6 @@ const PM_PESTILENCE = 312;
 const PM_FAMINE = 313;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
-const S_GOLEM = 55;
 const S_LICH = 38;
 const M2_UNDEAD = 0x00000002;
 const M2_NEUTER = 0x00040000;
@@ -2395,9 +2394,9 @@ export function monsterLeavesCorpse(monster, random = rn2) {
         || monsterHasDeathExplosion(monster))
         return false;
     const mnum = monster.mnum;
-    const guaranteed = (((MONSTER_SIZE[mnum] ?? 2) >= 3
+    const guaranteed = ((monsterIsBig(mnum)
         || mnum === PM_LIZARD) && !monster.mcloned)
-        || MONSTER_SYMBOL[mnum] === S_GOLEM
+        || monsterIsGolem(mnum)
         || monsterIsPlayerMonster(mnum)
         || (mnum >= PM_DEATH && mnum <= PM_FAMINE)
         || !!monster.isshk;
@@ -2962,7 +2961,7 @@ function restoreRevertedMonsterHealth(monster) {
 // silently resumes its vampire form and rises instead of petrifying.
 async function reviveStonedVampire(monster, baseForm, publish) {
     const posture = monsterIsAmorphous(monster) ? 'coalesces on the'
-        : (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY ? 'drops to the'
+        : monsterIsFlyer(monster.mnum) ? 'drops to the'
             : 'writhes on the';
     const fall = `The lapidifying ${monsterName(monster, {
         article: 'none', suppressSaddle: true, suppressHallucination: true,
@@ -3593,7 +3592,7 @@ export async function restartMonsterShapechanging(state = game) {
     }
 }
 async function dropBouldersTheNewFormCannotCarry(monster, state, polyspot, publish) {
-    if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW)
+    if (monsterThrowsRocks(monster.mnum))
         return [];
     const boulders = (monster.minvent || monster.inventory || [])
         .filter(object => object.otyp === BOULDER);
@@ -4156,17 +4155,14 @@ export function restoreMonsterTrueSpecies(monster) {
 export function monsterFliesOrFloats(monster) {
     if (!monster)
         return false;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster?.mnum];
-    return !!(flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT;
+    return monsterIsFlyer(monster.mnum) || monsterIsFloater(monster.mnum);
 }
 export function monsterInAir(monster, state = game) {
     if (!monster)
         return false;
     if (monsterFliesOrFloats(monster))
         return true;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return !!(flags & M1_CLING)
+    return monsterIsClinger(monster.mnum)
         && levelHasCeiling(state)
         && !!monster.mundetected;
 }

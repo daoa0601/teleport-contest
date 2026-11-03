@@ -39,7 +39,7 @@ import { canDigDown, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsWhirly, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { isAxe, isBimanualObject, isPick } from './object_properties.js';
@@ -241,7 +241,7 @@ async function mkcavepos(x, y, dist, waslit, rockit, state) {
         if (trapAt(state, x, y))
             return;
         const monster = monsterAt(x, y, state);
-        if (monster && !(requireMonsterData(MONSTER_FLAGS1, monster.mnum) & M1_WALLWALK)) {
+        if (monster && !monsterPassesWalls(monster.mnum)) {
             // C rloc(mtmp, RLOC_NOMSG): relocate without a message.
             await randomMonsterRelocation(monster, { state, flags: RLOC_NOMSG });
         }
@@ -1041,8 +1041,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 if (canSeeMonster(victim)) {
                     // C is_flyer() vs is_floater(): floaters also carry
                     // M1_FLY in the pinned data, so they report "flies".
-                    const flying = !!((MONSTER_FLAGS1[victim.mnum] ?? 0)
-                        & M1_FLY);
+                    const flying = monsterIsFlyer(victim.mnum);
                     await plineWithContinuation(`${monsterSubject(victim)} `
                         + `${flying ? 'flies' : 'floats'} over the pit.`);
                 }
@@ -1105,7 +1104,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 await impactDrop(null, x, y, { state, publish: plineWithContinuation });
             }
             if (victim) {
-                const clingsToCeiling = !!((MONSTER_FLAGS1[victim.mnum] ?? 0) & M1_CLING)
+                const clingsToCeiling = monsterIsClinger(victim.mnum)
                     && levelHasCeiling(state);
                 if (monsterFliesOrFloats(victim)
                     || clingsToCeiling

@@ -25,7 +25,7 @@ import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } fr
 import { rn2, rnd } from './rng.js';
 import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsRider } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './monster_data.js';
 import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
 import { spendHeroNutrition } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
@@ -122,7 +122,6 @@ function requireLevel(state: GameState): asserts state is LevelGameState {
 
 const M1_WALLWALK = 0x00000008;
 const M1_TPORT = 0x02000000;
-const M1_TPORT_CNTRL = 0x04000000;
 const S_ELEMENTAL = 31;
 const S_MIMIC = 13;
 
@@ -144,7 +143,7 @@ export function heroHasTeleportation(state: GameState) {
 
 export function heroFormCanTeleport(state: GameState) {
     return Upolyd(state.u) && state.u.umonnum !== undefined
-        && !!((MONSTER_FLAGS1[state.u.umonnum] ?? 0) & M1_TPORT);
+        && !!(monsterCanTeleport(state.u.umonnum));
 }
 
 export function heroCanTeleport(state = game) {
@@ -155,7 +154,7 @@ export function heroControlsTeleport(state = game) {
     const u = state?.u;
     return !!(u?.teleportControl
         || wornRing(state, RIN_TELEPORT_CONTROL)
-        || (Upolyd(u) && u.umonnum !== undefined && ((MONSTER_FLAGS1[u.umonnum] ?? 0) & M1_TPORT_CNTRL)));
+        || (Upolyd(u) && u.umonnum !== undefined && monsterControlsTeleport(u.umonnum)));
 }
 
 export function heroTeleportTrapBlock(state = game) {
@@ -628,9 +627,7 @@ function monsterRelocationCandidates(monster: Monster, state: LevelGameState) {
         COLNO - 1 - centerX,
         ROWNO - 1 - centerY,
     );
-    const passesWalls = !!(
-        (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK
-    );
+    const passesWalls = !!monsterPassesWalls(monster.mnum);
     const candidates: Position[] = [];
 
     for (let radius = 0; radius <= maxRadius; radius++) {
@@ -1077,7 +1074,7 @@ export async function teleportMonsterThroughPortal(monster: Monster, trap: Trap,
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
         await seeTrap(trap, state);
     }
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
+    if (!monsterControlsTeleport(monster.mnum)) monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, trap, {
         kind: 'magic-portal-migration', mode: MIGR_PORTAL,
     });
@@ -1139,7 +1136,7 @@ export async function teleportMonsterToRandomLevel(monster: Monster, trap: Trap,
         await publish(`Suddenly, ${monsterName(monster, { state })} disappears out of sight.`);
         await seeTrap(trap, state);
     }
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT_CNTRL)) monster.mconf = 1;
+    if (!monsterControlsTeleport(monster.mnum)) monster.mconf = 1;
     return migrateMonsterOffLevel(monster, state, { ...trap, dst: levelAtDepth(destination, { state }) },
         { kind: 'level-migration' });
 }
@@ -1309,7 +1306,7 @@ export async function teleportMonsterByHero(monster: Monster, {
             await sendMonsterToLimbo(monster, state);
         return true;
     }
-    if ((monsterIsRider(monster) || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x04000000)) && rn2(13)) {
+    if ((monsterIsRider(monster) || monsterControlsTeleport(monster.mnum)) && rn2(13)) {
         const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
         if (destination) {
             await relocateMonsterTo(monster, destination.x, destination.y, { state });

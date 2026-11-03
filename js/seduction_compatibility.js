@@ -3,7 +3,7 @@ import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
 import { AD_PHYS, AD_SEDU, AD_SITM, AD_SSEX } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAnimal, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAnimal, monsterPerceives } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 const M1_SEE_INVIS = 0x01000000;
 const M2_NEUTER = 0x00040000;
@@ -18,7 +18,7 @@ export function seductionCompatibility(aggressor, defender, attack, state = game
         ? AD_SSEX : attacks?.some(candidate => candidate[1] === AD_SEDU) ? AD_SEDU : AD_PHYS);
     const invisible = aggressor === 'hero' ? heroIsInvisible(state) : !!aggressor.minvis;
     const perceived = defender === 'hero' ? propertyIsActive('seeInvisible', state)
-        : !!((MONSTER_FLAGS1[defender.mnum] ?? 0) & M1_SEE_INVIS);
+        : monsterPerceives(defender.mnum);
     if (invisible && !perceived && damage === AD_SEDU)
         return 0;
     const nymph = MONSTER_SYMBOL[species] === S_NYMPH;

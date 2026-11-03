@@ -28,13 +28,7 @@ import { occupied } from './mkroom.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
-import {
-    MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2,
-    MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME,
-    MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous,
-    monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterTypeName,
-    requireMonsterData,
-} from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsGolem, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterDeathCount } from './mon.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
@@ -749,7 +743,7 @@ export async function makemon(
             ++tryCount;
         } while (tryCount <= 50
             && ((tryCount === 1 && In_sokoban(game.u.uz)
-                && !!((MONSTER_FLAGS2[mndx] ?? 0) & 0x08000000)) // M2_ROCKTHROW
+                && monsterThrowsRocks(mndx)) // M2_ROCKTHROW
                 || !goodPosition(x, y, { kind: 'species', mnum: mndx }, {
                     gpflags,
                 })));
@@ -1037,7 +1031,7 @@ export async function makemon(
         }
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 27
-        && (requireMonsterData(MONSTER_FLAGS1, mndx) & 0x00020000)
+        && monsterIsHumanoid(mndx)
         && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) {
         // C ref: m_initweap(), humanoid S_ANGEL.  Minion weapons and shields
         // deliberately bypass mongets()/ordinary object initialization.
@@ -2061,7 +2055,7 @@ function recordRoll(calls: RollLog | null, text: string): void {
 function growthFromKill(monster: Monster, victim: Monster, state: GrowthState, rollOne: Roll, random: Roll, calls: RollLog | null): GrowthIncrease {
     const level = monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0;
     let hpThreshold = level ? level * 8 : 4;
-    if (level && MONSTER_SYMBOL[monster.mnum] === S_GOLEM) {
+    if (level && monsterIsGolem(monster.mnum)) {
         hpThreshold = (Math.trunc((monster.mhpmax ?? 1) / 10) + 1)
             * 10 - 1;
     } else if (level && isHomeElementalAt(monster.mnum, state)) {

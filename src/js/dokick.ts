@@ -49,7 +49,7 @@ import { kickNonDoorTerrain } from './kick_terrain.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { stairwayAt } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsBig, monsterIsFlyer } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
@@ -547,7 +547,7 @@ export async function levitatingKickMisses(monster: Monster, state: GameState = 
         || state.levitating);
     if (!levitating || rn2(3) !== 0) return false;
     if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 1
-        || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) return false;
+        || (monsterIsFlyer(monster.mnum))) return false;
     return true;
 }
 
@@ -644,7 +644,7 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
 }: KickOptions = {}) {
     requirePlayingGame(state);
     if ((monster.mhp ?? 1) <= 0 || !martial
-        || (MONSTER_SIZE[monster.mnum] ?? 2) >= 3) return null;
+        || monsterIsBig(monster.mnum)) return null;
     if (rn2(3) !== 0 || monster.mcanmove === 0
         || monster === state.u?.ustuck || monster.mtrapped) return null;
 

@@ -15,7 +15,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { diggingTarget, startHeroDigging } from './dig.js';
 import { gotoLevel } from './level_change.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_MOVE, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, monsterPassesWalls, monsterTypeName } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { BOULDER, OBJECT_NAMES, STATUE } from './object_data.js';
 import { ownedObjectAction, ownedObjectName } from './objnam.js';
@@ -99,7 +99,7 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
             rn2(7) === 0 ||
             (monster.mnum === LONG_WORM && monster.wormno) ||
             (IS_OBSTRUCTED(diggingLocation(hero.ux, hero.uy, state).typ) &&
-                !((MONSTER_FLAGS1[monster.mnum] || 0) & M1_WALLWALK));
+                !monsterPassesWalls(monster.mnum));
         if (blocked || tendedShopAt(monster, state)) {
             if (monster.isshk &&
                 canSpotMonster(monster) &&

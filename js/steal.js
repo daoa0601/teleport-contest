@@ -10,7 +10,7 @@ import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { heroFootName, monsterFootName, heroHandName } from './body_parts.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterCanEngulf, monsterIsAnimal, monsterIsSlithy, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import { makePlural } from './objnam.js';
 import { AD_SITM } from './monster_attack_types.js';
 import { BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
@@ -167,7 +167,7 @@ export async function stealFromHero(monster, random, calls) {
         ? [game.uleft, game.uright].find(ring => ring?.otyp === OBJECT_NAMES.indexOf('adornment'))
         : null;
     let object = adornment ?? selectHeroItemForTheft(game, random, calls);
-    const throwsRocks = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x08000000);
+    const throwsRocks = monsterThrowsRocks(monster.mnum);
     let retriedBoulder = false;
     while (object) {
         // C steal.c:474-475: gs.stealoid holds the armor this same thief
@@ -521,7 +521,7 @@ export async function stealHeroQuestObject(monster, state, publish, random, roll
     const name = await inventoryItemDescription(object);
     await addObjectToMonsterInventory(monster, object, state);
     await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} steals ${name}!`);
-    if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x02000000)
+    if ((monsterCanTeleport(monster.mnum))
         && !await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
     await reportHeroEncumbrance(state);

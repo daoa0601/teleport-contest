@@ -15,7 +15,7 @@ import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOut
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
 import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING } from './object_data.js';
-import { MONSTER_FLAGS2, MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsBig, monsterThrowsRocks } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands } from './polyself.js';
 import { isAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo } from './object_properties.js';
@@ -311,7 +311,7 @@ async function throwCommand(
         if (item.quan === 1 && (item === game.uwep || item === game.uswapwep && game.u.twoweap))
             return GETOBJ_DOWNPLAY;
         return objectClass === 12 || objectClass === (wieldingSling ? 13 : 2)
-            || item.otyp === BOULDER && ((MONSTER_FLAGS2[game.u.umonnum ?? -1] ?? 0) & M2_ROCKTHROW)
+            || item.otyp === BOULDER && (monsterThrowsRocks(game.u.umonnum ?? -1))
             ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     };
     if (!selectedItem) {
@@ -373,7 +373,7 @@ async function throwCommand(
     }
     if (mjollnir && currentAttribute(A_STR) < STR19(25)
         || item.otyp === BOULDER
-            && !((MONSTER_FLAGS2[game.u.umonnum] ?? 0) & M2_ROCKTHROW)) {
+            && !(monsterThrowsRocks(game.u.umonnum))) {
         if (splitParent) await rejoinObjectStack(splitParent, item, game);
         await pline("It's too heavy.");
         game.context.move = 1;
@@ -1017,7 +1017,7 @@ export async function tryUnarmedStagger(monster: Monster, {
     finishMonsterDeath,
 }: UnarmedStaggerOptions): Promise<UnarmedStaggerOutcome> {
     if (rnd(100) >= skill) return { staggered: false };
-    if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 3
+    if (monsterIsBig(monster.mnum)
         || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_THICK_HIDE)) {
         return { staggered: false };
     }

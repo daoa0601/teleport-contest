@@ -14,7 +14,7 @@ import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL, monsterIsBig, requireMonsterData } from './monster_data.js';
 import { monsterCanTouchObject } from './mon.js';
 import { unlinkMonsterObject } from './mkobj.js';
 import { monsterName } from './do_name.js';
@@ -430,7 +430,7 @@ const SMALL_RND4 = objectTypes([
 ]);
 const SMALL_RND6 = objectTypes(['splash of acid venom']);
 function damageProfile(object, monster) {
-    const large = (MONSTER_SIZE[monster.mnum] ?? 2) >= 3;
+    const large = monsterIsBig(monster.mnum);
     const otyp = object.otyp;
     const range = (large ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)[otyp]
         ?? 0;

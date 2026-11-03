@@ -26,7 +26,7 @@ import { isBlade, isWetTowel } from './object_properties.js';
 import { isWeldedPrimary } from './wield.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsVerySmall, monsterIsWhirly, } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsDemon, monsterIsVerySmall, monsterIsWhirly } from './monster_data.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './read.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
@@ -341,7 +341,7 @@ export async function doengrave(state = game) {
     let oep = engravingAt(hero.ux, hero.uy, state.level);
     const oetype = oep?.engr_type ?? 0;
     const species = heroSpecies(state);
-    if (!!((MONSTER_FLAGS2[species] ?? 0) & M2_DEMON)
+    if (monsterIsDemon(species)
         || MONSTER_SYMBOL[species] === S_VAMPIRE)
         setup.type = ENGR_BLOOD;
     const jello = !!hero.uswallow

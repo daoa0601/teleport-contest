@@ -10,7 +10,7 @@ import { fromWhat, extrinsicPropertyMask, intrinsicPropertyMask, veryFast } from
 import { hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked, propertyTimeout } from './properties.js';
 import { blindnessBlocked, blindfolded, heroIsBlind, permanentBlind } from './senses.js';
 import { heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroPassesWalls } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, monsterIsClinger, monsterIsFlyer, monsterTypeName } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
@@ -166,7 +166,7 @@ export function attributeEnlightenmentLines(final = 0) {
     if (levitationSources && (trapped || levitationTerrain))
         message('You ', 'would levitate', 'would have levitated', `${trapped ? ' if not trapped' : ''}${trapped && levitationTerrain ? ' and' : ''}${levitationTerrain ? ' if surroundings permitted' : ''}`);
     const flightSources = intrinsicPropertyMask('flying') || extrinsicPropertyMask('flying')
-        || !!((MONSTER_FLAGS1[u.usteed?.mnum ?? -1] ?? 0) & 0x01);
+        || monsterIsFlyer(u.usteed?.mnum ?? -1);
     if (flightSources && propertyIsBlocked('flying')) {
         const terrain = u._propertySources?.flying?.blockedByTerrain;
         const reason = propertyIsActive('levitation') ? " if you weren't levitating"
@@ -174,7 +174,7 @@ export function attributeEnlightenmentLines(final = 0) {
                 : terrain && !trapped ? ' if surroundings permitted' : ' if circumstances permitted';
         message('You ', 'would fly', 'would have flown', reason);
     }
-    if ((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & 0x10) {
+    if (monsterIsClinger(u.umonnum ?? -1)) {
         const ceiling = levelHasCeiling();
         if (ceiling && !u.uinwater)
             can('cling to the ceiling');

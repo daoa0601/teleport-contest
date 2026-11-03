@@ -2,7 +2,7 @@
 // C ref: polyself.c mbodypart().  Keep each exported body part tied to the
 // corresponding source table rather than deriving one part from another.
 import { game } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterHasEyes } from './monster_data.js';
 import { AT_CLAW } from './monster_attack_types.js';
 const M1_NOEYES = 0x00001000;
 const M1_HUMANOID = 0x00020000;
@@ -571,7 +571,7 @@ export function heroHasEyes(state = game) {
 // C mondata.h:eyecount(). Eye count is anatomy, independent of sight.
 export function heroEyeCount(state = game) {
     const mnum = currentHeroMonsterNumber(state);
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES)
+    if (!monsterHasEyes(mnum))
         return 0;
     return mnum === PM_CYCLOPS || mnum === PM_FLOATING_EYE ? 1 : 2;
 }

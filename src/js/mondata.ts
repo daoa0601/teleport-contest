@@ -6,7 +6,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid,
     monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
     monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS,
-    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol,
+    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem,
 } from './monster_data.js';
 import {
     AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
@@ -339,15 +339,13 @@ const M1_WALLWALK = 0x00000008;
 const M1_AMORPHOUS = 0x00000004;
 const M1_UNSOLID = 0x00100000;
 const M1_METALLIVORE = 0x80000000;
-const M1_SLITHY = 0x00080000;
-const MZ_LARGE = 3;
 
 export function monsterPassesBars(monster: Pick<Monster, 'mnum'>): boolean {
     const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
     return !!(body & (M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))
         || monsterIsWhirly(monster)
         || monsterIsVerySmall(monster.mnum) || monsterCorrodesBars(monster)
-        || !!(body & M1_SLITHY) && (MONSTER_SIZE[monster.mnum] ?? MZ_LARGE) < MZ_LARGE;
+        || monsterIsSlithy(monster.mnum) && !monsterIsBig(monster.mnum);
 }
 
 export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
@@ -364,6 +362,14 @@ export function speciesCanBlow(mnum: number): boolean {
     return !(requireMonsterData(MONSTER_FLAGS1, mnum) & (M1_BREATHLESS | M1_NOHEAD))
         && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
         && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
+}
+
+// C mondata.c:can_track().  u_wield_art(ART_EXCALIBUR) comes first: the
+// artifact lets even eyeless monsters follow the hero's tracks.
+export function canTrack(mnum: number, state: GameState = game): boolean {
+    const weapon = state.uwep || state.u.uwep;
+    if (artifactById(weapon?.oartifact, state)?.name === 'Excalibur') return true;
+    return monsterHasEyes(mnum);
 }
 
 // Native mondata.c:same_race(). Species families used by cannibalism.
@@ -423,17 +429,13 @@ export function sameMonsterRace(left: number, right: number): boolean {
 
 // C mondata.c:locomotion() and stagger(). Describe the actual body, even
 // when its name is hidden or hallucinated.
-const S_EYE = 5;
-const S_LIGHT = 25;
-const M1_FLY = 0x00000001;
 const M1_NOLIMBS = 0x00006000;
 
 export function monsterLocomotion(mnum: number, fallback: string): string {
     const body = MONSTER_FLAGS1[mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[mnum];
     let verb = fallback;
-    if (symbol === S_EYE || symbol === S_LIGHT) verb = 'float';
-    else if (body & M1_FLY) verb = 'fly';
+    if (monsterIsFloater(mnum)) verb = 'float';
+    else if (monsterIsFlyer(mnum)) verb = 'fly';
     else if (monsterIsSlithy(mnum)) verb = 'slither';
     else if (monsterIsAmorphous({ mnum })) verb = 'ooze';
     else if (!MONSTER_MOVE[mnum]) verb = 'wiggle';
@@ -445,10 +447,9 @@ export function monsterLocomotion(mnum: number, fallback: string): string {
 // C mondata.c:stagger(): the faltering counterpart of locomotion().
 export function monsterStagger(mnum: number, fallback: string): string {
     const body = MONSTER_FLAGS1[mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[mnum];
     let verb = fallback;
-    if (symbol === S_EYE || symbol === S_LIGHT) verb = 'wobble';
-    else if (body & M1_FLY) verb = (MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL ? 'flutter' : 'stagger';
+    if (monsterIsFloater(mnum)) verb = 'wobble';
+    else if (monsterIsFlyer(mnum)) verb = (MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL ? 'flutter' : 'stagger';
     else if (monsterIsSlithy(mnum)) verb = 'falter';
     else if (monsterIsAmorphous({ mnum })) verb = 'tremble';
     else if (!MONSTER_MOVE[mnum]) verb = 'pulsate';
@@ -677,11 +678,6 @@ export function monsterResistsSleep(monster: Monster): boolean {
         || !!monster?.defendedSleep;
 }
 
-// C include/mondata.h:26 breathless().
-export function monsterIsBreathless(monster: Monster): boolean {
-    return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS);
-}
-
 // C include/monst.h:251 helpless().
 export function monsterIsHelpless(monster: Monster): boolean {
     return !!(monster.msleeping
@@ -700,11 +696,10 @@ export function levelFollower(monster: Monster, state: GameState): boolean {
 }
 
 // C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
-const S_GOLEM_POLY = 55;
 const PM_STONE_GOLEM_POLY = 257;
 
 export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
-    return MONSTER_SYMBOL[monster.mnum] === S_GOLEM_POLY
+    return monsterIsGolem(monster.mnum)
         && monster.mnum !== PM_STONE_GOLEM_POLY
         && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
 }

@@ -108,9 +108,18 @@ const M2_UNDEAD = 0x00000002;
 const M2_WERE = 0x00000004;
 const M2_HUMAN = 0x00000008;
 const M2_DEMON = 0x00000100;
+const M2_GIANT = 0x00002000;
+const M2_FEMALE = 0x00020000;
+const M2_PNAME = 0x00080000;
+const M2_ROCKTHROW = 0x08000000;
 const M2_ALWAYS_HOSTILE = 0x00100000;
 const M2_JEWELS = 0x20000000;
 const M1_FLY = 0x00000001;
+const M1_SWIM = 0x00000002;
+const M1_WALLWALK = 0x00000008;
+const M1_CONCEAL = 0x00000080;
+const M1_BREATHLESS = 0x00000400;
+const M1_NOEYES = 0x00001000;
 const M1_AMPHIBIOUS = 0x00000200;
 const M1_REGEN = 0x00800000;
 const M1_SEE_INVIS = 0x01000000;
@@ -158,6 +167,8 @@ const CORPSE_EATERS = new Set(['purple worm', 'baby purple worm', 'ghoul',
 const S_IMP = 9;
 const S_MIMIC = 13;
 const S_QUADRUPED = 17;
+const S_EYE = 5;
+const S_LIGHT = 25;
 const S_UNICORN = 21;
 const S_VORTEX = 22;
 const S_ANGEL = 27;
@@ -165,10 +176,12 @@ const S_CENTAUR = 29;
 const S_DRAGON = 30;
 const S_ELEMENTAL = 31;
 const S_JABBERWOCK = 36;
+const S_EEL = 57;
 const S_KOP = 37;
 const S_VAMPIRE = 48;
 export const S_GHOST = 54;
 const S_GOLEM = 55;
+const MS_SILENT = 0;
 const MS_NEMESIS = 37;
 const MS_GUARDIAN = 38;
 export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
@@ -270,6 +283,111 @@ export function monsterIsVerySmall(mnum: number) {
     return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;
 }
 
+// C mondata.h:bigmonst().  A missing size row reads as a medium body.
+export function monsterIsBig(mnum: number) {
+    return (MONSTER_SIZE[mnum] ?? MZ_MEDIUM) >= MZ_LARGE;
+}
+
+// C mondata.h:is_flyer(), M1_FLY.
+export function monsterIsFlyer(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);
+}
+
+// C mondata.h:is_floater(): eyes and lights float rather than fly.
+export function monsterIsFloater(mnum: number) {
+    return MONSTER_SYMBOL[mnum] === S_EYE || MONSTER_SYMBOL[mnum] === S_LIGHT;
+}
+
+// C mondata.h:is_clinger(), M1_CLING.
+export function monsterIsClinger(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);
+}
+
+// C mondata.h:is_hider(), M1_HIDE.
+export function monsterIsHider(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HIDE);
+}
+
+// C mondata.h:is_swimmer(), M1_SWIM.
+export function monsterIsSwimmer(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SWIM);
+}
+
+// C mondata.h:breathless(), M1_BREATHLESS.
+export function monsterIsBreathless(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_BREATHLESS);
+}
+
+// C mondata.h:amphibious(), M1_AMPHIBIOUS.
+export function monsterIsAmphibious(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_AMPHIBIOUS);
+}
+
+// C mondata.h:passes_walls(), M1_WALLWALK.
+export function monsterPassesWalls(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK);
+}
+
+// C mondata.h:haseyes(): bodies without the M1_NOEYES flag have eyes.
+export function monsterHasEyes(mnum: number) {
+    return !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES);
+}
+
+// C mondata.h:hides_under(), M1_CONCEAL.  Requires an object to hide under.
+export function monsterHidesUnder(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CONCEAL);
+}
+
+// C mondata.h:perceives(), M1_SEE_INVIS.
+export function monsterPerceives(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SEE_INVIS);
+}
+
+// C mondata.h:control_teleport(), M1_TPORT_CNTRL.
+export function monsterControlsTeleport(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT_CNTRL);
+}
+
+// C mondata.h:can_teleport(), M1_TPORT.
+export function monsterCanTeleport(mnum: number) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);
+}
+
+// C mondata.h:is_demon(), M2_DEMON.
+export function monsterIsDemon(mnum: number) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);
+}
+
+// C mondata.h:is_golem().
+export function monsterIsGolem(mnum: number) {
+    return MONSTER_SYMBOL[mnum] === S_GOLEM;
+}
+
+// C mondata.h:is_silent(), MS_SILENT.  A missing sound row is not silent.
+export function monsterIsSilent(mnum: number) {
+    return MONSTER_SOUND[mnum] === MS_SILENT;
+}
+
+// C mondata.h:type_is_pname(), M2_PNAME.
+export function monsterHasProperName(mnum: number) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME);
+}
+
+// C mondata.h:throws_rocks(), M2_ROCKTHROW.
+export function monsterThrowsRocks(mnum: number) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
+}
+
+// C mondata.h:is_giant(), M2_GIANT.
+export function monsterIsGiant(mnum: number) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);
+}
+
+// C mondata.h:is_female(), M2_FEMALE.
+export function monsterIsFemale(mnum: number) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_FEMALE);
+}
+
 export function monsterIsSlithy(mnum: number) {
     return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
 }
@@ -280,6 +398,12 @@ export function monsterIsCentaur(mnum: number) {
 
 export function monsterIsKop(mnum: number) {
     return MONSTER_SYMBOL[mnum] === S_KOP;
+}
+
+// Eels are the S_EEL class; like monsterIsKop/monsterIsCentaur this is a
+// symbol-class test with no mondata.h macro of its own.
+export function monsterIsEel(mnum: number) {
+    return MONSTER_SYMBOL[mnum] === S_EEL;
 }
 
 export function monsterCanBeSaddled(monster: SpeciesReference | null | undefined) {
@@ -483,7 +607,7 @@ export function monsterIsNonliving(mnum: number) {
 
 // Native mondata.h:weirdnonliving excludes undead and manes.
 export function monsterIsWeirdNonliving(mnum: number) {
-    return MONSTER_SYMBOL[mnum] === S_VORTEX || MONSTER_SYMBOL[mnum] === S_GOLEM;
+    return MONSTER_SYMBOL[mnum] === S_VORTEX || monsterIsGolem(mnum);
 }
 
 // BEGIN GENERATED MONSTER GROWTH DATA

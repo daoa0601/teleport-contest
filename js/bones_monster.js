@@ -10,7 +10,7 @@ import { peaceMinded, propagateMonsterSpecies } from './makemon.js';
 import { setMonsterMalign } from './makemon.js';
 import { hideMonsterOnRestore } from './save.js';
 import { hideMonsterUnder, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterHidesUnder } from './monster_data.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
 import { hasShopkeeperData } from './shop_types.js';
@@ -152,7 +152,7 @@ export async function restoreBonesMonsters(level, state) {
     }
     for (const monster of monsters) {
         setShopResidency(monster, false, state);
-        if (monster.mundetected && ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL))
+        if (monster.mundetected && (monsterHidesUnder(monster.mnum)))
             await hideMonsterUnder(monster, state);
         if (!monster.isshk) {
             const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;

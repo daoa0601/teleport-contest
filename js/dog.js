@@ -15,7 +15,7 @@ import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall, monsterTypeName, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
 import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
@@ -224,7 +224,7 @@ export async function makePetWary(monster, { wasDead = true, state = game, rando
         }
         if (!wasDead && cansee(monster.mx, monster.my) && heroHasEyes(state)) {
             const subject = monsterName(monster, { state, capitalized: true });
-            const hasEyes = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x1000);
+            const hasEyes = monsterHasEyes(monster.mnum);
             await publish(hasEyes
                 ? `${subject} ${monster.mpeaceful ? 'seems unable' : 'refuses'} to look you in the ${heroEyeName(state)}.`
                 : `${subject} avoids your gaze.`);

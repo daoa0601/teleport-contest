@@ -11,7 +11,7 @@ import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } fro
 import { commandResultCancelled } from './cmd.js';
 import { nomul } from './hack.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsFlyer, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
@@ -119,7 +119,7 @@ export async function dosounds(state = requireInitializedGame()) {
     }
     if (flags.has_beehive && !rn2(200)) {
         const bee = livingResidents(state).find(monster => MONSTER_SYMBOL[monster.mnum] === S_ANT
-            && (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY
+            && monsterIsFlyer(monster.mnum)
             && monInRoom(monster, BEEHIVE, state));
         if (bee) {
             await hearChoice(state, [
@@ -257,7 +257,7 @@ async function hear(state, message) {
 export async function dochat() {
     const species = heroSpecies(game);
     let refusal = null;
-    if (MONSTER_SOUND[species] === 0)
+    if (monsterIsSilent(species))
         refusal = `As ${withIndefiniteArticle(monsterTypeName(species, !!game.flags.female))}, you cannot speak.`;
     else if (propertyIsActive('strangled', game))
         refusal = "You can't speak.  You're choking!";
@@ -471,7 +471,7 @@ export async function publishMonsterNoise(monster, state = game) {
         return true;
     }
     if (sound === MS_SELL) {
-        if (!hallucinating || MONSTER_SOUND[monster.mnum] === MS_SILENT || monster.isshk && rn2(2) === 0)
+        if (!hallucinating || monsterIsSilent(monster.mnum) || monster.isshk && rn2(2) === 0)
             await chatWithShopkeeper(monster, state);
         else
             await plineWithContinuation(`"15 minutes could save you 15 ${currency(15, { state })}."`);

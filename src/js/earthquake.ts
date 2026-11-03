@@ -20,7 +20,7 @@ import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } 
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { MONSTER_FLAGS1, monsterIsHumanoid, monsterSpeciesHidesOnCeiling } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterSpeciesHidesOnCeiling } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
@@ -118,7 +118,7 @@ function finishEarthquakeLiquidDeath(
 
 function heroClingsToCeiling() {
     if (!heroIsPolymorphed(game)) return false;
-    return !!((MONSTER_FLAGS1[game.u.umonnum ?? -1] || 0) & M1_CLING);
+    return monsterIsClinger(game.u.umonnum ?? -1);
 }
 
 function heroIsAirborne() {
@@ -273,7 +273,7 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
                 await plineWithContinuation(
                     `${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`,
                 );
-            } else if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_FLY)) {
+            } else if (!(monsterIsFlyer(monster.mnum))) {
                 await publishHeardMessage('a thump.', plineWithContinuation);
             }
         }

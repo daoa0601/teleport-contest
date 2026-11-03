@@ -54,7 +54,7 @@ import { objectQuantity, splitObjectStack, objectWeight } from './mkobj.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsGiant, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_CHARGED, OBJECT_DELAY, OBJECT_NAMES, OBJECT_NUTRITION, OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, requireObjectData } from './object_data.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
@@ -989,7 +989,7 @@ export async function beginMealMimicry(turns, { state = game } = {}) {
 }
 // C eat.c:corpse_intrinsic().
 export function chooseCorpseIntrinsic(mnum) {
-    const giant = !!(requireMonsterData(MONSTER_FLAGS2, mnum) & M2_GIANT);
+    const giant = monsterIsGiant(mnum);
     let count = giant ? 1 : 0;
     let selected = giant ? 'strength' : null;
     for (const property of CANDIDATES) {
@@ -1227,10 +1227,10 @@ function tinSmell(species, state) {
     if (heroIsHallucinating(state))
         return makePlural(randomDisplayMonsterName());
     if (species === PM_WIZARD || requireMonsterData(MONSTER_GENO, species) & G_UNIQ
-        && !(requireMonsterData(MONSTER_FLAGS2, species) & M2_PNAME)
+        && !(monsterHasProperName(species))
         && species !== PM_HIGH_CLERIC && species !== PM_LONG_WORM_TAIL)
         return `the ${requireMonsterData(MONSTER_NAME, species)}`;
-    return requireMonsterData(MONSTER_FLAGS2, species) & M2_PNAME ? requireMonsterData(MONSTER_NAME, species) : makePlural(requireMonsterData(MONSTER_NAME, species));
+    return monsterHasProperName(species) ? requireMonsterData(MONSTER_NAME, species) : makePlural(requireMonsterData(MONSTER_NAME, species));
 }
 // C eat.c:consume_tin().
 function currentTin(state) {
@@ -1526,7 +1526,7 @@ async function describeCorpseTaste(food, rotted, state) {
     else {
         description = yummy ? 'delicious' : palatable ? taste.slice(1) : 'terrible';
     }
-    const prefix = requireMonsterData(MONSTER_FLAGS2, species) & M2_PNAME ? ''
+    const prefix = monsterHasProperName(species) ? ''
         : requireMonsterData(MONSTER_GENO, species) & G_UNIQ ? 'The ' : 'This ';
     const name = foodObjectName(food, { state }).replace(/^the /i, '');
     await pline(`${prefix}${name} ${verb} ${description}${yummy || !palatable ? '!' : '.'}`);
@@ -1856,7 +1856,7 @@ export async function digestAccessory(object, { state = game } = {}) {
         grantIntrinsicProperty(property, 'outside', state);
         if (object.otyp === SEE_INVISIBLE) {
             await refreshHeroSeeing({ state });
-            const innateSight = requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & 0x01000000;
+            const innateSight = monsterPerceives(state.u.umonnum);
             if (heroIsInvisible(state) && !oldIntrinsic && !extrinsicProperty(property, state)
                 && !innateSight && !heroIsBlind(state)) {
                 await newsym(state.u.ux, state.u.uy);

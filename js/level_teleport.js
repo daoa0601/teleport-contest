@@ -11,7 +11,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth } from './hacklib.js';
 import { heroSpecies } from './polyself.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
-import { MONSTER_SOUND } from './monster_data.js';
+import { monsterIsSilent } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { rn2, rnd, rnl } from './rng.js';
@@ -249,7 +249,7 @@ export function levelDepthByName(input, state = game) {
 async function teleportToNowhere(state) {
     if (await promptYesNoQuit('Go to Nowhere.  Are you sure?') !== 'y')
         return;
-    const action = MONSTER_SOUND[heroSpecies(state)] === 0 ? 'writhe' : 'scream';
+    const action = monsterIsSilent(heroSpecies(state)) ? 'writhe' : 'scream';
     await plineWithContinuation(`You ${action} in agony as your body begins to warp...`);
     await flushPendingTopline();
     await plineWithContinuation('You cease to exist.');

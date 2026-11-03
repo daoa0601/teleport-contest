@@ -19,7 +19,7 @@ import { watchDigging, digMonsterTunnel, diggingTimeToHole } from './dig.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage, learnWand } from './zap.js';
-import { monsterHasNoAttacks, monsterHasNoLimbs, monsterIsAmorphous, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsMindFlayer, MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsAnimal, monsterIsCovetous, monsterIsMindless, monsterIsNoncorporeal, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsUnsolid, monsterIsThickSkinned, monsterTypeName, MONSTER_HAS_WEAPON_ATTACK, speciesEatsCorpses, MONSTER_SOUND, MONSTER_DIFFICULTY } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterCanTeleport, monsterHasNoAttacks, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, monsterTypeName, speciesEatsCorpses } from './monster_data.js';
 import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
@@ -29,7 +29,7 @@ import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCa
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
-import { monsterCorrodesBars, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
+import { canTrack, monsterCorrodesBars, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
 import { adjustMonsterSpeed, setMonsterPermanentInvisibility } from './worn.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './rock_breakage.js';
@@ -129,7 +129,6 @@ const M1_TUNNEL = 0x00000020;
 const M1_NEEDPICK = 0x00000040;
 const M1_CONCEAL = 0x00000080;
 const M1_HIDE = 0x00000100;
-const M1_NOEYES = 0x00001000;
 const M1_NOHANDS = 0x00002000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
@@ -556,7 +555,7 @@ export async function checkMonsterHeroRange(monster: Monster, {
         && !(monster.mnum === PM_GRID_BUG && dx && dy);
     const seesHero = monster.mcansee
         && (!heroIsInvisible(state)
-            || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS));
+            || (monsterPerceives(monster.mnum)));
     const scary = monsterIsScaredAt(monster, state,
         seesHero ? state.u.ux : targetX, seesHero ? state.u.uy : targetY);
     const scared = nearby && (scary
@@ -678,7 +677,7 @@ export function searchMonsterItems(monster: Monster, state: PlayingGameState, {
                 const pile = state.level.objects[x]?.[y];
                 if (!pile?.length || radius < distmin(mx, my, x, y)
                     || !monsterCouldReachItem(monster, x, y, state)) continue;
-                if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL) && cansee(x, y)) continue;
+                if ((monsterHidesUnder(monster.mnum)) && cansee(x, y)) continue;
                 const occupant = monsterAtPosition(state.level, x, y);
                 if (occupant && (occupant.msleeping || !occupant.mcanmove || occupant.mundetected
                     || (occupant.mappearance && !occupant.iswiz) || !MONSTER_MOVE[occupant.mnum])) continue;
@@ -1673,10 +1672,8 @@ async function moveHostile(
         preferredRange = { min: approach.min, max: approach.max };
 
         // C can_track(): Excalibur lets even eyeless monsters follow tracks.
-        const heroWeapon = state.uwep || state.u.uwep;
-        const canTrack = !(speciesFlags & M1_NOEYES)
-            || artifactById(heroWeapon?.oartifact, state)?.name === 'Excalibur';
-        if (!shouldSee && canTrack) {
+        const trackable = canTrack(monster.mnum, state);
+        if (!shouldSee && trackable) {
             const track = getTrack(oldx, oldy, state);
             if (track) {
                 gx = track.x;
@@ -1693,7 +1690,7 @@ async function moveHostile(
     // peaceful actors, before approach determines whether combat forbids it.
     if ((!monster.mpeaceful || recordRandom(random, calls, 10) === 0)
         && !Is_rogue_level(state.u.uz, state)) {
-        const throwsRocks = !!((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_ROCKTHROW);
+        const throwsRocks = monsterThrowsRocks(heroSpecies(state));
         const inLine = monsterLinedUpWithPerceivedHero(monster, state, random, calls)
             && distmin(oldx, oldy, monster.mux, monster.muy)
                 <= (throwsRocks ? 20 : Math.trunc(currentAttribute(A_STR, state) / 2) + 1);
@@ -2128,8 +2125,8 @@ async function postMoveHideUnder(
     calls: MonsterCallLog,
 ) {
     const originalSpecies = requireMovementCapabilities(movement).species;
-    const hidesUnder = !!((MONSTER_FLAGS1[originalSpecies] ?? 0) & M1_CONCEAL);
-    const eel = MONSTER_SYMBOL[originalSpecies] === S_EEL;
+    const hidesUnder = monsterHidesUnder(originalSpecies);
+    const eel = monsterIsEel(originalSpecies);
     if (!hidesUnder && !eel) return;
     const helpless = !monster.mcanmove || monster.msleeping || (monster.mfrozen ?? 0) > 0;
     if (monster.mundetected || (!helpless && recordRandom(random, calls, 5) !== 0))
@@ -2544,7 +2541,7 @@ export async function takeMonsterTurn(
     if (monster.mflee) {
         const teleports =
             recordRandom(random, calls, 40) === 0 &&
-            !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TPORT) &&
+            !!(monsterCanTeleport(monster.mnum)) &&
             !monster.iswiz &&
             !monsterTeleportRestricted(monster, state);
         if (teleports) {
@@ -2900,7 +2897,7 @@ export async function moveMonsterAfterTrap(
     // its trailing distfleeck() and may subsequently attack.
     if (
         !movement &&
-        (MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_CONCEAL &&
+        monsterHidesUnder(monster?.mnum) &&
         canMonsterHideUnderObjectAt(state, monster.mx, monster.my) &&
         recordRandom(random, calls, 10) !== 0
     ) {
@@ -2975,7 +2972,7 @@ export async function runMonsterAction(
     // with M1_CONCEAL remains active after hiding beneath an object and
     // can spend another movement ration in this same movemon() pass.
     const restrapped = await attemptMonsterRestrap(monster, state, { random, calls });
-    const isHider = !!((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_HIDE);
+    const isHider = !!(monsterIsHider(monster?.mnum));
     if (
         isHider &&
         (restrapped ||
@@ -2998,7 +2995,7 @@ export async function runMonsterAction(
     }
     // Eels get one pre-dochug opportunity to hide again.  A stranded eel
     // still owns the 1-in-4 probe, but hideunder() fails on dry terrain.
-    const eel = MONSTER_SYMBOL[monster.mnum] === S_EEL;
+    const eel = monsterIsEel(monster.mnum);
     const nextToHero =
         distmin(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) <=
         1;
@@ -3028,7 +3025,7 @@ export async function runMonsterAction(
     const inSight =
         !state?.viz_array || !!((state.viz_array?.[monster.my]?.[monster.mx] ?? 0) & 0x2);
     const heroInvisible = heroIsInvisible(state);
-    const perceivesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    const perceivesInvisible = monsterPerceives(monster.mnum);
     if (
         heroHasConflict(state) &&
         !monster.iswiz &&

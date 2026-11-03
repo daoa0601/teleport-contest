@@ -3,7 +3,7 @@ import { W_AMUL, W_RINGL, W_RINGR } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, monsterHasHead, monsterIsMindless, monsterIsUnsolid, } from './monster_data.js';
+import { MONSTER_FLAGS1, monsterHasHead, monsterIsBreathless, monsterIsMindless, monsterIsUnsolid } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
@@ -46,7 +46,7 @@ export async function showHeroSilverContact(monster, silverMask, { state = game,
 export function monsterCanBeStrangled(monster) {
     if (!monsterHasHead(monster))
         return false;
-    const nonbreathing = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_BREATHLESS)
+    const nonbreathing = monsterIsBreathless(monster.mnum)
         || (monster.minvent ?? []).some(object => object.otyp === AMULET_OF_MAGICAL_BREATHING
             && !!((object.owornmask ?? 0) & W_AMUL));
     return !monsterIsMindless(monster.mnum) || !nonbreathing;

@@ -12,7 +12,7 @@ import { iceDescriptionAt } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsHumanoid, MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_FLAGS2, monsterIsAmorphous, monsterIsUnsolid, monsterIsWhirly, MONSTER_BODY_META, MONSTER_GENO, MONSTER_MOVE, monsterIsMindless, monsterTypeName, monsterDigests, monsterIsAnimal, requireMonsterData, MONSTER_ALIGNMENT } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterIsAmorphous, monsterIsAnimal, monsterIsClinger, monsterIsHumanoid, monsterIsMindless, monsterIsUnsolid, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
@@ -32,7 +32,7 @@ import { plineWithContinuation, pline } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterIsHelpless } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless } from './mondata.js';
 import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap } from './teleport.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { monsterName as canonicalMonsterName, monsterName, monsterName as perceivedMonsterName } from './do_name.js';
@@ -118,7 +118,7 @@ import { setMulti } from './cmd.js';
 import { levelAtDepth } from './dungeon.js';
 import { inventoryItemDescription } from './invent.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, poly_obj } from './zap.js';
-import { monsterHasNoLimbs, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
+import { monsterHasNoLimbs, monsterIsNonliving, monsterIsVampireShifter, monsterIsBreathless, monsterIsBig, monsterIsFloater, monsterIsFlyer } from './monster_data.js';
 import { transientObjectGlyph } from './display.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES } from './object_data.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -895,7 +895,7 @@ export async function triggerMonsterTrap(monster, state, movement, random, rollD
         // discovers that this level has nowhere to fall.
         if (!canFallThrough(state.u.uz))
             return null;
-        const clinging = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CLING) && levelHasCeiling(state);
+        const clinging = monsterIsClinger(monster.mnum) && levelHasCeiling(state);
         const airborne = monsterFliesOrFloats(monster) || clinging;
         const tooLarge = (MONSTER_SIZE[monster.mnum] ?? 2) >= 4;
         const longWorm = !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
@@ -1513,7 +1513,7 @@ export function beginMonsterPitTrap(monster, trap, state = game, { forced = fals
     const visibility = monsterTrapVisibility(monster, state);
     const spiked = trap.ttyp === SPIKED_PIT;
     const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
-    if (falls && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK))
+    if (falls && !monsterPassesWalls(monster.mnum))
         monster.mtrapped = 1;
     return {
         kind: 'pit-trap',
@@ -3120,7 +3120,7 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
 export async function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible = !monsterResistsSleep(monster) &&
-        !monsterIsBreathless(monster) &&
+        !monsterIsBreathless(monster.mnum) &&
         !monsterIsHelpless(monster);
     const slept = susceptible ? await putMonsterToSleep(monster, rollOne(25)) : false;
     return {
@@ -3315,7 +3315,7 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
     if (monsterInventory(monster).some((object) => artifactById(object?.oartifact)?.carriedDefense === 'magic')) {
         damage += rollOne(4);
     }
-    if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK)
+    if (monsterPassesWalls(monster.mnum))
         damage = Math.trunc((damage + 3) / 4);
     if (trap && monsterTrapVisibility(monster, state).inSight)
         await seeTrap(trap, state);
@@ -3817,7 +3817,6 @@ export async function fillPitWithBoulderAt(x, y, state = game, { publish = pline
 // C ref: trap.c dountrap(), could_untrap(), and untrap().
 const G_UNIQ = 0x1000;
 const S_HUMAN = 53;
-const MZ_LARGE = 3;
 function heroIsImpaired(state) {
     const hero = state.u;
     return !!hero.confused || (hero.confusionTurns ?? 0) > 0
@@ -3834,7 +3833,7 @@ function heroPassesWallsForUntrap(state) {
         return true;
     const form = (state.u.mtimedone ?? 0) > 0 ? state.u.umonnum : null;
     return form !== null && form !== undefined && Number.isInteger(form)
-        && !!((MONSTER_FLAGS1[form] ?? 0) & M1_WALLWALK);
+        && !!monsterPassesWalls(form);
 }
 function monsterAt(state, x, y) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
@@ -4107,7 +4106,7 @@ async function tryDisarm(trap, { state, publish, random, rollOne, luckRandom, en
         && heroBadRock(state, trap.tx, state.u.uy)
         && (((state.inventory || []).length > 0
             && inventoryWeight(state) > WT_TOOMUCH_DIAGONAL)
-            || (MONSTER_SIZE[heroSpecies(state)] ?? 2) >= MZ_LARGE));
+            || monsterIsBig(heroSpecies(state))));
     if (tooTight) {
         await publish(`You are unable to reach the ${trapName(trap.ttyp, { state })}!`);
         return 0;
@@ -5326,7 +5325,7 @@ async function triggerSleepingGasTrap(trap) {
     }
     const steed = hero.usteed;
     if (!steed || monsterResistsSleep(steed)
-        || monsterIsBreathless(steed) || monsterIsHelpless(steed))
+        || monsterIsBreathless(steed.mnum) || monsterIsHelpless(steed))
         return;
     steed.mx = hero.ux;
     steed.my = hero.uy;
@@ -5458,7 +5457,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
             position = next;
             const monster = monsterAtPosition(level, position.x, position.y);
             if (monster) {
-                if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW && random(3)) {
+                if (monsterThrowsRocks(monster.mnum) && random(3)) {
                     if (cansee(position.x, position.y))
                         await publish(`${monsterName(monster, { state, capitalized: true })} snatches the boulder.`);
                     boulder.otrapped = false;
@@ -6279,8 +6278,8 @@ export async function floatHeroUp(state = game, previous = null) {
         await plineWithContinuation('You start to float in the air!');
     }
     const steed = hero.usteed;
-    if (steed && ![5, 25].includes(requireMonsterData(MONSTER_SYMBOL, steed.mnum))
-        && !(requireMonsterData(MONSTER_FLAGS1, steed.mnum) & 0x01)) {
+    if (steed && !monsterIsFloater(steed.mnum)
+        && !monsterIsFlyer(steed.mnum)) {
         if (levitationAtWill(state)) {
             await plineWithContinuation(`${holdingMonsterSubject(steed, state)} magically floats up!`);
         }

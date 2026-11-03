@@ -113,12 +113,12 @@ split `rnl` row use this batch's complete runs.
 | `weapon_dam_bonus:state` | `weapon.c:weapon_dam_bonus` ↔ `skills.js:weaponSkillDamageBonus` | Same relation | 1×1 joined | 4.7 s |
 | `is_animal:tables` | `mondata.h:is_animal` ↔ `monster_data.js:monsterIsAnimal` | Same initial-species domain | 1×1 | 1.9 s |
 | `noncorporeal:tables` | `mondata.h:noncorporeal` ↔ `monster_data.js:monsterIsNoncorporeal` | Same domain; initial symbols | 1×1 | 3.6 s |
-| `breathless:tables` | `mondata.h:breathless` ↔ `mondata.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
+| `breathless:tables` | `mondata.h:breathless` ↔ `monster_data.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
 | `passes_bars:tables` | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
 | `armor_to_dragon` | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
 | `weight:stack` | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
 | `verysmall:tables` | `mondata.h:verysmall` ↔ `monster_data.js:monsterIsVerySmall` | Valid initial species; native/emitted size tables | 1×1 | 2.3 s |
-| `haseyes:tables` | `mondata.h:haseyes` ↔ `uhitm.js:hasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
+| `haseyes:tables` | `mondata.h:haseyes` ↔ `monster_data.js:monsterHasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
 | `hates_silver:tables` | `mondata.c:hates_silver` ↔ `monster_data.js:monsterSpeciesHatesSilver` | Valid initial species; pointer identity vs mons[PM_SHADE]/mons[PM_TENGU]; flags and symbols | 3×5 | 5.1 s |
 | `mon_hates_blessings:state` | `mondata.c:mon_hates_blessings` ↔ `monster_data.js:monsterHatesBlessings` | Valid species and shifter species cham 0..NUMMONS-1; mons[] pointer; native/emitted tables | 2×2 | 2.6 s |
 | `mon_resistancebits:state` | `monst.h:mon_resistancebits` ↔ `mondata.js:monsterResistanceBits` | Valid species; ushort extrinsic/intrinsic masks 0..65535; native/emitted resists table | 1×1 | 1.3 s |

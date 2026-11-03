@@ -13,7 +13,7 @@ import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterHatesBlessings, monsterHasNoLimbs, monsterIsAnimal, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterTypeName, requireMonsterData, MONSTER_RESISTS } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory, selectHeroDisenchantmentTarget } from './do_wear.js';
@@ -308,7 +308,7 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     if (casterVisible || heroAttack.directed) {
                         const misplaced = monster.mux !== game.u.ux || monster.muy !== game.u.uy;
                         const target = !heroAttack.directed ? ''
-                            : heroIsInvisible(game) && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x01000000) && misplaced
+                            : heroIsInvisible(game) && !(monsterPerceives(monster.mnum)) && misplaced
                                 ? ' at a spot near you'
                                 : heroIsDisplaced(game) && misplaced ? ' at your displaced image' : ' at you';
                         await publishSpellMessage(`${caster} casts a spell${target}!`);
@@ -933,7 +933,7 @@ function monsterAttackThreshold(monster, state, rollOne, calls) {
         (monster.m_lev ?? MONSTER_LEVEL[monster.mnum] ?? 0);
     if (heroHasInvoluntaryDelay(state))
         threshold += 4;
-    const perceivesInvisible = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+    const perceivesInvisible = monsterPerceives(monster.mnum);
     if ((heroIsInvisible(state) && !perceivesInvisible) || !monster.mcansee)
         threshold -= 2;
     if (monster.mtrapped)
@@ -1001,7 +1001,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
     if (monster.dead || monster.mhp <= 0)
         return { heroAttackResult: 1 };
     if ((state.underwater || state.u.uinwater)
-        && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SWIM))
+        && !(monsterIsSwimmer(monster.mnum)))
         return {};
     if (state.u.uswallow) {
         if (state.u.ustuck !== monster)
@@ -1049,7 +1049,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
     // C mhitu.c:721-724 — make eels visible the moment they hit or miss us.
-    if (MONSTER_SYMBOL[monster.mnum] === S_EEL && monster.minvis
+    if (monsterIsEel(monster.mnum) && monster.minvis
         && cansee(monster.mx, monster.my)) {
         monster.minvis = 0;
         await newsym(monster.mx, monster.my);
@@ -1472,8 +1472,8 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     const hiddenUnder = hit &&
         !retainedAttackRoll &&
         monster.mundetected &&
-        ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_CONCEAL ||
-            MONSTER_SYMBOL[monster.mnum] === S_EEL);
+        (monsterHidesUnder(monster.mnum) ||
+            monsterIsEel(monster.mnum));
     if (hiddenUnder) {
         if (!canSpotMonster(monster))
             await map_invisible(monster.mx, monster.my);
@@ -2694,7 +2694,7 @@ export async function monsterMissMessage(monster, attack, state, random) {
 async function wildMissMessage(monster, attack, state, random) {
     const invisible = heroIsInvisible(state);
     const unseen = !monster.mcansee
-        || invisible && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS);
+        || invisible && !(monsterPerceives(monster.mnum));
     const displaced = heroIsDisplaced(state);
     const submerged = !!(state.underwater || state.u.uinwater);
     if (!unseen && !displaced && !submerged) {

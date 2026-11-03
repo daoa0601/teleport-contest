@@ -14,7 +14,7 @@ import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, monsterHasEyes } from './monster_data.js';
 import {
     BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS,
 } from './object_data.js';
@@ -42,7 +42,7 @@ export function heroResistsBlindingLight(state: GameState = game): boolean {
 
 export function monsterResistsBlindingLight(monster: Monster, state: GameState = game): boolean {
     return !!monster.mblinded || !monster.mcansee || !!monster.msleeping
-        || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+        || !monsterHasEyes(monster.mnum)
         || (MONSTER_ATTACKS[monster.mnum] || []).some(([method, damage]) =>
             damage === AD_BLND && (method === AT_EXPL || method === AT_GAZE))
         || monsterHasArtifactDefense(monster, 'blindness', state);
@@ -90,7 +90,7 @@ export function monsterCanBeBlindedByObject(
     } = {},
 ) {
     if (!monster || ![CREAM_PIE, BLINDING_VENOM].includes(objectType)) return false;
-    if ((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NOEYES) return false;
+    if (!monsterHasEyes(monster?.mnum)) return false;
     if (!monster?.mcansee && (monster?.mblinded ?? 0) === 0) return false;
     // "a crow will not pluck out the eye of another crow"
     if (attackerSpecies === PM_RAVEN && monster.mnum === PM_RAVEN) return false;
@@ -138,7 +138,7 @@ export function heroBlindingObjectHitMessage(
 }
 
 function creamPieTarget(monster: Monster, name: string): string {
-    const hasFace = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+    const hasFace = monsterHasEyes(monster.mnum)
         && monster.mnum !== PM_FLOATING_EYE;
     if (!hasFace) return name;
     const face = monsterFaceName(monster.mnum);

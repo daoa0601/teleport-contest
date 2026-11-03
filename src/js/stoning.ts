@@ -25,7 +25,7 @@ import type { RandomBelow } from './monster_action_types.js';
 import { game, requireLiveGame } from './gstate.js';
 import { cureHeroVomiting } from './potion.js';
 import { healHeroLegs } from './do.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, monsterIsGolem } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterName } from './do_name.js';
@@ -127,7 +127,7 @@ export function formCanBecomeStoneGolem(mnum: number | undefined, state: GameSta
     const stoneGolemGenocided = !!(
         (state.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD
     );
-    return mnum !== undefined && MONSTER_SYMBOL[mnum] === S_GOLEM && mnum !== PM_STONE_GOLEM
+    return mnum !== undefined && monsterIsGolem(mnum) && mnum !== PM_STONE_GOLEM
         && !stoneGolemGenocided;
 }
 

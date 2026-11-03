@@ -13,7 +13,7 @@ import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './polyself.js';
 import { resetHeroFaint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
 import { offerGoldToMonster } from './minion.js';
 import { monsterName } from './do_name.js';
@@ -36,7 +36,7 @@ export async function talkToDemon(monster, state, random = rn2, rollOne = rnd) {
     if (monster.mux !== state.u.ux || monster.muy !== state.u.uy) {
         await plineWithContinuation(`${cansee(monster.mux ?? 0, monster.muy ?? 0)
             ? monsterName(monster, { state, capitalized: true }) : 'It'} whispers at thin air.`);
-        if ((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_DEMON)
+        if (monsterIsDemon(heroSpecies(state)))
             await relocateDemon(monster, state, random, rollOne);
         else {
             monster.minvis = monster.perminvis = false;
@@ -68,7 +68,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         if ((state.multi ?? 0) > 0)
             endVoluntaryMultiTurn(state);
     }
-    if (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON)
+    if ((monsterIsDemon(monster.mnum))
         && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PRINCE) && monster.minvis) {
         const unseen = !canSpotMonster(monster);
         monster.minvis = monster.perminvis = false;

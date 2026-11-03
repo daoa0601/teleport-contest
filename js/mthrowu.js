@@ -42,7 +42,7 @@ import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2 
 import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
@@ -123,7 +123,7 @@ async function hitHeroWithProjectile(shot, context) {
         if (object.otyp === ELVEN_ARROW)
             damage++;
     }
-    if ((MONSTER_SIZE[heroSpecies(state)] ?? 0) >= 3)
+    if (monsterIsBig(heroSpecies(state)))
         accuracy++;
     accuracy += 8 + object.spe;
     if (zeroDamage)
@@ -1105,7 +1105,7 @@ export async function attackHeroWithPolearm(monster, weapon, state = game, { pub
         damage = Math.ceil(damage / 2);
     const heroDistance = Math.max(Math.abs(state.u.ux - monster.mx), Math.abs(state.u.uy - monster.my));
     let accuracy = Math.max(-4, 3 - heroDistance) + 8 + (weapon.spe ?? 0);
-    if ((MONSTER_SIZE[heroSpecies(state)] ?? 0) >= 3)
+    if (monsterIsBig(heroSpecies(state)))
         accuracy++;
     const result = await hitHeroWithObject(weapon, damage, accuracy, { state, publish, rollOne });
     if (!result.died)
@@ -1164,7 +1164,7 @@ export function monsterLinedUpWithHero(source, state, random = rn2) {
             || appearance !== M_AP_NOTHING && appearance !== M_AP_MONSTER))
         return false;
     const inventory = source.minvent ?? source.inventory ?? [];
-    const ignoresBoulders = !!((MONSTER_FLAGS2[source.mnum] ?? 0) & M2_ROCKTHROW)
+    const ignoresBoulders = monsterThrowsRocks(source.mnum)
         || inventory.some(object => object.otyp === WAN_STRIKING);
     // A native monster that has not located the hero has zeroed mux/muy.
     const target = { x: source.mux ?? 0, y: source.muy ?? 0 };

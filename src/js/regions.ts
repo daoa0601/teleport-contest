@@ -28,10 +28,7 @@ import { makePlural } from './objnam.js';
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
 import { validCloudPosition } from './read.js';
-import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND,
-    MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
-} from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, monsterHasEyes, monsterIsBreathless, monsterIsEel } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
@@ -377,11 +374,11 @@ function poisonGasImmuneSpecies(
 ): boolean {
     if (typeof mnum !== 'number' || !Number.isInteger(mnum)) return false;
     if (monsterIsNonliving(mnum)
-        || (MONSTER_FLAGS1[mnum] ?? 0) & M1_BREATHLESS
+        || monsterIsBreathless(mnum)
         || mnum === PM_VROCK || mnum === PM_HEZROU
         || poisonBreather(mnum)) return true;
     const waterLevel = sameLevel(state.u?.uz, state.water_level);
-    return (MONSTER_SYMBOL[mnum] === S_EEL || waterLevel)
+    return (monsterIsEel(mnum) || waterLevel)
         && isPoolAt(x, y, state);
 }
 
@@ -481,7 +478,7 @@ async function affectMonsterWithGas(
         }
         await onAnger(monster);
     }
-    if (!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+    if (monsterHasEyes(monster.mnum)
         && monster.mcansee !== 0 && monster.mcansee !== false) {
         monster.mblinded = 1;
         monster.mcansee = 0;

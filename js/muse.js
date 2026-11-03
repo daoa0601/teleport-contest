@@ -16,7 +16,7 @@ import { monsterHasMagicResistance } from './trap.js';
 import { touchPetrifies } from './stoning.js';
 import { fillPitWithBoulderAt, finishImmediateMonsterTrap, seeTrap, trapAt, triggerImmediateMonsterTrap, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
-import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
 import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_SUBTYPE, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING } from './object_data.js';
@@ -548,7 +548,7 @@ function physicalEscape(monster, state, stuck) {
     }
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const ignoreBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) === 0
-        || !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW) || !!(flags & M1_WALLWALK);
+        || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
     const spots = [{ x: monster.mx, y: monster.my }];
     for (let x = monster.mx - 1; x <= monster.mx + 1; x++)
         for (let y = monster.my - 1; y <= monster.my + 1; y++)
@@ -775,7 +775,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             if (cansee(x, y)) {
                 await publish(`${subject()} has made a ${hole ? 'hole' : 'pit'} in the ${surfaceName(x, y, state)}.`);
                 if (hole)
-                    await publish(`${subject()} ${(MONSTER_FLAGS1[monster.mnum] ?? 0) & 1 ? 'dives' : 'falls'} through...`);
+                    await publish(`${subject()} ${monsterIsFlyer(monster.mnum) ? 'dives' : 'falls'} through...`);
             }
             else if (hole && !heroIsDeaf(state))
                 await publishHeardMessage(`something crash through the ${surfaceName(x, y, state)}.`, publish, state);
@@ -1103,10 +1103,10 @@ export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}
             continue;
         if (object.otyp === SCR_EARTH
             && (objectIsHardHelmet(helmet) || monster.mconf || monsterIsAmorphous(monster)
-                || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_WALLWALK)
+                || (monsterPassesWalls(monster.mnum))
                 || monsterIsNoncorporeal(monster) || monsterIsUnsolid(monster) || !random(10))
             && distance <= 2 && monster.mcansee
-            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES)
+            && monsterHasEyes(monster.mnum)
             && !sameLevel(state.u.uz, state.rogue_level)
             && (state.u.uz.dnum !== state.astral_level?.dnum || sameLevel(state.u.uz, state.earth_level)))
             choice = { kind: 'earth-scroll', object };
@@ -1564,8 +1564,8 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
                     || MONSTER_NAME[monster.mnum] === 'grid bug' && x !== monster.mx && y !== monster.my
                     || monsterAt(state, x, y, monster))
                     continue;
-                const ignoresBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) < 1
-                    || !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ROCKTHROW) || !!(flags & M1_WALLWALK);
+                const ignoresBoulders = monsterIsVerySmall(monster.mnum)
+                    || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
                 if (!ignoresBoulders && state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER)
                     || monsterIsScaredAt(monster, state, x, y))
                     continue;
@@ -2033,7 +2033,7 @@ export function monsterSearchesForItem(monster, object, state) {
 async function cureMonsterBlindness(monster, seen, options) {
     monster.mcansee = 1;
     monster.mblinded = 0;
-    if (seen && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOEYES))
+    if (seen && monsterHasEyes(monster.mnum))
         await (options.publish ?? plineWithContinuation)(`${monsterName(monster, { state: options.state, capitalized: true })} can see again.`);
 }
 // C muse.c:mcould_eat_tin().

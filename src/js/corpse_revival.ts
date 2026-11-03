@@ -15,7 +15,7 @@ import { delobjCore } from './invent.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { findMonsterNearPosition, makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { MONSTER_BODY_META, MONSTER_GENO,  MONSTER_SYMBOL, monsterIsDisplacer } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, monsterIsDisplacer, monsterIsEel } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance, changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { upstart } from './hacklib.js';
@@ -304,7 +304,7 @@ async function createRevivedMonster(corpse: CorpseObject, location: CorpseReviva
 
     const targetLocation = state.level?.at?.(x, y);
     if (corpse.norevive
-        || (MONSTER_SYMBOL[originalMnum] === S_EEL
+        || (monsterIsEel(originalMnum)
             && (!targetLocation || !IS_POOL(targetLocation.typ)))) {
         return {
             monster: null,

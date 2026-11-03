@@ -14,10 +14,7 @@ import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
 import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL } from './const.js';
 import { isok } from './cmd.js';
-import {
-    MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO,
-    MONSTER_SYMBOL, monsterIsCovetous,
-} from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, monsterHasEyes, monsterIsCovetous, monsterIsEel } from './monster_data.js';
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { hasCompletedEngraving } from './engrave.js';
 import { monsterAtPosition } from './steed.js';
@@ -157,7 +154,7 @@ export function goodPosition(x: number, y: number, subject: PlacementSubject, {
                         || propertyIsActive('flying', state) || heroHasWaterWalking(state)));
             }
             return !!(flags1 & M1_SWIM) || (surface && monsterInAir(monster, state));
-        } else if (MONSTER_SYMBOL[mnum] === S_EEL && random(13) && !ignoreWater) {
+        } else if (monsterIsEel(mnum) && random(13) && !ignoreWater) {
             return false;
         } else if (lava && !ignoreLava) {
             if (mnum === PM_FLOATING_EYE) return false;
@@ -230,6 +227,6 @@ function monsterTypeScaredFromPosition(mndx: number, x: number, y: number, state
     const inFinalDungeon = !!state.u?.uz && !!state.astral_level
         && state.u.uz.dnum === state.astral_level.dnum;
     if (inHell || inFinalDungeon || mndx === PM_MINOTAUR
-        || ((MONSTER_FLAGS1[mndx] ?? 0) & M1_NOEYES)) return false;
+        || (!monsterHasEyes(mndx))) return false;
     return hasCompletedEngraving('Elbereth', x, y, state);
 }

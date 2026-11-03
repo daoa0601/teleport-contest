@@ -12,7 +12,7 @@ import { isRoom } from './map_types.js';
 import { pline, plineWithContinuation, verbalize } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, monsterIsHuman, monsterIsVampire, monsterHasHead, MONSTER_SOUND, MONSTER_LEVEL, MONSTER_NUTRITION, monsterHasNoLimbs, MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
@@ -984,7 +984,7 @@ export function updateUnpaidObjectPrice(object, state = game) {
 export function objectOwnershipPrefix(object, state = game, { capitalized = true } = {}) {
     const species = object.corpsenm;
     if (object.otyp === CORPSE && species !== undefined && MONSTER_NAME[species] !== undefined) {
-        if ((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME)
+        if (monsterHasProperName(species))
             return '';
         if (((MONSTER_GENO[species] ?? 0) & G_UNIQ)
             && !['high cleric', 'long worm tail'].includes(MONSTER_NAME[species]))
@@ -1707,7 +1707,7 @@ export async function makeAngryShopkeeper(keeper, state = game) {
 // cad/minx/beast.
 export function shopkeeperCustomerInsult(state, altUsage = false) {
     const species = heroSpecies(state);
-    const gender = (MONSTER_FLAGS2[species] ?? 0) & M2_DEMON
+    const gender = monsterIsDemon(species)
         ? 3 : heroPolyGender(state);
     const word = ['cad', 'minx', 'beast', 'fiend'][gender] || 'thing';
     return altUsage ? `"${word.charAt(0).toUpperCase()}${word.slice(1)}!  ` : word;
@@ -1821,8 +1821,7 @@ export function repairableShopDamage(record, keeper, state = game) {
             || (x === keeper.mx && y === keeper.my))
             return false;
         const resident = monsterAt(state, x, y);
-        if (resident && !((MONSTER_FLAGS1[resident.mnum] ?? 0)
-            & M1_WALLWALK))
+        if (resident && !monsterPassesWalls(resident.mnum))
             return false;
     }
     // Is it a trap?  Don't fix if the hero or a monster is in it.
@@ -4633,7 +4632,7 @@ export async function warnAboutRemovedPick(object, state = game) {
             await plineWithContinuation(`"You sneaky ${shopkeeperCustomerInsult(state)}!  Get out of here with that pick!"`);
         }
         else {
-            const hasEyes = !((MONSTER_FLAGS1[keeper.mnum] ?? 0) & M1_NOEYES);
+            const hasEyes = monsterHasEyes(keeper.mnum);
             await plineWithContinuation(`${shopkeeperName(keeper, { state })} ${hasEyes ? 'glares at' : 'is dismayed because of'} your pick!`);
         }
     }

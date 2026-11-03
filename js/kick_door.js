@@ -8,7 +8,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { heroSpecies } from './polyself.js';
 import { heroHasMartialKick } from './kick_rules.js';
-import { MONSTER_FLAGS2 } from './monster_data.js';
+import { MONSTER_FLAGS2, monsterIsGiant } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -29,7 +29,7 @@ export async function kickDoor(x, y, average, responses) {
         return;
     }
     await exerciseAttribute(A_DEX, true);
-    const giant = Upolyd(game.u) && !!((MONSTER_FLAGS2[heroSpecies()] ?? 0) & 0x2000);
+    const giant = Upolyd(game.u) && monsterIsGiant(heroSpecies());
     const breaks = giant || rnl(35) < average + (heroHasMartialKick() ? currentAttribute(A_DEX) : 0);
     if (breaks) {
         const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;

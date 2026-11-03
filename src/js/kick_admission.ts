@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroLegName } from './body_parts.js';
 import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB } from './const.js';
 import { heroPassesWalls, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests, monsterIsVerySmall } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
 import { makePlural } from './objnam.js';
@@ -25,7 +25,7 @@ export async function admitHeroKick(): Promise<boolean> {
     let refusal: string | null = null;
     if ((flags & 0x00006000) === 0x00006000 || (flags & 0x00080000)) {
         refusal = 'You have no legs to kick with.';
-    } else if ((MONSTER_SIZE[species] ?? 2) < 1) {
+    } else if (monsterIsVerySmall(species)) {
         refusal = 'You are too small to do any kicking.';
     } else if (hero.usteed) {
         if (await promptYesNo('Kick your steed?', 'y') === 'y') {

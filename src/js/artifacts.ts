@@ -25,7 +25,7 @@ import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCom
 import { d, rnd, rn2, rnz } from './rng.js';
 import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { questMonsterAlignment } from './role_monsters.js';
-import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterIsCovetous, monsterIsPlayerMonster, MONSTER_SIZE, monsterHasHead, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, MONSTER_SOUND } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
@@ -1300,7 +1300,7 @@ async function applyBeheading(
         const fatalDamage = 2 * (Upolyd(state.u) ? state.u.mh : state.u.uhp)
             + FATAL_DAMAGE_MODIFIER;
         if (artifact.name === 'The Tsurugi of Muramasa' && dieRoll === 1) {
-            if ((MONSTER_SIZE[species.mnum] ?? 2) >= 3) {
+            if (monsterIsBig(species.mnum)) {
                 const subject = attacker ? monsterName(attacker, { state, capitalized: true })
                     : 'The razor-sharp blade';
                 await publish(`${subject} cuts deeply into you!`);
@@ -1338,7 +1338,7 @@ async function applyBeheading(
             };
         }
         if (!hitOnHead) return null;
-        if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 3) {
+        if (monsterIsBig(monster.mnum)) {
             if (!attacker) await publish(`You slice deeply into ${describeTarget()}!`);
             else if (visible) {
                 const attackerName = monsterName(attacker, { state, capitalized: true });

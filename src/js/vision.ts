@@ -14,7 +14,7 @@ import {
 import { newsym } from './display.js';
 import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterPerceives } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { objectLightRadius } from './light.js';
 import { objectsInTimerGraph } from './timeout.js';
@@ -1018,7 +1018,7 @@ export function couldsee(x: number, y: number): boolean {
 const M1_SEE_INVIS = 0x01000000;
 
 export function monsterHasLineOfSightToHero(monster: Monster, state: GameState = game): boolean {
-    return (!heroIsInvisible(state) || !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_SEE_INVIS))
+    return (!heroIsInvisible(state) || monsterPerceives(monster.mnum))
         && !state.u.uinwater && couldsee(monster.mx, monster.my);
 }
 
