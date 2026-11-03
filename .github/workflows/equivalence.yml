@@ -72,7 +72,13 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          make fetch-lua
+          # curl saves an HTTP error page as the tarball, which then fails its
+          # checksum; retry a transient bad download before giving up.
+          for attempt in 1 2 3; do
+            make fetch-lua && break
+            [ $attempt = 3 ] && exit 1
+            rm -rf lib/lua-*; sleep 30
+          done
           make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
       - run: npm ci --ignore-scripts
       - run: npm run compile
@@ -230,7 +236,13 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          make fetch-lua
+          # curl saves an HTTP error page as the tarball, which then fails its
+          # checksum; retry a transient bad download before giving up.
+          for attempt in 1 2 3; do
+            make fetch-lua && break
+            [ $attempt = 3 ] && exit 1
+            rm -rf lib/lua-*; sleep 30
+          done
           make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
           make -C util CC=clang SYSCFLAGS=-DLUA_USE_POSIX makedefs
           make -C dat bogusmon
@@ -320,7 +332,13 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          make fetch-lua
+          # curl saves an HTTP error page as the tarball, which then fails its
+          # checksum; retry a transient bad download before giving up.
+          for attempt in 1 2 3; do
+            make fetch-lua && break
+            [ $attempt = 3 ] && exit 1
+            rm -rf lib/lua-*; sleep 30
+          done
           make CC=clang SYSCFLAGS=-DLUA_USE_POSIX include/nhlua.h
       - run: npm ci --ignore-scripts
       - run: npm run compile
