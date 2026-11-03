@@ -65,7 +65,7 @@ import {
     extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime,
     heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm,
 } from './polyself.js';
-import { hurtleHero } from './hero_hurtle.js';
+import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

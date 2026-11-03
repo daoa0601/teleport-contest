@@ -6,7 +6,7 @@ import { STONING, TURNED_SLIME } from '../js/const.js';
 import { applyCorpsePreEffects } from '../js/eat.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { useHeroGaze } from '../js/polyself.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishMonsterAttackDeath } from '../js/end.js';

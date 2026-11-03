@@ -6,7 +6,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { POOL, ROOM, TT_WEB } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';

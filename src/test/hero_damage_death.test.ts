@@ -14,7 +14,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { triggerHeroTrap } from '../js/trap.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART,

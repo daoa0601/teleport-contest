@@ -264,44 +264,10 @@ export function costlySpot(x: number, y: number, state: GameState = game): Costl
     return { ...spot, resident };
 }
 
-// C dothrow.c:check_shop_obj(). Broken objects settle through the hero's
-// current shop. Intact returns remove bills or offer a sale before stacking.
+// C shk.c:is_unpaid(); also used by dothrow.c:check_shop_obj() in dothrow.ts.
 export function objectIsUnpaid(object: GameObject): boolean {
     return Boolean(object.unpaid)
         || (object.contents || []).some(objectIsUnpaid);
-}
-
-export async function settleThrownShopObject(
-    object: GameObject, x: number, y: number, state: GameState = game,
-    publish: MessagePublisher = plineWithContinuation,
-    { broken = false } = {},
-) {
-    requireLiveGame(state);
-    requireShopGame(state);
-    const heroShop = state.u.ushops[0];
-    const resident = shopResident(heroShop, state);
-    if (!resident) return false;
-    const spot = costlySpot(x, y, state);
-    const objectRoom = roomsAt(state.level, x, y, SHOPBASE)[0];
-    if (broken || !spot || objectRoom !== heroShop) {
-        if (objectIsUnpaid(object))
-            await stolenValue(object, state.u.ux, state.u.uy, resident.mpeaceful, {
-                state, publish, silent: false,
-            });
-        if (broken) object.no_charge = true;
-        return true;
-    }
-    const previousRoom = state.u.ushops0[0];
-    if (objectRoom === heroShop || objectRoom === previousRoom) {
-        if (objectIsUnpaid(object)) {
-            const gold = containedGold(object, true);
-            removeObjectAndContentsFromBill(object, state, { resident });
-            if (gold > 0) await donateGold(gold, resident, { selling: true, publish });
-        } else if (x !== resident.mx || y !== resident.my) {
-            await sellHeroDroppedObject(object, x, y, state, { publish });
-        }
-    }
-    return true;
 }
 
 const glassGemImitations = [

@@ -53,7 +53,7 @@ import { releaseHold } from './zap.js';
 import { setHeroGrip } from './hero_grip.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded } from './potion.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { hurtleHero, hurtleJumpTo } from './hero_hurtle.js';
+import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';

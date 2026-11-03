@@ -64,7 +64,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { heroHasNoHands } from './polyself.js';
 import { poisonHero } from './poison.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
-import { shouldMulchMissile } from './projectile.js';
+import { shouldMulchMissile } from './dothrow.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType } from './zap.js';
 import { displayRayName } from './ray_name.js';

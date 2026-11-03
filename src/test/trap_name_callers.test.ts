@@ -4,7 +4,7 @@ import { BEAR_TRAP, HWALL, PIT, ROOM, TER_TRP, TT_PIT, TT_WEB, WEB, W_WEP } from
 import { digActualHole, continueHeroDigging, ensureDiggingContext } from '../js/dig.js';
 import { map_trap } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { browseDetectionMap } from '../js/detect.js';
 import { LARGE_BOX, PICK_AXE, ROCK } from '../js/object_data.js';

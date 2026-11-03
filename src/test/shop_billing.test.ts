@@ -20,9 +20,9 @@ import {
     billedPickupQuote,
     chargeAlteredUnpaidObject,
     getCostOfShopItem,
-    settleThrownShopObject,
     splitObjectBill
 } from '../js/shk.js';
+import { settleThrownShopObject } from '../js/dothrow.js';
 import { splitObjectStack } from '../js/mkobj.js';
 import { mergeObjectStacks } from '../js/invent.js';
 

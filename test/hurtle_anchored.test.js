@@ -6,7 +6,7 @@ import { TT_INFLOOR, TT_LAVA } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/potion.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

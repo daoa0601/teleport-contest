@@ -9,7 +9,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt, newsym } from '../js/display.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { pushKey } from '../js/input.js';
 import { createCorpstatAt } from '../js/mkobj.js';
 import {

@@ -13,7 +13,7 @@ import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, OBJECT_UNIQUE } from './object
 import { definiteName, objectCombatName } from './objnam.js';
 import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
 import { heroIsDeaf } from './senses.js';
-import { settleThrownShopObject } from './shk.js';
+import { settleThrownShopObject } from './dothrow.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
 import { addInventoryItem } from './u_init.js';
 // Null leaves ordinary hit admission to the caller. False means the leader

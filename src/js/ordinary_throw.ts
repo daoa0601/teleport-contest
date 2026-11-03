@@ -18,9 +18,9 @@ import {
     hitMonsterWithThrownEggPieOrVenom,
 } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
-import { hurtleHero } from './hero_hurtle.js';
+import { hurtleHero } from './dothrow.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
-import { tossObjectUp } from './toss_up.js';
+import { tossObjectUp } from './dothrow.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { rejoinObjectStack } from './mkobj.js';

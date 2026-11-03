@@ -48,7 +48,7 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, displayColorName, displ
 import { monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName } from './do_name.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, selectHeroDisenchantmentTarget } from './do_wear.js';
 import { abusePetAfterHeroHit, tameMonster } from './dog.js';
-import { hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
+import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
 import { applyCannibalPenalty, eatHeroBrain, eatingConducts, eatMonsterBrain, spendHeroNutrition, updateHeroHunger } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
@@ -58,7 +58,7 @@ import { explode } from './explosion.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
+import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroTestMove, nearCapacity, nomul, roomForRoomno, roomsAt, stopRun } from './hack.js';
 import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
@@ -66,7 +66,6 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
 import { setHeroGrip } from './hero_grip.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { canKnockHeroToward, hurtleHero } from './hero_hurtle.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -2405,6 +2404,16 @@ export function isSteadfast(actor, state) {
     return inventory(actor, state).some(object => object.otyp === LOADSTONE)
         || (actor === state.u.usteed
             && state.inventory.some(object => object.otyp === LOADSTONE));
+}
+// C test_move(TEST_MOVE), before a blow can start the hero hurtling.
+export function canKnockHeroToward(dx, dy) {
+    requirePlayingGame(game);
+    const { ux, uy } = game.u;
+    const x = ux + dx;
+    const y = uy + dy;
+    // A boulder passes this test ("assume you'll be able to push it"); the
+    // hurtle itself then stops against it.
+    return isok(x, y) && heroTestMove(x, y);
 }
 // C uhitm.c:mhitm_knockback().
 export async function tryKnockback(attacker, defender, attack, { state = game, random = rn2, publish = plineWithContinuation, weaponUsed = false, hit = true, finishMonsterDeath, finishLiquidDeath, nameMonster = monster => monsterName(monster, {

@@ -34,7 +34,7 @@ import { monsterName } from './do_name.js';
 import { dismountHero } from './steed.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
 import { extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenSlime, heroIsPolymorphed, heroIsUnchanging, heroSpecies, polymonHero, returnHeroToHumanForm, } from './polyself.js';
-import { hurtleHero } from './hero_hurtle.js';
+import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';

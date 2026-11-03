@@ -1,16 +1,15 @@
 // The kick command and its damage helpers.
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb().
-import { A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, W_ARMF, ZAP_POS, is_hole } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
 import { isok } from './cmd.js';
 import { rnd, rn2 } from './rng.js';
-import { canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './do.js';
-import { hurtleHero, kickRecoilRange } from './hero_hurtle.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel } from './level_change.js';
 import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
@@ -36,13 +35,13 @@ import { adjustHeroAlignment } from './alignment.js';
 import { mksobj, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
 import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';
 import { vision_recalc, vision_reset, cansee, couldsee } from './vision.js';
-import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS } from './object_data.js';
+import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS, OBJECT_COST } from './object_data.js';
 import { convertSecretDoor, findTrap } from './detect.js';
 import { kickDoor } from './kick_door.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { kickNonDoorTerrain } from './kick_terrain.js';
 import { stairwayAt } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsBig, monsterIsFlyer } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsBig, monsterIsFlyer, MONSTER_FLAGS2, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
@@ -53,18 +52,21 @@ import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt } from './hack.js';
+import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
-import { breakFloorObject } from './dothrow.js';
+import { breakFloorObject, hurtleHero } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold } from './shk.js';
+import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy } from './shk.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { resolveGoldMonsterContact } from './gold_throw.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { hiddenGold } from './vault.js';
+import { finishMonsterEating } from './dogmove.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
 import { onQuestStart, okToQuest } from './quest.js';
@@ -143,6 +145,20 @@ function kickDeathReason(x, y) {
 async function damageHeroFromKick(amount, x, y, objectName) {
     const killer = objectName ? `kicking ${objectName}` : kickDeathReason(x, y);
     return loseHeroHp(amount, killer, { deathCause: `killed by ${killer}` });
+}
+// C dokick.c:1425-1436 kick recoil: range = (3 * mdat->cwt)
+// / (youmonst.data->cwt + (weight_cap() + inv_weight())), floored at 1.
+const HUMAN_WEIGHT = 1450;
+function heroBodyWeight(state = game) {
+    const form = Upolyd(state.u)
+        ? state.u.umonnum
+        : state.urace?.mnum;
+    return form === undefined ? HUMAN_WEIGHT : MONSTER_BODY_META[form]?.[0] ?? HUMAN_WEIGHT;
+}
+export function kickRecoilRange(monsterMnum, state = game) {
+    const targetWeight = MONSTER_BODY_META[monsterMnum]?.[0] ?? 0;
+    const movingWeight = Math.max(1, heroBodyWeight(state) + inventoryWeight(state));
+    return Math.max(1, Math.trunc(3 * targetWeight / movingWeight));
 }
 async function recoilFromKick(range) {
     const { dx, dy } = game.u;
@@ -281,6 +297,129 @@ async function kickLiveMonster(monster, x, y) {
     if (damage.trainSkill)
         await useHeroSkill(35);
     game.context.move = 1;
+    return true;
+}
+// ---------------------------------------------------------------------------
+// C dokick.c:ghitm(). A thrown or kicked purse a greedy monster catches.
+// ---------------------------------------------------------------------------
+const M2_MERC = 0x00000200;
+const M2_GREEDY = 0x10000000;
+const PM_SOLDIER = 277;
+const PM_SERGEANT = 278;
+const PM_LIEUTENANT = 280;
+const PM_CAPTAIN = 281;
+const MERCENARY_BASE_BRIBE = new Map([
+    [PM_SOLDIER, 100],
+    [PM_SERGEANT, 250],
+    [PM_LIEUTENANT, 500],
+    [PM_CAPTAIN, 750],
+]);
+function goldQuantity(object) {
+    return Math.max(0, Math.trunc(object?.quan ?? object?.quantity ?? 0));
+}
+async function missGold(monster, gold, state) {
+    const name = objectCombatName(gold, { state });
+    const spotted = cansee(monster.mx, monster.my) || canSpotMonster(monster);
+    const target = state.flags.verbose !== false && spotted ? monsterName(monster, { state }) : 'it';
+    await pline(`The ${name} ${goldQuantity(gold) === 1 ? 'misses' : 'miss'} ${target}.`);
+}
+async function finishShopkeeperCatch(monster, value, state) {
+    if (!hasShopkeeperData(monster))
+        throw new Error('Shopkeeper gold payment requires shopkeeper data.');
+    const robbedBefore = Math.max(0, Math.trunc(monster.eshk.robbed ?? 0));
+    if (robbedBefore) {
+        const robbedAfter = Math.max(0, robbedBefore - value);
+        await pline(`The amount ${robbedAfter ? 'partially ' : ''}covers ${monster.female ? 'her' : 'his'} recent losses.`);
+        monster.eshk.robbed = robbedAfter;
+        if (!robbedAfter)
+            await makeShopkeeperHappy(monster, { state });
+        return;
+    }
+    if (monster.mpeaceful) {
+        monster.eshk.credit = Math.max(0, Math.trunc(monster.eshk.credit ?? 0)) + value;
+        await pline(`You have ${monster.eshk.credit} ${currency(monster.eshk.credit, { state })} in credit.`);
+    }
+    else {
+        // C ghitm verbalizes this without a Deaf guard; unlike the shk.c
+        // call sites, the pinned dokick.c speech prints for deaf heroes.
+        await pline('"Thanks, scum!"');
+    }
+}
+async function finishGuardCatch(monster, state) {
+    const visible = heroGoldAmount(state);
+    const hidden = hiddenGold(state, true);
+    const speech = visible ? 'Drop the rest and follow me.'
+        : hidden ? 'You still have hidden gold.  Drop it now.'
+            : monster.mpeaceful
+                ? "I'll take care of that; please move along."
+                : "I'll take that; now get moving.";
+    // dokick.c ghitm verbalizes guard speech unconditionally.
+    await pline(`"${speech}"`);
+}
+async function finishMercenaryCatch(monster, value, state) {
+    const wasAngry = !monster.mpeaceful;
+    let required = MERCENARY_BASE_BRIBE.get(monster.mnum) ?? 0;
+    if (required && rn2(3) !== 0) {
+        const charisma = Math.max(3, currentAttribute(A_CHA, state));
+        required += Math.trunc((heroGoldAmount(state)
+            + (state.u?.ulevel ?? 1) * rn2(5)) / charisma);
+        if (value > required)
+            monster.mpeaceful = 1;
+    }
+    // dokick.c ghitm verbalizes mercenary replies unconditionally.
+    if (!monster.mpeaceful) {
+        await pline(required
+            ? '"That\'s not enough, coward!"'
+            : '"I don\'t take bribes from scum like you!"');
+    }
+    else if (wasAngry) {
+        await pline('"That should do.  Now beat it!"');
+    }
+    else {
+        await pline(`"Thanks for the tip, ${state.flags?.female ? 'lady' : 'buddy'}."`);
+    }
+}
+export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, }) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    const greedy = !!(flags & M2_GREEDY);
+    const mercenary = !!(flags & M2_MERC);
+    const eligible = greedy || monster?.isshk || monster?.ispriest
+        || monster?.isgd || mercenary;
+    if (!eligible) {
+        await wakeMonster?.(monster);
+        await missGold(monster, gold, state);
+        return false;
+    }
+    if (monster.mcanmove === 0 || monster.mcanmove === false) {
+        if (canSeeMonster(monster))
+            await pline(`The ${objectCombatName(gold, { state })} harmlessly ${goldQuantity(gold) === 1 ? 'hits' : 'hit'} ${monsterName(monster, { state })}.`);
+        else
+            await missGold(monster, gold, state);
+        return false;
+    }
+    const wasSleeping = !!monster.msleeping;
+    const value = goldQuantity(gold) * (OBJECT_COST[gold.otyp] ?? 1);
+    monster.msleeping = 0;
+    await finishMonsterEating(monster, state);
+    if (!monster.isgd && rn2(4) === 0)
+        await angerMonster?.(monster);
+    if (cansee(monster.mx, monster.my)) {
+        await pline(`${monsterName(monster, { state, capitalized: true })} ${wasSleeping ? 'awakens and ' : ''}catches the gold.`);
+    }
+    await addObjectToMonsterInventory(monster, gold, state);
+    if (monster.isshk) {
+        await finishShopkeeperCatch(monster, value, state);
+    }
+    else if (monster.ispriest) {
+        await pline(monster.mpeaceful
+            ? '"Thank you for your contribution."' : '"Thanks, scum!"');
+    }
+    else if (monster.isgd) {
+        await finishGuardCatch(monster, state);
+    }
+    else if (mercenary) {
+        await finishMercenaryCatch(monster, value, state);
+    }
     return true;
 }
 // C dokick.c:dokick().
