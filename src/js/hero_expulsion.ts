@@ -25,7 +25,6 @@ import { plineWithContinuation } from './pline.js';
 import { placeBallAndChain } from './ball.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
-import { vision_reset } from './vision.js';
 
 export interface ReleaseHeroOptions {
     state?: GameState;
@@ -156,7 +155,10 @@ function expulsionMessage(monster: Monster, mnum: number, state: GameState): str
     return `You get expelled from ${name}${effect}!`;
 }
 
+// C mon.c:unstuck() sets vision_full_recalc and calls docrt() directly; it
+// never rebuilds the blocker table, so docrt()'s vision_recalc(2) pass still
+// scans the previous vision's row bounds and newsym()s each formerly lit
+// cell (drawing warning flashes for unseen-but-warned monsters there).
 async function redrawAfterRelease() {
-    vision_reset();
     await docrt();
 }
