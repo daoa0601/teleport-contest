@@ -13,6 +13,7 @@ import { throwMonsterProjectile } from '../js/mthrowu.js';
 import { AKLYS, APPLE, HEAVY_IRON_BALL, POT_BLINDNESS, POT_WATER } from '../js/object_data.js';
 import { makeBlinded } from '../js/potion.js';
 import { CLR_GRAY, CLR_WHITE, NO_COLOR } from '../js/terminal.js';
+import { displayMessageWindow } from '../js/tty_topline.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
@@ -296,5 +297,51 @@ void test('a blinding potion impact defers its status update to the hunger messa
     assert.match(conditionRow, /Hungry Strained Blind/, 'The encumbrance of the weakened Strength shows while the hunger word still lags');
     assert.equal(game.u.uhs, WEAK);
     assert.equal(currentAttribute(A_STR), 15);
+});
+// C mthrowu.c:m_throw() starts its tmp_at() flight display at line 651,
+// before the flight loop, so the constructor's flush_screen(0) (display.c)
+// runs before any impact. When the first flight square is the hero herself
+// and the potion is one of blindness, toggle_blindness()'s vision_recalc()
+// newsym changes stay queued while the vapor messages page: the --More--
+// acknowledging "It suddenly gets dark." (via update_topl() paging or a
+// caller's display_nhwindow(WIN_MESSAGE, TRUE), as monmove.c's door shift
+// does) still shows the pre-blindness map, and only the next parse() flush
+// reveals the blind view (recorded session 0238efc6 step 65).
+void test('the vapor --More-- of a self-impacting blindness potion still shows the adjacent thrower', async () => {
+    await freshObjectRoom({ heroX: 10, heroY: 12 });
+    requirePlayingGame(game);
+    game.context.mon_moving = true;
+    const source = await createMonsterAt('orc', 9, 12, NO_MINVENT | MM_NOGRP);
+    const potion = await knownObject(POT_BLINDNESS);
+    await addObjectToMonsterInventory(source, potion);
+    assert.equal(cansee(9, 12), true);
+    await redrawMap();
+    await flush_screen(1);
+    assert.equal(screenCell(9, 12).ch, 'o');
+    const pagers = [];
+    const input = resetInputState();
+    input.display = {
+        async readKey() {
+            pagers.push(requireGameDisplay(game).grid
+                .map(row => row.map(cell => cell.ch).join('')));
+            return ' '.charCodeAt(0);
+        },
+    };
+    await throwMonsterProjectile(source, potion, {
+        state: game, dx: 1, dy: 0, range: 1,
+        random: limit => Math.min(1, limit - 1),
+    });
+    assert.equal(heroIsBlind(game), true);
+    // C monmove.c pages the still-pending vapor line without flushing the map.
+    await displayMessageWindow();
+    const vaporPager = pagers.find(rows => rows[0]?.includes('It suddenly gets dark'));
+    assert.ok(vaporPager, 'Expected a pager acknowledging the vapor message; '
+        + `toplines seen: ${pagers.map(rows => rows[0]).join(' | ')}`);
+    assert.match(vaporPager[0] ?? '', /--More--\s*$/);
+    const vaporMapRow = vaporPager[12 + 1] ?? '';
+    assert.equal(vaporMapRow[9 - 1], 'o', 'The adjacent thrower is still on screen at the vapor --More--');
+    // The blind view reaches the terminal only with the next map flush.
+    await flush_screen(1);
+    assert.notEqual(screenCell(9, 12).ch, 'o');
 });
 //# sourceMappingURL=monster_projectile_display.test.js.map
