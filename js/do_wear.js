@@ -18,12 +18,12 @@ import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL, BLINDFOLD, OBJECT_SUBTYPE, BATTLE_AXE } from './object_data.js';
 import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
-import { isBimanualObject, isSword, isFlimsyObject } from './object_properties.js';
+import { isBimanualObject, isSword, isFlimsyObject, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
 import { recordRandom } from './monster_action_types.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging, heroMonsterForm } from './polyself.js';
 import { retouchHeroObject } from './hero_retouch.js';
-import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
+import { learnObjectType, observeObject } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
@@ -54,7 +54,7 @@ import { rn2, rnd } from './rng.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute, attributeIsAtLimit } from './attrib.js';
 import { reportHeroEncumbrance } from './pickup.js';
-import { curseObjectState } from './mkobj.js';
+import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
 import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain } from './mondata.js';
@@ -1136,9 +1136,6 @@ export const OBJECT_ARMOR_BONUS = Object.freeze([
 ]);
 const ARMOR_FIRST = 89;
 const ARMOR_LAST = 172;
-const IRON = 11;
-const MITHRIL = 17;
-const GLASS = 19;
 const ARMOR_SLOTS = Object.freeze([
     'uarm', 'uarmc', 'uarmh', 'uarmf', 'uarms', 'uarmg', 'uarmu',
 ]);
@@ -1479,8 +1476,7 @@ export async function clearHeroArmor(object, state = game, { cancelledDon = pend
 export function objectIsHardHelmet(object) {
     if (!object || armorSlotFor(object.otyp) !== 'uarmh')
         return false;
-    const material = objectMaterial(object.otyp);
-    return material >= IRON && material <= MITHRIL || material === GLASS;
+    return objectIsMetallic(object) || objectIsCrackable(object);
 }
 export function wornArmorInDestroyOrder(state = game) {
     return ['uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu']
@@ -1556,16 +1552,15 @@ export async function erodeWornArmor(state = game) {
 // C do_wear.c:obj_erode_type(): the first erosion kind that can apply to
 // the object from its material — burn, rust, crack, rot, or corrode.
 export function objectErosionKind(object) {
-    const material = objectMaterial(object.otyp);
-    if ((material !== undefined && material <= 8 && material !== 1) || material === 18)
+    if (objectIsFlammable(object))
         return { field: 'oeroded', action: 'smoulder' };
-    if (material === 11)
+    if (objectIsRustprone(object))
         return { field: 'oeroded', action: 'rust' };
-    if (material === 19 && object.oclass === 3)
+    if (objectIsCrackable(object))
         return { field: 'oeroded', action: 'crack' };
-    if (material === 10)
+    if (objectIsRottable(object))
         return { field: 'oeroded2', action: 'rot' };
-    if (material === 13)
+    if (objectIsCorrodeable(object))
         return { field: 'oeroded2', action: 'corrode' };
     return null;
 }

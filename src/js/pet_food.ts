@@ -15,6 +15,7 @@ import {
     MEAT_RING, MEAT_STICK, RIN_SLOW_DIGESTION, SLIME_MOLD, TIN, TRIPE_RATION,
 } from './object_data.js';
 import { objectMaterial } from './o_init.js';
+import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
 import { fleshPetrifies } from './stoning.js';
 import type { GameState } from './game_state.js';
@@ -38,7 +39,7 @@ export type FoodQuality = typeof DOGFOOD | typeof CADAVER | typeof ACCFOOD
     | typeof MANFOOD | typeof APPORT | typeof POISON | typeof UNDEF | typeof TABU;
 
 const FOOD_CLASS = 7, ROCK_CLASS = 14, BALL_CLASS = 15, CHAIN_CLASS = 16;
-const WOOD = 8, IRON = 11, SILVER = 14, MITHRIL = 17;
+const SILVER = 14;
 const M1_NOEYES = 0x1000, M1_ACID = 0x08000000, M1_POIS = 0x10000000;
 const M1_CARNIVORE = 0x20000000, M1_HERBIVORE = 0x40000000, M1_METALLIVORE = 0x80000000;
 const M2_ELF = 0x10, M2_SHAPESHIFTER = 0x4000;
@@ -177,10 +178,10 @@ function nonfoodQuality(monster: Monster, object: GameObject, diet: number, stat
     if (object.otyp === AMULET_OF_STRANGULATION || object.otyp === RIN_SLOW_DIGESTION) return TABU;
     const material = objectMaterial(object, state);
     if (monsterHatesSilver(monster) && material === SILVER) return TABU;
-    if (monster.mnum === PM_GELATINOUS_CUBE && material <= WOOD) return ACCFOOD;
-    if ((diet & M1_METALLIVORE) && material >= IRON && material <= MITHRIL
-        && (material === IRON || monster.mnum !== PM_RUST_MONSTER)) {
-        return material === IRON && !object.oerodeproof ? DOGFOOD : ACCFOOD;
+    if (monster.mnum === PM_GELATINOUS_CUBE && objectIsOrganic(object, state)) return ACCFOOD;
+    if ((diet & M1_METALLIVORE) && objectIsMetallic(object, state)
+        && (objectIsRustprone(object, state) || monster.mnum !== PM_RUST_MONSTER)) {
+        return objectIsRustprone(object, state) && !object.oerodeproof ? DOGFOOD : ACCFOOD;
     }
     return !object.cursed && object.oclass !== BALL_CLASS && object.oclass !== CHAIN_CLASS
         ? APPORT : UNDEF;

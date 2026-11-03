@@ -33,7 +33,6 @@ import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
-import { objectMaterial } from './o_init.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject } from './mkobj.js';
@@ -42,7 +41,7 @@ import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
-import { isAxe, isBimanualObject, isPick } from './object_properties.js';
+import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { heroMonsterForm, heroIsFlying } from './polyself.js';
@@ -1700,7 +1699,7 @@ function removeFloorReference(object, state) {
 function scheduleBuriedRot(object, underIce, state) {
     const canRot = underIce
         ? object.oclass === POTION_CLASS
-        : objectMaterial(object, state) <= 8;
+        : objectIsOrganic(object, state);
     if (object.otyp === CORPSE || !canRot
         || objectResistsDestruction(object, 5, 95)) {
         return;

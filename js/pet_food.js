@@ -7,6 +7,7 @@ import { AD_POLY } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
 import { AMULET_OF_STRANGULATION, APPLE, BANANA, CARROT, CLOVE_OF_GARLIC, CORPSE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LUMP_OF_ROYAL_JELLY, MEATBALL, MEAT_RING, MEAT_STICK, RIN_SLOW_DIGESTION, SLIME_MOLD, TIN, TRIPE_RATION, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
+import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
 import { fleshPetrifies } from './stoning.js';
 import { sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
@@ -19,7 +20,7 @@ export const POISON = 5;
 export const UNDEF = 6;
 export const TABU = 7;
 const FOOD_CLASS = 7, ROCK_CLASS = 14, BALL_CLASS = 15, CHAIN_CLASS = 16;
-const WOOD = 8, IRON = 11, SILVER = 14, MITHRIL = 17;
+const SILVER = 14;
 const M1_NOEYES = 0x1000, M1_ACID = 0x08000000, M1_POIS = 0x10000000;
 const M1_CARNIVORE = 0x20000000, M1_HERBIVORE = 0x40000000, M1_METALLIVORE = 0x80000000;
 const M2_ELF = 0x10, M2_SHAPESHIFTER = 0x4000;
@@ -161,11 +162,11 @@ function nonfoodQuality(monster, object, diet, state) {
     const material = objectMaterial(object, state);
     if (monsterHatesSilver(monster) && material === SILVER)
         return TABU;
-    if (monster.mnum === PM_GELATINOUS_CUBE && material <= WOOD)
+    if (monster.mnum === PM_GELATINOUS_CUBE && objectIsOrganic(object, state))
         return ACCFOOD;
-    if ((diet & M1_METALLIVORE) && material >= IRON && material <= MITHRIL
-        && (material === IRON || monster.mnum !== PM_RUST_MONSTER)) {
-        return material === IRON && !object.oerodeproof ? DOGFOOD : ACCFOOD;
+    if ((diet & M1_METALLIVORE) && objectIsMetallic(object, state)
+        && (objectIsRustprone(object, state) || monster.mnum !== PM_RUST_MONSTER)) {
+        return objectIsRustprone(object, state) && !object.oerodeproof ? DOGFOOD : ACCFOOD;
     }
     return !object.cursed && object.oclass !== BALL_CLASS && object.oclass !== CHAIN_CLASS
         ? APPORT : UNDEF;

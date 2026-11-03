@@ -10,10 +10,10 @@ import { heroIsStrangled } from './do_wear.js';
 import { clearHeroTrap, deleteTrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { mksobj, objectQuantity } from './mkobj.js';
+import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
-import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_PROPERTY, OBJECT_UNIQUE, TALLOW_CANDLE, WAN_FIRE, WAX_CANDLE } from './object_data.js';
-import { objectMaterial } from './o_init.js';
+import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_UNIQUE } from './object_data.js';
+import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
@@ -25,7 +25,6 @@ import type { GameObject } from './object_types.js';
 import { exceedsActionCapacity } from './hack.js';
 
 const FOOD_CLASS = 7, COIN_CLASS = 12;
-const IRON = 11, MITHRIL = 17, WOOD = 8, LIQUID = 1, PLASTIC = 18;
 const METALLIVORE = 0x80000000;
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 const FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
@@ -42,14 +41,13 @@ export function heroEatsMetal(state: GameState = game): boolean {
 
 export function isEdibleFood(object: GameObject | null | undefined, state: GameState = game): boolean {
     if (!object || OBJECT_UNIQUE[object.otyp]) return false;
-    const material = objectMaterial(object, state);
     const form = heroSpecies(state);
-    if (form === FIRE_ELEMENTAL && objectIsFlammable(object, material)) return true;
-    if (heroEatsMetal(state) && material >= IRON && material <= MITHRIL
-        && (form !== RUST_MONSTER || material === IRON)) return true;
+    if (form === FIRE_ELEMENTAL && objectIsFlammable(object, state)) return true;
+    if (heroEatsMetal(state) && objectIsMetallic(object, state)
+        && (form !== RUST_MONSTER || objectIsRustprone(object, state))) return true;
     if (form === GHOUL)
         return object.otyp === CORPSE && !veganCorpse(object.corpsenm) || object.otyp === EGG;
-    if (form === GELATINOUS_CUBE && material <= WOOD && !object.contents?.length) return true;
+    if (form === GELATINOUS_CUBE && objectIsOrganic(object, state) && !object.contents?.length) return true;
     return object.oclass === FOOD_CLASS;
 }
 
@@ -143,8 +141,3 @@ function askFloorFood(prompt: string): Promise<'y' | 'n' | 'q'> {
     return promptYesNoQuit(`${prompt}`, 'n');
 }
 
-function objectIsFlammable(object: GameObject, material: number): boolean {
-    return ![TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(object.otyp)
-        && OBJECT_PROPERTY[object.otyp] !== 'fireResistance'
-        && (material <= WOOD && material !== LIQUID || material === PLASTIC);
-}

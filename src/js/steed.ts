@@ -24,7 +24,6 @@ import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
-import { objectMaterial } from './o_init.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless } from './mondata.js';
@@ -32,7 +31,7 @@ import { shopkeeperName } from './shknam.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
 import { heroHasFreeHand } from './engrave.js';
-import { isPolearm } from './object_properties.js';
+import { isPolearm, objectIsMetallic } from './object_properties.js';
 import { heroPassesWalls, heroSpecies } from './polyself.js';
 import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
@@ -114,8 +113,6 @@ const M2_DOMESTIC = 0x00400000;
 const M2_ROCKTHROW = 0x08000000;
 const MZ_SMALL = 1;
 const MZ_LARGE = 3;
-const IRON = 11;
-const MITHRIL = 17;
 const S_EYE = 5;
 const S_LIGHT = 25;
 
@@ -405,8 +402,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
         return false;
     }
     const armor = game.uarm || hero.uarm;
-    const material = armor && objectMaterial(armor);
-    if (!force && armor && typeof material === 'number' && material >= IRON && material <= MITHRIL
+    if (!force && armor && objectIsMetallic(armor)
         && (armor.oeroded || armor.oeroded2)) {
         const damage = armor.oeroded ? 'rusty' : 'corroded';
         await pline(`Your ${damage} armor is too stiff to be able to mount ${monsterName(steed)}.`);

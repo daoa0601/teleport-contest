@@ -50,7 +50,7 @@ import {
 } from './monster_data.js';
 import { withIndefiniteArticle } from './objnam.js';
 
-import { objectMaterial } from './o_init.js';
+import { objectIsMetallic } from './object_properties.js';
 import { walkPathCells } from './path_walk.js';
 import { applyPotionEffect } from './potion.js';
 import { propertyIsActive } from './properties.js';
@@ -445,14 +445,14 @@ function innateCastingPenalty(type: number, state: PlayingGameState) {
     const suit = wornObject('uarm', state);
     const robe = wornObject('uarmc', state)?.otyp === ROBE;
     let penalty = role.base;
-    if (suit && metallic(suit, state) && !paladin)
+    if (suit && objectIsMetallic(suit, state) && !paladin)
         penalty += robe ? Math.trunc(role.armor / 2) : role.armor;
     else if (robe) penalty -= role.armor;
     if (wornObject('uarms', state)) penalty += role.shield;
     if (wornObject('uwep', state)?.otyp === QUARTERSTAFF) penalty -= 3;
     if (!paladin) {
         for (const [slot, amount] of [['uarmh', 4], ['uarmg', 6], ['uarmf', 2]] as const) {
-            if (metallic(wornObject(slot, state), state)) penalty += amount;
+            if (objectIsMetallic(wornObject(slot, state), state)) penalty += amount;
         }
     }
     if (OBJECT_NAMES[type] === role.special) penalty += role.specialBonus;
@@ -464,10 +464,6 @@ function wornObject(slot: CastingSlot, state: GameState) {
     return state[slot] || state.u[slot];
 }
 
-function metallic(object: GameObject | null | undefined, state: GameState) {
-    const material = objectMaterial(object, state);
-    return material >= 11 && material <= 17;
-}
 
 function castingNutritionCost(energy: number, state: PlayingGameState) {
     let cost = energy * 2;

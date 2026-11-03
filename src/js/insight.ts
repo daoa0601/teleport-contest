@@ -41,7 +41,7 @@ import {
     canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
 } from './skills.js';
 import { weaponDescription } from './weapon.js';
-import { isLauncherAmmunition, isWetTowel } from './object_properties.js';
+import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
@@ -783,8 +783,7 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (eyewear?.otyp === TOWEL && (eyewear.spe ?? 0) > 0)
         message('You ', 'take', 'took', ' reduced poison gas damage');
     if (game.spells.length) {
-        const metallic = game.uarm && objectMaterial(game.uarm.otyp) >= 11
-            && objectMaterial(game.uarm.otyp) <= 17;
+        const metallic = !!game.uarm && objectIsMetallic(game.uarm);
         const robe = game.uarmc?.otyp === ROBE;
         if (metallic || robe) message('Your spell casting ', 'is', 'was', metallic
             ? ` impaired by metallic armor${robe ? ', mitigated by your robe' : ''}` : ' enhanced by wearing a robe');

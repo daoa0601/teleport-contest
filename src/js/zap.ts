@@ -96,7 +96,7 @@ import { askTeleportDestination, heroControlsTeleport, teleportHero } from './te
 
 
 import { bot } from './botl.js';
-import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
+import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
@@ -1291,8 +1291,7 @@ function glovesBlockRingShock(object: GameObject, state: GameState) {
     if (!isWornRing(object, state)) return false;
     const gloves = state.uarmg || state.u?.uarmg;
     if (!gloves) return false;
-    const material = objectMaterial(gloves.otyp);
-    return material < 11 || material > 17;
+    return !objectIsMetallic(gloves);
 }
 
 function destructionMessage(

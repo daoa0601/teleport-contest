@@ -684,8 +684,8 @@ STATE_SPECS += [
          probes=[('otyp correspondence omitted', UnrelatedState(
              lambda s: [], ('otmp.otyp',)))],
          mutants=[('js/objnam.js',
-                   'return flammable || rottable || rustprone || corrodeable || crackable;',
-                   'return flammable || rustprone || corrodeable || crackable;')]),
+                   'return objectIsRustprone(object) || objectIsFlammable(object)\n        || objectIsRottable(object) || objectIsCorrodeable(object)\n        || objectIsCrackable(object);',
+                   'return objectIsRustprone(object) || objectIsFlammable(object)\n        || objectIsCorrodeable(object)\n        || objectIsCrackable(object);')]),
     Spec('primary_erosion:tables', 'verification_primary_erosion',
          'objectAcceptsPrimaryErosion', [],
          js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
@@ -698,8 +698,9 @@ STATE_SPECS += [
          pre=lambda s: [],
          probes=[('otyp correspondence omitted', UnrelatedState(
              lambda s: [], ('otmp.otyp',)))],
-         mutants=[('js/objnam.js', 'return flammable || rustprone || crackable;',
-                   'return flammable || crackable;')]),
+         mutants=[('js/objnam.js',
+                   'return objectIsFlammable(object) || objectIsRustprone(object)\n        || objectIsCrackable(object);',
+                   'return objectIsFlammable(object)\n        || objectIsCrackable(object);')]),
     Spec('secondary_erosion:tables', 'verification_secondary_erosion',
          'objectAcceptsSecondaryErosion', [],
          js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
@@ -712,8 +713,9 @@ STATE_SPECS += [
          pre=lambda s: [],
          probes=[('otyp correspondence omitted', UnrelatedState(
              lambda s: [], ('otmp.otyp',)))],
-         mutants=[('js/objnam.js', 'return rottable || corrodeable;',
-                   'return corrodeable;')]),
+         mutants=[('js/objnam.js',
+                   'return objectIsCorrodeable(object) || objectIsRottable(object);',
+                   'return objectIsCorrodeable(object);')]),
     Spec('weapon_type:tables', 'weapon_type', 'weaponSkillType',
          [('weapon_present', INT)],
          js_file='js/skills.js', state=[('weapon.oclass', (8, True), 'weapon.oclass'),
@@ -1048,6 +1050,98 @@ STATE_SPECS += [
                   unrelated(lambda s: [s['obj.otyp'] == 24], 'obj.otyp'))],
          mutants=[(OBJ_FILE, 'return object.oclass === WEAPON_CLASS\n        && skill >= -P_SHURIKEN && skill <= -P_BOW;',
                    'return object.oclass === WEAPON_CLASS\n        && skill >= -P_BOOMERANG && skill <= -P_BOW;')]),
+]
+
+# ---- fv-equivalence-batch-7: objclass.h material macros and mkobj.c
+# is_flammable()/is_rottable() ----
+
+# Each macro has one named port function in object_properties.js (the
+# objclass.h predicates) or mkobj.js (the two real mkobj.c functions);
+# every former inline copy and duplicate helper now calls the owner. The
+# claims keep the whole initial table in the domain: the zero-material
+# generic rows carry material 0 on both sides, and the C-faithful owners
+# agree with the native macros there too.
+MATERIAL_TABLE_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+    'objclass.h reads objects[otyp].oc_material and mkobj.c is_flammable()/is_rottable() read the same column plus objects[otyp].oc_oprop; object_data.js OBJECT_MATERIAL keeps that column at every otyp in 0..NUM_OBJECTS-1 (checked concretely over the whole table), and object_properties.js:objectIs* reach it through o_init.js:objectMaterial over the related initial map',
+)
+
+FLAMMABLE_ASSUMPTIONS = MATERIAL_TABLE_ASSUMPTIONS + (
+    'mkobj.c:is_flammable reads otmp->otyp through obj.h Is_candle (TALLOW_CANDLE/WAX_CANDLE) and WAN_FIRE; object_data.js OBJECT_PROPERTY names the oc_oprop column, whose FIRE_RES rows are exactly the fireResistance rows (checked concretely), so the candle, wand and fire-resistance exclusions agree row for row',
+)
+
+
+STATE_SPECS += [
+    Spec('is_organic:tables', 'verification_is_organic', 'objectIsOrganic', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=MATERIAL_TABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned leather armor)',
+                  unrelated(lambda s: [s['obj.otyp'] == 134], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return objectMaterial(object, state) <= WOOD;',
+                   'return objectMaterial(object, state) < WOOD;')]),
+    Spec('is_metallic:tables', 'verification_is_metallic', 'objectIsMetallic', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=MATERIAL_TABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned plate mail)',
+                  unrelated(lambda s: [s['obj.otyp'] == 121], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return material >= IRON && material <= MITHRIL;',
+                   'return material >= IRON && material <= GLASS;')]),
+    Spec('is_rustprone:tables', 'verification_is_rustprone', 'objectIsRustprone', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=MATERIAL_TABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned plate mail)',
+                  unrelated(lambda s: [s['obj.otyp'] == 121], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return objectMaterial(object, state) === IRON;',
+                   'return objectMaterial(object, state) === COPPER;')]),
+    Spec('is_corrodeable:tables', 'verification_is_corrodeable',
+         'objectIsCorrodeable', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=MATERIAL_TABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned bronze plate mail)',
+                  unrelated(lambda s: [s['obj.otyp'] == 123], 'obj.otyp'))],
+         mutants=[(OBJ_FILE, 'return material === COPPER || material === IRON;',
+                   'return material === COPPER;')]),
+    Spec('is_crackable:tables', 'verification_is_crackable', 'objectIsCrackable', [],
+         js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=MATERIAL_TABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned crystal plate mail)',
+                  unrelated(lambda s: [s['obj.otyp'] == 122], 'obj.oclass'))],
+         mutants=[(OBJ_FILE, 'return objectMaterial(object, state) === GLASS\n        && object.oclass === ARMOR_CLASS;',
+                   'return object.oclass === ARMOR_CLASS;')]),
+    Spec('is_flammable:tables', 'is_flammable', 'objectIsFlammable', [],
+         js_file='js/mkobj.js',
+         state=[('otmp.otyp', (16, True), 'otmp.otyp'),
+                ('otmp.oclass', (8, True), 'otmp.oclass')],
+         assumptions=FLAMMABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('otmp'),
+         arguments=object_predicate_arguments('otmp'),
+         probes=[('otyp correspondence omitted (pinned leather armor)',
+                  unrelated(lambda s: [s['otmp.otyp'] == 134], 'otmp.otyp'))],
+         mutants=[('js/mkobj.js',
+                   'if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)\n        return false;',
+                   'if (object.otyp === WAN_FIRE && object.otyp === TALLOW_CANDLE)\n        return false;'),
+                  ('js/mkobj.js', '|| material === PLASTIC;',
+                   '|| material === DRAGON_HIDE;')]),
+    Spec('is_rottable:tables', 'is_rottable', 'objectIsRottable', [],
+         js_file='js/mkobj.js',
+         state=[('otmp.otyp', (16, True), 'otmp.otyp'),
+                ('otmp.oclass', (8, True), 'otmp.oclass')],
+         assumptions=FLAMMABLE_ASSUMPTIONS,
+         require_counterexamples=True, configure=plain_object_state('otmp'),
+         arguments=object_predicate_arguments('otmp'),
+         probes=[('otyp correspondence omitted (pinned leather armor)',
+                  unrelated(lambda s: [s['otmp.otyp'] == 134], 'otmp.otyp'))],
+         mutants=[('js/mkobj.js', '|| material === DRAGON_HIDE;',
+                   '|| material === PLASTIC;')]),
 ]
 
 # ---- fv-equivalence-batch-5: the named mondata.h/mondata.c predicates ----

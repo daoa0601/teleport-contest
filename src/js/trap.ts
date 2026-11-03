@@ -23,7 +23,7 @@ import type { MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDea
 import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, objectTypeKnown, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, OBJECT_SUBTYPE, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE } from './object_data.js';
-import { isBimanualObject, isBlade } from './object_properties.js';
+import { isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import { objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
@@ -53,7 +53,7 @@ import { recordHeroKillConduct, finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex, loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
-import { mksobj, objectWeight, unlinkObject, createCorpstatAt, rndmonnumAdj } from './mkobj.js';
+import { mksobj, objectWeight, unlinkObject, createCorpstatAt, rndmonnumAdj, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt } from './dig.js';
 import { placeObject, stack_object, placeCreatedObject, remove_object, updateIceObjectTimersAt } from './floor_object.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
@@ -279,7 +279,7 @@ const PM_AIR_ELEMENTAL = 154;
 
 function lavaCanBurnObject(object: GameObject | null | undefined, random: RandomBelow): boolean {
     if (!object || object.in_use || object.oerodeproof) return false;
-    const organic = objectMaterial(object) <= 8;
+    const organic = objectIsOrganic(object);
     if (!organic && object.oclass !== POTION_CLASS) return false;
     if (FIRE_RESISTANT_OBJECTS.has(object.otyp)
         || object.otyp === SCR_FIRE || object.otyp === SPE_FIREBALL)
@@ -501,7 +501,7 @@ export async function splashLitObject(object: GameObject | null | undefined, pub
 }
 
 function rustMetalObject(object: GameObject | null | undefined, description: string, luckRoll: RandomBelow): MetalRustResult {
-    if (!object || objectMaterial(object.otyp) !== 11)
+    if (!object || !objectIsRustprone(object))
         return { outcome: 'nothing' };
 
     const proof = !!object.oerodeproof;
@@ -2396,23 +2396,16 @@ export async function erodeObject(object: GameObject | null | undefined, kind: E
     }
     return 'nothing';
 }
-function objectCanBurn(object: GameObject, state: GameState) {
-    if ([TALLOW_CANDLE, WAX_CANDLE, WAN_FIRE].includes(object.otyp)
-        || OBJECT_PROPERTY[object.otyp] === 'fireResistance') return false;
-    const material = objectMaterial(object, state);
-    return (material <= 8 && material !== 1) || material === 18;
+export function objectIsVulnerableToErosion(object: GameObject, kind: ErosionKind, state: GameState = game) {
+    if (kind === 'burn') return objectIsFlammable(object, state);
+    if (kind === 'rust') return objectIsRustprone(object, state);
+    if (kind === 'corrosion') return objectIsCorrodeable(object, state);
+    if (kind === 'rot') return objectIsRottable(object, state);
+    return objectIsCrackable(object, state);
 }
 export function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>) {
     return [WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS].includes(object.oclass)
         || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0);
-}
-export function objectIsVulnerableToErosion(object: GameObject, kind: ErosionKind, state: GameState = game) {
-    const material = objectMaterial(object, state);
-    if (kind === 'burn') return objectCanBurn(object, state);
-    if (kind === 'rust') return material === 11;
-    if (kind === 'corrosion') return material === 11 || material === 13;
-    if (kind === 'rot') return (material <= 8 && material !== 1) || material === 10;
-    return material === 19 && object.oclass === ARMOR_CLASS;
 }
 function inventoryResists(kind: ErosionKind, state: GameState, random: typeof rn2) {
     if (kind !== 'burn' && kind !== 'corrosion') return false;

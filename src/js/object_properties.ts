@@ -27,7 +27,13 @@ const TOOL_CLASS = 6;
 const WAND_CLASS = 11;
 const GEM_CLASS = 13;
 const LEATHER = 7;
+const WOOD = 8;
+const IRON = 11;
+const COPPER = 13;
+const MITHRIL = 17;
+const GLASS = 19;
 const WHACK = 4;
+const ARMOR_CLASS = 3;
 
 function objectClass(object: ObjectCandidate): number {
     return object?.oclass || objectClassForType(object?.otyp);
@@ -140,6 +146,46 @@ export function isFlimsyObject(
 ): boolean {
     return objectMaterial(object, state) <= LEATHER
         || !!object && OBJECT_NAMES[object.otyp] === 'rubber hose';
+}
+
+// C objclass.h:is_organic().
+export function objectIsOrganic(
+    object: ObjectCandidate, state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    return objectMaterial(object, state) <= WOOD;
+}
+
+// C objclass.h:is_metallic().
+export function objectIsMetallic(
+    object: ObjectCandidate, state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    const material = objectMaterial(object, state);
+    return material >= IRON && material <= MITHRIL;
+}
+
+// C objclass.h:is_rustprone().
+export function objectIsRustprone(
+    object: ObjectCandidate, state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    return objectMaterial(object, state) === IRON;
+}
+
+// C objclass.h:is_corrodeable().
+export function objectIsCorrodeable(
+    object: ObjectCandidate, state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    const material = objectMaterial(object, state);
+    return material === COPPER || material === IRON;
+}
+
+// C objclass.h:is_crackable(). Only worn glass takes crack damage
+// (the erosion_matters() note in objclass.h).
+export function objectIsCrackable(
+    object: Pick<GameObject, 'otyp' | 'oclass'>,
+    state?: Pick<GameState, 'objectMaterials'>,
+): boolean {
+    return objectMaterial(object, state) === GLASS
+        && object.oclass === ARMOR_CLASS;
 }
 
 export type WeaponView = Pick<GameObject, 'otyp'>

@@ -34,6 +34,7 @@ import { removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterCl
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory, armorThiefGone } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
+import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight } from './mkobj.js';
 import { unpunishHero } from './read.js';
@@ -1830,7 +1831,6 @@ export function initializeMonsterMovement(monster) {
 }
 // ── C mon.c:meatmetal(), meatobj(), and meatcorpse(). Non-pet meals
 // during post-move item handling.
-const WOOD = 8, IRON = 11, MITHRIL = 17;
 const SCROLL_CLASS = 9, ROCK_CLASS = 14;
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 export async function consumeMonsterFloorObjects(monster, state, { originalSpecies, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
@@ -1863,11 +1863,10 @@ async function eatMetal(monster, context) {
     const { state, level, random, rollOne, publish } = context;
     const visible = canSeeMonster(monster);
     for (const object of [...(level.objects[monster.mx]?.[monster.my] ?? [])]) {
-        const material = objectMaterial(object, state);
-        if ((monster.mnum === PM_RUST_MONSTER && material !== IRON)
+        if ((monster.mnum === PM_RUST_MONSTER && !objectIsRustprone(object, state))
             || chokingObject(object) || poisonousObject(object, monster))
             continue;
-        if (material < IRON || material > MITHRIL
+        if (!objectIsMetallic(object, state)
             || objectResistsDestruction(object, 5, 95, random)
             || !monsterCanTouchArtifact(monster, object, state))
             continue;
@@ -1915,7 +1914,7 @@ async function eatOrEngulfPile(monster, context) {
             || object.oclass === ROCK_CLASS || object === (state.uball || state.u.uball)
             || object === (state.uchain || state.u.uchain) || object.otyp === SCR_SCARE_MONSTER)
             continue;
-        if (objectMaterial(object, state) > WOOD || objectResistsDestruction(object, 5, 95, random)
+        if (!objectIsOrganic(object, state) || objectResistsDestruction(object, 5, 95, random)
             || !monsterCanTouchArtifact(monster, object, state)
             || chokingObject(object) || poisonousObject(object, monster)
             || (petrifyingFood(object) && !monsterHasStoneResistance(monster))

@@ -197,7 +197,7 @@ negative checks. The exit status is nonzero if any claim fails.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 109 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 116 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -213,13 +213,17 @@ nineteen PR 610 mondata predicates (`bigmonst`, `is_flyer`, `is_floater`,
 `control_teleport`, `perceives`, `hides_under`, `is_hider`, `is_demon`,
 `is_golem`, `is_giant`, `is_female`, `throws_rocks`, `type_is_pname`,
 `is_silent`) and `mondata.c:can_track` with a wielded-Excalibur state
-relation, and the eighteen object-class claims of fv-equivalence-batch-6
+relation, the eighteen object-class claims of fv-equivalence-batch-6
 over `object_properties.js`: the obj.h macros `is_weptool`, `bimanual`,
 `is_missile`, `is_ammo`, `ammo_and_launcher`, `is_poisonable`,
 `is_blunt_weapon`, `is_flimsy`, `is_pick`, `is_axe`, `is_blade`,
 `is_wet_towel`, `is_pole`, `is_sword`, `is_graystone` and `is_multigen`,
 the real `dothrow.c:throwing_weapon`, and `artifact.c:permapoisoned`
-(nullable object). The monster claims check all 383 valid
+(nullable object), and the seven material-predicate claims of
+fv-equivalence-batch-7: the objclass.h macros `is_organic`,
+`is_metallic`, `is_rustprone`, `is_crackable` and `is_corrodeable`
+(`object_properties.js`) and the real `mkobj.c:is_flammable()`/
+`is_rottable()` (`mkobj.js`). The monster claims check all 383 valid
 native species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
