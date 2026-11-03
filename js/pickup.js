@@ -1073,7 +1073,10 @@ async function lootFloorContainers(x, y, unlock) {
             spentTime = true;
             break;
         }
-        game._pending_message = '';
+        // C wintty.c tty_display_nhwindow(NHW_MENU) pages a NEED_MORE
+        // topline before the menu is drawn, so do_loot_cont()'s pending
+        // "turns out to be locked" line is acknowledged with --More--
+        // ahead of use_container()'s prompt; nothing here discards it.
         await flush_screen(1);
         const result = await useContainer(container, {
             moreContainers: index + 1 < selected.length, underlay: snapshotMenuUnderlay(),

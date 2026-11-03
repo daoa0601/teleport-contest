@@ -44,7 +44,11 @@ void test('looting several containers replaces the old batch once and retains bo
     const ration = await knownObject(FOOD_RATION, { where: 'contained', container: second });
     second.contents = [ration];
 
-    await runExtendedCommand('loot', 'ab\noa\noa\n');
+    // The second chest's menu display pages the take-out messages of the
+    // first (wintty.c tty_display_nhwindow case NHW_MENU acknowledges a
+    // NEED_MORE topline before drawing), so a space separates the two
+    // containers' interactions.
+    await runExtendedCommand('loot', 'ab\noa\n oa\n');
 
     assert.equal(previous.pickup_prev, false);
     assert.equal(dart.pickup_prev, true);
