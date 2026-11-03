@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { pushKeys } from '../js/input.js';
 import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
 import { restoreGame, saveGame } from '../js/save.js';

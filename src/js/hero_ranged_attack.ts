@@ -20,7 +20,7 @@ import {
 import { objectClassForType } from './o_init.js';
 
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
-import { destroyMulchedProjectile, shouldMulchMissile } from './projectile.js';
+import { destroyMulchedProjectile, shouldMulchMissile } from './dothrow.js';
 import { rnd, rn2 } from './rng.js';
 import { chargeUnpaidObjectAsDebt } from './shk.js';
 import { weaponSkillHitBonus } from './skills.js';

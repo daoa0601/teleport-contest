@@ -88,7 +88,7 @@ import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './uhitm.js';
 import { setMonsterMalign, makemon } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary } from './wield.js';
-import type { HeroHurtleOptions } from './hero_hurtle.js';
+import type { HeroHurtleOptions } from './dothrow.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { splitHeroMonsterForm } from './potion.js';
 

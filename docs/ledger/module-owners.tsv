@@ -50,7 +50,6 @@ src/js/floor_object_display.ts	invent.c
 src/js/fruit.ts	objnam.c
 src/js/glob.ts	mkobj.c
 src/js/glyph_customizations.ts	display.c
-src/js/gold_throw.ts	dothrow.c
 src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
@@ -59,7 +58,6 @@ src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_grip.ts	mon.c
 src/js/hero_hide.ts	insight.c
-src/js/hero_hurtle.ts	dothrow.c
 src/js/hero_inventory.ts	invent.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
@@ -119,7 +117,6 @@ src/js/poison.ts	attrib.c
 src/js/potion.ts	potion.c
 src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
-src/js/projectile.ts	dothrow.c
 src/js/projectile_bars.ts	monmove.c
 src/js/quest.ts	quest.c
 src/js/ray_name.ts	mthrowu.c
@@ -153,7 +150,6 @@ src/js/throne.ts	sit.c
 src/js/timeout.ts	timeout.c
 src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
-src/js/toss_up.ts	dothrow.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
 src/js/trap.ts	trap.c

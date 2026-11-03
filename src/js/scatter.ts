@@ -55,7 +55,7 @@ import { delobj } from './invent.js';
 import { objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
-import { shouldMulchMissile } from './projectile.js';
+import { shouldMulchMissile } from './dothrow.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';

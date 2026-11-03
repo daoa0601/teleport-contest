@@ -17,7 +17,7 @@ import { definiteName, objectCombatName } from './objnam.js';
 import type { GameObject } from './object_types.js';
 import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
 import { heroIsDeaf } from './senses.js';
-import { settleThrownShopObject } from './shk.js';
+import { settleThrownShopObject } from './dothrow.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
 
 import { addInventoryItem } from './u_init.js';

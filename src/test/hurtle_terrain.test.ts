@@ -3,7 +3,7 @@ import test from 'node:test';
 import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { D_CLOSED, DOOR, LAVAWALL, POOL, STONE, VIBRATING_SQUARE, WATER } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 

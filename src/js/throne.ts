@@ -25,7 +25,7 @@ import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './do_wear.js';
 
 import { game, requireInitializedGame } from './gstate.js';
-import type { HeroHurtleOptions } from './hero_hurtle.js';
+import type { HeroHurtleOptions } from './dothrow.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 

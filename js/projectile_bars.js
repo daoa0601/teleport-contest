@@ -11,7 +11,7 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { breakFloorObject, breakObjectAtLocation } from './dothrow.js';
 import { BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { harmlessMissile } from './projectile.js';
+import { harmlessMissile } from './dothrow.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';

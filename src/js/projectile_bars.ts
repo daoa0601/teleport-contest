@@ -28,7 +28,7 @@ import {
 import { objectMaterial } from './o_init.js';
 
 
-import { harmlessMissile } from './projectile.js';
+import { harmlessMissile } from './dothrow.js';
 import type { GameObject } from './object_types.js';
 
 import { rn2 } from './rng.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, TT_LAVA } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { pushKeys } from '../js/input.js';
 import { levitationDialogue } from '../js/timeout.js';
 import { refreshProperty } from '../js/properties.js';

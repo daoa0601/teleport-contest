@@ -4,7 +4,7 @@ import { MM_ANGRY, MM_NOGRP, MM_NOTAIL, NO_MINVENT, STONE, STRAT_WAITMASK } from
 import { canSeeMonster, newsym } from '../js/display.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';

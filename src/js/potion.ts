@@ -46,7 +46,7 @@ import { releaseHeroFromMonster } from './hero_expulsion.js';
 
 import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { hurtleHero } from './hero_hurtle.js';
+import { hurtleHero } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
@@ -111,7 +111,7 @@ import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, h
 
 import type { ProjectileFlightCapture } from './thrown_object.js';
 
-import { tossObjectUp } from './toss_up.js';
+import { tossObjectUp } from './dothrow.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
 import { cansee, vision_recalc } from './vision.js';

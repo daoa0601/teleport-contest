@@ -57,7 +57,7 @@ import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { settleThrownShopObject } from './shk.js';
+import { settleThrownShopObject } from './dothrow.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 
 import { objectNoLongerHeld } from './do.js';

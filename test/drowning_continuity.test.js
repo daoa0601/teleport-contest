@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { CORR, POOL, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
-import { hurtleHero } from '../js/hero_hurtle.js';
+import { hurtleHero } from '../js/dothrow.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';

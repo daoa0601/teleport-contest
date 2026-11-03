@@ -426,11 +426,11 @@ src/js/timeout.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
 src/js/read.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
 src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
 src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
-src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
-src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
-src/js/gold_throw.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
-src/js/gold_throw.ts	resolveQuiveredGoldMonsterContact	rn2	"[""3""]"	constant
-src/js/gold_throw.ts	resolveQuiveredGoldMonsterContact	rnd	"[""20""]"	constant
+src/js/dokick.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
+src/js/dokick.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
+src/js/dokick.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
+src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rn2	"[""3""]"	constant
+src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rnd	"[""20""]"	constant
 src/js/apply.ts	damageHero	rn2	"[""10""]"	constant
 src/js/apply.ts	useGrapplingHook	rn2	"[""2""]"	constant
 src/js/apply.ts	useGrapplingHook	rn2	"[""4""]"	constant
@@ -507,7 +507,7 @@ src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
 src/js/uhitm.ts	finishHeroHitAftermath	random	"[""2""]"	constant
-src/js/hero_hurtle.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
+src/js/dothrow.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
 src/js/timeout.ts	advanceHeroSickness	random	"[""100""]"	constant
 src/js/timeout.ts	sicknessDialogue	rn2	"[""4""]"	constant
 src/js/timeout.ts	vomitingDialogue	rollDice	"[""2"", ""4""]"	constant
@@ -2017,11 +2017,11 @@ src/js/priest_talk.ts	talkToPriest	rn1	"[""3"", ""2""]"	constant
 src/js/priest_talk.ts	talkToPriest	rn1	"[""duration"", ""duration""]"	guarded
 src/js/priest_talk.ts	talkToPriest	rn2	"[""3""]"	constant
 src/js/priest_talk.ts	talkToPriest	rn2	"[""protection""]"	guarded
-src/js/projectile.ts	shouldMulchMissile	rn2	"[""2""]"	constant
-src/js/projectile.ts	shouldMulchMissile	rn2	"[""3""]"	constant
-src/js/projectile.ts	shouldMulchMissile	rn2	"[""4""]"	constant
-src/js/projectile.ts	shouldMulchMissile	rn2	"[""chance""]"	guarded
-src/js/projectile.ts	shouldMulchMissile	rnl	"[""4""]"	constant
+src/js/dothrow.ts	shouldMulchMissile	rn2	"[""2""]"	constant
+src/js/dothrow.ts	shouldMulchMissile	rn2	"[""3""]"	constant
+src/js/dothrow.ts	shouldMulchMissile	rn2	"[""4""]"	constant
+src/js/dothrow.ts	shouldMulchMissile	rn2	"[""chance""]"	guarded
+src/js/dothrow.ts	shouldMulchMissile	rnl	"[""4""]"	constant
 src/js/projectile_bars.ts	hitIronBars	random	"[""Math.max(2, chance)""]"	constant
 src/js/trap.ts	beginMonsterProjectileTrap	random	"[""15""]"	constant
 src/js/trap.ts	beginMonsterProjectileTrap	random	"[""6""]"	constant
@@ -2313,12 +2313,12 @@ src/js/tip_hat.ts	acknowledgeHelmetTip	rn2	"[""3""]"	constant
 src/js/topten.ts	randomToptenEntry	rollOne	"[""TOP_NAME_RANK""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""13""]"	constant
 src/js/topten.ts	toptenMonsterForm	random	"[""LAST_PLAYER_MONSTER - FIRST_PLAYER_MONSTER + 1""]"	constant
-src/js/toss_up.ts	tossObjectUp	random	"[""18""]"	constant
-src/js/toss_up.ts	tossObjectUp	random	"[""5""]"	constant
-src/js/toss_up.ts	tossObjectUp	rollOne	"[""20""]"	constant
-src/js/toss_up.ts	tossObjectUp	rollOne	"[""25""]"	constant
-src/js/toss_up.ts	tossObjectUp	rollOne	"[""4""]"	constant
-src/js/toss_up.ts	tossObjectUp	rollOne	"[""weightDamage""]"	constant
+src/js/dothrow.ts	tossObjectUp	random	"[""18""]"	constant
+src/js/dothrow.ts	tossObjectUp	random	"[""5""]"	constant
+src/js/dothrow.ts	tossObjectUp	rollOne	"[""20""]"	constant
+src/js/dothrow.ts	tossObjectUp	rollOne	"[""25""]"	constant
+src/js/dothrow.ts	tossObjectUp	rollOne	"[""4""]"	constant
+src/js/dothrow.ts	tossObjectUp	rollOne	"[""weightDamage""]"	constant
 src/js/apply.ts	useTowel	rn1	"[""10"", ""3""]"	constant
 src/js/apply.ts	useTowel	rn1	"[""10"", ""3""]"	constant
 src/js/apply.ts	useTowel	rn2	"[""2""]"	constant

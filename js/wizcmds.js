@@ -28,8 +28,7 @@ import { monsterIsNonliving, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from 
 import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes, smellUnseenMonster } from './mon.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
-import { hurtleHero } from './hero_hurtle.js';
-import { hurtleMonster } from './dothrow.js';
+import { hurtleHero, hurtleMonster } from './dothrow.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival } from './level_change.js';
 import { resolveHeroArrivalCollision } from './do.js';
