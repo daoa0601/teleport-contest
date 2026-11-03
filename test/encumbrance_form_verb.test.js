@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { reportHeroEncumbrance } from '../js/encumbrance.js';
+import { reportHeroEncumbrance } from '../js/pickup.js';
 import { ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

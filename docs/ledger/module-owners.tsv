@@ -18,7 +18,7 @@ src/js/character_name.ts	role.c
 src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
-src/js/confused_loot.ts	pickup.c
+src/js/container.ts	mkobj.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
@@ -30,12 +30,10 @@ src/js/dokick.ts	dokick.c
 src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
 src/js/dungeon.ts	dungeon.c
-src/js/dungeon_feature.ts	pickup.c
 src/js/eat.ts	eat.c
 src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
 src/js/enchant_weapon.ts	wield.c
-src/js/encumbrance.ts	pickup.c
 src/js/engrave.ts	engrave.c
 src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
@@ -77,13 +75,11 @@ src/js/inventory_prompt.ts	invent.c
 src/js/isaac64.ts	isaac64.c
 src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
-src/js/just_picked.ts	pickup.c
 src/js/kick_door.ts	dokick.c
 src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/level_change.ts	questpgr.c
 src/js/levitation_drop.ts	artifact.c
-src/js/lift_object.ts	pickup.c
 src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
@@ -147,6 +143,7 @@ src/js/spellbook_study.ts	spell.c
 src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
+src/js/stoning.ts	mhitm.c
 src/js/takeoff_menu.ts	do_wear.c
 src/js/teleport.ts	teleport.c
 src/js/teleport_rules.ts	teleport.c

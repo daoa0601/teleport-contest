@@ -2,11 +2,13 @@
 // C invent.c:look_here(), pickup.c:check_here(), and objnam.c.
 
 import { game, requireGameDisplay, requireGameLevel } from './gstate.js';
-import { ICE, Is_airlevel, Is_waterlevel, PLNMSG_ONE_ITEM_HERE, is_pit } from './const.js';
-import { dungeonFeatureAt, dungeonFeatureSentence, forceDescribeDecor } from './dungeon_feature.js';
+import { ALTAR, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, ICE, IRONBARS, SINK, THRONE, TREE, is_pit, PLNMSG_ONE_ITEM_HERE, Is_airlevel, Is_waterlevel } from './const.js';
+import { forceDescribeDecor } from './pickup.js';
+import { stairwayDescription } from './mklev.js';
+import { deityName } from './alignment.js';
 import { heroCanReachFloor } from './engrave.js';
 import { surfaceName } from './terrain_name.js';
-import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 
 import type { GameObject } from './object_types.js';
 import { nhgetch } from './input.js';
@@ -29,6 +31,60 @@ import { visibleRegionAt } from './regions.js';
 import { trapName } from './trap.js';
 
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, willFeelPetrifyingCorpse } from './stoning.js';
+import { iceDescriptionAt } from './pager.js';
+import type { GameState } from './game_state.js';
+import type { Stairway } from './map_types.js';
+
+
+export interface FeatureOptions { state?: GameState; probing?: boolean }
+
+// C invent.c:dfeature_at(): name the dungeon feature on a square, if any.
+export function dungeonFeatureAt(x: number, y: number, { state = game, probing = false }: FeatureOptions = {}): string | null {
+    const location = requireGameLevel(state).requireAt(x, y);
+    const type = location.typ;
+    if (type === DOOR) {
+        if (findDrawbridgeAt(x, y, state)) return 'open drawbridge portcullis';
+        return location.doormask === D_NODOOR ? 'doorway'
+            : location.doormask === D_ISOPEN ? 'open door'
+                : location.doormask === D_BROKEN ? 'broken door' : 'closed door';
+    }
+    if (type === FOUNTAIN) return 'fountain';
+    if (type === THRONE) return 'opulent throne';
+    if (isLavaAt(x, y, state)) return 'molten lava';
+    const surface = type === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : type;
+    if (surface === ICE) return iceDescriptionAt(x, y, { state, probing });
+    if (isPoolAt(x, y, state)) return 'pool of water';
+    if (type === SINK) return 'sink';
+    if (type === ALTAR) {
+        const alignment = Amask2align(location.flags);
+        const name = alignment === A_NONE ? 'unaligned'
+            : alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
+        const deity = deityName(alignment, state).replace(/^_/, '');
+        return `${location.flags & AM_SANCTUM ? 'high ' : ''}altar to ${deity} (${name})`;
+    }
+    for (let stairway = state.stairs; stairway; stairway = stairway.next)
+        if (stairway.sx === x && stairway.sy === y)
+            return stairwayDescription(stairway, state);
+    if (type === DRAWBRIDGE_DOWN) return 'lowered drawbridge';
+    if (type === DBWALL) return 'raised drawbridge';
+    if (type === GRAVE) return 'grave';
+    if (type === TREE) return 'tree';
+    if (type === IRONBARS) return 'set of iron bars';
+    return null;
+}
+
+export function dungeonFeatureSentenceAt(x: number, y: number): string {
+    return dungeonFeatureSentence(dungeonFeatureAt(x, y));
+}
+
+export function dungeonFeatureSentence(feature: string | null): string {
+    if (!feature || feature === 'pool of water' && (game.underwater || game.u.uinwater))
+        return '';
+    const noArticle = feature === 'molten lava' || feature === 'ice'
+        || feature.startsWith('frozen ') || feature.slice(feature.indexOf(' ')) === ' ice';
+    return `There is ${noArticle ? feature : withIndefiniteArticle(feature)} here.`;
+}
 
 export async function readFloorEngraving(x: number, y: number): Promise<void> {
     const read = await readEngravingAt(x, y, plineWithContinuation);

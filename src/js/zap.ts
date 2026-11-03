@@ -84,7 +84,7 @@ import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.j
 import type { MonsterHitPointRandom } from './makemon.js';
 import { impossible } from './diagnostics.js';
 import { recordMappedOverviewState } from './dungeon.js';
-import { forceDescribeDecor } from './dungeon_feature.js';
+import { forceDescribeDecor } from './pickup.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
 import { addExperience } from './exper.js';
 import { explode } from './explosion.js';
@@ -125,7 +125,7 @@ import { namelessMonsterName } from './do_name.js';
 import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
 import { restartEggHatchTimer } from './egg.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
 import { remove_object, sweepFloorPile } from './floor_object.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';

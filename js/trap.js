@@ -8,7 +8,7 @@ import { learnObjectType, observeObject, objectMaterial, objectClassForType, rec
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
+import { iceDescriptionAt } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { useUpInventoryStack } from './hero_inventory.js';
@@ -86,7 +86,7 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { setHeroGrip } from './hero_grip.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';

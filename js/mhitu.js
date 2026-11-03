@@ -77,7 +77,7 @@ import { seductionCompatibility } from './seduction_compatibility.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { objectTypeKnown } from './shk.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { finishHeroHelplessness } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack

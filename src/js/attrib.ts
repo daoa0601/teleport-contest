@@ -10,7 +10,7 @@ import type { DeathHandler } from './end.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';

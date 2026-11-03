@@ -45,7 +45,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley } from './hero_multishot.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
 import type { PotionWakeMonster, PotionWakeNearby } from './potion.js';

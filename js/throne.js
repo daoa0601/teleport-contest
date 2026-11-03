@@ -8,7 +8,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import { A_CON, A_MAX, A_STR, Luck, ROOM, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, } from './attrib.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import { displayColorName, map_background, newsym, newsym_force, see_monsters, shieldeff, } from './display.js';

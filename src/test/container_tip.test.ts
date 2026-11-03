@@ -6,7 +6,7 @@ import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, DAGGER, HORN_OF_PLENTY, ROC
     WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { reportHeroEncumbrance } from '../js/encumbrance.js';
+import { reportHeroEncumbrance } from '../js/pickup.js';
 
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';

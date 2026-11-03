@@ -31,8 +31,8 @@ import { heroIsPolymorphed } from './polyself.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { addInventoryItem } from './u_init.js';
 
-import { pickupBurden } from './lift_object.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { pickupBurden } from './pickup.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { CORPSE, CRYSKNIFE, GOLD_PIECE, LOADSTONE } from './object_data.js';
 import { nearCapacity } from './hack.js';
 

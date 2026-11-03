@@ -209,12 +209,12 @@ function beatitude(object) {
 function unpaidObjects(objects) {
     return objects.flatMap(object => [...(object.unpaid ? [object] : []), ...unpaidObjects(object.contents ?? [])]);
 }
-// C pickup.c:count_justpicked().
-// C pickup.c:find_justpicked().
 // C invent.c:dotypeinv(): the 'I' type filter. ckvalidcat() and ckunpaid()
 // are the category filters, tally_BUCX() the beatitude statuses,
 // wearing_armor() the armor-class admission, and this_type_only() the
 // single-class selection — all inlined below.
+// C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
+// of the previous pickup feed the 'P' selection.
 async function typeInventory() {
     const bill = usedUpBill();
     if (!game.inventory.length && !bill.length) {

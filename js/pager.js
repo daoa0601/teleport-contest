@@ -1,6 +1,6 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
-import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, COLNO, CORR, D_BROKEN, D_TRAPPED, def_warnsyms, DOOR, GRAVE, HOLE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
+import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, COLNO, CORR, D_BROKEN, D_TRAPPED, def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
 import { canSpotHeroSelf, cmapSymbolAppearance, displayLiquidName, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, randomDisplayMonsterName, swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -10,10 +10,9 @@ import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_F
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { visibleRegionAt } from './regions.js';
-import { isPoolAt } from './dbridge.js';
+import { isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
-import { iceDescriptionAt } from './dungeon_feature.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearCommandKeys, takeCommandKey } from './input.js';
 import { getLine, promptYesNo } from './query.js';
@@ -48,6 +47,32 @@ import { showExtendedCommandList } from './cmd.js';
 import { option_help } from './options.js';
 import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
+import { levelTimers } from './timeout.js';
+// C pager.c:ice_descr().
+export function iceDescriptionAt(x, y, { state = game, probing = false } = {}) {
+    const location = requireGameLevel(state).requireAt(x, y);
+    const surface = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    if (surface !== ICE)
+        return `[ice:${location.typ}?]`;
+    const radius = Math.max(state.u.xray_range ?? -1, 2);
+    const distance = (x - state.u.ux) ** 2 + (y - state.u.uy) ** 2;
+    const heroHere = x === state.u.ux && y === state.u.uy;
+    const generic = !probing && (distance > radius * radius * 2 - radius
+        || (!cansee(x, y) && (!heroHere || propertyIsActive('levitation', state))));
+    const substance = heroIsHallucinating(state)
+        ? `frozen ${displayLiquidName('water', state)}` : 'ice';
+    if (generic)
+        return substance;
+    const timer = levelTimers(state).find(timer => timer.kind === LEVEL_TIMER_KIND.MELT_ICE_AWAY && timer.x === x && timer.y === y);
+    const remaining = timer ? timer.deadline - state.moves : 0;
+    const strength = !remaining ? 'solid'
+        : remaining > 1000 ? 'sturdy'
+            : remaining > 100 ? 'steady'
+                : remaining > 50 ? 'unsteady'
+                    : remaining > 14 ? 'thin' : 'slushy';
+    return `${strength} ${substance}`;
+}
 // C refs: pager.c:do_look() (mode 0 for whatis, 1 for quick glance),
 // getpos.c:getpos(), pager.c:do_screen_description().
 // Farlook spends no game time. Ordinary look retains its cursor between

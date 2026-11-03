@@ -31,7 +31,7 @@ import type { Hero } from './hero_types.js';
 import type { PropertyName } from './property_types.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
-import { deferredDecor } from './dungeon_feature.js';
+import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import {
     hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty,
@@ -106,7 +106,7 @@ import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCannotVomit, nameToMonster } from './mondata.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 
 interface PetrificationAdvanceResult {
     active: boolean;

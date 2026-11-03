@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
-import { putIntoContainer, takeFromContainer } from '../js/container.js';
+import { putIntoContainer, takeFromContainer } from '../js/pickup.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

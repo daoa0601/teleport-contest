@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { THRONE, DUST } from '../js/const.js';
-import { deferredDecor } from '../js/dungeon_feature.js';
+import { deferredDecor } from '../js/pickup.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { resetInputState } from '../js/input.js';
 import { autopickupAtHero } from '../js/pickup.js';

@@ -5,7 +5,7 @@ import test from 'node:test';
 // One coin can therefore push a hero over the next burden threshold.
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { liftObject } from '../js/lift_object.js';
+import { liftObject } from '../js/pickup.js';
 import { DART, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

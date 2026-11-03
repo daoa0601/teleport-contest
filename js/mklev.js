@@ -30,7 +30,7 @@ import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './flo
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { GameMap } from './game.js';
 import { levelAllowsBones } from './bones_admission.js';
-import { ageStoresFuel } from './container.js';
+import { ageStoresFuel } from './pickup.js';
 import { restoreBonesMonsters } from './bones_monster.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
 import { encodeSavedGraph } from './saved_graph.js';
@@ -40,7 +40,7 @@ import { SHOP_TYPES, RANDOM_SHOP_TYPES } from './shknam.js';
 import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_CHA, COLNO, ROWNO, STONE, MAX_TYPE, ROOM, CORR, DOOR, STAIRS, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SHARED, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, GRAVE, THRONE, HEADSTONE, MARK, DUST, DIR_N, DIR_S, DIR_E, DIR_W, DIR_180, XL_UP, XL_DOWN, XL_LEFT, XL_RIGHT, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, ZAP_POS, IS_FURNITURE, IS_POOL, IS_AIR, IS_LAVA, In_endgame, Is_earthlevel, Is_botlevel, Is_stronghold, Invocation_lev, In_hell, In_quest, In_V_tower, Is_oracle_level, Is_waterlevel, Is_knox_level, Is_rogue_level, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DBWALL, ICED_POOL, ICED_MOAT, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_MOAT, DB_LAVA, DB_UNDER, DB_FLOOR, SHOP_HOLE_COST, AIR, TRICKED, A_NONE, A_LAWFUL, AM_SHRINE, Align2amask, LR_DOWNSTAIR, LR_UPSTAIR, LR_UPTELE, LR_DOWNTELE, LR_TELE, LR_BRANCH, LR_PORTAL, MM_ASLEEP, MM_NOGRP, MM_EPRI, MM_ESHK, MM_IGNOREWATER, MM_NOCOUNTBIRTH, MM_NOMSG, MM_EDOG, NO_MINVENT, G_EXTINCT, G_GENOD, G_GONE, HEALTHY_TIN, ANTI_MAGIC, TT_BURIEDBALL, TT_BEARTRAP, TT_WEB, TT_PIT, TT_LAVA, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
-import { depth as depth_of_level, ledgerNo } from './hacklib.js';
+import { depth as depth_of_level, ledgerNo, dungeonDepth } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { createMaze } from './maze_terrain.js';
 import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE } from './object_data.js';
@@ -202,6 +202,39 @@ export function stairwayAt(state, x, y) {
             return stair;
     }
     return null;
+}
+function sameLevel(left, right) {
+    return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
+}
+// C stairs.c:stairs_description().
+export function stairwayDescription(stairway, state) {
+    const noun = stairway.isladder ? 'ladder' : 'staircase';
+    const direction = stairway.up ? 'up' : 'down';
+    const here = state.u.uz;
+    if (!here)
+        throw new Error('Stair description requires the hero dungeon position');
+    const destination = stairway.tolev;
+    if (destination.dnum === here.dnum || !stairway.u_traversed) {
+        if (!stairway.u_traversed)
+            return `${noun} ${direction}`;
+        const localDepth = destination.dnum === state.quest_dnum
+            || sameLevel(destination, state.knox_level);
+        const depth = localDepth ? destination.dlevel
+            : dungeonDepth(destination.dnum, destination.dlevel, state.dungeons);
+        return `${noun} ${direction} to level ${depth}`;
+    }
+    if (here.dnum === 0 && here.dlevel === 1 && stairway.up) {
+        if (!state.u.uhave?.amulet)
+            return `${noun} up out of the dungeon`;
+        const elemental = [state.earth_level, state.air_level, state.fire_level, state.water_level]
+            .some(level => sameLevel(destination, level));
+        return `branch ${noun} up to ${elemental ? 'the Elemental Planes' : 'the end game'}`;
+    }
+    const descriptor = state.dungeons[destination.dnum];
+    if (!descriptor)
+        throw new Error(`Stair destination dungeon ${destination.dnum} does not exist`);
+    const dungeon = descriptor.dname.replace(/^The /, 'the ');
+    return `branch ${noun} ${direction} to ${dungeon}`;
 }
 // ── Hero placement (C ref: stairs.c, mkmaze.c) ──
 // C refs: dungeon.c Can_dig_down()/Can_fall_thru().  A level's hard-floor

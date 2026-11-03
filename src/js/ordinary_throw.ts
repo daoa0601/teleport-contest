@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { flyBoomerang } from './boomerang.js';
 import type { BoomerangFlight } from './boomerang.js';
 import { plineWithContinuation } from './pline.js';

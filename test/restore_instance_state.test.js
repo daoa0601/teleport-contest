@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { reportHeroEncumbrance } from '../js/encumbrance.js';
+import { reportHeroEncumbrance } from '../js/pickup.js';
 import { rhack } from '../js/cmd.js';
 import { flipCoin } from '../js/apply.js';
 import { AIR, DOOR, D_BROKEN, HUNGRY, NOT_HUNGRY, WATER, WEAK } from '../js/const.js';

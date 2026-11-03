@@ -2,61 +2,68 @@
 // container looting (doloot()), and tipping (dotip()).
 
 import { commandResultCancelled, setMulti } from './cmd.js';
-import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp } from './hack.js';
+import {
+    endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp,
+    heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity,
+} from './hack.js';
 import { monsterStagger } from './mondata.js';
-import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs } from './polyself.js';
+import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
+import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
-import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription } from './objnam.js';
+import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
+import {
+    definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming,
+    ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription,
+    makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction,
+    ownedObjectQuestion, corpseName, killerObjectName,
+} from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
 import { getAdjacentLocation } from './cmd.js';
-import { ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, is_pit, GRAVE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_ITEMFLAGS_SELECTED, PLNMSG_OBJNAM_ONLY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PARANOID_AUTOALL } from './const.js';
+import { ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL } from './const.js';
 import { isok } from './cmd.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, consumeObjectCharge, dolook } from './invent.js';
-import { tryCallObjectType, dropObjectAtHero } from './do.js';
-import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight } from './mkobj.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook } from './invent.js';
+import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
+import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout } from './mkobj.js';
 
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, objectClassForType, observeObject } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, displayLiquidName, flush_screen, newsym, newsym_force } from './display.js';
-import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving } from './floor_object_display.js';
+import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, dungeonFeatureAt } from './floor_object_display.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { describeDecor } from './dungeon_feature.js';
-import { showMultiSelectWindow, snapshotMenuUnderlay, showDisclosureOverlay } from './windows.js';
-import type { CountedSelection, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem } from './windows.js';
+import type { FeatureOptions } from './floor_object_display.js';
+import type { MessagePublisher } from './pline.js';
+import { showMultiSelectWindow, snapshotMenuUnderlay, showDisclosureOverlay, restoreMenuUnderlay, showChoiceWindow, showTextWindow } from './windows.js';
+import type { ChoiceMenuEntry, CountedSelection, MenuUnderlay, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import { addInventoryItem } from './u_init.js';
-import { recordHeroPrizeAcquisition } from './hero_inventory.js';
+import { recordHeroPrizeAcquisition, finishInventoryRemoval, useUpInventoryStack, freeInventoryObject } from './hero_inventory.js';
 import { remove_object } from './floor_object.js';
-import { carryableObjectCount, liftObject } from './lift_object.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
-import { promptYesNoQuit, getLine } from './query.js';
-import { yn_function } from './cmd.js';
+import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
+import { yn_function, paranoidYesNoQuit } from './cmd.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroCanReachFloor } from './engrave.js';
-import { hideHeroUnder } from './mon.js';
-import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL } from './shk.js';
+import { hideHeroUnder, finishEnvironmentalMonsterDeath } from './mon.js';
+import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, objectTypeKnown, removeObjectAndContentsFromBill, remoteBurglary, setSellDisposition, SELL_NORMAL, SELL_DELIBERATE, SELL_DONTSELL, currentShopResident, stolenValue, sellHeroDroppedObject, warnAboutRemovedPick, deleteObject } from './shk.js';
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
-import { clearJustPicked, markJustPicked } from './just_picked.js';
 import { touchArtifactByHero } from './artifacts.js';
-import { BAG_OF_HOLDING, BAG_OF_TRICKS, CAN_OF_GREASE, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL, SCR_SCARE_MONSTER, STATUE, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
+import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE } from './object_data.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import { useHornOfPlenty } from './horn_of_plenty.js';
-import { surfaceName, ceilingName } from './terrain_name.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
-import { isContainer, magicBagExplodes, explodeBag, loseMagicBagItem, thawObject, useContainer } from './container.js';
-import { feelPetrifyingCorpse, touchPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
+import { surfaceName, ceilingName, waterbodyName } from './terrain_name.js';
+import { chooseInventoryObject, getobj } from './inventory_prompt.js';
+import { isContainer, updateContainerWeights, restoreRejectedSplit } from './container.js';
+import type { TransferStack } from './container.js';
+import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { propertyIsActive } from './properties.js';
-import { rn2, rnd } from './rng.js';
-import { reverseLoot } from './confused_loot.js';
+import { propertyIsActive, propertyTimeout } from './properties.js';
+import { rn2, rnd, d } from './rng.js';
 import { heroHasFreeHand } from './engrave.js';
 import { heroHandName } from './body_parts.js';
 import { tipWornHelmet } from './tip_hat.js';
@@ -73,7 +80,23 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { floorReachProblem } from './engrave.js';
-import { heroEscapedShaft, heroTeetersAtPit } from './trap.js';
+import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.js';
+import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
+import { containerContents } from './end.js';
+import { bot } from './botl.js';
+import { startGlobTimeout } from './glob.js';
+import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';
+import { objectShedsLight, snuffLitObject } from './light.js';
+import { scatterFloorObjects } from './scatter.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { isBimanualObject } from './object_properties.js';
+import { stopObjectTimer } from './timeout.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
+import { removeHeroEquipment } from './hero_equipment.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { changeBoxLockByMagic } from './box_magic.js';
+import { courtMonsterType } from './mkroom.js';
+import { makemonAt } from './makemon.js';
 
 interface PickupSource {
     x: number;
@@ -578,6 +601,19 @@ function splitPickupStack(object: GameObject, count: number): GameObject {
     return splitObjectStack(object, count, game) ?? object;
 }
 
+// C pickup.c:reset_justpicked().
+export function clearJustPicked(state: GameState | null | undefined): void {
+    for (const object of state?.inventory || [])
+        object.pickup_prev = false;
+}
+
+export function markJustPicked(object: GameObject): GameObject;
+export function markJustPicked(object: GameObject | null | undefined): GameObject | null | undefined;
+export function markJustPicked(object: GameObject | null | undefined): GameObject | null | undefined {
+    if (object) object.pickup_prev = true;
+    return object;
+}
+
 // C pickup.c:check_here().
 async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ died: boolean }> {
     const { x, y } = source;
@@ -597,6 +633,360 @@ async function checkHere(source: PickupSource, pickedSome: boolean): Promise<{ d
     return { died };
 }
 
+interface DecorOptions {
+    state?: GameState;
+    publish?: MessagePublisher;
+    /** C gd.decor_fumble_override: force_decor() never defers. */
+    fumbleOverride?: boolean;
+    /** C gd.decor_levitate_override: probing reads the real ice condition. */
+    levitateOverride?: boolean;
+}
+
+// C pickup.c:describe_decor(). Feature feedback on arrival; FALSE means the
+// surface was the same non-furniture type, so look_here() shows its own
+// feature line instead of skipping it.
+export async function describeDecor({
+    state = game,
+    publish = plineWithContinuation,
+    fumbleOverride = false,
+    levitateOverride = false,
+}: DecorOptions = {}): Promise<boolean> {
+    // One turn of fumbling left: slip_or_trip() interrupts the hero at the
+    // end of this turn, so hold the decor message back until after it.
+    if (propertyTimeout('fumbling', state) === 1 && !state.iflags.deferDecor && !fumbleOverride) {
+        await deferredDecor(true, state, publish);
+        return false;
+    }
+    const { ux: x, uy: y } = state.u;
+    const location = requireGameLevel(state).requireAt(x, y);
+    const surface = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const previous = state._prevDecorType ?? STONE;
+    const underwater = !!(state.underwater || state.u?.uinwater);
+    let feature = dungeonFeatureAt(x, y, { state, probing: levitateOverride });
+    const doorHere = feature === 'open door' || feature === 'doorway';
+    const waterHere = feature === 'pool of water';
+    if (doorHere || underwater || (surface === ICE && IS_POOL(previous)))
+        feature = null;
+
+    let described = true;
+    if (surface === previous && !IS_FURNITURE(surface)) {
+        described = false;
+    } else if (feature) {
+        if (waterHere) feature = waterbodyName(x, y, state);
+        if (feature !== 'swamp' && surface !== ICE) feature = withIndefiniteArticle(feature);
+        // C flags.verbose defaults on.
+        const message = state.flags.verbose !== false
+            ? `There is ${feature} here.`
+            : `${feature.charAt(0).toUpperCase()}${feature.slice(1)}.`;
+        await publish(message, {
+            noRepeat: surface === ICE && !!state.flags.mention_decor,
+        });
+    } else if (!underwater) {
+        if (IS_POOL(previous) || IS_LAVA(previous) || previous === ICE) {
+            if (state._lastPlineKind !== PLNMSG_BACK_ON_GROUND) {
+                await publish(backOnGroundMessage(false, state));
+                state._lastPlineKind = PLNMSG_BACK_ON_GROUND;
+            }
+        }
+    }
+    state._prevDecorType = state.flags.mention_decor ? surface : STONE;
+    return described;
+}
+
+// C pickup.c:deferred_decor(). Setup holds the arrival feature back behind
+// an imminent fumble; catch-up describes it only while mention_decor is
+// still set, otherwise the pending message is simply dropped.
+export async function deferredDecor(setup: boolean, state: GameState = game,
+    publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
+    if (!state.flags.mention_decor) {
+        state.iflags.deferDecor = false;
+    } else if (setup) {
+        state.iflags.deferDecor = true;
+    } else {
+        await describeDecor({ state, publish });
+        state.iflags.deferDecor = false;
+    }
+}
+
+// C pickup.c:force_decor(). Probing reports the real floor even when
+// blindness or levitation would hide its condition during an ordinary look.
+export async function forceDescribeDecor({ state = game, probing = false }: FeatureOptions = {}): Promise<void> {
+    const { ux: x, uy: y } = state.u;
+    const location = requireGameLevel(state).requireAt(x, y);
+    state._prevDecorType = STONE;
+    await describeDecor({
+        state, fumbleOverride: true, levitateOverride: probing,
+    });
+    location.lastseentyp = location.typ;
+}
+
+
+// Decide how much of a floor or container stack the hero can lift.
+// C refs: pickup.c carry_count() and lift_object().
+export interface LiftOptions {
+    object: GameObject;
+    container?: GameObject | null;
+    count?: number;
+    telekinesis?: boolean;
+    state?: GameState;
+}
+export type LiftResult = { decision: 'lift'; count: number }
+    | { decision: 'stop' | 'skip'; count: 0 };
+
+const COIN_CLASS = 12;
+const INVENTORY_SLOT_COUNT = 52;
+const M2_ROCKTHROW = 0x08000000;
+
+function withQuantity(object: GameObject, count: number): GameObject {
+    return { ...object, quan: count, quantity: count };
+}
+
+function coinWeight(count: number): number {
+    return Math.trunc((Math.max(0, count) + 50) / 100);
+}
+
+function isCoin(object: GameObject): boolean {
+    return object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS;
+}
+
+// C carry_count() adds the stack's weight() (at least one unit for coins),
+// then subtracts only the GOLD_WT() change from merging with carried gold.
+function topLevelWeight(object: GameObject, count: number, state: GameState): number {
+    const weight = objectWeight(withQuantity(object, count));
+    if (!isCoin(object)) return weight;
+    const purse = heroGoldAmount(state);
+    return weight - (coinWeight(purse) + coinWeight(count) - coinWeight(purse + count));
+}
+
+function containerWeightAfterRemoval(container: GameObject, object: GameObject, count: number): number {
+    const total = objectQuantity(object);
+    const contents = (container.contents || []).flatMap(candidate => {
+        if (candidate !== object) return [candidate];
+        return count < total ? [withQuantity(object, total - count)] : [];
+    });
+    return objectWeight({ ...container, contents });
+}
+
+// C pickup.c:delta_cwt().
+function weightAddedByLift(object: GameObject, count: number, container: GameObject | null, state: GameState): number {
+    const added = topLevelWeight(object, count, state);
+    if (!container || !(state.inventory || []).includes(container))
+        return added;
+
+    const removed = container.otyp === BAG_OF_HOLDING
+        ? objectWeight(container)
+            - containerWeightAfterRemoval(container, object, count)
+        : objectWeight(withQuantity(object, count));
+    return added - removed;
+}
+
+function maximumLiftedCount(object: GameObject, requested: number, container: GameObject | null, state: GameState): number {
+    const current = invWeight(state) - 2 * weightCapacity(state);
+    const fits = (count: number) => current
+        + weightAddedByLift(object, count, container, state) < 0;
+    if (fits(requested)) return requested;
+    const carriedContainer = !!container && (state.inventory || []).includes(container);
+    if (isCoin(object) && !carriedContainer) {
+        // C GOLD_CAPACITY() over the capacity left after carried gold.
+        const purse = heroGoldAmount(state);
+        const room = current - coinWeight(purse);
+        return Math.max(0, Math.min(requested, room * -100 - (purse + 50) - 1));
+    }
+
+    let low = 0;
+    let high = requested;
+    while (low < high) {
+        const middle = Math.ceil((low + high) / 2);
+        if (fits(middle)) low = middle;
+        else high = middle - 1;
+    }
+    return low;
+}
+
+async function itemDescription(object: GameObject, count = objectQuantity(object)): Promise<string> {
+    if (isCoin(object))
+        return count === 1 ? 'a gold piece' : `${count} gold pieces`;
+    const view = withQuantity(object, count);
+    if (!view.name) {
+        const presentation = wishedObjectPresentation(object);
+        view.name = presentation.name;
+        view.plural = presentation.plural;
+        view.class = presentation.class;
+    }
+    return await inventoryItemDescription(view);
+}
+
+function locationPhrase(container: GameObject | null, state: GameState, short = false): string {
+    if (!container) return short ? 'here' : 'lying here';
+    return `in ${definiteName(objectCombatName(container, { state, includeCorpseSpecies: false }), state)}`;
+}
+
+function presentTense(object: GameObject): string {
+    return objectQuantity(object) === 1 ? 'is' : 'are';
+}
+
+async function reportPartialLift(object: GameObject, count: number, container: GameObject | null, telekinesis: boolean, state: GameState): Promise<void> {
+    observeObjectForNaming(object, { state });
+    const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
+    await plineWithContinuation(`You can only ${verb} ${count === 1 ? 'one' : 'some'} of the ${
+        await itemDescription(object)} ${locationPhrase(container, state)}.`);
+}
+
+async function reportUnliftable(object: GameObject, container: GameObject | null, state: GameState, telekinesis: boolean): Promise<void> {
+    const verb = container ? 'carry' : telekinesis ? 'acquire' : 'lift';
+    observeObjectForNaming(object, { state });
+    const description = await itemDescription(object);
+    const where = locationPhrase(container, state, !container);
+    if ((state.inventory || []).length || heroGoldAmount(state)) {
+        await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but you cannot ${
+            verb} any more.`);
+        return;
+    }
+    const subject = objectQuantity(object) === 1 ? 'it ' : 'even one ';
+    await plineWithContinuation(`There ${presentTense(object)} ${description} ${where}, but ${subject
+        }is too heavy for you to ${verb}.`);
+}
+
+function inventoryObjectCount(state: GameState): number {
+    return (state.inventory || []).filter(object =>
+        object.otyp !== GOLD_PIECE && object.oclass !== COIN_CLASS).length;
+}
+
+function canMergeWithInventory(object: GameObject, count: number, state: GameState): boolean {
+    const candidate: GameObject = {
+        ...withQuantity(object, count),
+        how_lost: 0,
+        no_charge: false,
+    };
+    return (state.inventory || []).some(carried =>
+        mergable(carried, candidate, state));
+}
+
+function heroThrowsRocks(state: GameState): boolean {
+    return heroIsPolymorphed(state)
+        && state.u.umonnum !== undefined
+        && !!((MONSTER_FLAGS2[state.u.umonnum] ?? 0) & M2_ROCKTHROW);
+}
+
+export function pickupBurden(state: GameState): number {
+    const setting = state.flags?.pickup_burden;
+    if (typeof setting === 'number' && Number.isInteger(setting)) return setting;
+    const first = String(setting || 'stressed').toLowerCase().charAt(0);
+    return new Map([['u', 0], ['b', 1], ['s', 2], ['n', 3],
+        ['o', 4], ['t', 4], ['l', 5]]).get(first) ?? MOD_ENCUMBER;
+}
+
+function goldFollows(object: GameObject, container: GameObject | null, state: GameState): boolean {
+    const list = container
+        ? container.contents || []
+        : state.level?.objects?.[object.ox]?.[object.oy] || [];
+    const index = list.indexOf(object);
+    return index >= 0 && list.slice(index + 1).some(candidate =>
+        candidate.otyp === GOLD_PIECE || candidate.oclass === COIN_CLASS);
+}
+
+function resetRejectedScareScroll(object: GameObject, container: GameObject | null): void {
+    if (!container && object.otyp === SCR_SCARE_MONSTER) object.spe = 0;
+}
+
+export async function carryableObjectCount({
+    object,
+    container = null,
+    count = objectQuantity(object),
+    telekinesis = false,
+    state = game,
+}: LiftOptions): Promise<number> {
+    const total = objectQuantity(object);
+    const requested = Math.max(
+        0, Math.min(Math.trunc(count || total), total),
+    );
+    const lifted = maximumLiftedCount(object, requested, container, state);
+    if (lifted < requested && lifted > 0)
+        await reportPartialLift(object, lifted, container, telekinesis, state);
+    if (lifted < 1)
+        await reportUnliftable(object, container, state, telekinesis);
+    return lifted;
+}
+
+export async function liftObject({
+    object,
+    container = null,
+    count = objectQuantity(object),
+    telekinesis = false,
+    state = game,
+}: LiftOptions): Promise<LiftResult> {
+    const total = objectQuantity(object);
+    count = Math.max(0, Math.min(Math.trunc(count || total), total));
+
+    if (object.otyp === BOULDER && state.level?.flags?.sokoban_rules) {
+        await plineWithContinuation(`You cannot get your hand around this ${objectCombatName(object, { state, includeCorpseSpecies: false })}.`);
+        return { decision: 'stop', count: 0 };
+    }
+
+    const ignoresWeight = object.otyp === LOADSTONE
+        || (object.otyp === BOULDER && heroThrowsRocks(state));
+    if (ignoresWeight) {
+        const sameType = (state.inventory || []).some(carried =>
+            carried.otyp === object.otyp);
+        if (inventoryObjectCount(state) < INVENTORY_SLOT_COUNT
+            || !sameType || canMergeWithInventory(object, total, state)) {
+            return { decision: 'lift', count };
+        }
+        const noun = objectCombatName(object, { state, includeCorpseSpecies: false });
+        await plineWithContinuation(`You are carrying too much stuff to pick up ${
+            total === 1 ? 'another' : 'more'} ${noun}.`);
+        return { decision: 'stop', count: 0 };
+    }
+
+    const liftedCount = await carryableObjectCount({
+        object, container, count, telekinesis, state,
+    });
+    if (liftedCount < 1) {
+        resetRejectedScareScroll(object, container);
+        return { decision: 'stop', count: 0 };
+    }
+
+    if (object.otyp !== GOLD_PIECE && object.oclass !== COIN_CLASS
+        && inventoryObjectCount(state) >= INVENTORY_SLOT_COUNT
+        && !canMergeWithInventory(object, liftedCount, state)) {
+        await plineWithContinuation(`Your knapsack cannot accommodate any more items${
+            goldFollows(object, container, state) ? ' (except gold)' : ''}.`);
+        resetRejectedScareScroll(object, container);
+        return { decision: 'stop', count: 0 };
+    }
+
+    const extraWeight = weightAddedByLift(
+        object, liftedCount, container, state,
+    );
+    const previousBurden = Math.max(nearCapacity(state), pickupBurden(state));
+    const nextBurden = calcCapacity(state, extraWeight);
+    if (nextBurden > previousBurden) {
+        if (telekinesis) {
+            resetRejectedScareScroll(object, container);
+            return { decision: 'skip', count: 0 };
+        }
+        const action = container ? 'removing' : 'lifting';
+        observeObjectForNaming(object, { state });
+        const answer = await promptYesNoQuit(
+            `${pickupLoadPrefix(nextBurden)} ${action} ${
+                await itemDescription(object, liftedCount)
+            }.  Continue?`,
+        );
+        // pickup.c lift_object() clears WIN_MESSAGE after every answer, so
+        // the question is gone before any later floor-pile window.
+        clearMessageWindow();
+        if (answer !== 'y') {
+            resetRejectedScareScroll(object, container);
+            return {
+                decision: answer === 'q' ? 'stop' : 'skip',
+                count: 0,
+            };
+        }
+    }
+    return { decision: 'lift', count: liftedCount };
+}
 export function orderedPickupObjects(pile: readonly GameObject[]): GameObject[] {
     return sortObjects(pile, { mode: lootSortMode() });
 }
@@ -1248,6 +1638,21 @@ export function encumbranceMessage(previous: number, current: number, state: Gam
     return '';
 }
 
+
+// C pickup.c:encumber_msg(). Status reads nearCapacity() live; oldcap
+// records only the last completed encumbrance check.
+export async function reportHeroEncumbrance(
+    state: GameState = game, publish: MessagePublisher = plineWithContinuation,
+): Promise<void> {
+    const previous = state._encumbranceLevel ?? 0;
+    const capacity = nearCapacity(state);
+    const message = encumbranceMessage(previous, capacity, state);
+    if (message) await publish(message);
+    // pline() may wait for a pager. C requests the next status redraw and
+    // commits oldcap only after that message has returned.
+    if (previous !== capacity) state.context.botl = true;
+    state._encumbranceLevel = capacity;
+}
 export function pickupLoadPrefix(level: number): string {
     return [
         '',
@@ -1257,4 +1662,1024 @@ export function pickupLoadPrefix(level: number): string {
         'You have extreme difficulty',
         'You have extreme difficulty',
     ][level] || '';
+}
+
+
+// C pickup.c:reverse_loot(): confused looting can display old loot or
+// give away a random fraction of one carried gold stack.
+export async function reverseLoot(): Promise<boolean> {
+    if (!rn2(3)) {
+        let remaining = game.inventory.length;
+        for (const object of game.inventory) {
+            if (!rn2(remaining + 1)) {
+                observeObjectForNaming(object);
+                await pline(`You find old loot: ${object.invlet} - ${await inventoryItemDescription(
+                    object, { primaryHandDetail: inventoryPrimaryHandDetail(object) })}.`);
+                return true;
+            }
+            remaining--;
+        }
+        return false;
+    }
+    let gold = game.inventory.find(object => object.oclass === 12);
+    if (!gold) return false;
+    const amount = Math.trunc((rnd(5) * objectQuantity(gold) + 4) / 5);
+    if (amount < objectQuantity(gold)) gold = splitObjectStack(gold, amount) ?? gold;
+    await removeHeroEquipment(gold);
+    const { ux: x, uy: y } = game.u;
+    const level = requireGameLevel();
+    const square = level.requireAt(x, y);
+    if (square.typ !== THRONE) {
+        await dropInventoryObjectAtHero(gold);
+        if (level.objects[x]?.[y]?.some(object => object.otyp === GOLD_PIECE))
+            await pline('Ok, now there is loot here.');
+        return true;
+    }
+    const coffers = royalCoffers();
+    if (coffers) {
+        await pline('"Thank you for your contribution to reduce the debt."');
+        await freeInventoryObject(gold);
+        await addObjectToContainer(coffers, gold);
+        coffers.owt = objectWeight(coffers);
+        coffers.cknown = false;
+        if (!coffers.olocked) await changeBoxLockByMagic(coffers, { otyp: SPE_WIZARD_LOCK });
+    } else {
+        const collector = square.looted !== T_LOOTED ? await makemonAt(courtMonsterType(), x, y) : null;
+        if (collector) {
+            await freeInventoryObject(gold);
+            await addObjectToMonsterInventory(collector, gold);
+            await pline('The exchequer accepts your contribution.');
+            if (!rn2(10)) square.looted = T_LOOTED;
+        } else {
+            await pline(`You drop ${await inventoryItemDescription(gold)}.`);
+            await dropInventoryObjectAtHero(gold);
+        }
+    }
+    return true;
+}
+
+function royalCoffers(): GameObject | null {
+    const { ux: x, uy: y } = game.u;
+    const chests = requireGameLevel().objects.flatMap(column => column?.flatMap(pile => pile ?? []) ?? [])
+        .filter(object => object.otyp === CHEST)
+        .sort((left, right) => (right._fobjOrder ?? 0) - (left._fobjOrder ?? 0));
+    const royal = chests.find(object => object.spe === 2);
+    if (royal) return royal;
+    const distance = (object: GameObject) => (object.ox - x) ** 2 + (object.oy - y) ** 2;
+    return chests.reduce<GameObject | null>((nearest, object) =>
+        !nearest || distance(object) < distance(nearest) ? object : nearest, null);
+}
+
+type ObjectMatcher = (object: GameObject) => boolean;
+interface ContainerCategory {
+    matches: ObjectMatcher;
+    filter: 'auto' | 'all' | 'class' | 'buc' | 'unpaid' | 'picked';
+}
+interface CategorySelection {
+    matchers: ObjectMatcher[];
+    autoSelect: boolean;
+    justPickedCount?: number;
+}
+interface ContainerTransferBatch {
+    results: ContainerTransferResult[];
+    spentTime: boolean;
+}
+export type ContainerTransferResult =
+    | { moved: true; message: string; stop?: never; destroyedContainer?: never }
+    | { moved: false; message: string | null; noRepeat?: boolean; stop?: boolean; destroyedContainer?: never }
+    | { moved: false; message: null; stop?: never; destroyedContainer: true };
+export interface ContainerUseResult {
+    spentTime: boolean;
+    container: GameObject | null;
+    heroDied?: boolean;
+    stopLooting?: boolean;
+    tookOut?: boolean;
+}
+interface ContainerUseOptions {
+    held?: boolean;
+    moreContainers?: boolean;
+    underlay?: MenuUnderlay | null;
+    resetJustPicked?: boolean;
+}
+
+const FORBIDDEN_CONTENTS = new Set([
+    AMULET_OF_YENDOR,
+    CANDELABRUM_OF_INVOCATION,
+    BELL_OF_OPENING,
+    SPE_BOOK_OF_THE_DEAD,
+]);
+
+const quantity = objectQuantity;
+
+async function lootObjectDescription(object: GameObject, primaryHandDetail: string | null = null,
+    withPrice = false): Promise<string> {
+    // objnam.c:doname() names one gold piece "a gold piece" and appends
+    // the wield/quiver suffixes, so no local coin formatting is allowed.
+    return await inventoryItemDescription(object, { primaryHandDetail, withPrice });
+}
+
+function className(object: GameObject): string {
+    return objectClassHeading(object.oclass || objectClassForType(object.otyp));
+}
+
+function objectsByClass(objects: readonly GameObject[]): { name: string; members: GameObject[] }[] {
+    const groups = new Map<string, GameObject[]>();
+    for (const object of objects) {
+        const name = className(object);
+        const members = groups.get(name) ?? [];
+        members.push(object);
+        groups.set(name, members);
+    }
+    const headings = [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
+    return headings.filter(name => groups.has(name))
+        .map(name => ({ name, members: groups.get(name) ?? [] }));
+}
+
+function menuBucCategory(object: GameObject): 'B' | 'C' | 'U' | 'X' {
+    if (object.oclass === 12)
+        return game.flags?.goldX ? 'X' : 'U';
+    if (game.urole?.key === 'priest') object.bknown = true;
+    if (!object.bknown) return 'X';
+    if (object.blessed) return 'B';
+    if (object.cursed) return 'C';
+    return 'U';
+}
+
+// C pickup.c:query_category(), for menu_loot's ALL_TYPES/UNPAID/BUCX/
+// CHOOSE_ALL/JUSTPICKED flags. Special filters stay out of menu inversion.
+async function categoryChoices(objects: readonly GameObject[]): Promise<MultiSelectItem<ContainerCategory>[]> {
+    const groups = objectsByClass(objects);
+    const showAll = groups.length > 1;
+    const verifyAll = !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
+    const choices: MultiSelectItem<ContainerCategory>[] = [{
+        key: 'A', text: 'Auto-select every relevant item',
+        itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: () => false, filter: 'auto' },
+    }];
+    if (!verifyAll || showAll) {
+        const firstHint = verifyAll ? !game._autoAllImpliedHintShown : !game._autoAllHintShown;
+        if (firstHint || game.flags.cmdassist !== false) choices.push({ selectable: false, text: verifyAll
+            ? "    (if no other choices are picked, 'a' is implied)"
+            : '    (ignored unless some other choices are also picked)' });
+        if (verifyAll) game._autoAllImpliedHintShown = true;
+        else game._autoAllHintShown = true;
+    }
+    choices.push({ selectable: false, text: '' });
+    if (showAll) choices.push({
+        key: 'a', text: 'All types', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: () => true, filter: 'all' },
+    });
+    choices.push(...groups.map((group, index): SelectableMenuItem<ContainerCategory> => ({
+        key: String.fromCharCode((showAll ? 98 : 97) + index),
+        text: group.name,
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? 0] || '',
+        value: { matches: (object: GameObject) => className(object) === group.name, filter: 'class' },
+    })));
+    const special: SelectableMenuItem<ContainerCategory>[] = [];
+    if (objects.some(hasUnpaidContents)) special.push({
+        key: 'u', text: 'Unpaid items', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: hasUnpaidContents, filter: 'unpaid' },
+    });
+    const bucNames = {
+        B: 'Items known to be Blessed', C: 'Items known to be Cursed',
+        U: 'Items known to be Uncursed', X: 'Items of unknown Bless/Curse status',
+    };
+    for (const category of ['B', 'C', 'U', 'X'] as const) {
+        if (objects.some(object => menuBucCategory(object) === category)) special.push({
+            key: category, text: bucNames[category], itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+            value: { matches: object => menuBucCategory(object) === category, filter: 'buc' },
+        });
+    }
+    // C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
+    // of the previous pickup.
+    const justPicked = objects.filter(object => object.pickup_prev);
+    const onePicked = justPicked.length === 1 ? justPicked[0] : null;
+    if (onePicked) {
+        // pickup.c:query_category() names the single just-picked stack via
+        // doname(); xname() observes the object while the hero can see.
+        observeObjectForNaming(onePicked);
+    }
+    if (justPicked.length) special.push({
+        key: 'P', text: onePicked ? `Just picked up: ${await lootObjectDescription(
+            onePicked, inventoryPrimaryHandDetail(onePicked),
+        )}`
+            : 'Items you just picked up', itemFlags: MENU_ITEMFLAGS_SKIPINVERT,
+        value: { matches: object => !!object.pickup_prev, filter: 'picked' },
+    });
+    if (special.length) choices.push({ selectable: false, text: '' }, ...special);
+    return choices;
+}
+// allow_category(): match one selection in every active filter group.
+// Selecting coins by class takes precedence over the other filters.
+function categoryMatcher(filters: readonly ContainerCategory[]): ObjectMatcher {
+    if (filters.some(filter => filter.filter === 'all')) return () => true;
+    const classes = filters.filter(filter => filter.filter === 'class');
+    const groups = ['class', 'buc', 'unpaid', 'picked'] as const;
+    return object => {
+        if (object.otyp === GOLD_PIECE && classes.length)
+            return classes.some(filter => filter.matches(object));
+        return groups.every(group => {
+            const members = filters.filter(filter => filter.filter === group);
+            return !members.length || members.some(filter => filter.matches(object));
+        });
+    };
+}
+
+export async function chooseObjectCategories(title: string, objects: readonly GameObject[]): Promise<CategorySelection> {
+    if (game.flags.menu_style !== undefined && game.flags.menu_style !== MENU_FULL)
+        return { matchers: [() => true], autoSelect: false };
+    const groups = objectsByClass(objects);
+    const knownBuc = new Set(objects.map(menuBucCategory));
+    const onlyGroup = groups[0];
+    if (groups.length === 1 && onlyGroup && knownBuc.size <= 1
+        && !objects.some(hasUnpaidContents))
+        return { matchers: [object => className(object) === onlyGroup.name], autoSelect: false };
+
+    const selected = await showMultiSelectWindow({
+        title, sections: [{ heading: '', items: await categoryChoices(objects) }], omitHeadings: true,
+        returnCounts: true,
+    });
+    let autoSelect = selected.some(choice => choice.value.filter === 'auto');
+    const filters = selected.filter(choice => choice.value.filter !== 'auto').map(choice => choice.value);
+    const picked = selected.find(choice => choice.value.filter === 'picked');
+    const matchers: ObjectMatcher[] = filters.length ? [categoryMatcher(filters)] : [];
+    if (autoSelect) {
+        if ((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL) {
+            const answer = await paranoidYesNoQuit(
+                !!((game.flags.paranoia_bits ?? 0) & PARANOID_CONFIRM),
+                'Really autoselect All?',
+            );
+            if (answer === 'q') return { matchers: [], autoSelect: false };
+            autoSelect = answer === 'y';
+            if (!matchers.length) matchers.push(() => true);
+        } else if (!matchers.length) {
+            await plineWithContinuation('No relevant items selected.');
+            autoSelect = false;
+        }
+    }
+    return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
+}
+
+function matchingObjects(objects: readonly GameObject[], matchers: readonly ObjectMatcher[]): GameObject[] {
+    if (!matchers.length) return [];
+    return objects.filter(object => matchers.some(matches => matches(object)));
+}
+
+async function selectionSections(objects: readonly GameObject[], useInventoryLetters: boolean): Promise<MultiSelectSection<GameObject>[]> {
+    const ordered = sortObjects(objects, {
+        mode: lootSortMode({ inventoryLetters: useInventoryLetters }),
+    });
+    for (const object of ordered) observeObjectForNaming(object);
+    let nextLetter = 0;
+    const groups = game.flags.sortpack === false ? [{ name: null, members: ordered }]
+        : objectsByClass(ordered);
+    const sections: MultiSelectSection<GameObject>[] = [];
+    for (const group of groups) {
+        const items = [];
+        for (const object of group.members) {
+            // pickup.c:query_objlist() draws obj_to_glyph() for every menu
+            // item before naming it, which consumes a display-RNG draw per
+            // item while hallucinating.
+            consumeHallucinatedMenuObjectGlyph(object);
+            items.push({
+                key: object.otyp === GOLD_PIECE ? '$'
+                    : useInventoryLetters && object.invlet
+                        ? object.invlet
+                        : String.fromCharCode(97 + nextLetter++),
+                // pickup.c:query_objlist() names menu entries with
+                // doname_with_price(), so shop goods inside a floor
+                // container are quoted "for sale".
+                text: await lootObjectDescription(object, inventoryPrimaryHandDetail(object), true),
+                value: object,
+            });
+        }
+        sections.push({ heading: group.name, items });
+    }
+    return sections;
+}
+
+async function chooseObjects(title: string, objects: readonly GameObject[], useInventoryLetters: boolean): Promise<CountedSelection<GameObject>[]> {
+    if (!objects.length) return [];
+    return showMultiSelectWindow({
+        title,
+        sections: await selectionSections(objects, useInventoryLetters),
+        omitHeadings: game.flags.sortpack === false,
+        returnCounts: true,
+    });
+}
+
+export function magicBagExplodes(object: GameObject, depth = 0): boolean {
+    if ((object.otyp === WAN_CANCELLATION
+            || object.otyp === BAG_OF_TRICKS)
+        && (object.spe ?? 0) <= 0) return false;
+    const dangerous = object.otyp === BAG_OF_HOLDING
+        || object.otyp === BAG_OF_TRICKS
+        || object.otyp === WAN_CANCELLATION;
+    if (dangerous
+        && rn2(1 << Math.min(depth, 7)) <= depth) return true;
+    return (object.contents || []).some(content =>
+        magicBagExplodes(content, depth + 1));
+}
+
+async function scatterBagContents(container: GameObject, state: GameState, held: boolean): Promise<void> {
+    container.in_use = true;
+    const contents = [...(container.contents || [])];
+    for (const object of contents) {
+        if (rn2(13) === 0) {
+            unlinkObject(object, state);
+            await loseMagicBagItem(object, held, state, true);
+            continue;
+        }
+        object.ox = state.u.ux;
+        object.oy = state.u.uy;
+        await scatterFloorObjects(object.ox, object.oy, 4, {
+            state, onlyObject: object, mayFracture: false,
+            publish: plineWithContinuation, heroCaused: !state.context.mon_moving,
+            finishMonsterKill: finishHeroMonsterKill,
+            finishMonsterDeath: async (monster, options = {}) => {
+                if (state.context.mon_moving)
+                    return await finishEnvironmentalMonsterDeath(monster, state, options);
+                if (options.deathMessage) await plineWithContinuation(options.deathMessage);
+                const death = await finishHeroMonsterKillOutcome(monster, monster.mx, monster.my,
+                    { showKillMessage: false, publish: plineWithContinuation });
+                return { survived: !death.killed, heroDied: death.heroDied };
+            },
+        });
+        if (state.program_state.gameover) return;
+    }
+}
+
+// C pickup.c:in_container() names the trigger before either bag blows up.
+export async function explodeBag(container: GameObject, trigger: GameObject, state: GameState,
+    { tipping = false, triggerHeld = true, rebillTrigger = false }:
+    { tipping?: boolean; triggerHeld?: boolean; rebillTrigger?: boolean } = {}): Promise<ContainerTransferResult> {
+    observeObjectForNaming(trigger, { state });
+    await plineWithContinuation(
+        tipping ? `As ${await lootObjectDescription(trigger)} ${trigger.quan === 1 ? 'tumbles' : 'tumble'} inside, you are blasted by a magical explosion!`
+            : `As you put ${await lootObjectDescription(trigger)} inside, you are blasted by a magical explosion!`,
+        { urgent: true },
+    );
+    if (rebillTrigger)
+        await addShopObjectToBill(trigger, state, { ininv: false, silent: true });
+    if (trigger.otyp === BAG_OF_HOLDING)
+        await scatterBagContents(trigger, state, triggerHeld);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
+    await deleteObject(trigger, state);
+    const held = container.where === 'inventory';
+    if (!held && costlySpot(container.ox, container.oy, state)) {
+        const noCharge = container.no_charge;
+        await addShopObjectToBill(container, state, { ininv: false });
+        if (noCharge === undefined) delete container.no_charge;
+        else container.no_charge = noCharge;
+    }
+    await scatterBagContents(container, state, held);
+    if (state.program_state.gameover) return { moved: false, stop: true, message: null };
+    if (held) await useUpInventoryStack(container, state);
+    else await useUpFloorObject(container, container.quan, { state });
+    await loseHeroHp(d(6, 6), 'magical explosion', { state });
+    if (!tipping) await bot();
+    return { moved: false, destroyedContainer: true, message: null };
+}
+
+// C mbag_item_gone(): announce before settling the loss and freeing the item.
+export async function loseMagicBagItem(object: GameObject, held: boolean, state: GameState = game,
+    silent = false): Promise<number> {
+    if (!silent) {
+        const known = object.dknown;
+        // The message uses prior knowledge, but doname() observes the item.
+        observeObjectForNaming(object, { state });
+        const name = await lootObjectDescription(object);
+        await plineWithContinuation(known
+            ? `${name.charAt(0).toUpperCase()}${name.slice(1)} ${objectNameIsPlural(object, state) ? 'have' : 'has'} vanished!`
+            : `You ${heroIsBlind(state) ? 'notice' : 'see'} ${name} disappear!`);
+    }
+    const keeper = currentShopResident(state);
+    const loss = keeper && (held ? object.unpaid : costlySpot(state.u.ux, state.u.uy, state))
+        ? await stolenValue(object, state.u.ux, state.u.uy, keeper.mpeaceful, { state, silent: true }) : 0;
+    await deleteObject(object, state);
+    return loss;
+}
+
+// C pickup.c:boh_loss(): a cursed bag of holding sometimes tosses a
+// carried item; pickup.c:is_boh_item_gone() is the 1-in-13 roll.
+async function loseCursedBagContents(container: GameObject, state: GameState): Promise<number> {
+    if (container.otyp !== BAG_OF_HOLDING || !container.cursed
+        || !container.contents?.length) return 0;
+    let loss = 0;
+    for (const object of [...container.contents]) {
+        if (rn2(13) !== 0) continue;
+        unlinkObject(object, state);
+        loss += await loseMagicBagItem(object, container.where === 'inventory', state);
+    }
+    return loss;
+}
+
+export function ageStoresFuel(object: GameObject): boolean {
+    return [BRASS_LANTERN, OIL_LAMP, CANDELABRUM_OF_INVOCATION,
+        TALLOW_CANDLE, WAX_CANDLE, POT_OIL].includes(object.otyp);
+}
+
+function freezeObject(object: GameObject, state: GameState): void {
+    if (ageStoresFuel(object) || object.ageRelative) return;
+    object.age = (state.moves ?? 0) - (object.age ?? 0);
+    object.ageRelative = true;
+    if (object.otyp === CORPSE) {
+        stopObjectTimer(object, OBJECT_TIMER_KIND.ROT_CORPSE);
+        stopObjectTimer(object, OBJECT_TIMER_KIND.REVIVE_MON);
+        const traits = object.oextra?.omonst;
+        if (object.corpsenm === MONSTER_NAME.indexOf('ice troll') && traits) traits.mcan = 0;
+    } else if (object.globby) {
+        stopObjectTimer(object, OBJECT_TIMER_KIND.SHRINK_GLOB);
+    }
+}
+
+export function thawObject(object: GameObject, state: GameState): void {
+    if (ageStoresFuel(object)) return;
+    object.age = (state.moves ?? 0) - (object.age ?? 0);
+    object.ageRelative = false;
+    if (object.otyp === CORPSE) {
+        object.norevive = (object.oextra?.omonst?.mnum ?? object.corpsenm)
+            !== MONSTER_NAME.indexOf('ice troll');
+        startCorpseTimeout(object);
+    } else if (object.globby) {
+        startGlobTimeout(object, state, state.moves ?? 0);
+    }
+}
+
+function cannotFit(object: GameObject): boolean {
+    if ([LARGE_BOX, CHEST, ICE_BOX, BOULDER].includes(object.otyp))
+        return true;
+    return object.otyp === STATUE
+        && (object.corpsenm === undefined ? 0 : MONSTER_SIZE[object.corpsenm] ?? 0) >= 3;
+}
+
+function weldedPrimary(object: GameObject, state: GameState): boolean {
+    const primary = state.uwep || state.u?.uwep;
+    return object === primary && willWeld(object);
+}
+
+function rejectedPutMessage(container: GameObject, object: GameObject, state: GameState): string | null {
+    if (object === state.uball || object === state.uchain
+        || object === state.u?.uball || object === state.u?.uchain) {
+        return 'You must be kidding.';
+    }
+    if (object === container)
+        return 'That would be an interesting topological exercise.';
+    if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY))
+        return `You cannot ${container.otyp === ICE_BOX ? 'refrigerate' : 'stash'} something you are wearing.`;
+    if (object.otyp === LOADSTONE && object.cursed) {
+        object.bknown = true;
+        return `The stone${quantity(object) === 1 ? '' : 's'} won't leave your person.`;
+    }
+    if (FORBIDDEN_CONTENTS.has(object.otyp)) {
+        return `The ${objectCombatName(object, { state })} cannot be confined in such trappings.`;
+    }
+    if (object.otyp === LEASH && object.leashmon) {
+        observeObjectForNaming(object, { state });
+        return `The ${objectCombatName(object, { state })} ${quantity(object) === 1 ? 'is' : 'are'} attached to your pet.`;
+    }
+    if (weldedPrimary(object, state)) {
+        object.bknown = true;
+        observeObjectForNaming(object, { state });
+        const hand = heroHandName(state);
+        return `${ownedObjectAction(object, 'are', state)} welded to your ${
+            isBimanualObject(object) ? makePlural(hand) : hand}!`;
+    }
+    return null;
+}
+
+function transferQuantity(object: GameObject, count: number): number {
+    const total = quantity(object);
+    return count > 0 ? Math.min(Math.trunc(count), total) : total;
+}
+
+function splitForTransfer(object: GameObject, count: number, state: GameState): TransferStack {
+    const amount = transferQuantity(object, count);
+    const split = splitObjectStack(object, amount, state);
+    if (!split) return { object, parent: null };
+    // splitObjectStack already carried the bill across the split.
+    return { object: split, parent: object };
+}
+
+// C pickup.c:fatal_corpse_mistake(): handling one corpse from the stack, with
+// the death reason from killer_xname() describing the whole stack.
+export async function touchPetrifyingCorpse(object: GameObject | null | undefined): Promise<{ died: boolean } | null> {
+    if (!handlesPetrifyingCorpseBareHanded(object)) return null;
+    const result = await petrifyFromCorpseContact(
+        `Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`,
+        killerObjectName(object),
+    );
+    if (!result) await displayMessageWindow();
+    return result;
+}
+
+export async function putIntoContainer(
+    container: GameObject, object: GameObject, state: GameState = game, count = -1,
+): Promise<ContainerTransferResult> {
+    const transfer = splitForTransfer(object, count, state);
+    object = transfer.object;
+    const rejected = rejectedPutMessage(container, object, state);
+    if (rejected) {
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, message: rejected,
+            noRepeat: !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) };
+    }
+
+    if (state.uwep === object) await setPrimaryWeapon(null, state);
+    if (state.uswapwep === object) await setSecondaryWeapon(null, state);
+    if (state.uquiver === object) await setQuiverObject(null, state);
+    if (await touchPetrifyingCorpse(object)) {
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, stop: true, message: null };
+    }
+    if (cannotFit(object)) {
+        const message = `You cannot fit the ${objectCombatName(object, { state })} into the ${objectCombatName(container, { state })}.`;
+        await restoreRejectedSplit(transfer, state);
+        return { moved: false, message };
+    }
+    state.inventory = state.inventory.filter(candidate => candidate !== object);
+    object.where = 'free';
+    await finishInventoryRemoval(object, state);
+    if (state.program_state?.gameover)
+        return { moved: false, stop: true, message: null };
+    if (objectShedsLight(object)) await snuffLitObject(object, state);
+    const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
+    const wasUnpaid = object.unpaid;
+    if (floorShop && object.oclass !== 12)
+        await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
+    if (container.otyp === ICE_BOX) freezeObject(object, state);
+    else if (container.otyp === BAG_OF_HOLDING
+        && magicBagExplodes(object)) {
+        return await explodeBag(container, object, state, { rebillTrigger: !!(wasUnpaid && floorShop) });
+    }
+
+    observeObjectForNaming(container, { state });
+    observeObjectForNaming(object, { state });
+    const message = `You put ${await lootObjectDescription(object)} into the ${objectCombatName(container, { state })}.`;
+    await plineWithContinuation(message);
+    if (floorShop && object.oclass === 12)
+        await sellHeroDroppedObject(object, container.ox, container.oy, state);
+    await addObjectToContainer(container, object, state);
+    container.cknown = true;
+    updateContainerWeights(container);
+    await bot();
+    return {
+        moved: true,
+        message,
+    };
+}
+
+// C pickup.c:out_container().
+export async function takeFromContainer(
+    container: GameObject, object: GameObject, state: GameState = game, count = -1,
+    { resetJustPicked = false }: { resetJustPicked?: boolean } = {},
+): Promise<ContainerTransferResult> {
+    if (!container.contents?.includes(object))
+        return { moved: false, message: null };
+    if (object.oartifact) {
+        const touch = await touchArtifactByHero(object);
+        if (!touch.allowed || touch.died) {
+            return {
+                moved: false,
+                stop: touch.died,
+                message: null,
+            };
+        }
+    }
+    if (await touchPetrifyingCorpse(object)) {
+        return { moved: false, stop: true, message: null };
+    }
+    const lift = await liftObject({
+        object,
+        container,
+        count: transferQuantity(object, count),
+        state,
+    });
+    if (lift.decision !== 'lift') {
+        return {
+            moved: false,
+            stop: lift.decision === 'stop',
+            message: null,
+        };
+    }
+
+    // C out_container(): a loadstone is never split here.
+    if (object.otyp !== LOADSTONE) object = splitForTransfer(object, lift.count, state).object;
+    unlinkObject(object, state);
+    if (container.otyp === ICE_BOX) thawObject(object, state);
+
+    if (!object.unpaid && container.where !== 'inventory'
+        && costlySpot(container.ox, container.oy, state)) {
+        object.ox = container.ox;
+        object.oy = container.oy;
+        await addShopObjectToBill(object, state, { ininv: false });
+    }
+
+    await warnAboutRemovedPick(object, state);
+    if (resetJustPicked) clearJustPicked(state);
+    const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
+    container.cknown = true;
+    updateContainerWeights(container);
+    observeObjectForNaming(carried, { state });
+    // C prinv()/xprname() formats the surviving stack itself, with only the
+    // removed quantity substituted: the stack keeps its identity, so
+    // doname()'s twoweapon primary still names the hand rather than
+    // degrading a partial stack to "(wielded)".
+    const total = quantity(carried);
+    const merged = addedCount > 0 && addedCount < total;
+    const savedQuantity = carried.quantity;
+    carried.quan = addedCount || total;
+    carried.quantity = carried.quan;
+    let named;
+    try {
+        named = await lootObjectDescription(carried, inventoryPrimaryHandDetail(carried));
+    } finally {
+        carried.quan = total;
+        if (savedQuantity === undefined) delete carried.quantity;
+        else carried.quantity = savedQuantity;
+    }
+    const suffix = merged ? state.flags.verbose === false ? ''
+        : ` (${total} in total).` : '.';
+    const description = `${carried.invlet || '$'} - ${named}${suffix}`;
+    return {
+        moved: true,
+        message: pickupInventoryMessage(description, 'removing', state),
+    };
+}
+
+// C traditional_loot()/askchain(): unlike pickup's floor loop, 'a' accepts
+// every remaining eligible class, and a completed traversal prints a tail.
+async function lootTraditionally(container: GameObject, putIn: boolean, resetPicked: boolean): Promise<ContainerTransferBatch> {
+    const objects = putIn ? game.inventory : container.contents ?? [];
+    const selection = await queryObjectClasses(putIn ? 'put in' : 'take out', objects);
+    if (!selection) return { results: [], spentTime: false };
+    if (selection.menu !== 'none') return putIn
+        ? await putSelectedObjects(container, false, selection)
+        : await takeOutSelectedObjects(container, resetPicked, selection);
+    const order = sortObjects(objects, { mode: SORTLOOT_INVLET });
+    const passes = !selection.oneAtATime && selection.classes.length ? selection.classes : [null];
+    const byCategory = selection.categories.some(category => typeof category === 'string');
+    const results: ContainerTransferResult[] = [];
+    const batch = (): ContainerTransferBatch => ({ results, spentTime: results.some(result => result.moved) });
+    const chain = () => putIn ? game.inventory : container.contents ?? [];
+    let all = selection.everything, first = true, questioned = false;
+    try {
+        for (const oclass of passes) {
+            bypassObjectList(chain(), false);
+            let letterCode = 'a'.charCodeAt(0) - 1;
+            if (chain()[0]?.oclass === 12) letterCode--;
+            let object;
+            while ((object = nextUnbypassedObject(chain(), game, order))) {
+                if (letterCode === 'z'.charCodeAt(0)) letterCode = 'A'.charCodeAt(0);
+                else if (letterCode === 'Z'.charCodeAt(0)) letterCode = '#'.charCodeAt(0);
+                else letterCode++;
+                if (oclass !== null && object.oclass !== oclass || putIn && object === container
+                    || byCategory && !matchesObjectCategories(object, selection)) continue;
+                let amount = quantity(object);
+                if (!all) {
+                    observeObjectForNaming(object);
+                    const letter = game.flags.fixinv === false ? String.fromCharCode(letterCode) : object.invlet ?? '#';
+                    const itemPrefix = putIn ? `${letter} - ` : '';
+                    const question = await objectQuestion(object, {
+                        prefix: first ? `${putIn ? 'Put in' : 'Take out'}: ` : '', suffix: '?', fallback: 'item',
+                        format: async (item, state) => `${itemPrefix}${await objectDescription(item, { state })}`,
+                        shortFormat: (item, state) => `${itemPrefix}${simpleObjectNameWithArticle(item, state)}`,
+                    });
+                    first = false;
+                    const response = await tty_yn_function(question, amount < 2 ? 'ynaq' : 'yn#aq', 'n');
+                    if (response.answer === 'q') return batch();
+                    questioned = true;
+                    if (response.answer === 'n' || response.answer === '#' && !response.count) continue;
+                    if (response.answer === 'a') all = true;
+                    if (response.answer === '#' && !(object.otyp === LOADSTONE && object.cursed)
+                        && !weldedPrimary(object, game))
+                        amount = Number(response.count < BigInt(amount) ? response.count : BigInt(amount));
+                }
+                questioned = true;
+                const transfer = splitForTransfer(object, amount, game);
+                const result = putIn ? await putIntoContainer(container, transfer.object)
+                    : await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked: resetPicked });
+                results.push(result);
+                if (!result.moved && !result.destroyedContainer) await restoreRejectedSplit(transfer, game);
+                if (result.message && (!putIn || !result.moved)) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
+                if (result.moved && !putIn) {
+                    resetPicked = false;
+                    if (object.oclass === 12) await bot();
+                }
+                if (result.stop || result.destroyedContainer || game.program_state.gameover) return batch();
+            }
+        }
+        await plineWithContinuation(questioned ? 'That was all.' : 'No applicable objects.');
+        return batch();
+    } finally {
+        clearBypasses();
+    }
+}
+
+// C pickup.c:menu_loot() with put_in=FALSE: category menu, then object
+// menu, then one transfer per selected stack.
+async function takeOutSelectedObjects(container: GameObject, resetPicked: boolean, retry: ObjectClassSelection | null = null): Promise<ContainerTransferBatch> {
+    game._pickupEncumbrance = 0;
+    if (!container.contents?.length) return { results: [], spentTime: false };
+    if (game.flags.menu_style === MENU_TRADITIONAL && !retry)
+        return await lootTraditionally(container, false, resetPicked);
+    const categories = retry ? { autoSelect: false, matchers: [
+        (object: GameObject) => retry.menu === 'all' || matchesObjectCategories(object, retry),
+    ] } : await chooseObjectCategories(
+        'Take out what type of objects?', container.contents,
+    );
+    const eligible = matchingObjects(container.contents, categories.matchers);
+    if (categories.matchers.length) container.cknown = true;
+    const selected = categories.autoSelect
+        ? eligible.map(value => ({ value, count: -1 }))
+        : await chooseObjects('Take out what?', eligible, false);
+    const results: ContainerTransferResult[] = [];
+    let resetJustPicked = resetPicked;
+    for (const selection of selected) {
+        const transfer = splitForTransfer(selection.value, selection.count, game);
+        const result = await takeFromContainer(
+            container, transfer.object, game, -1,
+            { resetJustPicked },
+        );
+        if (!result.moved) await restoreRejectedSplit(transfer, game);
+        results.push(result);
+        if (result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
+        if (result.moved) {
+            resetJustPicked = false;
+            if (selection.value.oclass === 12) await bot();
+        }
+        if (result.stop) break;
+    }
+    return { results, spentTime: categories.autoSelect
+        ? results.some(result => result.moved) : selected.length > 0 };
+}
+
+// C pickup.c:menu_loot() with put_in=TRUE (and the stash-one path, whose
+// getobj filter is pickup.c:stash_ok() inlined below).
+async function putSelectedObjects(container: GameObject, stashOne = false, retry: ObjectClassSelection | null = null): Promise<ContainerTransferBatch> {
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    if (!stashOne && menuStyle === MENU_TRADITIONAL && !retry)
+        return await lootTraditionally(container, true, false);
+    if (!stashOne && (menuStyle !== MENU_TRADITIONAL || retry !== null))
+        game._pickupEncumbrance = 0;
+    // menu_loot queries the whole inventory; only stash-one uses ck_bag.
+    const candidates = stashOne
+        ? game.inventory.filter(object => object !== container) : game.inventory;
+    if (!candidates.some(object => object !== container))
+        return { results: [], spentTime: false };
+    let selected: CountedSelection<GameObject>[];
+    let spentTime = false;
+    if (stashOne) {
+        // C pickup.c:stash_ok(): ck_bag() leaves the container selectable.
+        const choice = await getobj('stash', object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST,
+            { forcePrompt: true, allowCount: true });
+        const object = choice.object;
+        if (!object) return { results: [], spentTime: false };
+        // getobj() leaves unsplittable objects whole for in_container's refusal.
+        const unsplittable = (object.otyp === LOADSTONE && object.cursed) || weldedPrimary(object, game);
+        const count = unsplittable ? -1 : choice.count ?? -1;
+        selected = [{ value: object, count }];
+    } else {
+        const categories: CategorySelection = retry ? { autoSelect: false, matchers: [
+            (object: GameObject) => retry.menu === 'all' || matchesObjectCategories(object, retry),
+        ] } : await chooseObjectCategories(
+            'Put in what type of objects?', candidates,
+        );
+        const eligible = matchingObjects(candidates, categories.matchers);
+        const onePicked = categories.justPickedCount !== undefined
+            && candidates.filter(object => object.pickup_prev).length === 1
+            ? candidates.find(object => object.pickup_prev) : null;
+        if (!categories.autoSelect && onePicked) {
+            // menu_loot's single just-picked path keeps a rejected split
+            // and charges a turn regardless of in_container's result.
+            const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
+            const result = await putIntoContainer(container, transfer.object);
+            if (!result.moved && result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
+            return { results: [result], spentTime: true };
+        }
+        selected = categories.autoSelect
+            ? eligible.map(value => ({ value, count: -1 }))
+            : await chooseObjects('Put in what?', eligible, true);
+        // The ordinary menu path also charges a turn for a selected item,
+        // including a rejection; auto-selection counts successful transfers.
+        spentTime = !categories.autoSelect && selected.length > 0;
+    }
+    const results: ContainerTransferResult[] = [];
+    for (const selection of selected) {
+        const result = await putIntoContainer(
+            container, selection.value, game, selection.count,
+        );
+        results.push(result);
+        if (!result.moved && result.message) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
+        // Stashing one item costs a turn even when it destroys the bag.
+        if (stashOne && (result.destroyedContainer || result.stop)) spentTime = true;
+        if (result.destroyedContainer || result.stop) break;
+    }
+    return { results, spentTime: spentTime || results.some(result => result.moved) };
+}
+
+function actionKeys() {
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    return game.flags.lootabc && (menuStyle === MENU_PARTIAL || menuStyle === MENU_FULL)
+        ? { takeOut: 'a', putIn: 'b', both: 'c', reverse: 'd', stash: 'e' }
+        : { takeOut: 'o', putIn: 'i', both: 'b', reverse: 'r', stash: 's' };
+}
+
+// C pickup.c:in_or_out_menu(): the "Do what with <container>?" menu with
+// look/out/in/both/reversed/stash/next/quit choices.
+async function chooseAction(container: GameObject, usedTime: boolean, moreContainers: boolean): Promise<string> {
+    const keys = actionKeys();
+    const hasContents = !!container.contents?.length;
+    const mayTakeOut = hasContents || !container.cknown;
+    const mayPutIn = (game.inventory || []).some(object => object !== container);
+    const title = mayTakeOut
+        ? await ownedObjectQuestion(container, {
+            prefix: 'Do what with ', suffix: '?', fallback: 'it', capitalized: false,
+        })
+        : await ownedObjectQuestion(container, {
+            prefix: '', suffix: ' is empty.  Do what with it?', fallback: 'This', capitalized: true,
+        });
+    const menuStyle = game.flags.menu_style ?? MENU_FULL;
+    if (menuStyle === MENU_TRADITIONAL || menuStyle === MENU_COMBINATION) {
+        const visibleChoices = `:${mayTakeOut ? 'o' : ''}${mayPutIn ? 'i' : ''}`
+            + `${mayTakeOut ? 'b' : ''}${mayPutIn ? 'rs' : ''} ${moreContainers ? 'n' : ''}q`
+            + ((game.flags.cmdassist ?? true) ? ' or ?' : '');
+        return await promptChoice(title, [':', 'o', 'i', 'b', 'r', 's', 'n', 'q', '?'],
+            moreContainers ? 'n' : 'q', { visibleChoices });
+    }
+    if (!mayTakeOut && !mayPutIn) return keys.both;
+    const simpleName = definiteName(simpleObjectName(container));
+    const entries: ChoiceMenuEntry[] = [{ key: ':', text: `Look inside ${simpleName}` }];
+    if (mayTakeOut) entries.push({ key: keys.takeOut, text: 'take something out' });
+    if (mayPutIn) entries.push({ key: keys.putIn, text: 'put something in' });
+    if (mayTakeOut) entries.push({
+        key: keys.both, text: `${mayPutIn ? 'both; ' : ''}take out, then put in`,
+    });
+    if (mayPutIn) {
+        entries.push({
+            key: keys.reverse, text: `${mayTakeOut ? 'both reversed; ' : ''}put in, then take out`,
+        });
+        entries.push({ key: keys.stash, text: `stash one item into ${simpleName}` });
+    }
+    entries.push('');
+    if (moreContainers) entries.push({ key: 'n', marker: '*', text: 'loot next container' });
+    entries.push({ key: 'q', marker: moreContainers ? '-' : '*', text: usedTime ? 'done' : 'do nothing' });
+    const chosen = await showChoiceWindow({
+        title,
+        entries,
+    });
+    if (chosen === 0) return moreContainers ? 'n' : 'q';
+    return chosen === 27 ? 'q' : String.fromCharCode(chosen);
+}
+
+export async function useContainer(container: GameObject, {
+    held = false,
+    moreContainers = false,
+    underlay = null,
+    resetJustPicked = false,
+}: ContainerUseOptions = {}): Promise<ContainerUseResult> {
+    setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
+    try {
+        return await useContainerActions(container, { held, moreContainers, underlay, resetJustPicked });
+    } finally {
+        setSellDisposition(SELL_NORMAL);
+    }
+}
+
+// C pickup.c:loot_mon()/loot_cont() driver; the '?' help text is
+// pickup.c:explain_container_prompt() inlined below.
+async function useContainerActions(container: GameObject, {
+    held = false,
+    moreContainers = false,
+    underlay = null,
+    resetJustPicked = false,
+}: ContainerUseOptions = {}): Promise<ContainerUseResult> {
+    if (heroHasNoHands(game)) {
+        await pline('You have no hands!');
+        return { spentTime: false, container };
+    }
+    if (!heroHasFreeHand(game)) {
+        await pline(`You have no free ${heroHandName()}.`);
+        return { spentTime: false, container };
+    }
+
+    container.contents ||= [];
+    container.lknown = true;
+    if (container.olocked) {
+        await plineWithContinuation(
+            `${definiteObjectAction(container, 'are')} locked.`,
+        );
+        if (held) await pline('You must put it down to unlock.');
+        return { spentTime: false, container };
+    }
+    if (container.otrapped) {
+        if (held) {
+            const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+            await plineWithContinuation(`You open ${name}...`);
+        }
+        const trap = await triggerChestTrap(container);
+        if (!trap?.died && (game.multi ?? 0) >= 0) {
+            nomul(-1);
+            game._helplessReason = 'opening a container';
+            game._helplessDoneMessage = '';
+        }
+        return {
+            spentTime: true,
+            stopLooting: true,
+            heroDied: !!trap && 'died' in trap && trap.died,
+            container: trap?.destroyed ? null : container,
+        };
+    }
+
+    const quantumCat = isQuantumBox(container);
+    let spentTime = await observeQuantumCat(container);
+    let tookOut = false;
+    const cursedBag = container.otyp === BAG_OF_HOLDING && container.cursed && container.contents.length > 0;
+    const loss = await loseCursedBagContents(container, game);
+    if (loss) {
+        spentTime = true;
+        await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
+        updateContainerWeights(container);
+    }
+    const emptyMessage = container.contents.length ? ''
+        : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
+    const keys = actionKeys();
+    let action;
+    for (;;) {
+        action = await chooseAction(
+            container, spentTime, moreContainers,
+        );
+        if (action === '?') {
+            const help = ['Container actions:', '',
+                ' : -- Look: examine contents', ' o -- Out: take things out', ' i -- In: put things in',
+                ' b -- Both: first take things out, then put things in',
+                ' r -- Reversed: put things in, then take things out',
+                ' s -- Stash: put one item in', '',
+                ...(moreContainers ? [' n -- Next: loot next selected container'] : []),
+                ' q -- Quit: finished', ' ? -- Help: display this text.', ''];
+            await showTextWindow(help);
+            continue;
+        }
+        if (action !== ':') break;
+        if (!container.cknown) spentTime = true;
+        await containerContents([container], false, false, true);
+        if (underlay) restoreMenuUnderlay(underlay);
+    }
+
+    const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
+    const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
+    const putInFirst = action === keys.reverse;
+
+    if (takeOut && !putInFirst) {
+        if (!container.contents.length) {
+            if (!container.cknown) spentTime = true;
+            container.cknown = true;
+            await pline(emptyMessage);
+        } else {
+            const transfer = await takeOutSelectedObjects(container, resetJustPicked);
+            if (transfer.spentTime) spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
+        }
+    }
+
+    if (!game.program_state.gameover && (putIn || action === keys.stash)) {
+        const hasOtherInventory = (game.inventory || [])
+            .some(object => object !== container);
+        if (!hasOtherInventory) {
+            await pline(`You don't have anything${game.inventory.length ? ' else' : ''} to ${
+                action === keys.stash ? 'stash' : 'put in'}.`);
+        } else {
+            const transfer = await putSelectedObjects(
+                container, action === keys.stash,
+            );
+            const results = transfer.results;
+            if (transfer.spentTime) spentTime = true;
+            if (results.some(result => result.destroyedContainer)) {
+                return { spentTime, container: null };
+            }
+        }
+    }
+
+    if (!game.program_state.gameover && takeOut && putInFirst) {
+        if (!container.contents.length) {
+            if (!container.cknown) spentTime = true;
+            container.cknown = true;
+            await pline(emptyMessage);
+        } else {
+            const transfer = await takeOutSelectedObjects(container, resetJustPicked);
+            if (transfer.spentTime) spentTime = true;
+            tookOut = transfer.results.some(result => result.moved);
+        }
+    }
+
+    if (game.program_state.gameover) return { spentTime: true, container, heroDied: true };
+    if (spentTime) container.cknown = true;
+    if (underlay) restoreMenuUnderlay(underlay);
+    // C pickup.c use_container() ends with no redraw of its own: the tty
+    // menu dismissal already restored the covered screen from the glyph
+    // buffer, and a map recomputation here would replace remembered glyphs
+    // (such as a just-wiped engraving) that the buffer still holds. The
+    // flush only repaints the current buffer, like native flush_screen().
+    await flush_screen(1);
+    return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
 }

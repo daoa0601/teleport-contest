@@ -12,7 +12,7 @@ import { definiteName } from './objnam.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { loseHeroHp } from './hack.js';
 const POISON_EFFECT = [
     'You feel weaker!',

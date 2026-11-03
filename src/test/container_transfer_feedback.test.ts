@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { takeFromContainer } from '../js/container.js';
+import { takeFromContainer } from '../js/pickup.js';
 import { CHEST, DAGGER, DART, ROCK, SHORT_SWORD } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, floorObject, knownObject } from './support/game-objects.js';

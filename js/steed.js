@@ -1,5 +1,5 @@
 import { trapName, resolveImmediatePetrification, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, floatHeroDown } from './trap.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';

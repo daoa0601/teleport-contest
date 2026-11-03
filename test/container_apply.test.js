@@ -6,7 +6,7 @@ import { W_AMUL, OBJECT_TIMER_KIND } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { takeFromContainer } from '../js/container.js';
+import { takeFromContainer } from '../js/pickup.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, BAG_OF_HOLDING, CHEST, CLUB, CORPSE, DART, ICE_BOX, LEATHER_GLOVES, LOADSTONE, SACK, TWO_HANDED_SWORD, WAN_CANCELLATION, } from '../js/object_data.js';
 import { installPolymorphedHero } from './support/hero-state.js';

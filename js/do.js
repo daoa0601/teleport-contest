@@ -39,7 +39,7 @@ import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.
 import { impossible } from './diagnostics.js';
 import { waterbodyName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { chooseObjectCategories } from './container.js';
+import { chooseObjectCategories } from './pickup.js';
 import { selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { objectQuantity, rejoinObjectStack, splitObjectStack } from './mkobj.js';
@@ -59,7 +59,7 @@ import { placeObject, stack_object } from './floor_object.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { growMonster, setMonsterMalign } from './makemon.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { propertyIsActive } from './properties.js';
 import { dropBall } from './ball.js';
 import { requireHeroAttributes } from './hero_types.js';

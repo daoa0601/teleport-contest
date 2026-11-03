@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
 import { CHEST } from '../js/object_data.js';
-import { useContainer } from '../js/container.js';
+import { useContainer } from '../js/pickup.js';
 import { resetInputState } from '../js/input.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

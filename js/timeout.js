@@ -17,7 +17,7 @@ import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
-import { deferredDecor } from './dungeon_feature.js';
+import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
@@ -66,7 +66,7 @@ import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCannotVomit, nameToMonster } from './mondata.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 function petrificationMessage(turns, state) {
     if (turns === 5)
         return 'You are slowing down.';

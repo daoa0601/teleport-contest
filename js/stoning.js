@@ -159,16 +159,6 @@ export async function feelPetrifyingCorpse(object, { forceTouch = false, state =
     });
     return { touched: true, died: result.died };
 }
-// C pickup.c:fatal_corpse_mistake(): handling one corpse from the stack, with
-// the death reason from killer_xname() describing the whole stack.
-export async function touchPetrifyingCorpse(object) {
-    if (!handlesPetrifyingCorpseBareHanded(object))
-        return null;
-    const result = await petrifyFromCorpseContact(`Touching ${corpseName(object, { singular: true, includeArticle: true })} is a fatal mistake.`, killerObjectName(object));
-    if (!result)
-        await displayMessageWindow();
-    return result;
-}
 // C apply.c:use_whip(): a snatched corpse is named by cxname() before it
 // moves, and that name is also the death reason.
 export async function snatchPetrifyingCorpse(object, { beforeDeath = null, } = {}) {
@@ -178,11 +168,11 @@ export async function snatchPetrifyingCorpse(object, { beforeDeath = null, } = {
     const corpse = objectQuantity(object) === 1 ? withIndefiniteArticle(name) : name;
     return await petrifyFromCorpseContact(`Snatching ${corpse} is a fatal mistake.`, corpse, beforeDeath);
 }
-function handlesPetrifyingCorpseBareHanded(object) {
+export function handlesPetrifyingCorpseBareHanded(object) {
     return object?.otyp === CORPSE && touchPetrifies(object.corpsenm)
         && !(game.uarmg || game.u?.uarmg) && !heroResistsStoning();
 }
-async function petrifyFromCorpseContact(message, killer, beforeDeath = null) {
+export async function petrifyFromCorpseContact(message, killer, beforeDeath = null) {
     // Pickup and snatching try the golem conversion before warning or
     // placing a snatched corpse on the floor for death cleanup.
     if (formCanBecomeStoneGolem(game.u.umonnum)) {

@@ -3,7 +3,7 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
-import { reportHeroEncumbrance } from './encumbrance.js';
+import { reportHeroEncumbrance } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';

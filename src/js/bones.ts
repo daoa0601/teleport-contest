@@ -35,7 +35,7 @@ import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
 import { restoreMonsterInventoryOwnership } from './mkobj.js';
 
-import { ageStoresFuel } from './container.js';
+import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
 import { ICE_BOX, SLIME_MOLD } from './object_data.js';
 import type { GameObject } from './object_types.js';
