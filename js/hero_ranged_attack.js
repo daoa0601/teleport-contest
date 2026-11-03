@@ -3,7 +3,7 @@
 // Damage, messages, and death share uhitm.c:hmon() with melee.
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
-import { A_DEX, A_STR, P_BOW, Upolyd } from './const.js';
+import { A_DEX, A_STR, Luck, P_BOW, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { applyCaitiffPenalty } from './uhitm.js';
@@ -83,7 +83,7 @@ function baseRangedHitThreshold(monster, weapon, state) {
         : state.u?.ulevel ?? 1;
     const targetFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     const threshold = -1
-        + (state.u.uluck ?? 0) + (state.u.moreluck ?? 0)
+        + Luck(state.u)
         + findMonsterArmorClass(monster)
         + (state.u?.uhitinc ?? 0)
         + heroLevel

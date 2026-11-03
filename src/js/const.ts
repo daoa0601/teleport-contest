@@ -2777,6 +2777,12 @@ export function Upolyd(player: Pick<Hero, 'umonnum' | 'umonster'> | null | undef
     return !!player && player.umonnum !== player.umonster;
 }
 
+// C you.h:Luck is the hero's effective luck: u.uluck plus the carried
+// luckstone bonus u.moreluck.
+export function Luck(hero: Pick<Hero, 'uluck' | 'moreluck'> | null | undefined): number {
+    return (hero?.uluck ?? 0) + (hero?.moreluck ?? 0);
+}
+
 // Canonical macros — previously duplicated as local stubs in 15+ files
 export function u_at(x: number, y: number): boolean { return game?.u?.ux === x && game?.u?.uy === y; }
 export function M_AP_TYPE(mon: Pick<Monster, 'm_ap_type'> | null | undefined): number { return (mon?.m_ap_type ?? 0) & M_AP_TYPMASK; }

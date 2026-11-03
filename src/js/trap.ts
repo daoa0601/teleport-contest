@@ -115,7 +115,7 @@ import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { heroIsSliming } from './potion.js';
 import { meltIce } from './zap.js';
-import { A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF } from './const.js';
+import { A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF } from './const.js';
 import { AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
@@ -576,7 +576,9 @@ export async function waterDamageObject(
         }
         return 'damaged';
     }
-    const luck = (state.u.uluck ?? 0) + (state.u.moreluck ?? 0);
+    // C trap.c:4771 water_damage() tests Luck, which includes a carried
+    // luckstone's bonus.
+    const luck = Luck(state.u);
     if (!force && luck + 5 > random(20)) return 'nothing';
     if (object.oclass === 9) {
         if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
@@ -2661,8 +2663,10 @@ async function burnContainer(object: GameObject, context: FireDamageContext): Pr
     if (object.otyp === STATUE || object.otyp === ICE_BOX) return false;
     const chance = object.otyp === CHEST ? 40
         : object.otyp === LARGE_BOX ? 30 : 20;
+    // C trap.c:4484 fire_damage() tests Luck; the container survival roll
+    // includes the carried luckstone bonus.
     if (!context.force
-        && (context.state.u?.uluck ?? 0) + 5 > context.random(chance)) {
+        && Luck(context.state.u) + 5 > context.random(chance)) {
         return false;
     }
     if (context.squareVisible) {
@@ -2747,8 +2751,10 @@ export async function fireDamageObject(
         && object.otyp <= BAG_OF_TRICKS;
     if (container || object.otyp === STATUE)
         return burnContainer(object, context);
+    // C trap.c:4507 fire_damage() tests Luck, which includes a carried
+    // luckstone's bonus.
     if (!force
-        && (state.u?.uluck ?? 0) + 5 > random(20)) {
+        && Luck(state.u) + 5 > random(20)) {
         return false;
     }
     if (await burnPaperOrPotion(object, context)) return true;

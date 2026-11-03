@@ -8,7 +8,7 @@ import { makeBlinded } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import {
-    A_CON, A_MAX, A_STR, ROOM,
+    A_CON, A_MAX, A_STR, Luck, ROOM,
 } from './const.js';
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
@@ -91,13 +91,8 @@ function currentForm(): number | null {
     return species !== undefined && Number.isInteger(species) ? species : null;
 }
 
-function naturalLuck() {
-    return game.u?.uluck ?? game.u?.luck ?? 0;
-}
-
-function heroLuck() {
-    return naturalLuck() + (game.u.moreluck ?? 0);
-}
+// C sit.c:special_throne_effect() — cases 9-11 read the Luck macro
+// (you.h:Luck), case 6 reads u.uluck alone.
 
 function inVladsTower() {
     return (game.u.uz ? game.dungeons[game.u.uz.dnum]?.dname : undefined) === "Vlad's Tower";
@@ -202,7 +197,8 @@ async function normalThroneEffect(
         await takeHeroGold();
         break;
     case 6:
-        if (naturalLuck() + rn2(5) < 0) {
+        // C sit.c:106 reads u.uluck without the carried luck bonus.
+        if ((game.u.uluck ?? 0) + rn2(5) < 0) {
             await plineWithContinuation(formatFeltMessage('your luck is changing.'));
             changeHeroLuck(1);
         } else {
@@ -226,15 +222,15 @@ async function normalThroneEffect(
         await plineWithContinuation(
             '"A curse upon thee for sitting upon this most holy throne!"',
         );
-        if (heroLuck() > 0) {
+        if (Luck(game.u) > 0) {
             await makeBlinded((game.u.blindTurns ?? 0) + rn1(100, 250));
-            changeHeroLuck(heroLuck() > 1 ? -rnd(2) : -1);
+            changeHeroLuck(Luck(game.u) > 1 ? -rnd(2) : -1);
         } else {
             await rndcurse();
         }
         break;
     case 10:
-        if (heroLuck() < 0
+        if (Luck(game.u) < 0
             || hasPermanentIntrinsicProperty('seeInvisible', game)) {
             if (game.level?.flags?.nommap) {
                 await plineWithContinuation(
@@ -250,7 +246,7 @@ async function normalThroneEffect(
         }
         break;
     case 11:
-        if (heroLuck() < 0) {
+        if (Luck(game.u) < 0) {
             await plineWithContinuation(formatFeltMessage('threatened.'));
             aggravateMonsters(game);
         } else {

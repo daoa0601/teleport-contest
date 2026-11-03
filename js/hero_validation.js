@@ -169,7 +169,6 @@ export function validSavedHero(value, entities) {
         udg_cnt: optional(integer),
         ugrave_arise: optional(integer),
         uluck: optional(integer),
-        luck: optional(integer),
         moreluck: optional(integer),
         udaminc: optional(integer),
         uhitinc: optional(integer),

@@ -1,6 +1,6 @@
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
-import { ALTAR, CORR, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
+import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { dropBoulderIntoLiquid } from './boulder_pool.js';
 import { placeObject, stack_object } from './floor_object.js';
@@ -41,10 +41,10 @@ async function breakPotionOnHotGround(object, x, y, state, publish, random, luck
         await publish(`${definiteObjectAction(object, 'heat', state)} up as ${objectNameIsPlural(object, state) ? 'they hit' : 'it hits'} the hot ground.`);
     }
     let survivalChance = object.blessed ? 70 : 50;
-    // C do.c:340 adds Luck * 2; Luck is u.uluck + u.moreluck (you.h:464),
-    // so a carried luck bonus also protects handled potions.
+    // C do.c:340 adds Luck * 2, so a carried luck bonus also protects
+    // handled potions (you.h:Luck).
     if (object.invlet)
-        survivalChance += ((state.u?.uluck ?? 0) + (state.u?.moreluck ?? 0)) * 2;
+        survivalChance += Luck(state.u) * 2;
     if (object.otyp === POT_OIL)
         survivalChance = 100;
     const resists = objectResistsDestruction(object, survivalChance, 100, random);

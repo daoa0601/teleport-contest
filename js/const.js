@@ -2576,6 +2576,11 @@ export function has_mgivenname(mtmp) { return !!(mtmp?.mextra?.mgivenname || mtm
 export function Upolyd(player) {
     return !!player && player.umonnum !== player.umonster;
 }
+// C you.h:Luck is the hero's effective luck: u.uluck plus the carried
+// luckstone bonus u.moreluck.
+export function Luck(hero) {
+    return (hero?.uluck ?? 0) + (hero?.moreluck ?? 0);
+}
 // Canonical macros — previously duplicated as local stubs in 15+ files
 export function u_at(x, y) { return game?.u?.ux === x && game?.u?.uy === y; }
 export function M_AP_TYPE(mon) { return (mon?.m_ap_type ?? 0) & M_AP_TYPMASK; }

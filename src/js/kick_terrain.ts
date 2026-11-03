@@ -4,7 +4,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { exerciseAttribute } from './attrib.js';
 import {
     A_DEX, A_WIS, ALTAR, CORR, FOUNTAIN, G_GONE, IRONBARS, IS_TREE, Is_stronghold, LADDER,
-    LA_DOWN, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR,
+    LA_DOWN, Luck, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR,
     SINK, STAIRS, S_LDWASHER, S_LPUDDING, THRONE, TREE_LOOTED, TREE_SWARM, T_LOOTED,
 } from './const.js';
 import { displayColorName, feel_newsym, newsym } from './display.js';
@@ -77,7 +77,7 @@ export async function kickNonDoorTerrain(
 async function kickThrone(x: number, y: number, location: MapLocation, responses: TerrainKickResponses): Promise<void> {
     requirePlayingGame(game);
     if (game.u.levitating) { await responses.dumb(x, y); return; }
-    const luck = (game.u.uluck ?? 0) + (game.u.moreluck ?? 0);
+    const luck = Luck(game.u);
     if ((luck < 0 || location.looted) && rn2(3) === 0) {
         location.looted = 0;
         location.typ = ROOM;
