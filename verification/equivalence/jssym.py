@@ -151,12 +151,11 @@ class JSExec:
             return V(a.kind, z3.simplify(z3.If(guard, a.v, b.v)))
         if a.kind == b.kind == 'str' and (isinstance(a.v, z3.ExprRef)
                                           or isinstance(b.v, z3.ExprRef)):
-            # z3 String terms (symbolic string-array reads) merge by guard;
-            # the python-value comparison below must not see them (a z3
-            # equality is truthy even when it varies).
-            left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
-            right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
-            return V('str', z3.simplify(z3.If(guard, left, right)))
+            # Table terms encode null as ''. A literal '' must keep its
+            # distinct JS value, so leave mixed branches separate.
+            if not (isinstance(a.v, z3.ExprRef) and isinstance(b.v, z3.ExprRef)):
+                raise Unsupported('JavaScript table strings and literal strings cannot be joined')
+            return V('str', z3.simplify(z3.If(guard, a.v, b.v)))
         if a.kind in ('str', 'obj', 'null', 'undef', 'ctx', 'fn') and a.v == b.v:
             return a
         raise Unsupported('JavaScript values cannot be joined')
@@ -938,16 +937,16 @@ class JSExec:
             # equality is modeled for those.
             if a.kind == 'str' and (isinstance(a.v, z3.ExprRef)
                                     or isinstance(b.v, z3.ExprRef)):
-                left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
-                right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
                 # The empty string is the null encoding and the table itself
                 # excludes '' entries, so JavaScript's `value === ''` is
                 # false on every row: null === '' is false, and no string
-                # entry is empty. Comparing two terms stays exact because
-                # both use the same encoding.
-                if (z3.is_string_value(left) and left.as_string() == '') or \
-                        (z3.is_string_value(right) and right.as_string() == ''):
+                # entry is empty. Check for the JS literal before converting
+                # it: a table term can also simplify to StringVal('') when
+                # every branch reads null, and two such nulls are equal.
+                if any(isinstance(x.v, str) and x.v == '' for x in (a, b)):
                     return z3.BoolVal(False)
+                left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
+                right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
                 return left == right
             return z3.BoolVal(a.v == b.v)
         raise Unsupported(f'JavaScript equality on {a.kind}')

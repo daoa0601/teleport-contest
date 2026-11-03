@@ -448,22 +448,26 @@ exact — an in-bounds element read is never undefined, the empty encoding is
 exactly the null case, and `value === ''` is false on every row because the
 table excludes empty strings — while `typeof` and coercive `==` on such a
 term are rejected, as is a symbolic read of a mixed-kind array and a record
-lookup whose keys collide with the null coercion. Seven language tests pin
-the selection, the null distinctions, the empty-string comparison, the
-record lookup, and the rejections; the focused executor/query/selection
-suite is now 93 passing tests. No port
-fidelity bug was found in the eighteen stated domains.
+lookup whose keys collide with the null coercion. Branch joins merge only
+two table terms; a literal string keeps its own path so a real empty string
+cannot become the null encoding. Equality also distinguishes a literal
+empty string from a table term simplified to the null encoding. Ten language
+tests pin the selection, the null distinctions, the empty-string comparison,
+the record lookup, branch joins, and the rejections. The focused
+executor/query/selection suite is now 96 passing tests. No port fidelity bug
+was found in the eighteen stated domains.
 
-The complete 109-claim run exited 0 in **1057.5 s**, including **116 domain
-probes** and **121 mutant checks** (18 claims, 18 probes and 18 mutants
-new), and validated the rewritten 109-row ledger. The CI-parity
+The complete review round 3 run proved all 109 claims in **1041.57 s**, including
+**116 domain probes** and **122 mutant checks**, and checked the existing
+109-row ledger. The eighteen object claims each have one domain probe and
+one killed mutant. The prior CI-parity
 `--skip-slow --check-ledger` run passed in **456.3 s**; every new claim is
 fast, so the `equivalence` job keeps its slot and the two slow table claims
-are unchanged. The focused executor/query/selection suite is now **93
+are unchanged. The focused executor/query/selection suite is now **96
 passing tests** (the review rounds added the nullish-comparison,
-empty-string, record-lookup and mixed-array tests), and the **36 ledger CLI
-tests** passed. `npm run compile`
-and `npm run check` passed. No game source, session corpus, or frozen file
+empty-string, record-lookup, mixed-array and branch-join tests), and the
+**36 ledger CLI tests** passed. `npm run compile` and `npm run check` passed.
+No game source, session corpus, or frozen file
 was changed beyond the citation comments.
 
 The complete 91-claim run exited 0 in **1015.6 s**, including **90 domain

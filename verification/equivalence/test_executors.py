@@ -828,6 +828,63 @@ class ExecutorTests(unittest.TestCase):
                       base.replace('BODY', 'names[i] === "" ? 1 : 0'), **domain,
                       reason='outputs differ')
 
+    def test_symbolic_string_branch_joins_preserve_empty_and_null_values(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        for assignments, literal_branch, table_branch in (
+                ('let n = ""; if (j) n = names[i];', '!j', 'j'),
+                ('let n = names[i]; if (j) n = "";', 'j', '!j')):
+            for expression, expected, wrong in (
+                    ('n === ""', literal_branch, '0'),
+                    ('n === null', f'{table_branch} && i == 1',
+                     f'{literal_branch} || i == 1'),
+                    ('(n ?? "fallback") === "fallback"',
+                     f'{table_branch} && i == 1', f'{literal_branch} || i == 1')):
+                with self.subTest(assignments=assignments, expression=expression):
+                    source = ('const names = ["leather", null];\n'
+                              f'function example(i, j) {{ {assignments} '
+                              f'return {expression} ? 1 : 0; }}')
+                    self.rejected(f'int example(int i, int j) {{ return {wrong}; }}',
+                                  source, **domain, reason='outputs differ')
+                    self.equivalent(f'int example(int i, int j) {{ return {expected}; }}',
+                                    source, **domain)
+
+    def test_symbolic_string_branch_joins_preserve_two_table_reads(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        source = ('const names = ["leather", null];\n'
+                  'function example(i, j) { let n = names[i]; '
+                  'if (j) n = names[1 - i]; return n === null ? 1 : 0; }')
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        self.equivalent('int example(int i, int j) { return j ? i == 0 : i == 1; }',
+                        source, **domain)
+        self.rejected('int example(int i, int j) { return j ? i == 1 : i == 0; }',
+                      source, **domain, reason='outputs differ')
+
+    def test_joined_null_table_reads_equal_each_other(self):
+        def configure(world, front, modules):
+            world.join_paths = True
+
+        source = ('const names = [null, null];\n'
+                  'function example(i, j) { let n = names[i]; '
+                  'if (j) n = names[1 - i]; return n === names[i] ? 1 : 0; }')
+        domain = dict(params=[('i', INT), ('j', INT)],
+                      pre=lambda s: [s['i'] >= 0, s['i'] <= 1,
+                                     s['j'] >= 0, s['j'] <= 1],
+                      configure=configure)
+        self.rejected('int example(int i, int j) { return 0; }', source,
+                      **domain, reason='outputs differ')
+        self.equivalent('int example(int i, int j) { return 1; }', source, **domain)
+
     def test_symbolic_record_lookup_by_string_key_selects_exactly(self):
         lookup = ('const names = ["a", null];\nconst REC = { a: 1, b: 2 };\n'
                   'function example(i) { return REC[names[i]] ?? 0; }')
