@@ -426,8 +426,8 @@ src/js/timeout.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
 src/js/read.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
 src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
 src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
-src/js/dothrow.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
-src/js/dothrow.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
+src/js/dokick.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
+src/js/dokick.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
 src/js/dokick.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
 src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rn2	"[""3""]"	constant
 src/js/dothrow.ts	resolveQuiveredGoldMonsterContact	rnd	"[""20""]"	constant
