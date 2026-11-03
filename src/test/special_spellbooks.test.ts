@@ -12,7 +12,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { NOVEL_TITLES, novelTitle } from '../js/do_name.js';
 import { BELL_OF_OPENING, BOULDER, CANDELABRUM_OF_INVOCATION, CORPSE, EGG, SPE_NOVEL, ROCK, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
-import { readBookOfDead, readNovel } from '../js/special_spellbooks.js';
+import { readBookOfDead, readNovel } from '../js/spell.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { objectTimers, stopAllObjectTimers } from '../js/timeout.js';
 import { runDueTimers } from '../js/timeout.js';

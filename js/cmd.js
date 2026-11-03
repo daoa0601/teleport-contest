@@ -17,7 +17,7 @@ import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, tak
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
-import { continueSpellbookStudy } from './spellbook_study.js';
+import { continueSpellbookStudy } from './spell.js';
 import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';

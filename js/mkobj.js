@@ -40,7 +40,7 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
 import { updateCarriedLuck } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
-import { bookCursed } from './spellbook_study.js';
+import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
 const RANDOM_CLASS = 0;

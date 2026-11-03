@@ -73,7 +73,7 @@ import { readOrdinaryObject } from './readable_objects.js';
 import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
-import { studyBook } from './spellbook_study.js';
+import { studyBook } from './spell.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';

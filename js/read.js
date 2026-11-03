@@ -67,7 +67,7 @@ import { readOrdinaryObject } from './readable_objects.js';
 import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
-import { studyBook } from './spellbook_study.js';
+import { studyBook } from './spell.js';
 import { freeHeroFromBuriedBall } from './dig.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';

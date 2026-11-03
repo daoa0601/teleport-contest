@@ -84,7 +84,7 @@ import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { maybeResetPick } from './lock.js';
-import { bookDisappears } from './spellbook_study.js';
+import { bookDisappears } from './spell.js';
 import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip } from './hack.js';
 import { insideRoom } from './mkroom.js';
 import { objectWeight } from './mkobj.js';

@@ -25,7 +25,7 @@ import type { HeroOccupation } from './occupation_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Position } from './map_types.js';
-import { continueSpellbookStudy } from './spellbook_study.js';
+import { continueSpellbookStudy } from './spell.js';
 import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';

@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
 import { BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD } from '../js/object_data.js';
-import { readBookOfDead } from '../js/special_spellbooks.js';
+import { readBookOfDead } from '../js/spell.js';
 import { vision_recalc, vision_reset } from '../js/vision.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPagerInput } from './support/pager-input.js';

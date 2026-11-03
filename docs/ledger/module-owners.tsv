@@ -124,9 +124,7 @@ src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
 src/js/special_location.ts	sp_lev.c
-src/js/special_spellbooks.ts	spell.c
 src/js/spell.ts	spell.c
-src/js/spellbook_study.ts	spell.c
 src/js/startup.ts	role.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
