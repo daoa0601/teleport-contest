@@ -1,12 +1,11 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
+import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor, wearEyewear } from '../js/do_wear.js';
 import { dropHeroInventoryForBones } from '../js/bones_death.js';
 import { rhack } from '../js/cmd.js';
 import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
 import { pline } from '../js/pline.js';
-import { wearEyewear } from '../js/eyewear.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';

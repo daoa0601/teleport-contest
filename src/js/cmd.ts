@@ -45,8 +45,7 @@ import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import type { CommandDefinition } from './command_data.js';
 import type { CommandBindings } from './command_bindings.js';
 import { stopHeroOccupation } from './occupation.js';
-import { continueBulkTakeoff, takeOffAll } from './bulk_takeoff.js';
-import { resetBulkTakeoff, dowear, doputon, removeWornItem } from './do_wear.js';
+import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { autoDescribePosition, selectTravelMenuPosition, showGetposInstructions, selectMapPosition, gatherLocsInteresting, glyphToCmapSymbol, knownVibratingSquareAt } from './getpos.js';

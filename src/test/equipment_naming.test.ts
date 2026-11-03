@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { wearHeroAccessory } from '../js/do_wear.js';
+import { wearHeroAccessory, wearEyewear } from '../js/do_wear.js';
 
 import { wearHeroArmor } from '../js/do_wear.js';
 
 import { rhack } from '../js/cmd.js';
-import { wearEyewear } from '../js/eyewear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';

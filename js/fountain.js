@@ -3,7 +3,7 @@
 // fountain_sword/sink_dipping/sink_drinking/sink_terrain/dip_water
 // (pure move, no behavior change).
 import { distmin } from './hacklib.js';
-import { armorSimpleName } from './do_wear.js';
+import { armorSimpleName, fingersOrGloves } from './do_wear.js';
 import { heroArmName, heroFaceName, heroFingerName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
@@ -545,9 +545,6 @@ export async function dipFountain(object, loc) {
     if (eventMessage)
         await plineWithContinuation(eventMessage);
     await dryFountainAt(game.u.ux, game.u.uy);
-}
-export function fingersOrGloves() {
-    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
 }
 export async function washHands() {
     const glib = (game.u.glibTurns ?? 0) > 0;

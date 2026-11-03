@@ -7,7 +7,7 @@ import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
-import { wearEyewear } from '../js/eyewear.js';
+import { wearEyewear } from '../js/do_wear.js';
 
 // C apply.c:doapply()'s BLINDFOLD/LENSES case applies a worn item by
 // taking it off, guarded by do_wear.c cursed(): a cursed blindfold

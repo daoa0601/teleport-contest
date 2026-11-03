@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MFAST, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, NORMAL_SPEED, STRAT_WAITFORU, FIRE_TRAP, W_ARMC } from '../js/const.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
-import { wearEyewear } from '../js/eyewear.js';
+import { wearEyewear } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { applyHeroNaturalSliming } from '../js/uhitm.js';
 import type { HeroNaturalEffectContext } from '../js/hero_natural_types.js';

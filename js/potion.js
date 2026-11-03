@@ -13,7 +13,7 @@
 // dothrow.ts; inaccessible_equipment()'s covering test in
 // equipment_selection.ts.
 import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
-import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment } from './do_wear.js';
+import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, requireAttributeIndex } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
@@ -21,7 +21,7 @@ import { commandResultCancelled, commandResultFailed, setMulti, travelStairs } f
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
 import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
 import { impossible } from './diagnostics.js';
-import { dipFountain, dipSink, drinkFountain, drinkSink, fingersOrGloves, washHands } from './fountain.js';
+import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';

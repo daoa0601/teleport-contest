@@ -31,7 +31,7 @@ import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterN
 import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
 import { commandResultCancelled } from './cmd.js';
-import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
+import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor, isEyewear, wearEyewear } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
@@ -98,7 +98,6 @@ import { askTeleportDestination, heroControlsTeleport, teleportHero } from './te
 import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject } from './object_properties.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
-import { isEyewear, wearEyewear } from './eyewear.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
 import { fractureRock } from './rock_breakage.js';

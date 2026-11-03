@@ -5,7 +5,7 @@
 // the burning-object owners.
 
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
-import { armorSimpleName, armorSlotFor, heroHasFreeAction } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear } from './do_wear.js';
 import { artifactById, speakArtifact } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
@@ -32,7 +32,6 @@ import { restartEggHatchTimer } from './egg.js';
 import { heroHasFreeHand, wipeHeroEngraving } from './engrave.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { explode } from './explosion.js';
-import { applyEyewear, removeEyewear } from './eyewear.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { doBlindingRay } from './flash.js';

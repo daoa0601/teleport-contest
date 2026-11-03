@@ -316,7 +316,7 @@ bestow_artifact	discover_object	inlined	learnObjectType/discoverArtifact (sacrif
 bestow_artifact	unrestrict_weapon_skill	inlined	unrestrictHeroSkill (sacrifice.ts)
 blocking_terrain	closed_door	inlined	closed/locked door blocks the bolt (mthrowu.ts)
 break_armor	Armor_gone	inlined	removeHeroArmor with voluntary:false runs the gone path (polyself.ts, armor.ts)
-break_armor	Blindf_off	inlined	blindfold removal via dropCarriedObject/eyewear off handling (polyself.ts, eyewear.ts)
+break_armor	Blindf_off	inlined	blindfold removal via dropCarriedObject/eyewear off handling (polyself.ts, do_wear.ts)
 break_armor	Helmet_off	inlined	helmet drop runs Helmet_off luck handling (polyself.ts, armor.ts)
 break_armor	Shield_off	inlined	shield drop runs the shield off handler (polyself.ts)
 break_armor	dropp	inlined	dropCarriedObject/dropInventoryObjectAtHero (polyself.ts into do.ts)
@@ -962,14 +962,14 @@ kick_nondoor	mksobj_at	inlined	mksobj plus placeCreatedObject for the rock and t
 kick_nondoor	rnd_treefruit_at	inlined	tree fruit rolled and placed via mksobj+placeCreatedObject (kick_terrain.ts kickTree)
 kick_nondoor	sgn	inlined	Math.sign on u.ualign.type (cmd.ts)
 kick_nondoor	undiscovered_artifact	n/a	macro expansion of is_plural() (obj.h) in the fruit plural message; port pluralizes by count
-do_takeoff	Blindf_off	inlined	removeEyewear for the ublindf slot (bulk_takeoff.ts removeSelectedSlot)
-do_takeoff	Helmet_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, bulk_takeoff.ts)
-do_takeoff	Shield_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, bulk_takeoff.ts)
-do_takeoff	Shirt_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, bulk_takeoff.ts)
-do_takeoff	empty_handed	inlined	hand description built from gloves/humanoid checks (bulk_takeoff.ts)
-do_takeoff	setuqwep	inlined	setQuiverObject(null) plus "no longer have ammunition readied" (bulk_takeoff.ts)
-do_takeoff	setuswapwep	inlined	setSecondaryWeapon(null) plus readied-weapon message (bulk_takeoff.ts)
-do_takeoff	setuwep	inlined	setPrimaryWeapon(null) plus "You are ..." message (bulk_takeoff.ts)
+do_takeoff	Blindf_off	inlined	removeEyewear for the ublindf slot (do_wear.ts removeSelectedSlot)
+do_takeoff	Helmet_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, do_wear.ts)
+do_takeoff	Shield_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, do_wear.ts)
+do_takeoff	Shirt_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, do_wear.ts)
+do_takeoff	empty_handed	inlined	hand description built from gloves/humanoid checks (do_wear.ts)
+do_takeoff	setuqwep	inlined	setQuiverObject(null) plus "no longer have ammunition readied" (do_wear.ts)
+do_takeoff	setuswapwep	inlined	setSecondaryWeapon(null) plus readied-weapon message (do_wear.ts)
+do_takeoff	setuwep	inlined	setPrimaryWeapon(null) plus "You are ..." message (do_wear.ts)
 print_mapseen	add_menu	inlined	overview lines are TextMenuLine rows or tty_add_menu entries (cmd.ts)
 print_mapseen	align_gname	inlined	deityName(alignment) in the altar phrase (cmd.ts overviewFeatureLine)
 print_mapseen	br_string2	inlined	overviewBranchLine composes the branch note (cmd.ts)
@@ -1096,7 +1096,7 @@ reveal_terrain_getglyph	xy_set_wall_state	inlined	terrain_glyph recomputes the w
 armoroff	Helmet_off	inlined	finishArmorRemoval applies per-slot off effects (cmd.ts, armor.ts)
 armoroff	Shield_off	inlined	finishArmorRemoval applies per-slot off effects (cmd.ts, armor.ts)
 armoroff	Shirt_off	inlined	finishArmorRemoval applies per-slot off effects (cmd.ts, armor.ts)
-armoroff	cursed	inlined	unremovableCurse/canSelectOff reject cursed slots (cmd.ts, bulk_takeoff.ts)
+armoroff	cursed	inlined	unremovableCurse/canSelectOff reject cursed slots (cmd.ts, do_wear.ts)
 bind_key	alloc	n/a	memory allocation
 bind_key	cmdbind_add	inlined	CommandBindings set/define entries (command_bindings.ts)
 bind_key	cmdbind_get	inlined	CommandBindings lookup (command_bindings.ts)
@@ -1987,9 +1987,9 @@ set_repo_loc	sgn	inlined	Math.sign (shk.ts completeShopSettlement)
 boxlock_invent	update_inventory	n/a	perm_invent window plumbing
 delayed_killer	alloc	n/a	memory allocation for the killer record; typed slimeKiller/stoneKiller/_polymorphGenocideCause fields replace it
 delayed_killer	find_delayed_killer	inlined	the typed fields are read back at slime.ts:235 (hero.slimeKiller) and stoning.ts:458 (petrificationDeathCause)
-menu_remarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (takeoff_menu.ts selectBulkTakeoff)
-menu_remarm	menu_class_present	n/a	menu class plumbing; the BUC filter is a direct category check (takeoff_menu.ts)
-doddoremarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (bulk_takeoff.ts takeOffAll)
+menu_remarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (do_wear.ts selectBulkTakeoff)
+menu_remarm	menu_class_present	n/a	menu class plumbing; the BUC filter is a direct category check (do_wear.ts)
+doddoremarm	add_valid_menu_class	n/a	menu class accumulator replaced by direct category selection data (do_wear.ts takeOffAll)
 Boots_on	update_inventory	n/a	perm_invent window plumbing
 Cloak_on	update_inventory	n/a	perm_invent window plumbing
 Gloves_on	update_inventory	n/a	perm_invent window plumbing
