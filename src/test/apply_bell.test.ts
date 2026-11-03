@@ -19,7 +19,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { initializePet } from '../js/dog.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
 import {
     BEAR_TRAP,

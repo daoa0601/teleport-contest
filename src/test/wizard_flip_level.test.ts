@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 
 import { rhack } from '../js/cmd.js';
 import { DB_DIR, DB_EAST, DB_WEST, DRAWBRIDGE_DOWN, MM_ANGRY, MM_NOTAIL, NO_MINVENT, PIT, LEVEL_TIMER_KIND } from '../js/const.js';

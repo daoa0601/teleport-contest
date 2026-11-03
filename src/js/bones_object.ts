@@ -14,7 +14,7 @@ import {
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
 import { set_corpsenm, curseObjectState } from './mkobj.js';
 
-import { PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
+import { PM_DOPPELGANGER, revivalReplacement } from './read.js';
 import { shopkeeperInOwnShop } from './shk.js';
 
 import { definiteName, objectCombatName } from './objnam.js';

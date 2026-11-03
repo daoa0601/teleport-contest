@@ -1,72 +1,85 @@
 // Native read.c: doread(), seffects() with its seffect_*() scroll and spell
-// effects, learnscrolltyp()/learnscroll(), can_center_cloud(), forget(), and
-// do_stinking_cloud(). Effects own their exceptions to scroll disposal.
+// effects, learnscrolltyp()/learnscroll(), charge_ok(), recharge(),
+// stripspe(), p_glow1()..p_glow3(), wand_explode(), forget(), maybe_tame(),
+// valid_cloud_pos(), can_center_cloud(), drop_boulder_on_player(),
+// drop_boulder_on_monster(), do_class_genocide(), do_genocide(), punish(),
+// unpunish(), cant_revive(), create_particular() and its parse/creation
+// halves. Effects own their exceptions to scroll disposal.
 import { exerciseAttribute, exerciseWisdom, exerciseAttribute as exerciseAttributeNamed } from './attrib.js';
-import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, someHeroArmor, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
+import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, someHeroArmor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
-import { heroIsPunished } from './ball.js';
-import { heroHandName, heroHeadName, heroLegName } from './body_parts.js';
-import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, PLNMSG_TOWER_OF_FLAME, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, W_ART, W_ARTI, W_BALL } from './const.js';
+import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
+import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
+import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
+import { canSpotMonster, displayColorName, displayLiquidName, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
-import { canSpotMonster, displayColorName, displayLiquidName, shieldeff } from './display.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
-import { doClassGenocide, doGenocide } from './genocide.js';
-import { applyLightScrollEffect, objectLightRadius } from './light.js';
-import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { lightDamage, lightRoom, objectLightRadius } from './light.js';
+import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from './potion.js';
-import { heroSpecies } from './polyself.js';
+import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroMonsterForm, heroSpecies, polymorphHero, rememberPolymorphGenocide, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
 import { sokobanGuilt } from './trap.js';
-import { consumeInventoryItem, identifyPack } from './invent.js';
-import { createCritters } from './makemon.js';
+import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription } from './invent.js';
+import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
-import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsHuman, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
-import { monsterAtPosition, monsterSaddle } from './steed.js';
-import { makePlural, ownedObjectAction, withIndefiniteArticle } from './objnam.js';
-import { learnObjectType } from './o_init.js';
+import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
+import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
+import { learnObjectType, observeObject } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, CORNUTHAUM, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, LEASH, LOADSTONE, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, POT_WATER, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, YELLOW_DRAGON_SCALES, requireObjectData } from './object_data.js';
-import { blessObjectState, curseObject, curseObjectState, uncurseObjectState, objectWeight } from './mkobj.js';
-import { punishHero, unpunishHero } from './punishment.js';
-import { chooseObjectToCharge, rechargeObject } from './recharge.js';
+import { BAG_OF_TRICKS, BELL_OF_OPENING, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection, requireObjectData } from './object_data.js';
+import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState } from './mkobj.js';
 import { askTeleportDestination, teleportHero } from './teleport.js';
 import { levelTeleport } from './level_teleport.js';
 import { d, rn2, rn1, rnd } from './rng.js';
 import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
-import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { chargeAlteredUnpaidObject, deleteObject, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon } from './two_weapon.js';
-import { cansee } from './vision.js';
-import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
+import { cansee, couldsee } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
-import { finishHeroDeath as defaultHeroDeath } from './end.js';
+import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath, listGenocided } from './end.js';
+import { mksobj } from './mkobj.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
 import { drainHeroWeaponSkills } from './skills.js';
-import { burnAwayHeroSlime } from './timeout.js';
+import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import { addExperience } from './exper.js';
 import { enchantWeapon } from './enchant_weapon.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
-import { promptYesNo } from './query.js';
+import { getLine, promptYesNo } from './query.js';
 import { readOrdinaryObject } from './readable_objects.js';
-import { angerMonster } from './mon.js';
+import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
-import { tameMonster } from './dog.js';
+import { initializePet, tameMonster } from './dog.js';
 import { studyBook } from './spellbook_study.js';
 import { freeHeroFromBuriedBall } from './dig.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
+import { landFloorObject } from './floor_effects.js';
+import { possessiveName, upstart } from './hacklib.js';
+import { monsterName } from './do_name.js';
+import { makemonNear } from './mklev.js';
+import { isWeaponTool } from './object_properties.js';
+import { questMonsterSound } from './role_monsters.js';
+import { addObjectToMonsterInventory } from './steal.js';
+import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { isWeldedPrimary } from './wield.js';
+import { monsterCensus } from './minion.js';
 const WEAPON_CLASS = 2;
 const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const COIN_CLASS = 12;
@@ -181,6 +194,293 @@ export function learnScrollType(otyp, { state = game } = {}) {
 // C read.c:learnscroll().
 export function learnScroll(source, { state = game, } = {}) {
     return source.oclass === SPBOOK_CLASS ? false : learnScrollType(source.otyp, { state });
+}
+const RING_CLASS = 4;
+const TOOL_CLASS = 6;
+const WAND_CLASS = 11;
+const NODIR = 1;
+const WAN_NOTHING = OBJECT_NAMES.indexOf('nothing');
+// C read.c:charge_ok().
+function chargingChoice(object, state) {
+    if (object.oclass === WAND_CLASS)
+        return GETOBJ_SUGGEST;
+    const discovered = object.dknown && objectTypeKnown(object, state);
+    if (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]
+        && discovered)
+        return GETOBJ_SUGGEST;
+    if (isWeaponTool(object))
+        return GETOBJ_EXCLUDE;
+    // Weapons, armor and the rest stay selectable for the "feeling of
+    // loss" response.
+    if (object.oclass !== TOOL_CLASS)
+        return GETOBJ_EXCLUDE_SELECTABLE;
+    if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN
+        || object.otyp === MAGIC_LAMP && !objectTypeKnown(object, state))
+        return GETOBJ_SUGGEST;
+    if (OBJECT_CHARGED[object.otyp])
+        return discovered ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
+    return GETOBJ_EXCLUDE;
+}
+// getobj("charge", charge_ok, GETOBJ_PROMPT | GETOBJ_ALLOWCNT).
+export async function chooseObjectToCharge(state = game) {
+    return chooseInventoryObject('charge', object => chargingChoice(object, state), { forcePrompt: true, allowCount: true });
+}
+// C read.c:recharge().
+export async function rechargeObject(object, blessing, state = game) {
+    if (object.oclass === WAND_CLASS) {
+        await rechargeWand(object, blessing, state);
+    }
+    else if (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]) {
+        return rechargeRing(object, blessing, state);
+    }
+    else if (object.oclass === TOOL_CLASS) {
+        await rechargeTool(object, blessing, state);
+    }
+    else {
+        await pline('You have a feeling of loss.');
+    }
+    if (state.program_state.gameover)
+        return { heroDied: true };
+    if (object.where !== 'gone' && object.where !== 'onbill')
+        object.spe = Math.max(-SPE_LIM, Math.min(object.spe, SPE_LIM));
+    return { heroDied: false };
+}
+async function rechargeWand(wand, blessing, state) {
+    const limit = wand.otyp === WAN_WISHING ? 1
+        : objectDirection(wand.otyp, state) === NODIR ? 15 : 8;
+    if (wand.spe === -1)
+        wand.spe = 0;
+    const previous = wand.recharged;
+    if (previous > 0 && (wand.otyp === WAN_WISHING || previous ** 3 > rn2(343))) {
+        await explodeWand(wand, rnd(limit), state);
+        return;
+    }
+    wand.recharged = previous + 1;
+    if (blessing < 0) {
+        await stripCharges(wand, state);
+        return;
+    }
+    let charges = limit === 1 ? 1 : rn1(5, limit - 4);
+    if (blessing === 0)
+        charges = rnd(charges);
+    wand.spe = wand.spe < charges ? charges : wand.spe + 1;
+    if (wand.otyp === WAN_WISHING && wand.spe > 3) {
+        await explodeWand(wand, 1, state);
+    }
+    else {
+        await glow(wand, state, limit === 1 || wand.spe >= limit ? 'blue' : null, limit === 1);
+    }
+}
+export async function rechargeRing(ring, blessing, state = game, { publish = pline, random = rn2, rollOne = rnd, die = defaultHeroDeath, } = {}) {
+    const adjustment = blessing > 0 ? rollOne(3) : blessing < 0 ? -rollOne(2) : 1;
+    const slot = ['uleft', 'uright'].find(slot => state[slot] === ring || state.u[slot] === ring);
+    if (ring.spe > random(7) || ring.spe <= -5) {
+        if (!heroIsBlind(state))
+            observeObject(ring, state);
+        await publish(`${ownedObjectName(ring, state)} pulsates momentarily, then explodes!`);
+        if (slot)
+            await removeHeroAccessory(ring, state);
+        if (state.program_state.gameover)
+            return { damage: 0, heroDied: true };
+        const damage = physicalDamage(rollOne(3 * Math.abs(ring.spe)), state);
+        await consumeInventoryItem(ring, state);
+        if (state.program_state.gameover)
+            return { damage: 0, heroDied: true };
+        // C read.c:recharge() explodes the ring without find_ac(); the
+        // worn-ring removal (Ring_gone) already recomputed a protection
+        // ring's AC, and moveloop's once-per-input find_ac() catches up.
+        const heroDied = await loseHeroHp(damage, 'exploding ring', { state, publish, die });
+        return { damage, heroDied };
+    }
+    const direction = adjustment < 0 ? 'counterclockwise' : 'clockwise';
+    if (!heroIsBlind(state))
+        observeObject(ring, state);
+    await publish(`${ownedObjectName(ring, state)} spins ${direction} for a moment.`);
+    if (adjustment < 0)
+        await chargeAlteredUnpaidObject(ring, 'disenchant', state);
+    if (slot)
+        await removeHeroAccessory(ring, state);
+    if (state.program_state.gameover)
+        return { damage: 0, heroDied: true };
+    ring.spe += adjustment;
+    if (slot)
+        await wearHeroAccessory(ring, slot, state);
+    if (state.program_state.gameover)
+        return { damage: 0, heroDied: true };
+    // C read.c:recharge()'s spin path never calls find_ac(); Ring_off
+    // and Ring_on only recompute for a protection ring with nonzero
+    // enchantment, and moveloop's once-per-input find_ac() catches up.
+    if (adjustment > 0 && ring.unpaid)
+        updateUnpaidObjectPrice(ring, state);
+    ring.spe = Math.max(-SPE_LIM, Math.min(ring.spe, SPE_LIM));
+    return { damage: 0, heroDied: false };
+}
+async function rechargeTool(tool, blessing, state) {
+    const previous = tool.recharged;
+    if (OBJECT_CHARGED[tool.otyp] && previous < 7)
+        tool.recharged++;
+    switch (tool.otyp) {
+        case BELL_OF_OPENING:
+            if (blessing < 0)
+                await stripCharges(tool, state);
+            else
+                tool.spe += blessing > 0 ? rnd(3) : 1;
+            tool.spe = Math.min(tool.spe, 5);
+            return;
+        case MAGIC_MARKER:
+        case TINNING_KIT:
+        case EXPENSIVE_CAMERA:
+            if (blessing < 0) {
+                await stripCharges(tool, state);
+            }
+            else if (previous && tool.otyp === MAGIC_MARKER) {
+                tool.recharged = 1;
+                await pline(tool.spe < 3 ? 'Your marker seems permanently dried out.' : 'Nothing happens.');
+            }
+            else if (blessing > 0) {
+                const charges = tool.spe + rn1(16, 15);
+                tool.spe = charges <= 50 ? 50 : charges <= 75 ? 75 : Math.min(charges, 127);
+                await glow(tool, state, 'blue');
+            }
+            else {
+                tool.spe = Math.min(Math.max(tool.spe + rn1(11, 10), 50), SPE_LIM);
+                await glow(tool, state, 'white');
+            }
+            return;
+        case OIL_LAMP:
+        case BRASS_LANTERN:
+            if (blessing < 0) {
+                await stripCharges(tool, state);
+                if (tool.lamplit) {
+                    if (!heroIsBlind(state))
+                        await pline(`The ${objectName(tool, state)} goes out!`);
+                    endObjectBurn(tool, state);
+                }
+            }
+            else {
+                tool.spe = 1;
+                tool.age = blessing > 0 ? 1500 : Math.min(tool.age + 750, 1500);
+                await glow(tool, state, blessing > 0 ? 'blue' : null);
+            }
+            return;
+        case CRYSTAL_BALL:
+            if (tool.spe === -1)
+                tool.spe = 0;
+            if (blessing < 0) {
+                if (!tool.cursed) {
+                    await glow(tool, state, 'black');
+                    await curseObject(tool);
+                }
+                else {
+                    await pline(`${ownedObjectName(tool, state)} vibrates briefly.`);
+                }
+                if (tool.spe > 0)
+                    await chargeAlteredUnpaidObject(tool, 'uncharge', state);
+                tool.spe = 0;
+            }
+            else if (blessing > 0) {
+                tool.spe = 7;
+                await glow(tool, state, tool.blessed ? 'blue' : 'light blue');
+                if (!tool.blessed)
+                    blessObjectState(tool);
+            }
+            else if (tool.spe < 7 || tool.cursed) {
+                tool.spe = Math.min(tool.spe + rnd(2), 7);
+                await glow(tool, state, tool.cursed ? 'amber' : null);
+                if (tool.cursed)
+                    uncurseObjectState(tool);
+            }
+            else {
+                await pline('Nothing happens.');
+            }
+            return;
+        case HORN_OF_PLENTY:
+        case BAG_OF_TRICKS:
+        case CAN_OF_GREASE:
+            if (blessing < 0) {
+                await stripCharges(tool, state);
+            }
+            else {
+                const charges = blessing > 0 ? rn1(tool.spe <= 10 ? 10 : 5, 6) : rn1(5, 2);
+                tool.spe = Math.min(tool.spe + charges, 50);
+                await glow(tool, state, blessing > 0 ? 'blue' : null);
+            }
+            return;
+        case MAGIC_FLUTE:
+        case MAGIC_HARP:
+        case FROST_HORN:
+        case FIRE_HORN:
+        case DRUM_OF_EARTHQUAKE:
+            if (blessing < 0) {
+                await stripCharges(tool, state);
+            }
+            else {
+                tool.spe = Math.min(tool.spe + (blessing > 0 ? d(2, 4) : rnd(4)), 20);
+                await glow(tool, state, blessing > 0 ? 'blue' : null);
+            }
+            return;
+        default:
+            await pline('You have a feeling of loss.');
+    }
+}
+// C read.c:stripspe().
+async function stripCharges(object, state) {
+    if (object.blessed || object.spe <= 0) {
+        await pline('Nothing happens.');
+        return;
+    }
+    await pline(`${ownedObjectName(object, state)} vibrates briefly.`);
+    await chargeAlteredUnpaidObject(object, 'uncharge', state);
+    object.spe = 0;
+    if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN)
+        object.age = 0;
+}
+// C read.c:p_glow1().
+// C read.c:p_glow2().
+// C read.c:p_glow3().
+async function glow(object, state, color = null, feeble = false) {
+    const blind = heroIsBlind(state);
+    const verb = blind ? 'vibrates' : 'glows';
+    const hue = !blind && color ? ` ${displayColorName(color, state)}` : '';
+    const duration = color ? 'for a moment' : 'briefly';
+    await pline(`${ownedObjectName(object, state)} ${verb}${feeble ? ' feebly' : ''}${hue} ${duration}.`);
+}
+// C read.c:wand_explode().
+export async function explodeWand(wand, extraCharges = 0, state = game) {
+    let sides;
+    switch (wand.otyp) {
+        case WAN_WISHING:
+            sides = 12;
+            break;
+        case WAN_CANCELLATION:
+        case WAN_DEATH:
+        case WAN_POLYMORPH:
+        case WAN_UNDEAD_TURNING:
+            sides = 10;
+            break;
+        case WAN_COLD:
+        case WAN_FIRE:
+        case WAN_LIGHTNING:
+        case WAN_MAGIC_MISSILE:
+            sides = 8;
+            break;
+        case WAN_NOTHING:
+            sides = 4;
+            break;
+        default: sides = 6;
+    }
+    const damage = d(Math.max(2, wand.spe + (extraCharges || 2)), sides);
+    wand.in_use = true;
+    const motion = extraCharges ? 'vibrates violently and' : 'suddenly';
+    await pline(`${ownedObjectName(wand, state)} ${motion} explodes!`);
+    if (await loseHeroHp(physicalDamage(damage, state), 'exploding wand', { state }))
+        return;
+    await consumeInventoryItem(wand, state);
+    await exerciseAttribute(A_STR, false, state);
+}
+function physicalDamage(amount, state) {
+    return state.u.halfPhysicalDamage
+        ? Math.trunc((amount + 1) / 2) : amount;
 }
 // Armor and weapon scroll effects. C read.c:seffect_enchant_armor(),
 // seffect_destroy_armor(), and seffect_enchant_weapon().
@@ -674,6 +974,53 @@ async function charmMonsterEffect(source, state) {
         : `The neighborhood ${visibleResults ? 'is' : 'seems'} ${results < 0 ? 'un' : ''}friendlier.`);
     return { known: visibleResults > 0 };
 }
+const PM_YELLOW_LIGHT = 118;
+const PM_BLACK_LIGHT = 119;
+// C read.c:seffect_light(). The light owner (litroom, light sources)
+// stays in light.ts; this half owns the scroll effect itself.
+export async function applyLightScrollEffect(scroll, { finishMonsterKill } = {}) {
+    let known = false;
+    if ((game.u.confusionTurns ?? 0) > 0) {
+        known = await createConfusedLightPets(scroll);
+    }
+    else {
+        known = !heroIsBlind();
+        const lit = !scroll.cursed;
+        await lightRoom(lit, {
+            radius: scroll.blessed ? 9 : 5,
+            source: scroll,
+            finishMonsterKill: finishMonsterKill || finishHeroMonsterKillOutcome,
+        });
+        if (game.program_state.gameover)
+            return { known, consumed: false, heroDied: true };
+        if (lit && await lightDamage(scroll, true, 5))
+            known = true;
+    }
+    return { known, consumed: false, heroDied: !!game.program_state.gameover };
+}
+async function createConfusedLightPets(scroll) {
+    const mnum = scroll.cursed ? PM_BLACK_LIGHT : PM_YELLOW_LIGHT;
+    if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE) {
+        await plineWithContinuation('Tiny lights sparkle in the air momentarily.');
+        return false;
+    }
+    const count = rn2(2) + 3 + (scroll.blessed ? 2 : 0);
+    let sawLight = false;
+    for (let index = 0; index < count; index++) {
+        const monster = await makemonNear(mnum, game.u.ux, game.u.uy, NO_MINVENT | MM_EDOG | MM_NOMSG);
+        if (!monster)
+            continue;
+        initializePet(monster);
+        monster.msleeping = 0;
+        monster.mcan = 1;
+        if (canSpotMonster(monster))
+            sawLight = true;
+        await newsym(monster.mx, monster.my);
+    }
+    if (sawLight)
+        await plineWithContinuation('Lights appear all around you!');
+    return sawLight;
+}
 // C read.c:seffect_charging().
 async function chargingEffect(source, state) {
     const blessing = source.cursed ? -1 : source.blessed ? 1 : 0;
@@ -872,6 +1219,16 @@ function blessing(source) {
 function sourceTypeKnown(source, state) {
     return source.oclass === 10 || !!OBJECT_INITIAL_KNOWN[source.otyp]
         || !!state._knownObjectTypes?.has(source.otyp);
+}
+// C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
+// position? NOT the same thing as canCenterCloud; region.c's cloud growth
+// (regions.ts) shares the test through this export.
+export function validCloudPosition(state, x, y) {
+    if (!isok(x, y))
+        return false;
+    const typ = state.level?.at(x, y)?.typ;
+    return (typ !== undefined && ACCESSIBLE(typ))
+        || isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 function canCenterCloud(x, y, state) {
     if (!isok(x, y))
@@ -1108,6 +1465,716 @@ async function scrollEffect(source, state, hooks) {
         default:
             await impossible(`What weird effect is this? (${source.otyp})`);
             return;
+    }
+}
+const M1_WALLWALK = 0x00000008;
+// C read.c:drop_boulder_on_player().
+export async function dropBoulderOnHero({ state = game, confused = false, helmetProtects = true, heroCaused = true, skipSwallower = false, finishHeroDeath = defaultHeroDeath, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    if (state.u.uswallow && !skipSwallower)
+        return dropBoulderOnMonster(state.u.ux, state.u.uy, {
+            state, confused, heroCaused, finishHeroDeath, finishMonsterKill,
+        });
+    const object = await fallingRock(confused);
+    let damage = 0;
+    if (canBeHit({ mnum: heroSpecies(state) }) && !state.u.passesWalls) {
+        await plineWithContinuation(`You are hit by ${await fallingRockName(object, state)}!`);
+        damage = rollPhysicalWeaponDamageAgainstHero(object, state) * object.quan;
+        const helmet = state.uarmh || state.u.uarmh;
+        if (helmet && helmetProtects) {
+            if (objectIsHardHelmet(helmet)) {
+                await plineWithContinuation('Fortunately, you are wearing a hard helmet.');
+                damage = Math.min(damage, 2);
+            }
+            else if (state.flags.verbose !== false) {
+                await plineWithContinuation(`${ownedObjectName(helmet, state)} does not protect you.`);
+            }
+        }
+    }
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, 16, state);
+    await landFallingRock(object, state.u.ux, state.u.uy, state);
+    if (state.u.halfPhysicalDamage)
+        damage = Math.trunc((damage + 1) / 2);
+    const heroDied = damage ? await loseHeroHp(damage, 'scroll of earth', {
+        state, die: finishHeroDeath,
+    }) : false;
+    return { dropped: true, heroDied: !!heroDied };
+}
+// C read.c:drop_boulder_on_monster().
+export async function dropBoulderOnMonster(x, y, { state = game, confused = false, heroCaused = true, finishHeroDeath = defaultHeroDeath, finishMonsterKill = finishHeroMonsterKillOutcome, } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const object = await fallingRock(confused);
+    const monster = monsterAtPosition(state.level, x, y);
+    const swallowsHero = monster && state.u.uswallow && state.u.ustuck === monster;
+    if (monster && canBeHit(monster)) {
+        // C rechecks canspotmon() after each pline(), whose pending vision
+        // recalculation can hide the target behind boulders that just fell.
+        if (cansee(x, y)) {
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is hit by ${await fallingRockName(object, state)}!`);
+            if (monster.minvis && !canSpotMonster(monster))
+                await map_invisible(x, y);
+        }
+        else if (swallowsHero) {
+            await hear(`something hit ${possessiveName(monsterName(monster, { state }))} ${monsterStomachName(monster.mnum)} over your ${heroHeadName(state)}!`, state);
+        }
+        let damage = rollPhysicalWeaponDamage(object, monster) * object.quan;
+        const inventory = monster.minvent ?? monster.inventory;
+        const helmet = inventory?.find(item => (item.owornmask ?? 0) & W_ARMH);
+        if (helmet) {
+            if (objectIsHardHelmet(helmet)) {
+                if (canSpotMonster(monster))
+                    await plineWithContinuation(`Fortunately, ${monsterName(monster, { state })} is wearing a hard helmet.`);
+                else
+                    await hear('a clanging sound.', state);
+                damage = Math.min(damage, 2);
+            }
+            else if (canSpotMonster(monster)) {
+                await plineWithContinuation(`${possessiveName(monsterName(monster, { state, capitalized: true }))} ${objectName(helmet, state)} does not protect ${monsterObjectPronoun(monster, { state })}.`);
+            }
+        }
+        monster.mhp -= damage;
+        if (monster.mhp <= 0) {
+            if (heroCaused)
+                await finishMonsterKill(monster, x, y);
+            else {
+                await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} is killed.`);
+                await finishEnvironmentalMonsterDeath(monster, state);
+            }
+        }
+        else
+            await wakeMonster(monster, { attacked: heroCaused });
+        if (state.program_state.gameover)
+            return { dropped: true, heroDied: true };
+        await wakeMonstersNearWithMessages(x, y, 16, state);
+    }
+    else if (swallowsHero) {
+        await deleteObject(object, state);
+        return dropBoulderOnHero({ state, confused, helmetProtects: true,
+            heroCaused: false, skipSwallower: true, finishHeroDeath, finishMonsterKill });
+    }
+    await landFallingRock(object, x, y, state);
+    return { dropped: true, heroDied: !!state.program_state.gameover };
+}
+function canBeHit(monster) {
+    return !monsterIsAmorphous(monster) && !monsterIsNoncorporeal(monster)
+        && !monsterIsUnsolid(monster) && !(requireMonsterData(MONSTER_FLAGS1, monster.mnum) & M1_WALLWALK);
+}
+async function fallingRock(confused) {
+    const object = await mksobj(confused ? ROCK : BOULDER, false, false);
+    object.quan = confused ? rn1(5, 2) : 1;
+    object.owt = objectWeight(object);
+    return object;
+}
+// C doname() observes the falling object, so later blind feeling still
+// calls seen rocks "rocks" rather than "stones".
+async function fallingRockName(object, state) {
+    observeObjectForNaming(object, { state });
+    return await inventoryItemDescription(object);
+}
+async function landFallingRock(object, x, y, state) {
+    await landFloorObject(object, x, y, { state, verb: 'fall' });
+    await newsym(x, y);
+}
+async function hear(message, state) {
+    const heard = formatHeardMessage(message, state);
+    if (heard)
+        await plineWithContinuation(heard);
+}
+const GENOCIDE_REALLY = 1, GENOCIDE_PLAYER = 2;
+export const GENOCIDE_ON_THRONE = 4;
+const G_GENO = 0x0020, G_UNIQ = 0x1000;
+const M2_DEMON = 0x00000100, M2_PNAME = 0x00080000;
+const MS_LEADER = 36, MS_NEMESIS = 37, MS_GUARDIAN = 38;
+const S_INVISIBLE = 35;
+const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
+const PM_NINJA = MONSTER_NAME.indexOf('ninja');
+// C read.c:do_class_genocide().
+export async function doClassGenocide({ finishHeroDeath = finishNativeHeroDeath, } = {}) {
+    const state = requireInitializedGame();
+    const monsterClass = await requestGenocideClass();
+    if (monsterClass === null)
+        return false;
+    let doomed = false;
+    let feltDead = false;
+    let loggedClass = false;
+    for (let species = 0; species < MONSTER_NAME.length; species++) {
+        if (MONSTER_SYMBOL[species] !== monsterClass)
+            continue;
+        const name = requireMonsterData(MONSTER_NAME, species);
+        const plural = makePlural(name);
+        if (heroOwnSpecies(species)
+            || ((MONSTER_GENO[species] ?? 0) & G_GENO) && !speciesWasGenocided(species)) {
+            if (!loggedClass) {
+                const symbol = MONSTER_CLASS_SYMBOLS[monsterClass];
+                if (!symbol)
+                    throw new RangeError(`Genocide class ${monsterClass} has no symbol`);
+                const firstGenocide = !MONSTER_NAME.some((_, index) => speciesWasGenocided(index));
+                recordGameLogEvent(firstGenocide
+                    ? `performed ${state.flags.female ? 'her' : 'his'} first genocide (class ${symbol})`
+                    : `genocided class ${symbol}`, {
+                    state,
+                    flags: firstGenocide ? LL_CONDUCT | LL_GENOCIDE : LL_GENOCIDE,
+                });
+                loggedClass = true;
+            }
+            recordGenocide(species);
+            const removal = await killGenocidedMonsters();
+            if (removal.heroDied || state.program_state.gameover)
+                return true;
+            await plineWithContinuation(`Wiped out all ${plural}.`);
+            await revertTargetedVampireForm(species);
+            if (state.program_state.gameover)
+                return true;
+            if (Upolyd(state.u) && species === state.u.umonnum) {
+                state.u.mh = -1;
+                if (heroIsUnchanging(state)) {
+                    if (!feltDead)
+                        await plineWithContinuation('You die.', { urgent: true });
+                    feltDead = true;
+                    doomed = true;
+                }
+                else {
+                    const outcome = await returnHeroToHumanForm(state, { die: finishHeroDeath });
+                    if (outcome.died || state.program_state.gameover)
+                        return true;
+                }
+            }
+            if (heroOwnSpecies(species)) {
+                state.u.uhp = -1;
+                if (Upolyd(state.u)) {
+                    if (!feltDead)
+                        await plineWithContinuation(formatFeltMessage(`${feelingAfterSelfGenocide(state)} inside.`, state));
+                }
+                else {
+                    if (!feltDead)
+                        await plineWithContinuation('You die.', { urgent: true });
+                    doomed = true;
+                }
+                feltDead = true;
+            }
+        }
+        else if (!doomed && speciesWasGenocided(species)) {
+            await plineWithContinuation(`${upstart(plural)} are already nonexistent.`);
+        }
+        else if (!doomed && canAnnounceImmuneSpecies(species)) {
+            const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+            const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ) && species !== PM_HIGH_CLERIC;
+            await plineWithContinuation(`You aren't permitted to genocide ${unique && !named ? 'the ' : ''}${unique || named ? name : plural}.`);
+        }
+    }
+    // Unlike single-species genocide, C does not install a delayed killer here.
+    if (doomed)
+        await finishHeroDeath(genocideDeathOptions('scroll'));
+    return true;
+}
+// C read.c:do_genocide().
+export async function doGenocide(how, { finishHeroDeath = finishNativeHeroDeath, } = {}) {
+    const state = requireInitializedGame();
+    const really = !!(how & GENOCIDE_REALLY);
+    const playerSelected = !!(how & GENOCIDE_PLAYER);
+    const species = playerSelected ? state.u.umonster : await requestGenocideSpecies(really);
+    if (state.program_state.gameover)
+        return true;
+    if (species === null)
+        return false;
+    const presentation = genocidePresentation(species);
+    if (!really)
+        return sendInMonsters(species, presentation.name);
+    const firstGenocide = !MONSTER_NAME.some((_, index) => speciesWasGenocided(index));
+    const realName = makePlural(requireMonsterData(MONSTER_NAME, species));
+    recordGameLogEvent(firstGenocide
+        ? `performed ${state.flags.female ? 'her' : 'his'} first genocide (${realName})`
+        : `genocided ${realName}`, {
+        state,
+        flags: firstGenocide ? LL_CONDUCT | LL_GENOCIDE : LL_GENOCIDE,
+    });
+    recordGenocide(species);
+    await plineWithContinuation(`Wiped out ${presentation.prefix}${presentation.prefix === 'all ' ? makePlural(presentation.name) : presentation.name}.`);
+    const killPlayer = playerSelected || heroOwnSpecies(species)
+        || heroIsUnchanging(state) && species === heroSpecies(state);
+    if (killPlayer) {
+        state.u.uhp = -1;
+        const cause = playerSelected ? 'confusion'
+            : how & GENOCIDE_ON_THRONE ? 'throne' : 'scroll';
+        if (Upolyd(state.u) && species !== heroSpecies(state)) {
+            rememberPolymorphGenocide(cause, state);
+            await plineWithContinuation(formatFeltMessage(`${feelingAfterSelfGenocide(state)} inside.`, state));
+        }
+        else {
+            await finishHeroDeath(genocideDeathOptions(cause));
+            if (state.program_state.gameover)
+                return true;
+        }
+    }
+    else if (species === heroSpecies(state)) {
+        const outcome = await returnHeroToHumanForm(state, { die: finishHeroDeath });
+        if (outcome.died || state.program_state.gameover)
+            return true;
+    }
+    await killGenocidedMonsters();
+    return true;
+}
+function heroOwnSpecies(species) {
+    const state = requireInitializedGame();
+    return species === state.u.umonster || species === state.urace.mnum;
+}
+function genocideVital(species) {
+    const vital = game.mvitals?.[species];
+    if (!vital)
+        throw new Error(`Genocide requires initialized history for species ${species}`);
+    return vital;
+}
+function speciesWasGenocided(species) {
+    return !!(genocideVital(species).mvflags & G_GENOD);
+}
+function recordGenocide(species) {
+    const state = requireInitializedGame();
+    const vital = genocideVital(species);
+    const alreadyGenocided = !!(vital.mvflags & G_GENOD);
+    vital.mvflags |= G_GENOD | G_NOCORPSE;
+    if (alreadyGenocided)
+        return;
+    state.u.uconduct.genocides = (state.u.uconduct.genocides ?? 0) + 1;
+}
+function genocidePresentation(species) {
+    const state = requireInitializedGame();
+    if (heroIsHallucinating(state)) {
+        const role = state.flags.female && state.urole.name.f
+            ? state.urole.name.f : state.urole.name.m;
+        const name = Upolyd(state.u) ? monsterTypeName(heroSpecies(state), !!state.flags.female)
+            : role.charAt(0).toLowerCase() + role.slice(1);
+        return { name, prefix: 'all ' };
+    }
+    const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ) && species !== PM_HIGH_CLERIC;
+    const named = !!((MONSTER_FLAGS2[species] ?? 0) & M2_PNAME);
+    return { name: requireMonsterData(MONSTER_NAME, species), prefix: unique ? named ? '' : 'the ' : 'all ' };
+}
+async function revertTargetedVampireForm(species) {
+    const state = requireInitializedGame();
+    const base = state.u.mcham;
+    if (Upolyd(state.u) && base !== undefined && monsterIsVampire(base)
+        && !monsterIsVampire(state.u.umonnum)
+        && (species === state.u.umonnum || species === base))
+        await polymorphHero(POLY_REVERT);
+}
+async function sendInMonsters(species, name) {
+    const state = requireInitializedGame();
+    const census = () => state.level.monsters.filter(monster => monster.mhp > 0 && !(monster.isgd && monster.mx === 0)).length;
+    const before = census();
+    let created = 0;
+    if (!((MONSTER_GENO[species] ?? 0) & G_UNIQ)
+        && !(genocideVital(species).mvflags & (G_GENOD | G_EXTINCT))) {
+        for (let count = rn1(3, 4); count > 0; count--) {
+            const monster = await makemonNear(species, state.u.ux, state.u.uy, NO_MINVENT | MM_NOMSG);
+            if (!monster)
+                break;
+            created++;
+            if (genocideVital(species).mvflags & G_EXTINCT)
+                break;
+        }
+    }
+    if (created) {
+        const total = census() - before;
+        const subject = total > 1 ? `some ${makePlural(name)}` : withIndefiniteArticle(name);
+        await plineWithContinuation(`Sent in ${subject}.`);
+    }
+    else {
+        await plineWithContinuation('Nothing happens.');
+    }
+    return true;
+}
+async function requestGenocideSpecies(really) {
+    const state = requireInitializedGame();
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const response = await genocideInput('species', attempt);
+        if (!response) {
+            await plineWithContinuation(attempt < 4
+                ? "Type the name of a type of monster or 'none'." : 'No type of monster specified.');
+            continue;
+        }
+        if (declinedGenocide(response)) {
+            const species = really ? null : rndmonstAdj();
+            if (species !== null)
+                return species;
+            recordGameLogEvent('declined to perform genocide', { state, flags: LL_GENOCIDE });
+            return null;
+        }
+        if (response === '?' || response === "'?'") {
+            await listGenocided('g');
+            attempt--;
+            continue;
+        }
+        const species = nameToMonster(response);
+        if (species < 0 || speciesWasGenocided(species)) {
+            await plineWithContinuation(`Such creatures ${species < 0 ? 'do not' : 'no longer'} exist in this world.`);
+            continue;
+        }
+        await revertTargetedVampireForm(species);
+        if (state.program_state.gameover)
+            return null;
+        if (heroOwnSpecies(species))
+            return species;
+        if (monsterIsHuman(species))
+            adjustHeroAlignment(-Math.sign(state.u.ualign.type), state);
+        if ((MONSTER_FLAGS2[species] ?? 0) & M2_DEMON)
+            adjustHeroAlignment(Math.sign(state.u.ualign.type), state);
+        if (!((MONSTER_GENO[species] ?? 0) & G_GENO)) {
+            if (!heroIsDeaf(state)) {
+                if (state.flags.verbose)
+                    await plineWithContinuation('A thunderous voice booms through the caverns:');
+                await plineWithContinuation('"No, mortal!  That will not be done."');
+            }
+            continue;
+        }
+        return species;
+    }
+    if (!really) {
+        const species = rndmonstAdj();
+        if (species !== null)
+            return species;
+    }
+    await plineWithContinuation("That's enough tries!");
+    return null;
+}
+async function requestGenocideClass() {
+    const state = requireInitializedGame();
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const response = await genocideInput('class', attempt);
+        if (!response) {
+            await plineWithContinuation(attempt < 4
+                ? "Type letter (or punctuation) or name used for a class of monsters or 'none'."
+                : 'No class of monsters specified.');
+            continue;
+        }
+        if (declinedGenocide(response)) {
+            recordGameLogEvent('declined to perform class genocide', { state, flags: LL_GENOCIDE });
+            return null;
+        }
+        if (response === '?' || response === "'?'") {
+            await listGenocided('g');
+            attempt--;
+            continue;
+        }
+        const monsterClass = nameToMonsterClass(response);
+        let immune = 0, gone = 0, available = 0;
+        for (let species = 0; species < MONSTER_NAME.length; species++) {
+            if (MONSTER_SYMBOL[species] !== monsterClass)
+                continue;
+            if (!((MONSTER_GENO[species] ?? 0) & G_GENO))
+                immune++;
+            else if (speciesWasGenocided(species))
+                gone++;
+            else
+                available++;
+        }
+        if (available || monsterClass === MONSTER_SYMBOL[state.u.umonster]
+            || monsterClass === MONSTER_SYMBOL[state.urace.mnum])
+            return monsterClass;
+        if (gone)
+            await plineWithContinuation('All such monsters are already nonexistent.');
+        else if (immune || monsterClass === S_INVISIBLE)
+            await plineWithContinuation("You aren't permitted to genocide such monsters.");
+        else if (state.flags.debug && response.startsWith('*')) {
+            let removed = 0;
+            for (const monster of [...state.level.monsters].reverse()) {
+                if (monster.mhp <= 0)
+                    continue;
+                await removeMonsterFromGame(monster);
+                removed++;
+                if (state.program_state.gameover)
+                    return null;
+            }
+            await plineWithContinuation(`Eliminated ${removed} monster${removed === 1 ? '' : 's'}.`);
+            return null;
+        }
+        else {
+            await plineWithContinuation(`That ${response.length === 1 ? 'symbol' : 'response'} does not represent any monster.`);
+        }
+    }
+    await plineWithContinuation("That's enough tries!");
+    return null;
+}
+async function genocideInput(kind, attempt) {
+    const state = requireInitializedGame();
+    const subject = kind === 'class' ? 'class of monsters' : 'type of monster';
+    const assisted = kind === 'class' ? "the symbol or name representing a class, or '?'"
+        : "the name of a type of monster, or '?'";
+    const suffix = attempt ? ` [enter ${(state.flags.cmdassist ?? true) ? assisted : "'?' to see previous genocides"}]` : '';
+    const response = await getLine(`What ${subject} do you want to genocide?${suffix}`, (_ch, key) => key >= 32 && key < 127);
+    return response === null ? '\u001b' : response.trim().replace(/\s+/g, ' ');
+}
+function declinedGenocide(response) {
+    return response.startsWith('\u001b') || ['none', "'none'", 'nothing'].includes(response.toLowerCase());
+}
+function canAnnounceImmuneSpecies(species) {
+    const role = requireInitializedGame().urole;
+    const sound = questMonsterSound(species);
+    return (sound !== MS_LEADER || species === role.ldrnum)
+        && (sound !== MS_NEMESIS || species === role.neminum)
+        && (sound !== MS_GUARDIAN || species === role.guardnum)
+        && (species !== PM_NINJA || role.key === 'samurai');
+}
+// ---------------------------------------------------------------------------
+// Punishment. C refs: read.c punish(), unpunish().
+// ---------------------------------------------------------------------------
+const BALL_CLASS = 15;
+const CHAIN_CLASS = 16;
+// C read.c:punish().
+export async function punishHero(source = null, state = game) {
+    requirePlayingGame(state);
+    const reusedBall = source?.otyp === HEAVY_IRON_BALL ? source : null;
+    if (!reusedBall)
+        await plineWithContinuation('You are being punished for your misbehavior!');
+    const attachedBall = state.uball || state.u.uball;
+    if (attachedBall) {
+        await plineWithContinuation('Your iron ball gets heavier.');
+        attachedBall.owt += WT_IRON_BALL_INCR * (source?.cursed ? 2 : 1);
+        return;
+    }
+    const species = heroMonsterForm(state);
+    const form = species == null ? null : { mnum: species };
+    if (monsterIsAmorphous(form) || monsterIsWhirly(form) || monsterIsUnsolid(form)) {
+        if (!reusedBall)
+            await plineWithContinuation('A ball and chain appears, then falls away.');
+        const ball = reusedBall || await mkobj(BALL_CLASS, true);
+        if (state.u.uswallow) {
+            const swallower = state.u.ustuck;
+            if (!swallower)
+                throw new Error('A swallowed hero has no swallowing monster');
+            await addObjectToMonsterInventory(swallower, ball, state);
+        }
+        else
+            await landFloorObject(ball, state.u.ux, state.u.uy, { state });
+        return;
+    }
+    const chain = await mkobj(CHAIN_CLASS, true);
+    const ball = reusedBall || await mkobj(BALL_CLASS, true);
+    chain.owornmask = W_CHAIN;
+    ball.owornmask = W_BALL;
+    state.uchain = state.u.uchain = chain;
+    state.uball = state.u.uball = ball;
+    state.u.punished = true;
+    if (!state.u.uswallow) {
+        await placeBallAndChain(state);
+        if (heroIsBlind(state))
+            await setBallAndChainFelt(true, state);
+        await newsym(state.u.ux, state.u.uy);
+    }
+}
+// C read.c:unpunish().
+export async function unpunishHero(state = game) {
+    const chain = state.uchain || state.u.uchain;
+    const ball = state.uball || state.u.uball;
+    if (chain) {
+        state.uchain = null;
+        state.u.uchain = null;
+        chain.owornmask = (chain.owornmask ?? 0) & ~W_CHAIN;
+        await delobj(chain, state);
+    }
+    if (ball)
+        ball.owornmask = (ball.owornmask ?? 0) & ~W_BALL;
+    state.uchain = state.uball = null;
+    state.u.uchain = state.u.uball = null;
+    state.u.punished = false;
+    return { ball, chain };
+}
+// ---------------------------------------------------------------------------
+// Species and gender rules shared by corpse revival and statues.
+// C refs: read.c cant_revive() and obj.h corpse/statue gender flags.
+// ---------------------------------------------------------------------------
+const PM_ANGEL = 123;
+const PM_GUARD = 272;
+const PM_SHOPKEEPER = 271;
+const PM_ALIGNED_CLERIC = 275;
+const PM_LONG_WORM = 114;
+const PM_LONG_WORM_TAIL = 330;
+export const PM_HUMAN_ZOMBIE = 244;
+export const PM_DOPPELGANGER = 270;
+// C read.c:cant_revive().
+export function revivalReplacement(mnum, body, revival = true) {
+    if ([PM_GUARD, PM_HIGH_CLERIC, PM_ALIGNED_CLERIC, PM_ANGEL]
+        .includes(mnum) || mnum === PM_SHOPKEEPER && !revival)
+        return PM_HUMAN_ZOMBIE;
+    if (mnum === PM_LONG_WORM_TAIL)
+        return PM_LONG_WORM;
+    if ((MONSTER_GENO[mnum] ?? 0) & G_UNIQ
+        && !body?.oextra?.omonst)
+        return PM_DOPPELGANGER;
+    return null;
+}
+export function bodyGenderFlags(body) {
+    const gender = (body.spe ?? 0) & 0x03;
+    if (gender === 1)
+        return MM_FEMALE;
+    if (gender === 2)
+        return MM_MALE;
+    return 0;
+}
+const PM_STALKER = MONSTER_NAME.indexOf('stalker');
+// C read.c:create_particular().
+export async function createParticularMonster() {
+    requirePlayingGame(game);
+    let prompt = 'Create what kind of monster?';
+    let explainedEmptyInput = false;
+    for (let attempt = 0; attempt < 5; attempt++) {
+        const response = await getLine(prompt, (_ch, key) => key >= 32 && key < 127);
+        if (response === null || response.startsWith('\u001b'))
+            return false;
+        const text = response.trim().replace(/\s+/g, ' ');
+        const request = parseCreationRequest(text);
+        if (request)
+            return createRequestedMonsters(request);
+        if (text || explainedEmptyInput || attempt === 4)
+            await plineWithContinuation("I've never heard of such monsters.");
+        else {
+            await plineWithContinuation('Try again (type * for random, ESC to cancel).');
+            explainedEmptyInput = true;
+        }
+        prompt = 'Create what kind of monster? [type name or symbol]';
+    }
+    await plineWithContinuation("That's enough tries!");
+    return false;
+}
+// C read.c:create_particular_parse().
+function parseCreationRequest(text) {
+    const explicitQuantity = /^(\d+) */u.exec(text);
+    let quantity = explicitQuantity ? Number.parseInt(explicitQuantity[1] ?? '', 10)
+        : 1 + Math.max(game.multi, 0);
+    const limit = ROWNO * (COLNO - 1);
+    if (quantity < 1 || quantity > limit)
+        quantity = limit - monsterCensus();
+    let name = explicitQuantity ? text.slice(explicitQuantity[0].length) : text;
+    // Native removes one occurrence of each modifier before lookup. Checking
+    // female first prevents the embedded "male " from being mistaken for it.
+    const modifiers = new Set();
+    for (const modifier of ['saddled', 'sleeping', 'invisible', 'hidden', 'female', 'male']) {
+        const pattern = new RegExp(`${modifier} `, 'i');
+        if (pattern.test(name)) {
+            modifiers.add(modifier);
+            name = name.replace(pattern, ' '.repeat(modifier.length + 1));
+        }
+    }
+    name = name.trim().replace(/\s+/g, ' ');
+    let disposition = null;
+    for (const candidate of ['tame', 'peaceful', 'hostile']) {
+        if (name.toLowerCase().startsWith(`${candidate} `)) {
+            disposition = candidate;
+            name = name.slice(candidate.length + 1);
+            break;
+        }
+    }
+    const choice = monsterChoice(name);
+    if (!choice)
+        return null;
+    const namedGender = choice.kind === 'species' ? choice.gender : -1;
+    const explicitGender = modifiers.has('male') ? 0 : modifiers.has('female') ? 1 : null;
+    return {
+        quantity, choice, disposition,
+        gender: explicitGender ?? namedGender,
+        genderConflict: explicitGender !== null && namedGender !== -1
+            && namedGender !== 2 && explicitGender !== namedGender,
+        saddled: modifiers.has('saddled'), sleeping: modifiers.has('sleeping'),
+        invisible: modifiers.has('invisible'), hidden: modifiers.has('hidden'),
+    };
+}
+function monsterChoice(name) {
+    if (game.flags.debug && (name === '*' || name === 'random'))
+        return { kind: 'random' };
+    const match = resolveMonsterName(name);
+    if (match)
+        return { kind: 'species', species: match.mnum, gender: match.gender };
+    const { monsterClass, mnum } = resolveMonsterClass(name);
+    if (mnum >= 0)
+        return { kind: 'species', species: mnum, gender: 2 };
+    if (monsterClass === 35)
+        return { kind: 'species', species: PM_STALKER, gender: 2 };
+    if (monsterClass === 59)
+        return { kind: 'species', species: 114, gender: 2 };
+    return monsterClass > 0 ? { kind: 'class', monsterClass } : null;
+}
+// C read.c:create_particular_creation().
+async function createRequestedMonsters(request) {
+    requirePlayingGame(game);
+    const firstChoice = request.choice.kind === 'species' ? request.choice.species
+        : request.choice.kind === 'class' ? game.u.umonster : -1;
+    let species = firstChoice;
+    if (request.choice.kind === 'species') {
+        const replacement = revivalReplacement(species, null, false);
+        if (replacement !== null) {
+            species = replacement;
+            if (firstChoice !== 330) {
+                const answer = await promptYesNo(`Creating ${requireMonsterData(MONSTER_NAME, species)} instead; force ${requireMonsterData(MONSTER_NAME, firstChoice)}?`);
+                if (answer === 'y')
+                    species = firstChoice;
+            }
+        }
+    }
+    let madeAny = false;
+    for (let index = 0; index < request.quantity; index++) {
+        const selected = request.choice.kind === 'class' ? mkclassAligned(request.choice.monsterClass)
+            : request.choice.kind === 'random' ? rndmonstAdj() : species;
+        const flags = creationFlags(request, selected);
+        const monster = await makemonNear(selected, game.u.ux, game.u.uy, flags);
+        if (!monster) {
+            if (request.choice.kind === 'species')
+                break;
+            continue;
+        }
+        if (request.disposition === 'tame')
+            await tameMonster(monster);
+        else if (request.disposition) {
+            monster.mtame = 0;
+            monster.pet = false;
+            monster.mpeaceful = request.disposition === 'peaceful' ? 1 : 0;
+            setMonsterMalign(monster);
+        }
+        if (request.saddled && !monsterSaddle(monster))
+            await putSaddleOnMonster(null, monster);
+        if (request.hidden && canHideCreatedMonster(monster))
+            monster.mundetected = 1;
+        if (request.sleeping)
+            monster.msleeping = 1;
+        if ((request.hidden || request.invisible) && !canSpotMonster(monster))
+            await flashCreatedMonster(monster);
+        madeAny = true;
+        if (monster.cham !== undefined && monster.cham >= 0 && firstChoice >= 0
+            && monster.cham !== firstChoice)
+            await changeMonsterForm(monster, firstChoice);
+    }
+    return madeAny;
+}
+function creationFlags(request, species) {
+    const fixedGender = species !== null && (requireMonsterData(MONSTER_FLAGS2, species) & 0x00030000);
+    const setGender = request.genderConflict || !fixedGender;
+    const gender = setGender && request.gender === 1 ? MM_FEMALE
+        : setGender && request.gender === 0 ? MM_MALE : 0;
+    return gender | (request.genderConflict ? 0 : MM_NOEXCLAM)
+        | (request.invisible ? MM_MINVIS : 0);
+}
+function canHideCreatedMonster(monster) {
+    const traits = requireMonsterData(MONSTER_FLAGS1, monster.mnum);
+    const symbol = requireMonsterData(MONSTER_SYMBOL, monster.mnum);
+    return !!(traits & 0x00000100) && symbol !== 13
+        || !!(traits & 0x00000080) && !!game.level?.objects[monster.mx]?.[monster.my]?.length
+        || symbol === 57 && isPoolAt(monster.mx, monster.my);
+}
+async function flashCreatedMonster(monster) {
+    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
+    if (game.flags.sparkle === false)
+        count /= 2;
+    const row = game.viz_array?.[monster.my];
+    const saved = row?.[monster.mx];
+    if (!row || saved === undefined)
+        throw new Error('A created monster needs its visibility cell');
+    row[monster.mx] = saved | 3;
+    try {
+        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
+    }
+    finally {
+        row[monster.mx] = saved;
+        await newsym(monster.mx, monster.my);
     }
 }
 // ---------------------------------------------------------------------------

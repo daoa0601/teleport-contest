@@ -7,7 +7,7 @@ import { PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { releaseHeroFromMonster } from '../js/hero_expulsion.js';
 import { pushKeys } from '../js/input.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { addTrap } from './support/level-state.js';

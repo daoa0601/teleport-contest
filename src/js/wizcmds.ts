@@ -27,7 +27,7 @@ import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
 
 import { polymorphHero, heroSpecies, heroHasOlfaction } from './polyself.js';
-import { createParticularMonster } from './read_creation.js';
+import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';

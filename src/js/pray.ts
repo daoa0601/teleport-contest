@@ -56,7 +56,7 @@ import { deleteObject } from './shk.js';
 import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm } from './polyself.js';
 import type { PropertyName } from './property_types.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty, wornObjectGrantsProperty } from './properties.js';
-import { punishHero, unpunishHero } from './punishment.js';
+import { punishHero, unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery } from './cmd.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';

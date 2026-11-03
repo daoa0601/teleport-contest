@@ -27,7 +27,7 @@ import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, MONSTER_HAS_WEAPON_ATTACK
 import { objectNoLongerHeldSynchronously } from './do.js';
 import { rn2 } from './rng.js';
 import { dismountHero } from './steed.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { objectWeight } from './mkobj.js';
 const PM_HUMAN = 260;
 const PM_GHOST = 287;

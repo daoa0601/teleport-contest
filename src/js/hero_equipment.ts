@@ -14,7 +14,7 @@ import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
 import { uqwepgone, uswapwepgone, uwepgone } from './wield.js';
 import { setnotworn } from './worn.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
     deferArmorClass = false,

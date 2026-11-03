@@ -4,7 +4,7 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { APPLE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';

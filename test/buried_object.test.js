@@ -11,7 +11,7 @@ import { maybeUnhideAt } from '../js/mon.js';
 import { BELL_OF_OPENING, BOULDER, DAGGER, GOLD_PIECE, LEASH, POT_HEALING, ROCK, } from '../js/object_data.js';
 import { levelTimers } from '../js/timeout.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { addShopObjectToBill, deleteObject } from '../js/shk.js';
 import { runDueTimers } from '../js/timeout.js';

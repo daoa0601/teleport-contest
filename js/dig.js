@@ -49,7 +49,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { heroMonsterForm, heroIsFlying } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';
 import { refreshMovementProperties } from './properties.js';
-import { punishHero, unpunishHero } from './punishment.js';
+import { punishHero, unpunishHero } from './read.js';
 import { autopickupAtHero } from './pickup.js';
 import { angerTemplePriest } from './priest.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';

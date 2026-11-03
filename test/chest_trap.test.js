@@ -8,7 +8,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, CHEST, CLUB, RIN_FREE_ACTION, ROCK } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { heroIsHallucinating } from '../js/senses.js';
 import { putHeroToSleep } from '../js/timeout.js';

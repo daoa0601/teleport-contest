@@ -8,7 +8,7 @@ import { requireGameLevel, game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
 import { nameToMonster, nameToMonsterClass } from '../js/mondata.js';
-import { doClassGenocide, doGenocide } from '../js/genocide.js';
+import { doClassGenocide, doGenocide } from '../js/read.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CLUB, CRYSKNIFE, EGG, WORM_TOOTH } from '../js/object_data.js';
 import { scheduleObjectTimer } from '../js/timeout.js';

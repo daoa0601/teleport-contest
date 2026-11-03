@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initializePet } from '../js/dog.js';
-import { doGenocide } from '../js/genocide.js';
+import { doGenocide } from '../js/read.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

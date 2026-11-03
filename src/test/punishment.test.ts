@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { HEAVY_IRON_BALL, SCR_PUNISHMENT } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { readInventoryObject } from './support/commands.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';

@@ -5,7 +5,7 @@ import { DISMOUNT_KNOCKED, STONE, VIBRATING_SQUARE } from '../js/const.js';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { dismountHero } from '../js/steed.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addTrap } from './support/level-state.js';

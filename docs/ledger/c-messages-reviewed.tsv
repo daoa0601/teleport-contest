@@ -354,9 +354,9 @@ priest.c	angry_priest	has_emin(priest)	diagnostic	NHASSERT assertion condition t
 priest.c	priest_talk	Begone!  Thou desecratest this holy place with thy presence.	dead	The earlier !inhistemple(priest) branch returns, and inhistemple() requires has_shrine(); the later !has_shrine branch cannot run.
 priest.c	priest_talk	asks you for a contribution for the temple (base	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
 priest.c	priest_talk	asks you for a contribution for the temple.	composed	src/js/priest_talk.ts:talkToPriest; Selects the debug base contribution suffix or the ordinary temple request.
-read.c	do_class_genocide	What class of monsters do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'class of monsters' plus the cmdassist suffix.
-read.c	do_genocide	What type of monster do you want to genocide?	composed	src/js/genocide.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'type of monster' plus the cmdassist suffix.
-read.c	recharge	clockwise for a moment.	composed	src/js/recharge.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
+read.c	do_class_genocide	What class of monsters do you want to genocide?	composed	src/js/read.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'class of monsters' plus the cmdassist suffix.
+read.c	do_genocide	What type of monster do you want to genocide?	composed	src/js/read.ts:genocideInput; Composes `What ${subject} do you want to genocide?` with subject 'type of monster' plus the cmdassist suffix.
+read.c	recharge	clockwise for a moment.	composed	src/js/read.ts:rechargeRing; Selects clockwise or counterclockwise inside the spinning-ring template.
 read.c	seffect_enchant_armor	for a while, then	composed	src/js/read.ts:enchantArmor; armorGlow supplies violent vibration or colored glow; armorVerb supplies evaporate or evaporates.
 report.c	dobugreport	Unable to send bug report.  Please visit	out-of-scope	Requires submit_web_report() to launch a host reporting process and fail; #bugreport is also NOFUZZERCMD, rejected during recorded debug_fuzzer games.
 restore.c	restgamestate	Saved game was not yours.	out-of-scope	Compares a native savefile uid with the host getuid(); browser saves have no OS ownership metadata.

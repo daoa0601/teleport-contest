@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { G_EXTINCT, G_GENOD, G_NOCORPSE, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { gameLogEvents } from '../js/gamelog.js';
-import { doClassGenocide, doGenocide } from '../js/genocide.js';
+import { doClassGenocide, doGenocide } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeConfused, makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';

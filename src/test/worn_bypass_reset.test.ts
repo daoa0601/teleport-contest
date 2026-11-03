@@ -2,7 +2,7 @@ import { clearBypasses } from '../js/worn.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

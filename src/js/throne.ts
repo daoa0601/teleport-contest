@@ -24,7 +24,6 @@ import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './do_wear.js';
 
-import { doGenocide, GENOCIDE_ON_THRONE } from './genocide.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { HeroHurtleOptions } from './hero_hurtle.js';
 import type { MessagePublisher } from './pline.js';
@@ -58,7 +57,7 @@ import {
     heroIsPolymorphed, polymorphHero,
 } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
-import { applyRemoveCurseSpell } from './read.js';
+import { applyRemoveCurseSpell, doGenocide, GENOCIDE_ON_THRONE } from './read.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';

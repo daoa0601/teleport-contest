@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, NO_MINVENT, W_ARMH } from '../js/const.js';
 import { canSpotMonster } from '../js/display.js';
-import { dropBoulderOnHero, dropBoulderOnMonster } from '../js/falling_boulder.js';
+import { dropBoulderOnHero, dropBoulderOnMonster } from '../js/read.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { BOULDER, ORCISH_HELM } from '../js/object_data.js';

@@ -19,7 +19,7 @@ import {
 } from '../js/object_data.js';
 import { levelTimers } from '../js/timeout.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { addShopObjectToBill, deleteObject } from '../js/shk.js';
 import { runDueTimers } from '../js/timeout.js';

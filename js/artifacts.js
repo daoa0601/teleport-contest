@@ -53,7 +53,7 @@ import { chooseInventoryObject } from './inventory_prompt.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
-import { chooseObjectToCharge, rechargeObject } from './recharge.js';
+import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './flash.js';
 import { makeBlinded, makeHallucinated } from './potion.js';
 import { promptDirection } from './cmd.js';

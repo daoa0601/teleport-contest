@@ -44,7 +44,7 @@ import {
 } from './monster_data.js';
 
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
-import { explodeWand } from './recharge.js';
+import { explodeWand } from './read.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
 import { dryTowel } from './weapon.js';
 import { holdAnotherObject } from './hero_hold_object.js';

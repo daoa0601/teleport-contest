@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { finishLivingGame, finishOrdinaryQuit } from '../js/end.js';
-import { doGenocide } from '../js/genocide.js';
+import { doGenocide } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState } from '../js/input.js';

@@ -8,7 +8,7 @@ import { addObjectToContainer } from '../js/mkobj.js';
 import { putIntoContainer, takeFromContainer } from '../js/container.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { applyInventoryObject } from './support/commands.js';
 import { rhack } from '../js/cmd.js';
 import { gameLogEvents } from '../js/gamelog.js';

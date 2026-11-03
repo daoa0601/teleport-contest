@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { DB_ICE, DB_MOAT, DRAWBRIDGE_UP } from '../js/const.js';
 import { unplaceBallAndChain } from '../js/ball.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { SCR_BLANK_PAPER, SPE_BLANK_PAPER, FOOD_RATION, DAGGER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { decodeSavedGame } from '../js/persistent_state_validation.js';
 import { requireInitializedHero } from '../js/hero_types.js';

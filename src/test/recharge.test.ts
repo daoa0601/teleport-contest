@@ -19,7 +19,7 @@ import {
     MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION,
     WAN_FIRE, WAN_WISHING,
 } from '../js/object_data.js';
-import { chooseObjectToCharge, rechargeObject } from '../js/recharge.js';
+import { chooseObjectToCharge, rechargeObject } from '../js/read.js';
 
 import { unpaidObjectCost } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';

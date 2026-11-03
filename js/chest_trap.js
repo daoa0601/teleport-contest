@@ -20,7 +20,7 @@ import { staggerVerb } from './dothrow.js';
 import { delobj } from './invent.js';
 import { definiteName, definiteObjectAction, objectCombatName } from './objnam.js';
 import { poisonHero } from './poison.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { createPoisonGasCloud } from './regions.js';
 import { d, rn2 } from './rng.js';
 import { costlySpot, insideShopRoomAt, stolenValue, makeAngryShopkeeper, deleteObjectContents } from './shk.js';

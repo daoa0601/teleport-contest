@@ -27,7 +27,7 @@ import { heroFormHidesUnderObjects } from './polyself.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { ownedObjectName } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
-import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement } from './revival_species.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement } from './read.js';
 import { cansee } from './vision.js';
 import { restoreMonsterTraits } from './zap.js';
 function requireStatueSpecies(statue) {
