@@ -10,7 +10,7 @@ import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn } from './hack.js';
-import { isPolearm, ammunitionMatchesLauncher, isAmmunition } from './object_properties.js';
+import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo } from './object_properties.js';
 import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, } from './weapon.js';
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
@@ -216,8 +216,8 @@ function monsterClassVolleyBonus(monster, missile, launcher) {
 export function monsterVolleyCount(monster, missile, launcher, rollOne = rnd) {
     const quantity = missile?.quan ?? missile?.quantity ?? 1;
     const missileName = objectTypeName(missile);
-    const ammunition = isAmmunition(missile);
-    const matchingLauncher = ammunitionMatchesLauncher(missile, launcher);
+    const ammunition = isLauncherAmmunition(missile);
+    const matchingLauncher = launcherMatchesAmmo(missile, launcher);
     const stackableWeapon = missile.oclass === WEAPON_CLASS;
     if (quantity <= 1 || monster?.mconf
         || (ammunition ? !matchingLauncher : !stackableWeapon))
@@ -256,7 +256,7 @@ export function monsterVolleyCount(monster, missile, launcher, rollOne = rnd) {
 // turn; a dead shooter cancels the shots that remain.
 async function launchVolley(source, weapon, target, state, { random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     const launcher = monsterWieldedWeapon(source);
-    const launched = ammunitionMatchesLauncher(weapon, launcher);
+    const launched = launcherMatchesAmmo(weapon, launcher);
     const targetX = target?.mx ?? source.mux ?? 0;
     const targetY = target?.my ?? source.muy ?? 0;
     const range = distmin(source.mx, source.my, targetX, targetY);
@@ -595,7 +595,7 @@ async function flightBlocked(object, dx, dy, forceHit, { state, publish, random,
 export async function throwMonsterProjectile(source, object, { state = game, dx, dy, range, target = null, archer = null, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, volley, }) {
     requirePlayingGame(state);
     const tethered = object === monsterWieldedWeapon(source) && returningWeaponRangeSquared(object) !== null;
-    const launched = ammunitionMatchesLauncher(object, monsterWieldedWeapon(source));
+    const launched = launcherMatchesAmmo(object, monsterWieldedWeapon(source));
     const missile = await detachMissile(source, object, state, publish);
     state._thrownObject = missile;
     state.bhitpos = { x: source.mx, y: source.my };
@@ -616,7 +616,7 @@ export async function throwMonsterProjectile(source, object, { state = game, dx,
     try {
         if ((missile.cursed || missile.greased) && (dx || dy) && random(7) === 0) {
             if (canSeeMonster(source) && state.flags.verbose) {
-                if (isAmmunition(missile))
+                if (isLauncherAmmunition(missile))
                     await publish(`${monsterName(source, { state, capitalized: true })} misfires!`);
                 else {
                     const name = objectCombatName(missile, { state });
@@ -849,7 +849,7 @@ export async function throwMonsterWeaponAtMonster(source, target, state, options
     const chance = Math.max(BOLT_LIM - distmin(source.mx, source.my, target.mx, target.my), 1);
     if (target.mflee && (options.random ?? rn2)(chance) !== 0)
         return null;
-    if (ammunitionMatchesLauncher(weapon, monsterWieldedWeapon(source))
+    if (launcherMatchesAmmo(weapon, monsterWieldedWeapon(source))
         && dist2(source.mx, source.my, target.mx, target.my) > 36)
         return null;
     return { ...await launchVolley(source, weapon, target, state, options), targetKind: 'monster', aimedAt: target };

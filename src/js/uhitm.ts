@@ -111,7 +111,7 @@ import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { objectClassForType, objectMaterial, observeObject } from './o_init.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT, TOWEL, YA, YUMI } from './object_data.js';
-import { ammunitionMatchesLauncher, isAmmunition, isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
+import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -999,11 +999,11 @@ function isImprovisedContact(weapon: GameObject, mode: HeroPhysicalAttackMode, s
     const skill = OBJECT_SUBTYPE[weapon.otyp] ?? P_NONE;
     const launcher = weapon.oclass === WEAPON_CLASS && skill >= P_BOW && skill <= P_CROSSBOW;
     return launcher
-        || (mode === 'melee' && (isMissileObject(weapon) || isAmmunition(weapon)))
+        || (mode === 'melee' && (isMissileObject(weapon) || isLauncherAmmunition(weapon)))
         || (mode === 'melee' && !state.u.usteed && isPolearm(weapon)
             && artifactById(weapon.oartifact, state)?.enumName !== 'SNICKERSNEE')
-        || (isAmmunition(weapon) && (mode !== 'thrown'
-            || !ammunitionMatchesLauncher(weapon, state.uwep || state.u.uwep)));
+        || (isLauncherAmmunition(weapon) && (mode !== 'thrown'
+            || !launcherMatchesAmmo(weapon, state.uwep || state.u.uwep)));
 }
 
 // C uhitm.c:hmon_hitmon_weapon_ranged().

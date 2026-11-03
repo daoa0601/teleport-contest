@@ -125,12 +125,12 @@ export function isFlimsyObject(object, state) {
 }
 // C obj.h:is_pick().
 export function isPick(object) {
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
+    return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
         && OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;
 }
 // C obj.h:is_axe().
 export function isAxe(object) {
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
+    return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
         && OBJECT_SUBTYPE[object.otyp] === P_AXE;
 }
 // C obj.h:is_blade().
@@ -141,20 +141,6 @@ export function isBlade(object) {
     return object?.oclass === WEAPON_CLASS
         && skill >= P_DAGGER && skill <= P_SABER;
 }
-export function isAmmunition(object) {
-    if (!object)
-        return false;
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 13)
-        && skill >= -P_CROSSBOW && skill <= -P_BOW;
-}
-export function ammunitionMatchesLauncher(ammunition, launcher) {
-    if (!ammunition || !launcher || !isAmmunition(ammunition))
-        return false;
-    const launcherSkill = OBJECT_SUBTYPE[launcher.otyp];
-    return launcherSkill !== undefined
-        && OBJECT_SUBTYPE[ammunition.otyp] === -launcherSkill;
-}
 // C obj.h:is_wet_towel().
 export function isWetTowel(object) {
     return object?.otyp === TOWEL && (object.spe ?? 0) > 0;
@@ -162,7 +148,7 @@ export function isWetTowel(object) {
 // C obj.h:is_pole().
 // Snickersnee has the same reach as a polearm despite being a katana.
 export function isPolearm(object) {
-    if (object?.oclass !== WEAPON_CLASS && object?.oclass !== 6)
+    if (object?.oclass !== WEAPON_CLASS && object?.oclass !== TOOL_CLASS)
         return false;
     const skill = OBJECT_SUBTYPE[object.otyp];
     return skill === P_POLEARMS || skill === P_LANCE
@@ -171,6 +157,6 @@ export function isPolearm(object) {
 // C obj.h:is_sword().
 export function isSword(object) {
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;
+    return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER;
 }
 //# sourceMappingURL=object_properties.js.map

@@ -149,13 +149,13 @@ export type WeaponCandidate = WeaponView | null | undefined;
 
 // C obj.h:is_pick().
 export function isPick(object: WeaponCandidate): boolean {
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
+    return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
         && OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;
 }
 
 // C obj.h:is_axe().
 export function isAxe(object: WeaponCandidate): boolean {
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 6)
+    return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
         && OBJECT_SUBTYPE[object.otyp] === P_AXE;
 }
 
@@ -167,19 +167,6 @@ export function isBlade(object: WeaponCandidate): boolean {
         && skill >= P_DAGGER && skill <= P_SABER;
 }
 
-export function isAmmunition(object: WeaponCandidate): boolean {
-    if (!object) return false;
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return (object?.oclass === WEAPON_CLASS || object?.oclass === 13)
-        && skill >= -P_CROSSBOW && skill <= -P_BOW;
-}
-
-export function ammunitionMatchesLauncher(ammunition: WeaponCandidate, launcher: WeaponCandidate): boolean {
-    if (!ammunition || !launcher || !isAmmunition(ammunition)) return false;
-    const launcherSkill = OBJECT_SUBTYPE[launcher.otyp];
-    return launcherSkill !== undefined
-        && OBJECT_SUBTYPE[ammunition.otyp] === -launcherSkill;
-}
 // C obj.h:is_wet_towel().
 export function isWetTowel(object: WeaponCandidate): boolean {
     return object?.otyp === TOWEL && (object.spe ?? 0) > 0;
@@ -187,7 +174,7 @@ export function isWetTowel(object: WeaponCandidate): boolean {
 // C obj.h:is_pole().
 // Snickersnee has the same reach as a polearm despite being a katana.
 export function isPolearm(object: WeaponCandidate): boolean {
-    if (object?.oclass !== WEAPON_CLASS && object?.oclass !== 6) return false;
+    if (object?.oclass !== WEAPON_CLASS && object?.oclass !== TOOL_CLASS) return false;
     const skill = OBJECT_SUBTYPE[object.otyp];
     return skill === P_POLEARMS || skill === P_LANCE
         || artifactById(object.oartifact)?.name === 'Snickersnee';
@@ -195,5 +182,5 @@ export function isPolearm(object: WeaponCandidate): boolean {
 // C obj.h:is_sword().
 export function isSword(object: GameObject): boolean {
     const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
-    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER;
+    return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER;
 }

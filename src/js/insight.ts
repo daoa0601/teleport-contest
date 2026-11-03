@@ -41,7 +41,7 @@ import {
     canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
 } from './skills.js';
 import { weaponDescription } from './weapon.js';
-import { isAmmunition, isWetTowel } from './object_properties.js';
+import { isLauncherAmmunition, isWetTowel } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
@@ -500,7 +500,7 @@ function weaponInsightLines(final: EnlightenmentFinal = 0) {
     }
 
     const wtype = weaponSkillType(weapon);
-    if (wtype === P_NONE || (weapon && isAmmunition(weapon))) return lines;
+    if (wtype === P_NONE || (weapon && isLauncherAmmunition(weapon))) return lines;
     const sklvl = skillLevel(wtype);
     const sklvlName = skillLevelDescription(sklvl);
     const hav = sklvl !== P_UNSKILLED && sklvl !== P_SKILLED;
