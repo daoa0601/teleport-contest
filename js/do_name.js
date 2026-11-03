@@ -1,31 +1,31 @@
-// do_name.js — The #call/#name command and monster naming.
+// do_name.js — the do_name.c owner: the #call/#name command, monster and
+// object naming, player-given names, hallucination naming, novel titles.
 // C ref: do_name.c:docallcmd(), name_ok(), call_ok(), do_mgivenname(),
-// alreadynamed(), christen_monst(), rndghostname(), roguename(), mon_nam(),
-// distant_monnam(), l_monnam(), noname_monnam(), monverbself().  The
-// remaining individual owners are naming_categories.ts (the category menu),
-// individual_naming.ts (do_oname) and floor_naming.ts (namefloorobj).
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, W_SADDLE, } from './const.js';
+// do_oname(), name_from_player(), alreadynamed(), christen_monst(),
+// rndghostname(), roguename(), mon_nam(), distant_monnam(), l_monnam(),
+// noname_monnam(), x_monnam(), Monnam(), monverbself(), objtyp_is_callable(),
+// docall(), docall_xname(), namefloorobj(), bogusmon(), rndmonnam(),
+// hcolor(), rndcolor(), hliquid(), rndorcname(), noveltitle(),
+// lookup_novel().  The category menu is naming_categories.ts.
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, } from './const.js';
 import { clearCannedCommands } from './cmd.js';
 import { takeCommandKey, takeCommandPosition } from './input.js';
 import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { nameFloorObject } from './floor_naming.js';
-import { renameDiscoveredType, recordObjectEncounter, rememberType } from './o_init.js';
+import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, } from './object_data.js';
-import { nameIndividualObject } from './individual_naming.js';
-import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomDisplayMonsterIdentity, seeMonsterWithInfrared, } from './display.js';
-import { objectTypeKnown, repriceDiscoveredGems } from './shk.js';
-import { objectName, observeObjectForNaming } from './objnam.js';
+import { SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, } from './object_data.js';
+import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomBogusMonsterIdentity, seeMonsterWithInfrared, } from './display.js';
+import { objectTypeKnown, repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
+import { definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { impossible } from './diagnostics.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { GlyphOffset } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
-import { playerName } from './player_name.js';
 import { heroBeautyDescription } from './apply.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
 import { visibleCommandKey } from './cmd.js';
@@ -34,8 +34,17 @@ import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from './mondata.js';
-import { makePlural, verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { rn2 } from './rng.js';
+import { getLine } from './query.js';
+import { heroHandName } from './body_parts.js';
+import { displayMessageWindow } from './tty_topline.js';
+import { wipeoutText } from './engrave.js';
+import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { setTwoWeaponCombat } from './wield.js';
+import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
+import { withMapObject } from './map_object_description.js';
+import { heroFormHidesUnderObjects } from './polyself.js';
+import { rankOf } from './quest_pager.js';
+import { rn2, rn2Display } from './rng.js';
 import { monsterAtPosition } from './steed.js';
 import { showGetposTip } from './hack.js';
 // C do_name.c:docallcmd().
@@ -110,6 +119,15 @@ export async function doname() {
     }
     game.context.move = 0;
 }
+// C do_name.c:name_from_player(). Empty input cancels; spaces erase a name.
+export async function playerName(prompt) {
+    const input = await getLine(prompt, (_ch, key) => key <= 255);
+    if (input === null || input === '')
+        return null;
+    // mungspaces() changes ASCII spaces and tabs, leaving high bytes intact.
+    return input.replace(/^[ \t]+|[ \t]+$/g, '').replace(/[ \t]+/g, ' ')
+        .slice(0, PL_PSIZ - 1);
+}
 // Given-name storage shared by monster creation, revival, and bones.
 // C do_name.c:christen_monst(). No presentation imports: these setters also
 // run while a new monster is still being constructed.
@@ -148,6 +166,39 @@ export function randomGhostName(state = game) {
         throw new RangeError('Ghost name selection is outside the name table.');
     return name;
 }
+const G_NOGEN = 0x0200;
+const BOGUSMONSIZE = 100;
+// C do_name.c:bogusmon(), for descriptions that require a fictitious species.
+export function randomBogusMonsterName() {
+    return randomBogusMonsterIdentity().name;
+}
+// C do_name.c:rndmonnam().  This is presentation-only and therefore consumes
+// the display stream even when called while resolving a core combat action.
+export function randomDisplayMonsterIdentity() {
+    let mnum;
+    do {
+        mnum = rn2Display(SPECIAL_PM + BOGUSMONSIZE);
+    } while (mnum < SPECIAL_PM
+        && ((monsterHasProperName(mnum))
+            || ((MONSTER_GENO[mnum] ?? 0) & G_NOGEN)));
+    if (mnum >= SPECIAL_PM)
+        return randomBogusMonsterIdentity();
+    const female = rn2Display(2) !== 0; // pmname(..., random gender)
+    const name = monsterTypeName(mnum, female);
+    if (name === undefined)
+        throw new RangeError(`Missing display monster name ${mnum}`);
+    return { name, personal: false };
+}
+export function randomDisplayMonsterName() {
+    return randomDisplayMonsterIdentity().name;
+}
+// C do_name.c:Monnam() requests ARTICLE_THE, except personal bogus-monster
+// names suppress the article before the result is sentence-capitalized.
+export function randomDisplayMonsterSubject(forceThe = false) {
+    const { name, personal } = randomDisplayMonsterIdentity();
+    const subject = personal && !forceThe ? name : `the ${name}`;
+    return subject.charAt(0).toUpperCase() + subject.slice(1);
+}
 // C do_name.c:roguename().
 export function roguePlayerName() {
     const options = typeof process === 'undefined' ? undefined : process.env.ROGUEOPTS;
@@ -155,6 +206,156 @@ export function roguePlayerName() {
     if (options !== undefined && start >= 0)
         return options.slice(start + 5).split(',', 1)[0] ?? '';
     return rn2(3) ? (rn2(2) ? 'Michael Toy' : 'Kenneth Arnold') : 'Glenn Wichman';
+}
+const HALLUCINATED_COLORS = [
+    'ultraviolet', 'infrared', 'bluish-orange', 'reddish-green', 'dark white',
+    'light black', 'sky blue-pink', 'pinkish-cyan', 'indigo-chartreuse',
+    'salty', 'sweet', 'sour', 'bitter', 'umami',
+    'striped', 'spiral', 'swirly', 'plaid', 'checkered', 'argyle', 'paisley',
+    'blotchy', 'guernsey-spotted', 'polka-dotted', 'square', 'round',
+    'triangular', 'cabernet', 'sangria', 'fuchsia', 'wisteria', 'lemon-lime',
+    'strawberry-banana', 'peppermint', 'romantic', 'incandescent', 'octarine',
+    'excitingly dull', 'mauve', 'electric', 'neon', 'fluorescent',
+    'phosphorescent', 'translucent', 'opaque', 'psychedelic', 'iridescent',
+    'rainbow-colored', 'polychromatic', 'colorless', 'colorless green',
+    'dancing', 'singing', 'loving', 'loudy', 'noisy', 'clattery', 'silent',
+    'apocyan', 'infra-pink', 'opalescent', 'violant', 'tuneless',
+    'viridian', 'aureolin', 'cinnabar', 'purpurin', 'gamboge', 'madder',
+    'bistre', 'ecru', 'fulvous', 'tekhelet', 'selective yellow',
+];
+// C do_name.c:hcolor(). Hallucinated color names use the display RNG.
+export function displayColorName(preferred, state = game) {
+    if (preferred != null && !heroIsHallucinating(state))
+        return preferred;
+    const color = HALLUCINATED_COLORS[rn2Display(HALLUCINATED_COLORS.length)];
+    if (color === undefined)
+        throw new Error('Display RNG returned an invalid color index');
+    return color;
+}
+const OBJECT_COLOR_NAMES = [
+    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
+    'colorless', 'orange', 'bright green', 'yellow', 'bright blue',
+    'bright magenta', 'bright cyan', 'white',
+];
+// C do_name.c:rndcolor() draws an ordinary color even when hcolor() will
+// replace it with a hallucinated color from the display stream.
+export function randomColorName(state = game, random = rn2) {
+    const color = OBJECT_COLOR_NAMES[random(OBJECT_COLOR_NAMES.length)];
+    if (color === undefined)
+        throw new RangeError('Random color selection is outside the color table');
+    return displayColorName(color, state);
+}
+const HALLUCINATED_LIQUIDS = [
+    'yoghurt', 'oobleck', 'clotted blood', 'diluted water',
+    'purified water', 'instant coffee', 'tea', 'herbal infusion',
+    'liquid rainbow', 'creamy foam', 'mulled wine', 'bouillon', 'nectar',
+    'grog', 'flubber', 'ketchup', 'slow light', 'oil', 'vinaigrette',
+    'liquid crystal', 'honey', 'caramel sauce', 'ink', 'aqueous humour',
+    'milk substitute', 'fruit juice', 'glowing lava', 'gastric acid',
+    'mineral water', 'cough syrup', 'quicksilver', 'sweet vitriol',
+    'grey goo', 'pink slime', 'cosmic latte', 'bone oil', 'custard', 'lard',
+    'vinegar', 'creosote',
+];
+// C do_name.c:hliquid(): the hallucinated liquid name.
+export function displayLiquidName(fallback, state = game) {
+    if ((!heroIsHallucinating(state) || state.program_state.gameover) && fallback)
+        return fallback;
+    // do_name.c:hliquid() includes a nonempty fallback as one additional slot.
+    const index = rn2Display(HALLUCINATED_LIQUIDS.length + (fallback ? 1 : 0));
+    return HALLUCINATED_LIQUIDS[index] ?? fallback;
+}
+// C do_name.c:rndorcname().
+export function randomOrcName() {
+    const vowels = ['a', 'ai', 'og', 'u'];
+    const consonants = ['gor', 'gris', 'un', 'bane', 'ruk', 'oth', 'ul', 'z', 'thos', 'akh', 'hai'];
+    const count = rn2(2) + 3;
+    let vowelFirst = rn2(2);
+    let name = '';
+    for (let index = 0; index < count; index++) {
+        vowelFirst = 1 - vowelFirst;
+        if (index > 0 && rn2(30) === 0)
+            name += '-';
+        const syllables = vowelFirst ? vowels : consonants;
+        const syllable = syllables[rn2(syllables.length)];
+        if (syllable === undefined)
+            throw new Error('Orc name selection exceeded its syllables.');
+        name += syllable;
+    }
+    return name;
+}
+export const NOVEL_TITLES = [
+    "The Colour of Magic",
+    "The Light Fantastic",
+    "Equal Rites",
+    "Mort",
+    "Sourcery",
+    "Wyrd Sisters",
+    "Pyramids",
+    "Guards! Guards!",
+    "Eric",
+    "Moving Pictures",
+    "Reaper Man",
+    "Witches Abroad",
+    "Small Gods",
+    "Lords and Ladies",
+    "Men at Arms",
+    "Soul Music",
+    "Interesting Times",
+    "Maskerade",
+    "Feet of Clay",
+    "Hogfather",
+    "Jingo",
+    "The Last Continent",
+    "Carpe Jugulum",
+    "The Fifth Elephant",
+    "The Truth",
+    "Thief of Time",
+    "The Last Hero",
+    "The Amazing Maurice and His Educated Rodents",
+    "Night Watch",
+    "The Wee Free Men",
+    "Monstrous Regiment",
+    "A Hat Full of Sky",
+    "Going Postal",
+    "Thud!",
+    "Wintersmith",
+    "Making Money",
+    "Unseen Academicals",
+    "I Shall Wear Midnight",
+    "Snuff",
+    "Raising Steam",
+    "The Shepherd's Crown"
+];
+// C do_name.c:noveltitle(). Title indices are persistent object identity.
+export function novelTitle(book) {
+    const selected = rn2(NOVEL_TITLES.length);
+    if (book.novelidx === -1 || book.novelidx === undefined)
+        book.novelidx = selected;
+    const index = book.novelidx >= 0 && book.novelidx < NOVEL_TITLES.length
+        ? book.novelidx : selected;
+    const title = NOVEL_TITLES[index];
+    if (title === undefined)
+        throw new RangeError(`Unknown novel title index ${index}`);
+    return title;
+}
+// C do_name.c:lookup_novel(). An unrecognized label keeps a novel's existing
+// title index; recognized spellings replace both its title and index.
+export function lookupNovelTitle(name, book) {
+    const aliases = new Map([
+        ['the color of magic', 'The Colour of Magic'], ['sorcery', 'Sourcery'],
+        ['masquerade', 'Maskerade'],
+        ['the amazing maurice', 'The Amazing Maurice and His Educated Rodents'],
+        ['thud', 'Thud!'],
+    ]);
+    const requested = aliases.get(name.toLowerCase()) ?? aliases.get(definiteName(name).toLowerCase()) ?? name;
+    const fullName = definiteName(requested).toLowerCase();
+    const index = NOVEL_TITLES.findIndex(title => title.toLowerCase() === requested.toLowerCase()
+        || title.toLowerCase() === fullName);
+    if (index >= 0) {
+        book.novelidx = index;
+        return NOVEL_TITLES[index] ?? null;
+    }
+    return book.novelidx === undefined ? null : NOVEL_TITLES[book.novelidx] ?? null;
 }
 // C do_name.c:do_mgivenname().
 export async function nameChosenMonster() {
@@ -419,6 +620,163 @@ export function monsterReflexiveAction(monster, name, verb, otherText = '', { st
     }
     return `${name} ${action}${otherText ? ` ${otherText}` : ''} ${reflexive}`;
 }
+// Player inscriptions and artifact naming.
+// C do_name.c:do_oname().
+export async function nameIndividualObject(object) {
+    if (object.otyp === SPE_NOVEL) {
+        await plineWithContinuation(`${objectOwnershipPrefix(object)}${simpleObjectName(object)} already has a published name.`);
+        return;
+    }
+    observeObjectForNaming(object);
+    const prefix = `What do you want to name ${objectNameIsPlural(object) ? 'these' : 'this'} `;
+    const suffix = '?';
+    const description = individualNamingDescription(object, QBUFSZ - 1 - prefix.length - suffix.length);
+    const name = await playerName(`${prefix}${description}${suffix}`);
+    if (name === null)
+        return;
+    if (object.oartifact) {
+        await plineWithContinuation(`${object.oextra?.oname || object.oname || 'The artifact'} resists the attempt.`);
+        return;
+    }
+    const artifact = artifactByName(name);
+    let inscription = name;
+    if (artifact && (restrictedArtifactName(object, artifact)
+        || artifact.baseType === object.otyp && game._artifactExists?.has(artifact.id))) {
+        inscription = artifact.name;
+        const start = /^the /i.test(inscription) ? inscription.slice(0, 4) : '';
+        do {
+            inscription = start + wipeoutText(artifact.name.slice(start.length), rn2Display(2) + 1);
+        } while (inscription === artifact.name);
+        await plineWithContinuation(`While engraving, your ${heroHandName(game)} slips.`);
+        await displayMessageWindow();
+        await plineWithContinuation(`You engrave: "${inscription}".`);
+        const conduct = (game.u.uconduct ??= {});
+        conduct.literate = (conduct.literate ?? 0) + 1;
+    }
+    else if (artifact?.baseType === object.otyp) {
+        inscription = artifact.name;
+    }
+    delete object.oname;
+    if (inscription) {
+        object.oextra = { ...object.oextra, oname: inscription };
+    }
+    else if (object.oextra) {
+        delete object.oextra.oname;
+    }
+    if (!artifact || artifact.baseType !== object.otyp || inscription !== artifact.name)
+        return;
+    if (!nameArtifact(object, artifact, { origin: 'named', knownOrigin: true }))
+        return;
+    if (object === (game.uswapwep || game.u.uswapwep)) {
+        if (game.u.twoweap)
+            await plineWithContinuation('You can no longer wield two weapons at once.');
+        setTwoWeaponCombat(false);
+    }
+    if (object === (game.uwep || game.u.uwep))
+        await setWieldedArtifactProperties(object, true, game);
+    if (object.unpaid)
+        updateUnpaidObjectPrice(object);
+    const conduct = (game.u.uconduct ??= {});
+    const first = !conduct.literate;
+    conduct.literate = (conduct.literate ?? 0) + 1;
+    const bareName = artifact.name.replace(/^the /i, '');
+    recordGameLogEvent(first ? `became literate by naming ${bareName}`
+        : `chose ${simpleObjectNameWithArticle(object)} to be named "${bareName}"`, {
+        flags: first ? LL_CONDUCT | LL_ARTIFACT : LL_ARTIFACT,
+    });
+}
+// C safe_qbuf()/short_oname(xname, simpleonames): keep as much of each
+// existing name as fits, without changing the names the player can edit.
+function individualNamingDescription(object, limit) {
+    const describe = (item, state = game) => {
+        const name = objectName(item, state);
+        return item.quan === 1 ? name : pluralizeObjectNoun(item, name);
+    };
+    let name = describe(object);
+    if (name.length <= limit)
+        return name;
+    const callName = game._objectCallNames?.[object.otyp];
+    const personalName = object.oextra?.oname || object.oname;
+    const shortCallState = callName && callName.length >= 12
+        ? { ...game, _objectCallNames: {
+                ...game._objectCallNames, [object.otyp]: `${callName.slice(0, 8)}...`,
+            } } : game;
+    const shortNamedObject = personalName && personalName.length >= 12
+        ? { ...object, oextra: { ...object.oextra, oname: `${personalName.slice(0, 8)}...` } }
+        : object;
+    if (shortCallState !== game) {
+        name = describe(object, shortCallState);
+        if (name.length <= limit)
+            return name;
+    }
+    if (shortNamedObject !== object) {
+        name = describe(shortNamedObject);
+        if (name.length <= limit)
+            return name;
+    }
+    const shortenBoth = shortCallState !== game && shortNamedObject !== object;
+    if (shortenBoth) {
+        name = describe(shortNamedObject, shortCallState);
+        if (name.length <= limit)
+            return name;
+    }
+    // Only the combined attempt leaves both names abbreviated when native
+    // removes attributes. Erosion aliases share the cleared C fields.
+    const state = shortenBoth ? shortCallState : game;
+    const plainObject = { ...(shortenBoth ? shortNamedObject : object),
+        bknown: game.urole?.key === 'priest', rknown: false, greased: false,
+        oeroded: 0, oeroded2: 0, orotten: false, odiluted: false, norevive: false,
+    };
+    name = describe(plainObject, state);
+    if (name.length > limit)
+        name = simpleObjectName(plainObject, state);
+    return name.length <= limit ? name : 'item';
+}
+function restrictedArtifactName(object, artifact) {
+    if (!(artifact.restricted || artifact.noGeneration || object.quan > 1))
+        return false;
+    if (object.otyp === artifact.baseType)
+        return true;
+    if (objectTypeKnown(object) || objectTypeKnown({ otyp: artifact.baseType }))
+        return false;
+    if (object.oclass !== objectClassForType(artifact.baseType))
+        return false;
+    const description = game.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+    const other = game.objectDescriptions?.[artifact.baseType] ?? OBJECT_DESCRIPTIONS[artifact.baseType];
+    if (!description || !other)
+        return false;
+    const [low, high] = appearanceRange(object);
+    return description === other || artifact.baseType >= low && artifact.baseType <= high;
+}
+// o_init.c:obj_shuffle_range(), including its fixed-description exceptions.
+function appearanceRange(object) {
+    const type = object.otyp;
+    const armorRanges = [
+        [HELMET, OBJECT_NAMES.indexOf('helm of telepathy')],
+        [LEATHER_GLOVES, OBJECT_NAMES.indexOf('gauntlets of dexterity')],
+        [CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT], [SPEED_BOOTS, LEVITATION_BOOTS],
+    ];
+    if (object.oclass === 3) {
+        for (const [low, high] of armorRanges)
+            if (low !== undefined && high !== undefined && type >= low && type <= high)
+                return [low, high];
+    }
+    let low = OBJECT_BASES[object.oclass] ?? type;
+    let high = (OBJECT_BASES[object.oclass + 1] ?? type + 1) - 1;
+    if (object.oclass === 8)
+        high = POT_WATER - 1;
+    else if ([5, 9, 10].includes(object.oclass)) {
+        high = low;
+        while (objectClassForType(high) === object.oclass
+            && !OBJECT_UNIQUE[high] && OBJECT_MAGIC[high])
+            high++;
+        high--;
+    }
+    else if (![4, 11, 17].includes(object.oclass)) {
+        low = high = type;
+    }
+    return type >= low && type <= high ? [low, high] : [type, type];
+}
 // ---------------------------------------------------------------------------
 // Object type calls. C refs: do_name.c objtyp_is_callable(), docall(),
 // docall_xname().
@@ -495,5 +853,66 @@ export async function callObjectType(object, state = game) {
     recordObjectCall(object.otyp, callName, state);
     recordObjectEncounter(object.otyp, state);
     return { prompted: true, named: true, callName };
+}
+// C do_name.c:namefloorobj().
+export async function nameFloorObject() {
+    requirePlayingGame(game);
+    const goal = `object on map (or '.' for one ${game.u.uundetected && heroFormHidesUnderObjects(game) ? 'over' : 'under'} you)`;
+    const tip = await showGetposTip();
+    if (game.flags.verbose) {
+        const helpKey = game.commandBindings.specialKey('getpos.help');
+        if (helpKey === undefined)
+            throw new Error('Floor naming requires a getpos.help binding');
+        await plineWithContinuation(`(For instructions type a '${visibleCommandKey(helpKey)}')`);
+    }
+    if (tip)
+        await plineWithContinuation(`Move cursor to ${goal}:`);
+    const selected = await selectMapPosition({
+        start: { x: game.u.ux, y: game.u.uy }, goal, force: false,
+        prompt: game._pending_message,
+    });
+    if (!selected || selected.x < 0)
+        return;
+    const here = selected.x === game.u.ux && selected.y === game.u.uy;
+    if (here) {
+        const object = game.level.objects[selected.x]?.[selected.y]?.[0];
+        if (object)
+            await nameFloorType(object);
+        else
+            await plineWithContinuation("There doesn't seem to be any object under you.");
+    }
+    else {
+        const result = await withMapObject(selected.x, selected.y, glyphAt(selected.x, selected.y), async (object) => {
+            await nameFloorType(object);
+            return true;
+        });
+        if (!result)
+            await plineWithContinuation("There doesn't seem to be any object there.");
+    }
+}
+async function nameFloorType(object) {
+    const name = object.otyp === 0 ? 'strange object' : simpleObjectName(object);
+    const plural = object.quan > 1;
+    if (heroIsHallucinating(game)) {
+        const female = Upolyd(game.u) ? game.u.mfemale : game.flags.female;
+        const role = female && game.urole?.name.f || game.urole?.name.m || 'Player';
+        const rank = rankOf(rn2Display(30) + 1, game);
+        const bogus = randomBogusMonsterName();
+        const choices = [role, rank, bogus, bogus, roguePlayerName(), 'Wibbly Wobbly'];
+        const chosen = choices[rn2Display(choices.length)];
+        if (chosen === undefined)
+            throw new Error('Hallucinated floor naming selected a missing name');
+        const subject = definiteName(name);
+        await plineWithContinuation(`${subject.charAt(0).toUpperCase()}${subject.slice(1)} ${plural ? 'decide' : 'decides'} to call you "${chosen}."`);
+    }
+    else if (!objectTypeIsCallable(object)) {
+        await plineWithContinuation(`${plural ? 'Those' : 'That'} ${name} can't be assigned a type name.`);
+    }
+    else if (!object.dknown) {
+        await plineWithContinuation(`You don't know ${plural ? 'those' : 'that'} ${name} well enough to name ${plural ? 'them' : 'it'}.`);
+    }
+    else {
+        await callObjectType(object);
+    }
 }
 //# sourceMappingURL=do_name.js.map

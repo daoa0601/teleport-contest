@@ -44,7 +44,6 @@ src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/eyewear.ts	do_wear.c
 src/js/familiar.ts	dog.c
-src/js/floor_naming.ts	do_name.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
 src/js/fruit.ts	objnam.c
@@ -68,7 +67,6 @@ src/js/hero_status.ts	insight.c
 src/js/horn_of_plenty.ts	mkobj.c
 src/js/ident.ts	mkobj.c
 src/js/immediate_monster_magic.ts	mon.c
-src/js/individual_naming.ts	do_name.c
 src/js/inventory_prompt.ts	invent.c
 src/js/isaac64.ts	isaac64.c
 src/js/japanese_item_name.ts	objnam.c
@@ -98,19 +96,18 @@ src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
 src/js/music.ts	music.c
-src/js/novel_titles.ts	do_name.c
 src/js/o_init.ts	o_init.c
 src/js/object_properties.ts	artifact.c
 src/js/occupation.ts	allmain.c
 src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c
+src/js/orc_raid.ts	mkmaze.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
 src/js/pick_axe.ts	mon.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
-src/js/player_name.ts	do_name.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
 src/js/poison.ts	attrib.c

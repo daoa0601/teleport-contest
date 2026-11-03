@@ -3,7 +3,8 @@
 import { monsterHasMapPosition } from './steed.js';
 import { heroFootName } from './body_parts.js';
 import { MM_ADJACENTOK, MM_NOMSG, NO_MINVENT } from './const.js';
-import { canSpotMonster, randomDisplayMonsterName, randomDisplayMonsterSubject } from './display.js';
+import { canSpotMonster } from './display.js';
+import { randomDisplayMonsterName, randomDisplayMonsterSubject } from './do_name.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { game, requireGameLevel } from './gstate.js';

@@ -7,7 +7,6 @@ import { heroIsHallucinating } from './senses.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { game } from './gstate.js';
 import { expiredFatally } from './timeout.js';
-import { displayLiquidName } from './display.js';
 import { pline } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow } from './windows.js';
 import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
@@ -24,7 +23,7 @@ import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, we
 import { weaponDescription } from './weapon.js';
 import { isAmmunition, isWetTowel } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterDigests } from './monster_data.js';
 import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './polyself.js';

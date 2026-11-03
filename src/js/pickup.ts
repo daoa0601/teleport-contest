@@ -27,7 +27,7 @@ import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToConta
 
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, objectClassForType, observeObject } from './o_init.js';
-import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, displayLiquidName, flush_screen, newsym, newsym_force } from './display.js';
+import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force } from './display.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, dungeonFeatureAt } from './floor_object_display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { FeatureOptions } from './floor_object_display.js';
@@ -59,7 +59,7 @@ import { isContainer, updateContainerWeights, restoreRejectedSplit } from './con
 import type { TransferStack } from './container.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';

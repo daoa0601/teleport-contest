@@ -17,9 +17,9 @@ import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIE
 import { reviveCorpseImmediately } from './corpse_revival.js';
 
 import { impossible } from './diagnostics.js';
-import { canSeeMonster, canSpotMonster, displayColorName, flush_screen, newsym, randomDisplayMonsterName, see_monsters } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters } from './display.js';
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { reportHeroEncumbrance } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';

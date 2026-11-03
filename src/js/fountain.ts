@@ -10,7 +10,7 @@ import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactPrope
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
-import { canSpotMonster, displayColorName, displayLiquidName, glyphAt, newsym, randomDisplayMonsterName } from './display.js';
+import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
@@ -29,7 +29,7 @@ import { resolveMonsterLiquid, angerWatchGuards } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
 import { level_difficulty } from './dungeon.js';
 import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, OBJECT_DESCRIPTIONS, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, requireObjectData } from './object_data.js';

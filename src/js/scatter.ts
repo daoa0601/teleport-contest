@@ -6,7 +6,7 @@ import { currency } from './currency.js';
 import { deleteTrap } from './trap.js';
 import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';
 import { isok } from './cmd.js';
-import { canSpotMonster, displayLiquidName, newsym } from './display.js';
+import { canSpotMonster, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -23,7 +23,7 @@ import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutc
 import { revealMonsterAppearance } from './mon.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {
     monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,

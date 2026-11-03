@@ -15,7 +15,7 @@ import { BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, C
 import { doloot } from './pickup.js';
 import type { MapLocation, Position } from './map_types.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { feel_location, feel_newsym, newsym, canSeeMonster, displayLiquidName, glyphAt, canSpotMonster, map_invisible } from './display.js';
+import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
@@ -48,7 +48,7 @@ import { heroFingerName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';
 import { untrap, untrapAbilityProblem } from './trap.js';
 import { possessiveName } from './hacklib.js';

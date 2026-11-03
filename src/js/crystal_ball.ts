@@ -12,9 +12,10 @@ import { artifactByName } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { nomul } from './hack.js';
 import {
-    canSpotMonster, currentBoulderSymbol, displayColorName, glyphAt, magic_map_background,
+    canSpotMonster, currentBoulderSymbol, glyphAt, magic_map_background,
     map_invisible,
 } from './display.js';
+import { displayColorName } from './do_name.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';

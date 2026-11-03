@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { makemonAt } from './makemon.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
-import { setMonsterGivenName } from './do_name.js';
+import { randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setMonsterMalign } from './makemon.js';
 import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, } from './object_data.js';
@@ -66,25 +66,6 @@ export async function createOrcRaid() {
         await giveShinyLoot(monster, state);
         await sendRaiderToLowerMines(monster, false, state);
     }
-}
-// C do_name.c:rndorcname().
-function randomOrcName() {
-    const vowels = ['a', 'ai', 'og', 'u'];
-    const consonants = ['gor', 'gris', 'un', 'bane', 'ruk', 'oth', 'ul', 'z', 'thos', 'akh', 'hai'];
-    const count = rn2(2) + 3;
-    let vowelFirst = rn2(2);
-    let name = '';
-    for (let index = 0; index < count; index++) {
-        vowelFirst = 1 - vowelFirst;
-        if (index > 0 && rn2(30) === 0)
-            name += '-';
-        const syllables = vowelFirst ? vowels : consonants;
-        const syllable = syllables[rn2(syllables.length)];
-        if (syllable === undefined)
-            throw new Error('Orc name selection exceeded its syllables.');
-        name += syllable;
-    }
-    return name;
 }
 function nameOrc(monster, gang, suffix = '') {
     const name = upstart(randomOrcName());

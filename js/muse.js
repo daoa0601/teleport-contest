@@ -23,11 +23,11 @@ import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET
 import { objectIsHardHelmet } from './do_wear.js';
 import { dragonFormForArmor, heroSpecies } from './polyself.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { monsterName, monsterReflexiveAction } from './do_name.js';
+import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
 import { monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless, monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned, monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow } from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
-import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displayColorName, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, randomDisplayMonsterName, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
+import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { d, rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';

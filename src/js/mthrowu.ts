@@ -33,7 +33,7 @@ import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOO
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import {
-    canSeeMonster, canSpotMonster, displayLiquidName, newsym, flush_screen, lastDirtyMapCursor,
+    canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor,
     transientObjectGlyph,
 } from './display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
@@ -56,7 +56,7 @@ import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks } from './monster_data.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import {
     monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance,

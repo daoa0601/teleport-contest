@@ -25,7 +25,7 @@ import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import {
-    canSeeMonster, canSenseMonster, canSpotMonster, displayLiquidName, flush_screen, map_invisible, newsym,
+    canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { artifactById } from './artifacts.js';
@@ -53,7 +53,7 @@ import {
     turnGolemToStone,
 } from './mon.js';
 import { staggerVerb } from './dothrow.js';
-import { monsterName as canonicalMonsterName, monsterName, namelessMonsterName } from './do_name.js';
+import { displayLiquidName, monsterName, monsterName as canonicalMonsterName, namelessMonsterName } from './do_name.js';
 import { possessiveName, dist2, distmin } from './hacklib.js';
 import {
     exposeEngulfedDefenderForDeath, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt,

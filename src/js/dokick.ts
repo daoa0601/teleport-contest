@@ -4,7 +4,7 @@
 import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
 import { isok } from './cmd.js';
 import { rnd, rn2 } from './rng.js';
-import { canSeeMonster, canSpotMonster, displayLiquidName, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
+import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
@@ -20,7 +20,7 @@ import { applyHeroContactPassive } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { applyCaitiffPenalty } from './uhitm.js';

@@ -13,7 +13,7 @@ import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './g
 import { BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT } from './object_data.js';
 import { doloot } from './pickup.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { feel_location, feel_newsym, newsym, canSeeMonster, displayLiquidName, glyphAt, canSpotMonster, map_invisible } from './display.js';
+import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
@@ -43,7 +43,7 @@ import { heroFingerName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { maybeAbsorbItem } from './steal.js';
 import { untrap, untrapAbilityProblem } from './trap.js';
 import { possessiveName } from './hacklib.js';

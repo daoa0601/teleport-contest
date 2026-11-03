@@ -8,7 +8,7 @@ import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_CO
 import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireLiveGame, requireInitializedGame } from './gstate.js';
-import { novelTitle } from './novel_titles.js';
+import { novelTitle } from './do_name.js';
 import { setTinVariety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { nextIdent, nextObjectId } from './ident.js';

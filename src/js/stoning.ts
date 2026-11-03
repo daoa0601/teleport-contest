@@ -12,7 +12,7 @@ import { makePlural, withIndefiniteArticle, corpseName, killerObjectName, object
 import { objectQuantity } from './mkobj.js';
 import type { PetrificationKillerFormat } from './potion.js';
 import { A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
-import { canSpotMonster, randomDisplayMonsterSubject } from './display.js';
+import { canSpotMonster } from './display.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -28,7 +28,7 @@ import { healHeroLegs } from './do.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, monsterIsGolem } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { monsterName } from './do_name.js';
+import { monsterName, randomDisplayMonsterSubject } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { CORPSE, EGG } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed, polymonHero } from './polyself.js';

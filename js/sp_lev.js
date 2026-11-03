@@ -8,10 +8,9 @@ import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.j
 import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight } from './mkobj.js';
 import { isRoom } from './map_types.js';
 import { deleteTrap, maketrap } from './trap.js';
-import { setMonsterGivenName } from './do_name.js';
+import { lookupNovelTitle, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
-import { lookupNovelTitle } from './novel_titles.js';
 import { setWallState } from './wall_topology.js';
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';

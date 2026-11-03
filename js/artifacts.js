@@ -23,7 +23,7 @@ import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE, M
 import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
-import { see_monsters, displayColorName, glyphAt, canSeeMonster, newsym } from './display.js';
+import { see_monsters, glyphAt, canSeeMonster, newsym } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty } from './properties.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { isContainer } from './container.js';
@@ -38,7 +38,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { lightDamage, lightRoom } from './light.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel } from './mon.js';
 import { applyMagicbaneHit } from './magicbane.js';
-import { monsterName } from './do_name.js';
+import { displayColorName, monsterName } from './do_name.js';
 import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
 import { cansee, couldsee } from './vision.js';
 import { monsterHitPointsPerLevel } from './makemon.js';

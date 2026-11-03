@@ -11,7 +11,7 @@ import type { HeroSpellAttack, MonsterCallLog, MonsterSpell, MonsterSpellEffect,
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterIsDemon, monsterIsNonliving, monsterPerceives, monsterTypeName } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen, randomBogusMonsterName } from './display.js';
+import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { displayRayName } from './ray_name.js';
@@ -40,7 +40,7 @@ import type { MonsterAttack } from './data_types.js';
 import type { Monster } from './monster_types.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
-import { monsterName as canonicalMonsterName } from './do_name.js';
+import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './do_name.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
 import { heroIsUnaware } from './senses.js';

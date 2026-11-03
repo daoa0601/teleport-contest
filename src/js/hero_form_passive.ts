@@ -3,7 +3,8 @@
 
 import { heroIsHallucinating, heroIsBlind } from './senses.js';
 import { Upolyd } from './const.js';
-import { canSpotMonster, displayLiquidName, randomDisplayMonsterSubject, shieldeff } from './display.js';
+import { canSpotMonster, shieldeff } from './display.js';
+import { displayLiquidName, randomDisplayMonsterSubject } from './do_name.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';

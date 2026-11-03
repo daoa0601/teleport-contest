@@ -27,14 +27,14 @@ import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, objectMonsterName, ownedObjectAction, definiteObjectAction } from './objnam.js';
 import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { callObjectType, monsterName } from './do_name.js';
+import { callObjectType, displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
 import { threateningMonsterNearby, loseHeroHp, impactDisturbsZombies, switchHeroTerrain, burnAwayHeroSlime } from './hack.js';
 import { applyFloorEffects } from './floor_effects.js';
 import type { FloorEffectResult } from './floor_effects.js';
 import type { Trap } from './map_types.js';
 import { buryFloorObjectsAt, addBuriedObject } from './dig.js';
-import { canSpotMonster, newsym, displayLiquidName, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, displayColorName, randomDisplayMonsterName, map_object } from './display.js';
+import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object } from './display.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo } from './mon.js';
 import { formatHeardMessage } from './hero_speech.js';

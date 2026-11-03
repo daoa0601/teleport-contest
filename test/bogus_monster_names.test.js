@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { randomBogusMonsterName } from '../js/display.js';
+import { randomBogusMonsterName } from '../js/do_name.js';
 import { initRng } from '../js/rng.js';
 // makedefs prepends its default entry "grue" to the compiled bogusmon file.
 // rumors.c:get_rnd_line() wraps to that first entry when the random offset
