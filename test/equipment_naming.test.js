@@ -10,7 +10,7 @@ import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { AKLYS, AMULET_OF_REFLECTION, ARROW, CROSSBOW_BOLT, DAGGER, DART, GOLD_DRAGON_SCALES, GRAY_DRAGON_SCALES, LEATHER_GLOVES, LENSES, LONG_SWORD, MEAT_RING, PICK_AXE, RIN_FIRE_RESISTANCE, RING_MAIL, ROCK, TOWEL, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { polymorphHero } from '../js/polyself.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setSlipperyHands } from '../js/potion.js';
 import { addInventoryItem } from '../js/u_init.js';

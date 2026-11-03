@@ -47,13 +47,11 @@ src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/eyewear.ts	do_wear.c
-src/js/falling_boulder.ts	read.c
 src/js/familiar.ts	dog.c
 src/js/floor_naming.ts	do_name.c
 src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
 src/js/fruit.ts	objnam.c
-src/js/genocide.ts	read.c
 src/js/glob.ts	mkobj.c
 src/js/glyph_customizations.ts	display.c
 src/js/gold_throw.ts	dothrow.c
@@ -89,6 +87,7 @@ src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/levitation_drop.ts	artifact.c
 src/js/lift_object.ts	pickup.c
+src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
 src/js/lua/lifecycle.ts	nhlua.c
@@ -129,13 +128,11 @@ src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile.ts	dothrow.c
 src/js/projectile_bars.ts	monmove.c
-src/js/punishment.ts	read.c
 src/js/quest.ts	quest.c
 src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
-src/js/recharge.ts	read.c
 src/js/rect.ts	rect.c
-src/js/revival_species.ts	read.c
+src/js/regions.ts	region.c
 src/js/ring_sink.ts	do.c
 src/js/rng.ts	rnd.c
 src/js/roles.ts	role.c

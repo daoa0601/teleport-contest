@@ -68,7 +68,7 @@ import { stopObjectTimer } from './timeout.js';
 import { rndClass } from './objnam.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
 import { registerQuestLeader } from './quest.js';
-import { createParticularMonster } from './read_creation.js';
+import { createParticularMonster } from './read.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 

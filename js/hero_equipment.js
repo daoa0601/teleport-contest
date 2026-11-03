@@ -9,7 +9,7 @@ import { game } from './gstate.js';
 import { syncBlindness } from './senses.js';
 import { uqwepgone, uswapwepgone, uwepgone } from './wield.js';
 import { setnotworn } from './worn.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 export async function removeHeroEquipment(object, state = game, { deferArmorClass = false, } = {}) {
     const armorSlot = armorSlotFor(object.otyp);
     if (state.uskin === object) {

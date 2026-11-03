@@ -11,7 +11,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { BELL_OF_OPENING, CAN_OF_GREASE, CRYSTAL_BALL, MAGIC_FLUTE, MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION, WAN_FIRE, WAN_WISHING, } from '../js/object_data.js';
-import { chooseObjectToCharge, rechargeObject } from '../js/recharge.js';
+import { chooseObjectToCharge, rechargeObject } from '../js/read.js';
 import { unpaidObjectCost } from '../js/shk.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { addInventoryObject, artifactObject, floorObject } from './support/game-objects.js';

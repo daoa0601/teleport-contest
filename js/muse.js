@@ -55,7 +55,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { dropBoulderOnHero, dropBoulderOnMonster } from './falling_boulder.js';
+import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
 import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn } from './timeout.js';
 import { lightDamage } from './light.js';

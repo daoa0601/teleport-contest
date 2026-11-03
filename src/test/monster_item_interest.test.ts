@@ -24,7 +24,7 @@ import type { GameObject } from '../js/object_types.js';
 import { objectClassForType } from '../js/o_init.js';
 
 import { objectMaterial } from '../js/o_init.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 
 import { artifactObject, floorObject, knownObject } from './support/game-objects.js';

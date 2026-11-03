@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { monsterAtPosition } from '../js/steed.js';
 import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MINVENT, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { doGenocide } from '../js/genocide.js';
+import { doGenocide } from '../js/read.js';
 import { pushKeys } from '../js/input.js';
 import { findMonsterNearPosition, makemonNear } from '../js/mklev.js';
 import { splitHeroMonsterForm } from '../js/potion.js';

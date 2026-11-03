@@ -5,7 +5,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { Upolyd } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { GameDisplay } from '../js/game_display.js';
-import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
+import { doGenocide, GENOCIDE_ON_THRONE } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame, resetGame } from '../js/gstate.js';
 
 import { pushKeys, resetInputState } from '../js/input.js';

@@ -5,7 +5,7 @@ import { newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_LIGHT } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

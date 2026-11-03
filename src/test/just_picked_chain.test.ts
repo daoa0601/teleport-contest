@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshPlayableRoom } from './support/playable-room.js';

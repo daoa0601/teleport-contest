@@ -28,7 +28,7 @@ import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { heroSpecies } from './polyself.js';
 import { MONSTER_FLAGS2, MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsVerySmall, monsterIsWhirly, } from './monster_data.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
-import { explodeWand } from './recharge.js';
+import { explodeWand } from './read.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
 import { dryTowel } from './weapon.js';
 import { holdAnotherObject } from './hero_hold_object.js';

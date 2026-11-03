@@ -14,7 +14,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshSpecialLevel } from './support/special-level.js';
 import { createSpecialLevel } from './support/topology.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 
 import { addInventoryItem } from '../js/u_init.js';
 import { unlinkObject } from '../js/mkobj.js';

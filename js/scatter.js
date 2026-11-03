@@ -26,7 +26,7 @@ import { angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, m
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 import { MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';

@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 

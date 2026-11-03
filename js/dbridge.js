@@ -18,7 +18,7 @@ import { remove_object } from './floor_object.js';
 import { BOULDER } from './object_data.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid } from './mon.js';
 import { delobj } from './invent.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';

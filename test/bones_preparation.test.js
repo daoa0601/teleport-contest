@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { LEASH } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { InMemoryStorage } from '../js/storage.js';

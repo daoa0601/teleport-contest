@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { remove_object } from '../js/floor_object.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { BOULDER, HEAVY_IRON_BALL } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import type { GameObject } from '../js/object_types.js';
 import { createMonsterAt } from './support/monsters.js';

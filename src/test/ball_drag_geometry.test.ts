@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { resetInputState } from '../js/input.js';
 import { unlinkObject } from '../js/mkobj.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { floorObjectsAt } from './support/level-state.js';

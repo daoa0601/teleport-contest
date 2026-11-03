@@ -7,7 +7,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
 import { setHeroTrap, floatHeroDown } from '../js/trap.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { placeObjectSynchronously, remove_object } from '../js/floor_object.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { floorObject } from './support/game-objects.js';

@@ -39,7 +39,7 @@ import {
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
 
 import {

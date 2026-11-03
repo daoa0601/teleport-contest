@@ -94,7 +94,7 @@ import { usePickAxe } from './pick_axe.js';
 import { pickupFloorObject } from './pickup.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { propertyIsActive } from './properties.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery } from './cmd.js';
 import { monsterReflectionSource } from './muse.js';

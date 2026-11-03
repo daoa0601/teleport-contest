@@ -27,7 +27,7 @@ import { d, rn2 } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { markQuestLeaderAlive } from './quest.js';
-import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './revival_species.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './read.js';
 import { restoreMonsterTraits } from './zap.js';
 import { maketrap } from './trap.js';
 function requireCorpseSpecies(corpse) {

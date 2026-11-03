@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { bot } from '../js/botl.js';
-import { doGenocide } from '../js/genocide.js';
+import { doGenocide } from '../js/read.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, DAGGER } from '../js/object_data.js';

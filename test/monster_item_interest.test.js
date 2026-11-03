@@ -14,7 +14,7 @@ import { addObjectToContainer } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, CORPSE, DAGGER, EGG, EXPENSIVE_CAMERA, FIRE_HORN, GOLD_PIECE, HEAVY_IRON_BALL, IRON_CHAIN, LEATHER_GLOVES, OBJECT_MATERIAL, OBJECT_NAMES, PICK_AXE, POT_BLINDNESS, POT_HEALING, POT_INVISIBILITY, POT_WATER, ROCK, RUBY, SACK, SCR_SCARE_MONSTER, SCR_TELEPORTATION, STATUE, TIN, TIN_OPENER, UNICORN_HORN, WAN_DIGGING, WAN_FIRE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SPEED_MONSTER, WAN_TELEPORTATION, WORTHLESS_PIECE_OF_RED_GLASS, } from '../js/object_data.js';
 import { objectClassForType } from '../js/o_init.js';
 import { objectMaterial } from '../js/o_init.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

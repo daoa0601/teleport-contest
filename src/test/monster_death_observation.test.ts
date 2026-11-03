@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import type { RoleKey } from '../js/roles.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { doGenocide } from '../js/genocide.js';
+import { doGenocide } from '../js/read.js';
 import { pushKeys } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { POT_HEALING } from '../js/object_data.js';

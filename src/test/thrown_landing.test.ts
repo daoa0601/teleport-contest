@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, HEAVY_IRON_BALL, LARGE_BOX, POT_WATER, TALLOW_CANDLE } from '../js/object_data.js';
 import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
 import { scheduleObjectTimer } from '../js/timeout.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timeout.js';
 import { addInventoryItem } from '../js/u_init.js';

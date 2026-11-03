@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
 import { unlinkObject } from '../js/mkobj.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryItem } from '../js/u_init.js';

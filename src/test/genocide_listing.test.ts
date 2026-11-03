@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { G_EXTINCT, G_GENOD } from '../js/const.js';
 import { listGenocided } from '../js/end.js';
-import { doClassGenocide, doGenocide } from '../js/genocide.js';
+import { doClassGenocide, doGenocide } from '../js/read.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

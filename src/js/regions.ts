@@ -27,6 +27,7 @@ import { makePlural } from './objnam.js';
 
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
+import { validCloudPosition } from './read.js';
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND,
     MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter,
@@ -179,13 +180,6 @@ async function makeGasCloud(
         state._lastPlineKind = PLNMSG_ENVELOPED_IN_GAS;
     }
     return region;
-}
-
-function validCloudPosition(state: GameState, x: number, y: number): boolean {
-    if (!isok(x, y)) return false;
-    const typ = state.level?.at(x, y)?.typ;
-    return (typ !== undefined && ACCESSIBLE(typ))
-        || isPoolAt(x, y, state) || isLavaAt(x, y, state);
 }
 
 function gasCloudCells(

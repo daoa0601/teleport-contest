@@ -18,7 +18,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { initializePet } from '../js/dog.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
 import { BEAR_TRAP, CLOUD, DOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, G_GONE, MFAST, NO_MINVENT, PIT, ROCKTRAP, SDOOR, TT_WEB, VIBRATING_SQUARE, WEB, } from '../js/const.js';
 import { BELL, BELL_OF_OPENING, CHEST, SPEED_BOOTS } from '../js/object_data.js';

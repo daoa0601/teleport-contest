@@ -17,7 +17,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { punishHero, unpunishHero } from '../js/punishment.js';
+import { punishHero, unpunishHero } from '../js/read.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';

@@ -1,5 +1,4 @@
 // Object light and burn timers.
-// C refs: timeout.c begin_burn()/burn_object()/end_burn(), light.c.
 
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
@@ -25,14 +24,13 @@ import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import { CORR, G_GONE, Is_rogue_level, Is_waterlevel, MM_EDOG, MM_NOMSG, NO_MINVENT, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
-import { canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
-import { initializePet } from './dog.js';
-import { makemonNear } from './mklev.js';
+import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
+import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
+
 import { unblessObjectState, uncurseObjectState, objectWeight } from './mkobj.js';
 import { monsterDigests, monsterIsWhirly } from './monster_data.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
-import { rn2, rnd } from './rng.js';
+import { rnd } from './rng.js';
 import { learnObjectType } from './o_init.js';
 import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
@@ -72,8 +70,6 @@ export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
-const PM_YELLOW_LIGHT = 118;
-const PM_BLACK_LIGHT = 119;
 
 export function objectShedsLight(object: GameObject | null | undefined) {
     return !!object?.lamplit
@@ -416,57 +412,6 @@ export async function lightDamage(
         ? Math.trunc((damage + 1) / 2) : damage;
     await loseHeroHp(physical, reason, { state, deathCause: reason });
     return damage;
-}
-
-async function createConfusedLightPets(scroll: GameObject): Promise<boolean> {
-    const mnum = scroll.cursed ? PM_BLACK_LIGHT : PM_YELLOW_LIGHT;
-    if ((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE) {
-        await plineWithContinuation(
-            'Tiny lights sparkle in the air momentarily.',
-        );
-        return false;
-    }
-
-    const count = rn2(2) + 3 + (scroll.blessed ? 2 : 0);
-    let sawLight = false;
-    for (let index = 0; index < count; index++) {
-        const monster = await makemonNear(
-            mnum, game.u.ux, game.u.uy,
-            NO_MINVENT | MM_EDOG | MM_NOMSG,
-        );
-        if (!monster) continue;
-        initializePet(monster);
-        monster.msleeping = 0;
-        monster.mcan = 1;
-        if (canSpotMonster(monster)) sawLight = true;
-        await newsym(monster.mx, monster.my);
-    }
-    if (sawLight)
-        await plineWithContinuation('Lights appear all around you!');
-    return sawLight;
-}
-
-// C read.c:seffect_light(). The read owner handles Wisdom, discovery,
-// source disposal, and the turn; this owner changes light and creatures.
-export async function applyLightScrollEffect(
-    scroll: GameObject,
-    { finishMonsterKill }: Pick<RoomLightOptions, 'finishMonsterKill'> = {},
-) {
-    let known = false;
-    if ((game.u.confusionTurns ?? 0) > 0) {
-        known = await createConfusedLightPets(scroll);
-    } else {
-        known = !heroIsBlind();
-        const lit = !scroll.cursed;
-        await lightRoom(lit, {
-            radius: scroll.blessed ? 9 : 5,
-            source: scroll,
-            finishMonsterKill: finishMonsterKill || finishHeroMonsterKillOutcome,
-        });
-        if (game.program_state.gameover) return { known, consumed: false, heroDied: true };
-        if (lit && await lightDamage(scroll, true, 5)) known = true;
-    }
-    return { known, consumed: false, heroDied: !!game.program_state.gameover };
 }
 
 

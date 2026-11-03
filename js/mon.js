@@ -36,7 +36,7 @@ import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight } from './mkobj.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { surfaceName } from './terrain_name.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';

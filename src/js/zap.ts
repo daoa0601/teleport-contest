@@ -33,7 +33,7 @@ import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './m
 import { commandResultCancelled } from './cmd.js';
 import { removeHeroAccessory, wearHeroAccessory, objectIsHardHelmet, applyArmorOnEffects, armorSlotFor, wearHeroArmor } from './do_wear.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-import { rechargeRing } from './recharge.js';
+import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 
@@ -160,7 +160,6 @@ import { poisonHero } from './poison.js';
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
 import { propertyIsActive } from './properties.js';
-import { unpunishHero } from './punishment.js';
 import { getLine } from './query.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { displayRayName, realRayName } from './ray_name.js';

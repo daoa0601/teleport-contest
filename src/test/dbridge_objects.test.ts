@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { placeCreatedObject } from '../js/floor_object.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { BELL_OF_OPENING, ROCK, SACK } from '../js/object_data.js';
-import { punishHero } from '../js/punishment.js';
+import { punishHero } from '../js/read.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';

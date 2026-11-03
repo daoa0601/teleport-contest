@@ -369,7 +369,7 @@ src/js/exper.ts	levelHpIncrease	rnd	"[""role[random]""]"	unproved
 src/js/exper.ts	randomExperience	rn2	"[""range""]"	unproved
 src/js/extversion.ts	doextversion	rn2	"[""2""]"	constant
 src/js/extversion.ts	doextversion	rn2	"[""3""]"	constant
-src/js/falling_boulder.ts	fallingRock	rn1	"[""5"", ""2""]"	constant
+src/js/read.ts	fallingRock	rn1	"[""5"", ""2""]"	constant
 src/js/familiar.ts	familiarSpecies	rn2	"[""2""]"	constant
 src/js/familiar.ts	familiarSpecies	rn2	"[""3""]"	constant
 src/js/familiar.ts	makeFamiliar	rn2	"[""10""]"	constant
@@ -423,7 +423,7 @@ src/js/timeout.ts	slipOrTrip	rn2	"[""3""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""3""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""4""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
-src/js/genocide.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
+src/js/read.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
 src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
 src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
 src/js/gold_throw.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
@@ -740,7 +740,7 @@ src/js/levitation_commands.ts	refreshLevitationArtifactCooldowns	rnz	"[""100""]"
 src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
 src/js/potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
-src/js/light.ts	createConfusedLightPets	rn2	"[""2""]"	constant
+src/js/read.ts	createConfusedLightPets	rn2	"[""2""]"	constant
 src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
 src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
 src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
@@ -2058,23 +2058,23 @@ src/js/zap.ts	traceRay	context.rollDice	"[""12"", ""6""]"	constant
 src/js/zap.ts	traceRay	random	"[""7""]"	constant
 src/js/zap.ts	zapRayWithObject	rn2	"[""6""]"	constant
 src/js/ray_name.ts	displayRayName	random	"[""hallucinationBlasts.length""]"	constant
-src/js/recharge.ts	explodeWand	d	"[""Math.max(2, wand.spe + (extraCharges || 2))"", ""sides""]"	unproved
-src/js/recharge.ts	rechargeRing	random	"[""7""]"	constant
-src/js/recharge.ts	rechargeRing	rollOne	"[""2""]"	constant
-src/js/recharge.ts	rechargeRing	rollOne	"[""3 * Math.abs(ring.spe)""]"	unproved
-src/js/recharge.ts	rechargeRing	rollOne	"[""3""]"	constant
-src/js/recharge.ts	rechargeTool	d	"[""2"", ""4""]"	constant
-src/js/recharge.ts	rechargeTool	rn1	"[""11"", ""10""]"	constant
-src/js/recharge.ts	rechargeTool	rn1	"[""16"", ""15""]"	constant
-src/js/recharge.ts	rechargeTool	rn1	"[""5"", ""2""]"	constant
-src/js/recharge.ts	rechargeTool	rn1	"[""tool.spe <= 10 ? 10 : 5"", ""6""]"	constant
-src/js/recharge.ts	rechargeTool	rnd	"[""2""]"	constant
-src/js/recharge.ts	rechargeTool	rnd	"[""3""]"	constant
-src/js/recharge.ts	rechargeTool	rnd	"[""4""]"	constant
-src/js/recharge.ts	rechargeWand	rn1	"[""5"", ""limit - 4""]"	constant
-src/js/recharge.ts	rechargeWand	rn2	"[""343""]"	constant
-src/js/recharge.ts	rechargeWand	rnd	"[""charges""]"	unproved
-src/js/recharge.ts	rechargeWand	rnd	"[""limit""]"	constant
+src/js/read.ts	explodeWand	d	"[""Math.max(2, wand.spe + (extraCharges || 2))"", ""sides""]"	unproved
+src/js/read.ts	rechargeRing	random	"[""7""]"	constant
+src/js/read.ts	rechargeRing	rollOne	"[""2""]"	constant
+src/js/read.ts	rechargeRing	rollOne	"[""3 * Math.abs(ring.spe)""]"	unproved
+src/js/read.ts	rechargeRing	rollOne	"[""3""]"	constant
+src/js/read.ts	rechargeTool	d	"[""2"", ""4""]"	constant
+src/js/read.ts	rechargeTool	rn1	"[""11"", ""10""]"	constant
+src/js/read.ts	rechargeTool	rn1	"[""16"", ""15""]"	constant
+src/js/read.ts	rechargeTool	rn1	"[""5"", ""2""]"	constant
+src/js/read.ts	rechargeTool	rn1	"[""tool.spe <= 10 ? 10 : 5"", ""6""]"	constant
+src/js/read.ts	rechargeTool	rnd	"[""2""]"	constant
+src/js/read.ts	rechargeTool	rnd	"[""3""]"	constant
+src/js/read.ts	rechargeTool	rnd	"[""4""]"	constant
+src/js/read.ts	rechargeWand	rn1	"[""5"", ""limit - 4""]"	constant
+src/js/read.ts	rechargeWand	rn2	"[""343""]"	constant
+src/js/read.ts	rechargeWand	rnd	"[""charges""]"	unproved
+src/js/read.ts	rechargeWand	rnd	"[""limit""]"	constant
 src/js/rect.ts	rnd_rect	rn2	"[""count""]"	guarded
 src/js/regions.ts	rescueHeroFromRegion	d	"[""4"", ""4""]"	constant
 src/js/returning_throw.ts	finishReturningThrow	rn2	"[""100""]"	constant

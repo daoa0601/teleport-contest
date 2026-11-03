@@ -65,7 +65,7 @@ import { pline as immediatePline, plineWithContinuation as pline, plineWithConti
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import { unpunishHero } from './punishment.js';
+import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery } from './cmd.js';
 import { d, rn1, rn2, rnd } from './rng.js';

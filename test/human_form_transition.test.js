@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_STR, G_GENOD, M_AP_NOTHING, POLY_CONTROLLED, UNENCUMBERED } from '../js/const.js';
 import { heroHasInvoluntaryDelay } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { doGenocide, GENOCIDE_ON_THRONE } from '../js/genocide.js';
+import { doGenocide, GENOCIDE_ON_THRONE } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { beginMealMimicry } from '../js/eat.js';
