@@ -72,11 +72,15 @@ async function breakPotionOnHotGround(
     }
 
     let survivalChance = object.blessed ? 70 : 50;
-    if (object.invlet) survivalChance += (state.u?.uluck ?? 0) * 2;
+    // C do.c:340 adds Luck * 2; Luck is u.uluck + u.moreluck (you.h:464),
+    // so a carried luck bonus also protects handled potions.
+    if (object.invlet)
+        survivalChance += ((state.u?.uluck ?? 0) + (state.u?.moreluck ?? 0)) * 2;
     if (object.otyp === POT_OIL) survivalChance = 100;
-    if (objectResistsDestruction(
+    const resists = objectResistsDestruction(
         object, survivalChance, 100, random,
-    )) return false;
+    );
+    if (resists) return false;
 
     if (visible) {
         await publish(quantity === 1
