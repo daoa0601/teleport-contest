@@ -63,8 +63,6 @@ src/js/inventory_prompt.ts	invent.c
 src/js/isaac64.ts	isaac64.c
 src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
-src/js/kick_door.ts	dokick.c
-src/js/kick_terrain.ts	dokick.c
 src/js/leprechaun_stash.ts	monmove.c
 src/js/level_change.ts	questpgr.c
 src/js/levitation_drop.ts	artifact.c

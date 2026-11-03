@@ -1,24 +1,25 @@
 // The kick command and its damage helpers.
-// C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb().
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, DBWALL, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, FOUNTAIN, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LADDER, LAVAWALL, M_AP_MONSTER, M_AP_TYPE, ROOM, SDOOR, SINK, STAIRS, THRONE, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
+// C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb()
+//     /kick_door()/kick_nondoor().
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
 import { isok } from './cmd.js';
-import { rnd, rn2 } from './rng.js';
+import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
-import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, revealMonsterAppearance, maybeMnexto } from './mon.js';
+import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './do.js';
 import { finishTeleportArrival } from './location_effects.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { applyHeroContactPassive } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { displayLiquidName, monsterName } from './do_name.js';
+import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
 import { applyCaitiffPenalty } from './uhitm.js';
@@ -29,35 +30,40 @@ import { commandResultCancelled } from './cmd.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
-import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural } from './objnam.js';
+import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
 import { disturbGrave } from './grave.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { mksobj, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
+import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
 import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';
-import { vision_recalc, vision_reset, cansee, couldsee } from './vision.js';
-import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS, OBJECT_COST } from './object_data.js';
+import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
+import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS, OBJECT_COST, APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR } from './object_data.js';
 import { convertSecretDoor, findTrap } from './detect.js';
-import { kickDoor } from './kick_door.js';
+import { heroPolyGender, heroSpecies } from './polyself.js';
+import { makemonAt } from './makemon.js';
+import { dungeonDepth } from './hacklib.js';
+import { altarWrath } from './pray.js';
+import { sinkBacksUp } from './fountain.js';
+import { bringLeashedFollowers } from './apply.js';
+import { displayMessageWindow } from './tty_topline.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { kickNonDoorTerrain } from './kick_terrain.js';
-import { stairwayAt } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterIsBig, monsterIsFlyer, MONSTER_FLAGS2, MONSTER_BODY_META } from './monster_data.js';
+import { canFallThrough, findMonsterNearPosition, stairwayAt } from './mklev.js';
+import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterIsBig, monsterIsFlyer, monsterIsGiant, MONSTER_FLAGS2, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { specialContactDamage } from './contact_damage.js';
-import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, resolveImmediatePetrification } from './trap.js';
+import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, heroGoldAmount, inventoryWeight } from './hack.js';
+import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject, hurtleHero } from './dothrow.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy } from './shk.js';
+import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { scatterFloorObjects } from './scatter.js';
@@ -70,7 +76,7 @@ import { finishMonsterEating } from './dogmove.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isContainer } from './container.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { surfaceName } from './terrain_name.js';
+import { ceilingName, surfaceName } from './terrain_name.js';
 import { currency } from './currency.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
@@ -590,6 +596,316 @@ async function kickDumb(x, y) {
     }
     if (kickCausesRecoil() && rn2(2) !== 0)
         await recoilFromKick(1);
+}
+export async function kickDoor(x, y, average, responses) {
+    requirePlayingGame(game);
+    const door = game.level.requireAt(x, y);
+    game.context.move = 1;
+    if (door.doormask === D_ISOPEN || door.doormask === D_BROKEN || door.doormask === D_NODOOR) {
+        await responses.dumb(x, y);
+        return;
+    }
+    if (game.u.levitating) {
+        await responses.ouch(x, y);
+        return;
+    }
+    await exerciseAttribute(A_DEX, true);
+    const giant = Upolyd(game.u) && monsterIsGiant(heroSpecies());
+    const breaks = giant || rnl(35) < average + (heroHasMartialKick() ? currentAttribute(A_DEX) : 0);
+    if (breaks) {
+        const shopDoor = roomsAt(game.level, x, y, SHOPBASE).length > 0;
+        if (door.doormask & D_TRAPPED) {
+            if (game.flags.verbose)
+                await plineWithContinuation('You kick the door.');
+            await exerciseAttribute(A_STR, false);
+            door.doormask = D_NODOOR;
+            if (await triggerBoobyTrap('door', { bodypart: true }))
+                return;
+        }
+        else if (currentAttribute(A_STR) > 18 && rn2(5) === 0 && !shopDoor) {
+            await plineWithContinuation('As you kick the door, it shatters to pieces!');
+            await exerciseAttribute(A_STR, true);
+            door.doormask = D_NODOOR;
+        }
+        else {
+            await plineWithContinuation('As you kick the door, it crashes open!');
+            await exerciseAttribute(A_STR, true);
+            door.doormask = D_BROKEN;
+        }
+        await feel_newsym(x, y);
+        // Preserve the keeper's pre-break visibility until shop billing.
+        vision_note_blocker_change(x, y);
+        if (shopDoor) {
+            addShopDamage(x, y, SHOP_DOOR_COST);
+            await payForShopDamage('break');
+        }
+        await witnessDoorKick(x, y, true);
+    }
+    else {
+        if (heroIsBlind())
+            await feel_location(x, y);
+        await exerciseAttribute(A_STR, true);
+        await plineWithContinuation(heroIsDeaf() || rn2(3) === 0 ? 'Thwack!!' : 'Whammm!!');
+        await witnessDoorKick(x, y, false);
+    }
+}
+async function witnessDoorKick(x, y, broken) {
+    requirePlayingGame(game);
+    if (!inTown(game.level, x, y))
+        return;
+    const witness = [...game.level.monsters].reverse().find(monster => !monster.dead && monster.mhp > 0 && isWatch(monster)
+        && monster.mpeaceful && couldsee(monster.mx, monster.my));
+    if (!witness)
+        return;
+    const door = game.level.requireAt(x, y);
+    if (broken || ((door.looted ?? 0) & D_WARNED)) {
+        await watchmanYells(witness, broken ? "Halt, thief!  You're under arrest!"
+            : "Halt, vandal!  You're under arrest!");
+        await angerWatchGuards(false);
+    }
+    else {
+        await watchmanYells(witness, 'Hey, stop damaging that door!');
+        door.looted = (door.looted ?? 0) | D_WARNED;
+    }
+}
+async function watchmanYells(monster, shout) {
+    const name = monsterName(monster, { article: 'a', capitalized: true });
+    if (heroIsDeaf()) {
+        if (canSpotMonster(monster))
+            await plineWithContinuation(`${name} angrily waves ${monster.female ? 'her' : 'his'} arms!`);
+        return;
+    }
+    if (canSpotMonster(monster))
+        await plineWithContinuation(`${name} yells:`);
+    else
+        await publishHeardMessage('someone yell:', plineWithContinuation);
+    await plineWithContinuation(`"${shout}"`);
+}
+export async function kickNonDoorTerrain(x, y, average, responses) {
+    requirePlayingGame(game);
+    const location = game.level.requireAt(x, y);
+    if (location.typ === SCORR) {
+        if (!game.u.levitating && rn2(30) < average) {
+            await plineWithContinuation('Crash!  You kick open a secret passage!');
+            await exerciseAttribute(A_DEX, true);
+            location.typ = CORR;
+            await feel_newsym(x, y);
+            vision_note_blocker_change(x, y);
+        }
+        else
+            await responses.ouch(x, y);
+    }
+    else if (location.typ === THRONE) {
+        await kickThrone(x, y, location, responses);
+    }
+    else if (location.typ === ALTAR || location.typ === FOUNTAIN) {
+        await kickAltarOrFountain(x, y, location, responses);
+    }
+    else if (IS_TREE(location.typ)) {
+        await kickTree(x, y, location, responses);
+    }
+    else if (location.typ === SINK) {
+        await kickSink(x, y, location, responses);
+    }
+    else if (location.typ === IRONBARS || location.typ === STAIRS || location.typ === LADDER) {
+        if (location.typ !== IRONBARS && location.ladder === LA_DOWN)
+            await responses.dumb(x, y);
+        else
+            await responses.ouch(x, y);
+    }
+    else
+        return false;
+    game.context.move = 1;
+    return true;
+}
+async function kickThrone(x, y, location, responses) {
+    requirePlayingGame(game);
+    if (game.u.levitating) {
+        await responses.dumb(x, y);
+        return;
+    }
+    const luck = Luck(game.u);
+    if ((luck < 0 || location.looted) && rn2(3) === 0) {
+        location.looted = 0;
+        location.typ = ROOM;
+        await mkgold(rnd(200), x, y);
+        await plineWithContinuation(heroIsBlind() ? 'CRASH!  You destroy it.' : 'CRASH!  You destroy the throne.');
+        if (!heroIsBlind())
+            await newsym(x, y);
+        await exerciseAttribute(A_DEX, true);
+        return;
+    }
+    if (luck > 0 && rn2(3) === 0 && !location.looted) {
+        await mkgold(rn1(201, 300), x, y);
+        for (let gems = Math.min(luck + 1, 6); gems > 0; gems--)
+            placeCreatedObject(await mksobj(rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1), false, true), x, y);
+        await plineWithContinuation(heroIsBlind() ? 'You kick something loose!' : 'You kick loose some ornamental coins and gems!');
+        if (!heroIsBlind())
+            await newsym(x, y);
+        location.looted = T_LOOTED;
+        return;
+    }
+    if (rn2(4) === 0) {
+        const current = game.u.uz;
+        const dungeon = game.dungeons[current.dnum];
+        if (dungeon && current.dlevel < dungeon.num_dunlevs) {
+            await fallThroughTerrain();
+            return;
+        }
+    }
+    await responses.ouch(x, y);
+}
+// C trap.c:fall_through(FALSE, 0). A throne opens a temporary hole under
+// the hero; level travel waits until the current command has finished.
+async function fallThroughTerrain() {
+    requirePlayingGame(game);
+    const hero = game.u;
+    const { ux: x, uy: y } = hero;
+    const sokoban = game.level.flags.sokoban_rules;
+    if (heroIsBlind() && hero.levitating && !sokoban)
+        return;
+    await plineWithContinuation(`The ${surfaceName(x, y)} opens up under you!`);
+    const form = heroSpecies();
+    const flags = MONSTER_FLAGS1[form] ?? 0;
+    const clings = !!(flags & 0x10);
+    const ceilingHider = !!(flags & 0x100) && (clings && MONSTER_SYMBOL[form] !== 13 || !!(flags & 0x01));
+    let refusal = null;
+    if (!(sokoban && canFallThrough(hero.uz))) {
+        if (hero.levitating || hero.ustuck || (!canFallThrough(hero.uz) && !game.level.requireAt(x, y).candig)
+            || hero.flying || clings || ceilingHider && hero.uundetected)
+            refusal = "You don't fall in.";
+        else if ((MONSTER_SIZE[form] ?? 2) >= 4)
+            refusal = "You don't fit through.";
+        else if (!await bringLeashedFollowers())
+            refusal = 'You are jerked back by your pet!';
+    }
+    if (refusal) {
+        await plineWithContinuation(refusal);
+        await impactDrop(null, x, y, { publish: plineWithContinuation });
+        await displayMessageWindow();
+        await plineWithContinuation('The opening under you closes up.');
+        return;
+    }
+    if (hero.ushops?.length)
+        await shopDig(1);
+    const destination = Is_stronghold(hero.uz) ? game.valley_level
+        : { dnum: hero.uz.dnum, dlevel: hero.uz.dlevel + 1 };
+    if (!destination)
+        throw new Error('The stronghold fall requires the Valley destination.');
+    if (!Is_stronghold(hero.uz)) {
+        const distance = dungeonDepth(destination.dnum, destination.dlevel)
+            - dungeonDepth(hero.uz.dnum, hero.uz.dlevel);
+        if (distance > 1)
+            await plineWithContinuation(`You fall down a ${distance > 3 ? 'very ' : ''}${distance > 2 ? 'deep ' : ''}shaft!`);
+    }
+    scheduleLevelChange([destination, { arrival: hero.flying ? 'random' : 'falling',
+            postMessage: `The hole in the ${ceilingName(x, y)} above you closes up.` }]);
+}
+async function kickAltarOrFountain(x, y, location, responses) {
+    if (game.u.levitating) {
+        await responses.dumb(x, y);
+        return;
+    }
+    const altar = location.typ === ALTAR;
+    await plineWithContinuation(`You kick ${heroIsBlind() ? 'something' : altar ? 'the altar' : 'the fountain'}.`);
+    if (altar)
+        await altarWrath(x, y);
+    if (rn2(3) === 0) {
+        await responses.ouch(x, y);
+        return;
+    }
+    if (!altar && game.uarmf && rn2(3) !== 0) {
+        if (await waterDamageObject(game.uarmf, [], game, { force: true, description: 'metal boots', publish: plineWithContinuation }) === 'nothing')
+            await plineWithContinuation('Your boots get wet.');
+    }
+    await exerciseAttribute(A_DEX, true);
+}
+function speciesGone(species) {
+    return !!((game.mvitals?.[species]?.mvflags ?? 0) & G_GONE);
+}
+async function kickTree(x, y, location, responses) {
+    const bee = MONSTER_NAME.indexOf('killer bee');
+    if (rn2(3) !== 0) {
+        if (rn2(6) === 0 && !speciesGone(bee))
+            await publishHeardMessage('a low buzzing.', plineWithContinuation);
+        await responses.ouch(x, y);
+        return;
+    }
+    if (rn2(15) !== 0 && !((location.looted ?? 0) & TREE_LOOTED)) {
+        const fruits = [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF];
+        const type = fruits[rn2(fruits.length)];
+        if (type === undefined)
+            throw new Error('Tree fruit selection requires an object type.');
+        const fruit = placeCreatedObject(await mksobj(type, true, false), x, y);
+        const count = 8 - rnl(7);
+        fruit.quan = fruit.quantity = count;
+        fruit.owt = objectWeight(fruit);
+        const name = objectCombatName(fruit);
+        await plineWithContinuation(count > 1 ? `Some ${name} fall from the tree!` : `${withIndefiniteArticle(name).replace(/^./u, letter => letter.toUpperCase())} falls from the tree!`);
+        const fallen = await scatterFloorObjects(x, y, 2, { onlyObject: fruit, mayDestroy: false, mayFracture: false,
+            mayHitHero: true, mayHitMonsters: true, heroCaused: true, publish: plineWithContinuation });
+        if (fallen !== count) {
+            const caught = await mksobj(type, true, false);
+            caught.quan = caught.quantity = count - fallen;
+            await plineWithContinuation(`${count - fallen} ${objectCombatName(caught)} got caught in the branches.`);
+        }
+        await exerciseAttribute(A_DEX, true);
+        await exerciseAttribute(A_WIS, true);
+        await newsym(x, y);
+        location.looted = (location.looted ?? 0) | TREE_LOOTED;
+        return;
+    }
+    if (!((location.looted ?? 0) & TREE_SWARM)) {
+        let made = 0;
+        let position = { x, y };
+        for (let count = rnl(4) + 2; count > 0; count--) {
+            const next = findMonsterNearPosition(bee, position.x, position.y);
+            if (!next)
+                continue;
+            position = next;
+            if (await makemonAt(bee, position.x, position.y, MM_ANGRY | MM_NOMSG))
+                made++;
+        }
+        await plineWithContinuation(made ? "You've attracted the tree's former occupants!" : 'You smell stale honey.');
+        location.looted = (location.looted ?? 0) | TREE_SWARM;
+        return;
+    }
+    await responses.ouch(x, y);
+}
+async function kickSink(x, y, location, responses) {
+    const gender = heroPolyGender();
+    if (game.u.levitating) {
+        await responses.dumb(x, y);
+        return;
+    }
+    if (rn2(5) !== 0) {
+        await plineWithContinuation(heroIsDeaf() ? 'Klunk!' : 'Klunk!  The pipes vibrate noisily.');
+        await exerciseAttribute(A_DEX, true);
+        return;
+    }
+    const pudding = MONSTER_NAME.indexOf('black pudding');
+    const demon = MONSTER_NAME.indexOf('amorous demon');
+    if (!((location.looted ?? 0) & S_LPUDDING) && rn2(3) === 0 && !speciesGone(pudding)) {
+        if (!heroIsBlind())
+            await plineWithContinuation(`A ${displayColorName('black')} ooze gushes up from the drain!`);
+        else if (!heroIsDeaf())
+            await publishHeardMessage('a gushing sound.', plineWithContinuation);
+        await makemonAt(pudding, x, y, MM_NOMSG);
+        await exerciseAttribute(A_DEX, true);
+        await newsym(x, y);
+        location.looted = (location.looted ?? 0) | S_LPUDDING;
+    }
+    else if (!((location.looted ?? 0) & S_LDWASHER) && rn2(3) === 0 && !speciesGone(demon)) {
+        await plineWithContinuation(`${heroIsBlind() ? 'Something' : 'The dish washer'} returns!`);
+        if (await makemonAt(demon, x, y, MM_NOMSG | (gender === 1 || gender === 2 && rn2(2) ? MM_MALE : MM_FEMALE)))
+            await newsym(x, y);
+        location.looted = (location.looted ?? 0) | S_LDWASHER;
+        await exerciseAttribute(A_DEX, true);
+    }
+    else if (rn2(3) === 0)
+        await sinkBacksUp(x, y);
+    else
+        await responses.ouch(x, y);
 }
 const M1_FLY = 0x00000001;
 const M1_NOEYES = 0x00001000;

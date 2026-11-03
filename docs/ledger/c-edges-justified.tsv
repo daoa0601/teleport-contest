@@ -80,10 +80,10 @@ getbones	yn_function	inlined	wizard-mode bonesPrompt (bones.ts)
 minliquid_core	is_waterwall	inlined	typ === WATER (mon.ts resolveMonsterLiquid)
 slip_or_trip	confdir	inlined	same dirs_ord table, skipped for grid bugs as in C (timeout.ts)
 slip_or_trip	sobj_at	inlined	rock lookup in the floor pile (timeout.ts)
-kick_door	get_iter_mons	inlined	witnessDoorKick thief branch (kick_door.ts)
-kick_door	get_iter_mons_xy	inlined	witnessDoorKick door-damage branch (kick_door.ts)
-kick_door	kick_dumb	inlined	kickDumb is injected as a callback from cmd.ts
-kick_door	kick_ouch	inlined	kickOuch is injected as a callback from cmd.ts
+kick_door	get_iter_mons	inlined	witnessDoorKick thief branch (dokick.ts)
+kick_door	get_iter_mons_xy	inlined	witnessDoorKick door-damage branch (dokick.ts)
+kick_door	kick_dumb	inlined	kickDumb is injected as a callback from dokick()'s dispatch (dokick.ts)
+kick_door	kick_ouch	inlined	kickOuch is injected as a callback from dokick()'s dispatch (dokick.ts)
 mkshop	isbig	inlined	area > 20 (mkroom.ts)
 mkshop	mkzoo	n/a	only through the wizard SHOPTYPE environment override
 mkshop	mktemple	n/a	only through the wizard SHOPTYPE environment override
@@ -953,14 +953,14 @@ accessory_or_armor_on	on_msg	inlined	objectWearMessage after a zero-delay don (c
 accessory_or_armor_on	safe_typename	n/a	only used in an impossible() sanity panic
 accessory_or_armor_on	setworn	inlined	wearHeroArmor/wearHeroAccessory install the slot (armor.ts, cmd.ts)
 accessory_or_armor_on	unmul	inlined	finishHeroHelplessness runs the zero-delay afternmv action (cmd.ts putOnArmorObject)
-kick_nondoor	adjalign	inlined	adjustHeroAlignment(-Math.sign(align)) when breaking a grave (cmd.ts)
-kick_nondoor	del_engr_at	inlined	deleteEngravingAt when the headstone breaks (cmd.ts)
-kick_nondoor	disturb_grave	inlined	disturbGrave (grave.ts) from the kick grave branch (cmd.ts)
-kick_nondoor	kick_dumb	inlined	kickDumb (cmd.ts)
-kick_nondoor	kick_ouch	inlined	kickOuch (cmd.ts)
-kick_nondoor	mksobj_at	inlined	mksobj plus placeCreatedObject for the rock and throne gems (cmd.ts, kick_terrain.ts)
-kick_nondoor	rnd_treefruit_at	inlined	tree fruit rolled and placed via mksobj+placeCreatedObject (kick_terrain.ts kickTree)
-kick_nondoor	sgn	inlined	Math.sign on u.ualign.type (cmd.ts)
+kick_nondoor	adjalign	inlined	adjustHeroAlignment(-Math.sign(align)) when breaking a grave (dokick.ts)
+kick_nondoor	del_engr_at	inlined	deleteEngravingAt when the headstone breaks (dokick.ts)
+kick_nondoor	disturb_grave	inlined	disturbGrave (grave.ts) from the kick grave branch (dokick.ts)
+kick_nondoor	kick_dumb	inlined	kickDumb callback injected by dokick() (dokick.ts)
+kick_nondoor	kick_ouch	inlined	kickOuch callback injected by dokick() (dokick.ts)
+kick_nondoor	mksobj_at	inlined	mksobj plus placeCreatedObject for the rock and throne gems (dokick.ts)
+kick_nondoor	rnd_treefruit_at	inlined	tree fruit rolled and placed via mksobj+placeCreatedObject (dokick.ts kickTree)
+kick_nondoor	sgn	inlined	Math.sign on u.ualign.type (dokick.ts)
 kick_nondoor	undiscovered_artifact	n/a	macro expansion of is_plural() (obj.h) in the fruit plural message; port pluralizes by count
 do_takeoff	Blindf_off	inlined	removeEyewear for the ublindf slot (do_wear.ts removeSelectedSlot)
 do_takeoff	Helmet_off	inlined	removeHeroArmor applies per-slot off effects (armor.ts, do_wear.ts)
