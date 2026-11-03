@@ -733,6 +733,9 @@ class JSExec:
                 continue
             for q, index in self.eval(p, n.child_by_field_name('index')):
                 if obj.kind == 'obj' and index.kind == 'str':
+                    if isinstance(index.v, z3.ExprRef):
+                        raise Unsupported(
+                            'JavaScript state-object lookup by a symbolic string')
                     key = f'{obj.v}.{index.v}'
                     value = self.module_env.get(key, self.m.world.js_values.get(key))
                     if value is None and key in self.m.world.js_state:
@@ -744,6 +747,22 @@ class JSExec:
                     out.extend(self._choices(q, value.v) if value.kind == 'choice' else [(q, value)])
                     continue
                 if obj.kind == 'record' and index.kind == 'str':
+                    if isinstance(index.v, z3.ExprRef):
+                        # A symbolic string index selects the field by
+                        # String equality. The null encoding ('') matches no
+                        # key, which is only JavaScript-exact when the record
+                        # has no key that null/undefined would coerce to.
+                        if any(key in ('', 'null', 'undefined')
+                               for key in obj.v):
+                            raise Unsupported(
+                                'JavaScript record lookup with a key that '
+                                'collides with the null encoding')
+                        choices = [(self._equal(index, V('str', key)), value)
+                                   for key, value in obj.v.items()]
+                        missing = z3.Not(z3.Or(*(c for c, _ in choices))) \
+                            if choices else z3.BoolVal(True)
+                        out.extend(self._choices(q, choices + [(missing, UNDEF)]))
+                        continue
                     out.append((q, obj.v.get(index.v, UNDEF)))
                     continue
                 array = obj
@@ -921,6 +940,14 @@ class JSExec:
                                     or isinstance(b.v, z3.ExprRef)):
                 left = a.v if isinstance(a.v, z3.ExprRef) else z3.StringVal(a.v)
                 right = b.v if isinstance(b.v, z3.ExprRef) else z3.StringVal(b.v)
+                # The empty string is the null encoding and the table itself
+                # excludes '' entries, so JavaScript's `value === ''` is
+                # false on every row: null === '' is false, and no string
+                # entry is empty. Comparing two terms stays exact because
+                # both use the same encoding.
+                if (z3.is_string_value(left) and left.as_string() == '') or \
+                        (z3.is_string_value(right) and right.as_string() == ''):
+                    return z3.BoolVal(False)
                 return left == right
             return z3.BoolVal(a.v == b.v)
         raise Unsupported(f'JavaScript equality on {a.kind}')

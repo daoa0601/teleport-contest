@@ -815,5 +815,35 @@ class ExecutorTests(unittest.TestCase):
             params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1],
             reason='unsupported: JavaScript symbolic array read needs numeric or rectangular array elements')
 
+    def test_symbolic_string_array_read_never_equals_the_empty_string(self):
+        base = 'const names = ["leather", null];\nfunction example(i) { return BODY; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent('int example(int i) { return 0; }',
+                        base.replace('BODY', 'names[i] === "" ? 1 : 0'), **domain)
+        self.equivalent('int example(int i) { return 1; }',
+                        base.replace('BODY', 'names[i] !== "" ? 1 : 0'), **domain)
+        # the null encoding must not leak into the empty-string comparison:
+        # a mirror that is true exactly on the null row differs
+        self.rejected('int example(int i) { return i == 1; }',
+                      base.replace('BODY', 'names[i] === "" ? 1 : 0'), **domain,
+                      reason='outputs differ')
+
+    def test_symbolic_record_lookup_by_string_key_selects_exactly(self):
+        lookup = ('const names = ["a", null];\nconst REC = { a: 1, b: 2 };\n'
+                  'function example(i) { return REC[names[i]] ?? 0; }')
+        mirror = 'int example(int i) { return i == 0 ? 1 : 0; }'
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] <= 1])
+        self.equivalent(mirror, lookup, **domain)
+        # the null row misses every key, like JavaScript's REC['null']
+        self.rejected('int example(int i) { return i == 0 ? 2 : 0; }', lookup,
+                      **domain, reason='outputs differ')
+        # keys that null or undefined coerce to cannot be encoded
+        self.rejected('int example(int i) { return 0; }',
+                      'const names = ["a", null];\nconst REC = { null: 1 };\n'
+                      'function example(i) { return REC[names[i]] ?? 0; }',
+                      **domain,
+                      reason='unsupported: JavaScript record lookup with a key '
+                             'that collides with the null encoding')
+
 if __name__ == '__main__':
     unittest.main()
