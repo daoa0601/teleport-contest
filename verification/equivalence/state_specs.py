@@ -608,7 +608,7 @@ STATE_SPECS += [
 
 OBJECT_PREDICATE_ASSUMPTIONS = (
     'objects.c:objects_globals_init and object_data.js tables retain their initial values; o_init.js:objectMaterial reads the emitted per-game material map first, so the claim relates the initial emitted OBJECT_MATERIAL entries and leaves the o_init.c:shuffle correspondence (same algorithm on both sides) outside the entry relation',
-    'mkobj.c/mksobj only create objects whose otyp carries a real material (objclass.h materials start at LIQUID); the zero-material rows are the illegal object and class markers',
+    'the zero-material rows 1..17 (generic class markers) can occur on a struct obj only as pager.c:object_from_map temporary naming objects (OBJ_NAME is non-null for the GENERIC rows); there C is true and the port is false, but the difference is unobservable: mksobj(glyphotyp, FALSE, FALSE) copies cg.zeroobj so oeroded/oeroded2/oerodeproof are zero and rknown false (mkobj_erosions runs only under init), add_erosion_words then prints nothing, and the caller deallocates the object at once (pager.c:376); the rows are oc_nowish, so readobjnam\'s other is_damageable call cannot name one, and neither mkobj nor mksobj places them',
 )
 
 
@@ -669,7 +669,7 @@ STATE_SPECS += [
          js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
                                         ('otmp.otyp', (16, True), 'otmp.otyp')],
          assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
-             'objclass.h:is_damageable expands is_flammable (mkobj.c, with its candle and fire-resistance exclusions), is_rottable, is_rustprone, is_corrodeable and is_crackable; every real-material row agrees, so the class-marker rows are the only divergence',
+             'objclass.h:is_damageable expands is_flammable (mkobj.c, with its candle and fire-resistance exclusions), is_rottable, is_rustprone, is_corrodeable and is_crackable; every real-material row agrees, so the zero-material generic rows are the only divergence and are dropped as unreachable-observable per the assumption above',
          ),
          require_counterexamples=True, configure=damageable_state,
          arguments=object_predicate_arguments('otmp'),

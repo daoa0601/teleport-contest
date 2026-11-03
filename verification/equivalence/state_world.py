@@ -839,8 +839,11 @@ def object_predicate_arguments(prefix):
 def real_object_precondition(world, front, otyp):
     """Restrict otyp to rows with a real material. objclass.h materials start
     at LIQUID; the zero-material rows are the illegal object and the class
-    markers, which no struct obj instance carries and where the port's
-    inline material tests differ from C's (material 0 <= WOOD)."""
+    markers, where the port's inline material tests differ from C's
+    (material 0 <= WOOD). Those rows reach a struct obj only as pager.c
+    object_from_map temporary naming objects, whose zeroed erosion fields
+    and oc_nowish status make the difference unobservable (see the claim
+    assumptions in state_specs.py)."""
     materials = _objects_member(world, front, 'oc_material')
     return select_int(materials, otyp) >= front.enum_value('LIQUID')
 

@@ -302,10 +302,20 @@ classification and a mutant of it.
 The object claims document three domain facts. First, otyp rows 0..17
 (the illegal object and the class markers) carry material 0, where C's
 `omat <= WOOD && omat != LIQUID` is true but the port's `material > 1`
-is false; no `struct obj` instance can hold those otyps (mkobj/mksobj
-assign real types only), so `is_damageable` keeps only rows with a real
-material (>= LIQUID) and `erosion_matters`/`weapon_type`, which agree
-there, keep the whole 0..NUM_OBJECTS-1 range. Second, C's
+is false. Those rows do reach a `struct obj`: pager.c:object_from_map
+builds a temporary naming object with the generic otyp when a remembered
+or hallucinated class glyph has no object at that spot, and doname's
+add_erosion_words runs is_damageable on it. The divergence is
+unobservable there and unreachable elsewhere: the fake object comes from
+mksobj(glyphotyp, FALSE, FALSE), which copies cg.zeroobj (oeroded,
+oeroded2 and oerodeproof zero, rknown false; mkobj_erosions runs only
+under init), so add_erosion_words prints nothing either way, and the
+caller deallocates the object at once (pager.c:376); the generic rows
+are oc_nowish, so readobjnam's other is_damageable call cannot name one,
+and neither mkobj nor mksobj places them. `is_damageable` therefore
+keeps only rows with a real material (>= LIQUID), while
+`erosion_matters`/`weapon_type`, which agree on every row, keep the
+whole 0..NUM_OBJECTS-1 range. Second, C's
 `is_flammable` excludes candles, `WAN_FIRE` and fire-resistance-oprop
 objects while the port's inline material test does not; inside the
 `erosion_matters` guard (weapon/armor/ball/chain or a weapon-tool, with
