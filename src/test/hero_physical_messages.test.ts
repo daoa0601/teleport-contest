@@ -7,12 +7,8 @@ import { flush_screen, glyphAt } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { addFruit } from '../js/fruit.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import {
-    captureHeroPhysicalObjectName, captureHeroProjectileName, captureUnpoisonedPhysicalObjectName,
-    reportHeroThrownMiss,
-    showHeroHarmlessStoneHit, showHeroPhysicalHit, showHeroPhysicalLight,
-    showHeroPhysicalPoisonWoreOff, showHeroPhysicalSilver, showHeroShadeMiss,
-} from '../js/hero_physical_messages.js';
+import { captureHeroPhysicalObjectName, captureHeroProjectileName, captureUnpoisonedPhysicalObjectName, showHeroHarmlessStoneHit, showHeroPhysicalHit, showHeroPhysicalLight, showHeroPhysicalPoisonWoreOff, showHeroPhysicalSilver, showHeroShadeMiss } from '../js/uhitm.js';
+import { reportHeroThrownMiss } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {

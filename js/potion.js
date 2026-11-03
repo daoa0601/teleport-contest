@@ -45,7 +45,7 @@ import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js
 import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { healHeroLegs } from './hero_legs.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { reportHeroThrownMiss } from './dothrow.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
 import { heroIsUnaware } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';

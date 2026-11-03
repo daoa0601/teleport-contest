@@ -5,7 +5,7 @@ import { M_ATTK_DEF_DIED, M_ATTK_HIT, MM_NOGRP, NO_MINVENT, W_AMUL, W_WEP } from
 import { canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resolveHeroCombatExplosion } from '../js/hero_combat_explosion.js';
+import { resolveHeroCombatExplosion } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AT_EXPL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from '../js/monster_data.js';

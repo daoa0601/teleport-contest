@@ -38,7 +38,7 @@ import { gotoLevel } from './level_change.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, surfaceName, ceilingName } from './terrain_name.js';
-import { attackHostileMonster } from './hero_melee.js';
+import { attackHostileMonster } from './uhitm.js';
 import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, moveMonsterNextToHero, relocateMonsterTo, askTeleportDestination } from './teleport.js';
 import { goodPosition, heroTeleportRestricted, findNearbyMonsterPosition } from './teleport_rules.js';
 import { wormCrossesBetween } from './worm.js';
@@ -59,18 +59,19 @@ import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hideHeroUnder, wakeMonstersNearWithMessages, monsterMayDigLocation, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
-import { prepareAppliedWeaponAttack } from './hero_attack_preflight.js';
-import { hasDoorAppearance, stumbleOntoMimic } from './mimic.js';
+import { prepareAppliedWeaponAttack } from './uhitm.js';
+import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 import { confusePromptDirection } from './tty_prompts.js';
-import { resolveHeroCombatExplosion } from './hero_combat_explosion.js';
+import { resolveHeroCombatExplosion } from './uhitm.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { isPick, isFlimsyObject, isBlade } from './object_properties.js';
 import { applyPickAxeDirection } from './pick_axe.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
+import { runSafepetDisplacement } from './uhitm.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
@@ -3687,47 +3688,6 @@ function petBadRock(monster, state, x, y) {
     const passesWalls = !!(flags & M1_WALLWALK)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return !tunnels && !passesWalls;
-}
-export async function runSafepetDisplacement(monster) {
-    // C uhitm.c:do_attack(): a tame monster normally yields to
-    // the hero, and ordinary peacefuls share the same displacement path.
-    // Only tame actors flee after refusal.
-    const tame = !!(monster.pet || monster.mtame);
-    const blocked = heroIsPunished() || rn2(7) === 0
-        || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
-            .includes(MONSTER_NAME[monster.mnum] ?? ''))
-        || (IS_OBSTRUCTED(requireGameLevel(game).requireAt(game.u.ux, game.u.uy).typ)
-            && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & 0x00000008));
-    const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
-        .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
-    if ((blocked || inShop) && monster.isshk
-        && !game.context.travel && !game.context.run) {
-        await dopay();
-        return 'paid';
-    }
-    if ((blocked || inShop) && tame) {
-        const flight = await makeMonsterFlee(monster, {
-            turns: rnd(6), announce: false,
-        });
-        if (flight.heroDied)
-            return 'stopped';
-    }
-    if (blocked || inShop) {
-        // C uhitm.c do_attack(): y_monnam(), capitalized.
-        const displayName = monsterName(monster, {
-            state: game, article: 'your', capitalized: true,
-        });
-        await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
-        stopRun(game);
-        return 'stopped';
-    }
-    if (monster.mfrozen || monster.msleeping || !monster.mcanmove
-        || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
-        await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
-        stopRun(game);
-        return 'frozen';
-    }
-    return 'evaded';
 }
 // C hack.c:domove_core() owns the movement transaction.
 // C hack.c:carrying_too_much(): an overloaded or exhausted hero collapses

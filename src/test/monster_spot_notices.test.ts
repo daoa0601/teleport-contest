@@ -8,7 +8,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { restoregamePreamble } from '../js/allmain.js';
-import { moveMonsterForHeroAttack, performMonsterTurn } from '../js/monmove.js';
+import { moveMonsterForHeroAttack } from '../js/uhitm.js';
+import { performMonsterTurn } from '../js/monmove.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import {

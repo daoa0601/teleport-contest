@@ -16,7 +16,7 @@ LOCATIONS = [
     ('hack.c:calc_capacity', 'hack.js:calcCapacity'),
     ('hack.c:near_capacity', 'hack.js:nearCapacity'),
     ('weapon.c:dmgval', 'weapon.js:rollPhysicalWeaponDamage'),
-    ('uhitm.c:find_roll_to_hit', 'hero_attack_accuracy.js:findHeroMeleeHitThreshold'),
+    ('uhitm.c:find_roll_to_hit', 'uhitm.js:findHeroMeleeHitThreshold'),
 ]
 HERO = dict(str=12, dex=12, con=12, level=8, luck=0, moreluck=0,
             hitinc=0, trapped=0, form=-1, levitating=0, flying=0, legs=0, role=0,

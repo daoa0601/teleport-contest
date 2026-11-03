@@ -23,7 +23,7 @@ import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
-import type { HeroObjectContactResult } from './hero_object_contact.js';
+import type { HeroObjectContactResult } from './uhitm.js';
 import { monsterHasStoneResistance } from './mondata.js';
 
 export interface HeroEggHitOptions {

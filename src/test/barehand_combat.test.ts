@@ -5,8 +5,8 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { wearHeroArmor } from '../js/do_wear.js';
 
-import { prepareHeroBarehandContact } from '../js/barehand_combat.js';
-import { recalculateHeroPhysicalDamage } from '../js/hero_physical_damage.js';
+import { prepareHeroBarehandContact } from '../js/uhitm.js';
+import { recalculateHeroPhysicalDamage } from '../js/uhitm.js';
 import { rhack } from '../js/cmd.js';
 import { specialContactDamage } from '../js/contact_damage.js';
 import {

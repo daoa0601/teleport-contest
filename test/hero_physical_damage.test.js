@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { prepareHeroBarehandContact } from '../js/barehand_combat.js';
+import { prepareHeroBarehandContact } from '../js/uhitm.js';
 import { A_STR, P_BARE_HANDED_COMBAT, P_BASIC, P_BOW, P_DAGGER, P_EXPERT, P_POLEARMS, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, STR18, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { recalculateHeroPhysicalDamage } from '../js/hero_physical_damage.js';
+import { recalculateHeroPhysicalDamage } from '../js/uhitm.js';
 import { ARROW, BOW, DAGGER, OBJECT_NAMES, TWO_HANDED_SWORD } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

@@ -3,7 +3,7 @@
 import { objectMaterial } from './o_init.js';
 import { STRAT_WAITMASK } from './const.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { reportHeroThrownMiss } from './dothrow.js';
 import { BANANA, CORPSE } from './object_data.js';
 import { ACCFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';

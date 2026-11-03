@@ -84,7 +84,8 @@ import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMons
 import { retouchEquipment } from './hero_retouch.js';
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
-import { applyMonsterStoningAttack, startHeroPetrificationFromMonster, touchPetrifies } from './stoning.js';
+import { touchPetrifies } from './stoning.js';
+import { applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
 import { monsterReflectsRay } from './ray.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
@@ -2584,34 +2585,10 @@ export async function presentMonsterPostMove(action, game) {
     }
     return !!game.program_state.gameover || !!movement.heroDied;
 }
-async function presentMonsterMoveMessage(action, game) {
+export async function presentMonsterMoveMessage(action, game) {
     const movement = action.movement;
     if (movement?.message)
         await plineWithContinuation(movement.message);
-}
-// C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
-// Resolve that movement transaction before the hero tests its new position;
-// no movement ration, dochug prelude, or dochug attack tail belongs here.
-export async function moveMonsterForHeroAttack(monster, state = requireInitializedGame()) {
-    requireLiveGame(state);
-    const previousDeferral = state._deferVisibleMonsterContact;
-    state._deferVisibleMonsterContact = true;
-    let action;
-    try {
-        action = await beginMonsterMove(monster, state);
-    }
-    finally {
-        state._deferVisibleMonsterContact = previousDeferral;
-    }
-    let heroDied = await presentMonsterPostMove(action, state);
-    if (!heroDied)
-        heroDied = (await presentMonsterAttackEffects(action, state)).heroDied;
-    if (!heroDied)
-        await presentMonsterMoveMessage(action, state);
-    const status = action.movement.postMoveStatus;
-    if (status === undefined)
-        throw new Error('Monster movement completed without its native movement result.');
-    return { status, heroDied: heroDied || !!state.program_state.gameover };
 }
 // Complete the same action and message phases for scheduled turns and
 // direct dochug() calls. The caller owns movement rations and dochugw().

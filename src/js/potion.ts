@@ -52,7 +52,7 @@ import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHe
 import { healHeroLegs } from './hero_legs.js';
 import type { Hero } from './hero_types.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { reportHeroThrownMiss } from './dothrow.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
 import { heroIsUnaware } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';

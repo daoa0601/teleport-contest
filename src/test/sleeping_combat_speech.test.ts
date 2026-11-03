@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { poisonHero } from '../js/poison.js';
-import { applyMonsterStoningAttack } from '../js/stoning.js';
+import { applyMonsterStoningAttack } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { A_INT, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, W_ARMH } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalBrain } from '../js/hero_natural_brain.js';
+import { applyHeroNaturalBrain } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_DRIN, AT_TENT } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';

@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
+import { hitMonsterWithHeroObject } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { ARROW, CREAM_PIE, DAGGER } from '../js/object_data.js';
 import { freeInventoryObject } from '../js/hero_inventory.js';

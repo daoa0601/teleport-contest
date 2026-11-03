@@ -6,7 +6,7 @@ import { MFAST, M_ATTK_DEF_DIED, M_ATTK_MISS, MM_NOGRP, NO_MINVENT, NORMAL_SPEED
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { wearEyewear } from '../js/eyewear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroNaturalSliming } from '../js/hero_natural_sliming.js';
+import { applyHeroNaturalSliming } from '../js/uhitm.js';
 import type { HeroNaturalEffectContext } from '../js/hero_natural_types.js';
 import { resetInputState } from '../js/input.js';
 import { AD_SLIM } from '../js/monster_attack_types.js';

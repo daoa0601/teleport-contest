@@ -18,7 +18,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { heroFormSticks } from './polyself.js';
 import { isSteadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { revealMimicIdentity } from './mimic.js';
+import { revealMimicIdentity } from './uhitm.js';
 
 
 import { changeMonsterForm, healMonster, respondToImmediateMagic, wakeAttackedMonster, wakeMonster } from './mon.js';

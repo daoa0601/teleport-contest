@@ -3,7 +3,7 @@ import test from 'node:test';
 import { A_STR, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { currentAttribute } from '../js/attrib.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { hitMonsterWithHeroObject } from '../js/hero_physical_hit.js';
+import { hitMonsterWithHeroObject } from '../js/uhitm.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/u_init.js';

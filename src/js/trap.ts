@@ -93,7 +93,7 @@ import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIs
 import { placeHeroOnLevel } from './hero_location.js';
 import { checkHeroLeashes, bringLeashedFollowers } from './apply.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
-import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './mimic.js';
+import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './uhitm.js';
 import { setMonsterMalign, makemon } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary } from './wield.js';

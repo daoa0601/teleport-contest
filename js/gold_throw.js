@@ -29,7 +29,7 @@ import { applyFloorEffects } from './floor_effects.js';
 import { rn2, rnd } from './rng.js';
 import { finishHeroThrownObjectLanding, flyHeroThrownObject, heroDirectGoldThrowRange, heroThrowTrajectory, prepareHeroThrownTarget, } from './thrown_object.js';
 import { cansee } from './vision.js';
-import { reportHeroThrownMiss } from './hero_physical_messages.js';
+import { reportHeroThrownMiss } from './dothrow.js';
 import { offerThrownFood } from './thrown_food.js';
 import { applyThrowSlip } from './throw_state.js';
 import { finishMonsterEating } from './dogmove.js';
