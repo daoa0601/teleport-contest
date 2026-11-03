@@ -72,10 +72,16 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          # curl saves an HTTP error page as the tarball, which then fails its
-          # checksum; retry a transient bad download before giving up.
+          # fetch-Lua always exits 0 and stops at the first mirror that answers:
+          # when www.lua.org times out, the tecgraf mirror's 404 page is saved as
+          # the tarball. Check for the extracted header and fall back to the
+          # nethack.org copy (same checksum) before giving up.
           for attempt in 1 2 3; do
-            make fetch-lua && break
+            make fetch-lua
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
+            rm -rf lib/lua-*
+            make fetch-lua-nhd
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
             [ $attempt = 3 ] && exit 1
             rm -rf lib/lua-*; sleep 30
           done
@@ -236,10 +242,16 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          # curl saves an HTTP error page as the tarball, which then fails its
-          # checksum; retry a transient bad download before giving up.
+          # fetch-Lua always exits 0 and stops at the first mirror that answers:
+          # when www.lua.org times out, the tecgraf mirror's 404 page is saved as
+          # the tarball. Check for the extracted header and fall back to the
+          # nethack.org copy (same checksum) before giving up.
           for attempt in 1 2 3; do
-            make fetch-lua && break
+            make fetch-lua
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
+            rm -rf lib/lua-*
+            make fetch-lua-nhd
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
             [ $attempt = 3 ] && exit 1
             rm -rf lib/lua-*; sleep 30
           done
@@ -332,10 +344,16 @@ jobs:
           python3 -c 'import shutil; shutil.rmtree(".git")'
           sed -i.bak "s|^PREFIX=.*|PREFIX=$PWD/install|" sys/unix/hints/linux-minimal
           sh sys/unix/setup.sh sys/unix/hints/linux-minimal
-          # curl saves an HTTP error page as the tarball, which then fails its
-          # checksum; retry a transient bad download before giving up.
+          # fetch-Lua always exits 0 and stops at the first mirror that answers:
+          # when www.lua.org times out, the tecgraf mirror's 404 page is saved as
+          # the tarball. Check for the extracted header and fall back to the
+          # nethack.org copy (same checksum) before giving up.
           for attempt in 1 2 3; do
-            make fetch-lua && break
+            make fetch-lua
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
+            rm -rf lib/lua-*
+            make fetch-lua-nhd
+            [ -f lib/lua-5.4.8/src/lua.h ] && break
             [ $attempt = 3 ] && exit 1
             rm -rf lib/lua-*; sleep 30
           done
