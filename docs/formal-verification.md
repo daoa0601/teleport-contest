@@ -88,10 +88,10 @@ split `rnl` row use this batch's complete runs.
 | `dmgtype_fromattack:enfolds` | `mondata.h:enfolds` via native scan ↔ `monster_data.js:monsterEnfolds` | Same array domain; `AD_WRAP`, `AT_ENGL`; presence only | 1×1 | 3.6 s |
 | `attacktype_fordmg:digests` | `mondata.c:attacktype_fordmg` ↔ `monster_data.js:monsterDigests` | Same array domain; `AT_ENGL`, `AD_DGST`; presence only | 1×1 | 3.4 s |
 | `dmgtype:sticks` | `mondata.c:sticks`, including `dmgtype` ↔ `monster_data.js:monsterSpeciesSticks` | Same array domain; complete sticking predicate | 1×1 | 1.6 s |
-| `weight_cap:state` | `hack.c:weight_cap` ↔ `weight.js:weightCapacity` | Related hero state, representative property masks, initial species; restored properties | 1×1 | 27.8 s |
-| `inv_weight:chain4` | `hack.c:inv_weight` ↔ `weight.js:invWeight` | Related inventory length 0..4; four object types; fresh cache; weights/quantities 0..100000 | 5×(1×1) | 8.6 s |
-| `calc_capacity:chain4` | `hack.c:calc_capacity` ↔ `weight.js:calcCapacity` | Same chain domain; extra weight in [-1000000,1000000] | 5×(1×1) | 12.9 s |
-| `near_capacity:chain4` | `hack.c:near_capacity` ↔ `weight.js:nearCapacity` | Same chain domain; extra weight zero | 5×(1×1) | 9.6 s |
+| `weight_cap:state` (slow) | `hack.c:weight_cap` ↔ `weight.js:weightCapacity` | Related hero state, representative property masks, initial species; restored properties | 1×1 | 27.8 s |
+| `inv_weight:chain4` (slow) | `hack.c:inv_weight` ↔ `weight.js:invWeight` | Related inventory length 0..4; four object types; fresh cache; weights/quantities 0..100000 | 5×(1×1) | 8.6 s |
+| `calc_capacity:chain4` (slow) | `hack.c:calc_capacity` ↔ `weight.js:calcCapacity` | Same chain domain; extra weight in [-1000000,1000000] | 5×(1×1) | 12.9 s |
+| `near_capacity:chain4` (slow) | `hack.c:near_capacity` ↔ `weight.js:nearCapacity` | Same chain domain; extra weight zero | 5×(1×1) | 9.6 s |
 | `sgn:inline` | `hacklib.c:sgn` ↔ emitted `muse.js:aimedDirection` dx initializer | Any C int delta; explicit local inputs; enclosing caller excluded | 2×1 | <0.1 s |
 | `enermod` | `exper.c:enermod` ↔ `exper.js:energyModifier` | `abs(en) <= 715827882`; corresponding one of 13 playable roles | 4×4 | 3.1 s |
 | `newuexp` | `exper.c:newuexp` ↔ `exper.js:newExperienceThreshold` | `0 <= lev <= 30` | 4×4 | 0.9 s |
@@ -105,18 +105,18 @@ split `rnl` row use this batch's complete runs.
 | `abon:human` | `weapon.c:abon` ↔ `uhitm.js:heroAttributeHitBonus` | Corresponding attribute arrays and level in 1..30; no gauntlets; original human form | 24×17 | 1.9 s |
 | `acurr:all` | `attrib.c:acurr` ↔ `attrib.js:currentAttribute` | all six attributes; corresponding arrays, worn items, artifact identities and current body | 6×6 | 5.6 s |
 | `dbon:all` | `weapon.c:dbon` ↔ `weapon.js:heroStrengthDamageBonus` | corresponding arrays/items; human and polymorphed forms | 8×8 | 0.3 s |
-| `abon:forms` | `weapon.c:abon` ↔ `uhitm.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 43.6 s |
+| `abon:forms` (slow) | `weapon.c:abon` ↔ `uhitm.js:heroAttributeHitBonus` | same; level 1..30; initial species data; corresponding Wizard deaths; **assumed** equal, pure dungeon difficulty in 1..32767 | 32×23 | 43.6 s |
 | `experience:tables` (slow) | `exper.c:experience` ↔ `exper.js:monsterExperience` | initial tables; no monster inventory; any `uchar` monster level; `nk` 0..255; corresponding Amphibious option | 383 species domains, both log settings | 415.6 s |
 | `mcalcmove:tables` (slow) | `mon.c:mcalcmove` ↔ `mon.js:mcalcmove` | initial tables; initialized fields; corresponding speed/mount/context; gallop 0..2^53; both moving modes | 383 species domains, both log settings | 175.5 s |
 | `xytodir` | `cmd.c:xytodir` ↔ `cmd.js:xyToDirection` | Deltas inside C int; decl.c and const.js direction tables | 9×9 via `findIndex` | 0.8 s |
 | `weapon_hit_bonus:state` | `weapon.c:weapon_hit_bonus` ↔ `skills.js:weaponSkillHitBonus` | Weapon null/uwep/uswapwep/unrelated; corresponding skills, role, twoweap, steed; objects[] tables | 1×1 joined | 10.3 s |
-| `weapon_dam_bonus:state` | `weapon.c:weapon_dam_bonus` ↔ `skills.js:weaponSkillDamageBonus` | Same relation | 1×1 joined | 4.7 s |
+| `weapon_dam_bonus:state` (slow) | `weapon.c:weapon_dam_bonus` ↔ `skills.js:weaponSkillDamageBonus` | Same relation | 1×1 joined | 4.7 s |
 | `is_animal:tables` | `mondata.h:is_animal` ↔ `monster_data.js:monsterIsAnimal` | Same initial-species domain | 1×1 | 1.9 s |
 | `noncorporeal:tables` | `mondata.h:noncorporeal` ↔ `monster_data.js:monsterIsNoncorporeal` | Same domain; initial symbols | 1×1 | 3.6 s |
 | `breathless:tables` | `mondata.h:breathless` ↔ `monster_data.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
 | `passes_bars:tables` | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
-| `armor_to_dragon` | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
-| `weight:stack` | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
+| `armor_to_dragon` (slow) | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
+| `weight:stack` (slow) | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
 | `verysmall:tables` | `mondata.h:verysmall` ↔ `monster_data.js:monsterIsVerySmall` | Valid initial species; native/emitted size tables | 1×1 | 2.3 s |
 | `haseyes:tables` | `mondata.h:haseyes` ↔ `monster_data.js:monsterHasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
 | `hates_silver:tables` | `mondata.c:hates_silver` ↔ `monster_data.js:monsterSpeciesHatesSilver` | Valid initial species; pointer identity vs mons[PM_SHADE]/mons[PM_TENGU]; flags and symbols | 3×5 | 5.1 s |
@@ -201,7 +201,7 @@ split `rnl` row use this batch's complete runs.
 | `cmap_to_glyph` | `display.h:cmap_to_glyph` ↔ `glyph_numbers.js:cmapToGlyph` | `|cmap_idx| <= 2^30`; modeled u.uz/dungeon_topology branch state; In_mines/on_level real, In_hell an equal 0/1 contract; port wallOffset = the selected base | 10×7 | 5.4 s |
 | `zapdir_to_glyph` | `display.c:zapdir_to_glyph` ↔ `glyph_numbers.js:zapdirToGlyph` | dx/dy int32; beam_type 0..NUM_ZAP-1 (callers pass sgn() deltas and zap colors) | 1×1 | 4.6 s |
 | `swallow_to_glyph` | `display.c:swallow_to_glyph` ↔ `display.js:swallowToGlyph` | mnum 0..2^27, loc S_sw_tl..S_sw_br; HHallucination clear (what_mon's sober arm) | 1×1 | 2.8 s |
-| `glyph_is_monster` | `display.h:glyph_is_monster` ↔ `glyph_numbers.js:glyphIsMonster` | Every int32 glyph | 3×9 | 9.2 s |
+| `glyph_is_monster` (slow) | `display.h:glyph_is_monster` ↔ `glyph_numbers.js:glyphIsMonster` | Every int32 glyph | 3×9 | 9.2 s |
 | `glyph_is_pet` | `display.h:glyph_is_pet` ↔ `glyph_numbers.js:glyphIsPet` | Same domain | 3×3 | 2.4 s |
 | `glyph_is_invisible` | `display.h:glyph_is_invisible` ↔ `glyph_numbers.js:glyphIsInvisible` | Same domain | 1×1 | 1.4 s |
 | `glyph_is_detected_monster` | `display.h:glyph_is_detected_monster` ↔ `glyph_numbers.js:glyphIsDetectedMonster` | Same domain | 3×3 | 2.4 s |
@@ -215,9 +215,9 @@ split `rnl` row use this batch's complete runs.
 | `glyph_is_warning` | `display.h:glyph_is_warning` ↔ `glyph_numbers.js:glyphIsWarning` | Same domain | 2×2 | 1.9 s |
 | `glyph_is_explosion` | `display.h:glyph_is_explosion` ↔ `glyph_numbers.js:glyphIsExplosion` | Same domain | 2×2 | 1.9 s |
 | `glyph_is_cmap_zap` | `display.h:glyph_is_cmap_zap` ↔ `glyph_numbers.js:glyphIsCmapZap` | Same domain | 2×2 | 2.2 s |
-| `glyph_to_mon` | `display.h:glyph_to_mon` ↔ `glyph_numbers.js:glyphToMon` | Every int32 glyph | 9×9 | 12.7 s |
+| `glyph_to_mon` (slow) | `display.h:glyph_to_mon` ↔ `glyph_numbers.js:glyphToMon` | Every int32 glyph | 9×9 | 12.7 s |
 | `glyph_to_obj` (slow) | `display.h:glyph_to_obj` ↔ `glyph_numbers.js:glyphToObj` | Same domain | 5×5 | 26.3 s |
-| `glyph_to_swallow` | `display.h:glyph_to_swallow` ↔ `glyph_numbers.js:glyphToSwallow` | Same domain | 2×2 | 2.5 s |
+| `glyph_to_swallow` (slow) | `display.h:glyph_to_swallow` ↔ `glyph_numbers.js:glyphToSwallow` | Same domain | 2×2 | 2.5 s |
 | `glyph_to_warning` | `display.h:glyph_to_warning` ↔ `glyph_numbers.js:glyphToWarning` | Same domain | 2×2 | 2.4 s |
 | `glyph_to_explosion` | `display.h:glyph_to_explosion` ↔ `glyph_numbers.js:glyphToExplosion` | Same domain | 2×2 | 2.5 s |
 | `glyph_to_trap` | `display.h:glyph_to_trap` ↔ `glyph_numbers.js:glyphToTrap` | Same domain | 2×2 | 2.8 s |
@@ -694,9 +694,15 @@ glyph-number packing, and `objnum_to_glyph(BOULDER)` checks in `cmd.ts`,
 plus the swallow-range test in `do_name.ts` and the zap/warning decodes in
 `pager.ts`.
 
-Two claims are slow (`glyph_is_object` 19.6 s, `glyph_to_obj` 25.9 s) and
-join the nightly job; the other thirty are fast (worst `glyph_to_mon` at
-12.6 s). The port fidelity bug found — a fresh
+Five glyph claims are slow and join the nightly job: `glyph_is_object`
+(19.6 s local) and `glyph_to_obj` (25.9 s), plus `glyph_to_mon`,
+`glyph_is_monster` and `glyph_to_swallow`, which took 39 s, 30 s and 30 s
+with their probes and mutants on a hosted runner. With this batch the fast
+`equivalence` job's proving step reached 1559 s and hit the 30-minute job
+timeout, so the eight older claims costing more than about 25 s on CI moved
+too: `abon:forms` (101 s), `weight_cap:state` (84 s), the three
+`*:chain4` capacity claims (51, 42 and 29 s), `weapon_dam_bonus:state`
+(33 s), `weight:stack` (31 s) and `armor_to_dragon` (26 s). The port fidelity bug found — a fresh
 `glyphToTrap` owner that subtracted `S_arrow_trap` twice — was caught by the
 module's own round-trip smoke before proving and fixed; no pre-existing
 port behavior changed.

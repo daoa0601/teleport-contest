@@ -93,7 +93,7 @@ STATE_SPECS += [
              'dungeon.c:level_difficulty: assumed equal pure xint16 result in 1..32767',
              'monst.h:mvitals.died: corresponding Wizard death count; other JS counters are independent uchar values',
          ),
-         require_counterexamples=True, js_file=HIT_BONUS, js_args=[('obj', 'game')],
+         require_counterexamples=True, slow=True, js_file=HIT_BONUS, js_args=[('obj', 'game')],
          state=HERO + ULEVEL + [('svm.mvitals[PM_WIZARD_OF_YENDOR].died', (8, False), None)],
          references=WORN, configure=hit_bonus_state,
          pre=lambda s: [s['u.ulevel'] >= 1, s['u.ulevel'] <= 30],
@@ -293,7 +293,7 @@ RESTORED_PROPERTIES = ('u.uprops[LEVITATION].extrinsic', 'u.uprops[LEVITATION].b
 
 STATE_SPECS += [
     Spec('weight_cap:state', 'weight_cap', 'weightCapacity', [],
-         js_file='js/hack.js', js_args=[('obj', 'game')],
+         slow=True, js_file='js/hack.js', js_args=[('obj', 'game')],
          state=HERO + CAPACITY_STATE, references=WORN, configure=capacity_state,
          pre=capacity_domain, assumptions=CAPACITY_ASSUMPTIONS,
          dependencies=('acurr:all',), restored_state=RESTORED_PROPERTIES, result_range=(1, 1000), partitions=whole_domain,
@@ -323,7 +323,7 @@ def inventory_domain(s):
 
 
 STATE_SPECS += [
-    Spec(name, native, port, params, js_file='js/hack.js',
+    Spec(name, native, port, params, slow=True, js_file='js/hack.js',
          arguments=capacity_arguments,
          state=HERO + CAPACITY_STATE + [('chain', INT, None)] + INVENTORY_FIELDS,
          references=WORN, configure=inventory_state,
@@ -415,7 +415,7 @@ STATE_SPECS += [
                   ('js/skills.js', 'if (riding <= P_UNSKILLED)\n            bonus -= 2;',
                    'if (riding <= P_UNSKILLED)\n            bonus -= 3;')]),
     Spec('weapon_dam_bonus:state', 'weapon_dam_bonus', 'weaponSkillDamageBonus',
-         WEAPON_BONUS_PARAMS, js_file='js/skills.js', require_counterexamples=True,
+         WEAPON_BONUS_PARAMS, slow=True, js_file='js/skills.js', require_counterexamples=True,
          state=WEAPON_BONUS_STATE, enum_state=ROLE_ENUM, configure=skill_bonus_state,
          arguments=skill_bonus_arguments, pre=skill_bonus_domain,
          assumptions=WEAPON_BONUS_ASSUMPTIONS,
@@ -479,7 +479,7 @@ def armor_arguments(world, front):
 
 STATE_SPECS += [
     Spec('armor_to_dragon', 'armor_to_dragon', 'dragonFormForArmor', [('armotyp', INT)],
-         js_file='js/polyself.js', require_counterexamples=True, configure=dragon_state,
+         slow=True, js_file='js/polyself.js', require_counterexamples=True, configure=dragon_state,
          arguments=armor_arguments,
          assumptions=('polyself.c:armor_to_dragon and js/polyself.js:dragonFormForArmor read the initial object and monster-name tables',
                       'C returns NON_PM (-1) where the port returns null and every caller tests that value for truthiness; the claim covers exactly the dragon scale-mail and scales otyps',),
@@ -527,7 +527,7 @@ WEIGHT_ASSUMPTIONS = (
 )
 
 STATE_SPECS += [
-    Spec('weight:stack', 'weight', 'objectWeight', [], js_file='js/mkobj.js',
+    Spec('weight:stack', 'weight', 'objectWeight', [], slow=True, js_file='js/mkobj.js',
          require_counterexamples=True, state=WEIGHT_STATE, partitions=weight_partitions,
          configure=weight_state, arguments=weight_arguments, pre=weight_domain,
          assumptions=WEIGHT_ASSUMPTIONS,
@@ -1694,7 +1694,7 @@ STATE_SPECS += [
          mutants=[(GLYPH_FILE, 'const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;',
                    'const direction = dx === dy ? 3 : dx && dy ? 3 : dx ? 1 : 0;')]),
     Spec('glyph_is_monster', 'verification_glyph_is_monster', 'glyphIsMonster',
-         [('glyph', LONG)], js_file=GLYPH_FILE,
+         [('glyph', LONG)], slow=True, js_file=GLYPH_FILE,
          assumptions=GLYPH_ASSUMPTIONS + (
              'display.h:glyph_is_monster() is exactly the normal, pet, detected and ridden ranges; bodies, statues and the invisible placeholder are not monsters',
          ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
@@ -1802,7 +1802,7 @@ STATE_SPECS += [
          mutants=[(GLYPH_FILE, 'glyph < (NUM_ZAP << 2) + GlyphOffset.zap;',
                    'glyph < (NUM_ZAP << 3) + GlyphOffset.zap;')]),
     Spec('glyph_to_mon', 'verification_glyph_to_mon', 'glyphToMon',
-         [('glyph', LONG)], js_file=GLYPH_FILE,
+         [('glyph', LONG)], slow=True, js_file=GLYPH_FILE,
          assumptions=GLYPH_ASSUMPTIONS + (
              'display.h:glyph_to_mon() decodes every monster range to its species and returns the fencepost NUMMONS elsewhere',
          ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
@@ -1817,7 +1817,7 @@ STATE_SPECS += [
          probes=[narrow('glyph', 2 ** 32 + 3448)],
          mutants=[(GLYPH_FILE, 'glyphIsBody(glyph) ? CORPSE', 'glyphIsBody(glyph) ? STATUE')]),
     Spec('glyph_to_swallow', 'verification_glyph_to_swallow', 'glyphToSwallow',
-         [('glyph', LONG)], js_file=GLYPH_FILE,
+         [('glyph', LONG)], slow=True, js_file=GLYPH_FILE,
          assumptions=GLYPH_ASSUMPTIONS + (
              'display.h:glyph_to_swallow() masks the low three bits and returns zero outside the range',
          ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
