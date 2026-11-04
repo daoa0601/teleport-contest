@@ -5,7 +5,7 @@ import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
 import { isRoom } from './map_types.js';
 import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
-import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetHeroTrap, maketrap } from './trap.js';
+import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetUtrap, maketrap } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';

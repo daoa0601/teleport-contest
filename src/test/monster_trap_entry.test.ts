@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
@@ -36,7 +36,7 @@ void test('a removed trap no longer holds a monster', async () => {
     requirePlayingGame(game);
     level.traps.length = 0;
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.equal(monster.mtrapped, 0);
 });
@@ -48,8 +48,7 @@ void test('a huge monster climbs out of a pit and exposes the trap', async () =>
     requirePlayingGame(game);
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message: string) => messages.push(message),
     });
 
@@ -65,8 +64,7 @@ void test('a rust monster eats the bear trap holding it', async () => {
     requirePlayingGame(game);
     initRng(1n);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+    await mintrap(monster, game, { publish: async () => {} });
 
     assert.equal(monster.mtrapped, 0);
     assert.equal(level.traps.includes(trap), false);
@@ -80,8 +78,7 @@ void test('a rust monster eats pit spikes but remains in the pit', async () => {
     requirePlayingGame(game);
     initRng(1n);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+    await mintrap(monster, game, { publish: async () => {} });
 
     assert.equal(trap.ttyp, PIT);
     assert.equal(monster.mtrapped, 1);
@@ -96,7 +93,7 @@ void test('a monster which recognizes a web can avoid becoming trapped', async (
     requirePlayingGame(game);
     initRng(3n);
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.equal(monster.mtrapped ?? 0, 0);
     assert.equal(monster.mtrapseen, 1 << (WEB - 1));
@@ -110,7 +107,7 @@ void test('a monster can avoid a familiar ordinary teleport trap', async () => {
     requirePlayingGame(game);
     initRng(3n);
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.deepEqual({ x: monster.mx, y: monster.my }, { x: 11, y: 10 });
 });
@@ -128,7 +125,7 @@ void test('a fixed teleport trap sends a monster to its free destination', async
 
     installPagerInput(resetInputState(), { expected: /little dog|disoriented/, limit: 2 });
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.deepEqual({ x: monster.mx, y: monster.my }, destination);
     assert.deepEqual(monster.mtrack, []);
@@ -141,8 +138,7 @@ void test('a visible bear trap catches and hurts a pony', async () => {
     requirePlayingGame(game);
     initRng(5n);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
 
     assert.equal(monster.mtrapped, 1);
     assert.ok(monster.mhp < 20);
@@ -155,8 +151,7 @@ void test('a bear trap removes a monster it kills', async () => {
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         rollDice: () => 8,
         publish: async () => {},
     });
@@ -173,8 +168,7 @@ void test('iron shoes protect a caught monster from a bear trap', async () => {
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async () => {},
     });
 
@@ -191,8 +185,7 @@ void test('rust-trap water rusts an iron helmet worn by a monster', async () => 
     requirePlayingGame(game);
     initRng(1n);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async () => {},
     });
 
@@ -205,8 +198,7 @@ void test('a rust trap removes an iron golem which falls to pieces', async () =>
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async () => {},
     });
 
@@ -230,8 +222,7 @@ void test('a boulder-hit vampire rises while the boulder keeps rolling',
         const boulder = await floorObject(BOULDER, 9, 10);
         installPagerInput(resetInputState(), { expected: /boulder|wolf|vampire/i, limit: 8 });
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await finishImmediateMonsterTrap(action, game);
+    await mintrap(monster, game);
 
         assert.equal(monster.mnum, vampireLeader);
         assert.equal(game.level.monsters.includes(monster), true);
@@ -247,7 +238,7 @@ void test('enchanted iron shoes absorb an anti-magic trap', async () => {
     });
     requirePlayingGame(game);
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.equal(shoes.spe, 0);
     assert.equal(monster.mhp, 8);
@@ -260,7 +251,7 @@ void test('an anti-magic trap drains a monster which casts spells', async () => 
     requirePlayingGame(game);
     initRng(17n);
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.ok((monster.mspec_used ?? 0) > 0);
     assert.equal(trap.tseen, true);
@@ -273,7 +264,7 @@ void test('an anti-magic trap hurts a magic-resistant monster', async () => {
     requirePlayingGame(game);
     initRng(19n);
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.ok(monster.mhp >= 16 && monster.mhp < 20);
 });
@@ -286,8 +277,7 @@ void test('fatal anti-magic compression removes the monster', async () => {
     const messages: string[] = [];
     initRng(23n);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: () => 1,
         publish: async (message: string) => messages.push(message),
     });

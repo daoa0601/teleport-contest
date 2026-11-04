@@ -10,7 +10,7 @@ import { game } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 
 import { hurtleHero } from '../js/dothrow.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, ROCK } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -64,7 +64,7 @@ for (const lifesaving of [false, true] as const) {
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        const result = await triggerHeroTrap(trap);
+        const result = await dotrap(trap);
 
         assert.equal(result.died, !lifesaving);
         assert.equal(result.shortCircuited, false);

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MAGIC_PORTAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
@@ -22,7 +22,7 @@ void test('a portal arrival without its matching portal lands in the down-telepo
     destination.upTeleportRegion = { lx: 11, ly: 10, hx: 11, hy: 10 };
     destination.downTeleportRegion = { lx: 13, ly: 10, hx: 13, hy: 10 };
     installPagerInput(resetInputState(), { expected: /portal|dizzy/, limit: 4 });
-    await triggerHeroTrap(portal, { gotoLevel });
+    await dotrap(portal, { gotoLevel });
     await finishScheduledLevelChange();
     assert.ok(game.level === destination, 'the portal reached its destination');
     assert.equal(game.u.ux, 13, 'the fallback arrival uses the down region');

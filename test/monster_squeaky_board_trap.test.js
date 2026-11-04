@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { adjustHeroAlignment } from '../js/alignment.js';
@@ -18,8 +18,7 @@ void test('a visible monster squeaks a board and wakes a nearby sleeper', async 
     const sleeper = await createMonsterAt('jackal', 15, 10);
     sleeper.msleeping = 1;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(trap.tseen, true);
@@ -33,8 +32,7 @@ void test('a deaf hero sees a monster cringe without discovering the board', asy
     sleeper.msleeping = 1;
     const messages = [];
     game.deaf = true;
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(trap.tseen ?? false, false);
@@ -46,7 +44,7 @@ void test('a flying monster does not press a squeaky board', async () => {
     requirePlayingGame(game);
     const sleeper = await createMonsterAt('jackal', 15, 10);
     sleeper.msleeping = 1;
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
     assert.equal(trap.tseen ?? false, false);
     assert.equal(sleeper.msleeping, 1);
 });
@@ -58,8 +56,7 @@ void test('alignment abuse lets an existing peaceful erinys fly over a squeaky b
     sleeper.msleeping = 1;
     const messages = [];
     adjustHeroAlignment(-16);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => { messages.push(message); },
     });
     assert.equal(messages.length, 0, 'the airborne erinys must not press the board');

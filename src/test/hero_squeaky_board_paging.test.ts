@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, SQKY_BOARD } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -13,7 +13,7 @@ void test('a squeaky board announces a visible sleeper before waking it', async 
     const sleeper = await createMonsterAt('water nymph', 11, 10, NO_MINVENT);
     sleeper.msleeping = 1;
     const input = resetInputState();
-    const operation = triggerHeroTrap(addTrap(level, SQKY_BOARD, 10, 10, { tnote: 4 }));
+    const operation = dotrap(addTrap(level, SQKY_BOARD, 10, 10, { tnote: 4 }));
 
     assert.equal(await Promise.race([
         operation.then(() => 'finished'), input.waitUntilBlocked().then(() => 'input'),
@@ -34,7 +34,7 @@ void test('the hero board noise uses the hero level for its waking radius', asyn
     const input = resetInputState();
     input.feed(' ');
 
-    await triggerHeroTrap(addTrap(level, SQKY_BOARD, 10, 10, { tnote: 4 }));
+    await dotrap(addTrap(level, SQKY_BOARD, 10, 10, { tnote: 4 }));
 
     assert.equal(sleeper.msleeping, 0, 'distance 100 is inside level 8 noise radius 160');
 });

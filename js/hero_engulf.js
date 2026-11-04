@@ -16,7 +16,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { newsym, shieldeff, swallowed } from './display.js';
 import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { drainHeroEnergy, petrifyMonsterImmediately, resetHeroTrap } from './trap.js';
+import { drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
 import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
 import { resetOccupations } from './cmd.js';
@@ -99,7 +99,7 @@ export async function beginHeroEngulf(monster, attack, { state = game, random = 
         return { captured: false, died: true };
     if (hero.utrap) {
         await publish(`You are released from the ${hero.utraptype === TT_WEB ? 'web' : 'trap'}!`);
-        await resetHeroTrap(false, state);
+        await resetUtrap(false, state);
     }
     const leashes = state.inventory.filter(object => object.otyp === LEASH && object.leashmon).length;
     if (leashes) {

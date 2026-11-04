@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -39,8 +39,7 @@ void test('a visible monster reveals the vibrating square under its feet',
         requirePlayingGame(game);
         const messages: string[] = [];
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             publish: async (message: string) => messages.push(message),
         });
 
@@ -55,8 +54,7 @@ void test('the vibration appears beneath an airborne monster', async () => {
     requirePlayingGame(game);
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message: string) => messages.push(message),
     });
 
@@ -71,8 +69,7 @@ void test('an unseen monster makes the nearby ground vibrate', async () => {
     requirePlayingGame(game);
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message: string) => messages.push(message),
     });
 

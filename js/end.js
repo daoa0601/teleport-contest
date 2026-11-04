@@ -58,7 +58,7 @@ import { collectLevelFollowers } from './dog.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { isAccessibleAt } from './monmove.js';
-import { resetHeroTrap } from './trap.js';
+import { resetUtrap } from './trap.js';
 import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 const AMULET_CLASS = 5;
@@ -134,7 +134,7 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
         ? 'being toyed with by Fate' : 'attempting to cheat Death';
     game._helplessDoneMessage = 'You survived that attempt on your life.';
     if (game.u.utrap && game.u.utraptype === TT_LAVA)
-        await resetHeroTrap(false);
+        await resetUtrap(false);
     game.context.botl = true;
     clearHeroRemains(game);
     setPropertyTimeout('unchanging', 0);

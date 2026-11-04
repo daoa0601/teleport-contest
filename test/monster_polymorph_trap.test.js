@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLY_TRAP, W_ARMF } from '../js/const.js';
@@ -45,7 +45,7 @@ void test("a polymorph trap changes a monster's iron shoes but leaves them worn"
     });
     requirePlayingGame(game);
     const originalForm = monster.mnum;
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
     const changedShoes = monster.inventory[0];
     assert.ok(changedShoes);
     assert.equal(changedShoes.otyp, KICKING_BOOTS);
@@ -60,7 +60,7 @@ void test('magic resistance protects a monster from a polymorph trap', async () 
     });
     requirePlayingGame(game);
     const originalForm = monster.mnum;
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
     assert.equal(monster.mnum, originalForm);
     assert.notEqual(trap.tseen, true);
 });
@@ -71,8 +71,7 @@ void test('a magic-resistant monster on a polymorph trap reports that it resists
     requirePlayingGame(game);
     const originalForm = monster.mnum;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(monster.mnum, originalForm);
@@ -85,8 +84,7 @@ void test('the resists report carries the accessiblemsg anchor of the monster', 
     });
     requirePlayingGame(game);
     game.flags.accessiblemsg = true;
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: pline });
+    await mintrap(monster, game, { publish: pline });
     const said = [...game._messageHistory, game._pending_message].join(' | ');
     assert.match(said, /\([^)]*\): The baby gray dragon resists!/);
 });
@@ -98,8 +96,7 @@ void test('a visible monster changes form and reveals a polymorph trap', async (
     const originalForm = monster.mnum;
     const messages = [];
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.notEqual(monster.mnum, originalForm);
@@ -113,8 +110,7 @@ void test('a polymorph trap is revealed when a Nazgul cannot change form', async
     requirePlayingGame(game);
     const originalForm = monster.mnum;
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async () => { },
     });
     assert.equal(monster.mnum, originalForm);

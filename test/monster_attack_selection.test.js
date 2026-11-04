@@ -7,7 +7,7 @@ import { releaseHold } from '../js/zap.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_BITE, AT_CLAW, AT_KICK, AT_TUCH, AT_WEAP } from '../js/monster_attack_types.js';
 import { runMonsterAction } from '../js/monmove.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, maketrap } from '../js/trap.js';
+import { mintrap, maketrap } from '../js/trap.js';
 import { DAGGER, RIN_CONFLICT } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';
@@ -126,8 +126,7 @@ void test('a horse fighting from a pit can bite but cannot kick', async () => {
     requirePlayingGame(game);
     const horse = await createMonsterAt('horse', 11, 10, NO_MINVENT);
     await maketrap(horse.mx, horse.my, PIT);
-    const fall = await triggerImmediateMonsterTrap(horse, game);
-    await resumeDeferredMonsterTrap(fall, game);
+    await mintrap(horse, game);
     assert.equal(horse.mtrapped, 1, 'the horse must actually fall into its pit');
     const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     orc.mhp = orc.mhpmax = 100;

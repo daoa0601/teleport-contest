@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
@@ -21,12 +21,11 @@ for (const species of ['goblin', 'bugbear']) {
         game.u.hallucinationTurns = 20;
         assert.equal(canSeeMonster(monster), false);
         assert.equal(canSpotMonster(monster), true);
-        const action = await triggerImmediateMonsterTrap(monster, game);
         initRng(1n);
         const nextDescription = monsterName(monster);
         initRng(1n);
         const messages = [];
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             publish: async (message) => { messages.push(message); },
         });
         assert.deepEqual(messages, species === 'bugbear'

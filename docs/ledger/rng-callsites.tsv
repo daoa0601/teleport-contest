@@ -597,9 +597,9 @@ src/js/trap.ts	triggerBearTrap	d	"[""2"", ""4""]"	constant
 src/js/trap.ts	triggerBearTrap	rn2	"[""10""]"	constant
 src/js/trap.ts	triggerBearTrap	rn2	"[""2""]"	constant
 src/js/trap.ts	triggerBearTrap	rn2	"[""4""]"	constant
-src/js/trap.ts	triggerFallingRockTrap	d	"[""2"", ""6""]"	constant
-src/js/trap.ts	triggerFallingRockTrap	rn2	"[""15""]"	constant
-src/js/trap.ts	triggerHeroTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	trapeffectRocktrap	d	"[""2"", ""6""]"	constant
+src/js/trap.ts	trapeffectRocktrap	rn2	"[""15""]"	constant
+src/js/trap.ts	dotrap	rn2	"[""5""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""35""]"	constant
@@ -608,19 +608,19 @@ src/js/trap.ts	triggerLandmine	rnd	"[""16""]"	constant
 src/js/trap.ts	triggerLandmine	rnd	"[""16""]"	constant
 src/js/trap.ts	triggerMagicTrap	rn2	"[""30""]"	constant
 src/js/trap.ts	triggerMagicTrap	rnd	"[""10""]"	constant
-src/js/trap.ts	triggerPit	rn2	"[""5""]"	constant
-src/js/trap.ts	triggerPit	rn2	"[""6""]"	constant
-src/js/trap.ts	triggerPit	rn2	"[""6""]"	constant
-src/js/trap.ts	triggerPit	rnd	"[""adjacent ? 3 : 6""]"	constant
-src/js/trap.ts	triggerPit	rnd	"[""conjoined ? 4 : adjacent ? 6 : 10""]"	constant
-src/js/trap.ts	triggerPit	rnd	"[""trap.ttyp === PIT ? 6 : 10""]"	constant
+src/js/trap.ts	trapeffectPit	rn2	"[""5""]"	constant
+src/js/trap.ts	trapeffectPit	rn2	"[""6""]"	constant
+src/js/trap.ts	trapeffectPit	rn2	"[""6""]"	constant
+src/js/trap.ts	trapeffectPit	rnd	"[""adjacent ? 3 : 6""]"	constant
+src/js/trap.ts	trapeffectPit	rnd	"[""conjoined ? 4 : adjacent ? 6 : 10""]"	constant
+src/js/trap.ts	trapeffectPit	rnd	"[""trap.ttyp === PIT ? 6 : 10""]"	constant
 src/js/trap.ts	triggerProjectileTrap	rn2	"[""15""]"	constant
 src/js/trap.ts	triggerProjectileTrap	rn2	"[""2""]"	constant
 src/js/trap.ts	triggerProjectileTrap	rn2	"[""6""]"	constant
-src/js/trap.ts	triggerRustTrap	rn2	"[""3""]"	constant
-src/js/trap.ts	triggerRustTrap	rn2	"[""5""]"	constant
-src/js/trap.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
-src/js/trap.ts	triggerSleepingGasTrap	rnd	"[""25""]"	constant
+src/js/trap.ts	trapeffectRustTrap	rn2	"[""3""]"	constant
+src/js/trap.ts	trapeffectRustTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	trapeffectSlpGasTrap	rnd	"[""25""]"	constant
+src/js/trap.ts	trapeffectSlpGasTrap	rnd	"[""25""]"	constant
 src/js/trap.ts	webTrapDuration	rn2	"[""2""]"	constant
 src/js/trap.ts	webTrapDuration	rn2	"[""4""]"	constant
 src/js/trap.ts	webTrapDuration	rn2	"[""4""]"	constant
@@ -1596,7 +1596,7 @@ src/js/uhitm.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/uhitm.ts	objectTouchedByEnchantment	random	"[""2""]"	constant
 src/js/uhitm.ts	resolveMonsterPhysicalDamage	random	"[""4""]"	constant
 src/js/mon.ts	pickUpMonsterFloorObject	random	"[""25""]"	constant
-src/js/trap.ts	finishMonsterPitTrap	rollOne	"[""event.damageSides""]"	unproved
+src/js/trap.ts	trapeffectPit	rollOne	"[""event.damageSides""]"	unproved
 src/js/uhitm.ts	poisonHeroFromMonster	random	"[""chance""]"	guarded
 src/js/uhitm.ts	poisonMonsterFromAttack	random	"[""10""]"	constant
 src/js/mon.ts	decideMonsterShapeChange	random	"[""10""]"	constant
@@ -1652,8 +1652,8 @@ src/js/muse.ts	consumeMonsterStoningCure	rollOne	"[""15""]"	constant
 src/js/dog.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/dog.ts	tameMonster	rnd	"[""10""]"	constant
 src/js/zap.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
-src/js/trap.ts	tryMonsterTrapEscape	random	"[""2""]"	constant
-src/js/trap.ts	tryMonsterTrapEscape	random	"[""40""]"	constant
+src/js/trap.ts	mintrap	random	"[""2""]"	constant
+src/js/trap.ts	mintrap	random	"[""40""]"	constant
 src/js/dig.ts	digMonsterTunnel	random	"[""3""]"	constant
 src/js/dig.ts	digMonsterTunnel	random	"[""5""]"	constant
 src/js/dig.ts	digMonsterTunnel	rollOne	"[""12""]"	constant
@@ -2087,8 +2087,8 @@ src/js/do.ts	polymorphSink	rn2	"[""4""]"	constant
 src/js/do.ts	teleportSink	rn2	"[""ROWNO - 2""]"	constant
 src/js/do.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
 src/js/rock_breakage.ts	fractureRock	random	"[""60""]"	constant
-src/js/trap.ts	beginMonsterRockTrap	random	"[""15""]"	constant
-src/js/trap.ts	beginMonsterRockTrap	rollDice	"[""2"", ""6""]"	constant
+src/js/trap.ts	trapeffectRocktrap	random	"[""15""]"	constant
+src/js/trap.ts	trapeffectRocktrap	rollDice	"[""2"", ""6""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""10""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""20""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""3""]"	constant
@@ -2100,7 +2100,7 @@ src/js/rumor.ts	outOracle	rnd	"[""remaining.length - 1""]"	guarded
 src/js/rumor.ts	outRumor	rn2	"[""2""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""3""]"	constant
 src/js/rumor.ts	outRumor	rn2	"[""4""]"	constant
-src/js/trap.ts	finishMonsterRustTrap	random	"[""3""]"	constant
+src/js/trap.ts	trapeffectRustTrap	random	"[""3""]"	constant
 src/js/pray.ts	bestowArtifact	rn2	"[""6 + 2 * (hero.ugifts || 0) * count""]"	unproved
 src/js/pray.ts	bestowArtifact	rnz	"[""300 + 50 * count""]"	constant
 src/js/pray.ts	consumeOffering	rn2	"[""messages.length""]"	constant
@@ -2176,7 +2176,7 @@ src/js/sit.ts	sitWhileTrapped	rn2	"[""5""]"	constant
 src/js/sit.ts	sitWhileTrapped	rnd	"[""4""]"	constant
 src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""current - previous""]"	unproved
 src/js/skills.ts	drainHeroWeaponSkills	rn2	"[""record.length""]"	unproved
-src/js/trap.ts	beginMonsterSleepGasTrap	rollOne	"[""25""]"	constant
+src/js/trap.ts	trapeffectSlpGasTrap	rollOne	"[""25""]"	constant
 src/js/special_location.ts	getLocation	rn2	"[""sx""]"	unproved
 src/js/special_location.ts	getLocation	rn2	"[""sy""]"	unproved
 src/js/spell.ts	invokeBook	d	"[""2"", ""6""]"	constant

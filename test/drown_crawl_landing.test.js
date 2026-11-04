@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, MOAT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrapAt } from '../js/trap.js';
+import { dotrapAt } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { GOLD_PIECE } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -29,7 +29,7 @@ void test('crawling out of a flooded land-mine hole reports the item on the land
         await floorObject(GOLD_PIECE, 10 + dx, 10 + dy, { quan: 1 });
     }
     resetInputState().feed(' '.repeat(40));
-    await triggerHeroTrapAt(10, 10);
+    await dotrapAt(10, 10);
     const log = [...game._messageHistory, game._pending_message].join(' | ');
     const crawl = log.indexOf('Pheew!  That was close.');
     assert.ok(crawl >= 0, `expected a crawl-out: ${log}`);

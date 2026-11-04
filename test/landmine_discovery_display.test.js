@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE } from '../js/const.js';
@@ -25,8 +25,7 @@ for (const detonates of [false, true]) {
             await flush_screen(1);
             shown.push({ message, glyph: requireScreenCell(10, 11).ch, seen: !!trap.tseen });
         };
-        const action = await triggerImmediateMonsterTrap(monster, game, { force: true, random, rollOne: () => 1 });
-        await resumeDeferredMonsterTrap(action, game, { publish, random, rollOne: () => 1 });
+        await mintrap(monster, game, { forcetrap: true, random, rollOne: () => 1, publish });
         await publish('You wait.');
         assert.match(shown[0]?.message ?? '', /trigger appears/);
         assert.equal(shown[0]?.seen, false, 'the trigger announcement precedes seetrap');
@@ -48,8 +47,7 @@ void test('a grounded monster is drawn before announcing its land mine explosion
     placeMonsterAt(monster, 11, 10);
     let shownAtExplosion;
     const random = (limit) => limit - 1;
-    const action = await triggerImmediateMonsterTrap(monster, game, { random, rollOne: () => 1 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random, rollOne: () => 1,
         publish: async (message) => {
             await flush_screen(1);

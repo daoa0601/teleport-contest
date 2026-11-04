@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOLE, MAGIC_PORTAL, TRAPDOOR } from '../js/const.js';
@@ -18,7 +18,7 @@ for (const kind of [HOLE, TRAPDOOR, MAGIC_PORTAL]) {
         await vision_recalc(0);
         const input = resetInputState();
         await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
-        const fall = triggerImmediateMonsterTrap(xorn, game, { random: () => 0 });
+        const fall = mintrap(xorn, game, { random: () => 0 });
         const boundary = await Promise.race([
             input.waitUntilBlocked().then(() => 'pager'), fall.then(() => 'left'),
         ]);

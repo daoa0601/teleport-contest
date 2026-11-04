@@ -36,7 +36,7 @@ import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWe
 import { weaponHitBonus } from './weapon.js';
 import { selectAttack } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
-import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, damageObjectWithAcid, erodeArmor } from './trap.js';
+import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack, resolveMonsterPhysicalDamage, tryKnockback, applyMonsterCombatEffect, physicalEffect, effectResult, } from './uhitm.js';
 import { monsterReflectionSource } from './muse.js';
 import { contactIsProtected, touchPetrifies } from './stoning.js';
@@ -447,8 +447,7 @@ export async function tryMonsterPuddingSplit(aggressor, defender, weapon, { stat
     if (visible && canSpotMonster(defender)) {
         await publish(`${monsterName(defender, { state, capitalized: true })} divides as ${monsterName(aggressor, { state })} hits it!`);
     }
-    const trap = await triggerImmediateMonsterTrap(clone, state, { random });
-    await finishImmediateMonsterTrap(trap, state, { publish, random });
+    await mintrap(clone, state, { random, publish });
     return {
         split: true,
         heroDied: !!state.program_state.gameover,
@@ -719,8 +718,7 @@ export async function resolveMonsterCombatEngulf(attacker, defender, attack, { s
             if (liquid?.heroDied || state.program_state.gameover)
                 return { ...result, heroDied: true };
             if (attacker.mhp > 0 && state.level.traps.some(trap => trap.tx === destination.x && trap.ty === destination.y)) {
-                const trap = await triggerImmediateMonsterTrap(attacker, state, { random, rollOne, rollDice });
-                await finishImmediateMonsterTrap(trap, state, { publish, random });
+                await mintrap(attacker, state, { random, rollOne, rollDice, publish });
             }
             return { ...result,
                 nativeResult: result.nativeResult | (attacker.mhp <= 0 ? M_ATTK_AGR_DIED : 0),

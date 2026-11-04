@@ -11,7 +11,7 @@ import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { impossible, panic } from './diagnostics.js';
 import { mkstairs } from './mklev.js';
 import { monsterAtPosition } from './steed.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, resetHeroTrap, deleteTrap, maketrap } from './trap.js';
+import { mintrap, resetUtrap, deleteTrap, maketrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { fractureRock } from './rock_breakage.js';
@@ -51,7 +51,7 @@ export async function makeInvocationArea({ state = game } = {}) {
     if (state.u.utrap) {
         if (state.u.utraptype === TT_BURIEDBALL)
             await buriedBallToPunishment();
-        await resetHeroTrap(false, state);
+        await resetUtrap(false, state);
     }
     for (const [distance, ring] of rings.entries()) {
         for (const position of ring)
@@ -111,8 +111,7 @@ async function changeInvocationSquare({ x, y }, distance, state) {
         if (monster.m_ap_type)
             await revealMonsterAppearance(monster);
         if (level.traps.some(candidate => candidate.tx === x && candidate.ty === y)) {
-            const action = await triggerImmediateMonsterTrap(monster, state);
-            await finishImmediateMonsterTrap(action, state);
+            await mintrap(monster, state);
         }
         else
             await resolveMonsterLiquid(monster, state, {

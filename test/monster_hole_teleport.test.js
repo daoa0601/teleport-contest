@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HOLE, TRAPDOOR } from '../js/const.js';
@@ -22,7 +22,7 @@ for (const [cursed, force, falls] of [[false, false, true], [true, false, false]
         const tameness = dog.mtame;
         addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
         pushKeys(' '.repeat(20));
-        await triggerImmediateMonsterTrap(dog, game, { force, random: () => 0 });
+        await mintrap(dog, game, { forcetrap: force, random: () => 0 });
         assert.equal(source.monsters.includes(dog), !falls);
         assert.equal(leash.leashmon, falls ? 0 : dog.m_id);
         assert.equal(!!dog.mleashed, !falls);
@@ -35,7 +35,7 @@ void test('a hole cannot carry away a monster that is holding the hero', async (
     const owlbear = await createMonsterAt('owlbear', 11, 10);
     game.u.ustuck = owlbear;
     addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
-    await triggerImmediateMonsterTrap(owlbear, game, { random: () => 0 });
+    await mintrap(owlbear, game, { random: () => 0 });
     assert.ok(source.monsters.includes(owlbear));
     assert.equal(game.u.ustuck, owlbear);
 });
@@ -47,7 +47,7 @@ void test('a Castle trapdoor sends a monster to the Valley instead of its ordina
     game.dungeons.push(createDungeon({ dname: 'Gehennom', num_dunlevs: 3, depth_start: 3 }));
     const orc = await createMonsterAt('hill orc', 11, 10);
     addTrap(source, TRAPDOOR, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
-    await triggerImmediateMonsterTrap(orc, game, { random: () => 0 });
+    await mintrap(orc, game, { random: () => 0 });
     assert.deepEqual(orc.migrationDestination, { dnum: 1, dlevel: 1 });
 });
 void test('a monster falling in Gehennom cannot pass the invocation level before the ritual', async () => {
@@ -59,7 +59,7 @@ void test('a monster falling in Gehennom cannot pass the invocation level before
     game.valley_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
     const orc = await createMonsterAt('hill orc', 11, 10);
     addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 3 } });
-    await triggerImmediateMonsterTrap(orc, game, { random: () => 0 });
+    await mintrap(orc, game, { random: () => 0 });
     assert.deepEqual(orc.migrationDestination, { dnum: 0, dlevel: 2 });
 });
 void test('Sokoban pulls even a giant through a pre-existing hole', async () => {
@@ -70,7 +70,7 @@ void test('Sokoban pulls even a giant through a pre-existing hole', async () => 
     const giant = await createMonsterAt('stone giant', 11, 10);
     addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
     pushKeys(' '.repeat(20));
-    await triggerImmediateMonsterTrap(giant, game, { random: () => 0 });
+    await mintrap(giant, game, { random: () => 0 });
     assert.equal(source.monsters.includes(giant), false);
     assert.deepEqual(giant.migrationDestination, { dnum: 0, dlevel: 2 });
 });
@@ -81,8 +81,8 @@ for (const species of ['bat', 'floating eye', 'rock piercer']) {
         const monster = await createMonsterAt(species, 11, 10);
         const trap = addTrap(source, HOLE, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
         const messages = [];
-        await triggerImmediateMonsterTrap(monster, game, {
-            force: true, publish: async (message) => { messages.push(message); },
+        await mintrap(monster, game, {
+            forcetrap: true, publish: async (message) => { messages.push(message); },
         });
         assert.ok(source.monsters.includes(monster));
         assert.equal(trap.tseen, true);

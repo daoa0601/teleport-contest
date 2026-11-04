@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PIT, WEB } from '../js/const.js';
@@ -24,8 +24,8 @@ void test('a concealing monster caught by a pit under its object appears', async
     const messages: string[] = [];
     initRng(1n);
 
-    const action = await triggerImmediateMonsterTrap(hider, game, { force: true });
-    await finishImmediateMonsterTrap(action, game, {
+    await mintrap(hider, game, {
+        forcetrap: true,
         publish: async message => { messages.push(message); },
     });
 
@@ -47,8 +47,8 @@ void test('a monster that tears straight through a web does not appear', async (
     const messages: string[] = [];
     initRng(1n);
 
-    const action = await triggerImmediateMonsterTrap(giant, game, { force: true });
-    await finishImmediateMonsterTrap(action, game, {
+    await mintrap(giant, game, {
+        forcetrap: true,
         publish: async message => { messages.push(message); },
     });
 

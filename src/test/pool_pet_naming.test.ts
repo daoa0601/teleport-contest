@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -9,7 +9,6 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
 import { initRng } from '../js/rng.js';
@@ -59,8 +58,8 @@ for (const [target, message] of [
         setMonsterGivenName(monster, 'Sirius');
         const messages: string[] = [];
 
-        const event = await beginMonsterRustTrap(monster, trap, game);
-        await finishMonsterRustTrap(monster, event, game, {
+        requirePlayingGame(game);
+        await mintrap(monster, game, {
             random: () => target,
             publish: text => { messages.push(text); },
         });
@@ -77,8 +76,7 @@ void test('a squeaky board addresses a named pet without a species article', asy
     requirePlayingGame(game);
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: text => { messages.push(text); } });
+    await mintrap(monster, game, { publish: text => { messages.push(text); } });
 
     assert.equal(messages[0], 'A board beneath Idefix squeaks a B flat loudly.');
 });

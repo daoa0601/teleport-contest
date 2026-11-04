@@ -6,7 +6,7 @@ import { COLNO, DOOR, D_CLOSED, D_NODOOR, MOAT, PIT, ROOM, ROWNO, STONE, TT_PIT,
 import { createEarthquake } from '../js/earthquake.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -163,7 +163,7 @@ void test('earthquake jostling in an existing pit damages the current monster bo
     installPolymorphedHero('giant ant', { hitPoints: 100 });
     const pit = addTrap(game.level, PIT, 10, 10);
     pushKeys(' '.repeat(300));
-    await triggerHeroTrap(pit);
+    await dotrap(pit);
     const hitPoints = game.u.mh;
     assert.equal(game.u.utraptype, TT_PIT);
     initRng(1n);

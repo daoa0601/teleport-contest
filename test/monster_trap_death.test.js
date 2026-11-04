@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -32,11 +32,8 @@ for (const [name, trapType] of [
         initializePet(monster);
         await makeBlinded(1, { talk: false });
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game, {
+        await mintrap(monster, game, {
             random: range => range - 1,
-            rollOne: sides => sides, rollDice: () => 8,
-        });
-        await resumeDeferredMonsterTrap(action, game, {
             rollOne: sides => sides, rollDice: () => 8,
             publish: async (message) => { messages.push(message); },
         });
@@ -52,8 +49,7 @@ void test('a pet iron golem rusting to pieces has grief and a rust epitaph witho
     requirePlayingGame(game);
     initializePet(monster);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => { messages.push(message); },
     });
     assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
@@ -69,8 +65,8 @@ void test('an invisible pet killed by anti-magic compression gives grief instead
     requirePlayingGame(game);
     initializePet(monster);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { rollOne: () => 4 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        rollOne: () => 4,
         publish: async (message) => { messages.push(message); },
     });
     assert.notEqual(monsterAtPosition(game.level, monster.mx, monster.my), monster);
@@ -84,8 +80,8 @@ void test('the initial fire-trap hit does not give a straw pet the inventory-bur
     requirePlayingGame(game);
     initializePet(monster);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 8 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        rollDice: () => 8,
         random: range => range === 5 ? 1 : 0,
         publish: async (message) => { messages.push(message); },
     });
@@ -103,8 +99,8 @@ void test('a straw pet killed by an exploding potion in a fire trap receives a r
     const potion = await knownObject(POT_OIL);
     await addObjectToMonsterInventory(monster, potion);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 8 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        rollDice: () => 8,
         random: range => range === 5 ? 1 : 0,
         rollOne: () => 6,
         publish: async (message) => { messages.push(message); },

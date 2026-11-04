@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { BEAR_TRAP } from '../js/const.js';
@@ -16,8 +16,10 @@ for (const species of ['owlbear', 'bugbear', 'giant']) {
         requirePlayingGame(game);
         await makeBlinded(20, { talk: false });
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game, { force: true });
-        await finishImmediateMonsterTrap(action, game, { publish: message => { messages.push(message); } });
+        await mintrap(monster, game, {
+            forcetrap: true,
+            publish: message => { messages.push(message); },
+        });
         assert.equal(monster.mtrapped, 1);
         assert.ok(monster.mhp < 100);
         assert.equal(trap.tseen, false, 'hearing the victim does not reveal the trap');
@@ -36,8 +38,10 @@ for (const sleeping of [false, true]) {
         if (sleeping)
             await putHeroToSleep(10);
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game, { force: true });
-        await finishImmediateMonsterTrap(action, game, { publish: message => { messages.push(message); } });
+        await mintrap(monster, game, {
+            forcetrap: true,
+            publish: message => { messages.push(message); },
+        });
         assert.equal(messages.join('\n'), sleeping ? 'You dream that you hear the roaring of an angry bear!' : '');
     });
 }

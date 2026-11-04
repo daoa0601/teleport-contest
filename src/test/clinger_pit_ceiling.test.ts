@@ -4,7 +4,7 @@ import test from 'node:test';
 import { LANDMINE, PIT, SPIKED_PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
@@ -48,8 +48,7 @@ for (const type of [PIT, SPIKED_PIT]) {
         game.u.uz = { dnum: 1, dlevel: 1 };
         const options = { rollOne: (sides: number) => sides, publish: () => {} };
 
-        const action = await triggerImmediateMonsterTrap(monster, game, options);
-        await finishImmediateMonsterTrap(action, game, options);
+        await mintrap(monster, game, options);
 
         assert.equal(monster.mtrapped, 1);
         assert.equal(monster.mhp, type === PIT ? 94 : 90);

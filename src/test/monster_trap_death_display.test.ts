@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
@@ -42,10 +42,7 @@ for (const [type, name] of [
         addTrap(level, type, 11, 10, { tseen: true });
         initRng(1n);
 
-        const action = await triggerImmediateMonsterTrap(monster, game, {
-            random: limit => limit - 1, rollOne: sides => sides, rollDice: () => 8,
-        });
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             random: limit => limit === 5 ? 1 : limit - 1, rollOne: sides => sides,
             rollDice: () => 8, publish: async () => {},
         });

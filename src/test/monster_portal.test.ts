@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -34,7 +34,7 @@ void test('an unleashed pet enters a magic portal and retains its tameness', asy
     const tameness = pet.mtame;
     const messages: string[] = [];
 
-    await triggerImmediateMonsterTrap(pet, game, {
+    await mintrap(pet, game, {
         publish: async message => { messages.push(message); },
     });
 
@@ -56,7 +56,7 @@ for (const cursed of [false, true]) {
         pet.mleashed = 1;
         const messages: string[] = [];
 
-        await triggerImmediateMonsterTrap(pet, game, {
+        await mintrap(pet, game, {
             publish: async message => { messages.push(message); },
         });
 
@@ -74,7 +74,7 @@ for (const held of [false, true]) {
         if (held) game.u.ustuck = monster;
         else game.u.usteed = monster;
 
-        const action = await triggerImmediateMonsterTrap(monster, game, { publish: async () => {} });
+        const action = await mintrap(monster, game, { publish: async () => {} });
 
         assert.equal(action.event, null);
         assert.ok(game.level.monsters.includes(monster));
@@ -86,7 +86,7 @@ void test('a monster with teleport control crosses a portal without becoming con
     requirePlayingGame(game);
     monster.mconf = 0;
 
-    await triggerImmediateMonsterTrap(monster, game, { publish: async () => {} });
+    await mintrap(monster, game, { publish: async () => {} });
 
     assert.equal(game.level.monsters.includes(monster), false);
     assert.equal(monster.mconf, 0);
@@ -97,7 +97,7 @@ void test('a monster can avoid a magic portal it already knows about', async () 
     requirePlayingGame(game);
     monsterLearnsTrap(monster, trap);
 
-    const action = await triggerImmediateMonsterTrap(monster, game, {
+    const action = await mintrap(monster, game, {
         random: () => 1, publish: async () => {},
     });
 
@@ -112,7 +112,7 @@ void test('forcing a pet into a portal releases even a cursed leash', async () =
     const leash = await addInventoryObject(LEASH, { leashmon: pet.m_id, cursed: true });
     pet.mleashed = 1;
 
-    await triggerImmediateMonsterTrap(pet, game, { force: true, publish: async () => {} });
+    await mintrap(pet, game, { forcetrap: true, publish: async () => {} });
 
     assert.equal(pet.mleashed, 0);
     assert.equal(leash.leashmon, 0);
@@ -126,7 +126,7 @@ void test('portal departure waits for the message pager before removing the pet'
     await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
     const input = resetInputState();
 
-    const departure = triggerImmediateMonsterTrap(pet, game);
+    const departure = mintrap(pet, game);
     await input.waitUntilBlocked();
     try {
         assert.ok(game.level.monsters.includes(pet));
@@ -147,7 +147,7 @@ for (const roll of [0, 1]) {
         game.astral_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
         const messages: string[] = [];
 
-        await triggerImmediateMonsterTrap(monster, game, {
+        await mintrap(monster, game, {
             random: () => roll,
             publish: async message => { messages.push(message); },
         });
@@ -164,7 +164,7 @@ void test('an Amulet carrier cannot cross a planar portal', async () => {
     game.astral_level = createSpecialLevel({ dnum: 0, dlevel: 1 });
     await addObjectToMonsterInventory(monster, await knownObject(AMULET_OF_YENDOR));
 
-    await triggerImmediateMonsterTrap(monster, game, {
+    await mintrap(monster, game, {
         random: () => 0, publish: async () => {},
     });
 
@@ -178,7 +178,7 @@ void test('a home elemental cannot leave its plane through a portal', async () =
     game.earth_level = createSpecialLevel({ ...game.u.uz });
     const messages: string[] = [];
 
-    await triggerImmediateMonsterTrap(monster, game, {
+    await mintrap(monster, game, {
         random: () => 0, publish: async message => { messages.push(message); },
     });
 

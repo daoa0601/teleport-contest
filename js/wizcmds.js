@@ -68,7 +68,7 @@ import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
 import { customizedGlyphs } from './glyph_customizations.js';
 import { rumorCheck } from './rumor.js';
-import { clearHeroTrap } from './trap.js';
+import { resetUtrap } from './trap.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
     const verbose = game.flags.verbose;
@@ -661,7 +661,7 @@ async function discardOldLevel() {
     game._travelTarget = null;
     if (game.context.polearm)
         game.context.polearm.hitmonId = null;
-    clearHeroTrap();
+    await resetUtrap(false);
     await checkSpecialRoom({ newLevel: true });
     game.u.ustuck = null;
     game.u.uswallow = game.uswallow = 0;

@@ -5,7 +5,7 @@ import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';
 
 import { BEAR_TRAP, TT_BEARTRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { FUMBLE_BOOTS, LEVITATION_BOOTS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -32,10 +32,8 @@ for (const admission of ['ordinary', 'forceTrap', 'failedUntrap', 'forceBungle',
         pushKeys(' '.repeat(60));
         initRng(1n);
 
-        await triggerHeroTrap(
-            trap,
-            ['ordinary', 'fumbling'].includes(admission) ? {} : { [admission]: true },
-        );
+        await dotrap(trap,
+        ['ordinary', 'fumbling'].includes(admission) ? {} : { [admission]: true },);
 
         const caught = admission !== 'ordinary';
         assert.equal(!!game.u.utrap, caught);
@@ -69,7 +67,7 @@ for (const [airborne, forced, sitting] of [
         const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
         initRng(1n);
 
-        await triggerHeroTrap(trap, { forceTrap: forced, viaSitting: sitting });
+        await dotrap(trap, { forceTrap: forced, viaSitting: sitting });
 
         const caught = forced || sitting;
         assert.equal(!!game.u.utrap, caught);
@@ -89,7 +87,7 @@ void test('hallucinated bear-trap feedback can use the current female role name'
     const trap = addTrap(game.level, BEAR_TRAP, 10, 10, { tseen: true });
     initRng(51n);
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     assert.match(game._pending_message, /You float over a cavewoman trap\./);
     assert.ok(!game.u.utrap);

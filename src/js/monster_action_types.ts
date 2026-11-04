@@ -477,7 +477,10 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     forcedTrapLanding?: boolean;
     // FORCEBUNGLE retains the avoidance roll but makes its result ineffective.
     forcedTrapBungle?: boolean;
-    escapingTrap?: boolean;
+    // mintrap()'s result for the m_move() tail: Trap_Caught_Mon ("caught"),
+    // the deferred completion's outcome, or undefined when no staged
+    // completion ran.
+    trapOutcome?: 'finished' | 'caught' | 'hero-died' | 'killed' | 'left-level';
     reluctant?: boolean;
     usedDefense?: MonsterOffensiveResult;
     usedMisc?: MonsterMiscItem;
@@ -526,11 +529,15 @@ export interface MonsterDamageOptions extends MonsterRandomOptions {
     die?: DeathHandler;
 }
 
-export interface ImmediateMonsterTrapOptions extends MonsterRandomOptions {
+export interface MintrapOptions extends MonsterTrapResumeOptions {
+    /** FORCETRAP: an unavoidable trigger (forced plunge, locked trap). */
+    forcetrap?: boolean;
+    /** FORCEBUNGLE: a hurtling landing still rolls the known-trap check. */
+    forcebungle?: boolean;
+    /** HURTLING or caller-known airborne state: floor-triggered traps are skipped. */
     inAir?: boolean;
-    force?: boolean;
-    forceBungle?: boolean;
-    publish?: PublishMonsterMessage;
+    movement?: MonsterMovement;
+    calls?: MonsterCallLog;
 }
 
 export interface MonsterTrapResumeOptions extends MonsterRandomOptions {

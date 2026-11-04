@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FIRE_TRAP } from '../js/const.js';
@@ -10,8 +10,7 @@ void test('a concealed clinger triggers a fire trap and takes its damage', async
     });
     requirePlayingGame(game);
     monster.mundetected = true;
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await finishImmediateMonsterTrap(action, game);
+    await mintrap(monster, game);
     assert.ok(monster.mhp < 40, 'Clinging does not prevent floor-triggered fire damage');
     assert.ok((monster.mtrapseen ?? 0) & (1 << (FIRE_TRAP - 1)));
 });

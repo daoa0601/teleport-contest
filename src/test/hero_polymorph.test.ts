@@ -15,7 +15,7 @@ import { loseHeroHp } from '../js/hack.js';
 import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { morehungry } from '../js/eat.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
@@ -156,7 +156,7 @@ for (const [trapType, form] of [
         const level = await freshObjectRoom({ flags: { debug: true } });
         requireFixtureGame(game);
         const trap = addTrap(level, trapType, game.u.ux, game.u.uy);
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         assert.ok((game.u.utrap ?? 0) > 0);
         pushKeys(`polyself\n${form}\n                `);
 
@@ -178,7 +178,7 @@ void test('a slipping body escaping a web resumes blocked levitation', async () 
     const level = await freshObjectRoom({ flags: { debug: true } });
     requireFixtureGame(game);
     const trap = addTrap(level, WEB, game.u.ux, game.u.uy);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.ok((game.u.utrap ?? 0) > 0);
     grantIntrinsicProperty('levitation', 'outside');
     assert.equal(propertyIsActive('levitation', game), false,

@@ -10,7 +10,7 @@ import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
-import { waterDamageObject, triggerHeroTrap } from './trap.js';
+import { waterDamageObject, dotrap } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { throneSitEffect } from './throne.js';
 import type { ThroneOptions } from './throne.js';
@@ -259,7 +259,7 @@ export async function dosit({
             if (await sitWhileTrapped(trap)) return;
         } else {
             await pline(`You ${u?.flying || game.flying ? 'land' : 'sit down'}.`);
-            const result = await triggerHeroTrap(trap, {
+            const result = await dotrap(trap, {
                 finishTeleport,
                 gotoLevel,
                 viaSitting: true,

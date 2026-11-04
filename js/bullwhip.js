@@ -33,7 +33,7 @@ import { vision_recalc, vision_reset } from './vision.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './do_wear.js';
-import { fireDamageObject, resetHeroTrap } from './trap.js';
+import { fireDamageObject, resetUtrap } from './trap.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
 const PM_GRID_BUG = 116;
@@ -233,7 +233,7 @@ function pitEscapeDestination(targetX, targetY, monster, state) {
         : { x: targetX, y: targetY };
 }
 async function moveHeroOutOfPit(destination, state) {
-    await resetHeroTrap(true, state);
+    await resetUtrap(true, state);
     const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
         allowDrag: true,
         finishArrival: async (movement) => {

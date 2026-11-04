@@ -40,7 +40,7 @@ import { cureHeroSickness, heroIsSick } from './potion.js';
 import { healHeroLegs } from './do.js';
 import { confersLuck } from './invent.js';
 import { clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
-import { clearHeroTrap, announceTerrainRescue } from './trap.js';
+import { resetUtrap, announceTerrainRescue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -576,7 +576,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         clearHeroStrangulation(state);
         return;
     case Trouble.LAVA:
-        if (!await teleportHeroSafely()) clearHeroTrap(state);
+        if (!await teleportHeroSafely()) await resetUtrap(false, state);
         await announceTerrainRescue(DISSOLVED, state);
         return;
     case Trouble.STARVING:

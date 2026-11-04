@@ -22,7 +22,7 @@ import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetHeroTrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
+import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
@@ -480,7 +480,7 @@ async function strikeOrLockVertically(source, x, y, trap, state) {
         trap.ttyp = HOLE;
         trap.tseen = 1;
         await newsym(x, y);
-        await triggerHeroTrap(trap, { gotoLevel });
+        await dotrap(trap, { gotoLevel });
         return known;
     }
     if (!striking && trap.ttyp === HOLE) {
@@ -968,7 +968,7 @@ async function freezeLiquidAt(x, y, state, publish) {
         else if (state.u.utrap && state.u.utraptype === TT_LAVA) {
             if (state.u.passesWalls) {
                 await publish('You pass through the now-solid rock.');
-                await resetHeroTrap(true, state);
+                await resetUtrap(true, state);
             }
             else {
                 setHeroTrap(rn1(50, 20), TT_INFLOOR, state);
@@ -1024,10 +1024,10 @@ async function evaporatePoolAt(x, y, state, publish, heroCaused) {
         await newsym(x, y);
         const monster = liquidMonsterAt(x, y, state);
         if (pit && state.u.ux === x && state.u.uy === y)
-            await triggerHeroTrap(pit);
+            await dotrap(pit);
         else if (pit && monster) {
             requirePlayingGame(state);
-            await finishImmediateMonsterTrap(await triggerImmediateMonsterTrap(monster, state), state, { publish });
+            await mintrap(monster, state, { publish });
         }
     }
     return rangeChange;

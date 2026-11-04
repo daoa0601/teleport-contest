@@ -30,7 +30,7 @@ import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsFlyer, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetHeroTrap, floatHeroUp, floatHeroDown, clearHeroTrap, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, triggerHeroTrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
 import { gotoLevel } from './level_change.js';
@@ -1295,7 +1295,7 @@ async function leaveWater({ state, location, publish, }) {
     return true;
 }
 // entry 'spot-effects' (C hack.c:spoteffects() -> pooleffects()) is the
-// default.  entry 'float-down' (C trap.c:float_down() -> drown()/
+// default.  entry 'float-down' (float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
 // mounted-steed dismount, and the ceiling-hider check, none of which the
 // direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
@@ -2663,7 +2663,7 @@ export async function finishDestinationSpotEffects({ oldx, oldy, newx, newy, tra
                 triggeringTrapType = trap.ttyp;
                 let result;
                 try {
-                    result = await triggerHeroTrapAt(newx, newy, {
+                    result = await dotrapAt(newx, newy, {
                         finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
                     });
                 }
@@ -3203,7 +3203,7 @@ export async function heroCanMoveFromTrap(targetX, targetY) {
         return true;
     const moved = await heroTrapmove(targetX, targetY);
     if (!hero.utrap)
-        await resetHeroTrap(true);
+        await resetUtrap(true);
     return moved;
 }
 // C hack.c:air_turbulence().
@@ -3561,8 +3561,7 @@ export async function settleBeastHeroDisplacement(beast, state) {
         if (!state.level.monsters.includes(beast) || beast.dead || beast.mhp <= 0
             || state.program_state.gameover)
             return;
-        const trap = await triggerImmediateMonsterTrap(beast, state);
-        await finishImmediateMonsterTrap(trap, state);
+        await mintrap(beast, state);
     }
     finally {
         if (moving === undefined)
@@ -3660,8 +3659,7 @@ export async function settlePetHeroDisplacement(monster, state) {
         return;
     let trapMovedMonster = false;
     if (!monster.dead && monster.mhp > 0) {
-        const action = await triggerImmediateMonsterTrap(monster, state);
-        await finishImmediateMonsterTrap(action, state);
+        const action = await mintrap(monster, state);
         if (state.program_state.gameover)
             return;
         // trapeffect_telep_trap() returns Trap_Moved_Mon even when blocked.

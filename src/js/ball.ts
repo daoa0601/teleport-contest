@@ -25,7 +25,7 @@ import { dist2, distmin } from './hacklib.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { woundHeroLegs } from './do.js';
-import { fillPitWithBoulderAt, resetHeroTrap } from './trap.js';
+import { fillPitWithBoulderAt, resetUtrap } from './trap.js';
 import { endVoluntaryMultiTurn, applyHeroLocationEffects, moveObject, loseHeroHp, nearCapacity, SLT_ENCUMBER, weightCapacity } from './hack.js';
 import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass } from './monworn.js';
@@ -334,7 +334,7 @@ export async function dropBall(x: number, y: number, { state = game, publish = p
                         return;
                 }
             }
-            await resetHeroTrap(true, state);
+            await resetUtrap(true, state);
             await fillPitWithBoulderAt(hero.ux, hero.uy, state, { publish });
         }
 

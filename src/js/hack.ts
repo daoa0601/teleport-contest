@@ -38,7 +38,7 @@ import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsFlyer, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetHeroTrap, floatHeroUp, floatHeroDown, clearHeroTrap, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, triggerHeroTrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
@@ -1378,7 +1378,7 @@ async function leaveWater({
 }
 
 // entry 'spot-effects' (C hack.c:spoteffects() -> pooleffects()) is the
-// default.  entry 'float-down' (C trap.c:float_down() -> drown()/
+// default.  entry 'float-down' (float_down() -> drown()/
 // lava_effects()) skips the spoteffects-only stages: leaving water, the
 // mounted-steed dismount, and the ceiling-hider check, none of which the
 // direct drown()/lava_effects() calls perform. Entries 'drown' and 'lava'
@@ -2764,7 +2764,7 @@ export async function finishDestinationSpotEffects({
                 triggeringTrapType = trap.ttyp;
                 let result;
                 try {
-                    result = await triggerHeroTrapAt(newx, newy, {
+                    result = await dotrapAt(newx, newy, {
                         finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
                     });
                 } finally {
@@ -3283,7 +3283,7 @@ export async function heroCanMoveFromTrap(targetX: number, targetY: number): Pro
     const hero = game.u;
     if (!hero?.utrap) return true;
     const moved = await heroTrapmove(targetX, targetY);
-    if (!hero.utrap) await resetHeroTrap(true);
+    if (!hero.utrap) await resetUtrap(true);
     return moved;
 }
 
@@ -3641,8 +3641,7 @@ export async function settleBeastHeroDisplacement(beast: Monster, state: Playing
         });
         if (!state.level.monsters.includes(beast) || beast.dead || beast.mhp <= 0
             || state.program_state.gameover) return;
-        const trap = await triggerImmediateMonsterTrap(beast, state);
-        await finishImmediateMonsterTrap(trap, state);
+        await mintrap(beast, state);
     } finally {
         if (moving === undefined) delete state.context.mon_moving;
         else state.context.mon_moving = moving;
@@ -3736,8 +3735,7 @@ export async function settlePetHeroDisplacement(monster: Monster, state: Playing
     if (state.program_state.gameover) return;
     let trapMovedMonster = false;
     if (!monster.dead && monster.mhp > 0) {
-        const action = await triggerImmediateMonsterTrap(monster, state);
-        await finishImmediateMonsterTrap(action, state);
+        const action = await mintrap(monster, state);
         if (state.program_state.gameover) return;
         // trapeffect_telep_trap() returns Trap_Moved_Mon even when blocked.
         trapMovedMonster = !!action.movement.actorLeftLevel || action.event?.kind === 'teleport-trap';

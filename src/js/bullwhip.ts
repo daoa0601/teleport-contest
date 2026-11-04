@@ -35,7 +35,7 @@ import { vision_recalc, vision_reset } from './vision.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './do_wear.js';
-import { fireDamageObject, resetHeroTrap } from './trap.js';
+import { fireDamageObject, resetUtrap } from './trap.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -272,7 +272,7 @@ function pitEscapeDestination(targetX: number, targetY: number, monster: Monster
 }
 
 async function moveHeroOutOfPit(destination: Position, state: GameState) {
-    await resetHeroTrap(true, state);
+    await resetUtrap(true, state);
     const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
         allowDrag: true,
         finishArrival: async movement => {

@@ -42,7 +42,7 @@ import { heroSpecies, heroFormSticks } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject } from './floor_consumption.js';
-import { deleteFloorTrap, resetHeroTrap, petrifyMonsterImmediately } from './trap.js';
+import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { impossible } from './diagnostics.js';
 import { waterbodyName } from './terrain_name.js';
@@ -1413,7 +1413,7 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
                 { state, publish, deathCause: cause }))
                 return { finished: true, object: boulder, heroDied: true };
             squishedHero = true;
-        } else await resetHeroTrap(true, state);
+        } else await resetUtrap(true, state);
     }
     if (verb && !squishedHero) {
         if (heroIsBlind(state) && heroHere) {
@@ -1432,7 +1432,7 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
     if (remainingTrap) {
         await deleteFloorTrap(remainingTrap, state);
         if (state.program_state.gameover) return { finished: true, object: boulder, heroDied: true };
-        if (state.u.utrap && heroHere) await resetHeroTrap(false, state);
+        if (state.u.utrap && heroHere) await resetUtrap(false, state);
     }
     boulder.ox = x;
     boulder.oy = y;

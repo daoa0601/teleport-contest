@@ -3,7 +3,7 @@
 // the movement tail in most sessions; this test drives the mintrap entry
 // directly with scripted draws and checks the world: whether the trap
 // springs, whether the monster is caught, and what it learned.
-import { triggerMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { monsterKnowsTrap } from '../js/mondata.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { DART_TRAP } from '../js/const.js';
@@ -24,9 +24,10 @@ void test('a monster which learned the trap type declines to spring it on a fail
 
     // The avoidance roll draws nonzero, so mintrap returns before any
     // trap effect runs.
-    await triggerMonsterTrap(
-        monster, game, stepMovement(monster.mx, monster.my), () => 1, () => 1, () => 20, [],
-    );
+    await mintrap(monster, game, {
+        movement: stepMovement(monster.mx, monster.my),
+        random: () => 1, rollDice: () => 1, rollOne: () => 20,
+    });
 
     assert.equal(trap.once, false);
     assert.equal(monster.mtrapped, 0);
@@ -42,9 +43,10 @@ void test('an unknown trap springs without any avoidance roll and teaches its ty
     // C trap.c:3812 gates the avoidance roll on already_seen; a monster
     // which has not learned this trap type gets no roll at all, so even a
     // draw that would decline a known trap still springs the effect.
-    await triggerMonsterTrap(
-        monster, game, stepMovement(monster.mx, monster.my), () => 1, () => 1, () => 20, [],
-    );
+    await mintrap(monster, game, {
+        movement: stepMovement(monster.mx, monster.my),
+        random: () => 1, rollDice: () => 1, rollOne: () => 20,
+    });
 
     assert.equal(trap.once, true);
     assert.equal(monster.mtrapped, 0);

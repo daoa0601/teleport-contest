@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { DAGGER, OIL_LAMP, TALLOW_CANDLE } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { beginObjectBurn } from '../js/timeout.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -21,8 +21,7 @@ for (const quantity of [1, 3]) {
         monster.female = false;
         const trap = addTrap(level, RUST_TRAP, 11, 10);
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             random: () => 2,
             publish: message => { messages.push(message); },
         });
@@ -40,8 +39,7 @@ for (const erosion of [1, 2]) {
         const weapon = await knownObject(DAGGER, { quan: 3, oeroded: erosion });
         await equipMonsterObject(monster, weapon, W_WEP);
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             random: () => 2,
             publish: message => { messages.push(message); },
         });
@@ -57,8 +55,7 @@ for (const verbose of [true, false]) {
         const weapon = await knownObject(DAGGER, { quan: 3, oerodeproof: true, rknown: false });
         await equipMonsterObject(monster, weapon, W_WEP);
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             random: () => 2,
             publish: message => { messages.push(message); },
         });
@@ -77,8 +74,7 @@ for (const type of [OIL_LAMP, TALLOW_CANDLE]) {
         await addObjectToMonsterInventory(monster, light);
         beginObjectBurn(light);
         const messages = [];
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             random: () => 4,
             publish: message => { messages.push(message); },
         });

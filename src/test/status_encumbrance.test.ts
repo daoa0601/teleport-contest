@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { WEB } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -44,7 +44,7 @@ void test('an ordinary pickup retains load status until a trap requests a status
         },
     };
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     assert.equal(pages, 1);
     assert.ok((game.u.utrap ?? 0) > 0);

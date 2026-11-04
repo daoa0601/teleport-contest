@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
 import { wearHeroArmor } from '../js/do_wear.js';
-import { game } from '../js/gstate.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { damageObjectWithAcid, erodeObject } from '../js/trap.js';
@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { equipMonsterObject } from './support/monsters.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 for (const location of ['on the floor', 'held by an invisible monster']) {
     for (const wearsOff of [false, true]) {
         void test(`acid ${wearsOff ? 'dissolves' : 'leaves'} grease on an artifact ${location} without revealing it`, async () => {
@@ -129,8 +129,8 @@ for (const arm of [1, 2]) {
         const weapon = await uninitializedObject(OBJECT_NAMES.indexOf('ranseur'), { typeKnown: false });
         await equipMonsterObject(monster, weapon, W_WEP);
         const messages = [];
-        const event = await beginMonsterRustTrap(monster, trap, game);
-        await finishMonsterRustTrap(monster, event, game, {
+        requirePlayingGame(game);
+        await mintrap(monster, game, {
             random: () => arm,
             publish: async (message) => { messages.push(message); },
         });

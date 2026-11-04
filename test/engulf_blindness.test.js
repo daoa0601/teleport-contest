@@ -7,7 +7,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, PIT, WEB, W_AMUL } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { requireGameLevel, game } from '../js/gstate.js';
@@ -199,7 +199,7 @@ void test('engulfing releases a web and attached leashes before blinding the her
     const messages = [];
     recordMessages(messages);
     const web = addTrap(game.level, WEB, game.u.ux, game.u.uy);
-    await triggerHeroTrap(web);
+    await dotrap(web);
     assert.ok((game.u.utrap ?? 0) > 0);
     const pet = await createMonsterAt('little dog', 9, 10);
     initializePet(pet);

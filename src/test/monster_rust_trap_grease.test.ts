@@ -8,7 +8,7 @@ import { monsterName } from '../js/do_name.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { HELMET } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { knownObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { equipMonsterObject } from './support/monsters.js';
@@ -26,8 +26,8 @@ for (const hallucinating of [false, true]) {
             initRng(33n);
             const messages: string[] = [];
 
-            const event = await beginMonsterRustTrap(monster, trap, game);
-            await finishMonsterRustTrap(monster, event, game, {
+            requirePlayingGame(game);
+            await mintrap(monster, game, {
                 random: limit => limit === 5 ? 0 : greaseRoll,
                 publish: text => { messages.push(text); },
             });
@@ -57,8 +57,8 @@ void test('a monster stepping onto an unseen rust trap is drawn there before the
     assert.notEqual(cell(), 'H');
     let shownAtMessage: string | undefined;
 
-    const event = await beginMonsterRustTrap(monster, trap, game);
-    await finishMonsterRustTrap(monster, event, game, {
+    requirePlayingGame(game);
+    await mintrap(monster, game, {
         random: () => 4,
         publish: async () => {
             await flush_screen(1);
@@ -79,8 +79,8 @@ for (const [species, part] of headCases) {
         const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species } });
         const messages: string[] = [];
 
-        const event = await beginMonsterRustTrap(monster, trap, game);
-        await finishMonsterRustTrap(monster, event, game, {
+        requirePlayingGame(game);
+        await mintrap(monster, game, {
             random: () => 0,
             publish: text => { messages.push(text); },
         });
@@ -99,9 +99,8 @@ void test('a gremlin splits on a rust trap only after the gush is reported', asy
     const before = living();
     const messages: string[] = [];
 
-    const event = await beginMonsterRustTrap(monster, trap, game);
-    assert.equal(living(), before, 'preparing the trap must not split the gremlin yet');
-    await finishMonsterRustTrap(monster, event, game, {
+    requirePlayingGame(game);
+    await mintrap(monster, game, {
         random: limit => limit === 5 ? 4 : 1,
         publish: text => {
             messages.push(`${text} [${living()}]`);

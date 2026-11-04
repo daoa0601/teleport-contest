@@ -1,6 +1,6 @@
 import { setHeroGrip } from './mon.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { seeTrap, deleteTrap, clearHeroTrap } from './trap.js';
+import { seeTrap, deleteTrap, resetUtrap } from './trap.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
@@ -218,7 +218,7 @@ export async function gotoLevel(targetDepth, { arrival = 'random', ladder = fals
     // placebc() installs them on the destination after hero placement.
     if (heroIsPunished())
         await unplaceBallAndChain(game);
-    clearHeroTrap(game);
+    await resetUtrap(false, game);
     setHeroGrip(null);
     game.u.uinwater = 0;
     game.u.uundetected = false;

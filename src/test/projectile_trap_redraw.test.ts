@@ -1,10 +1,10 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 
 import { ARROW } from '../js/object_data.js';
@@ -25,7 +25,7 @@ void test('a visible missed trap arrow joins ammunition already lying at the her
     pushKeys(' '.repeat(8));
     initRng(11n);
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     const arrows = floorObjectsAt(level, game.u.ux, game.u.uy)
         .filter(object => object.otyp === ARROW);
@@ -42,7 +42,7 @@ void test('revealing an arrow trap displays its victim before announcing the hit
     await newsym(12, 10);
     addTrap(level, ARROW_TRAP, 11, 10);
 
-    await triggerImmediateMonsterTrap(centaur, game);
+    await mintrap(centaur, game);
 
     const glyph = glyphAt(11, 10);
     assert.equal(glyph?.kind, 'monster');

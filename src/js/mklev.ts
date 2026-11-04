@@ -11,7 +11,7 @@ import type { GameState, Fruit } from './game_state.js';
 import type { DungeonBranch, DungeonLocation } from './dungeon_types.js';
 import { restoreLevelTimers, stopLevelTimer } from './timeout.js';
 import type { DueObjectTimer } from './timeout.js';
-import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetHeroTrap, maketrap } from './trap.js';
+import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetUtrap, maketrap } from './trap.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';

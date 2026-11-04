@@ -14,7 +14,6 @@ import { objectMaterial, learnObjectType } from './o_init.js';
 import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt } from './hack.js';
-import { launchRollingBoulder } from './trap.js';
 import type { Monster } from './monster_types.js';
 import { impossible, panic } from './diagnostics.js';
 import type { GameObject } from './object_types.js';
@@ -22,7 +21,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import type { RandomBelow, RollOne, RollDice, PublishMonsterMessage, MonsterCallLog, AttackTuple, MonsterAttackPaging, MonsterAction, MonsterMovementAction, MonsterMovement, MonsterMovementCapabilities, MonsterMoveCandidate, DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, MonsterMiscItem, MonsterAttackInitiation, MonsterMoveResult, MonsterTurnResult, MonsterDamageOptions, ImmediateMonsterTrapOptions, MonsterTrapResumeOptions, MonsterEngulfOptions, MonsterTrapEvent, MonsterRollingBoulderEvent, MonsterDistressEvent } from './monster_action_types.js';
+import type { RandomBelow, RollOne, RollDice, PublishMonsterMessage, MonsterCallLog, AttackTuple, MonsterAttackPaging, MonsterAction, MonsterMovementAction, MonsterMovement, MonsterMovementCapabilities, MonsterMoveCandidate, DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, MonsterMiscItem, MonsterAttackInitiation, MonsterMoveResult, MonsterTurnResult, MonsterDamageOptions, MonsterTrapResumeOptions, MonsterEngulfOptions, MonsterTrapEvent, MonsterRollingBoulderEvent, MonsterDistressEvent } from './monster_action_types.js';
 import { veganCorpse } from './food_traits.js';
 import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL } from './monster_attack_types.js';
 import { M_SEEN_REFL, A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit, Is_rogue_level, DISMOUNT_THROWN, LEVEL_TELEP, RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, ACCESSIBLE, DRAWBRIDGE_UP, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, WEB, WT_TOOMUCH_DIAGONAL } from './const.js';
@@ -66,7 +65,7 @@ import { releaseHeroFromMonster } from './mon.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { trapName, beginMonsterFireTrap, finishMonsterFireTrap, beginMonsterPitTrap, finishDeferredMonsterTrap, burnArmorByFire, monsterTrapVisibility, seeTrap, trapAt, triggerMonsterTrap, tryMonsterTrapEscape, finishMonsterPitTrap, beginMonsterProjectileTrap, finishMonsterProjectileTrap, projectileTrapNeedsResume, finishMonsterWebTrap, maketrap } from './trap.js';
+import { mintrap, trapAt, maketrap } from './trap.js';
 import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth } from './dungeon.js';
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
@@ -85,15 +84,6 @@ import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject
 import { possessiveName, depth, dist2, distmin } from './hacklib.js';
 import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
-import { applyMonsterAntiMagicTrap, finishMonsterAntiMagicTrap, monsterHasMagicResistance } from './trap.js';
-import { beginMonsterBearTrap, finishMonsterBearTrap } from './trap.js';
-import { beginMonsterLandMine, finishMonsterLandMine, landMineNeedsResume } from './trap.js';
-import { beginMonsterRockTrap, finishMonsterRockTrap, rockTrapNeedsResume } from './trap.js';
-import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap, sleepGasTrapNeedsResume } from './trap.js';
-import { beginMonsterSqueakyBoard, finishMonsterSqueakyBoard } from './trap.js';
-import { beginMonsterVibratingSquare, finishMonsterVibratingSquare } from './trap.js';
-import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './trap.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from './trap.js';
 import { heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { canLetGo } from './do.js';
@@ -2350,27 +2340,22 @@ export async function completeMovedMonsterAction(
         }
         if (state === game) await newsym(movement.oldx, movement.oldy);
         movement.postMoveOldSquarePainted = true;
-        await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
-        if (movement.deferredAfterMonsterTrap) {
-            // C trap.c:mintrap(): the trap's message, escape roll, and
-            // effect completions run inline here, before postmov() continues
-            // with the door, tunneling, and floor tails.
-            const event = movement.trap;
-            if (!event) throw new Error('A deferred monster trap must retain its event');
-            const outcome = await finishDeferredMonsterTrap(
-                monster, movement, event, state, calls,
-                { random, rollDice, rollOne, describeMonster: visibleMonsterSubject },
-            );
-            if (outcome === 'hero-died') return movement;
-            if (outcome === 'killed') {
-                // C postmov() repaints the destination before returning
-                // MMOVE_DIED for a trap that killed the actor (monmove.c:1512);
-                // the presenter must not paint this return's cell a second
-                // time, which would consume an extra display-RNG draw.
-                await newsym(movement.x, movement.y);
-                movement.postMoveDestinationPainted = true;
-                return movement;
-            }
+        // trap.c mintrap(): the trap's message, escape roll, and effect
+        // completions run inline here, before postmov() continues with the
+        // door, tunneling, and floor tails.
+        const outcome = (await mintrap(monster, state, {
+            movement, random, rollDice, rollOne, calls,
+            describeMonster: visibleMonsterSubject,
+        })).movement.trapOutcome;
+        if (outcome === 'hero-died') return movement;
+        if (outcome === 'killed') {
+            // C postmov() repaints the destination before returning
+            // MMOVE_DIED for a trap that killed the actor (monmove.c:1512);
+            // the presenter must not paint this return's cell a second
+            // time, which would consume an extra display-RNG draw.
+            await newsym(movement.x, movement.y);
+            movement.postMoveDestinationPainted = true;
+            return movement;
         }
         if (movementHasEnded(movement) || state.program_state.gameover) return movement;
         requireMovementCapabilities(movement).species = monster.mnum;
@@ -2864,10 +2849,11 @@ export async function moveMonsterAfterTrap(
     if (!movement && monster.mtrapped) {
         const oldx = monster.mx;
         const oldy = monster.my;
-        await tryMonsterTrapEscape(monster, state, {
+        await mintrap(monster, state, {
             random,
             publish: plineWithContinuation,
             describeMonster: visibleMonsterSubject,
+            calls,
         });
         if (monster.mtrapped) {
             // Trap_Caught_Mon: m_move() returns MMOVE_NOTHING without

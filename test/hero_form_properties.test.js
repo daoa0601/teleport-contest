@@ -8,7 +8,7 @@ import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { createFireExplosion } from '../js/fire_explosion.js';
 import { game } from '../js/gstate.js';
 import { setHeroSpecies } from '../js/polyself.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
@@ -95,7 +95,7 @@ void test('escaping a web restores flight without changing the bat body', async 
     pushKeys('polyself\nbat\n                        ');
     await rhack('#'.charCodeAt(0));
     const web = addTrap(level, WEB, game.u.ux, game.u.uy);
-    await triggerHeroTrap(web);
+    await dotrap(web);
     assert.ok((game.u.utrap ?? 0) > 0);
     assert.equal(game.u.flying, false);
     for (let attempt = 0; (game.u.utrap ?? 0) > 0 && attempt < 20; attempt++)

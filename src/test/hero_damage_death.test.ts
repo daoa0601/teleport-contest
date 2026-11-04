@@ -15,7 +15,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { hurtleHero } from '../js/dothrow.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART,
     GRAPPLING_HOOK, SCR_FIRE, WAN_STRIKING } from '../js/object_data.js';
@@ -137,7 +137,7 @@ for (const { type, death } of [
         const trap = addTrap(level, type, game.u.ux, game.u.uy);
         initRng(1n);
 
-        await dieWith(() => triggerHeroTrap(trap), death);
+        await dieWith(() => dotrap(trap), death);
     });
 }
 
@@ -146,7 +146,7 @@ void test('a falling rock trap kills with the falling rock', async () => {
     const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);
     initRng(1n);
 
-    await dieWith(() => triggerHeroTrap(trap), 'killed by a falling rock');
+    await dieWith(() => dotrap(trap), 'killed by a falling rock');
 });
 
 void test('a fatal magic trap explosion leaves no energy to absorb', async () => {
@@ -155,7 +155,7 @@ void test('a fatal magic trap explosion leaves no energy to absorb', async () =>
     const energy = game.u.uenmax;
     initRng(33n); // rn2(30) selects the explosion
 
-    await dieWith(() => triggerHeroTrap(trap), 'killed by a magical explosion');
+    await dieWith(() => dotrap(trap), 'killed by a magical explosion');
     assert.equal(game.u.uenmax, energy);
 });
 
@@ -168,7 +168,7 @@ void test('a rolling boulder that hits the hero kills with the boulder', async (
     await floorObject(BOULDER, ux + 4, uy);
     initRng(1n); // the boulder hits rather than misses
 
-    await dieWith(() => triggerHeroTrap(trap), 'killed by a boulder');
+    await dieWith(() => dotrap(trap), 'killed by a boulder');
 });
 
 for (const [count, cause] of [[1, 'a club'], [3, 'clubs']] as const) {

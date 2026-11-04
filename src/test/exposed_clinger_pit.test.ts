@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PIT, SPIKED_PIT } from '../js/const.js';
@@ -14,8 +14,7 @@ for (const type of [PIT, SPIKED_PIT]) {
         requirePlayingGame(game);
         monster.mundetected = false;
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await finishImmediateMonsterTrap(action, game);
+        await mintrap(monster, game);
 
         assert.equal(monster.mhp, 40);
         assert.equal(monster.mtrapped ?? 0, 0);

@@ -52,7 +52,7 @@ import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './m
 import { updateMonsterRegions } from './regions.js';
 import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { specialContactDamage } from './contact_damage.js';
-import { finishImmediateMonsterTrap, trapAt, triggerImmediateMonsterTrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
+import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { triggerChestTrap } from './chest_trap.js';
@@ -1068,15 +1068,15 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
     await newsym(oldx, oldy);
     await newsym(x, y);
     setMonsterApparentHeroPosition(monster, state, rn2);
-    const trap = await triggerImmediateMonsterTrap(monster, state);
-    await finishImmediateMonsterTrap(trap, state, {
+    const trap = await mintrap(monster, state, {
         publish: announce, describeMonster: nameMonster,
     });
+    const event = trap.event;
     return {
         oldx, oldy, x, y,
-        trap: trap.event,
+        trap: event,
         dead: !!monster.dead || (monster.mhp ?? 1) <= 0,
-        heroDied: !!trap.event && 'heroDied' in trap.event && !!trap.event.heroDied,
+        heroDied: !!event && 'heroDied' in event && !!event.heroDied,
     };
 }
 // C dokick.c:container_impact_dmg().  A kicked, dropped, or thrown

@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { PIT, WEB } from '../js/const.js';
@@ -21,8 +21,8 @@ void test('a concealing monster caught by a pit under its object appears', async
     requirePlayingGame(game);
     const messages = [];
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(hider, game, { force: true });
-    await finishImmediateMonsterTrap(action, game, {
+    await mintrap(hider, game, {
+        forcetrap: true,
         publish: async (message) => { messages.push(message); },
     });
     assert.equal(hider.mtrapped, 1, 'the snake is caught in the pit');
@@ -40,8 +40,8 @@ void test('a monster that tears straight through a web does not appear', async (
     requirePlayingGame(game);
     const messages = [];
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(giant, game, { force: true });
-    await finishImmediateMonsterTrap(action, game, {
+    await mintrap(giant, game, {
+        forcetrap: true,
         publish: async (message) => { messages.push(message); },
     });
     assert.equal(giant.mtrapped, 0, 'the giant tears through the web');

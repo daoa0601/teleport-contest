@@ -10,7 +10,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { floatHeroUp, resetHeroTrap } from '../js/trap.js';
+import { floatHeroUp, resetUtrap } from '../js/trap.js';
 for (const property of ['levitation', 'flying'] as const) {
     void test(`${property} stops inside solid terrain and resumes after it opens`, async () => {
         await freshObjectRoom();
@@ -71,7 +71,7 @@ void test('releasing a ground trap resumes flight with feedback', async () => {
     game.u.utraptype = TT_BEARTRAP;
     refreshMovementProperties();
     assert.equal(game.u.flying, false);
-    await resetHeroTrap(true);
+    await resetUtrap(true);
     assert.equal(game.u.utrap, 0);
     assert.equal(game.u.flying, true);
     assert.match(game._pending_message, /You can fly/);

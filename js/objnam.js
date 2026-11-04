@@ -37,7 +37,7 @@ import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt } from './pager.js';
 import { deleteEngravingAt } from './engrave.js';
-import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetHeroTrap, maketrap } from './trap.js';
+import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { make_grave } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
@@ -2270,7 +2270,7 @@ export async function tryWizardTerrainWish(parsed) {
     }
     else {
         if (game.u.utrap && game.u.utraptype === TT_LAVA && !isLavaAt(game.u.ux, game.u.uy))
-            await resetHeroTrap(false);
+            await resetUtrap(false);
         vision_note_blocker_change(x, y);
     }
     if (previousType === FOUNTAIN || previousType === SINK)

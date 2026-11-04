@@ -1,17 +1,16 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DELPHI, DOOR, D_CLOSED, LAVAPOOL, NO_MINVENT, OROOM, ROCKTRAP, ROOMOFFSET, ROLLING_BOULDER_TRAP, RUST_TRAP } from '../js/const.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, decideMonsterShapeChange } from '../js/mon.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { launchRollingBoulder } from '../js/trap.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
@@ -27,7 +26,7 @@ void test('a sighted hero names the falling rock when a ceiling trap opens', asy
     const level = freshPlayableRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     await flush_screen();
     assert.equal(topline(), 'A trap door in the ceiling opens and a rock falls on your head!');
 });
@@ -54,8 +53,7 @@ void test('a rust trap announces water hitting a monster seen through infravisio
     assert.equal(canSeeMonster(monster), true);
     const trap = addTrap(level, RUST_TRAP, 15, 10);
     const messages = [];
-    const event = await beginMonsterRustTrap(monster, trap, game);
-    await finishMonsterRustTrap(monster, event, game, {
+    await mintrap(monster, game, {
         random: () => 0,
         publish: async (message) => { messages.push(message); },
     });
@@ -128,8 +126,7 @@ for (const deaf of [false, true]) {
         const hp = monster.mhp;
         const messages = [];
         const options = { random: (limit) => limit - 1, publish: async (message) => { messages.push(message); } };
-        const action = await triggerImmediateMonsterTrap(monster, game, options);
-        await finishImmediateMonsterTrap(action, game, options);
+        await mintrap(monster, game, options);
         assert.deepEqual(messages, deaf ? [] : ['You hear rumbling in the distance.', 'You hear a sizzling splash.']);
         assert.equal(monster.mhp, hp, 'the boulder sinks before it could hit the monster');
         assert.equal(boulder.where, 'gone');

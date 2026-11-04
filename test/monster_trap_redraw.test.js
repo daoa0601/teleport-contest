@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ANTI_MAGIC, ARROW_TRAP, DART_TRAP, NO_MINVENT, ROCKTRAP } from '../js/const.js';
@@ -25,8 +25,7 @@ for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRA
             await newsym(11, 10);
             assert.equal(glyphAt(11, 10)?.kind, 'trap');
             placeMonsterAt(monster, 11, 10);
-            const action = await triggerImmediateMonsterTrap(monster, game, { random: () => 0 });
-            await resumeDeferredMonsterTrap(action, game, { publish: async () => { } });
+            await mintrap(monster, game, { random: () => 0, publish: async () => { } });
             assert.equal(level.traps.includes(trap), false);
             assert.equal(glyphAt(11, 10)?.kind, invisible ? 'terrain' : 'monster');
         });
@@ -41,8 +40,7 @@ void test('anti-magic damage redraws a surviving monster over a known trap', asy
     await newsym(11, 10);
     assert.equal(glyphAt(11, 10)?.kind, 'trap');
     placeMonsterAt(monster, 11, 10);
-    const action = await triggerImmediateMonsterTrap(monster, game, { rollOne: () => 4 });
-    await resumeDeferredMonsterTrap(action, game, { publish: async () => { } });
+    await mintrap(monster, game, { rollOne: () => 4, publish: async () => { } });
     assert.equal(monster.mhp, 16);
     assert.equal(glyphAt(11, 10)?.kind, 'monster');
 });
@@ -71,8 +69,8 @@ for (const killedByTrap of [false, true]) {
         addTrap(level, ANTI_MAGIC, 11, 10, { tseen: true });
         initRng(1n);
         if (killedByTrap) {
-            const action = await triggerImmediateMonsterTrap(monster, game, { rollOne: () => 4 });
-            await resumeDeferredMonsterTrap(action, game, {
+            await mintrap(monster, game, {
+                rollOne: () => 4,
                 random: () => 1, publish: async () => { },
             });
         }

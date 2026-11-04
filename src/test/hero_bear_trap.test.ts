@@ -10,7 +10,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX, BEAR_TRAP, TT_BEARTRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import {
     AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING,
@@ -39,7 +39,7 @@ for (const lifesaving of [false, true] as const) {
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         assert.equal(!!game.program_state.gameover, !lifesaving);
         if (lifesaving) {
@@ -60,7 +60,7 @@ for (const unchanging of [false, true] as const) {
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         assert.equal(!!game.program_state.gameover, unchanging);
         if (unchanging) {
@@ -83,7 +83,7 @@ for (const form of ['kitten', 'gray ooze', 'fog cloud', 'ghost', 'ogre'] as cons
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
 
         const caught = form === 'ogre';
         assert.equal(game.u.uhp, 100, 'the inactive human body is not damaged');
@@ -105,7 +105,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS, LOW_BOOTS] as const) {
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         const protectedLeg = type !== LOW_BOOTS;
         assert.equal(game.u.utraptype, TT_BEARTRAP);
@@ -129,7 +129,7 @@ for (const outcome of ['survives', 'life saved', 'dies'] as const) {
         pushKeys(' '.repeat(100));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         assert.equal(game.u.uhp, 100);
         assert.equal(currentAttribute(A_DEX), dexterity);

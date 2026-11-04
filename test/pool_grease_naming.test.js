@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { RUST_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { RING_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -19,7 +19,7 @@ void test('a rust trap washes grease off the full name of a worn suit', async ()
     const trap = addTrap(level, RUST_TRAP, 10, 10);
     pushKeys(' '.repeat(20));
     initRng(2n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.match(game._pending_message, /The grease on your ring mail named Raincoat washes off\./);
     assert.equal(suit.greased, false);
     assert.equal(suit.oeroded ?? 0, 0);

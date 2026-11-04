@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { TELEP_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { finishTeleportArrival } from '../js/location_effects.js';
 import { addTrap } from './support/level-state.js';
@@ -11,7 +11,7 @@ void test('a wizard chooses the destination of an ordinary teleport trap', async
     const level = await freshObjectRoom({ flags: { debug: true, tips: false } });
     requirePlayingGame(game);
     const input = resetInputState();
-    const operation = triggerHeroTrap(addTrap(level, TELEP_TRAP, 10, 10), {
+    const operation = dotrap(addTrap(level, TELEP_TRAP, 10, 10), {
         finishTeleport: finishTeleportArrival,
     });
     assert.equal(await Promise.race([

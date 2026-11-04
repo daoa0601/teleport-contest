@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, TT_PIT, Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -115,7 +115,7 @@ void test('a horse trapped in a pit can bite but cannot use its kick attack', as
     const { level, monster } = await combatRoom('horse');
     const pit = addTrap(level, PIT, game.u.ux, game.u.uy);
     installPagerInput(resetInputState(), { expected: /pit|You fall/, limit: 3 });
-    await triggerHeroTrap(pit, { forceTrap: true });
+    await dotrap(pit, { forceTrap: true });
     assert.equal(game.u.utraptype, TT_PIT);
     assert.ok((game.u.utrap ?? 0) > 0);
     const messages = await attackEast(/hill giant/);

@@ -10,7 +10,7 @@ import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from 
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick } from './lock.js';
-import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
+import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, dotrapAt } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import type { InventoryAction } from './invent.js';
@@ -850,8 +850,8 @@ async function readCommand(): Promise<void> {
 // hand the destination to goto_level().
 // C do.c:dodown() and C do.c:doup(): the '<' and '>' commands whose shared
 // body this is; each still starts with set_move_cmd(). C hack.c:u_rooted():
-// the "You are rooted" refusal. C trap.c:uteetering_at_seen_pit() and
-// C trap.c:uescaped_shaft(): the seen pit and shaft underfoot take the
+// the "You are rooted" refusal. trap.c uteetering_at_seen_pit() and
+// uescaped_shaft(): the seen pit and shaft underfoot take the
 // plunge before the stairway is required; C hack.c:is_pool_or_lava(): the
 // hider's drop-to-liquid message.
 // C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
@@ -899,7 +899,7 @@ export async function travelStairs(up: boolean) {
                 } else {
                     await autopickupAtHero();
                     if (!game.program_state.gameover)
-                        await triggerHeroTrapAt(game.u.ux, game.u.uy, {
+                        await dotrapAt(game.u.ux, game.u.uy, {
                             finishTeleport: finishTeleportArrival, gotoLevel, tookPlunge: true,
                         });
                 }
@@ -918,7 +918,7 @@ export async function travelStairs(up: boolean) {
             && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
             && !(game.u.utrap && game.u.utraptype === TT_PIT));
         if (pit) {
-            await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
             game.context.move = 1;
             return true;
         }
@@ -926,7 +926,7 @@ export async function travelStairs(up: boolean) {
             trap.tx === game.u.ux && trap.ty === game.u.uy
             && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
         if (hole) {
-            const result = await triggerHeroTrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
+            const result = await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
             if (result.died) return false;
             game.context.move = 1;
             return true;

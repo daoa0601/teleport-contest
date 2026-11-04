@@ -10,7 +10,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { LEVITATION_BOOTS } from '../js/object_data.js';
@@ -276,7 +276,7 @@ for (const property of ['levitation', 'flying'] as const) {
         grantIntrinsicProperty(property, 'outside');
         const input = resetInputState();
 
-        await answerPrompts(triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10)), input, [
+        await answerPrompts(dotrap(addTrap(level, LEVEL_TELEP, 10, 10)), input, [
             { prompt: property === 'levitation'
                 ? /You float onto a level teleport trap!--More--/
                 : /You fly onto a level teleport trap!--More--/, keys: ' ' },
@@ -305,7 +305,7 @@ for (const acceptDeath of [true, false]) {
             },
         };
 
-        await triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10));
+        await dotrap(addTrap(level, LEVEL_TELEP, 10, 10));
 
         assert.equal(!!game.program_state.gameover, acceptDeath);
         assert.equal(game.u.confusionTurns ?? 0, acceptDeath ? 0 : 3,
@@ -327,7 +327,7 @@ void test('discovering a level teleport trap displays it beneath an invisible he
     await plineWithContinuation('You hear footsteps approaching along the corridor.');
     const input = resetInputState();
 
-    const operation = triggerHeroTrap(trap);
+    const operation = dotrap(trap);
     await input.waitUntilBlocked();
     const displayedSquare = requireScreenCell(9, 11).ch;
     await answerPrompts(operation, input, [
@@ -345,7 +345,7 @@ void test('a level teleport trap pages its announcement before asking for a leve
     requirePlayingGame(game);
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     const input = resetInputState();
-    const operation = triggerHeroTrap(trap);
+    const operation = dotrap(trap);
 
     assert.equal(await Promise.race([
         operation.then(() => 'finished'), input.waitUntilBlocked().then(() => 'input'),
@@ -371,7 +371,7 @@ void test('teleport control prevents the trap from confusing the hero after canc
     const input = resetInputState();
     input.feed(' \x1b');
 
-    await triggerHeroTrap(addTrap(level, LEVEL_TELEP, 10, 10));
+    await dotrap(addTrap(level, LEVEL_TELEP, 10, 10));
 
     assert.equal(game.u.confusionTurns ?? 0, 0);
     assert.equal(game._pending_message, 'You briefly feel centered.');
@@ -383,7 +383,7 @@ void test('magic resistance leaves an unintentionally triggered level teleport t
     const input = resetInputState();
     input.feed(' ');
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     assert.equal(level.traps.includes(trap), true);
     assert.equal(trap.tseen, true);

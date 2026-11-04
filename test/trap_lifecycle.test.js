@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, connectPits, pitsAreConjoined, maketrap, triggerHeroTrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
+import { mintrap, connectPits, pitsAreConjoined, maketrap, dotrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
 import { createDungeon } from './support/topology.js';
 import { requirePlayingGame, game } from '../js/gstate.js';
 import test from 'node:test';
@@ -142,7 +142,7 @@ for (const replacement of [SPIKED_PIT, WEB]) {
         requirePlayingGame(game);
         const { ux: x, uy: y } = game.u;
         const pit = await createTrap(x, y, PIT);
-        await triggerHeroTrapAt(x, y);
+        await dotrapAt(x, y);
         assert.ok((game.u.utrap ?? 0) > 0);
         assert.equal(game.u.utraptype, TT_PIT);
         const trappedTurns = game.u.utrap;
@@ -180,8 +180,7 @@ void test('removing a floor trap beneath a worm segment releases the trapped wor
     assert.ok(segment);
     assert.notDeepEqual([segment.x, segment.y], [worm.mx, worm.my]);
     const headPit = await createTrap(worm.mx, worm.my, PIT);
-    const action = await triggerImmediateMonsterTrap(worm, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(worm, game);
     assert.equal(worm.mtrapped, 1);
     const tailTrap = await createTrap(segment.x, segment.y, BEAR_TRAP);
     await deleteFloorTrap(tailTrap);

@@ -15,7 +15,7 @@ import { isok } from './cmd.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { touchPetrifies } from './stoning.js';
-import { fillPitWithBoulderAt, finishImmediateMonsterTrap, seeTrap, trapAt, triggerImmediateMonsterTrap, trapName, heroIsUnconscious, maketrap } from './trap.js';
+import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
 import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
@@ -380,8 +380,7 @@ async function teleportForEscape(monster, type, seen, options, trap = null) {
         if (seen && type)
             learnObjectType(type, state);
         if (trap) {
-            const action = await triggerImmediateMonsterTrap(monster, state, { force: true, random, rollOne, rollDice, publish });
-            await finishImmediateMonsterTrap(action, state, { publish, random, rollOne, rollDice });
+            await mintrap(monster, state, { forcetrap: true, random, rollOne, rollDice, publish });
         }
         else
             await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
@@ -782,8 +781,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                 await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
             else {
                 vision_note_blocker_change(x, y);
-                const action = await triggerImmediateMonsterTrap(monster, state, { forceBungle: true, random, rollOne, rollDice });
-                await finishImmediateMonsterTrap(action, state, { publish, random, rollOne, rollDice });
+                const action = await mintrap(monster, state, { forcebungle: true, random, rollOne, rollDice, publish });
                 if (action.event?.kind === 'pit-trap' && action.event.killed)
                     return { nativeResult: 1, heroDied: !!state.program_state.gameover };
             }
@@ -2348,8 +2346,7 @@ async function triggerCureTrap(monster, trap, visible, context) {
             await publish(`${name} ${locomotionThirdPerson(monster)} ${floats ? 'over' : 'onto'} ${trap.tseen ? 'the' : 'a'} fire trap!`);
         }
     }
-    const action = await triggerImmediateMonsterTrap(monster, state, { force: true, random, rollDice, rollOne });
-    await finishImmediateMonsterTrap(action, state, { publish, random, rollDice, rollOne });
+    await mintrap(monster, state, { forcetrap: true, random, rollDice, rollOne, publish });
 }
 // C muse.c:muse_unslime() composes vtense(fakename[0],
 // locomotion(mon->data, "move")); this is the conjugated third-person form

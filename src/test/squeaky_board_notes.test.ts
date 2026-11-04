@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -43,8 +43,7 @@ void test('a visible monster makes a squeaky board sound an F sharp', async () =
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
 
     assert.equal(trap.tseen, true);
@@ -57,8 +56,7 @@ void test('a visible monster makes a squeaky board sound a G sharp', async () =>
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
 
     assert.equal(trap.tseen, true);
@@ -72,8 +70,7 @@ void test('an unseen monster can be heard squeaking an F sharp nearby', async ()
     });
     requirePlayingGame(game);
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
 
     assert.equal(trap.tseen ?? false, false);
