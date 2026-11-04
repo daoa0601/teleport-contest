@@ -2,6 +2,7 @@
 // hitmu()/mdamageu() damage and resume machinery, and slot presentation.
 // C ref: mhitu.c.
 
+import { WEAPON_CLASS, TOOL_CLASS } from './objclass.js';
 import {
     objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES,
     SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_PROPERTY,
@@ -3277,8 +3278,6 @@ export function monsterWeaponSwingVerb(object: WeaponView, bash = false, random 
 }
 
 // Protection against special attacks. C mhitu.c:magic_negation().
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
 const M2_MINION = 0x00001000;
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');

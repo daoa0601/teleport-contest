@@ -1,3 +1,4 @@
+import { WEAPON_CLASS, ARMOR_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -14,8 +15,6 @@ import { freshObjectRoom } from './support/object-room.js';
 const KNIFE = 40;
 const SHURIKEN = 25;
 const RUBBER_HOSE = 78;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
 
 void test('abbots are born without weapons or armor but can carry magic items', async () => {
     let carriedItems = 0;

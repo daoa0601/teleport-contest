@@ -29,6 +29,7 @@
 // steal_it(), theft_petrifies(), damageum() and mhitm_adtyping()'s two
 // actor arms, explum(), gulpum()/start_engulf()/end_engulf(), hmonas(),
 // that_is_a_mimic()/stumble_onto_mimic(), and nohandglow().
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, TOWEL, YA, YUMI, } from './object_data.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
@@ -668,7 +669,7 @@ export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit,
     const sliceOrChop = isBlade(weapon) || isAxe(weapon);
     const oldHitPoints = monster.mhp;
     const oldWeaponHits = game.u.uconduct.weaphit ?? 0;
-    if (weapon && (weapon.oclass === 2 || isWeaponTool(weapon)))
+    if (weapon && (weapon.oclass === WEAPON_CLASS || isWeaponTool(weapon)))
         game.u.uconduct.weaphit = oldWeaponHits + 1;
     const result = await hitMonsterWithHeroObject(monster, weapon, {
         mode: 'melee', dieRoll, twoHits, target: { x, y },
@@ -747,8 +748,6 @@ function possessive(noun) {
         return `${noun}s`;
     return noun.endsWith('s') ? `${noun}'` : `${noun}'s`;
 }
-const WEAPON_CLASS = 2;
-const GEM_CLASS = 13;
 const S_BLOB = 2;
 export async function prepareHeroWeaponContact(monster, weapon, { mode, dieRoll, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
@@ -862,8 +861,6 @@ function greatestErosion(weapon) {
 }
 const VEGGY = 3;
 const PAPER = 5;
-const POTION_CLASS = 8;
-const SPBOOK_CLASS = 10;
 const PHYSICAL_OBJECTS = new Set([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]);
 const SHADE_AWARE_OBJECTS = new Set([...PHYSICAL_OBJECTS, MIRROR, CLOVE_OF_GARLIC]);
 export async function resolveHeroObjectContact(monster, object, { mode, state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, finishMonsterDeath = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
@@ -1334,7 +1331,6 @@ export async function finishHeroHitAftermath(monster, { angerGuards, state = gam
 }
 const GEMSTONE = 20;
 const MINERAL = 21;
-const RING_CLASS = 4;
 export async function hitMonsterWithHeroObject(monster, object, options) {
     const state = options.state ?? game;
     requirePlayingGame(state);
@@ -1524,7 +1520,7 @@ async function preparePhysicalContact(monster, object, context) {
             return { kind: 'finished', outcome: { survived: contact.done ? contact.survived : monster.mhp > 0, heroDied: contact.heroDied } };
         strike.damage = contact.damage;
         // potionhit() refreshes hmon's cached species after changing the body.
-        if (object.oclass === 8)
+        if (object.oclass === POTION_CLASS)
             strike.originalSpecies = monster.mnum;
         strike.getDamageBonus = contact.getDamageBonus;
         strike.hitTextShown = contact.specialMessage;
@@ -1582,7 +1578,7 @@ function shouldLogWeaponHit(strike, { state, mode }) {
     const object = strike.object;
     return !!object && (object === (state.uwep || state.u.uwep)
         || (!!state.u.twoweap && object === (state.uswapwep || state.u.uswapwep)))
-        && (object.oclass === 2 || isWeaponTool(object))
+        && (object.oclass === WEAPON_CLASS || isWeaponTool(object))
         && (mode === 'melee' || mode === 'applied')
         && !strike.joust && strike.damage > 0 && (state.u.uconduct.weaphit ?? 0) <= 1;
 }
@@ -2632,7 +2628,6 @@ function damageResult(damage) {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 // Native uhitm.c:mhitm_ad_sedu()/sgld(), monster attacking monster.
-const COIN_CLASS = 12;
 const S_NYMPH = 14;
 export async function applyMonsterTheftEffect(attacker, defender, context) {
     return context.attack[1] === AD_SGLD
@@ -3549,7 +3544,7 @@ export function nurseContactMode(monster, state) {
     if (monster.mcan || (Upolyd(state.u) && touchPetrifies(heroSpecies(state))))
         return 'hit';
     const weapon = state.uwep || state.u.uwep;
-    const armed = weapon && (weapon.oclass === 2 || isWeaponTool(weapon));
+    const armed = weapon && (weapon.oclass === WEAPON_CLASS || isWeaponTool(weapon));
     const armored = state.uarmu || state.uarm || state.uarmc || state.uarms
         || state.uarmg || state.uarmf || state.uarmh;
     if (!armed && !armored)
@@ -4715,7 +4710,7 @@ async function performFormWeaponAttack(sequence, attack, index) {
     return { kind: 'processed', result: strike.hit ? M_ATTK_HIT : M_ATTK_MISS, weapon: passiveWeapon, heroDied: false };
 }
 function canAlternateFormWeapon(primary, secondary, state) {
-    return !!(primary && secondary && (primary.oclass === 2 || isWeaponTool(primary))
+    return !!(primary && secondary && (primary.oclass === WEAPON_CLASS || isWeaponTool(primary))
         && !isBimanualObject(primary) && !(state.uarms || state.u.uarms)
         && !secondary.oartifact && isTwoWeaponObject(secondary) && !isBimanualObject(secondary)
         && !(objectMaterial(secondary, state) === 14 && monsterSpeciesHatesSilver(heroSpecies(state))));
@@ -5275,7 +5270,7 @@ export async function applyMonsterPassiveToObject(defender, object, { carried = 
             return;
         if (carried)
             state._armorClassDirty = true;
-        if (carried && (object.known || object.oclass === 3)) {
+        if (carried && (object.known || object.oclass === ARMOR_CLASS)) {
             observeObjectForNaming(object, { state });
             await publish(`${ownedObjectAction(object, 'seem', state)} less effective.`);
         }

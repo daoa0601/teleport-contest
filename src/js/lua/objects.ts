@@ -1,5 +1,6 @@
 // Lua object handles and operations. C nhlobj.c.
 
+import { RANDOM_CLASS, POTION_CLASS } from '../objclass.js';
 import {
     objectClassForType, objectBaseWeight, objectBaseCost, objectDelay,
     objectPropertyId, objectDirection, objectBimanual, objectMerge, objectUsesKnown,
@@ -176,7 +177,7 @@ export function createObjectApi(state: GameState = game): ObjectApi {
             const oclass = typeof options.class === 'string'
                 ? OBJECT_CLASS_SYMBOLS.indexOf(options.class) : -1;
             // ARROW is FIRST_OBJECT; earlier entries represent class glyphs.
-            item = type < ARROW ? await mkobj(Math.max(0, oclass), false)
+            item = type < ARROW ? await mkobj(Math.max(RANDOM_CLASS, oclass), false)
                 : await mksobj(type, true, false);
         } else throw new TypeError('obj.new expects an object name or table');
         if (item) {
@@ -353,7 +354,7 @@ function objectTable(item: GameObject | null, state: GameState): LuaTable {
         values.male = Number(!!(item.spe & CORPSTAT_MALE));
         values.female = Number(!!(item.spe & CORPSTAT_FEMALE));
     }
-    if (item.oclass === 8) values.odiluted = Number(!!(item.odiluted || item.diluted));
+    if (item.oclass === POTION_CLASS) values.odiluted = Number(!!(item.odiluted || item.diluted));
     else values.oeroded = item.oeroded || 0;
     if (isPoisonableObject(item)) values.opoisoned = Number(!!item.opoisoned);
     else values.otrapped = Number(!!item.otrapped);

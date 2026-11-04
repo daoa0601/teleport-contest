@@ -4,6 +4,7 @@
 // readobjnam() first resolves the artifact to an object type, mksobj() builds
 // that ordinary object, and oname() then commits the named artifact.
 
+import { WEAPON_CLASS } from './objclass.js';
 import {
     objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES,
     OBJECT_DESCRIPTIONS, OBJECT_NAMES, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM,
@@ -479,7 +480,7 @@ export async function createArtifactGift(
             candidates.push(artifact);
             break;
         }
-        const weapon = objectClassForType(artifact.baseType) === 2;
+        const weapon = objectClassForType(artifact.baseType) === WEAPON_CLASS;
         const skill = Math.abs(objectSkill(artifact.baseType));
         const compatibility = weapon ? (skills?.[skill]?.maxSkill ?? 0) : P_SKILLED;
         if (

@@ -1,4 +1,5 @@
 // C mthrowu.c:thitu(). Polearms and thrown weapons share this hit rule.
+import { RING_CLASS, POTION_CLASS } from './objclass.js';
 import { objectMaterial } from './o_init.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_CON, A_STR } from './const.js';
@@ -20,8 +21,6 @@ import { loseHeroHp } from './hack.js';
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
-const RING_CLASS = 4;
-const POTION_CLASS = 8;
 const M1_WALLWALK = 0x00000008;
 const M1_UNSOLID = 0x00100000;
 export async function hitHeroWithObject(object, damage, accuracy, { state = game, publish = plineWithContinuation, rollOne = rnd, random = rn2, rollDice = d, die = finishHeroDeath, name: requestedName, killer: requestedKiller, volley, } = {}) {

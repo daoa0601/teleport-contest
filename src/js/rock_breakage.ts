@@ -1,6 +1,7 @@
 // Shared statue/boulder fracture owner.
 // C refs: zap.c fracture_rock() and break_statue(), trap.c sokoban_guilt().
 
+import { GEM_CLASS } from './objclass.js';
 import {
     objectUsesKnown, BOULDER, ROCK, STATUE,
 } from './object_data.js';
@@ -31,7 +32,6 @@ interface FractureOptions {
     publish?: MessagePublisher;
 }
 
-const GEM_CLASS = 13;
 
 async function dropStatueContents(
     statue: GameObject,

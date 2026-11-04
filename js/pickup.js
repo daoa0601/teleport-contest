@@ -1,4 +1,5 @@
 // C pickup.c: command pickup, automatic pickup, floor inspection,
+import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
@@ -74,7 +75,7 @@ import { changeBoxLockByMagic } from './box_magic.js';
 import { courtMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 export function pickupClassOrder() {
-    return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
+    return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
 }
 // The #pickup command: C hack.c:dopickup() runs the location checks and
 // then pickup.c:pickup() over what remains, or loots the swallower's
@@ -685,7 +686,6 @@ export async function forceDescribeDecor({ state = game, probing = false } = {})
     });
     location.lastseentyp = location.typ;
 }
-const COIN_CLASS = 12;
 const INVENTORY_SLOT_COUNT = 52;
 const M2_ROCKTHROW = 0x08000000;
 function withQuantity(object, count) {
@@ -1236,7 +1236,7 @@ export async function dotip() {
         spill = 'grease';
     else if ([FOOD_RATION, CRAM_RATION, LEMBAS_WAFER].includes(object.otyp))
         spill = 'crumbs';
-    else if (object.oclass === 17)
+    else if (object.oclass === VENOM_CLASS)
         spill = 'venom';
     if (spill) {
         const plural = spill === 'crumbs';
@@ -1248,7 +1248,7 @@ export async function dotip() {
             await consumeObjectCharge(object);
         game.context.move = 1;
     }
-    else if (object.oclass === 8) {
+    else if (object.oclass === POTION_CLASS) {
         await plineWithContinuation(`The ${objectCombatName(object)} ${object.quan === 1 ? 'is' : 'are'} securely sealed.`);
     }
     else if (object === (game.uarmh || game.u.uarmh)) {
@@ -1449,7 +1449,7 @@ export async function query_classes(action, objects) {
         letters += 'u';
     const statuses = new Set(objects.map(object => {
         if (game.urole?.key === 'priest')
-            object.bknown = object.oclass !== 12;
+            object.bknown = object.oclass !== COIN_CLASS;
         return bucCategory(object);
     }));
     letters += ['B', 'U', 'C', 'X'].filter(status => statuses.has(status)).join('');
@@ -1496,7 +1496,7 @@ export async function query_classes(action, objects) {
             }
             else {
                 const oclass = OBJECT_CLASS_SYMBOLS.indexOf(character);
-                if (letters.includes(character) && oclass > 0) {
+                if (letters.includes(character) && oclass > RANDOM_CLASS) {
                     selected.push(oclass);
                     if (!categories.includes(oclass))
                         categories.push(oclass);
@@ -1526,8 +1526,8 @@ export function matchesObjectCategories(object, selection) {
     if (!selection.categories.length)
         return !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
     // Explicit coin selection overrides the other filter groups.
-    if (object.oclass === 12 && classes.length)
-        return classes.includes(12);
+    if (object.oclass === COIN_CLASS && classes.length)
+        return classes.includes(COIN_CLASS);
     if (game.urole?.key === 'priest' && !object.bknown)
         object.bknown = true;
     return (!classes.length || classes.includes(object.oclass))
@@ -1539,7 +1539,7 @@ export function hasBucCategory(selection) {
     return selection.categories.some(category => typeof category === 'string' && 'BUCX'.includes(category));
 }
 function bucCategory(object) {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
@@ -1635,7 +1635,7 @@ export async function reverseLoot() {
         }
         return false;
     }
-    let gold = game.inventory.find(object => object.oclass === 12);
+    let gold = game.inventory.find(object => object.oclass === COIN_CLASS);
     if (!gold)
         return false;
     const amount = Math.trunc((rnd(5) * objectQuantity(gold) + 4) / 5);
@@ -1711,12 +1711,12 @@ function objectsByClass(objects) {
         members.push(object);
         groups.set(name, members);
     }
-    const headings = [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
+    const headings = [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
     return headings.filter(name => groups.has(name))
         .map(name => ({ name, members: groups.get(name) ?? [] }));
 }
 function menuBucCategory(object) {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return game.flags?.goldX ? 'X' : 'U';
     if (game.urole?.key === 'priest')
         object.bknown = true;
@@ -1759,7 +1759,7 @@ async function categoryChoices(objects) {
     choices.push(...groups.map((group, index) => ({
         key: String.fromCharCode((showAll ? 98 : 97) + index),
         text: group.name,
-        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? 0] || '',
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? RANDOM_CLASS] || '',
         value: { matches: (object) => className(object) === group.name, filter: 'class' },
     })));
     const special = [];
@@ -2123,7 +2123,7 @@ export async function putIntoContainer(container, object, state = game, count = 
         await snuffLitObject(object, state);
     const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
     const wasUnpaid = object.unpaid;
-    if (floorShop && object.oclass !== 12)
+    if (floorShop && object.oclass !== COIN_CLASS)
         await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX)
         freezeObject(object, state);
@@ -2135,7 +2135,7 @@ export async function putIntoContainer(container, object, state = game, count = 
     observeObjectForNaming(object, { state });
     const message = `You put ${await lootObjectDescription(object)} into the ${objectCombatName(container, { state })}.`;
     await plineWithContinuation(message);
-    if (floorShop && object.oclass === 12)
+    if (floorShop && object.oclass === COIN_CLASS)
         await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
@@ -2245,7 +2245,7 @@ async function traditional_loot(container, putIn, resetPicked) {
         for (const oclass of passes) {
             bypassObjectList(chain(), false);
             let letterCode = 'a'.charCodeAt(0) - 1;
-            if (chain()[0]?.oclass === 12)
+            if (chain()[0]?.oclass === COIN_CLASS)
                 letterCode--;
             let object;
             while ((object = nextUnbypassedObject(chain(), game, order))) {
@@ -2292,7 +2292,7 @@ async function traditional_loot(container, putIn, resetPicked) {
                     await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
                 if (result.moved && !putIn) {
                     resetPicked = false;
-                    if (object.oclass === 12)
+                    if (object.oclass === COIN_CLASS)
                         await bot();
                 }
                 if (result.stop || result.destroyedContainer || game.program_state.gameover)
@@ -2351,7 +2351,7 @@ async function menu_loot(container, putIn, resetPicked = false, retry = null) {
             await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
         if (!putIn && result.moved) {
             resetJustPicked = false;
-            if (selection.value.oclass === 12)
+            if (selection.value.oclass === COIN_CLASS)
                 await bot();
         }
         if (result.stop || putIn && result.destroyedContainer)

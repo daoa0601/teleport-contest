@@ -1,4 +1,5 @@
 // C mplayer.c: player opponents, their equipment, and developer names.
+import { RANDOM_CLASS } from './objclass.js';
 import {
     objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER,
@@ -200,7 +201,7 @@ async function equipSpecialPlayer(monster: Monster, equipment: PlayerEquipment):
         await giveMonsterStartingObject(monster, rndClass(DILITHIUM_CRYSTAL, JADE));
     await giveMonsterStartingGold(monster, rn2(1000));
     for (let count = rn2(10); count > 0; count--)
-        await addCreatedObjectToMonsterInventory(monster, await mkobj(0, false));
+        await addCreatedObjectToMonsterInventory(monster, await mkobj(RANDOM_CLASS, false));
 }
 
 async function givePlayerArmor(monster: Monster, type: number): Promise<void> {

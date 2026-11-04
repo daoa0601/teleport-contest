@@ -5,6 +5,7 @@
 // bound_digging. sp_lev.c construction lives in sp_lev.ts / sp_lev_lua.ts;
 // regular room-and-corridor generation stays in mklev.ts.
 
+import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { AIR, ALTAR, BLCORNER, BRCORNER, COLNO, CORR, CROSSWALL, DBWALL, D_NODOOR, FOUNTAIN, HWALL, ICED_MOAT, ICED_POOL, ICE, In_mines, In_quest, Invocation_lev, IRONBARS, IS_DOOR, IS_LAVA, IS_STWALL, IS_WALL, Is_earthlevel, Is_firelevel, Is_stronghold, LAVAPOOL, LAVAWALL, LR_BRANCH, LR_DOWNSTAIR, LR_DOWNTELE, LR_PORTAL, LR_TELE, LR_UPSTAIR, LR_UPTELE, MAGIC_PORTAL, MAX_TYPE, POOL, ROOM, ROWNO, SDOOR, SINK, SPACE_POS, STONE, TDWALL, TLCORNER, TLWALL, TRCORNER, TRWALL, TUWALL, VWALL, VIBRATING_SQUARE, WATER, W_NONDIGGABLE, W_NONPASSWALL, RLOC_ERR, RLOC_NOMSG, LEVEL_TIMER_KIND } from './const.js';
@@ -33,7 +34,7 @@ import { premap_detect } from './detect.js';
 import { specialLevelAt } from './dungeon.js';
 import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { GEM_CLASS, NO_TRAP, PM_MINOTAUR, RANDOM_CLASS, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
+import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
 import { createOrcRaid } from './orc_raid.js';
 import { isRoom } from './map_types.js';
 import type { ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room, StairRegion } from './map_types.js';

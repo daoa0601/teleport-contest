@@ -1,6 +1,10 @@
 // Shared missile contact with iron bars. C mthrowu.c:hits_bars()/hit_bars().
 
 import {
+    WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, FOOD_CLASS, SPBOOK_CLASS,
+    WAND_CLASS, COIN_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
+} from './objclass.js';
+import {
     objectSkill, BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES,
     LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, POT_ACID, SKELETON_KEY, STATUE,
     TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE,
@@ -57,16 +61,6 @@ type BarsHitOptions = Omit<ProjectileBarsOptions, 'forceHit' | 'heroCaused'>;
 type BarsAttack = { kind: 'projectile'; heroCaused: boolean }
     | { kind: 'wielded'; breaksOnImpact: boolean };
 
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const TOOL_CLASS = 6;
-const FOOD_CLASS = 7;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const ROCK_CLASS = 14;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const ARM_GLOVES = 3;
 const LEATHER = 7;
 const SILVER = 14;

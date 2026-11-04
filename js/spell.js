@@ -1,3 +1,4 @@
+import { RANDOM_CLASS } from './objclass.js';
 import { objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, QUARTERSTAFF, requireObjectData, ROBE, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
 import { requirePlayingGame } from './gstate.js';
 // Spell learning and the native spell.c:spelleffects() transaction.
@@ -1175,7 +1176,7 @@ export async function castSkilledElementalSpell(pseudo, { state = game } = {}) {
         }
         else {
             const damage = adjustSpellDamage(Math.trunc(state.u.ulevel / 2) + 1, state);
-            await explode(state.u.dx ?? 0, state.u.dy ?? 0, pseudo.otyp - SPE_MAGIC_MISSILE + 10, damage, 0, pseudo.otyp === SPE_CONE_OF_COLD ? EXPL_FROSTY : EXPL_FIERY, { state });
+            await explode(state.u.dx ?? 0, state.u.dy ?? 0, pseudo.otyp - SPE_MAGIC_MISSILE + 10, damage, RANDOM_CLASS, pseudo.otyp === SPE_CONE_OF_COLD ? EXPL_FROSTY : EXPL_FIERY, { state });
         }
         if (state.program_state.gameover)
             return { targeted: true, heroDied: true };

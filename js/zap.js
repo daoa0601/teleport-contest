@@ -2,6 +2,7 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
 import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
@@ -163,11 +164,6 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { setMimicAppearance } from './makemon.js';
 import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';
-const RING_CLASS = 4;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -184,7 +180,7 @@ export const INVENTORY_DAMAGE = Object.freeze({
 export function learnWand(object, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (object.oclass === 10)
+    if (object.oclass === SPBOOK_CLASS)
         return; // Spell pseudo-objects do not rediscover books.
     if (objectTypeKnown(object, state))
         observeObject(object, state);
@@ -2067,7 +2063,7 @@ export async function showProbedObjectInventory(objects, title, { state = game, 
         for (const object of members) {
             consumeHallucinatedMenuObjectGlyph(object);
             items.push({
-                ...(first && objectClassForType(object.otyp) === 12 ? { key: '$' } : {}),
+                ...(first && objectClassForType(object.otyp) === COIN_CLASS ? { key: '$' } : {}),
                 text: await inventoryItemDescription(object), value: object,
             });
             first = false;
@@ -2085,12 +2081,12 @@ export async function cancelObjectMagic(object, { state = game } = {}) {
     const objectClass = object.oclass ?? objectClassForType(originalType);
     removeWornBonuses(object, state);
     const enchanted = !!object.spe
-        && ([2, 3].includes(objectClass) || isWeaponTool(object));
+        && ([WEAPON_CLASS, ARMOR_CLASS].includes(objectClass) || isWeaponTool(object));
     if (objectMagic(originalType) || enchanted
         || originalType === POT_ACID || originalType === POT_SICKNESS
         || (originalType === POT_WATER && (object.blessed || object.cursed))
         || originalType === SPE_NOVEL) {
-        const cancelledCharges = objectClass === 11 || originalType === CRYSTAL_BALL ? -1 : 0;
+        const cancelledCharges = objectClass === WAND_CLASS || originalType === CRYSTAL_BALL ? -1 : 0;
         if (object.spe !== cancelledCharges
             && ![WAN_CANCELLATION, MAGIC_LAMP, CANDELABRUM_OF_INVOCATION].includes(originalType)) {
             await chargeAlteredUnpaidObject(object, 'cancel', state);
@@ -2098,19 +2094,19 @@ export async function cancelObjectMagic(object, { state = game } = {}) {
             if ('enchantment' in object)
                 object.enchantment = cancelledCharges;
         }
-        if (objectClass === 9) {
+        if (objectClass === SCROLL_CLASS) {
             await chargeAlteredUnpaidObject(object, 'cancel', state);
             object.otyp = SCR_BLANK_PAPER;
             object.spe = 0;
         }
-        else if (objectClass === 10
+        else if (objectClass === SPBOOK_CLASS
             && originalType !== SPE_CANCELLATION && originalType !== SPE_BOOK_OF_THE_DEAD) {
             await chargeAlteredUnpaidObject(object, 'cancel', state);
             object.otyp = SPE_BLANK_PAPER;
             if (originalType === SPE_NOVEL)
                 blankNovel(object);
         }
-        else if (objectClass === 8) {
+        else if (objectClass === POTION_CLASS) {
             await chargeAlteredUnpaidObject(object, originalType !== POT_WATER ? 'cancel'
                 : object.cursed ? 'uncurse' : 'unbless', state);
             if (originalType === POT_SICKNESS || originalType === POT_SEE_INVISIBLE)
@@ -2176,9 +2172,6 @@ export function blankNovel(object) {
 // Object transformations, system shock, and material golems.
 // C zap.c:obj_shudders(), do_osshock(), poly_obj(), polyuse(), create_polymon().
 const STRANGE_OBJECT = 0;
-const WEAPON_CLASS = 2, ARMOR_CLASS = 3, AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
-const GEM_CLASS = 13, ROCK_CLASS = 14;
 const WOOD = 8, FLESH = 4, LEATHER = 7, CLOTH = 6, BONE = 9;
 const IRON = 11, METAL = 12, COPPER = 13, SILVER = 14, GOLD = 15;
 const PLATINUM = 16, MITHRIL = 17, GLASS = 19, GEMSTONE = 20, MINERAL = 21;
@@ -3678,7 +3671,7 @@ async function traceRay(direction, originX, originY, context) {
         // cell it entered before rebounding off the open sky.
         const spot = vanishedAt ?? endpoint;
         const blastType = vanishedAt !== null ? 1 : 11;
-        await explode(spot.x, spot.y, blastType, context.rollDice(12, 6), 0, EXPL_FIERY, { state, publish, heroCaused: true });
+        await explode(spot.x, spot.y, blastType, context.rollDice(12, 6), RANDOM_CLASS, EXPL_FIERY, { state, publish, heroCaused: true });
     }
     if (context.shopDamage && !state.program_state.gameover) {
         const verb = context.damageType === AD_FIRE ? 'burn away'
@@ -4427,7 +4420,7 @@ async function applyRayDamage(context, damage, name, resisted = false) {
         damage = Math.trunc((damage + 1) / 2);
     const rayName = context.name || name;
     const verb = breath ? 'exhaled' : source.endsWith('spell') ? 'cast'
-        : context.sourceObject?.oclass === 6 ? 'played' : 'zapped';
+        : context.sourceObject?.oclass === TOOL_CLASS ? 'played' : 'zapped';
     const reflexive = state.flags?.female ? 'herself' : 'himself';
     const killer = sourceMonster
         ? monsterSpellDeathReason(sourceMonster, rayName).replace('inflicted', verb)
@@ -4683,7 +4676,7 @@ function wishDropMessage(object) {
 // C zap.c:bhitm(). Direction and range belong to the caller.
 export async function hitMonsterWithWand(monster, wand, { state = game, x = monster.mx, y = monster.my, } = {}) {
     requirePlayingGame(state);
-    const source = wand.oclass === 10 ? 'spell' : 'wand';
+    const source = wand.oclass === SPBOOK_CLASS ? 'spell' : 'wand';
     const attackLevel = source === 'wand' ? 12 : state.u.ulevel;
     const onHead = monster.mx === x && monster.my === y;
     state.notonhead = !onHead;

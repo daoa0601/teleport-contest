@@ -1,3 +1,4 @@
+import { RING_CLASS, SPBOOK_CLASS } from '../js/objclass.js';
 import { objectCharged, LUCKSTONE, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, POT_POLYMORPH, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, RIN_POISON_RESISTANCE, SPE_CONFUSE_MONSTER, SPE_FORCE_BOLT, SPE_POLYMORPH, WAN_NOTHING, WAN_POLYMORPH, } from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -31,14 +32,14 @@ void test('random Wizard gear excludes unusable items and controlled polymorph c
             for (const type of [WAN_POLYMORPH, RIN_POLYMORPH, POT_POLYMORPH, SPE_POLYMORPH])
                 assert.equal(types.has(type), false, `${context}: controlled polymorph ${type}`);
         }
-        const rings = state.inventory.filter(item => item.oclass === 4);
+        const rings = state.inventory.filter(item => item.oclass === RING_CLASS);
         assert.equal(rings.length, 2, context);
         assert.notEqual(rings[0]?.otyp, rings[1]?.otyp, context);
         for (const ring of rings) {
             if (objectCharged(ring.otyp))
                 assert.ok((ring.spe ?? 0) > 0, context);
         }
-        const books = state.inventory.filter(item => item.oclass === 10);
+        const books = state.inventory.filter(item => item.oclass === SPBOOK_CLASS);
         assert.equal(books.length, 2, context);
         assert.equal(books.filter(book => book.otyp === SPE_FORCE_BOLT).length, 1, context);
         for (const book of books) {
@@ -51,7 +52,7 @@ void test('a Priest first receives a level-one book and a different book in an a
     for (let seed = 1n; seed <= 48n; seed++) {
         const state = prepareHeroStartup({ role: 'priest', seed });
         await uInitInventoryAttrs();
-        const books = state.inventory.filter(item => item.oclass === 10);
+        const books = state.inventory.filter(item => item.oclass === SPBOOK_CLASS);
         const first = books[0], second = books[1];
         assert.ok(first && second, `Priest seed ${seed} needs both books`);
         assert.equal(OBJECT_SPELL_LEVEL[first.otyp], 1, `Priest seed ${seed}`);

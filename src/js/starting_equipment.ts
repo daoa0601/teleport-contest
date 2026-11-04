@@ -1,5 +1,6 @@
 // C u_init.c:ini_inv_use_obj(), after starting-item discovery.
 
+import { WEAPON_CLASS, ARMOR_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { armorSlotFor, wearHeroArmor } from './do_wear.js';
 
 import type { GameState } from './game_state.js';
@@ -18,9 +19,6 @@ import {
     setTwoWeaponCombat,
 } from './wield.js';
 
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const SPBOOK_CLASS = 10;
 
 export async function useStartingItem(item: GameObject, state: GameState): Promise<void> {
     const weapon = state.uwep || state.u.uwep;

@@ -1,5 +1,6 @@
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
 
+import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import {
     objectUnique, BEARTRAP, CORPSE, EGG, GOLD_PIECE,
 } from './object_data.js';
@@ -26,7 +27,6 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { exceedsActionCapacity } from './hack.js';
 
-const FOOD_CLASS = 7, COIN_CLASS = 12;
 const METALLIVORE = 0x80000000;
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 const FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');

@@ -1,5 +1,6 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
+import { COIN_CLASS } from './objclass.js';
 import { displayColorName } from './do_name.js';
 import { upstart } from './hacklib.js';
 import { plineWithContinuation } from './pline.js';
@@ -9,7 +10,6 @@ import { inventoryItemDescription } from './invent.js';
 import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { withIndefiniteArticle } from './objnam.js';
-const COIN_CLASS = 12;
 async function objectDescription(object, state) {
     observeObjectForNaming(object, { state });
     return state === game

@@ -1,3 +1,4 @@
+import { POTION_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -40,6 +41,6 @@ void test('shop stocking puts merchandise beneath worm tails instead of attempti
             x > room.lx && x < room.hx && y > room.ly && y < room.hy));
     assert.ok(shelfSegments.length > 0, 'the generated worms must occupy interior shop shelves');
     for (const { x, y } of shelfSegments)
-        assert.ok(game.level.objects[x]?.[y]?.some(object => object.oclass === 8),
+        assert.ok(game.level.objects[x]?.[y]?.some(object => object.oclass === POTION_CLASS),
             `the worm segment at ${x},${y} must have potion stock beneath it`);
 });

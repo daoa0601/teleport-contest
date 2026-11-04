@@ -1,3 +1,4 @@
+import { WEAPON_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS } from '../js/objclass.js';
 import { objectSkill, CANDELABRUM_OF_INVOCATION, HELMET, } from '../js/object_data.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -10,7 +11,6 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
-const POTION_CLASS = 8, SCROLL_CLASS = 9, WAND_CLASS = 11;
 function statusText() {
     return requireScreenRow(23).map(cell => cell.ch).join('');
 }
@@ -21,7 +21,7 @@ for (const name of ['gnome queen', 'ogre king']) {
             await freshObjectRoom({ gameplaySeed: seed });
             const prince = await createMonsterAt(name, 12, 10, MM_NOGRP | MM_NOMSG);
             // Throwing stacks from m_initthrow() retain their raw enchantment.
-            const weapons = (prince.minvent ?? []).filter(object => object.oclass === 2
+            const weapons = (prince.minvent ?? []).filter(object => object.oclass === WEAPON_CLASS
                 && object.quan === 1
                 && objectSkill(object.otyp) >= 0);
             if (weapons.length)

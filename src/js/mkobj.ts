@@ -2,6 +2,12 @@
 // C ref: mkobj.c.
 
 import {
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS,
+    TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS,
+    WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS,
+    SPBOOK_no_NOVEL,
+} from './objclass.js';
+import {
     objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic,
     getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN,
     HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
@@ -76,26 +82,11 @@ import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
 
-const RANDOM_CLASS = 0;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
 const G_NOGEN = 0x0200;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const LIQUID = 1;
 const WOOD = 8;
 const DRAGON_HIDE = 10;
 const PLASTIC = 18;
-const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const M2_HUMAN = 0x00000008;
@@ -155,7 +146,7 @@ export async function curseObject(
     const changed = curseObjectState(object, state);
     if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
         await dropCursedAlternateWeapon(object, state);
-    if (object && changed && !wasCursed && object.oclass === 10)
+    if (object && changed && !wasCursed && object.oclass === SPBOOK_CLASS)
         await bookCursed(object, { state });
     if (object?.lamplit) await adjustObjectLightAfterBlessing(object, oldLight, state);
     return changed;
@@ -875,15 +866,15 @@ interface MonsterLinkOptions extends MonsterPickupOptions {
 
 // C mkobj.c:clear_dknown().
 const DESCRIPTION_UNKNOWN_CLASSES = new Set([
-    2,  // WEAPON_CLASS
-    4,  // RING_CLASS
-    6,  // TOOL_CLASS
-    8,  // POTION_CLASS
-    9,  // SCROLL_CLASS
-    10, // SPBOOK_CLASS
-    11, // WAND_CLASS
-    13, // GEM_CLASS
-    17, // VENOM_CLASS
+    WEAPON_CLASS,
+    RING_CLASS,
+    TOOL_CLASS,
+    POTION_CLASS,
+    SCROLL_CLASS,
+    SPBOOK_CLASS,
+    WAND_CLASS,
+    GEM_CLASS,
+    VENOM_CLASS,
 ]);
 
 // C mkobj.c:clear_dknown().
@@ -1496,14 +1487,14 @@ export async function useHornOfPlenty(horn: GameObject, {
     let object: GameObject;
     let what: string;
     if (!rn2(13)) {
-        object = await mkobj(8, false);
+        object = await mkobj(POTION_CLASS, false);
         if (objectMagic(object.otyp)) {
             do { object.otyp = rndClass(POT_BOOZE, POT_WATER); } while (object.otyp === POT_SICKNESS);
             if (object.otyp === POT_OIL) object.age = MAX_OIL_IN_FLASK;
         }
         what = object.quan > 1 ? 'Some potions spill' : 'A potion spills';
     } else {
-        object = await mkobj(7, false);
+        object = await mkobj(FOOD_CLASS, false);
         if (object.otyp === FOOD_RATION && !rn2(7)) object.otyp = LUMP_OF_ROYAL_JELLY;
         what = 'Some food spills';
     }
@@ -2152,7 +2143,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     // A top-level coin stack is treated specially by inv_weight(), but coin
     // inside a container reaches mkobj.c:weight() and therefore weighs at
     // least one unit even below 50 pieces.
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
     // C mkobj.c:weight(): globs keep quantity one while absorption and
     // SHRINK_GLOB mutate their complete weight directly in owt.  This check
@@ -2172,7 +2163,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     }
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition per item, including stacks of partly eaten wishes.
-    if (object.oclass === 7 && uneatenNutrition > 0 && base > 0) {
+    if (object.oclass === FOOD_CLASS && uneatenNutrition > 0 && base > 0) {
         const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
         if (fullNutrition > 0) {
             return Math.max(1, Math.trunc(

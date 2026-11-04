@@ -1,3 +1,4 @@
+import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, beginMonsterHeroAttack, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
@@ -80,9 +81,6 @@ const M1_WALLWALK = 0x00000008;
 const M1_NOEYES = 0x00001000;
 const M2_NEUTER = 0x00040000;
 // include/objclass.h nofetch classes dog_invent() refuses to carry.
-const ROCK_CLASS = 14;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);

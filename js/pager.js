@@ -1,5 +1,6 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
+import { ROCK_CLASS } from './objclass.js';
 import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
 import { canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -719,7 +720,7 @@ export function screenDescription(x, y, description) {
         // is set for this level's symset (ov_rogue_syms on the Rogue level),
         // else the default rock symbol.
         const boulderSymbol = (Is_rogue_level(game.u.uz)
-            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[14] || '';
+            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[ROCK_CLASS] || '';
         for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
             const statue = index === 14 && glyph.kind === 'object' && glyph.statueGlyph;
             const boulder = index === 14 && sameSymbol({ ch: boulderSymbol });

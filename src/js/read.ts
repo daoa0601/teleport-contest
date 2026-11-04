@@ -7,6 +7,11 @@
 // halves. Effects own their exceptions to scroll disposal.
 
 import {
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS,
+    CHAIN_CLASS,
+} from './objclass.js';
+import {
     objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING,
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM,
     CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM,
@@ -142,10 +147,6 @@ export interface RemoveCurseOptions {
     announce?: boolean | undefined;
 }
 
-const WEAPON_CLASS = 2;
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10, ARMOR_CLASS = 3;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
 const S_HUMAN = 53;
 
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
@@ -274,9 +275,6 @@ export interface RechargeRingOptions {
     die?: DeathHandler;
 }
 
-const RING_CLASS = 4;
-const TOOL_CLASS = 6;
-const WAND_CLASS = 11;
 const NODIR = 1;
 const WAN_NOTHING = OBJECT_NAMES.indexOf('nothing');
 
@@ -1253,7 +1251,7 @@ async function fireEffect(
             await burnAwayHeroSlime({ state });
         }
     }
-    const explosion = await explode(center.x, center.y, 11, damage, 9, EXPL_FIERY, {
+    const explosion = await explode(center.x, center.y, 11, damage, SCROLL_CLASS, EXPL_FIERY, {
         state, die: finishHeroDeath,
     });
     result.heroDied = explosion.heroDied;
@@ -1309,7 +1307,7 @@ async function cloudEffect(source: GameObject, state: PlayingGameState): Promise
     if (!center) await pline('Never mind.');
     else if (!canCenterCloud(center.x, center.y, state)) {
         await pline(heroIsHallucinating(state) ? 'Ugh... someone cut the cheese.'
-            : `${source.oclass === 9 ? 'The scroll crumbles with' : 'You smell'} a whiff of rotten eggs.`);
+            : `${source.oclass === SCROLL_CLASS ? 'The scroll crumbles with' : 'You smell'} a whiff of rotten eggs.`);
     } else {
         await createPoisonGasCloud(state, center.x, center.y,
             15 + 10 * blessing(source), 8 + 4 * blessing(source));
@@ -1322,7 +1320,7 @@ function blessing(source: Pick<GameObject, 'blessed' | 'cursed'>): -1 | 0 | 1 {
 }
 
 function sourceTypeKnown(source: GameObject, state: GameState): boolean {
-    return source.oclass === 10 || !!OBJECT_INITIAL_KNOWN[source.otyp]
+    return source.oclass === SPBOOK_CLASS || !!OBJECT_INITIAL_KNOWN[source.otyp]
         || !!state._knownObjectTypes?.has(source.otyp);
 }
 
@@ -2045,8 +2043,6 @@ function canAnnounceImmuneSpecies(species: number): boolean {
 // Punishment. C refs: read.c punish(), unpunish().
 // ---------------------------------------------------------------------------
 
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 
 // C read.c:punish().
 export async function punishHero(source: GameObject | null = null, state: GameState = game) {

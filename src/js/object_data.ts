@@ -1,3 +1,4 @@
+import { ILLOBJ_CLASS, WEAPON_CLASS } from './objclass.js';
 // C objects.c:objects_globals_init() and objects.h: initial object definitions.
 import type { SpellCategory } from './data_types.js';
 import type { PropertyName } from './property_types.js';

@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
 import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt } from './mkobj.js';
@@ -73,21 +74,9 @@ import { switchHeroTerrain, roomsAt } from './hack.js';
 // room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
 // level (extralev.c) in extralev.ts. Level construction uses the game's
 // main random-number stream.
-// Object/class constants (normally from objects.js, not in contest template)
-export const RANDOM_CLASS = 0;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const TOOL_CLASS = 6;
 const M2_DOMESTIC = 0x00400000;
 export const G_NOGEN = 0x0200;
 export const G_IGNORE = 0x8000;
-export const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-export const SPBOOK_CLASS = 10;
-export const WAND_CLASS = 11;
-export const GEM_CLASS = 13;
 export const SCR_TELEPORTATION = 333;
 export const RIN_TELEPORTATION = 194;
 const SCR_LIGHT = 332;
@@ -95,7 +84,6 @@ const SPE_LIGHT = 372;
 const BELL = 255;
 export const CANDELABRUM_OF_INVOCATION = 262;
 export const PM_VAMPIRE_BAT = 129;
-export const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 // Supply chest items
 const POT_HEALING = 307;
 const POT_EXTRA_HEALING = 308;

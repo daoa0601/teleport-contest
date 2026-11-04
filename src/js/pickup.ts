@@ -1,5 +1,6 @@
 // C pickup.c: command pickup, automatic pickup, floor inspection,
 
+import { RANDOM_CLASS, POTION_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import {
     objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER,
     BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION,
@@ -114,7 +115,7 @@ export interface AddedInventoryObject {
 }
 
 export function pickupClassOrder(): string[] {
-    return [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
+    return [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
 }
 
 // The #pickup command: C hack.c:dopickup() runs the location checks and
@@ -735,7 +736,6 @@ export interface LiftOptions {
 export type LiftResult = { decision: 'lift'; count: number }
     | { decision: 'stop' | 'skip'; count: 0 };
 
-const COIN_CLASS = 12;
 const INVENTORY_SLOT_COUNT = 52;
 const M2_ROCKTHROW = 0x08000000;
 
@@ -1301,7 +1301,7 @@ export async function dotip(): Promise<void> {
         || object.otyp === MAGIC_LAMP && object.spe !== 0) spill = 'oil';
     else if (object.otyp === CAN_OF_GREASE && object.spe > 0) spill = 'grease';
     else if ([FOOD_RATION, CRAM_RATION, LEMBAS_WAFER].includes(object.otyp)) spill = 'crumbs';
-    else if (object.oclass === 17) spill = 'venom';
+    else if (object.oclass === VENOM_CLASS) spill = 'venom';
     if (spill) {
         const plural = spill === 'crumbs';
         const { ux: x, uy: y } = game.u;
@@ -1310,7 +1310,7 @@ export async function dotip(): Promise<void> {
         await plineWithContinuation(`Some ${spill} spill${plural ? '' : 's'} onto the ${surfaceName(x, y)}${tail}.`);
         if (object.otyp === CAN_OF_GREASE) await consumeObjectCharge(object);
         game.context.move = 1;
-    } else if (object.oclass === 8) {
+    } else if (object.oclass === POTION_CLASS) {
         await plineWithContinuation(`The ${objectCombatName(object)} ${object.quan === 1 ? 'is' : 'are'} securely sealed.`);
     } else if (object === (game.uarmh || game.u.uarmh)) {
         game.context.move = await tipWornHelmet(object) ? 1 : 0;
@@ -1490,7 +1490,7 @@ export async function query_classes(
     letters += 'm';
     if (objects.some(hasUnpaidContents)) letters += 'u';
     const statuses = new Set(objects.map(object => {
-        if (game.urole?.key === 'priest') object.bknown = object.oclass !== 12;
+        if (game.urole?.key === 'priest') object.bknown = object.oclass !== COIN_CLASS;
         return bucCategory(object);
     }));
     letters += (['B', 'U', 'C', 'X'] as const).filter(status => statuses.has(status)).join('');
@@ -1526,7 +1526,7 @@ export async function query_classes(
                 filtered = true;
             } else {
                 const oclass = OBJECT_CLASS_SYMBOLS.indexOf(character);
-                if (letters.includes(character) && oclass > 0) {
+                if (letters.includes(character) && oclass > RANDOM_CLASS) {
                     selected.push(oclass);
                     if (!categories.includes(oclass)) categories.push(oclass);
                 } else {
@@ -1553,7 +1553,7 @@ export function matchesObjectCategories(object: GameObject, selection: ObjectCla
         category === 'B' || category === 'U' || category === 'C' || category === 'X');
     if (!selection.categories.length) return !!((game.flags.paranoia_bits ?? 0) & PARANOID_AUTOALL);
     // Explicit coin selection overrides the other filter groups.
-    if (object.oclass === 12 && classes.length) return classes.includes(12);
+    if (object.oclass === COIN_CLASS && classes.length) return classes.includes(COIN_CLASS);
     if (game.urole?.key === 'priest' && !object.bknown) object.bknown = true;
     return (!classes.length || classes.includes(object.oclass))
         && (!statuses.length || statuses.includes(bucCategory(object)))
@@ -1566,7 +1566,7 @@ export function hasBucCategory(selection: ObjectClassSelection): boolean {
 }
 
 function bucCategory(object: GameObject): BucCategory {
-    if (object.oclass === 12) return game.flags.goldX ? 'X' : 'U';
+    if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
@@ -1664,7 +1664,7 @@ export async function reverseLoot(): Promise<boolean> {
         }
         return false;
     }
-    let gold = game.inventory.find(object => object.oclass === 12);
+    let gold = game.inventory.find(object => object.oclass === COIN_CLASS);
     if (!gold) return false;
     const amount = Math.trunc((rnd(5) * objectQuantity(gold) + 4) / 5);
     if (amount < objectQuantity(gold)) gold = splitObjectStack(gold, amount) ?? gold;
@@ -1773,13 +1773,13 @@ function objectsByClass(objects: readonly GameObject[]): { name: string; members
         members.push(object);
         groups.set(name, members);
     }
-    const headings = [...inventoryClassOrder(), 17, 0].map(objectClassHeading);
+    const headings = [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS].map(objectClassHeading);
     return headings.filter(name => groups.has(name))
         .map(name => ({ name, members: groups.get(name) ?? [] }));
 }
 
 function menuBucCategory(object: GameObject): 'B' | 'C' | 'U' | 'X' {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return game.flags?.goldX ? 'X' : 'U';
     if (game.urole?.key === 'priest') object.bknown = true;
     if (!object.bknown) return 'X';
@@ -1815,7 +1815,7 @@ async function categoryChoices(objects: readonly GameObject[]): Promise<MultiSel
     choices.push(...groups.map((group, index): SelectableMenuItem<ContainerCategory> => ({
         key: String.fromCharCode((showAll ? 98 : 97) + index),
         text: group.name,
-        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? 0] || '',
+        groupAccelerator: OBJECT_CLASS_SYMBOLS[group.members[0]?.oclass ?? RANDOM_CLASS] || '',
         value: { matches: (object: GameObject) => className(object) === group.name, filter: 'class' },
     })));
     const special: SelectableMenuItem<ContainerCategory>[] = [];
@@ -2183,7 +2183,7 @@ export async function putIntoContainer(
     if (objectShedsLight(object)) await snuffLitObject(object, state);
     const floorShop = container.where !== 'inventory' && costlySpot(state.u.ux, state.u.uy, state);
     const wasUnpaid = object.unpaid;
-    if (floorShop && object.oclass !== 12)
+    if (floorShop && object.oclass !== COIN_CLASS)
         await sellHeroDroppedObject(object, state.u.ux, state.u.uy, state);
     if (container.otyp === ICE_BOX) freezeObject(object, state);
     else if (container.otyp === BAG_OF_HOLDING
@@ -2195,7 +2195,7 @@ export async function putIntoContainer(
     observeObjectForNaming(object, { state });
     const message = `You put ${await lootObjectDescription(object)} into the ${objectCombatName(container, { state })}.`;
     await plineWithContinuation(message);
-    if (floorShop && object.oclass === 12)
+    if (floorShop && object.oclass === COIN_CLASS)
         await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
@@ -2304,7 +2304,7 @@ async function traditional_loot(container: GameObject, putIn: boolean, resetPick
         for (const oclass of passes) {
             bypassObjectList(chain(), false);
             let letterCode = 'a'.charCodeAt(0) - 1;
-            if (chain()[0]?.oclass === 12) letterCode--;
+            if (chain()[0]?.oclass === COIN_CLASS) letterCode--;
             let object;
             while ((object = nextUnbypassedObject(chain(), game, order))) {
                 if (letterCode === 'z'.charCodeAt(0)) letterCode = 'A'.charCodeAt(0);
@@ -2341,7 +2341,7 @@ async function traditional_loot(container: GameObject, putIn: boolean, resetPick
                 if (result.message && (!putIn || !result.moved)) await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
                 if (result.moved && !putIn) {
                     resetPicked = false;
-                    if (object.oclass === 12) await bot();
+                    if (object.oclass === COIN_CLASS) await bot();
                 }
                 if (result.stop || result.destroyedContainer || game.program_state.gameover) return batch();
             }
@@ -2396,7 +2396,7 @@ async function menu_loot(container: GameObject, putIn: boolean, resetPicked = fa
             await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
         if (!putIn && result.moved) {
             resetJustPicked = false;
-            if (selection.value.oclass === 12) await bot();
+            if (selection.value.oclass === COIN_CLASS) await bot();
         }
         if (result.stop || putIn && result.destroyedContainer) break;
     }

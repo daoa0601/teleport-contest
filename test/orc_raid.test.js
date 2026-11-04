@@ -1,3 +1,4 @@
+import { RING_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -44,7 +45,7 @@ void test('ransacked Minetown sends its raiders and named stolen goods into the 
 });
 for (const callName of ['shiny', 'SHI- NY']) {
     void test(`orc captains can steal rings called "${callName}" regardless of appearance`, async () => {
-        const rings = getObjectClassBounds(4);
+        const rings = getObjectClassBounds(RING_CLASS);
         let stoleCalledRing = false;
         for (let seed = 1; seed <= 8; seed++) {
             const active = freshSpecialLevel({ prototype: 'minetn', variant: 1, seed, depth: 3 });
@@ -59,7 +60,7 @@ for (const callName of ['shiny', 'SHI- NY']) {
             await generateMinetown(active);
             const captain = game._migratingMonsters?.find(monster => monster.mnum === MONSTER_NAME.indexOf('orc-captain'));
             assert.ok(captain, 'the raiding gang must have a migrating captain');
-            const ring = captain.inventory?.find(object => object.oclass === 4);
+            const ring = captain.inventory?.find(object => object.oclass === RING_CLASS);
             assert.ok(ring, 'the captain must carry a shiny ring');
             if (game.objectDescriptions?.[ring.otyp] !== 'shiny') {
                 stoleCalledRing = true;

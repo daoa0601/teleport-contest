@@ -1,5 +1,6 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
+import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
 import { objectBaseWeight, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -819,7 +820,6 @@ function monsterDigCapabilities(monster, flags) {
 // ---------------------------------------------------------------------------
 // C mon.c:can_touch_safely(), curr_mon_load(), max_mon_load() and can_carry().
 // ---------------------------------------------------------------------------
-const COIN_CLASS = 12, GEM_CLASS = 13;
 const M1_NOHANDS = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_GREEDY = 0x10000000;
@@ -1858,7 +1858,6 @@ export function initializeMonsterMovement(monster) {
 }
 // ── C mon.c:meatmetal(), meatobj(), and meatcorpse(). Non-pet meals
 // during post-move item handling.
-const SCROLL_CLASS = 9, ROCK_CLASS = 14;
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 export async function consumeMonsterFloorObjects(monster, state, { originalSpecies, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     requireLiveGame(state);

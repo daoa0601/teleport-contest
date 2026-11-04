@@ -1,3 +1,4 @@
+import { RING_CLASS, AMULET_CLASS } from '../js/objclass.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,8 +24,8 @@ const GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const SILVER_DAGGER = OBJECT_NAMES.indexOf('silver dagger');
 
 function ringMadeOf(material: number) {
-    const firstRing = OBJECT_BASES[4];
-    const afterRings = OBJECT_BASES[5];
+    const firstRing = OBJECT_BASES[RING_CLASS];
+    const afterRings = OBJECT_BASES[AMULET_CLASS];
     assert.ok(firstRing !== undefined && afterRings !== undefined);
     const type = Array.from({ length: afterRings - firstRing },
         (_, index) => firstRing + index)

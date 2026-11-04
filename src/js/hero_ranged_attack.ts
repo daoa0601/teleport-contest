@@ -1,6 +1,7 @@
 // Hero ranged hit admission. Native dothrow.c:thitmonst() owns accuracy,
 // exercise, worm cutting, missile destruction, and object passive effects.
 // Damage, messages, and death share uhitm.c:hmon() with melee.
+import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectClassForType, objectSkill, BOOMERANG, BOULDER, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
     GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, YUMI,
@@ -61,9 +62,6 @@ export type RangedObjectHitResult = { heroDied: true } | {
 
 const M2_ELF = 0x00000010;
 const M2_ORC = 0x00000080;
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const GEM_CLASS = 13;
 
 function heroIsPolymorphed(state: PlayingGameState) {
     return Upolyd(state.u);

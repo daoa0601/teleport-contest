@@ -1,5 +1,6 @@
 // Hero-credited monster death.
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
+import { RANDOM_CLASS, FOOD_CLASS } from './objclass.js';
 import { objectBimanual, BOULDER, FIGURINE, } from './object_data.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -36,7 +37,6 @@ import { finishDestinationSpotEffects } from './hack.js';
 // pet-murder chronicle entry behind (mon.c:xkilled()).
 const G_UNIQ = 0x1000;
 const M2_COLLECT = 0x40000000;
-const FOOD_CLASS = 7;
 const MZ_HUMAN = 2;
 function killingIsMurder(monster) {
     const mnum = monster?.mnum ?? -1;
@@ -193,7 +193,7 @@ export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinatin
             && (x !== game.u?.ux || y !== game.u?.uy)
             && !monsterIsKop(monster.mnum)
             && !monster.mcloned) {
-            const extra = await mkobj(0, true);
+            const extra = await mkobj(RANDOM_CLASS, true);
             const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_COLLECT);
             const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)

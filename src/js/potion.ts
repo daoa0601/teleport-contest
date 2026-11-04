@@ -14,6 +14,10 @@
 // equipment_selection.ts.
 
 import {
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, POTION_CLASS, SPBOOK_CLASS,
+    COIN_CLASS,
+} from './objclass.js';
+import {
     objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_DESCRIPTIONS,
     OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
     POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
@@ -607,7 +611,7 @@ export async function quaff({ state = game }: PotionEffectOptions = {}): Promise
     }
     // drink_ok() reports a declined floor source as GETOBJ_EXCLUDE_NONINVENT.
     let source = await chooseInventoryObject('drink', object =>
-        object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
+        object.oclass === POTION_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE,
     { hands: declinedSource ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (!source) return { ...outcome(false, state), cancelled: true };
     if (source.owornmask) {
@@ -961,7 +965,7 @@ async function monsterDetection(source: GameObject, state: PlayingGameState) {
         unknown++;
         const timeout = hero.monsterDetectionTurns || 0;
         hero.monsterDetectionTurns = Math.min(TIMEOUT,
-            timeout + (timeout >= 300 ? 1 : source.oclass === 10 ? rn1(40, 21) : rn2(100) + 100));
+            timeout + (timeout >= 300 ? 1 : source.oclass === SPBOOK_CLASS ? rn1(40, 21) : rn2(100) + 100));
         let found = false;
         for (let x = 1; x < COLNO; x++) for (let y = 0; y < ROWNO; y++) {
             await unmap_invisible(x, y);
@@ -2672,7 +2676,7 @@ function potionColor(potion: GameObject): string {
 
 function mixtureType(first: GameObject, second: GameObject): number | null {
     let left = first.otyp, right = second.otyp;
-    if (first.oclass === 8 && [POT_GAIN_LEVEL, POT_GAIN_ENERGY, POT_HEALING, POT_EXTRA_HEALING,
+    if (first.oclass === POTION_CLASS && [POT_GAIN_LEVEL, POT_GAIN_ENERGY, POT_HEALING, POT_EXTRA_HEALING,
         POT_FULL_HEALING, POT_ENLIGHTENMENT, POT_FRUIT_JUICE].includes(right)) {
         left = second.otyp;
         right = first.otyp;
@@ -2734,12 +2738,12 @@ async function chooseDipTarget(verb: string, floorWater = true): Promise<DipTarg
 }
 
 function dipClassification(object: GameObject): InventoryClassification {
-    if (object.oclass === 12) return GETOBJ_EXCLUDE;
+    if (object.oclass === COIN_CLASS) return GETOBJ_EXCLUDE;
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
 
 function potionClassification(object: GameObject): InventoryClassification {
-    return object.oclass === 8 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE;
+    return object.oclass === POTION_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE;
 }
 
 // ---- hold_potion() (C potion.c:2243) ----
@@ -2811,7 +2815,7 @@ export async function dip({
 
 function dipTargetPronoun(object: DipTarget): string {
     if (object === 'hands') return 'them';
-    const slot = object.oclass === 3 ? armorSlotFor(object.otyp) : null;
+    const slot = object.oclass === ARMOR_CLASS ? armorSlotFor(object.otyp) : null;
     return objectNameIsPlural(object) || object.otyp === LENSES
         || slot === 'uarmg' || slot === 'uarmf' ? 'them' : 'it';
 }
@@ -2904,7 +2908,7 @@ export async function treatDippedObject(object: GameObject, potion: GameObject):
     } else if (object.otyp === POT_POLYMORPH || potion.otyp === POT_POLYMORPH) {
         await dipInPolymorph(object, potion);
         return true;
-    } else if (object.oclass === 8 && object.otyp !== potion.otyp) {
+    } else if (object.oclass === POTION_CLASS && object.otyp !== potion.otyp) {
         await mixPotions(object, potion);
         return true;
     }
@@ -3024,7 +3028,7 @@ export async function mixPotions(object: GameObject, potion: GameObject): Promis
         case 1: object.otyp = POT_WATER; break;
         case 2: case 3: object.otyp = POT_SICKNESS; break;
         case 4: {
-            const randomPotion = await mkobj(8, false);
+            const randomPotion = await mkobj(POTION_CLASS, false);
             object.otyp = randomPotion.otyp;
             if (object.otyp === POT_OIL) object.age = randomPotion.age;
             await deleteObject(randomPotion);
@@ -3087,7 +3091,7 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
     } else if (potion.cursed) {
         await pline(`The potion spills and covers your ${fingersOrGloves()} with oil.`);
         setPropertyTimeout('glib', (game.u.glibTurns ?? 0) + d(2, 10));
-    } else if (object.oclass !== 2 && !isWeaponTool(object)) return false;
+    } else if (object.oclass !== WEAPON_CLASS && !isWeaponTool(object)) return false;
     else if ((!objectIsVulnerableToErosion(object, 'rust') && !objectIsVulnerableToErosion(object, 'corrosion'))
         || isLauncherAmmunition(object) || !(object.oeroded || object.oeroded2)) {
         const verb = verbForSubject(objectNameIsPlural(object) ? 'they' : null,
@@ -3112,7 +3116,7 @@ async function dipInOil(object: GameObject, potion: GameObject): Promise<boolean
 async function fillLamp(lamp: GameObject, potion: GameObject): Promise<void> {
     if (lamp.lamplit || potion.lamplit) {
         await consumeInventoryItem(potion);
-        await explode(game.u.ux, game.u.uy, 11, d(6, 6), 0, EXPL_FIERY);
+        await explode(game.u.ux, game.u.uy, 11, d(6, 6), RANDOM_CLASS, EXPL_FIERY);
         await exerciseAttribute(A_WIS, false);
         return;
     }

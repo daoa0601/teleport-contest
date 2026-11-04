@@ -2,6 +2,7 @@
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
 
+import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import {
     objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE,
     BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG,
@@ -116,8 +117,6 @@ const M2_ROCKTHROW = 0x08000000;
 const M2_JEWELS = 0x20000000;
 const M1_MINDLESS = 0x00010000;
 const M1_ANIMAL = 0x00040000;
-const WEAPON_CLASS = 2;
-const GEM_CLASS = 13;
 const S_KOP = 37;
 const PM_BALROG = MONSTER_NAME.indexOf('balrog');
 
@@ -484,9 +483,6 @@ export interface PhysicalWeaponDamageOptions {
     hatesSilver?: boolean;
 }
 
-const TOOL_CLASS = 6;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const LEATHER = 7;
 const SILVER = 14;
 
@@ -752,7 +748,7 @@ const CLASS_NAMES = [
 ];
 
 export function weaponDescription(object: GameObject): string {
-    const skill = [2, 6, 13].includes(object.oclass)
+    const skill = [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass)
         ? Math.abs(objectSkill(object.otyp)) : 0;
     let description = SKILL_NAMES[skill];
     if (skill === 0) {
@@ -761,7 +757,7 @@ export function weaponDescription(object: GameObject): string {
         else description = object.globby ? 'glob' : CLASS_NAMES[object.oclass];
     } else if (skill === P_SLING && isLauncherAmmunition(object)) {
         description = [ROCK, LUCKSTONE, LOADSTONE, TOUCHSTONE, FLINT].includes(object.otyp)
-            ? 'stone' : object.oclass === 13 ? 'gem' : CLASS_NAMES[object.oclass];
+            ? 'stone' : object.oclass === GEM_CLASS ? 'gem' : CLASS_NAMES[object.oclass];
     } else if (skill === P_BOW && isLauncherAmmunition(object)) description = 'arrow';
     else if (skill === P_CROSSBOW && isLauncherAmmunition(object)) description = 'bolt';
     else if (skill === P_FLAIL && object.otyp === GRAPPLING_HOOK) description = 'hook';

@@ -1,3 +1,4 @@
+import { RING_CLASS, FOOD_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CON, A_DEX, A_STR, ALTAR, CORR, FOUNTAIN, IRONBARS, LA_UP, ROOM, SCORR,
@@ -105,7 +106,7 @@ void test('a backed-up sink leaves its ring at the kicked sink', async () => {
 
         if ((sink.looted ?? 0) & S_LRING) {
             found = true;
-            assert.ok(level.objects[11]?.[10]?.some(object => object.oclass === 4));
+            assert.ok(level.objects[11]?.[10]?.some(object => object.oclass === RING_CLASS));
             assert.ok(!level.objects[10]?.[10]?.length);
         }
     }
@@ -127,7 +128,7 @@ void test('a tree can yield fruit once and then release its bees', async () => {
             assert.ok(level.monsters.some(monster => monster.mnum === MONSTER_NAME.indexOf('killer bee')));
         } else if (!fruited && ((tree.looted ?? 0) & TREE_LOOTED)) {
             fruited = true;
-            assert.ok(floorObjects(level).some(object => object.oclass === 7));
+            assert.ok(floorObjects(level).some(object => object.oclass === FOOD_CLASS));
         }
     }
     assert.ok(fruited && swarmed, 'A tree supplies fruit and its former occupants.');

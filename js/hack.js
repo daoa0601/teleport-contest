@@ -1,5 +1,6 @@
 // Hero movement, travel, and terrain effects.
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
+import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, } from './object_data.js';
 import { setHeroGrip } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
@@ -110,7 +111,6 @@ import { hitIronBars, dissolveBars } from './projectile_bars.js';
 import { ensureHeroSkills, useHeroSkill, weaponSkillType } from './skills.js';
 import { weaponDescription } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
-const COIN_CLASS = 12;
 // C hack.c:revive_nasty().
 export async function reviveNastyAt(x, y, message = null, state = game) {
     requirePlayingGame(state);
@@ -301,7 +301,7 @@ async function cannotPushMessage(boulder, x, y) {
 async function cannotPush(boulder, x, y) {
     if (heroThrowsRocks()) {
         const canPickup = !game.level?.flags.sokoban_rules
-            && (game.inventory.filter(object => object.oclass !== 12).length < 52
+            && (game.inventory.filter(object => object.oclass !== COIN_CLASS).length < 52
                 || !game.inventory.some(object => object.otyp === BOULDER));
         const willPickup = canPickup && game.flags.pickup && !game.context.nopick && await autopickupAllows(boulder);
         const steed = game.u.usteed;
@@ -4652,8 +4652,8 @@ function maybeHalfPhysicalDamage(amount, state) {
         ? Math.trunc((amount + 1) / 2) : amount;
 }
 function isWeaponOrWeaponTool(object) {
-    return object.oclass === 2
-        || (object.oclass === 6 && objectSkill(object.otyp) !== 0);
+    return object.oclass === WEAPON_CLASS
+        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
 }
 export async function fallIntoSink(state = game, { publish = plineWithContinuation, die = finishHeroDeath } = {}) {
     // World side effects are singleton-only: every production caller uses
@@ -4845,13 +4845,13 @@ export function inventoryWeight(state) {
     const objectWeightTotal = inventory.reduce((total, object) => {
         // NetHack's only coin denomination weighs one unit per 100 coins,
         // rounded after combining the entire inventory stack.
-        if (object.oclass === 12)
+        if (object.oclass === COIN_CLASS)
             return total + Math.trunc((quantity(object) + 50) / 100);
         if (object.otyp === BOULDER && throwsRocks)
             return total;
         // C inv_weight() reads owt.  A partly eaten meal's owt is refreshed
         // only at eat.c:recalc_wt() checkpoints, not after every bite.
-        if (object.oclass === 7 && (object.oeaten ?? 0) > 0 && object.owt !== undefined)
+        if (object.oclass === FOOD_CLASS && (object.oeaten ?? 0) > 0 && object.owt !== undefined)
             return total + object.owt;
         return total + objectWeight(object);
     }, 0);

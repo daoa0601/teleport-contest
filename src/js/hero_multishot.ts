@@ -1,6 +1,7 @@
 // How many objects the hero throws or shoots with one command.
 // C refs: dothrow.c multishot_class_bonus() and throw_obj().
 
+import { WEAPON_CLASS } from './objclass.js';
 import {
     objectClassForType, objectSkill, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI,
 } from './object_data.js';
@@ -29,7 +30,6 @@ export interface HeroVolleyOptions {
     random?: (range: number) => number;
 }
 
-const WEAPON_CLASS = 2;
 
 function weakMultishot(role: RoleKey, skill: number, state: PlayingGameState) {
     return role === 'wizard' || role === 'priest'

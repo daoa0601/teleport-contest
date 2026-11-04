@@ -1,3 +1,4 @@
+import { GEM_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import type { TestContext } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,7 +19,6 @@ import { memoryStorage } from './support/memory-storage.js';
 import { startLuaCore } from './support/lua-game.js';
 import { objectWeight } from '../js/mkobj.js';
 
-const GEM_CLASS = 13;
 
 function prepareMines(seed = 271) {
     freshSpecialLevel({ prototype: 'minefill', seed, depth: 2 });

@@ -1,6 +1,7 @@
 // The kick command and its damage helpers.
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb()
 //     /kick_door()/kick_nondoor().
+import { COIN_CLASS, GEM_CLASS } from './objclass.js';
 import { objectBaseCost, objectBimanual, BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR, } from './object_data.js';
 import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
 import { isok } from './cmd.js';
@@ -1082,7 +1083,6 @@ export async function tryKickReel(monster, dx, dy, { martial = false, state = ga
 // C dokick.c:container_impact_dmg().  A kicked, dropped, or thrown
 // container may lose fragile contents.  Callers own placement and pass the
 // object's PRE-impact coordinates for shop-room attribution.
-const GEM_CLASS = 13;
 const GLASS = 19;
 // dokick.c:443-450 per-item adapter: mark no_charge for the hero's own
 // contents, then charge the item at its pre-destruction value.  Called by
@@ -1184,7 +1184,7 @@ function unitWeight(object) {
 function kickRange(object, state, dx, dy, martial, rollOne) {
     let slide = false;
     let range = Math.trunc(currentStrength(state) / 2)
-        - Math.trunc((object.oclass === 12 ? objectWeight(object) : unitWeight(object)) / 40);
+        - Math.trunc((object.oclass === COIN_CLASS ? objectWeight(object) : unitWeight(object)) / 40);
     if (martial)
         range += rollOne(3);
     if (isPoolAt(object.ox, object.oy, state)) {
@@ -1251,7 +1251,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     const owner = findObjectOwner(object, x, y, state);
     let costly = !!owner && !!(costlySpot(x, y, state)
         || costlyAdjacent(owner, x, y, state) && object.unpaid);
-    const isGold = object.oclass === 12;
+    const isGold = object.oclass === COIN_CLASS;
     observeObjectForNaming(object, { state });
     await publish(`You kick ${await objectDescription(isGold ? object
         : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
@@ -1326,7 +1326,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             await publish('Thump!');
         return random(3) === 0 || martial;
     }
-    if (object.oclass === 12 && quantity(object) > 1) {
+    if (object.oclass === COIN_CLASS && quantity(object) > 1) {
         if (random(20) !== 0) {
             if (!heroIsDeaf(state))
                 await publish('Thwwpingg!');
@@ -1346,7 +1346,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             return random(3) === 0 || martial;
         }
     }
-    const moving = object.oclass !== 12 && quantity(object) > 1
+    const moving = object.oclass !== COIN_CLASS && quantity(object) > 1
         ? splitObjectStack(object, 1, state)
         : object;
     if (!moving)
@@ -1418,7 +1418,6 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
             state._kickedObject = null;
     }
 }
-const COIN_CLASS = 12;
 function sameLevel(first, second) {
     return !!first && !!second
         && first.dnum === second.dnum

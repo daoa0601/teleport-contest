@@ -1,4 +1,5 @@
 // C explode.c:explode(). Floor and monster effects precede damage to the hero.
+import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS } from './objclass.js';
 import { objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, } from './object_data.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
@@ -28,11 +29,12 @@ import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, rayDamageType } from './zap.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance } from './mondata.js';
-const WAND_CLASS = 11;
-const SCROLL_CLASS = 9;
 const RAY = 3;
 const M2_DEMON = 0x100;
-const resistanceLevels = new Map([[WAND_CLASS, 12], [6, 10], [2, 10], [SCROLL_CLASS, 9], [8, 6], [4, 5]]);
+const resistanceLevels = new Map([
+    [WAND_CLASS, 12], [TOOL_CLASS, 10], [WEAPON_CLASS, 10],
+    [SCROLL_CLASS, 9], [POTION_CLASS, 6], [RING_CLASS, 5],
+]);
 const damageKinds = new Map([
     [AD_MAGM, {
             name: 'magical blast', floor: 'magic', property: 'antimagic',

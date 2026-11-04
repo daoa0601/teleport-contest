@@ -1,3 +1,4 @@
+import { FOOD_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ANTHOLE, COCKNEST, FILL_NORMAL, LEPREHALL, ROOMOFFSET } from '../js/const.js';
@@ -38,7 +39,7 @@ void test('an anthole is stocked with one sleeping ant species and food', async 
     assert.equal(species.size, 1);
     assert.ok([...species].every(name => ['giant ant', 'soldier ant', 'fire ant'].includes(name ?? '')));
     assert.ok(requireGameLevel().monsters.every(monster => monster.msleeping));
-    assert.ok(floorObjects(requireGameLevel()).some(object => object.oclass === 7));
+    assert.ok(floorObjects(requireGameLevel()).some(object => object.oclass === FOOD_CLASS));
 });
 
 void test('a leprechaun hall has sleeping leprechauns and floor gold', async () => {

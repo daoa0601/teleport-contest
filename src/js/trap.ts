@@ -1,4 +1,8 @@
 import {
+    WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS,
+} from './objclass.js';
+import {
     objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE,
     CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES,
     OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER,
@@ -226,9 +230,6 @@ interface WaterAcidContext {
 export type WaterDamageOutcome = 'nothing' | 'damaged' | 'destroyed' | 'greased';
 
 const PM_IRON_GOLEM = 259;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
 const DRAGON_HIDE = 10;
 const FIRE_RESISTANT_OBJECTS = new Set([
     RED_DRAGON_SCALE_MAIL,
@@ -524,7 +525,7 @@ export async function waterDamageObject(
     // luckstone's bonus.
     const luck = Luck(state.u);
     if (!force && luck + 5 > random(20)) return 'nothing';
-    if (object.oclass === 9) {
+    if (object.oclass === SCROLL_CLASS) {
         if (object.otyp === SCR_BLANK_PAPER) return 'nothing';
         if (carried) await emit(`Your ${name} ${plural ? 'fade' : 'fades'}.`);
         object.otyp = SCR_BLANK_PAPER;
@@ -532,7 +533,7 @@ export async function waterDamageObject(
         object.spe = 0;
         return 'damaged';
     }
-    if (object.oclass === 10) {
+    if (object.oclass === SPBOOK_CLASS) {
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             const position = getObjectLocation(object, state, { contained: true, buried: true });
             if (position) {
@@ -552,7 +553,7 @@ export async function waterDamageObject(
         if (novel) blankNovel(object);
         return 'damaged';
     }
-    if (object.oclass === 8) {
+    if (object.oclass === POTION_CLASS) {
         if (object.otyp === POT_ACID) {
             return await destroyWetAcidPotion(object, false, emit, state, acidContext);
         }
@@ -2290,11 +2291,6 @@ interface ObjectView {
 function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
     return defender === state.u;
 }
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const TOOL_CLASS = 6;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
 const EROSION: Record<ErosionKind, ErosionRule> = {
     burn: { field: 'oeroded', verb: 'smoulder', past: 'burnt', cause: 'heat' },
@@ -6240,7 +6236,6 @@ function heroPassesRocks() {
 
 
 // ── moved from src/js/hero_polymorph_trap.ts ──
-const WAND_CLASS = 12;
 
 // trap.c trapeffect_poly_trap(): the hero branch — the trigger message
 // with the steed's lead-in, the form change or its reversal, the worn-gear
@@ -6280,7 +6275,8 @@ export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean):
     if (steed) {
         steed.mx = game.u.ux;
         steed.my = game.u.uy;
-        if (!monsterHasMagicResistance(steed) && !monsterResistsEffect(steed, WAND_CLASS, rn2))
+        // C zap.c:resist() maps WAND_CLASS to attack level 12.
+        if (!monsterHasMagicResistance(steed) && !monsterResistsEffect(steed, 12, rn2))
             await changeMonsterForm(steed, null, game, {
                 showMessage: true, publish: plineWithContinuation,
             });

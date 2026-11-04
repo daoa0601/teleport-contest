@@ -2,6 +2,7 @@
 // C refs: dothrow.c:autoquiver()/throwing_weapon(), obj.h ammo predicates,
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
+import { WEAPON_CLASS, COIN_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectClassForType, objectSkill, AKLYS, FLINT, ROCK,
 } from './object_data.js';
@@ -43,14 +44,14 @@ export function autoquiverCandidate(state: GameState): GameObject | null {
         const knownType = objectTypeKnown(item, state);
         const ordinarySlingStone = item.otyp === ROCK
             || (item.otyp === FLINT && knownType)
-            || (objectClass === 13
+            || (objectClass === GEM_CLASS
                 && objectMaterial(item.otyp) === 19 && knownType);
         if (ordinarySlingStone) {
             if (currentSling) currentAmmo = item;
             else if (launcherMatchesAmmo(item, state.uswapwep))
                 alternateAmmo = item;
             else if (!miscellaneous) miscellaneous = item;
-        } else if (objectClass === 13) {
+        } else if (objectClass === GEM_CLASS) {
             continue;
         } else if (isLauncherAmmunition(item)) {
             if (launcherMatchesAmmo(item, state.uwep)) currentAmmo = item;
@@ -59,7 +60,7 @@ export function autoquiverCandidate(state: GameState): GameObject | null {
             else miscellaneous = item;
         } else if (isMissileObject(item)) {
             missile = item;
-        } else if (objectClass === 2 && isThrowingWeapon(item)) {
+        } else if (objectClass === WEAPON_CLASS && isThrowingWeapon(item)) {
             if (objectSkill(item.otyp) === P_DAGGER && !missile)
                 missile = item;
             else if (item.otyp !== AKLYS) miscellaneous = item;
@@ -79,7 +80,7 @@ export function readySuggestion(item: GameObject, state: GameState): boolean {
             || launcherMatchesAmmo(item, state.uswapwep);
     }
     const skill = objectSkill(item.otyp);
-    if (quiverObjectClass(item) === 2
+    if (quiverObjectClass(item) === WEAPON_CLASS
         && skill >= P_BOW && skill <= P_CROSSBOW) return false;
-    return [2, 12].includes(quiverObjectClass(item));
+    return [WEAPON_CLASS, COIN_CLASS].includes(quiverObjectClass(item));
 }

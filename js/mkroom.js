@@ -4,6 +4,7 @@
 // morguemon(), antholemon(), courtmon(), squadmon(), nexttodoor(),
 // shrine_pos(); plus the coordinate selectors somexy()/somexyspace() and
 // mklev.c occupied() that share this file's room table.
+import { RANDOM_CLASS, FOOD_CLASS, SPBOOK_CLASS, WAND_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isPoolOrLavaAt } from './dbridge.js';
 import { rn2, rnd, rn1 } from './rng.js';
@@ -26,7 +27,7 @@ import { impossible } from './diagnostics.js';
 import { addToContainer } from './sp_lev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
-import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, findMonsterNearPosition, topologize, } from './mklev.js';
+import { findMonsterNearPosition, topologize } from './mklev.js';
 import { make_grave } from './engrave.js';
 import { isRoom } from './map_types.js';
 import { objectWeight } from './mkobj.js';

@@ -1,3 +1,4 @@
+import { WEAPON_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { init_dungeons } from '../js/dungeon.js';
@@ -29,6 +30,6 @@ void test('a level-script knight receives player hit points and a weapon', async
     assert.ok(knight.m_lev >= 1 && knight.m_lev <= 16);
     assert.ok(knight.mhp >= knight.m_lev + 30, `Player hit dice plus 30 must exceed ordinary monster HP; got ${knight.mhp} at level ${knight.m_lev}`);
     assert.equal(knight.mhp, knight.mhpmax);
-    assert.ok(knight.minvent?.some(object => object.oclass === 2));
+    assert.ok(knight.minvent?.some(object => object.oclass === WEAPON_CLASS));
 });
 //# sourceMappingURL=mplayer_creation.test.js.map

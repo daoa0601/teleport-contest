@@ -1,3 +1,4 @@
+import { RANDOM_CLASS } from './objclass.js';
 import {
     objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING,
     CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN,
@@ -1196,7 +1197,7 @@ export async function castSkilledElementalSpell(pseudo: GameObject, { state = ga
         } else {
             const damage = adjustSpellDamage(Math.trunc(state.u.ulevel / 2) + 1, state);
             await explode(state.u.dx ?? 0, state.u.dy ?? 0, pseudo.otyp - SPE_MAGIC_MISSILE + 10,
-                damage, 0, pseudo.otyp === SPE_CONE_OF_COLD ? EXPL_FROSTY : EXPL_FIERY, { state });
+                damage, RANDOM_CLASS, pseudo.otyp === SPE_CONE_OF_COLD ? EXPL_FROSTY : EXPL_FIERY, { state });
         }
         if (state.program_state.gameover) return { targeted: true, heroDied: true };
         state.u.dx = center.x + rnd(3) - 2;

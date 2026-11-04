@@ -1,3 +1,4 @@
+import { TOOL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { addFruit } from '../js/fruit.js';
@@ -43,7 +44,7 @@ void test('an unmatched called bag with modifiers falls back to the whole tool c
         await freshObjectRoom({ gameplaySeed: seed });
         const result = await readObjectName('blessed bag called unregistered', { wizardWish: true });
         assert.ok(result && !result.noWish, `Tool wish rejected for seed ${seed}`);
-        assert.equal(result.object.oclass, 6, `Expected a tool for seed ${seed}`);
+        assert.equal(result.object.oclass, TOOL_CLASS, `Expected a tool for seed ${seed}`);
         assert.equal(result.object.blessed, true, `Blessing lost for seed ${seed}`);
         receivedOtherTool ||= result.object.otyp < SACK || result.object.otyp > BAG_OF_TRICKS;
     }

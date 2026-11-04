@@ -1,5 +1,6 @@
 // Ordinary-object reading. C refs: read.c doread(), erode_obj_text(),
 // tshirt_text(), apron_text(), hawaiian_design(), and candy_wrapper_text().
+import { SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS } from './objclass.js';
 import { armorSimpleName } from './do_wear.js';
 
 import { artifactById } from './artifacts.js';
@@ -29,7 +30,6 @@ export type OrdinaryReadingResult =
     | { handled: false; spentTime: false; heroDied: false }
     | { handled: true; spentTime: boolean; heroDied: boolean };
 
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10, COIN_CLASS = 12;
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 const RED_MONSTERS: readonly string[] = [
     'fire ant', 'pyrolisk', 'hell hound', 'imp', 'large mimic', 'leocrotta',

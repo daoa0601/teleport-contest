@@ -1,4 +1,5 @@
 // C mplayer.c: player opponents, their equipment, and developer names.
+import { RANDOM_CLASS } from './objclass.js';
 import { objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR, GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALE_MAIL, JADE, KATANA, LEATHER_GLOVES, LEVITATION_BOOTS, LOADSTONE, LONG_SWORD, LUCKSTONE, MACE, OBJECT_NAMES, ORCISH_DAGGER, QUARTERSTAFF, ROBE, SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN, WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL, } from './object_data.js';
 import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
@@ -212,7 +213,7 @@ async function equipSpecialPlayer(monster, equipment) {
         await giveMonsterStartingObject(monster, rndClass(DILITHIUM_CRYSTAL, JADE));
     await giveMonsterStartingGold(monster, rn2(1000));
     for (let count = rn2(10); count > 0; count--)
-        await addCreatedObjectToMonsterInventory(monster, await mkobj(0, false));
+        await addCreatedObjectToMonsterInventory(monster, await mkobj(RANDOM_CLASS, false));
 }
 async function givePlayerArmor(monster, type) {
     if (type === STRANGE_OBJECT)

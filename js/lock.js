@@ -4,6 +4,7 @@
 // reset_pick()/maybe_reset_pick(), u_have_forceable_weapon(),
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
+import { WEAPON_CLASS, TOOL_CLASS, POTION_CLASS, WAND_CLASS, ROCK_CLASS } from './objclass.js';
 import { objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT, } from './object_data.js';
 import { currency } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
@@ -53,10 +54,6 @@ import { impossible } from './diagnostics.js';
 import { roomsAt } from './hack.js';
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const ROCK_CLASS = 14;
-const POTION_CLASS = 8;
 export async function doforce(state = game) {
     if (state.u?.uswallow) {
         await pline("You can't force anything from inside here.");
@@ -992,7 +989,6 @@ function lockPickChance(tool, box, state) {
 }
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
-const WAND_CLASS = 11;
 export async function changeDoorByMagic(source, x, y, { state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

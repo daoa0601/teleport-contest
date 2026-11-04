@@ -2,6 +2,7 @@
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb()
 //     /kick_door()/kick_nondoor().
 
+import { COIN_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectBaseCost, objectBimanual, BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG,
     EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL,
@@ -1133,7 +1134,6 @@ export async function tryKickReel(monster: Monster, dx: number, dy: number, {
 // C dokick.c:container_impact_dmg().  A kicked, dropped, or thrown
 // container may lose fragile contents.  Callers own placement and pass the
 // object's PRE-impact coordinates for shop-room attribution.
-const GEM_CLASS = 13;
 const GLASS = 19;
 
 export interface ContainerImpactOptions {
@@ -1274,7 +1274,7 @@ function kickRange(
 ) {
     let slide = false;
     let range = Math.trunc(currentStrength(state) / 2)
-        - Math.trunc((object.oclass === 12 ? objectWeight(object) : unitWeight(object)) / 40);
+        - Math.trunc((object.oclass === COIN_CLASS ? objectWeight(object) : unitWeight(object)) / 40);
     if (martial) range += rollOne(3);
     if (isPoolAt(object.ox, object.oy, state)) {
         range = Math.trunc(range / 3) + 1;
@@ -1337,7 +1337,7 @@ export async function kickFloorObject(x: number, y: number, {
     const owner = findObjectOwner(object, x, y, state);
     let costly = !!owner && !!(costlySpot(x, y, state)
         || costlyAdjacent(owner, x, y, state) && object.unpaid);
-    const isGold = object.oclass === 12;
+    const isGold = object.oclass === COIN_CLASS;
     observeObjectForNaming(object, { state });
     await publish(`You kick ${await objectDescription(isGold ? object
         : { ...object, quan: 1, quantity: 1 }, { state })}.`, { noRepeat: true });
@@ -1404,7 +1404,7 @@ export async function kickFloorObject(x: number, y: number, {
         if (!box) await publish('Thump!');
         return random(3) === 0 || martial;
     }
-    if (object.oclass === 12 && quantity(object) > 1) {
+    if (object.oclass === COIN_CLASS && quantity(object) > 1) {
         if (random(20) !== 0) {
             if (!heroIsDeaf(state)) await publish('Thwwpingg!');
             const messages = ['scatter the coins', 'knock coins all over the place',
@@ -1423,7 +1423,7 @@ export async function kickFloorObject(x: number, y: number, {
             return random(3) === 0 || martial;
         }
     }
-    const moving = object.oclass !== 12 && quantity(object) > 1
+    const moving = object.oclass !== COIN_CLASS && quantity(object) > 1
         ? splitObjectStack(object, 1, state)
         : object;
     if (!moving) throw new Error('A kicked stack must yield an object.');
@@ -1487,7 +1487,6 @@ export async function kickFloorObject(x: number, y: number, {
     }
 }
 
-const COIN_CLASS = 12;
 type RandomBelow = (limit: number) => number;
 interface MigrationGate {
     arrival: number;

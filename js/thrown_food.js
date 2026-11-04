@@ -1,5 +1,6 @@
 // Food contact after thitmonst's weapon and successful splash branches.
 // C dothrow.c:thitmonst(), tmiss(FALSE); mondata.h:befriend_with_obj().
+import { FOOD_CLASS } from './objclass.js';
 import { objectMaterial } from './o_init.js';
 import { STRAT_WAITMASK } from './const.js';
 import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -13,7 +14,6 @@ const PM_APE = MONSTER_NAME.indexOf('ape');
 const PM_LICHEN = MONSTER_NAME.indexOf('lichen');
 const M2_DOMESTIC = 0x00400000;
 const S_UNICORN = 21;
-const FOOD_CLASS = 7;
 const VEGGY = 3;
 // The caller has already made the ordinary contact rolls. A null result lets
 // it continue to the next thitmonst branch. Handled food can be consumed or

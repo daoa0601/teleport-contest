@@ -1,5 +1,6 @@
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
+import { POTION_CLASS } from './objclass.js';
 import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -19,7 +20,6 @@ import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectWeight, placeObject, stack_object, meldLandingGlob } from './mkobj.js';
 import { applyBoulderPitEffects, dropBoulderIntoLiquid } from './do.js';
-const POTION_CLASS = 8;
 function squareIsVisible(state, x, y) {
     if (state === game)
         return cansee(x, y);

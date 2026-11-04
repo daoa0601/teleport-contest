@@ -1,4 +1,5 @@
 // Pet food preferences and hazards. C refs: dog.c dogfood(), obj.h, mondata.h.
+import { FOOD_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { artifactById, artifactByName } from './artifacts.js';
 import { G_GENOD, MAX_EGG_HATCH_TIME } from './const.js';
 import { veganCorpse } from './food_traits.js';
@@ -19,7 +20,6 @@ export const APPORT = 4;
 export const POISON = 5;
 export const UNDEF = 6;
 export const TABU = 7;
-const FOOD_CLASS = 7, ROCK_CLASS = 14, BALL_CLASS = 15, CHAIN_CLASS = 16;
 const SILVER = 14;
 const M1_NOEYES = 0x1000, M1_ACID = 0x08000000, M1_POIS = 0x10000000;
 const M1_CARNIVORE = 0x20000000, M1_HERBIVORE = 0x40000000, M1_METALLIVORE = 0x80000000;

@@ -1,3 +1,4 @@
+import { COIN_CLASS } from './objclass.js';
 import { eggTypeFromParent } from './mon.js';
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
@@ -27,7 +28,6 @@ import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, heroFormStic
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { splitSittingGremlin } from './fountain.js';
-const COIN_CLASS = 12;
 const CLOTH = 6;
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;

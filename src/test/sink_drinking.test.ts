@@ -1,3 +1,4 @@
+import { RING_CLASS } from '../js/objclass.js';
 import type { RngSeed } from '../js/rng.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
 import { requirePlayingGame } from '../js/gstate.js';
@@ -156,7 +157,7 @@ void test('a sink ring becomes a real floor object and can only be found once', 
     assert.ok(rings !== undefined && rings !== null, 'Expected rings to be initialized');
     assert.equal(rings.length, 1);
     assert.ok(rings[0] !== undefined && rings[0] !== null);
-    assert.equal(rings[0].oclass, 4);
+    assert.equal(rings[0].oclass, RING_CLASS);
     assert.equal(rings[0].where, 'floor');
     assert.ok(location.looted !== undefined && location.looted !== null, 'Expected location.looted to be initialized');
     assert.equal(location.looted & S_LRING, S_LRING);

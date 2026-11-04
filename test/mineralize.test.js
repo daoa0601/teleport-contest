@@ -1,3 +1,4 @@
+import { GEM_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COLNO, MOAT, POOL, ROOM, ROWNO, STONE, WATER, W_NONDIGGABLE } from '../js/const.js';
@@ -14,7 +15,6 @@ import { freshSpecialLevel } from './support/special-level.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startLuaCore } from './support/lua-game.js';
 import { objectWeight } from '../js/mkobj.js';
-const GEM_CLASS = 13;
 function prepareMines(seed = 271) {
     freshSpecialLevel({ prototype: 'minefill', seed, depth: 2 });
     requirePlayingGame(game);

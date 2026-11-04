@@ -1,6 +1,7 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h and dothrow.c throwing_weapon().
 
+import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectClassForType, objectBaseDirection, objectSkill, objectBimanual, objectCharged, AKLYS,
     FLINT, LOADSTONE, LUCKSTONE, OBJECT_NAMES, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN,
@@ -21,10 +22,6 @@ import { rn2 } from './rng.js';
 type ObjectKind = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'oartifact'>>;
 type ObjectCandidate = ObjectKind | null | undefined;
 
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const WAND_CLASS = 11;
-const GEM_CLASS = 13;
 const LEATHER = 7;
 const WOOD = 8;
 const IRON = 11;
@@ -32,7 +29,6 @@ const COPPER = 13;
 const MITHRIL = 17;
 const GLASS = 19;
 const WHACK = 4;
-const ARMOR_CLASS = 3;
 
 function objectClass(object: ObjectCandidate): number {
     return object?.oclass || objectClassForType(object?.otyp);

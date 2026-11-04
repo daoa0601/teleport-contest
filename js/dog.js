@@ -1,5 +1,6 @@
 // Tame monster state.
 // C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
+import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
 import { A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, } from './const.js';
 import { heroEyeName, heroHasEyes } from './body_parts.js';
@@ -281,8 +282,6 @@ const M3_WANTSARTI = 0x0010;
 const M3_COVETOUS = 0x001f;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const S_DOG = 4;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
 export async function tameMonster(monster, source = null, { state = game, announce = false, } = {}) {
     requireLiveGame(state);
     const magic = source?.oclass === SCROLL_CLASS || source?.oclass === SPBOOK_CLASS;

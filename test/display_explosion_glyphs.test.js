@@ -1,3 +1,4 @@
+import { SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_DARK, EXPL_FIERY, MAGIC_TRAP, NO_MINVENT } from '../js/const.js';
@@ -13,7 +14,6 @@ import { createMonsterAt } from './support/monsters.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
-const SCROLL_CLASS = 9;
 void test('an ASCII explosion keeps its border position and fiery glyph type', async () => {
     await freshObjectRoom();
     game.symset = 'ASCII';
@@ -23,7 +23,7 @@ void test('an ASCII explosion keeps its border position and fiery glyph type', a
         assert.equal(requireScreenCell(13, 10).ch, '-');
         assert.equal(glyphAt(14, 9)?.glyph, GlyphOffset.explodeFiery + 1);
     };
-    await explode(14, 10, 11, 0, 9, EXPL_FIERY);
+    await explode(14, 10, 11, 0, SCROLL_CLASS, EXPL_FIERY);
     assert.ok(frames > 0);
 });
 void test('a default game shows the shield of a monster resisting an explosion', async () => {

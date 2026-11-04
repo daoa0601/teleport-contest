@@ -1,3 +1,4 @@
+import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { wakeNearby } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
@@ -1618,8 +1619,6 @@ function clearTerrainFlags(location) {
     location.icedpool = 0;
     location.emptygrave = 0;
 }
-const POTION_CLASS = 8;
-const COIN_CLASS = 12;
 export function addBuriedObject(object, x, y, state = game) {
     if (!object)
         return object;

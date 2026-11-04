@@ -1,3 +1,4 @@
+import { WEAPON_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -73,7 +74,7 @@ for (const invisible of [false, true]) {
             const ring = await addInventoryObject(OBJECT_NAMES.indexOf('see invisible'));
             resetInputState().feed(`${ring.invlet}l                `);
             if (command === 'R') await rhack('P'.charCodeAt(0));
-            const firstObject = OBJECT_BASES[2];
+            const firstObject = OBJECT_BASES[WEAPON_CLASS];
             assert.ok(firstObject !== undefined);
             initRng(17n);
             // see_monsters() redraws the hero's floor once. Only an invisible

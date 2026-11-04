@@ -1,4 +1,8 @@
 import {
+    RANDOM_CLASS, WEAPON_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS,
+    SPBOOK_CLASS, COIN_CLASS, ROCK_CLASS, VENOM_CLASS,
+} from './objclass.js';
+import {
     objectClassForType, objectMerge, BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES,
     OBJECT_NAMES, getObjectClassBounds,
 } from './object_data.js';
@@ -386,7 +390,7 @@ async function senseDetectedTrap(trap: DetectionTrap) {
         await map_trap(trap, true);
         return;
     }
-    const firstObject = OBJECT_BASES[2];
+    const firstObject = OBJECT_BASES[WEAPON_CLASS];
     if (firstObject === undefined) throw new Error('Object class table has no weapon offset.');
     const type = firstObject + rn2(OBJECT_NAMES.length - firstObject);
     const quantity = type === GOLD_PIECE ? rnd(10) : objectMerge(type) ? rnd(2) : 1;
@@ -706,7 +710,7 @@ async function senseTrap(trap: TrapGlyphSource, shown: DetectionMap, cursed: boo
         trap.tseen = true;
         return;
     }
-    const firstObject = getObjectClassBounds(2).first;
+    const firstObject = getObjectClassBounds(WEAPON_CLASS).first;
     const otyp = hallucinating
         ? rn2(OBJECT_NAMES.length - firstObject) + firstObject : GOLD_PIECE;
     const quantity = otyp === GOLD_PIECE ? rnd(10) : objectMerge(otyp) ? rnd(2) : 1;
@@ -755,8 +759,6 @@ export interface DetectionObject {
     dknown?: boolean;
 }
 
-const FOOD_CLASS = 7, POTION_CLASS = 8, SPBOOK_CLASS = 10, COIN_CLASS = 12;
-const ROCK_CLASS = 14;
 const GOLD = 15;
 const GOLD_GOLEM = MONSTER_NAME.indexOf('gold golem');
 const LONG_WORM = MONSTER_NAME.indexOf('long worm');
@@ -927,17 +929,17 @@ export async function detectMonsters(source: GameObject | null, { state = game, 
     return effectResult(0, true);
 }
 
-export async function detectObjects(source: GameObject | null, { state = game, objectClass = 0 }: DetectionOptions & { objectClass?: number } = {}): Promise<DetectionResult> {
+export async function detectObjects(source: GameObject | null, { state = game, objectClass = RANDOM_CLASS }: DetectionOptions & { objectClass?: number } = {}): Promise<DetectionResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (!Number.isInteger(objectClass) || objectClass < 0 || objectClass > 17)
+    if (!Number.isInteger(objectClass) || objectClass < RANDOM_CLASS || objectClass > VENOM_CLASS)
         throw new RangeError(`Invalid object detection class: ${objectClass}`);
     // detect.c:object_detect() cannot tell a class symbol from the
     // user-defined boulder symbol when they match, so it detects both: the
     // buried-object chain stays class-only.
     const boulderClass = objectClass
         && OBJECT_CLASS_SYMBOLS[objectClass] === currentBoulderSymbol(state)
-        ? ROCK_CLASS : 0;
+        ? ROCK_CLASS : RANDOM_CLASS;
     const matches = (object: GameObject): GameObject | null =>
         objectOfClass(object, objectClass) || objectOfClass(object, boulderClass);
     const observe = source?.blessed
@@ -971,7 +973,7 @@ export async function detectObjects(source: GameObject | null, { state = game, o
             || monsterGold(monster, objectClass)) { elsewhere++; break; }
     }
     const stale = await clearStaleObjects(objectClass, 0, state);
-    let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === 9)
+    let what = heroIsHallucinating(state) || ((state.u.confusionTurns ?? 0) > 0 && objectClass === SCROLL_CLASS)
         ? 'something' : objectClass ? OBJECT_CLASS_NAMES[objectClass] : 'objects';
     if (boulderClass && objectClass !== ROCK_CLASS) what += ' and/or large stones';
     if (!stale && !elsewhere) {
@@ -1009,7 +1011,7 @@ export async function detectObjects(source: GameObject | null, { state = game, o
                 // obj_is_generic() never hides the mimic's appearance behind
                 // the potion-class slot: a disguised potion is drawn with its
                 // own shuffled oc_color even though no dknown exists.
-                const mimicObject: DetectionObject = { otyp: appearance, oclass: 0,
+                const mimicObject: DetectionObject = { otyp: appearance, oclass: RANDOM_CLASS,
                     quan: 1, quantity: 1, ox: 0, oy: 0,
                     corpsenm: monster.mcorpsenm !== undefined && monster.mcorpsenm >= 0 ? monster.mcorpsenm : MONSTER_NAME.indexOf('tengu') };
                 await showObjectAt(mimicObject, monster.mx, monster.my, shown);
@@ -1104,7 +1106,7 @@ async function showObjectAt(object: DetectionObject, x: number, y: number, shown
 // and the coordinates are assigned, so it keeps a zero oc_class too.
 function detectedCoins(): DetectionObject {
     const quantity = rnd(10);
-    return { otyp: GOLD_PIECE, oclass: 0, quan: quantity, quantity, ox: 0, oy: 0 };
+    return { otyp: GOLD_PIECE, oclass: RANDOM_CLASS, quan: quantity, quantity, ox: 0, oy: 0 };
 }
 
 async function showHeroUnlessCovered(shown: DetectionMap, state: GameState) {

@@ -4,6 +4,7 @@
 // (dobreathe, dospit, doremove, dospinweb, dosummon, dogaze, dopoly,
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
+import { WEAPON_CLASS } from './objclass.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
 import { setHeroGrip } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
@@ -1137,7 +1138,7 @@ async function dropPolymorphWeapons(alone) {
 }
 function droppedWeaponNoun(object) {
     const skill = objectSkill(object.otyp);
-    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
+    return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER
         ? 'sword' : weaponDescription(object);
 }
 function canDropPolymorphWeapon(object) {

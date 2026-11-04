@@ -1,4 +1,5 @@
 // C invent.c:look_here(): inspection touches corpses before showing inventory.
+import { RANDOM_CLASS, VENOM_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { CONTAINED_SYM, MGIVENNAME } from './const.js';
 import { monsterStomachName } from './body_parts.js';
@@ -48,7 +49,7 @@ export async function lookInsideSwallower(monster: Monster): Promise<void> {
     const ordered = sortObjects(objects, { mode: lootSortMode() });
     const sections: InventorySection<GameObject>[] = [];
     let first = true;
-    for (const oclass of [...inventoryClassOrder(), 17, 0]) {
+    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS]) {
         const objects = ordered.filter(object => object.oclass === oclass);
         if (!objects.length) continue;
         const items = [];

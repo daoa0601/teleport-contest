@@ -3,6 +3,10 @@
 // steal.c mpickobj().
 
 import {
+    WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, COIN_CLASS,
+    GEM_CLASS, BALL_CLASS, VENOM_CLASS,
+} from './objclass.js';
+import {
     objectSkill, AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL,
 } from './object_data.js';
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
@@ -64,7 +68,6 @@ export interface SwallowedPotionThrowOptions extends GenericSwallowedThrowOption
 }
 
 const PM_AIR_ELEMENTAL = 154;
-const POTION_CLASS = 8;
 
 function possessive(name: string): string {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;
@@ -77,8 +80,8 @@ function swallowedWeaponTarget(state: GameState, item: GameObject, objectClass: 
     // thitmonst() groups weapons, weptools, and gems into its weapon
     // branch, and gives heavy iron balls and boulders the same hmon()
     // contact with Strength exercised around the guaranteed hit.
-    const weaponLike = objectClass === 2 || objectClass === 13
-        || (objectClass === 6 && subtype !== 0)
+    const weaponLike = objectClass === WEAPON_CLASS || objectClass === GEM_CLASS
+        || (objectClass === TOOL_CLASS && subtype !== 0)
         || item.otyp === HEAVY_IRON_BALL || item.otyp === BOULDER;
 
     if (!weaponLike || engulfer.wormno) {
@@ -102,10 +105,10 @@ function genericSwallowedEligibility(
     // are snuffed by throwit_mon_hit()'s snuff_candle() and other surviving
     // light sources by mpickobj()'s engulfer pickup, so a lit object still
     // follows this vanish-and-transfer arm.
-    if ([2, 8, 12, 13, 15, 17].includes(objectClass)
+    if ([WEAPON_CLASS, POTION_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, VENOM_CLASS].includes(objectClass)
         || item.otyp === BOULDER
         || item === state.uball || item === state.u?.uball) return null;
-    if (objectClass === 6 && objectSkill(item.otyp) !== 0)
+    if (objectClass === TOOL_CLASS && objectSkill(item.otyp) !== 0)
         return null; // is_weptool()
     return engulfer;
 }
@@ -300,7 +303,7 @@ export async function resolveSwallowedFoodThrow({
     wakeMonster,
 }: GenericSwallowedThrowOptions): Promise<boolean> {
     const engulfer = state.u.uswallow ? state.u.ustuck : null;
-    if (!engulfer || objectClass !== 7 || isHeroThrownEggPieOrVenom(item)) return false;
+    if (!engulfer || objectClass !== FOOD_CLASS || isHeroThrownEggPieOrVenom(item)) return false;
     requireLiveGame(state);
     const thrown = await detachThrownUnit(state, item, selectedQuantity, splitObjectId);
     try {

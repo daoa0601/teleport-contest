@@ -1,3 +1,4 @@
+import { FOOD_CLASS } from './objclass.js';
 import {
     objectUsesKnown, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW,
     CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL,
@@ -152,7 +153,7 @@ export function prepareBonesObjectForRestore<T extends GameObject | null | undef
         }
     }
 
-    if (object.oclass === 7 && (object.oeaten ?? 0) > 0)
+    if (object.oclass === FOOD_CLASS && (object.oeaten ?? 0) > 0)
         object.no_charge = isInStaffedShop(object, state);
     return object;
 }

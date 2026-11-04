@@ -1,3 +1,4 @@
+import { POTION_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FOUNTAIN, G_GENOD, SHOPBASE } from '../js/const.js';
@@ -30,7 +31,7 @@ void test('shop stocking places merchandise on interior fountains', async (t) =>
     for (const room of shops) {
         const x = room.lx + 3, y = room.ly + 2;
         assert.equal(game.level.requireAt(x, y).typ, FOUNTAIN);
-        assert.ok(game.level.objects[x]?.[y]?.some(object => object.oclass === 8), `the fountain at ${x},${y} must receive potion stock`);
+        assert.ok(game.level.objects[x]?.[y]?.some(object => object.oclass === POTION_CLASS), `the fountain at ${x},${y} must receive potion stock`);
     }
 });
 //# sourceMappingURL=shop_feature_stock.test.js.map
