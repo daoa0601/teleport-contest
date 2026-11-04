@@ -8,7 +8,7 @@
 // timeout_luck.js, and timeout_body.js.
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './corpse_revival.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
@@ -2048,8 +2048,10 @@ async function announceBuriedRevival(event) {
     else {
         const dx = monster.mx - game.u.ux;
         const dy = monster.my - game.u.uy;
-        if (!(game.u.deaf || game.deaf) && dx * dx + dy * dy < 25)
-            await plineWithContinuation('You hear scratching noises.');
+        // C do.c:revive_corpse(): `else if (mdistu(mtmp) < 5*5)` calls
+        // `You_hear("scratching noises.");` with no caller-level Deaf guard.
+        if (dx * dx + dy * dy < 25)
+            await publishHeardMessage('scratching noises.', plineWithContinuation);
     }
 }
 //# sourceMappingURL=timeout.js.map
