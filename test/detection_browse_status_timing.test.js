@@ -50,8 +50,8 @@ void test('a browsed food detection repaints the turn counter with the restored 
             return 27;
         },
     };
-    // A two-square travel: the final step runs findTravelDirection()'s
-    // arrival branch, which leaves the suppressing run value behind.
+    // A two-square travel: the final step runs findtravelpath()'s arrival
+    // branch, which leaves the suppressing run value behind.
     input.feed('_ll.');
     await moveloop_core();
     await moveloop_core();

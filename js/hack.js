@@ -2270,6 +2270,10 @@ export async function strikeIronBarsWithWeapon(weapon, x, y, state = game) {
         x: state.u.ux, y: state.u.uy, barsX: x, barsY: y, state,
     });
 }
+// C hack.c:domove_fight_web().  Force-fighting a seen web: Sting or a
+// flaming artifact cuts or burns through, unsuitable weapons refuse with
+// their description, and a successful swing against the adjusted roll
+// dissolves the trap.
 export async function fightSeenWebWithForce(x, y, state = game) {
     if (!state.context.forcefight)
         return false;
@@ -2337,7 +2341,7 @@ export async function fightSeenWebWithForce(x, y, state = game) {
     await newsym(x, y);
     return true;
 }
-// C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
+// C hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
 // Both spend the action without entering terrain movement; only the
 // remembered-invisible path is excluded by nopick.
@@ -3341,6 +3345,10 @@ function avoidsGroundTraps(type, state) {
     return !!(state.u.levitating || state.u.flying || (flags & 1)
         || symbol === 5 || symbol === 25 || ((flags & 0x10) && ceiling));
 }
+// C hack.c:domove().  Evaluates a successful step after all destination
+// effects: domove_succeeded survives for the caller's assessments, the
+// origin is snapshotted for maybe_smudge_engr(), and the kicked location
+// clears.
 export async function domove(dx, dy, explicitAttempt = true) {
     const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
