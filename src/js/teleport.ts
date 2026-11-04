@@ -1274,7 +1274,7 @@ export async function mlevel_tele_trap(monster: Monster, trap: Trap, {
     if (!await teleportMonsterPet(monster, state, force, publish)) return null;
     const seen = canSeeMonster(monster) || monster === state.u.usteed;
     const subject = () => monsterName(monster, { state, capitalized: true });
-    let destination: DungeonLocation;
+    let destination: DungeonLocation | undefined;
     let kind: 'level-fall-migration' | 'magic-portal-migration' | 'level-migration';
     let mode: number | undefined;
     if (is_hole(trap.ttyp)) {
@@ -1303,7 +1303,9 @@ export async function mlevel_tele_trap(monster: Monster, trap: Trap, {
             }
             return null;
         }
-        if (!trap.dst) throw new Error('A magic portal requires its destination');
+        // A portal trap keeps whatever destination it carries; a bare
+        // fixture portal migrates exactly as teleportMonsterThroughPortal
+        // passed the trap through before the merge.
         destination = trap.dst;
         kind = 'magic-portal-migration';
         mode = MIGR_PORTAL;
@@ -1331,7 +1333,7 @@ export async function mlevel_tele_trap(monster: Monster, trap: Trap, {
     }
     // is_xport(): holes and trap doors do not confuse the traveller.
     if (!is_hole(trap.ttyp) && !monsterControlsTeleport(monster.mnum)) monster.mconf = 1;
-    return migrateMonsterOffLevel(monster, state, { ...trap, dst: destination },
+    return migrateMonsterOffLevel(monster, state, destination === undefined ? trap : { ...trap, dst: destination },
         mode === undefined ? { kind } : { kind, mode });
 }
 
