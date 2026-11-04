@@ -829,11 +829,12 @@ export async function presentMonsterAttackEffects(
                             paging.pagerOwned = true;
                         return dismissal;
                     };
-                    await completeHeroContactTail(
-                        action, heroAttack, game, {
+                    await hitmu(
+                        action.monster, heroAttack, game, {
                             random, rollDice, rollOne,
                             publish: publishContactMessage,
                             die: finishHeroDeathAfterMonsterMessage,
+                            calls: action.calls,
                         },
                     );
                     if (game.program_state?.gameover) return { heroDied: true };
@@ -1005,72 +1006,6 @@ function monsterAttackThreshold(
     return Math.max(1, threshold);
 }
 
-// C mhitu.c:hitmu().  Negative AC has a second, independent role after a
-// hit: once attack effects and knockback finish, it reduces positive damage
-// by rnd(-uac), with a floor of one.  This is not the AC_VALUE to-hit draw.
-function reduceHeroContactDamage(
-    monster: Monster,
-    damage: number,
-    state: PlayingGameState,
-    rollOne: RollOne,
-    calls: MonsterCallLog,
-) {
-    const armorClass = state?.u?.uac ?? 10;
-    let appliedDamage = damage;
-    if (appliedDamage > 0 && armorClass < 0) {
-        const reduction = rollOne(-armorClass);
-        calls.push(`rnd(${-armorClass})`);
-        appliedDamage = Math.max(1, appliedDamage - reduction);
-    }
-    // mhitu.c:hitmu() applies Half_physical_damage only after negative-AC
-    // reduction and rounds odd positive damage upward.
-    const mitreProtects = state.urole.key === 'priest'
-        && artifactById(state.uarmh?.oartifact, state)?.questArtifact
-        && monsterHatesBlessings(monster);
-    if (appliedDamage > 0 && (state.u.halfPhysicalDamage || mitreProtects)) {
-        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
-    }
-    return appliedDamage;
-}
-
-// mhitu.c mdamageu(): subtract from the active body and clamp only down to
-// its maximum. Lethal HP stays negative until done() commits zero, after
-// done_in_by() has announced the death.
-async function applyHeroContactDamage(
-    state: PlayingGameState, damage: number, publish: MessagePublisher = plineWithContinuation,
-) {
-    state.context.botl = true;
-    // C mdamageu(): showdamage() prints the post-subtraction, pre-clamp HP.
-    if (Upolyd(state.u)) {
-        state.u.mh = (state.u.mh ?? 1) - damage;
-        if (state.flags.showdamage && damage)
-            await publish(`[HP ${-damage}, ${state.u.mh} left]`);
-        state.u.mh = Math.min(state.u.mh, state.u.mhmax ?? 1);
-    } else {
-        state.u.uhp -= damage;
-        if (state.flags.showdamage && damage)
-            await publish(`[HP ${-damage}, ${state.u.uhp} left]`);
-        state.u.uhp = Math.min(state.u.uhp, state.u.uhpmax);
-    }
-}
-
-// Complete body loss before applying the old form's passive response.
-async function finishHeroContactDamage(
-    monster: Monster,
-    damage: number,
-    attackType: number,
-    oldForm: number,
-    state: PlayingGameState,
-    { random = rn2, rollDice = d, publish = plineWithContinuation, die }: MonsterDamageOptions = {},
-) {
-    await applyHeroContactDamage(state, damage, publish);
-    if (Upolyd(state.u) && state.u.mh < 1) {
-        const restored = await returnHeroToHumanForm(state, { publish, ...(die ? { die } : {}) });
-        if (restored.died) return { heroDied: true, attackerStopped: true };
-    }
-    if (damage <= 0) return { attackerStopped: false };
-    return passiveum(monster, oldForm, attackType, { state, random, rollDice, publish });
-}
 
 interface HeroFormPassiveOptions {
     state?: GameState;
@@ -2142,14 +2077,14 @@ async function beginHeroAttackSlot(
             publish: physicalHug ? monsterAttackMessagePublisher(sequence.paging) : plineWithContinuation,
         } });
         if (outcome.heroDied) return { ...physical, damage: 0, heroDied: true };
-        damage = outcome.damage;
-        const knockback = await knockHeroFromMonster(monster, physical, state, random);
-        if (knockback.defenderDied) return { ...physical, damage: 0, heroDied: true };
-        if (outcome.done) return physical;
-        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
-        const passive = await finishHeroContactDamage(monster, damage, attackType, oldFormMnum,
-            state, { random, rollDice });
-        return { ...physical, damage, passive, heroDied: !!passive.heroDied };
+        physical.damage = outcome.damage;
+        if (outcome.done) physical.contactDone = true;
+        await hitmu(monster, physical, state, { random, rollOne, rollDice, calls });
+        return {
+            ...physical,
+            damage: physical.appliedDamage ?? physical.damage,
+            heroDied: !!physical.heroDied,
+        };
     } else if (hit && monster.mnum === 116 && !deferVisibleContact) {
         // PM_GRID_BUG: AT_BITE AD_ELEC 1d1.  The electric special checks
         // magic cancellation, optionally checks inventory destruction, then
@@ -2162,38 +2097,14 @@ async function beginHeroAttackSlot(
         } else {
             damage = 0;
         }
-        const knockback = await knockHeroFromMonster(
-            monster,
-            { attackType, damageType, hit },
-            state,
-            random,
-        );
-        if (knockback.defenderDied)
-            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
-        const passive = await finishHeroContactDamage(
-            monster,
-            damage,
-            attackType,
-            oldFormMnum,
-            state,
-            {
-                random,
-                rollDice,
-            },
-        );
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
-            passive,
-            heroDied: !!passive.heroDied,
+        const electric: HeroContactAttack = {
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, oldFormMnum,
             effect: negated ? 'electric-avoided' : 'electric-zap',
         };
+        await hitmu(monster, electric, state, { random, rollOne, rollDice, calls });
+        electric.damage = electric.appliedDamage ?? electric.damage ?? 0;
+        return electric;
     } else if (hit && poisonAttribute !== null) {
         // uhitm.c:mhitm_ad_drst() family.  Poisonous natural attacks roll
         // their physical damage first, then magic cancellation; only a
@@ -2233,38 +2144,14 @@ async function beginHeroAttackSlot(
                     damageType,
                 };
         }
-        const knockback = await knockHeroFromMonster(
-            monster,
-            { attackType, damageType, hit },
-            state,
-            random,
-        );
-        if (knockback.defenderDied)
-            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
-        const passive = await finishHeroContactDamage(
-            monster,
-            damage,
-            attackType,
-            oldFormMnum,
-            state,
-            {
-                random,
-                rollDice,
-            },
-        );
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
+        const poisonous: HeroContactAttack = {
+            kind: 'hero-attack', roll, threshold, hit, damage,
+            attackType, damageType, oldFormMnum,
             effect: 'poisonous-natural',
-            passive,
-            heroDied: !!passive.heroDied,
         };
+        await hitmu(monster, poisonous, state, { random, rollOne, rollDice, calls });
+        poisonous.damage = poisonous.appliedDamage ?? poisonous.damage ?? 0;
+        return poisonous;
     } else if (hit && (damageType === AD_WERE || damageType === AD_SLEE
         || damageType === AD_POLY || damageType === AD_TLPT || damageType === AD_PLYS
         || damageType === AD_WRAP || damageType === AD_DRIN || damageType === AD_CURS
@@ -2613,10 +2500,13 @@ async function knockHeroFromMonster(
     });
 }
 
-// C mhitu.c:hitmu() after mhitm_adtyping(): mhitm_knockback(), the
-// armor-class and permanent-damage reductions, mdamageu() and passiveum().
-async function completeHeroContactTail(
-    action: MonsterMovementAction,
+// C mhitu.c:hitmu(): the contact tail after mhitm_adtyping() — the deferred
+// stoning and poison fragments, mhitm_knockback(), the negative-AC and
+// permanent-damage reductions, mdamageu() and passiveum().  The begin-phase
+// inline physical, grid-bug and poison slots run this same tail; deferred
+// slots reach it from the presenter.
+async function hitmu(
+    monster: Monster,
     attack: HeroContactAttack,
     state: PlayingGameState,
     {
@@ -2625,24 +2515,24 @@ async function completeHeroContactTail(
         rollDice = d,
         publish = plineWithContinuation,
         die,
-    }: MonsterDamageOptions = {},
+        calls = [],
+    }: MonsterDamageOptions & { calls?: MonsterCallLog } = {},
 ) {
-    const calls = action.calls;
     if (
         attack.damageType === AD_STON &&
-        await applyMonsterStoningAttack(action.monster, { state, random, publish })
+        await applyMonsterStoningAttack(monster, { state, random, publish })
     ) {
         // C uhitm.c:mhitm_ad_ston() mhitu branch: a successful do_stone_u()
         // sets mhm.done, but mhitu.c:hitmu() still runs mhitm_knockback()
         // before it returns on mhm.done.
         attack.contactDone = true;
-        const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
+        const knockback = await knockHeroFromMonster(monster, attack, state, random, publish);
         if (knockback.defenderLeftLevel) attack.attackerDone = true;
         if (knockback.defenderDied) attack.heroDied = true;
         return;
     }
     if (attack.poison) {
-        const poison = await poisonHeroFromMonster(action.monster, attack.attackType, {
+        const poison = await poisonHeroFromMonster(monster, attack.attackType, {
             ...attack.poison,
             state,
             random,
@@ -2657,7 +2547,7 @@ async function completeHeroContactTail(
             return;
         }
     }
-    const knockback = await knockHeroFromMonster(action.monster, attack, state, random, publish);
+    const knockback = await knockHeroFromMonster(monster, attack, state, random, publish);
     if (knockback.defenderLeftLevel) attack.attackerDone = true;
     if (knockback.defenderDied) {
         attack.heroDied = true;
@@ -2667,7 +2557,24 @@ async function completeHeroContactTail(
         attack.nativeResult ??= M_ATTK_HIT;
         return;
     }
-    attack.appliedDamage = reduceHeroContactDamage(action.monster, attack.damage ?? 0, state, rollOne, calls);
+    // Negative armor class reduces damage done instead of fully protecting
+    // against hits; Half_physical_damage applies only after that reduction
+    // and rounds odd positive damage upward.  This is not the AC_VALUE
+    // to-hit draw.
+    const armorClass = state?.u?.uac ?? 10;
+    let appliedDamage = attack.damage ?? 0;
+    if (appliedDamage > 0 && armorClass < 0) {
+        const reduction = rollOne(-armorClass);
+        calls.push(`rnd(${-armorClass})`);
+        appliedDamage = Math.max(1, appliedDamage - reduction);
+    }
+    const mitreProtects = state.urole.key === 'priest'
+        && artifactById(state.uarmh?.oartifact, state)?.questArtifact
+        && monsterHatesBlessings(monster);
+    if (appliedDamage > 0 && (state.u.halfPhysicalDamage || mitreProtects)) {
+        appliedDamage = Math.trunc((appliedDamage + 1) / 2);
+    }
+    attack.appliedDamage = appliedDamage;
     if (attack.permanentDamage && attack.appliedDamage > 0) {
         const damage = attack.appliedDamage;
         let drain = recordRandom(random, calls, Math.trunc(damage / 2) + 1);
@@ -2683,14 +2590,36 @@ async function completeHeroContactTail(
             hero[maximum] = Math.max(lowerLimit, hero[maximum] - drain);
         state.context.botl = true;
     }
-    attack.passive = await finishHeroContactDamage(
-        action.monster,
-        attack.appliedDamage,
-        attack.attackType,
-        attack.oldFormMnum ?? state.u.umonnum,
-        state,
-        { random, rollDice, publish, ...(die ? { die } : {}) },
-    );
+    // mdamageu(): subtract from the active body and clamp only down to its
+    // maximum.  Lethal HP stays negative until the presenter's death
+    // handler commits zero, after done_in_by() has announced the death.
+    state.context.botl = true;
+    if (Upolyd(state.u)) {
+        state.u.mh = (state.u.mh ?? 1) - appliedDamage;
+        if (state.flags.showdamage && appliedDamage)
+            await publish(`[HP ${-appliedDamage}, ${state.u.mh} left]`);
+        state.u.mh = Math.min(state.u.mh, state.u.mhmax ?? 1);
+    } else {
+        state.u.uhp -= appliedDamage;
+        if (state.flags.showdamage && appliedDamage)
+            await publish(`[HP ${-appliedDamage}, ${state.u.uhp} left]`);
+        state.u.uhp = Math.min(state.u.uhp, state.u.uhpmax);
+    }
+    // Complete body loss before applying the old form's passive response.
+    if (Upolyd(state.u) && state.u.mh < 1) {
+        const restored = await returnHeroToHumanForm(state, { publish, ...(die ? { die } : {}) });
+        if (restored.died) {
+            attack.passive = { heroDied: true, attackerStopped: true };
+            attack.heroDied = true;
+            return;
+        }
+    }
+    if (appliedDamage <= 0) {
+        attack.passive = { attackerStopped: false };
+        return;
+    }
+    attack.passive = await passiveum(monster, attack.oldFormMnum ?? state.u.umonnum,
+        attack.attackType, { state, random, rollDice, publish });
     if (attack.passive.heroDied) attack.heroDied = true;
 }
 
