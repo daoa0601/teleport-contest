@@ -420,13 +420,15 @@ function valueKey(n) {
     return `${scope}|${text(n)}${fresh ? `@${n.getStart()}` : ''}`;
 }
 
-function localSummary(n, depth) {
+function localSummary(n) {
     const symbol = resolve(n), decl = symbol?.valueDeclaration;
     if (!decl || !ts.isVariableDeclaration(decl) || !ts.isIdentifier(decl.name)
         || !decl.initializer || !enclosingFunction(decl)) return null;
     const key = declKey(decl);
     if (key in locals) return key;
     locals[key] = null;
+    // Give each local its own expression budget. Its first caller may be
+    // several helpers deep; the cached entry above already breaks cycles.
     const updates = [];
     let supported = true;
     const visit = m => {
@@ -436,15 +438,15 @@ function localSummary(n, depth) {
                 updates.push({ op: p.operator === ts.SyntaxKind.PlusPlusToken ? '+' : '-', args: [{ self: true }, { num: 1 }] });
             } else if (ts.isBinaryExpression(p) && p.left === m) {
                 const op = p.operatorToken.getText();
-                if (op === '=') updates.push(inContext(p, () => term(p.right, depth + 1)));
-                else if (['+=', '-=', '*='].includes(op)) updates.push({ op: op[0], args: [{ self: true }, inContext(p, () => term(p.right, depth + 1))] });
+                if (op === '=') updates.push(inContext(p, () => term(p.right, 1)));
+                else if (['+=', '-=', '*='].includes(op)) updates.push({ op: op[0], args: [{ self: true }, inContext(p, () => term(p.right, 1))] });
                 else supported = false;
             } else supported = false;
         }
         ts.forEachChild(m, visit);
     };
     visit(enclosingFunction(decl).body);
-    const initial = inContext(decl.initializer, () => term(decl.initializer, depth + 1));
+    const initial = inContext(decl.initializer, () => term(decl.initializer, 1));
     locals[key] = supported ? { name: text(n), initial, updates } : null;
     return key;
 }
@@ -546,7 +548,7 @@ function term(n, depth = 0) {
             && n.arguments[0]) leaf.attribute = constantNumber(term(n.arguments[0], depth));
     }
     if (ts.isIdentifier(n) && depth < 6) {
-        const local = localSummary(n, depth);
+        const local = localSummary(n);
         if (local) leaf.local = local;
     }
     if (ts.isPropertyAccessExpression(n) && ['lx', 'hx', 'ly', 'hy'].includes(n.name.text)) {
