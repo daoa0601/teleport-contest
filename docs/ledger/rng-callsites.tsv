@@ -360,7 +360,7 @@ src/js/engrave.ts	doengrave	rn2	"[""7""]"	constant
 src/js/engrave.ts	doengrave	rn2	"[""WAND_BACKFIRE_CHANCE""]"	constant
 src/js/engrave.ts	doengrave	rnd	"[""50""]"	constant
 src/js/engrave.ts	doengrave	rnd	"[""94""]"	constant
-src/js/engulf_blindness.ts	gulpBlindnessCheck	d	"[""attack[2]"", ""attack[3]""]"	unproved
+src/js/mhitu.ts	gulp_blnd_check	d	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/exper.ts	levelEnergyIncrease	rn2	"[""range""]"	unproved
 src/js/exper.ts	levelHpIncrease	rnd	"[""race[random]""]"	unproved
 src/js/exper.ts	levelHpIncrease	rnd	"[""role[random]""]"	unproved
@@ -485,11 +485,11 @@ src/js/mkobj.ts	placeTreeFruit	random	"[""TREE_FRUITS.length""]"	constant
 src/js/hero_displacement.ts	gainCorpseDisplacement	d	"[""6"", ""6""]"	constant
 src/js/trap.ts	drainHeroEnergy	rollOne	"[""-hero.uen""]"	unproved
 src/js/trap.ts	drainHeroEnergy	rollOne	"[""amount""]"	unproved
-src/js/hero_engulf.ts	beginHeroEngulf	random	"[""20""]"	constant
-src/js/hero_engulf.ts	beginHeroEngulf	rollOne	"[""level + 5""]"	invariant
-src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""2""]"	constant
-src/js/hero_engulf.ts	resolveHeroEngulf	random	"[""4""]"	constant
-src/js/hero_engulf.ts	resolveHeroEngulf	rollOne	"[""-hero.uac""]"	guarded
+src/js/mhitu.ts	gulpmu	random	"[""20""]"	constant
+src/js/mhitu.ts	gulpmu	rollOne	"[""level + 5""]"	invariant
+src/js/mhitu.ts	gulpmu	random	"[""2""]"	constant
+src/js/mhitu.ts	gulpmu	random	"[""4""]"	constant
+src/js/mhitu.ts	gulpmu	rollOne	"[""-hero.uac""]"	guarded
 src/js/mon.ts	releaseHeroFromMonster	rollOne	"[""2""]"	constant
 src/js/uhitm.ts	performFormWeaponAttack	rnd	"[""20""]"	constant
 src/js/uhitm.ts	performHeroEngulf	rn2	"[""5""]"	constant

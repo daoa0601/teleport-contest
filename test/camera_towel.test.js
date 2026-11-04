@@ -23,7 +23,7 @@ import { vision_recalc } from '../js/vision.js';
 import { makedog } from '../js/u_init.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { applyInventoryObject } from './support/commands.js';
@@ -449,12 +449,14 @@ void test('a photograph from inside a monster records the stomach instead of fla
         kind: 'hero-attack',
         attackType: AT_ENGL,
         hit: true,
+        effect: 'engulf',
         damageType: engulf[1],
         engulfOldX: holder.mx,
         engulfOldY: holder.my,
+        engulfDamage: 0,
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
-    assert.equal((await beginHeroEngulf(holder, attack)).captured, true);
+    assert.equal((await gulpmu(holder, attack)).hit, true);
     const object = await camera();
     await aim(object, '>');
     assert.match(game._pending_message, /picture of the purple worm's stomach/);
@@ -632,12 +634,14 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
         kind: 'hero-attack',
         attackType: AT_ENGL,
         hit: true,
+        effect: 'engulf',
         damageType: engulf[1],
         engulfOldX: holder.mx,
         engulfOldY: holder.my,
+        engulfDamage: 0,
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
-    assert.equal((await beginHeroEngulf(holder, attack)).captured, true);
+    assert.equal((await gulpmu(holder, attack)).hit, true);
     game.u.ucreamed = 6;
     setHeroBlindnessTurns(6);
     const timer = game.u.uswldtim;

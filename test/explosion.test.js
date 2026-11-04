@@ -9,7 +9,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { explode } from '../js/explosion.js';
 import { requireGameLevel, game } from '../js/gstate.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL, AD_DGST } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -131,7 +131,7 @@ void test('a fire blast from inside an engulfer cannot burn the floor or a bysta
     const oldX = swallower.mx, oldY = swallower.my;
     placeMonsterAt(swallower, 10, 10);
     game.u.ustuck = swallower;
-    await beginHeroEngulf(swallower, { kind: 'hero-attack', attackType: AT_ENGL, hit: true, damageType: AD_DGST, engulfOldX: oldX, engulfOldY: oldY });
+    await gulpmu(swallower, { kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf', damageType: AD_DGST, engulfOldX: oldX, engulfOldY: oldY, engulfDamage: 0 });
     await explode(10, 10, -WAN_FIRE, 10, WAND_CLASS, EXPL_FIERY);
     assert.ok(swallower.mhp < 500);
     assert.equal(game.u.uhp, 490);

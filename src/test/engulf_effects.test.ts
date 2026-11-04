@@ -8,9 +8,11 @@ import { moveloop_core } from '../js/allmain.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, Upolyd } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
-import { resolveHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
+import type { Monster } from '../js/monster_types.js';
+import { AD_DGST, AD_ELEC, AD_WRAP, AT_ENGL } from '../js/monster_attack_types.js';
+import type { DamageType } from '../js/monster_attack_types.js';
 import { resetInputState } from '../js/input.js';
-import { AD_DGST, AD_ELEC, AD_WRAP } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { RIN_SLOW_DIGESTION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -29,6 +31,13 @@ function recordMessages(messages: string[]) {
 
     };
     return input;
+}
+
+function gulpmuTick(monster: Monster, damageType: DamageType, damage: number) {
+    return gulpmu(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, damageType, hit: true,
+        damage, effect: 'engulf-tick', engulfDamage: damage,
+    });
 }
 
 async function captureHero(species: string, messages: string[], seed = 2n) {
@@ -67,7 +76,7 @@ void test('a wrapping engulf can deal one damage against negative armor class', 
     game.u.uswldtim = 2;
     const hp = game.u.uhp;
 
-    await resolveHeroEngulf(trapper, AD_WRAP, 1);
+    await gulpmuTick(trapper, AD_WRAP, 1);
 
     assert.equal(game.u.uhp, hp - 1);
     assert.equal(game.u.uswldtim, 1);
@@ -85,7 +94,7 @@ void test('total digestion uses base HP even when the polymorphed body has more 
     const hp = game.u.mh;
     assert.ok(hp > game.u.uhp);
 
-    await resolveHeroEngulf(worm, AD_DGST, 1);
+    await gulpmuTick(worm, AD_DGST, 1);
     await flushPendingTopline();
 
     assert.equal(Upolyd(game.u), true);
@@ -107,7 +116,7 @@ void test('a slow digestion ring causes regurgitation without digestion damage',
     const hp = game.u.uhp;
     messages.length = 0;
 
-    await resolveHeroEngulf(worm, AD_DGST, 1);
+    await gulpmuTick(worm, AD_DGST, 1);
     await flushPendingTopline();
 
     assert.equal(game.u.uhp, hp);
@@ -127,7 +136,7 @@ void test('electric engulf heals an injured flesh golem instead of damaging it',
     messages.length = 0;
     initRng(1n);
 
-    await resolveHeroEngulf(vortex, AD_ELEC, 6);
+    await gulpmuTick(vortex, AD_ELEC, 6);
     await flushPendingTopline();
 
     assert.equal(game.u.mh, hp + 1);

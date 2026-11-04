@@ -28,7 +28,6 @@ src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
 src/js/elemental.ts	mkmaze.c
 src/js/engrave.ts	engrave.c
-src/js/engulf_blindness.ts	mhitu.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c

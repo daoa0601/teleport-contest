@@ -2,21 +2,21 @@
 // hitmu()/mdamageu() damage and resume machinery, and slot presentation.
 // C ref: mhitu.c.
 import { WEAPON_CLASS, TOOL_CLASS } from './objclass.js';
-import { objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, EGG, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, TIN_OPENER, TOWEL, GOLD_PIECE, } from './object_data.js';
+import { objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, EGG, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, TIN_OPENER, TOWEL, GOLD_PIECE, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff } from './display.js';
-import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
+import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
+import { cansee, couldsee, monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterEnfolds, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus } from './weapon.js';
@@ -29,14 +29,14 @@ import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
-import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural } from './objnam.js';
+import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural, objectNameIsPlural } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByElement } from './zap.js';
-import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies } from './polyself.js';
+import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, setMonsterApparentHeroPosition } from './monmove.js';
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
@@ -45,9 +45,9 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
 import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
-import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems, damageObjectWithAcid } from './trap.js';
+import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
 import { getmattk } from './attack_selection.js';
-import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker } from './mhitm.js';
 import { msummon } from './minion.js';
@@ -59,11 +59,10 @@ import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { monsterSentenceSubject, sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
 import { heroResistsStoning, touchPetrifies, contactIsProtected } from './stoning.js';
 import { setHeroGrip } from './mon.js';
-import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
 import { staggerVerb } from './dothrow.js';
-import { unplaceBallAndChain } from './ball.js';
+import { unplaceBallAndChain, moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
@@ -81,7 +80,12 @@ import { advanceMonsterWormBody } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ceilingName } from './terrain_name.js';
-import { objectTypeKnown } from './shk.js';
+import { objectTypeKnown, carriedObjectOwner } from './shk.js';
+import { expelHero } from './hero_expulsion.js';
+import { endObjectBurn } from './timeout.js';
+import { releaseAllMonsterLeashes } from './apply.js';
+import { heroHasEyes } from './body_parts.js';
+import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { finishHeroHelplessness } from './allmain.js';
@@ -1921,7 +1925,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
                 engulfDamage: damage,
             };
         }
-        if (!monsterCanEngulfHero(monster, state)) {
+        if (!engulf_target(monster, state)) {
             return {
                 kind: 'hero-attack',
                 roll,
@@ -2348,12 +2352,366 @@ function monsterGrabPassesThroughHero(attack, state) {
     return monsterIsUnsolid({ mnum: heroSpecies(state) })
         && (attack[0] === AT_HUGS || [AD_DGST, AD_STCK, AD_WRAP].includes(attack[1]));
 }
-// C mhitu.c:gulpmu(), presented after mattacku()'s flush_screen(1): the
-// initial capture and every subsequent swallowed slot resolve here.
+// C mhitm.c:engulf_target() (hero defender): whether the attacker can
+// swallow the hero's current body from its square.
+function engulf_target(monster, state = game) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    const body = { mnum: heroSpecies(state) };
+    const heroSize = MONSTER_SIZE[body.mnum];
+    const monsterSize = MONSTER_SIZE[monster.mnum];
+    if (heroSize === undefined || monsterSize === undefined)
+        return false;
+    if (heroSize >= MZ_HUGE
+        || (monsterSize < heroSize && !monsterIsWhirly(monster)))
+        return false;
+    // A hero's u.utrap is released after capture; it is not mtrapped.
+    if (monster.mtrapped)
+        return false;
+    if (!heroPassesWalls(state)
+        && engulfSquareBlocked(state.level.at(hero.ux, hero.uy), monster))
+        return false;
+    if (!monsterPassesWalls(monster.mnum)
+        && engulfSquareBlocked(state.level.at(monster.mx, monster.my), body))
+        return false;
+    const trap = state.level.traps.find(candidate => candidate.tx === hero.ux && candidate.ty === hero.uy);
+    const objects = state.level.objects[hero.ux]?.[hero.uy] || [];
+    return !trap || !is_pit(trap.ttyp) || !objects.some(object => object.otyp === BOULDER);
+}
+function engulfSquareBlocked(location, otherBody) {
+    if (!location)
+        return true;
+    const closedDoor = location.typ === DOOR
+        && !!((location.doormask ?? location.flags ?? 0) & (D_CLOSED | D_LOCKED));
+    return IS_OBSTRUCTED(location.typ) || closedDoor || IS_TREE(location.typ)
+        || (location.typ === IRONBARS && !monsterIsWhirly(otherBody));
+}
+const FLAMING_SPECIES = new Set([
+    'fire vortex', 'flaming sphere', 'fire elemental', 'salamander',
+].map(name => MONSTER_NAME.indexOf(name)));
+const MZ_HUGE = 4;
+// C snuff_lit()/snuff_candle(), here called only for the hero's inventory.
+async function snuffEngulfedLights(state, publish) {
+    for (const object of [...state.inventory]) {
+        if (!object.lamplit)
+            continue;
+        if ([OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN, POT_OIL].includes(object.otyp)) {
+            if (!heroIsBlind(state)) {
+                await publish(`${ownedObjectName(object, state)} ${objectNameIsPlural(object, state) ? 'go' : 'goes'} out!`);
+            }
+        }
+        else if ([TALLOW_CANDLE, WAX_CANDLE, CANDELABRUM_OF_INVOCATION].includes(object.otyp)) {
+            if (!heroIsBlind(state)) {
+                const candelabrum = object.otyp === CANDELABRUM_OF_INVOCATION;
+                const many = candelabrum ? (object.spe ?? 0) > 1 : object.quan > 1;
+                await publish(`${carriedObjectOwner(object, state)} ${candelabrum ? "candelabrum's " : ''}candle${many ? "s' flames are" : "'s flame is"} extinguished.`);
+            }
+        }
+        else
+            continue;
+        endObjectBurn(object, state);
+    }
+}
+// C mondata.c:can_blnd(AT_ENGL). Cancellation and light resistance do not help.
+function engulfCanBlindHero(state) {
+    return heroHasEyes(state) && !blindfolded(state)
+        && !heroIsUnaware(state) && !state.u.ucreamed;
+}
+// C mhitu.c:gulpmu(): the monster swallows the hero, or damages one it has
+// already swallowed. An 'engulf' slot is the initial capture (C !u.uswallow);
+// every later tick, and gulp_blnd_check()'s re-entry, run the shared body.
+export async function gulpmu(monster, attack, { state = game, random = rn2, rollOne = rnd, publish = plineWithContinuation, flushMessages = displayMessageWindow, die } = {}) {
+    requireLiveGame(state);
+    requirePlayingGame(state);
+    const hero = state.u;
+    if (attack.effect === 'engulf') { /* swallows you */
+        await newsym(monster.mx, monster.my);
+        if (hero.usteed) {
+            const steedName = monsterName(hero.usteed, { state });
+            const subject = monsterName(monster, { state, capitalized: true, augmentIt: true });
+            const verb = monsterIsAnimal(monster) ? 'lunges'
+                : monsterIsWhirly(monster) ? 'whirls'
+                    : monsterIsUnsolid({ mnum: monster.mnum }) ? 'flows'
+                        : monsterIsAmorphous(monster) ? 'oozes' : 'surges';
+            await publish(`${subject} ${verb} forward and plucks you off ${steedName}!`, { urgent: true });
+            const dismount = await dismountHero(DISMOUNT_ENGULFED, { state, random, announce: publish });
+            if (dismount.died || state.program_state.gameover)
+                return { hit: false, damage: 0, died: true };
+        }
+        else {
+            const subject = monsterName(monster, { state, capitalized: true });
+            const verb = monsterDigests(monster) ? 'swallows you whole'
+                : monsterEnfolds(monster) ? 'folds itself around you' : 'engulfs you';
+            await publish(`${subject} ${verb}!`, { urgent: true });
+        }
+        await stopHeroOccupation(state, publish);
+        resetOccupations(state); // gulpmu() behaves as if the hero had moved.
+        if (state.program_state.gameover)
+            return { hit: false, damage: 0, died: true };
+        if (hero.utrap) {
+            await publish(`You are released from the ${hero.utraptype === TT_WEB ? 'web' : 'trap'}!`);
+            await resetUtrap(false, state);
+        }
+        const leashes = state.inventory.filter(object => object.otyp === LEASH && object.leashmon).length;
+        if (leashes) {
+            await publish(leashes > 1 ? 'The leashes snap loose.' : 'The leash snaps loose.');
+            releaseAllMonsterLeashes(state);
+        }
+        if (touchPetrifies(heroSpecies(state)) && !monsterHasStoneResistance(monster)) {
+            if (attack.engulfOldX === undefined || attack.engulfOldY === undefined)
+                throw new Error("Engulf capture is missing the attacker's original position.");
+            monster.mx = attack.engulfOldX;
+            monster.my = attack.engulfOldY;
+            const petrification = await petrifyMonsterImmediately(monster, {
+                creditHero: true, publish,
+                finishDeath: (target, death = {}) => finishHeroMonsterKill(target, target.mx, target.my, {
+                    ...death, showKillMessage: false, recordConduct: false,
+                }),
+            });
+            if (petrification.heroDied || state.program_state.gameover)
+                return { hit: false, damage: 0, died: true };
+            if (state.uball)
+                await placeBallAndChain(state, publish);
+            setHeroGrip(null, state);
+            return { hit: false, damage: 0, died: false };
+        }
+        await flushMessages();
+        await vision_recalc(2);
+        hero.uswallow = 1;
+        const level = monster.m_lev;
+        let duration;
+        if (attack.damageType === AD_DGST) {
+            const endurance = Math.max(0, currentAttribute(A_CON, state) + 10 - hero.uac + random(20));
+            duration = Math.trunc(endurance / level) + 3;
+        }
+        else
+            duration = rollOne(level + 5);
+        hero.uswldtim = Math.max(2, duration);
+        await swallowed(true);
+        if (!FLAMING_SPECIES.has(monster.mnum))
+            await snuffEngulfedLights(state, publish);
+    }
+    if (monster !== hero.ustuck)
+        return { hit: false, damage: 0, died: false };
+    moveSwallowedBallAndChain(monster, state);
+    if (hero.uswldtim !== undefined && hero.uswldtim > 0)
+        hero.uswldtim--;
+    let damage = attack.engulfDamage ?? 0;
+    let physical = false;
+    switch (attack.damageType) {
+        case AD_DGST:
+            physical = true;
+            if (hero.slowDigestion) {
+                hero.uswldtim = 0;
+                damage = 0;
+            }
+            else if (!hero.uswldtim) {
+                await publish(`${monsterName(monster, { state, capitalized: true })} totally digests you!`);
+                damage = hero.uhp * (hero.halfPhysicalDamage ? 2 : 1);
+            }
+            else {
+                const degree = hero.uswldtim === 2 ? ' thoroughly'
+                    : hero.uswldtim === 1 ? ' utterly' : '';
+                await publish(`${monsterName(monster, { state, capitalized: true })}${degree} digests you!`);
+                await exerciseAttribute(A_STR, false, state);
+            }
+            break;
+        case AD_PHYS:
+            physical = true;
+            if (monster.mnum === MONSTER_NAME.indexOf('fog cloud')) {
+                const flaming = FLAMING_SPECIES.has(heroSpecies(state));
+                const amphibious = monsterIsAmphibious(heroSpecies(state));
+                const breathless = heroIsBreathless(state);
+                const effect = flaming ? 'are smoldering out!'
+                    : breathless ? 'find it mildly uncomfortable.'
+                        : amphibious ? 'feel comforted.' : 'can barely breathe!';
+                await publish(`You are laden with moisture and ${effect}`);
+                if (!flaming && (amphibious || hero.magicalBreathing || breathless))
+                    damage = 0;
+            }
+            else {
+                await publish(`You are ${monsterEnfolds(monster)
+                    ? 'being squashed' : 'pummeled with debris'}!`);
+                await exerciseAttribute(A_STR, false, state);
+            }
+            break;
+        case AD_ACID:
+            if (hero.acidResistance) {
+                await publish('You are covered with a seemingly harmless goo.');
+                damage = 0;
+            }
+            else {
+                await publish(heroIsHallucinating(state)
+                    ? "Ouch!  You've been slimed!" : 'You are covered in slime!  It burns!');
+                await exerciseAttribute(A_STR, false, state);
+            }
+            break;
+        case AD_BLND:
+            // C gulpmu() AD_BLND: can_blnd(AT_ENGL) keeps the hero blind until
+            // disgorged.
+            if (engulfCanBlindHero(state)) {
+                if (!heroIsBlind(state)) {
+                    const wasBlinded = heroIsBlinded(state);
+                    if (!wasBlinded)
+                        await publish("You can't see in here!");
+                    await makeBlinded(damage, { state, talk: false, publish });
+                    if (!wasBlinded && !heroIsBlind(state))
+                        await publish('Your vision quickly clears.');
+                }
+                else {
+                    setHeroBlindnessTurns((state.u.blindTurns ?? 0) + 1, state);
+                }
+            }
+            damage = 0;
+            break;
+        case AD_ELEC:
+        case AD_COLD:
+        case AD_FIRE:
+            if (monster.mcan || !random(2)) {
+                damage = 0;
+                break;
+            }
+            if (attack.damageType === AD_ELEC) {
+                await publish('The air around you crackles with electricity.');
+                if (hero.shockResistance) {
+                    await shieldeff(hero.ux, hero.uy, state);
+                    await publish('You seem unhurt.');
+                    await applyHeroGolemEffects(attack.damageType, damage, { state, publish });
+                    damage = 0;
+                }
+            }
+            else {
+                const fire = attack.damageType === AD_FIRE;
+                if (fire ? hero.fireResistance : hero.coldResistance) {
+                    await shieldeff(hero.ux, hero.uy, state);
+                    await publish(formatFeltMessage(fire ? 'mildly hot.' : 'mildly chilly.', state));
+                    await applyHeroGolemEffects(attack.damageType, damage, { state, publish });
+                    damage = 0;
+                }
+                else {
+                    await publish(fire ? 'You are burning to a crisp!' : 'You are freezing to death!');
+                }
+                if (fire)
+                    await burnAwayHeroSlime(state, publish);
+            }
+            break;
+        case AD_DISE:
+            if (!await diseasemu(monster, state, publish, random))
+                damage = 0;
+            break;
+        case AD_DREN:
+            // AC magic cancellation doesn't help when engulfed.
+            if (!monster.mcan && random(4)) {
+                await publish(drainHeroEnergy(state, damage, { rollOne }));
+            }
+            damage = 0;
+            break;
+        case AD_MAGM:
+        case AD_SLEE:
+        case AD_DISN:
+        case AD_DRST:
+        case AD_SPC1:
+        case AD_SPC2:
+        case AD_STUN:
+        case AD_SLOW:
+        case AD_PLYS:
+        case AD_DRLI:
+        case AD_LEGS:
+        case AD_STON:
+        case AD_STCK:
+        case AD_SGLD:
+        case AD_SITM:
+        case AD_SEDU:
+        case AD_TLPT:
+        case AD_RUST:
+        case AD_CONF:
+        case AD_HEAL:
+        case AD_WRAP:
+        case AD_WERE:
+        case AD_DRDX:
+        case AD_DRCO:
+        case AD_DRIN:
+        case AD_DCAY:
+        case AD_SSEX:
+        case AD_HALU:
+        case AD_DETH:
+        case AD_PEST:
+        case AD_FAMN:
+        case AD_SLIM:
+        case AD_ENCH:
+        case AD_CORR:
+        case AD_POLY:
+        case AD_CLRC:
+        case AD_SPEL:
+        case AD_RBRE:
+        case AD_SAMU:
+        case AD_CURS:
+        default:
+            physical = true;
+            damage = 0;
+            break;
+    }
+    if (physical) {
+        // Same damage reduction for AC as in hitmu().
+        if (hero.uac < 0)
+            damage -= rollOne(-hero.uac);
+        if (damage < 0)
+            damage = 1;
+        if (hero.halfPhysicalDamage)
+            damage = Math.trunc((damage + 1) / 2);
+    }
+    // corpse_chance() uses this engulfer during damage. Native unstuck()
+    // clears it before expulsion's landing effects, which happen on the map.
+    const previousSwallower = state._monsterSwallower;
+    state._monsterSwallower = monster;
+    let died;
+    try {
+        died = await mdamageu(monster, damage, {
+            state, publish, ...(die ? { die } : {}),
+        });
+    }
+    finally {
+        state._monsterSwallower = previousSwallower ?? null;
+    }
+    if (died || state.program_state.gameover)
+        return { hit: true, damage, died: true };
+    if (damage)
+        await stopHeroOccupation(state, publish);
+    if (state.program_state.gameover)
+        return { hit: true, damage, died: true };
+    if (!hero.uswallow)
+        return { hit: true, damage, died: false };
+    const petrifies = touchPetrifies(heroSpecies(state))
+        && !monsterHasStoneResistance(monster);
+    const size = MONSTER_SIZE[heroSpecies(state)];
+    const tooLarge = size !== undefined && size >= MZ_HUGE;
+    if (petrifies || !hero.uswldtim || tooLarge) {
+        const digests = monsterDigests(monster);
+        const enfolds = monsterEnfolds(monster);
+        if (petrifies) {
+            const verb = digests ? 'regurgitates' : enfolds ? 'releases' : 'expels';
+            await publish(`${monsterName(monster, { state, capitalized: true })} very hurriedly ${verb} you!`);
+        }
+        else {
+            await publish(`You get ${digests ? 'regurgitated' : enfolds ? 'released' : 'expelled'}!`);
+            if (state.flags.verbose && digests && hero.slowDigestion) {
+                await publish(`Obviously ${monsterName(monster, { state })} doesn't like your taste.`);
+            }
+        }
+        const release = await expelHero(monster, {
+            state, publish, message: false, random, rollOne,
+        });
+        if (release.died)
+            return { hit: true, damage, died: true };
+    }
+    return { hit: true, damage, died: false };
+}
+// The engulf slot's recording adapter: gulpmu() itself takes the raw rolls.
 async function presentHeroEngulfSlot(monster, attack, state, { random = rn2, rollOne = rnd, publish = plineWithContinuation, flushMessages, die, calls = [], } = {}) {
     if (attack.engulfDamage === undefined)
         throw new Error('An engulf slot must retain its rolled damage');
-    const options = {
+    const result = await gulpmu(monster, attack, {
         state,
         publish,
         ...(flushMessages ? { flushMessages } : {}),
@@ -2364,21 +2722,37 @@ async function presentHeroEngulfSlot(monster, attack, state, { random = rn2, rol
             calls.push(`rnd(${sides})`);
             return value;
         },
-    };
-    if (attack.effect === 'engulf') {
-        const capture = await beginHeroEngulf(monster, attack, options);
-        if (!capture.captured) {
-            attack.hit = false;
-            attack.damage = attack.appliedDamage = 0;
-            delete attack.engulfDamage;
-            return { died: capture.died };
-        }
-    }
-    const result = await resolveHeroEngulf(monster, attack.damageType, attack.engulfDamage, options);
+    });
     attack.hit = result.hit;
     attack.damage = attack.appliedDamage = result.damage;
     delete attack.engulfDamage;
     return result;
+}
+// C mhitu.c:gulp_blnd_check(): taking a blindfold off inside a blinding
+// swallower immediately applies the engulfing blindness, like a passive.
+export async function gulp_blnd_check({ state = game, publish = plineWithContinuation, } = {}) {
+    if (heroIsBlinded(state) || !state.u.uswallow || !engulfCanBlindHero(state))
+        return { triggered: false, died: false };
+    const monster = state.u.ustuck;
+    if (!monster)
+        throw new Error('Swallowed hero has no swallowing monster');
+    const attacks = MONSTER_ATTACKS[monster.mnum];
+    if (!attacks)
+        throw new Error(`Swallowing species ${monster.mnum} has no attack data`);
+    const attack = attacks.find(([method, damage]) => method === AT_ENGL && damage === AD_BLND);
+    if (!attack)
+        return { triggered: false, died: false };
+    // The immediate exposure is not another elapsed turn inside the monster.
+    if (state.u.uswldtim === undefined)
+        throw new Error('Swallowed hero has no digestion timeout');
+    state.u.uswldtim++;
+    const duration = d(attack[2], attack[3]);
+    const slot = {
+        kind: 'hero-attack', attackType: AT_ENGL, damageType: AD_BLND,
+        hit: true, damage: 0, effect: 'engulf-tick', engulfDamage: duration,
+    };
+    const result = await gulpmu(monster, slot, { state, publish });
+    return { triggered: true, died: result.died };
 }
 async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
     const finishDeath = (target, options = {}) => finishEnvironmentalMonsterDeath(target, state, { ...options, publish });

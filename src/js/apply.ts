@@ -47,7 +47,7 @@ import type { GlyphMetadata } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction } from './do_name.js';
 import { attachEggHatchTimer, killEgg } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving } from './engrave.js';
-import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { gulp_blnd_check } from './mhitu.js';
 import { explode } from './explosion.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
@@ -260,7 +260,7 @@ export async function useTowel(object: GameObject, { state = game }: { state?: G
         state.u.ucreamed = 0;
         if (!heroIsBlinded(state)) {
             await pline("You've got the glop off.");
-            const gulp = await gulpBlindnessCheck({ state });
+            const gulp = await gulp_blnd_check({ state });
             if (!gulp.triggered && !gulp.died) {
                 setHeroBlindnessTimeout(1, state);
                 await makeBlinded(0, { state });

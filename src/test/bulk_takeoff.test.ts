@@ -37,7 +37,7 @@ import { createStaffedShop } from './support/shop.js';
 import { createPoisonGasCloud } from '../js/regions.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
+import { gulpmu } from '../js/mhitu.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
@@ -1215,11 +1215,11 @@ void test('being engulfed discards interrupted bulk removal', async () => {
     initRng(1n);
     pushKeys(' '.repeat(10));
     game.u.ustuck = monster;
-    const capture = await beginHeroEngulf(monster, {
-        kind: 'hero-attack', attackType: AT_ENGL, hit: true,
-        damageType: AD_DGST, engulfOldX: ux - 1, engulfOldY: uy,
+    const capture = await gulpmu(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf',
+        damageType: AD_DGST, engulfOldX: ux - 1, engulfOldY: uy, engulfDamage: 0,
     });
-    assert.equal(capture.captured, true);
+    assert.equal(capture.hit, true);
     assert.doesNotMatch(await inventoryItemDescription(suit), /being doffed/);
     resetInputState();
     await takeOff('\x1b');

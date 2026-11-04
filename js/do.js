@@ -16,7 +16,7 @@ import { AD_POLY } from './monster_attack_types.js';
 import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
-import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { gulp_blnd_check } from './mhitu.js';
 import { heroFaceName, heroHandName, heroLegName, monsterStomachName } from './body_parts.js';
 import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, OBJECT_NAMES, TIN, WORM_TOOTH } from './object_data.js';
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, objectMonsterName, ownedObjectAction, definiteObjectAction } from './objnam.js';
@@ -1254,7 +1254,7 @@ export async function continueWipingFace(occupation, state = game) {
     if ((state.u?.blindTurns ?? 0) === 0) {
         await pline("You've got the glop off.");
         state.u.ucreamed = 0;
-        const gulp = await gulpBlindnessCheck({ state, publish: plineWithContinuation });
+        const gulp = await gulp_blnd_check({ state, publish: plineWithContinuation });
         if (!gulp.triggered && !gulp.died) {
             setHeroBlindnessTimeout(1, state);
             await makeBlinded(0, { state, publish: plineWithContinuation });

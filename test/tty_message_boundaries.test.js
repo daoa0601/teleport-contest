@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { performMonsterHeroAttack } from '../js/mhitu.js';
+import { performMonsterHeroAttack, gulpmu } from '../js/mhitu.js';
 import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { beginHeroEngulf } from '../js/hero_engulf.js';
 import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
@@ -53,9 +53,9 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
     game.u.ustuck = monster;
     await plineWithContinuation('You hit the purple worm.');
     const input = resetInputState();
-    const capture = beginHeroEngulf(monster, {
-        kind: 'hero-attack', attackType: AT_ENGL, hit: true,
-        damageType: attack[1], engulfOldX: oldX, engulfOldY: oldY,
+    const capture = gulpmu(monster, {
+        kind: 'hero-attack', attackType: AT_ENGL, hit: true, effect: 'engulf',
+        damageType: attack[1], engulfOldX: oldX, engulfOldY: oldY, engulfDamage: 0,
     });
     try {
         await input.waitUntilBlocked();
@@ -64,8 +64,10 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
     }
     finally {
         input.feed(' ');
-        assert.equal((await capture).captured, true);
+        assert.equal((await capture).hit, true);
     }
+    // The shared gulpmu() body continues with the first digestion line.
+    await flushPendingTopline();
     await flush_screen(1);
     assert.equal(messageRow(), '');
     assert.equal(game.u.uswallow, 1);

@@ -48,7 +48,7 @@ import type { InventoryClassification } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
-import { gulpBlindnessCheck } from './engulf_blindness.js';
+import { gulp_blnd_check } from './mhitu.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import type { MenuUnderlay, MultiSelectItem, MultiSelectSection } from './windows.js';
@@ -2653,7 +2653,7 @@ export async function removeEyewear(object: GameObject | null = null, {
             await publish('You still cannot see.');
         }
     } else if (wasBlind) {
-        const gulp = await gulpBlindnessCheck({ state, publish });
+        const gulp = await gulp_blnd_check({ state, publish });
         if (gulp.died) return true;
         if (!gulp.triggered) {
             await publish('You can see again.');
