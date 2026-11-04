@@ -1,7 +1,7 @@
 // Magicbane's probe, stun, scare, and cancellation attacks.
 // C ref: artifact.c Mb_hit().
 
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { upstart } from './hacklib.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';

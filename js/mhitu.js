@@ -56,7 +56,7 @@ import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, GOLD_PIECE } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';

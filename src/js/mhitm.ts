@@ -5,7 +5,7 @@
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
 // xdrainenergym() are folded in below in native order.
 
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState, GameState } from './game_state.js';

@@ -100,7 +100,7 @@ import { linkObjectToMonsterInventory, mksobj, unlinkObject, deallocateObject } 
 import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
-import { moveMonsterNextToHero } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';

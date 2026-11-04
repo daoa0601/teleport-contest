@@ -1,4 +1,4 @@
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { seeTrap, deleteTrap, clearHeroTrap } from './trap.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';

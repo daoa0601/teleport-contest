@@ -1,3 +1,4 @@
+import { guardianGenus } from './mon.js';
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
 import { game, requireGameLevel } from './gstate.js';
@@ -31,7 +32,7 @@ import { BOGUS_MONSTERS } from './random_text_data.js';
 import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
 import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
-import { hatchableEggSpecies } from './egg_species.js';
+import { hatchableEggSpecies } from './mon.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt } from './pager.js';
@@ -2064,19 +2065,6 @@ function wishedGender(species, parsed) {
     if (flags & M2_FEMALE)
         return CORPSTAT_FEMALE;
     return rn2(2) ? CORPSTAT_MALE : CORPSTAT_FEMALE;
-}
-// C mon.c:genus() with mode 1: quest guardians name their role's class
-// monster; other species keep their identity. Only the mode-1 callers
-// (corpse wishes, guardian speech) exist in the game.
-function guardianGenus(species) {
-    const guardians = new Map([
-        ['student', 'archeologist'], ['chieftain', 'barbarian'], ['neanderthal', 'cave dweller'],
-        ['attendant', 'healer'], ['page', 'knight'], ['abbot', 'monk'], ['acolyte', 'cleric'],
-        ['hunter', 'ranger'], ['thug', 'rogue'], ['roshi', 'samurai'], ['guide', 'tourist'],
-        ['apprentice', 'wizard'], ['warrior', 'valkyrie'],
-    ]);
-    const genus = guardians.get(MONSTER_NAME[species] ?? '');
-    return genus ? MONSTER_NAME.indexOf(genus) : species;
 }
 // ---------------------------------------------------------------------------
 // C objnam.c:wizterrainwish(). Terrain wishes use the ordinary map, trap,

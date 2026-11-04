@@ -40,7 +40,8 @@ import type { Position, Trap } from './map_types.js';
 import { levelFollower } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
-import { expelHero, releaseHeroFromMonster } from './hero_expulsion.js';
+import { expelHero } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import { AT_WEAP } from './monster_attack_types.js';

@@ -24,7 +24,6 @@ src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
 src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
-src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
 src/js/engrave.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
@@ -34,18 +33,17 @@ src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
 src/js/fruit.ts	objnam.c
 src/js/glyph_customizations.ts	display.c
+src/js/glyph_numbers.ts	display.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
 src/js/hero_expulsion.ts	monmove.c
 src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
-src/js/hero_grip.ts	mon.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
-src/js/immediate_monster_magic.ts	mon.c
 src/js/inventory_reports.ts	shk.c
 src/js/isaac64.ts	isaac64.c
 src/js/japanese_item_name.ts	objnam.c
@@ -69,7 +67,6 @@ src/js/mkmaze.ts	mkmaze.c
 src/js/mkobj.ts	mkobj.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
-src/js/mondeath.ts	mon.c
 src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
@@ -83,7 +80,6 @@ src/js/orc_raid.ts	mkmaze.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
-src/js/pick_axe.ts	mon.c
 src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
 src/js/pline.ts	pline.c
@@ -104,6 +100,7 @@ src/js/rumor.ts	rumors.c
 src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
 src/js/shknam.ts	shknam.c
+src/js/sit.ts	sit.c
 src/js/skills.ts	weapon.c
 src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c

@@ -39,7 +39,8 @@ import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifacts.j
 import { regenerateHeroHp } from './hero_regeneration.js';
 import { ceilingName } from './terrain_name.js';
 import { consumeMonsterItem } from './mthrowu.js';
-import { heroCanTeleport, moveMonsterNextToHero, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
+import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { runDueTimers } from './timeout.js';
 import { askKeepRestoredSave, restoreMonsterCover } from './save.js';
 import { placeHeroAtRandomArrival, finishScheduledLevelChange } from './level_change.js';

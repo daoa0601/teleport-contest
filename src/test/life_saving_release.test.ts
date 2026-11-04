@@ -7,7 +7,7 @@ import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { COLNO, LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT, ROWNO, ROOM, STONE, TT_PIT, W_AMUL } from '../js/const.js';
 import { expelHero } from '../js/hero_expulsion.js';
-import { setHeroGrip } from '../js/hero_grip.js';
+import { setHeroGrip } from '../js/mon.js';
 import { installPagerInput } from './support/pager-input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';

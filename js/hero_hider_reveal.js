@@ -12,7 +12,7 @@ import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
 import { game } from './gstate.js';
 import { dist2, possessiveName } from './hacklib.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsEel, monsterTypeName } from './monster_data.js';

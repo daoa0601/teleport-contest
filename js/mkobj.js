@@ -7,7 +7,7 @@ import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
-import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
+import { eggSpeciesIsDead, hatchableEggSpecies } from './mon.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
@@ -1107,15 +1107,6 @@ export function unlinkMonsterObject(monster, object) {
     delete object.carrierMid;
     object.where = 'free';
     return true;
-}
-// C mon.c:replmon()/restore.c:restmonchn(): ownership follows the current
-// actor instance, including while that actor has left the map but still
-// carries its drops.
-export function restoreMonsterInventoryOwnership(monster) {
-    for (const object of monster.minvent || monster.inventory || []) {
-        object.ocarry = monster;
-        object.carrierMid = monster.m_id;
-    }
 }
 // C mkobj.c:discard_minvent().
 export async function discardMonsterInventory(monster, uncreateArtifacts, state = game, { publish = plineWithContinuation, } = {}) {

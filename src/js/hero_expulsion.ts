@@ -1,13 +1,14 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 
-import { moveMonsterNextToHero } from './teleport.js';
-import { setHeroGrip } from './hero_grip.js';
+import type { ReleaseHeroOptions } from './mon.js';
+import { releaseHeroFromMonster, redrawAfterRelease } from './mon.js';
+import { moveMonsterNextToHero } from './mon.js';
 
-import { game, requireLiveGame } from './gstate.js';
+import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import type { MessagePublisher } from './pline.js';
+
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
 
@@ -17,21 +18,12 @@ import { RLOC_NOMSG } from './const.js';
 import {
     MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly,
 } from './monster_data.js';
-import {
-    AD_COLD, AD_ELEC, AD_STCK, AT_ENGL, AT_HUGS,
-} from './monster_attack_types.js';
-import { docrt, newsym } from './display.js';
+import { AD_COLD, AD_ELEC, AT_ENGL } from './monster_attack_types.js';
+import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { placeBallAndChain } from './ball.js';
+
 import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
-
-export interface ReleaseHeroOptions {
-    state?: GameState;
-    publish?: MessagePublisher;
-    redraw?: () => unknown;
-    rollOne?: (sides: number) => number;
-}
 
 export interface ExpelHeroOptions extends ReleaseHeroOptions {
     message?: boolean;
@@ -72,33 +64,6 @@ export function holdingMonsterName(monster: Monster, state: GameState = game): s
 export function holdingMonsterSubject(monster: Monster, state: GameState = game): string {
     const name = holdingMonsterName(monster, state);
     return name.charAt(0).toUpperCase() + name.slice(1);
-}
-
-// C mon.c:unstuck(). Release a hold without moving the monster or applying
-// expulsion landing effects; death and departure use this same boundary.
-export async function releaseHeroFromMonster(monster: Monster, {
-    state = game,
-    publish = plineWithContinuation,
-    redraw = redrawAfterRelease,
-    rollOne = rnd,
-}: ReleaseHeroOptions = {}): Promise<void> {
-    requireLiveGame(state);
-    if (state.u.ustuck !== monster) return;
-    const swallowed = state.u.uswallow;
-    setHeroGrip(null, state);
-    if (swallowed) {
-        state._monsterSwallower = null;
-        state.u.ux = monster.mx;
-        state.u.uy = monster.my;
-        const chain = state.uchain || state.u.uchain;
-        if (chain && chain.where !== 'floor')
-            await placeBallAndChain(state, publish);
-        state.vision_full_recalc = 1;
-        await redraw();
-    }
-    const canHold = (MONSTER_ATTACKS[monster.mnum] ?? []).some(([type, damage]) =>
-        type === AT_ENGL || type === AT_HUGS || damage === AD_STCK);
-    if (!monster.mspec_used && canHold) monster.mspec_used = rollOne(2);
 }
 
 export async function expelHero(monster: Monster, {
@@ -153,12 +118,4 @@ function expulsionMessage(monster: Monster, mnum: number, state: GameState): str
             : attack?.[1] === AD_ELEC ? ' in a shower of sparks' : '';
     }
     return `You get expelled from ${name}${effect}!`;
-}
-
-// C mon.c:unstuck() sets vision_full_recalc and calls docrt() directly; it
-// never rebuilds the blocker table, so docrt()'s vision_recalc(2) pass still
-// scans the previous vision's row bounds and newsym()s each formerly lit
-// cell (drawing warning flashes for unseen-but-warned monsters there).
-async function redrawAfterRelease() {
-    await docrt();
 }

@@ -69,7 +69,7 @@ import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import type { Hero } from './hero_types.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';

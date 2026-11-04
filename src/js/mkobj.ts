@@ -4,7 +4,7 @@
 import type { GameObject, ObjectTimer, ObjectTimerKind } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './timeout.js';
-import type { Monster, PetData, SavedMonsterTraits, ShopkeeperData } from './monster_types.js';
+import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOOZE, POT_SICKNESS, POT_WATER } from './object_data.js';
 import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
@@ -14,7 +14,7 @@ import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
-import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
+import { eggSpeciesIsDead, hatchableEggSpecies } from './mon.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
@@ -43,7 +43,6 @@ import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
 
-
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
 import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, settleGlobAbsorptionBilling, splitObjectBill } from './shk.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
@@ -64,7 +63,6 @@ import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } f
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
-
 
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;
@@ -1071,7 +1069,6 @@ export function remove_object<T extends GameObject | null | undefined>(
     return object;
 }
 
-
 export function detachFloorObjectUnit(object: GameObject, state: GameState): GameObject {
     const quantity = objectQuantity(object);
     if (quantity <= 1) {
@@ -1083,7 +1080,6 @@ export function detachFloorObjectUnit(object: GameObject, state: GameState): Gam
     if (!detached) throw new Error(`Object ${object.o_id} cannot split into floor units`);
     return remove_object(detached, state);
 }
-
 
 // C mkobj.c:add_to_minv(). Acquisition effects belong to mpickobj, not raw
 // linkage.
@@ -1145,16 +1141,6 @@ export function unlinkMonsterObject(
     delete object.carrierMid;
     object.where = 'free';
     return true;
-}
-
-// C mon.c:replmon()/restore.c:restmonchn(): ownership follows the current
-// actor instance, including while that actor has left the map but still
-// carries its drops.
-export function restoreMonsterInventoryOwnership(monster: Monster): void {
-    for (const object of monster.minvent || monster.inventory || []) {
-        object.ocarry = monster;
-        object.carrierMid = monster.m_id;
-    }
 }
 
 // C mkobj.c:discard_minvent().
@@ -1551,8 +1537,6 @@ export async function useHornOfPlenty(horn: GameObject, {
     return 1;
 }
 
-
-
 // ---------------------------------------------------------------------------
 // Splitting one quantity from an ordinary object stack.
 // C refs: mkobj.c splitobj()/unsplitobj().
@@ -1652,7 +1636,6 @@ export function nextObjectId(oldObject: GameObject, newObject: GameObject, state
     nextIdent(state);
     return ident;
 }
-
 
 // C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(
@@ -2116,7 +2099,6 @@ export async function finishGlobTimer(
     await reportHeroEncumbrance(state, publish);
     return event;
 }
-
 
 const TREE_FRUITS = [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF];
 

@@ -1,3 +1,4 @@
+import { wakeNearby } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -5,7 +6,7 @@ import { objectIsHardHelmet } from './do_wear.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { heroFootName, heroHeadName, monsterStomachName } from './body_parts.js';
-import { A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, GRAVE, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir } from './const.js';
+import { A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { currency } from './invent.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isMoatAt, isPoolAt } from './dbridge.js';
@@ -40,7 +41,7 @@ import { canDigDown, stairwayAt } from './mklev.js';
 import {createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
@@ -50,7 +51,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroMonsterForm, heroIsFlying } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';
-import { refreshMovementProperties } from './properties.js';
+
 import { punishHero, unpunishHero } from './read.js';
 import { autopickupAtHero } from './pickup.js';
 import { angerTemplePriest } from './priest.js';
@@ -64,7 +65,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { levelHasCeiling, levelAtDepth } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
-import { scheduleObjectTimer, stopObjectTimer, stopLevelTimer } from './timeout.js';
+import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';
 import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { willWeld } from './wield.js';
@@ -74,9 +75,23 @@ import { captureRayTraversalFrame } from './zap.js';
 
 import { endObjectBurn } from './timeout.js';
 import { displayMessageWindow } from './tty_topline.js';
-import type { MapLocation, Position, Stairway, Trap } from './map_types.js';
+import type { MapLocation, Position, Trap } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { fireDamageObject } from './trap.js';
+import { nomul, roomForRoomno } from './hack.js';
+import { artifactById } from './artifacts.js';
+import { makeMonsterFlee } from './monmove.js';
+import { heroIsPunished } from './ball.js';
+import { IS_WATERWALL, LAVAWALL, N_DIRS_Z, TT_WEB, WEB } from './const.js';
+import { canSpotMonster } from './display.js';
+import { wipeHeroEngraving } from './engrave.js';
+import { heroCanReachFloor } from './engrave.js';
+import { prepareAppliedWeaponAttack } from './uhitm.js';
+import { MONSTER_MOVE } from './monster_data.js';
+import { OBJECT_NAMES } from './object_data.js';
+import { confusePromptDirection } from './cmd.js';
+import type { Hero } from './hero_types.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and
 // wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
 // digging_watch/buried_object/hole (pure move, no behavior change).
@@ -107,7 +122,6 @@ function monsterAt(x: number, y: number, state: GameState): Monster | null {
         (monster.mhp ?? 1) > 0 && monster.mx === x && monster.my === y,
     ) || null;
 }
-
 
 // C dig.c pick_can_reach(): whether a pick can reach a statue or boulder
 // that sits in (or beside) a pit.
@@ -1996,4 +2010,343 @@ export async function freeHeroFromBuriedBall(state: GameState = game) {
     );
     await newsym(x, y);
     return true;
+}
+
+// C dig.c:use_pick_axe()/use_pick_axe2(). Tool prompts and digging directions.
+
+export interface PickAxeDirection {
+    dx: number;
+    dy: number;
+    dz: number;
+}
+
+export interface PickAxeResult {
+    spentTime: boolean;
+    resume?: boolean;
+    cancelled?: true;
+    died?: true;
+}
+
+interface PickAxeDirectionOptions {
+    state?: GameState;
+    attackMonster: (monster: Monster, struckAt: Position) => void | Promise<unknown>;
+    payShopkeeper: () => void | Promise<unknown>;
+}
+
+interface PickAxeOptions extends PickAxeDirectionOptions {
+    ensureWielded: () => Promise<{ ready: boolean }>;
+    // getdir() owns direction validation and the first impairment check.
+    readDirection: (prompt: string) => Promise<PickAxeDirection | null>;
+}
+
+const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
+const LONG_WORM = MONSTER_NAME.indexOf('long worm');
+function requirePickAxeDirection(hero: Hero): asserts hero is Hero & PickAxeDirection {
+    if (hero.dx === undefined || hero.dy === undefined || hero.dz === undefined)
+        throw new Error('Using a pick-axe requires a chosen direction.');
+}
+
+function diggingLocation(x: number, y: number, state: GameState) {
+    const location = requireGameLevel(state).at(x, y);
+    if (!location) throw new Error(`Digging target (${x}, ${y}) is outside the map.`);
+    return location;
+}
+
+function impaired(state: GameState) {
+    const hero = state.u;
+    return (
+        hero.confused ||
+        (hero.confusionTurns ?? 0) > 0 ||
+        hero.stunned ||
+        (hero.stunnedTurns ?? 0) > 0 ||
+        heroIsHallucinating(state)
+    );
+}
+
+function prepareDiggingDirections(tool: GameObject, state: GameState) {
+    const hero = state.u;
+    const downOK = heroCanReachFloor(state);
+    const keys: string[] = [];
+    for (let direction = 0; direction < N_DIRS_Z; direction++) {
+        const key = state.commandBindings.keyForDirection(direction);
+        if (!hero.uswallow) {
+            // Native movecmd() changes the hero's direction for each hint,
+            // even when getdir() will subsequently be cancelled.
+            const movement = state.commandBindings.movementForKey(key, 0);
+            hero.dz = movement?.dz ?? 0;
+            if (movement) {
+                hero.dx = movement.dx;
+                hero.dy = movement.dy;
+            }
+            if (movement && !movement.dz) {
+                if (hero.umonnum === GRID_BUG && movement.dx && movement.dy) {
+                    hero.dx = hero.dy = 0;
+                    continue;
+                }
+                const x = hero.ux + movement.dx, y = hero.uy + movement.dy;
+                if (!isok(x, y) || diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
+                    continue;
+            } else if ((hero.dz > 0) !== downOK) continue;
+        }
+        keys.push(String.fromCharCode(key));
+    }
+    return keys.join('').split('\0')[0] ?? '';
+}
+
+function tendedShopAt(monster: Monster, state: GameState) {
+    const level = requireGameLevel(state);
+    return roomsAt(level, monster.mx, monster.my, SHOPBASE).some((roomno) => {
+        const room = roomForRoomno(level, roomno);
+        const keeper = room?.resident;
+        return keeper && !keeper.dead && (keeper.mhp ?? 1) > 0;
+    });
+}
+
+async function attackWithTool(
+    tool: GameObject,
+    monster: Monster,
+    attackMonster: PickAxeDirectionOptions['attackMonster'],
+    payShopkeeper: PickAxeDirectionOptions['payShopkeeper'],
+    state: GameState,
+    struckAt: Position,
+) {
+    const hero = state.u;
+    const safe =
+        state.flags?.safe_dog !== false &&
+        monster.mpeaceful &&
+        canSpotMonster(monster) &&
+        !impaired(state);
+    if (
+        safe &&
+        !state.context.forcefight &&
+        artifactById(tool.oartifact, state)?.name !== 'Stormbringer'
+    ) {
+        const blocked =
+            heroIsPunished(state) ||
+            rn2(7) === 0 ||
+            (monster.mnum === LONG_WORM && monster.wormno) ||
+            (IS_OBSTRUCTED(diggingLocation(hero.ux, hero.uy, state).typ) &&
+                !monsterPassesWalls(monster.mnum));
+        if (blocked || tendedShopAt(monster, state)) {
+            if (
+                monster.isshk &&
+                canSpotMonster(monster) &&
+                !state._runState &&
+                !state.context.travel
+            ) {
+                await payShopkeeper();
+                return true;
+            }
+            if (monster.mtame || monster.pet) {
+                const flight = await makeMonsterFlee(monster, {
+                    state,
+                    turns: rnd(6),
+                    announce: false,
+                });
+                if (flight.heroDied) return true;
+            }
+            await plineWithContinuation(`You stop.  ${monsterName(monster, { state, capitalized: true, article: 'your' })} is in the way!`);
+            return true;
+        }
+        if (
+            monster.mfrozen ||
+            monster.msleeping ||
+            monster.mcanmove === 0 ||
+            (MONSTER_MOVE[monster.mnum] === 0 && rn2(6))
+        ) {
+            await plineWithContinuation(`${monsterName(monster, { state, capitalized: true, article: 'your' })} doesn't seem to move!`);
+            return true;
+        }
+        // do_attack() leaves a safe monster alone. Applying is not movement,
+        // so the caller continues against the terrain rather than swapping.
+        return false;
+    }
+    const verdict = await prepareAppliedWeaponAttack(
+        monster, tool, { state, struckAt });
+    if (verdict.proceed) await attackMonster(monster, struckAt);
+    return true;
+}
+
+async function hurtHero(amount: number, killer: string, state: GameState) {
+    if (state.u.halfPhysicalDamage) amount = Math.trunc((amount + 1) / 2);
+    await loseHeroHp(amount, killer, { state, killerFormat: KILLED_BY });
+}
+
+async function strikeUndiggable(tool: GameObject, x: number, y: number, state: GameState) {
+    const hero = state.u;
+    const location = diggingLocation(x, y, state);
+    const trap = trapAt(state, x, y);
+    const pile = requireGameLevel(state).objects[x]?.[y] || [];
+    const boulder = pile.find((object) => object.otyp === BOULDER);
+    const statue = pile.find((object) => object.otyp === STATUE);
+    if (trap?.ttyp === WEB) {
+        if (!trap.tseen) {
+            await seeTrap(trap, state);
+            await plineWithContinuation('There is a spider web there!');
+        }
+        await plineWithContinuation(
+            `${ownedObjectAction(tool, 'become', state)} entangled in the web.`,
+        );
+        const turns = d(2, 2);
+        nomul(-turns, state);
+        state._helplessReason = 'stuck in a spider web';
+        state._helplessDoneMessage = 'You pull free.';
+    } else if (location.typ === IRONBARS) {
+        await plineWithContinuation('Clang!');
+        await wakeNearby(state);
+    } else if (IS_WATERWALL(location.typ) || location.typ === LAVAWALL) {
+        await plineWithContinuation('Splash!');
+        if (location.typ === LAVAWALL)
+            await fireDamageObject(tool, { state, x, y, publish: plineWithContinuation });
+    } else if (IS_TREE(location.typ)) {
+        await plineWithContinuation('You need an axe to cut down a tree.');
+    } else if (IS_OBSTRUCTED(location.typ)) {
+        await plineWithContinuation('You need a pick to dig rock.');
+    } else if (boulder || statue) {
+        const target = boulder ? 'boulder' : 'statue';
+        if (isPick(tool)) {
+            await plineWithContinuation(`You can't reach the ${target}.`);
+        } else {
+            const vibrates = rn2(3) === 0;
+            await plineWithContinuation(
+                `Sparks fly as you whack the ${target}.${
+                    vibrates ? '  The axe-handle vibrates violently!' : ''
+                }`,
+            );
+            if (vibrates) await hurtHero(2, 'axing a hard object', state);
+            await wakeNearby(state);
+        }
+    } else {
+        const here = trapAt(state, hero.ux, hero.uy);
+        if (hero.utrap && hero.utraptype === TT_PIT && here) {
+            if (trap && is_pit(trap.ttyp) && connectPits(here, trap)) {
+                await plineWithContinuation('You clear some debris from between the pits.');
+            } else {
+                await plineWithContinuation(
+                    `You swing ${ownedObjectName(tool, state, { capitalized: false })}, but the rubble has no place to go.`,
+                );
+            }
+        } else {
+            await plineWithContinuation(
+                `You swing ${ownedObjectName(tool, state, { capitalized: false })} through thin air.`,
+            );
+        }
+    }
+}
+
+// C dig.c:use_pick_axe().
+export async function usePickAxe(
+    tool: GameObject,
+    { state = game, ensureWielded, readDirection, attackMonster, payShopkeeper }: PickAxeOptions,
+): Promise<PickAxeResult> {
+    if (tool !== (state.uwep || state.u.uwep)) {
+        const wielded = await ensureWielded();
+        return { spentTime: !!wielded.ready, resume: !!wielded.ready };
+    }
+    const verb = isPick(tool) ? 'dig' : 'chop';
+    if (state.u.utrap && state.u.utraptype === TT_WEB) {
+        await plineWithContinuation(`Unfortunately, you can't ${verb} while entangled in a web.`);
+        return { spentTime: false };
+    }
+    const direction = await readDirection(
+        `In what direction do you want to ${verb}? [${prepareDiggingDirections(tool, state)}]`,
+    );
+    if (!direction) return { spentTime: false, cancelled: true };
+    const hero = state.u;
+    hero.dx = direction.dx;
+    hero.dy = direction.dy;
+    hero.dz = direction.dz;
+    return applyPickAxeDirection(tool, { state, attackMonster, payShopkeeper });
+}
+
+// C dig.c:use_pick_axe2().
+export async function applyPickAxeDirection(
+    tool: GameObject,
+    { state = game, attackMonster, payShopkeeper }: PickAxeDirectionOptions,
+): Promise<PickAxeResult> {
+    const hero = state.u;
+    requirePickAxeDirection(hero);
+    const verbing = isPick(tool) ? 'digging' : 'chopping';
+    if (
+        hero.uswallow &&
+        hero.ustuck &&
+        await attackWithTool(tool, hero.ustuck, attackMonster, payShopkeeper, state,
+            { x: hero.ux + hero.dx, y: hero.uy + hero.dy })
+    ) {
+        return { spentTime: true };
+    }
+    if (state.underwater || hero.uinwater) {
+        await plineWithContinuation(`Turbulence torpedoes your ${verbing} attempts.`);
+    } else if (hero.dz < 0) {
+        const levitating = hero.levitating || hero.levitation || state.levitating;
+        await plineWithContinuation(
+            levitating
+                ? "You don't have enough leverage."
+                : `You can't reach the ${ceilingName(hero.ux, hero.uy, state)}.`,
+        );
+    } else if (!hero.dx && !hero.dy && !hero.dz) {
+        const damage = Math.max(1, rnd(2) + heroStrengthDamageBonus(state) + (tool.spe ?? 0));
+        await plineWithContinuation(
+            `You hit yourself with ${ownedObjectName(tool, state, { capitalized: false })}.`,
+        );
+        await hurtHero(
+            damage,
+            `${state.flags.female ? 'her' : 'his'} own ${OBJECT_NAMES[tool.otyp]}`,
+            state,
+        );
+    } else if (!hero.dz) {
+        confusePromptDirection(hero);
+        const x = hero.ux + hero.dx,
+            y = hero.uy + hero.dy;
+        if (!isok(x, y)) {
+            await plineWithContinuation('Clash!');
+            return { spentTime: true };
+        }
+        const monster = requireGameLevel(state).monsters.find(
+            (mon) =>
+                monsterHasMapPosition(mon, state) &&
+                !mon.dead &&
+                (mon.mhp ?? 1) > 0 &&
+                mon.mx === x &&
+                mon.my === y,
+        );
+        if (monster && await attackWithTool(
+            tool, monster, attackMonster, payShopkeeper, state, { x, y }))
+            return { spentTime: true };
+        if (diggingTarget(tool, x, y, state) === DIGTYP_UNDIGGABLE)
+            await strikeUndiggable(tool, x, y, state);
+        else await startHeroDigging(tool, x, y, { state });
+    } else if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)) {
+        await plineWithContinuation(
+            `You swing ${ownedObjectName(tool, state, { capitalized: false })} through thin air.`,
+        );
+    } else if (!heroCanReachFloor(state)) {
+        await plineWithContinuation(`You can't reach the ${surfaceName(hero.ux, hero.uy, state)}.`);
+    } else if (
+        isPoolAt(hero.ux, hero.uy, state) || isLavaAt(hero.ux, hero.uy, state)
+    ) {
+        await plineWithContinuation(
+            `You cannot stay under${
+                isPoolAt(hero.ux, hero.uy, state) ? 'water' : ' the lava'
+            } long enough.`,
+        );
+    } else {
+        const trap = trapAt(state, hero.ux, hero.uy);
+        const seenTrap = trap?.tseen ? trap : null;
+        const pitEdge =
+            seenTrap && is_pit(seenTrap.ttyp) && !(hero.utrap && hero.utraptype === TT_PIT);
+        if (seenTrap && (pitEdge || is_hole(seenTrap.ttyp))) {
+            const result = await triggerHeroTrap(seenTrap, { forceBungle: true, gotoLevel });
+            if (result.died) return { spentTime: false, died: true };
+            if (!hero.utrap) await plineWithContinuation("You can't reach the bottom of the pit.");
+        } else if (!isPick(tool) && trap?.ttyp !== LANDMINE && trap?.ttyp !== BEAR_TRAP) {
+            await plineWithContinuation(
+                `${ownedObjectAction(tool, 'merely scratch', state)} the ${surfaceName(hero.ux, hero.uy, state)}.`,
+            );
+            wipeHeroEngraving(3, state);
+        } else {
+            await startHeroDigging(tool, hero.ux, hero.uy, { down: true, state });
+        }
+    }
+    return { spentTime: true };
 }

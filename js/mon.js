@@ -9,7 +9,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, monsterKillLineVisible, unmap_invisible, swallowed } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed } from './display.js';
 import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterTypeName, monsterYoungerForm, requireMonsterData, speciesEatsCorpses } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
@@ -18,7 +18,7 @@ import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneRes
 import { AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, OBJECT_WEIGHT, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, OBJECT_DESCRIPTIONS, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS } from './object_data.js';
 import { objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
-import { dealWithMonsterOvercrowding, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
+import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { reportMonsterTeleportRestriction, monsterTeleportRestricted, findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { fireDamageChain, monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, monsterWearsGloves, fillPitWithBoulderAt } from './trap.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
@@ -60,7 +60,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
-import { releaseHeroFromMonster, expelHero } from './hero_expulsion.js';
+import { expelHero } from './hero_expulsion.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { finishScheduledLevelChange } from './level_change.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
@@ -69,7 +69,6 @@ import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { preventMonsterDeath, lifeSaveMonster, wornMonsterLifeSaver } from './mondeath.js';
 import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';
@@ -91,6 +90,27 @@ import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resolveMonsterGaze } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
+import { monsterOlderForm } from './monster_data.js';
+import { wormKnown } from './display.js';
+import { controlMonsterTeleport, requireLevel } from './teleport.js';
+import { heroIsUnaware } from './senses.js';
+import { A_WIS, D_NODOOR, D_TRAPPED, W_AMUL } from './const.js';
+import { exerciseAttribute } from './attrib.js';
+import { pline as lifeSavingLine } from './pline.js';
+import { releaseHeroGrip } from './polyself.js';
+import { makePetWary } from './dog.js';
+import { monsterIsVampire } from './monster_data.js';
+import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
+import { AMULET_OF_LIFE_SAVING } from './object_data.js';
+import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { OBJECT_COLOR } from './object_data.js';
+import { simpleObjectTypeName } from './objnam.js';
+import { RLOC_NONE, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE } from './const.js';
+import { AMULET_OF_YENDOR } from './object_data.js';
+import { isHomeElemental } from './makemon.js';
+import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
+import { docrt } from './display.js';
+import { placeBallAndChain } from './ball.js';
 const M1_SWIM = 0x00000002;
 const M1_AMORPHOUS = 0x00000004;
 const M1_WALLWALK = 0x00000008;
@@ -436,6 +456,19 @@ const UNDEAD_CORPSE_TYPES = new Map([
     [247, 169], [194, 169], // giant zombie/mummy -> giant
     [245, 174], [193, 174], // ettin zombie/mummy -> ettin
 ]);
+// C mon.c:genus() with mode 1: quest guardians name their role's class
+// monster; other species keep their identity. Only the mode-1 callers
+// (corpse wishes, guardian speech) exist in the game.
+export function guardianGenus(species) {
+    const guardians = new Map([
+        ['student', 'archeologist'], ['chieftain', 'barbarian'], ['neanderthal', 'cave dweller'],
+        ['attendant', 'healer'], ['page', 'knight'], ['abbot', 'monk'], ['acolyte', 'cleric'],
+        ['hunter', 'ranger'], ['thug', 'rogue'], ['roshi', 'samurai'], ['guide', 'tourist'],
+        ['apprentice', 'wizard'], ['warrior', 'valkyrie'],
+    ]);
+    const genus = guardians.get(MONSTER_NAME[species] ?? '');
+    return genus ? MONSTER_NAME.indexOf(genus) : species;
+}
 // C mon.c:undead_to_corpse().
 export function undeadToCorpse(mndx) {
     return UNDEAD_CORPSE_TYPES.get(mndx) ?? mndx;
@@ -1715,6 +1748,10 @@ export async function publishMonsterWake(monster, interesting = false, state = g
 // the distance filter (monstersNear), the wake message, indeterminate-sleep
 // clearing, petcall whistles, and the closing disturb_buried_zombies() all
 // live here.
+// C mon.c:wake_nearby() for a non-deliberate noise.
+export async function wakeNearby(state) {
+    await wakeMonstersNearWithMessages(state.u.ux, state.u.uy, (state.u.ulevel ?? 1) * 20, state);
+}
 export async function wakeMonstersNearWithMessages(x, y, distance, state = game, publish = plineWithContinuation, { petCall = false } = {}) {
     requireLiveGame(state);
     for (const monster of monstersNear(x, y, distance, state)) {
@@ -2614,6 +2651,259 @@ async function finishMonsterRemains(remains, monster, state) {
 // Per-species birth and death state: decl.h mvitals[] and the mondead() tail.
 // ---------------------------------------------------------------------------
 const PM_MAIL_DAEMON = MONSTER_NAME.indexOf('mail daemon');
+// C mon.c:mlifesaver().
+// which_armor(mon, W_AMUL) is the eligibility boundary: carrying an amulet
+// without wearing it must never intercept monster death.
+export function wornMonsterLifeSaver(monster) {
+    const shiftedVampire = typeof monster.cham === 'number' && Number.isInteger(monster.cham)
+        && monsterIsVampire(monster.cham);
+    if (monsterIsNonliving(monster?.mnum) && !shiftedVampire)
+        return null;
+    return (monster?.minvent || monster?.inventory || []).find(object => object.otyp === AMULET_OF_LIFE_SAVING
+        && ((object.owornmask ?? 0) & W_AMUL));
+}
+// C mon.c:lifesaved_monster() selects the recovery verb from explosion attacks.
+function monsterReconstitutesAfterLifeSaving(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum] || [])
+        .some(attack => attack[0] === 13 || attack[0] === 14);
+}
+// C mon.c:lifesaved_monster(): an amulet of life saving revives a dying
+// monster; genocided species still fail after the medallion crumbles.
+// The caller supplies any credited kill line. The amulet is consumed and the
+// monster is restored before any caller can remove it from the level.
+export async function lifeSaveMonster(monster, amulet, { creditedKill, retainCursor = false, genocided = false, continueLine = plineWithContinuation, line = lifeSavingLine, repaint = newsym, } = {}) {
+    if (creditedKill)
+        await continueLine(creditedKill);
+    const visible = cansee(monster.mx, monster.my);
+    if (visible) {
+        await continueLine('But wait...');
+        await line(`${possessiveName(monsterName(monster, { capitalized: true }))} medallion begins to glow!`);
+        const alreadyKnown = game._knownObjectTypes instanceof Set
+            && game._knownObjectTypes.has(amulet.otyp);
+        if (!alreadyKnown)
+            await exerciseAttribute(A_WIS, true);
+        // C discover_object(): the amulet's type becomes known.
+        recordObjectEncounter(amulet.otyp);
+        recordObjectKnowledge(amulet.otyp);
+        if (canSeeMonster(monster)) {
+            const recovery = monsterReconstitutesAfterLifeSaving(monster)
+                ? 'reconstitutes' : 'looks much better';
+            await line(`${monsterName(monster, { capitalized: true })} ${recovery}!`);
+        }
+        await line('The medallion crumbles to dust!');
+    }
+    const inventory = monster.minvent || monster.inventory || [];
+    const index = inventory.indexOf(amulet);
+    if (index >= 0)
+        inventory.splice(index, 1);
+    amulet.owornmask = 0;
+    amulet.worn = false;
+    amulet.wornSlot = null;
+    amulet.where = 'gone';
+    amulet.ox = amulet.oy = 0;
+    amulet.ocarry = null;
+    monster.minvent = inventory;
+    monster.inventory = inventory;
+    monster.hasInventory = inventory.length > 0;
+    monster.misc_worn_check = (monster.misc_worn_check ?? 0) & ~W_AMUL;
+    checkMonsterGearNextTurn(monster);
+    monster.dead = false;
+    monster.mcanmove = 1;
+    monster.mfrozen = 0;
+    if ((monster.mtame ?? 0) > 0 && !monster.isminion) {
+        await makePetWary(monster, {
+            wasDead: genocided,
+            publish: continueLine, repaint, state: game,
+        });
+    }
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
+    monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
+    monster.mhp = monster.mhpmax;
+    if (genocided) {
+        if (cansee(monster.mx, monster.my)) {
+            const failedSubject = monsterName(monster);
+            await line(`Unfortunately, ${failedSubject} is still genocided...`);
+        }
+        monster.mhp = 0;
+    }
+    if (retainCursor)
+        game._cursorOverride = [monster.mx - 1, monster.my + 1];
+    return {
+        kind: 'monster-life-saving', monster, amulet,
+        messageShown: visible, genocided, survived: !genocided, completedDeath: null,
+    };
+}
+// C mon.c:mondead().
+export async function preventMonsterDeath(monster, { creditedKill, disintegrated = false, state = game, genocided = monsterSpeciesWasGenocided(monster, state), publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    requireLiveGame(state);
+    monster.mhp = 0;
+    const amulet = wornMonsterLifeSaver(monster);
+    if (amulet) {
+        const saved = await lifeSaveMonster(monster, amulet, { creditedKill: creditedKill ?? null, genocided });
+        if (saved.survived)
+            return saved;
+    }
+    else if (creditedKill) {
+        await publish(creditedKill);
+    }
+    const revived = await reviveShiftedVampire(monster, {
+        visible: cansee(monster.mx, monster.my),
+        spotted: canSpotMonster(monster), disintegrated, state, publish,
+        random, rollOne,
+    });
+    return revived || {
+        monster, survived: false, messageShown: false, completedDeath: null,
+    };
+}
+// C mon.c:mondead() tests the dying species against the genocide flag.
+function monsterSpeciesWasGenocided(monster, state = game) {
+    return !!((state.mvitals?.[monster?.mnum]?.mvflags ?? 0) & G_GENOD);
+}
+// C mon.c:vamprises() constructs the old-form description.
+function vampireRiseAction(monster, disintegrated, unaware, state) {
+    const unusualBody = monsterIsNonliving(monster.mnum)
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
+    const reconstitutes = disintegrated
+        || monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster);
+    const oldSubject = monsterName(monster, {
+        state, adjective: unusualBody ? '' : 'seemingly dead',
+        suppressInvisible: true, suppressSaddle: false, augmentIt: true,
+    });
+    const action = reconstitutes ? 'reconstitutes' : 'transforms';
+    const description = `${unaware ? 'you dream that ' : ''}${oldSubject} ${unaware ? '' : 'suddenly '}${action} and rises as`;
+    return description.charAt(0).toUpperCase() + description.slice(1);
+}
+// C mon.c:vamprises() destroys a closed door under the reverted vampire.
+async function smashDoorUnderVampire(monster, x, y, { visible, spotted, unaware, state, publish, rollOne, random, }) {
+    const door = state.level?.at?.(x, y);
+    if (!door || !closedDoor(state, x, y)) {
+        return { monster, survived: true, messageShown: false, completedDeath: null };
+    }
+    const trapped = !!((door.doormask ?? 0) & D_TRAPPED);
+    let message = null;
+    if (!visible) {
+        message = trapped
+            ? formatHeardMessage('an explosion.', state) : formatHeardMessage('a door being smashed.', state);
+    }
+    else if (visible && !spotted) {
+        message = formatSeenMessage(trapped ? 'a door exploding.' : 'a door being smashed.', state);
+    }
+    else if (visible && spotted && !unaware) {
+        message = trapped
+            ? 'The door is smashed and it explodes!'
+            : 'The door is smashed.';
+    }
+    if (message)
+        await publish(message);
+    door.doormask = D_NODOOR;
+    if (state === game)
+        vision_note_blocker_change(x, y);
+    if (!trapped) {
+        return { monster, survived: true, messageShown: !!message, completedDeath: null };
+    }
+    const verbose = state.flags.verbose;
+    let trap;
+    state.flags.verbose = false;
+    try {
+        trap = await triggerMonsterDoorTrap(monster, visible, { state, publish, rollOne, random });
+    }
+    finally {
+        if (verbose === undefined)
+            delete state.flags.verbose;
+        else
+            state.flags.verbose = verbose;
+    }
+    if (trap.heroDied)
+        return {
+            monster, survived: !trap.killed, messageShown: !!message,
+            completedDeath: trap.death, heroDied: true,
+        };
+    const showDeath = trap.killed && canSpotMonster(monster) && !heroIsUnaware(state);
+    if (showDeath) {
+        await publish(`${monsterName(monster, { state, capitalized: true })} is destroyed!`);
+    }
+    return { monster, survived: !trap.killed,
+        messageShown: !!message || showDeath, completedDeath: trap.death };
+}
+// C mon.c:vamprises(): a killed shapeshifted vampire reverts to its base
+// form and rises instead of dying, smashing a closed door in the way.
+async function reviveShiftedVampire(monster, { visible, spotted, disintegrated, state, publish, random, rollOne, }) {
+    const baseMnum = typeof monster.cham === 'number' && Number.isInteger(monster.cham)
+        ? monster.cham : NON_PM;
+    if (baseMnum < 0 || baseMnum === monster.mnum
+        || !monsterIsVampire(baseMnum)
+        || ((state.mvitals?.[baseMnum]?.mvflags ?? 0) & G_GENOD)) {
+        return null;
+    }
+    const x = monster.mx;
+    const y = monster.my;
+    const unaware = heroIsUnaware(state);
+    const riseAction = vampireRiseAction(monster, disintegrated, unaware, state);
+    monster.dead = false;
+    monster.mcanmove = 1;
+    monster.mfrozen = 0;
+    // C mon.c:set_mon_min_mhpmax(mtmp, 10).
+    monster.mhpmax = Math.max(monster.mhpmax ?? 1, (monster.m_lev ?? 0) + 1, 10);
+    monster.mhp = monster.mhpmax;
+    if (state.u?.ustuck === monster) {
+        if (state.u.uswallow) {
+            const expulsion = await expelHero(monster, {
+                state, publish, message: false, random, rollOne,
+            });
+            if (expulsion.died)
+                return {
+                    monster, survived: monster.mhp > 0,
+                    messageShown: false, heroDied: true, completedDeath: null,
+                };
+        }
+        else {
+            // C mon.c:vamprises() releases the hero's grip with uunstick().
+            await releaseHeroGrip(state, publish);
+        }
+    }
+    const change = await changeMonsterForm(monster, baseMnum, state);
+    if (change?.heroDied)
+        return {
+            monster, survived: monster.mhp > 0,
+            messageShown: false, heroDied: true, completedDeath: null,
+        };
+    if (!change) {
+        return {
+            monster, survived: monster.mhp > 0, messageShown: false, completedDeath: null,
+        };
+    }
+    monster.cham = monster.mnum === baseMnum ? NON_PM : baseMnum;
+    const spottedAfter = state === game ? canSpotMonster(monster) : spotted;
+    let messageShown = false;
+    if (spottedAfter) {
+        const newName = namelessMonsterName(monster, {
+            state, article: 'a', suppressIt: true, suppressInvisible: true,
+        });
+        await publish(`${riseAction} ${newName}!`);
+        messageShown = true;
+    }
+    const door = await smashDoorUnderVampire(monster, x, y, {
+        visible: state === game ? cansee(x, y) : visible,
+        spotted: spottedAfter,
+        unaware,
+        state,
+        publish,
+        rollOne,
+        random,
+    });
+    if (door.heroDied)
+        return door;
+    if (state === game) {
+        // mon.c:vamprises() redraws only the death square: expels() has
+        // already moved a swallower with mnexto() and newcham() drew the
+        // risen form at its new square (mon.c:5458), so no second newsym.
+        await newsym(x, y);
+    }
+    return {
+        ...door,
+        messageShown: messageShown || door.messageShown,
+    };
+}
 export function monsterDeathCount(mnum, state = game) {
     return state.mvitals?.[mnum]?.died ?? 0;
 }
@@ -2659,6 +2949,15 @@ export async function returnDeadKop(monster, state = game, rollOne = rnd) {
             return makemonAt(monster.mnum, stair.sx, stair.sy, 0);
     }
     return makemonAt(monster.mnum, 0, 0, 0);
+}
+// C mon.c:replmon()/restore.c:restmonchn(): ownership follows the current
+// actor instance, including while that actor has left the map but still
+// carries its drops.
+export function restoreMonsterInventoryOwnership(monster) {
+    for (const object of monster.minvent || monster.inventory || []) {
+        object.ocarry = monster;
+        object.carrierMid = monster.m_id;
+    }
 }
 // C mon.c:m_detach(): unlink the dying monster from leash, light, worm
 // body, shop and quest bookkeeping before the level forgets it.
@@ -2808,6 +3107,11 @@ export async function finishMonsterLiquidDeath(monster, { state = game, random =
         actionCompleted: true,
         corpse,
     };
+}
+// C mon.c:monkilled(). Its death line is square-visible or worm-known,
+// independently of whether the actor can be identified.
+export function monsterKillLineVisible(monster) {
+    return monster.wormno ? wormKnown(monster) : cansee(monster.mx, monster.my);
 }
 // C monkilled(): the death line precedes recovery, but pet grief follows it.
 // A null cause suppresses the line even when the monster's square is visible.
@@ -3097,6 +3401,137 @@ export async function describeStoneEngulferEscape(monster, remains, state, publi
     if (!remains || !monsterDigests(monster))
         return;
     await publish(`You ${heroLocomotion('jump', state)} through an opening in the new ${objectName(remains, state)}.`);
+}
+// C mon.c:set_ustuck(). A grip change can change the status conditions.
+export function setHeroGrip(monster, state = game) {
+    state.context.botl = true;
+    state.u.ustuck = monster;
+    if (!monster) {
+        state.u.uswallow = state.uswallow = 0;
+        state.u.uswldtim = 0;
+    }
+}
+// C mon.c:mnexto(). The old square remains occupied during enexto().
+export async function moveMonsterNextToHero(monster, state = game, { flags = RLOC_NONE, random = rn2, } = {}) {
+    requireLiveGame(state);
+    requireLevel(state);
+    if (monster === state.u.usteed) {
+        const oldx = monster.mx, oldy = monster.my;
+        monster.mx = state.u.ux;
+        monster.my = state.u.uy;
+        return { oldx, oldy, x: monster.mx, y: monster.my, moved: false };
+    }
+    let destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state, random });
+    if (!destination) {
+        await dealWithMonsterOvercrowding(monster, state);
+        return null;
+    }
+    const controlled = await controlMonsterTeleport(monster, destination, {
+        state, mode: 'near', flags, random,
+    });
+    destination = controlled || destination;
+    return await relocateMonsterTo(monster, destination.x, destination.y, {
+        state, random, flags,
+    });
+}
+// C mon.c:deal_with_overcrowding()/elemental_clog().
+export async function dealWithMonsterOvercrowding(monster, state = game) {
+    requirePlayingGame(state);
+    requireLiveGame(state);
+    requireLevel(state);
+    if (!In_endgame(state.u.uz)) {
+        await sendMonsterToLimbo(monster, state);
+        return;
+    }
+    const previous = state._elementalClogMessageMove || 0;
+    if (!previous || state.moves - previous > 200) {
+        if (!previous || rn2(2))
+            await plineWithContinuation(formatFeltMessage('besieged.', state));
+        state._elementalClogMessageMove = state.moves;
+    }
+    const victim = overcrowdingVictim(monster, state);
+    if (victim) {
+        const x = victim.mx, y = victim.my;
+        victim.mstate = (victim.mstate ?? 0) | MON_OBLITERATE;
+        await removeMonsterFromGame(victim);
+        await relocateMonsterTo(monster, x, y, { state, flags: RLOC_NONE });
+    }
+    else if (!Is_astralevel(state.u.uz)) {
+        monster.mstate = (monster.mstate ?? 0) | MON_ENDGAME_MIGR;
+        await migrateMonsterToLevel(monster, {
+            ...state.u.uz, dlevel: state.u.uz.dlevel - 1,
+        }, state);
+    }
+}
+// C mon.c:elemental_clog(): prefer a foreign elemental,
+// then a home one, weakest, other, pet. C mon.c:ok_to_obliterate() keeps
+// the Wizard, riders, temple/shop/vault keepers, the hero's anchor and
+// steed, and amulet carriers off the list.
+function overcrowdingVictim(arriving, state) {
+    let foreignElemental = null, homeElemental = null;
+    let weakest = null, other = null, pet = null;
+    let lowestLevel = 0;
+    for (const monster of [...state.level.monsters].reverse()) {
+        if (monster.mhp <= 0 || monster === arriving || !monster.mx)
+            continue;
+        const name = MONSTER_NAME[monster.mnum];
+        if ((name !== undefined && ['Wizard of Yendor', 'Death', 'Pestilence', 'Famine'].includes(name))
+            || monster.isminion || monster.emin || monster.mextra?.emin
+            || monster.epri || monster.mextra?.epri
+            || monster.eshk || monster.mextra?.eshk
+            || monster === state.u.ustuck || monster === state.u.usteed
+            || monster.minvent?.some(object => object.otyp === AMULET_OF_YENDOR))
+            continue;
+        if (MONSTER_SYMBOL[monster.mnum] === 31) {
+            if (isHomeElemental(monster.mnum))
+                homeElemental ||= monster;
+            else
+                foreignElemental ||= monster;
+        }
+        else if (!monster.mtame) {
+            if (!lowestLevel || monster.m_lev < lowestLevel) {
+                lowestLevel = monster.m_lev;
+                weakest = monster;
+            }
+            else {
+                other ||= monster;
+            }
+        }
+        else {
+            pet = monster;
+            break;
+        }
+    }
+    return foreignElemental || homeElemental || weakest || other || pet;
+}
+// C mon.c:unstuck(). Release a hold without moving the monster or applying
+// expulsion landing effects; death and departure use this same boundary.
+export async function releaseHeroFromMonster(monster, { state = game, publish = plineWithContinuation, redraw = redrawAfterRelease, rollOne = rnd, } = {}) {
+    requireLiveGame(state);
+    if (state.u.ustuck !== monster)
+        return;
+    const swallowed = state.u.uswallow;
+    setHeroGrip(null, state);
+    if (swallowed) {
+        state._monsterSwallower = null;
+        state.u.ux = monster.mx;
+        state.u.uy = monster.my;
+        const chain = state.uchain || state.u.uchain;
+        if (chain && chain.where !== 'floor')
+            await placeBallAndChain(state, publish);
+        state.vision_full_recalc = 1;
+        await redraw();
+    }
+    const canHold = (MONSTER_ATTACKS[monster.mnum] ?? []).some(([type, damage]) => type === AT_ENGL || type === AT_HUGS || damage === AD_STCK);
+    if (!monster.mspec_used && canHold)
+        monster.mspec_used = rollOne(2);
+}
+// C mon.c:unstuck() sets vision_full_recalc and calls docrt() directly; it
+// never rebuilds the blocker table, so docrt()'s vision_recalc(2) pass still
+// scans the previous vision's row bounds and newsym()s each formerly lit
+// cell (drawing warning flashes for unseen-but-warned monsters there).
+export async function redrawAfterRelease() {
+    await docrt();
 }
 // C mon.c:maybe_mnexto() uses rloc_to() after choosing an accessible square.
 export async function maybeMnexto(monster, state) {
@@ -4162,5 +4597,57 @@ export function monsterInAir(monster, state = game) {
     return monsterIsClinger(monster.mnum)
         && levelHasCeiling(state)
         && !!monster.mundetected;
+}
+const PM_SCORPIUS = MONSTER_NAME.indexOf('Scorpius');
+const PM_SCORPION = MONSTER_NAME.indexOf('scorpion');
+const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
+const PM_GARGOYLE = MONSTER_NAME.indexOf('gargoyle');
+const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
+const M1_OVIPAROUS = 0x00400000;
+// C mon.c:can_be_hatched().
+export function hatchableEggSpecies(species) {
+    if (species == null)
+        return -1;
+    if (species === PM_SCORPIUS)
+        species = PM_SCORPION;
+    species = monsterOlderForm(species);
+    if (species === PM_KILLER_BEE || species === PM_GARGOYLE)
+        return species;
+    if (((MONSTER_FLAGS1[species] ?? 0) & M1_OVIPAROUS)
+        && (!rn2(77) || (species !== PM_QUEEN_BEE && species !== PM_WINGED_GARGOYLE)))
+        return species;
+    return -1;
+}
+// C mon.c:dead_species(). Extinction does not kill eggs.
+export function eggSpeciesIsDead(species, state = game) {
+    return species < 0 || !!((state.mvitals?.[species]?.mvflags ?? 0) & G_GENOD)
+        || !!((state.mvitals?.[monsterYoungerForm(species)]?.mvflags ?? 0) & G_GENOD);
+}
+const OBJECT_COLOR_NAMES = [
+    'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'gray',
+    'transparent', 'orange', 'bright green', 'yellow', 'bright blue',
+    'bright magenta', 'bright cyan', 'white',
+];
+// C mon.c:mimic_hit_msg() for healing and extra healing alike.
+export async function mimicHitMessage(monster, state) {
+    const appearance = monster.mappearance;
+    if (appearance === undefined)
+        throw new Error('An object mimic requires an object appearance.');
+    // C mon.c:mimic_hit_msg() names the mimicked appearance with
+    // The(simple_typename(ap)): the type name without its label,
+    // so an unknown scroll reads just "The scroll".
+    const name = simpleObjectTypeName(appearance, state);
+    const color = OBJECT_COLOR_NAMES[state.objectColors?.[appearance] ?? OBJECT_COLOR[appearance] ?? 0];
+    await pline(`The ${name} seems a more vivid ${color} than before.`);
+}
+// C mon.c:egg_type_from_parent().
+export function eggTypeFromParent(parent) {
+    if (rn2(77) === 0)
+        return parent;
+    if (parent === PM_QUEEN_BEE)
+        return 1;
+    if (parent === PM_WINGED_GARGOYLE)
+        return PM_GARGOYLE;
+    return parent;
 }
 //# sourceMappingURL=mon.js.map

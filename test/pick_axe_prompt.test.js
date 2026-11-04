@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { requirePlayingGame, game } from '../js/gstate.js';
 import { PICK_AXE } from '../js/object_data.js';
-import { usePickAxe } from '../js/pick_axe.js';
+import { usePickAxe } from '../js/dig.js';
 import { uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 // dig.c:use_pick_axe() lists likely directions in hack.h order, where

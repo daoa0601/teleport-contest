@@ -5,7 +5,7 @@ import { glyphAt } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { initRng, rn2Display } from '../js/rng.js';
 import { randomDisplayMonsterName } from '../js/do_name.js';
-import { releaseHeroFromMonster } from '../js/hero_expulsion.js';
+import { releaseHeroFromMonster } from '../js/mon.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

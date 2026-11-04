@@ -26,7 +26,7 @@ cmd.c	enter_explore_mode	cannot access explore mode.	dead	!authorize_explore_mod
 cmd.c	there_cmd_menu_self	Go down the	composed	src/js/cmd.ts:selfEntries; Composes `Go ${up or down} the ${ladder or stairs}` for the self context menu, like there_cmd_menu_self().
 decl.c	hexdd	00112233445566778899aAbBcCdDeEfF	diagnostic	Hex-digit lookup table, not a message; used by hex parsing helpers.
 dig.c	adj_pit_checks	The rock glows then fades.	dead	adj_pit_checks() zeroes rm.flags (wall_info aliases flags, rm.h:211) at its top, so the STONE/SCORR W_NONDIGGABLE re-test can never be true; the port's clearTerrainFlags models the same clearing.
-dig.c	use_pick_axe2	merely scratches the	composed	src/js/pick_axe.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.
+dig.c	use_pick_axe2	merely scratches the	composed	src/js/dig.ts:applyPickAxeDirection; ownedObjectAction supplies the singular scratches verb before the named surface.
 dig.c	zap_dig	rock glows then fades.	composed	src/js/dig.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
 dig.c	zap_dig	wall glows then fades.	composed	src/js/dig.ts:zapDigWithObject; Selects wall or rock for a nondiggable surface.
 display.c	show_glyph	body at top of a pile	diagnostic	Glyph-descriptive name chosen only inside show_glyph()'s !isok(x, y) invalid-position branch before impossible-style reporting; developer diagnostic.
@@ -271,8 +271,8 @@ mon.c	copy_mextra	has_egd(mtmp2)	diagnostic	NHASSERT assertion condition text; a
 mon.c	copy_mextra	has_emin(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mon.c	copy_mextra	has_epri(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mon.c	copy_mextra	has_eshk(mtmp2)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-mon.c	lifesaved_monster	looks much better!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
-mon.c	lifesaved_monster	reconstitutes!	composed	src/js/mondeath.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
+mon.c	lifesaved_monster	looks much better!	composed	src/js/mon.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
+mon.c	lifesaved_monster	reconstitutes!	composed	src/js/mon.ts:lifeSaveMonster; Exploding forms select reconstitutes; other forms select looks much better, both with an exclamation mark.
 mon.c	make_corpse	recently regrown horn crumbles to dust.	composed	src/js/mon.ts:createMonsterPart; Appends crumbles to dust to the possessive unicorn name and recently regrown horn.
 mon.c	minliquid_core	burns slightly.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.
 mon.c	minliquid_core	surrenders to the fire.	composed	src/js/mon.ts:resolveMonsterLiquid; A fire-resistant monster selects burns slightly or surrenders to the fire according to remaining HP.

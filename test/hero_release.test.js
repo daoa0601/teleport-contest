@@ -5,7 +5,7 @@ import { unplaceBallAndChain } from '../js/ball.js';
 import { rhack } from '../js/cmd.js';
 import { PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { releaseHeroFromMonster } from '../js/hero_expulsion.js';
+import { releaseHeroFromMonster } from '../js/mon.js';
 import { pushKeys } from '../js/input.js';
 import { punishHero } from '../js/read.js';
 import { restoreGame, saveGame } from '../js/save.js';

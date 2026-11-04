@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { setHeroGrip } from '../js/hero_grip.js';
+import { setHeroGrip } from '../js/mon.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

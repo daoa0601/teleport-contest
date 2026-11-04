@@ -18,7 +18,7 @@ import {
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { createCorpstatAt, addObjectToContainer } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/mon.js';
-import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/egg_species.js';
+import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { getObjectLocation, createPolymorphMonsterFromPile, do_osshock, obj_unpolyable, poly_obj, polymorphFloorObject, stone_to_flesh_obj } from '../js/zap.js';
 import { setPrimaryWeapon } from '../js/wield.js';

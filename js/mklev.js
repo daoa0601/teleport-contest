@@ -1,6 +1,7 @@
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt } from './mkobj.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt } from './mkobj.js';
+import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
 import { isRoom } from './map_types.js';
 import { restoreLevelTimers, stopLevelTimer } from './timeout.js';

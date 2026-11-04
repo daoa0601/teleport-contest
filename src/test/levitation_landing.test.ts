@@ -9,7 +9,7 @@ import { AMULET_OF_LIFE_SAVING, CORPSE, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_NAME
 import { wearHeroAccessory, removeHeroAccessory } from '../js/do_wear.js';
 import { grantIntrinsicProperty, levitationIsPurelyTimed, revokeIntrinsicProperty, setPropertyTerrainBlocked } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { setHeroGrip } from '../js/hero_grip.js';
+import { setHeroGrip } from '../js/mon.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { M_AP_FURNITURE } from '../js/const.js';
 import { newsym } from '../js/display.js';
 import { pushKeys } from '../js/input.js';
-import { hitMonsterWithWand } from '../js/immediate_monster_magic.js';
+import { hitMonsterWithWand } from '../js/zap.js';
 import { MAP_SYMBOLS } from '../js/map_symbols.js';
 import { SPE_STONE_TO_FLESH } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

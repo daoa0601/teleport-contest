@@ -68,10 +68,10 @@ import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroT
 import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
-import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 
 import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { freeInventoryObject } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -97,7 +97,7 @@ import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity,
 import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterCorpseIntrinsic, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
 import type { MonsterDeathHandler, MonsterDefenderPetrificationResult, PetrificationDeathHandler, PetrificationOptions } from './mon.js';
 import { monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun } from './mondata.js';
-import { wornMonsterLifeSaver } from './mondeath.js';
+import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
 import type { AttackTuple, HeroContactAttack, MonsterCallLog, MonsterMeleeAttack, MonsterMovementAction, RandomBelow, RollDice } from './monster_action_types.js';

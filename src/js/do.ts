@@ -76,14 +76,15 @@ import { objectResistsDestruction } from './zap.js';
 import { floorObjectDescription } from './invent.js';
 import { countLevelFeatures } from './mklev.js';
 import { make_grave } from './engrave.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { chooseInventoryObject } from './invent.js';
 import { monsterAlignmentType } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { moveMonsterNextToHero, randomMonsterRelocation } from './teleport.js';
+import { randomMonsterRelocation } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 
 export async function dodrop(): Promise<void> {
     const inShop = !!game.u?.ushops?.[0];
