@@ -4857,13 +4857,13 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
         noWebMessage = true;
     }
     const turns = webTrapDuration(strength);
-    setHeroTrap(turns, TT_WEB);
     if (!turns) {
         if (!noWebMessage)
             await plineWithContinuation(`You tear through ${trap.madeby_u ? 'your' : 'a'} web!`);
         deleteTrap(trap);
         await newsym(hero.ux, hero.uy);
     }
+    setHeroTrap(turns, TT_WEB);
 }
 // trap.c trapeffect_landmine() guards steedintrap() with a static
 // recursive_mine flag: the dying steed's dismount must not re-enter the
