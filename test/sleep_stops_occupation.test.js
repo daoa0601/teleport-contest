@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { SLP_GAS_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { castNativeRay } from '../js/zap.js';
 import { addTrap } from './support/level-state.js';
@@ -20,7 +20,7 @@ void test('falling asleep in a gas trap interrupts and reports the current occup
         messages.push(game._pending_message || '');
         input.feed(' ');
     };
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
     messages.push(game._pending_message || '');
     const text = messages.join(' ');
     assert.match(text, /A cloud of gas puts you to sleep!.*You stop wiping your face\./);

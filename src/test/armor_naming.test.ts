@@ -5,7 +5,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { BEAR_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { objectName } from '../js/objnam.js';
 import { IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES } from '../js/object_data.js';
@@ -26,7 +26,7 @@ for (const type of [IRON_SHOES, KICKING_BOOTS]) {
         pushKeys(' '.repeat(60));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         assert.ok(
             game._pending_message.includes(`Your pair of ${OBJECT_NAMES[type]} protects your leg.`),
@@ -94,7 +94,7 @@ for (const blind of [false, true]) {
         pushKeys(' '.repeat(60));
         initRng(1n);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         assert.equal(boots.dknown, !blind);
         assert.match(game._pending_message, /protects your leg/);

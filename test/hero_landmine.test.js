@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { LANDMINE, PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING } from '../js/object_data.js';
 import { heroIsPolymorphed } from '../js/polyself.js';
@@ -25,7 +25,7 @@ for (const lifesaving of [false, true]) {
             await wearHeroAccessory(await addInventoryObject(AMULET_OF_LIFE_SAVING), 'uamul');
         pushKeys(' '.repeat(100));
         initRng(1n);
-        await triggerHeroTrap(mine);
+        await dotrap(mine);
         assert.equal(!!game.program_state.gameover, !lifesaving);
         assert.equal(mine.ttyp, PIT);
         assert.equal(sleeper.msleeping, lifesaving ? 0 : 1);
@@ -49,7 +49,7 @@ for (const unchanging of [false, true]) {
             await wearHeroAccessory(await addInventoryObject(AMULET_OF_UNCHANGING), 'uamul');
         pushKeys(' '.repeat(100));
         initRng(1n);
-        await triggerHeroTrap(mine);
+        await dotrap(mine);
         assert.equal(!!game.program_state.gameover, unchanging);
         assert.equal(sleeper.msleeping, unchanging ? 1 : 0);
         if (unchanging)

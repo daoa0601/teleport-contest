@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { CHEST, CORPSE, SADDLE } from '../js/object_data.js';
-import { keepSaddleWithSteedcorpse, triggerHeroTrap } from '../js/trap.js';
+import { keepSaddleWithSteedcorpse, dotrap } from '../js/trap.js';
 import type { GameObject } from '../js/object_types.js';
 import { addTrap } from './support/level-state.js';
 import { createSaddledSteed } from './support/monsters.js';
@@ -54,7 +54,7 @@ void test('a ridden steed takes the land mine blast and the saddle follows its c
         const messages = collectMessages();
         initRng(seed);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
 
         messages.push(game._pending_message || game._last_message || '');
         if (!(steed.mhp <= 0)) continue;
@@ -89,7 +89,7 @@ void test('a flying hero sitting on their own known mine gets the madeby_u trigg
         const messages = collectMessages();
         initRng(seed);
 
-        await triggerHeroTrap(trap, { viaSitting: true });
+        await dotrap(trap, { viaSitting: true });
 
         messages.push(game._pending_message || game._last_message || '');
         const text = messages.join(' ');
@@ -118,7 +118,7 @@ void test('a flying hero discovering their own unseen mine gets the discovery va
         const messages = collectMessages();
         initRng(seed);
 
-        await triggerHeroTrap(trap, { viaSitting: true });
+        await dotrap(trap, { viaSitting: true });
 
         messages.push(game._pending_message || game._last_message || '');
         const text = messages.join(' ');

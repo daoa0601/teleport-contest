@@ -19,7 +19,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
-import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, setHeroTrap, triggerHeroTrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
+import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
 import type { DiggingContext, GameState, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -519,7 +519,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
         } else if (trap && (trap.ttyp === LANDMINE
             || (trap.ttyp === BEAR_TRAP && !((hero.utrap ?? 0) > 0)))) {
             // Digging onto a set object trap triggers it; #untrap first.
-            const result = await triggerHeroTrap(trap, { forceTrap: true });
+            const result = await dotrap(trap, { forceTrap: true });
             if (result.died) return false;
             clearDiggingContext(state);
             return false;

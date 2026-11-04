@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { LANDMINE, PIT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrapAt } from '../js/trap.js';
+import { dotrapAt } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
@@ -24,7 +24,7 @@ void test('a hero-triggered land mine changes the level around the blast',
         makeEngravingAt(10, 10, 'Elbereth');
         pushKeys('                    ');
 
-        await triggerHeroTrapAt(10, 10);
+        await dotrapAt(10, 10);
 
         assert.equal(mine.ttyp, PIT);
         assert.equal(game.u.utraptype, TT_PIT);

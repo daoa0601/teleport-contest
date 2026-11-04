@@ -34,7 +34,7 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MON
 import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, requireObjectData } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, triggerHeroTrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
@@ -2760,7 +2760,7 @@ export async function finishDestinationSpotEffects({
                 triggeringTrapType = trap.ttyp;
                 let result;
                 try {
-                    result = await triggerHeroTrapAt(newx, newy, {
+                    result = await dotrapAt(newx, newy, {
                         finishTeleport: finishTeleportArrival, gotoLevel, ...trapOptions,
                     });
                 } finally {

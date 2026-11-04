@@ -26,7 +26,7 @@ import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { setHeroTrap, triggerHeroTrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
+import { setHeroTrap, dotrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
@@ -524,7 +524,7 @@ async function strikeOrLockVertically(source: GameObject, x: number, y: number, 
         trap.ttyp = HOLE;
         trap.tseen = 1;
         await newsym(x, y);
-        await triggerHeroTrap(trap, { gotoLevel });
+        await dotrap(trap, { gotoLevel });
         return known;
     }
     if (!striking && trap.ttyp === HOLE) {
@@ -1049,7 +1049,7 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
         await newsym(x, y);
         const monster = liquidMonsterAt(x, y, state);
         if (pit && state.u.ux === x && state.u.uy === y)
-            await triggerHeroTrap(pit);
+            await dotrap(pit);
         else if (pit && monster) {
             requirePlayingGame(state);
             await finishImmediateMonsterTrap(

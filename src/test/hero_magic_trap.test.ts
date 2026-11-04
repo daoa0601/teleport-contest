@@ -4,7 +4,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { A_CHA, MAGIC_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_REFLECTION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -32,7 +32,7 @@ for (const hero of [
         installPolymorphedHero(hero.form);
         initRng(1n);
 
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
 
         assert.equal(game._last_message,
             `You feel ${hero.oddly ? 'oddly ' : ''}like the prodigal son.`);
@@ -55,7 +55,7 @@ void test('a magic-trap flash blinds and deafens the hero, summons monsters, and
     const count = game.level.monsters.length;
     initRng(16n);
 
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
 
     assert.ok((game.u.blindTurns ?? 0) >= 10 && (game.u.blindTurns ?? 0) <= 14);
     assert.ok((game.u.deafTurns ?? 0) >= 30 && (game.u.deafTurns ?? 0) <= 49);
@@ -70,7 +70,7 @@ void test('a hero in Archon form sees a nearby sleeper wake after resisting a ma
     installPolymorphedHero('Archon');
     initRng(16n);
 
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
 
     assert.equal(game.u.blindTurns, 0);
     assert.ok((game.u.deafTurns ?? 0) >= 30 && (game.u.deafTurns ?? 0) <= 49);
@@ -84,7 +84,7 @@ void test('a deaf hero resists the flash and gains a shorter deafness extension'
     game.u.deafTurns = 5;
     initRng(16n);
 
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
 
     assert.equal(game.u.blindTurns, 0);
     assert.ok((game.u.deafTurns ?? 0) >= 20 && (game.u.deafTurns ?? 0) <= 24);
@@ -97,7 +97,7 @@ void test('a benevolent magic trap increases charisma and tames adjacent monster
     assert.ok(charisma !== undefined);
     initRng(60n);
 
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
 
     assert.equal(game.u.acurr?.a[A_CHA], charisma + 1);
     assert.ok(goblin.mtame);
@@ -126,7 +126,7 @@ for (const outcome of [
         game.flags.verbose = outcome.verbose;
         initRng(60n);
 
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
 
         assert.equal(game.u.acurr.a[A_CHA], outcome.resultingCharisma);
         assert.equal(game._last_message, outcome.message);
@@ -140,7 +140,7 @@ void test('magic-trap cleansing uncurses worn gear and preserves the confusion t
     game.u.confusionTurns = 12;
     initRng(10n);
 
-    await triggerHeroTrap(trap, { forceTrap: true });
+    await dotrap(trap, { forceTrap: true });
 
     assert.equal(amulet.cursed, false);
     assert.equal(game.u.confusionTurns, 12);
@@ -162,7 +162,7 @@ void test('a hallucinating hero hears a low hum and sees a far-out invisibility 
         };
         initRng(seed);
 
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
 
         messages.push(game._last_message ?? '');
         if (!messages.some(message => message.includes('a low hum'))) continue;

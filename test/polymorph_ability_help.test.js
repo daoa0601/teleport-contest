@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { POLY_TRAP } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addTrap } from './support/level-state.js';
@@ -19,7 +19,7 @@ for (const [form, help] of [
         const messages = [];
         input.beforeRead = () => { messages.push(game._pending_message); };
         pushKeys(` ${form}\n                        `);
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         messages.push(game._pending_message);
         assert.equal(game.u.umonnum, MONSTER_NAME.indexOf(form));
         assert.ok(messages.some(message => message.includes(`Use the command #monster to ${help}.`)), `Missing ability explanation in: ${messages.join('\n')}`);

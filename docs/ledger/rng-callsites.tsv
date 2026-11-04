@@ -599,7 +599,7 @@ src/js/trap.ts	triggerBearTrap	rn2	"[""2""]"	constant
 src/js/trap.ts	triggerBearTrap	rn2	"[""4""]"	constant
 src/js/trap.ts	triggerFallingRockTrap	d	"[""2"", ""6""]"	constant
 src/js/trap.ts	triggerFallingRockTrap	rn2	"[""15""]"	constant
-src/js/trap.ts	triggerHeroTrap	rn2	"[""5""]"	constant
+src/js/trap.ts	dotrap	rn2	"[""5""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""3""]"	constant
 src/js/trap.ts	triggerLandmine	rn2	"[""35""]"	constant

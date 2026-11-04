@@ -5,7 +5,7 @@ import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, RUST_TRAP, SLP
 import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
@@ -60,7 +60,7 @@ for (const [type, name] of [
         game.u.ux = 11;
         await plineWithContinuation('You hear something moving nearby in the darkness.');
         const input = resetInputState();
-        const action = triggerHeroTrap(trap, { forceTrap: true });
+        const action = dotrap(trap, { forceTrap: true });
         await input.waitUntilBlocked();
         const shownAtMessage = requireScreenCell(10, 11).ch;
         input.feed(' '.repeat(30));

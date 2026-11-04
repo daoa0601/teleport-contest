@@ -58,7 +58,7 @@ import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine } from './insight.js';
-import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
+import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
@@ -1726,7 +1726,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
                 return jumpResult(false, state);
             }
             await plineWithContinuation(`You jump up and ${propertyIsActive('flying', state) ? 'fly' : 'come'} back down.`);
-            await triggerHeroTrap(trap, { forceTrap: true, tookPlunge: true,
+            await dotrap(trap, { forceTrap: true, tookPlunge: true,
                 finishTeleport: finishTeleportArrival, gotoLevel });
         }
         return jumpResult(true, state);
@@ -2295,7 +2295,7 @@ export async function continueTrapSetting(state = game) {
         // C evaluates this luck roll before checking force_bungle too.
         const bungle = (object.cursed || propertyIsActive('fumbling', state)) && rnl(10) > 5;
         if (bungle || progress.forceBungle) {
-            await triggerHeroTrap(trap, { forceBungle: progress.forceBungle, gotoLevel, finishTeleport: finishTeleportArrival });
+            await dotrap(trap, { forceBungle: progress.forceBungle, gotoLevel, finishTeleport: finishTeleportArrival });
             if (state.program_state.gameover)
                 return false;
         }

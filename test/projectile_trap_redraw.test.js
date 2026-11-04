@@ -4,7 +4,7 @@ import test from 'node:test';
 import { ARROW_TRAP, NO_MINVENT } from '../js/const.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ARROW } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -22,7 +22,7 @@ void test('a visible missed trap arrow joins ammunition already lying at the her
     const trap = addTrap(level, ARROW_TRAP, game.u.ux, game.u.uy);
     pushKeys(' '.repeat(8));
     initRng(11n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     const arrows = floorObjectsAt(level, game.u.ux, game.u.uy)
         .filter(object => object.otyp === ARROW);
     assert.equal(arrows.length, 1, 'seeing the arrow allows it to join the known floor stack');

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, DART_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { addTrap } from './support/level-state.js';
@@ -29,7 +29,7 @@ for (const trapType of [ARROW_TRAP, DART_TRAP]) {
                 input.feed(' ');
             };
             initRng(seed);
-            await triggerHeroTrap(trap, { forceTrap: true });
+            await dotrap(trap, { forceTrap: true });
             messages.push(game._last_message ?? '');
             const text = messages.join(' ');
             if (/The saddled pony is (?:almost )?hit by an? /.test(text)) {
@@ -64,7 +64,7 @@ void test('an arrow trap that kills the ridden steed throws the hero without a r
             input.feed(' ');
         };
         initRng(seed);
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
         messages.push(game._pending_message || game._last_message || '');
         if (!(steed.mhp <= 0))
             continue;

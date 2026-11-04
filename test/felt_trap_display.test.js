@@ -4,7 +4,7 @@ import { BEAR_TRAP, HOLE, LANDMINE, MAGIC_PORTAL, PIT, ROCKTRAP, ROLLING_BOULDER
 import { flush_screen, newsym } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
@@ -32,7 +32,7 @@ for (const blind of [false, true]) {
             });
             await plineWithContinuation('You hear something moving nearby in the darkness.');
             const input = resetInputState();
-            const action = triggerHeroTrap(trap, { forceTrap: true, gotoLevel: async () => true });
+            const action = dotrap(trap, { forceTrap: true, gotoLevel: async () => true });
             await input.waitUntilBlocked();
             const shownAtMessage = requireScreenCell(9, 11).ch;
             const rememberedAtMessage = level.requireAt(10, 10).remembered_glyph?.kind;
@@ -51,7 +51,7 @@ for (const seen of [false, true]) {
         await newsym(10, 10);
         await flush_screen(1);
         const trap = addTrap(level, VIBRATING_SQUARE, 10, 10, { tseen: seen });
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         await plineWithContinuation('You hover here.');
         await flush_screen(1);
         assert.equal(level.requireAt(10, 10).remembered_glyph?.kind, 'trap');

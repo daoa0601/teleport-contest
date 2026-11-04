@@ -49,7 +49,7 @@ import { hurtleHero } from './dothrow.js';
 import { mksobj, placeCreatedObject, stack_object } from './mkobj.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import { tossObjectUp } from './dothrow.js';
-import { deleteTrap, feelTrap, triggerHeroTrap, igniteItems, resetUtrap, maketrap } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
@@ -1900,7 +1900,7 @@ async function spinWhileSwallowed(state, publish, refresh) {
         await publish(`The web dissolves into ${monsterName(monster, { state })}.`);
     }
 }
-export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = triggerHeroTrap, } = {}) {
+export async function useHeroWeb({ state = game, publish = plineWithContinuation, refresh = newsym, createTrap = maketrap, activateTrap = dotrap, } = {}) {
     if (!heroCanSpinWeb(state))
         return { used: false, spentTime: false };
     const x = state.u.ux;

@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, connectPits, pitsAreConjoined, maketrap, triggerHeroTrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
+import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, connectPits, pitsAreConjoined, maketrap, dotrapAt, fillPitWithBoulderAt, deleteFloorTrap } from '../js/trap.js';
 import { createDungeon } from './support/topology.js';
 import type { Trap } from '../js/map_types.js';
 import { requirePlayingGame, game } from '../js/gstate.js';
@@ -164,7 +164,7 @@ for (const replacement of [SPIKED_PIT, WEB]) {
         requirePlayingGame(game);
         const { ux: x, uy: y } = game.u;
         const pit = await createTrap(x, y, PIT);
-        await triggerHeroTrapAt(x, y);
+        await dotrapAt(x, y);
         assert.ok((game.u.utrap ?? 0) > 0);
         assert.equal(game.u.utraptype, TT_PIT);
         const trappedTurns = game.u.utrap;

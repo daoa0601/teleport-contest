@@ -6,7 +6,7 @@ import { cpostfx } from '../js/eat.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { triggerHeroTrap, maketrap } from '../js/trap.js';
+import { dotrap, maketrap } from '../js/trap.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterDoorPassage } from '../js/monmove.js';
 import { setPropertyTimeout } from '../js/properties.js';
@@ -71,7 +71,7 @@ for (const asleep of [false, true]) {
         setHeroBlindnessTurns(10);
         if (asleep)
             await putHeroToSleep(5);
-        await triggerHeroTrap(trap, { forceTrap: true });
+        await dotrap(trap, { forceTrap: true });
         assert.equal(game.u.utrap ?? 0, 0);
         assert.equal(game._lastPlineMessage, asleep
             ? 'You dream that you see a pit below you.' : 'You sense a pit below you.');

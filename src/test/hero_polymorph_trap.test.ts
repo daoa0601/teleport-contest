@@ -5,7 +5,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { POLY_TRAP } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { flush_screen } from '../js/display.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { IRON_SHOES, KICKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -27,7 +27,7 @@ for (const protection of ['antimagic', 'unchanging'] as const) {
         const originalForm = game.u.umonnum;
         const trap = addTrap(level, POLY_TRAP, 10, 10);
 
-        const outcome = await triggerHeroTrap(trap);
+        const outcome = await dotrap(trap);
 
         assert.equal(outcome.died, false);
         assert.equal(level.traps.includes(trap), true);
@@ -48,7 +48,7 @@ void test('wielded Magicbane resists a polymorph trap without consuming it', asy
         assert.fail(`A resisted polymorph trap must not ask for input: ${game._pending_message}`);
     };
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     assert.equal(level.traps.includes(trap), true);
     assert.equal(trap.tseen, true);
@@ -63,7 +63,7 @@ void test('a priest recognizes blessed replacement boots when a polymorph trap p
     const trap = addTrap(level, POLY_TRAP, 10, 10);
     installPagerInput(resetInputState(), { expected: /polymorph trap|warps strangely/, limit: 3 });
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     const replacement = game.uarmf;
     assert.ok(replacement);
@@ -81,7 +81,7 @@ void test('a polymorph trap replaces worn iron shoes with kicking boots and vani
     const trap = addTrap(level, POLY_TRAP, 10, 10);
     installPagerInput(resetInputState(), { expected: /polymorph trap|warps strangely/, limit: 3 });
 
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
 
     assert.equal(level.traps.includes(trap), false);
     assert.equal(game.u.umonnum, originalForm);
@@ -105,7 +105,7 @@ for (const blind of [false, true]) {
         input.beforeRead = () => { messages.push(game._pending_message); };
         installPagerInput(input, { expected: /polymorph trap|warps strangely/, limit: 3 });
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         messages.push(game._pending_message);
 
         assert.equal(shoes.dknown, !blind, 'Naming the original boots observes them only with sight.');
@@ -132,7 +132,7 @@ for (const known of [false, true]) {
         installPagerInput(input, { expected: /polymorph trap|warps strangely/, limit: 3 });
         await flush_screen(1);
 
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         await flush_screen(1);
 
         assert.equal(level.traps.includes(trap), false);
@@ -148,7 +148,7 @@ void test('an unprotected hero removes the trap before choosing a new form', asy
     const input = resetInputState();
     input.beforeRead = () => { assert.equal(level.traps.includes(trap), false); };
 
-    await answerPrompts(triggerHeroTrap(trap), input, [
+    await answerPrompts(dotrap(trap), input, [
         { prompt: /You step onto a polymorph trap!  You feel a change coming over you\.--More--/, keys: ' ' },
         { prompt: /Become what kind of monster\?/, keys: 'hill giant\n' },
     ]);

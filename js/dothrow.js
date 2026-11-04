@@ -50,7 +50,7 @@ import { throwOrdinaryObject } from './ordinary_throw.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible } from './display.js';
 import { goodPosition } from './teleport_rules.js';
-import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject, resolveImmediatePetrification, petrifyMonsterFromContact, trapName, triggerHeroTrap } from './trap.js';
+import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject, resolveImmediatePetrification, petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
@@ -1355,7 +1355,7 @@ async function triggerLandingTrap(trap, options, remaining) {
         await plineWithContinuation('The ground vibrates as you pass it.');
     if ([VIBRATING_SQUARE, FIRE_TRAP, MAGIC_PORTAL].includes(trap.ttyp) || sokobanFall) {
         const result = sokobanFall && options.jumping
-            ? { died: false } : await triggerHeroTrap(trap, options);
+            ? { died: false } : await dotrap(trap, options);
         if (result.died)
             return true;
         if (trap.ttyp === MAGIC_PORTAL)

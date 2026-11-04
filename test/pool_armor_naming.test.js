@@ -3,7 +3,7 @@ import test from 'node:test';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { NO_MINVENT, RUST_TRAP, W_ARM } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { ROBE, MUMMY_WRAPPING, RING_MAIL, LEATHER_ARMOR, OIL_LAMP, MAGIC_LAMP } from '../js/object_data.js';
@@ -62,7 +62,7 @@ void test('a rust trap calls a worn ring mail suit mail', async () => {
     const trap = addTrap(level, RUST_TRAP, 10, 10);
     pushKeys(' '.repeat(20));
     initRng(2n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.match(game._pending_message, /Your mail rusts!/);
     assert.equal(suit.oeroded, 1);
 });
@@ -73,7 +73,7 @@ void test('a rust trap uses the full name of ring mail wielded in the right hand
     const trap = addTrap(level, RUST_TRAP, 10, 10);
     pushKeys(' '.repeat(20));
     initRng(14n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.match(game._pending_message, /Your ring mail rusts!/);
     assert.equal(suit.oeroded, 1);
 });
@@ -89,7 +89,7 @@ for (const [type, label] of [[OIL_LAMP, 'oil lamp'], [MAGIC_LAMP, 'magic lamp']]
         const trap = addTrap(level, RUST_TRAP, 10, 10);
         pushKeys(' '.repeat(20));
         initRng(14n);
-        await triggerHeroTrap(trap);
+        await dotrap(trap);
         assert.equal(lamp.lamplit, false);
         assert.equal(lamp.dknown, false);
         assert.equal(lamp.bknown, false);
@@ -106,7 +106,7 @@ void test('a rust trap names an unlit wielded lamp and reveals its beatitude to 
     const trap = addTrap(level, RUST_TRAP, 10, 10);
     pushKeys(' '.repeat(20));
     initRng(14n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.equal(lamp.lamplit, false);
     assert.equal(lamp.dknown, false);
     assert.equal(lamp.bknown, true);

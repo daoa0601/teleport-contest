@@ -5,7 +5,7 @@ import { DELPHI, DOOR, D_CLOSED, LAVAPOOL, NO_MINVENT, OROOM, ROCKTRAP, ROOMOFFS
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { MONSTER_DIFFICULTY, MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, decideMonsterShapeChange } from '../js/mon.js';
 import { BOULDER } from '../js/object_data.js';
@@ -27,7 +27,7 @@ void test('a sighted hero names the falling rock when a ceiling trap opens', asy
     const level = freshPlayableRoom({ hero: { uhp: 100, uhpmax: 100 } });
     requirePlayingGame(game);
     const trap = addTrap(level, ROCKTRAP, game.u.ux, game.u.uy);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     await flush_screen();
     assert.equal(topline(), 'A trap door in the ceiling opens and a rock falls on your head!');
 });

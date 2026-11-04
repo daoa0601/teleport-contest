@@ -5,7 +5,7 @@ import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
 import { activateMagicPortal } from '../js/teleport.js';
@@ -21,7 +21,7 @@ void test('cancelling a level teleport trap displays the resulting confusion', a
     const input = resetInputState();
     await bot();
 
-    await answerPrompts(triggerHeroTrap(trap), input, [
+    await answerPrompts(dotrap(trap), input, [
         { prompt: /level teleport trap!--More--/, keys: ' ' },
         { prompt: /To what level do you want to teleport\?/, keys: '\x1b' },
     ]);

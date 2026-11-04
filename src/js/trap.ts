@@ -2075,7 +2075,7 @@ export async function openFallingTrap(target: TrapTarget | null | undefined, {
 async function activateTrap(target: TrapTarget, hero: boolean, trap: Trap, state: PlayingGameState, falling: boolean): Promise<TrapMagicResult> {
     if (hero) {
         if (state.u.utrap) return result(false, false, state);
-        await triggerHeroTrap(trap, {
+        await dotrap(trap, {
             forceTrap: true, noWebMessage: !falling && !!state.u.usteed, gotoLevel,
         });
         return result(!!state.u.utrap, true, state);
@@ -2452,6 +2452,17 @@ export function pitsAreConjoined(first: Trap | null | undefined, second: Trap | 
         && !!((second.conjoined ?? 0) & (1 << ((direction + 4) % 8)));
 }
 
+
+// C trap.c:adj_nonconjoined_pit(): the hero stepped out of one pit into a
+// neighboring pit in a diagonal or cardinal move (xytodir(u.dx, u.dy) !=
+// DIR_ERR); the pair is not conjoined.
+function adjNonconjoinedPit(adjtrap: Trap | null | undefined, state: GameState = game): boolean {
+    const trapWithHero = trapAt(state, state.u.ux0, state.u.uy0);
+    return !!(trapWithHero && adjtrap && state.u.utrap && state.u.utraptype === TT_PIT
+        && is_pit(trapWithHero.ttyp) && is_pit(adjtrap.ttyp)
+        && (state.u.dx || state.u.dy));
+}
+
 export function connectPits(first: Trap, second: Trap) {
     const direction = pitDirection(first, second);
     if (direction < 0) return false;
@@ -2808,7 +2819,7 @@ export function beginMonsterFireTrap(
 
 // C trap.c:trapeffect_fire_trap(): the monster branch — the flame under a
 // monster, golem immolation, item destruction, and the maximum-HP scorch.
-// The hero branch is the fire-trap case of triggerHeroTrap: it reveals the
+// The hero branch is the fire-trap case of dotrap: it reveals the
 // trap and runs dofiretrap() (triggerHeroFireTrap below).
 export async function finishMonsterFireTrap(
     monster: Monster,
@@ -4979,7 +4990,7 @@ async function tryDisarm(trap: Trap, {
                 state, publish, random, rollOne,
             });
         } else if (here) {
-            const result = await triggerHeroTrap(trap, { failedUntrap: true });
+            const result = await dotrap(trap, { failedUntrap: true });
             if (result.died) return 1;
         } else {
             const entered = enterTrap ? await enterTrap(trap) : null;
@@ -5017,7 +5028,7 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
             const web = existing ?? await maketrap(state.u.ux, state.u.uy, WEB);
             if (web?.ttyp === WEB) {
                 await publish("The web sticks to you.  You're caught too!");
-                await triggerHeroTrap(web, { noWebMessage: true });
+                await dotrap(web, { noWebMessage: true });
                 if (state.u.usteed && state.u.utrap) {
                     const dismount = await dismountHero(DISMOUNT_FELL);
                     if (dismount.died) return;
@@ -5877,7 +5888,7 @@ async function triggerLandmine(trap: Trap, {
     if (game.program_state.gameover) return;
     if (steedMid && saddle && !hero.usteed) await keepSaddleWithSteedcorpse(steedMid, saddle);
     await newsym(hero.ux, hero.uy);
-    const landing = await triggerHeroTrapAt(hero.ux, hero.uy, { recursiveTrap: true });
+    const landing = await dotrapAt(hero.ux, hero.uy, { recursiveTrap: true });
     if (landing.died) return;
     await fillPitWithBoulderAt(hero.ux, hero.uy, game);
 }
@@ -6835,31 +6846,26 @@ export async function prepareHoleFall(trap: Trap | null | undefined, { tookPlung
     return { destination, arrival: flying ? 'random' : 'falling' };
 }
 
-// C trap.c:trapeffect_selector(): the hero-side dispatch over trap type;
-// dotrap()'s prelude above the switch runs the Sokoban air currents, the
-// check_in_air() fly-over and the 1-in-5 seen-trap escape.
-// C trap.c:adj_nonconjoined_pit(): fromPit && (hero.dx || hero.dy) inlines
-// its xytodir() != DIR_ERR test; the other pit check belongs to
-// pitsAreConjoined. C trap.c:trapeffect_statue_trap(): the hero case
-// animates the statue; monsters never trigger one.
-// C trap.c:trapeffect_magic_portal(): feelTrap plus the buried-ball
-// reattachment before the portal owner runs; monsters fall through to
-// C trap.c:trapeffect_level_telep()'s monster move. C trap.c:trapeffect_vibrating_square(): the hero
-// branch only feels the trap; its symbol just marks the square.
-// C trap.c:trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap
-// and runs dofiretrap() through triggerHeroFireTrap.
-// shortCircuited stops remaining spot effects; died stops the whole action.
-export async function triggerHeroTrap(trap: Trap | null | undefined, {
-    finishTeleport = null,
-    gotoLevel = null,
-    viaSitting = false,
-    failedUntrap = false,
-    forceTrap = false,
-    forceBungle = false,
-    noWebMessage = false,
-    tookPlunge = false,
-    recursiveTrap = false,
-}: HeroTrapOptions = {}): Promise<HeroTrapResult> {
+// C trap.c:dotrap(): the hero trap entry.  The prelude runs the Sokoban air
+// currents, the check_in_air() fly-over, and the 1-in-5 seen-trap escape
+// (conjoined_pits()/adj_nonconjoined_pit() guard a pit the hero left), then
+// teaches the steed, projects trap knowledge, and hands the actor to
+// trapeffect_selector().  shortCircuited stops remaining spot effects; died
+// stops the whole action.
+export async function dotrap(
+    trap: Trap | null | undefined,
+    {
+        finishTeleport = null,
+        gotoLevel = null,
+        viaSitting = false,
+        failedUntrap = false,
+        forceTrap = false,
+        forceBungle = false,
+        noWebMessage = false,
+        tookPlunge = false,
+        recursiveTrap = false,
+    }: HeroTrapOptions = {},
+): Promise<HeroTrapResult> {
     if (!trap) return { died: false, shortCircuited: false };
     endVoluntaryMultiTurn();
     requirePlayingGame(game);
@@ -6883,12 +6889,10 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
             if (trap.tseen) await plineWithContinuation(`You ${locomotion} over ${owner} ${trapName(trap.ttyp)}.`);
             return { died: false, shortCircuited: false };
         }
-        const previousPit = game.level.traps.find(candidate =>
-            candidate.tx === hero.ux0 && candidate.ty === hero.uy0);
-        const fromPit = pit && hero.utrap && hero.utraptype === TT_PIT
-            && previousPit && is_pit(previousPit.ttyp);
-        const conjoined = fromPit && pitsAreConjoined(previousPit, trap);
-        const adjacent = fromPit && (hero.dx || hero.dy);
+        const previousPit = trapAt(game, hero.ux0, hero.uy0);
+        const conjoined = pit && hero.utrap && hero.utraptype === TT_PIT
+            && pitsAreConjoined(previousPit, trap);
+        const adjacent = adjNonconjoinedPit(trap);
         if (trap.tseen && !hero.fumbling && trap.ttyp !== MAGIC_PORTAL
             && trap.ttyp !== VIBRATING_SQUARE && trap.ttyp !== ANTI_MAGIC
             && !forceBungle && !tookPlunge && !conjoined && !adjacent
@@ -6899,6 +6903,38 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     }
     if (hero.usteed) monsterLearnsTrap(hero.usteed, trap);
     monstersSeeTrap(game, trap);
+    return trapeffectSelector(hero, trap, {
+        finishTeleport, gotoLevel, viaSitting, failedUntrap, forceTrap,
+        forceBungle, noWebMessage, tookPlunge, recursiveTrap,
+    });
+}
+
+// C trap.c:trapeffect_selector(): dispatch the trap effect for the actor
+// over the trap type; each case runs the matching trapeffect_ branch.
+// C trap.c:trapeffect_statue_trap(): the hero case animates the statue;
+// monsters never trigger one.
+// C trap.c:trapeffect_magic_portal(): feelTrap plus the buried-ball
+// reattachment before the portal owner runs; monsters fall through to
+// trapeffect_level_telep()'s monster move.
+// C trap.c:trapeffect_vibrating_square(): the hero branch only feels the
+// trap; its symbol just marks the square.
+// C trap.c:trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap and
+// runs dofiretrap() through triggerHeroFireTrap.
+async function trapeffectSelector(
+    hero: Hero,
+    trap: Trap,
+    {
+        finishTeleport = null,
+        gotoLevel = null,
+        viaSitting = false,
+        failedUntrap = false,
+        forceTrap = false,
+        forceBungle = false,
+        noWebMessage = false,
+        tookPlunge = false,
+        recursiveTrap = false,
+    }: HeroTrapOptions = {},
+): Promise<HeroTrapResult> {
     let died = false;
     let shortCircuited = false;
     switch (trap.ttyp) {
@@ -6981,10 +7017,10 @@ export async function triggerHeroTrap(trap: Trap | null | undefined, {
     };
 }
 
-export async function triggerHeroTrapAt(x: number, y: number, options: HeroTrapOptions = {}): Promise<HeroTrapResult> {
+export async function dotrapAt(x: number, y: number, options: HeroTrapOptions = {}): Promise<HeroTrapResult> {
     const trap = game.level?.traps?.find(candidate =>
         candidate.tx === x && candidate.ty === y);
-    return triggerHeroTrap(trap, options);
+    return dotrap(trap, options);
 }
 
 // ── moved from src/js/rock_breakage.ts ──
@@ -7440,7 +7476,7 @@ export async function floatHeroDown(
         const hole = trap.ttyp === HOLE || trap.ttyp === TRAPDOOR;
         const blocked = hole && (!canFallThrough(hero.uz) || hero.ustuck);
         if (!blocked && !hero.utrap) { // not already in the trap
-            const result = await triggerHeroTrap(trap, {
+            const result = await dotrap(trap, {
                 finishTeleport: finishTeleportArrival, gotoLevel,
             });
             if (result.died) return 1;

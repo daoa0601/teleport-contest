@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BEAR_TRAP, P_BASIC, P_FLAIL, SLP_GAS_TRAP, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { triggerHeroTrap } from '../js/trap.js';
+import { dotrap } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { GRAPPLING_HOOK } from '../js/object_data.js';
@@ -23,7 +23,7 @@ void test('a sleeping-gas trap names an unnamed steed through Monnam', async () 
     const trap = addTrap(game.level, SLP_GAS_TRAP, 10, 10);
     pushKeys(' '.repeat(100));
     initRng(31n);
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.equal(game.u.usteed.mcanmove, 0);
     assert.match(game._pending_message ?? '', /The saddled pony suddenly falls asleep!/, `expected the Monnam(steed) message, got: ${game._pending_message}`);
 });
@@ -43,7 +43,7 @@ async function runBearTrapForNamedSteed(name, message) {
     game.u.usteed = steed;
     const trap = addTrap(game.level, BEAR_TRAP, 10, 10);
     pushKeys(' '.repeat(100));
-    await triggerHeroTrap(trap);
+    await dotrap(trap);
     assert.equal(game._pending_message ?? '', message, 'expected the s_suffix(mon_nam(steed)) message from trap.c:1508-1509');
 }
 // C apply.c:3838 prints "You pull in mon_nam(mtmp)!" for a tiny creature;

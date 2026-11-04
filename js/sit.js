@@ -7,7 +7,7 @@ import { exerciseAttribute } from './attrib.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
-import { waterDamageObject, triggerHeroTrap } from './trap.js';
+import { waterDamageObject, dotrap } from './trap.js';
 import { throneSitEffect } from './throne.js';
 import { morehungry } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
@@ -247,7 +247,7 @@ export async function dosit({ finishTeleport = null, gotoLevel = null, chooseTel
         }
         else {
             await pline(`You ${u?.flying || game.flying ? 'land' : 'sit down'}.`);
-            const result = await triggerHeroTrap(trap, {
+            const result = await dotrap(trap, {
                 finishTeleport,
                 gotoLevel,
                 viaSitting: true,

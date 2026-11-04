@@ -71,7 +71,7 @@ import { hurtleHero } from './dothrow.js';
 import {mksobj, placeCreatedObject, stack_object} from './mkobj.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import { tossObjectUp } from './dothrow.js';
-import { deleteTrap, feelTrap, triggerHeroTrap, igniteItems, resetUtrap, maketrap } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
@@ -2099,13 +2099,13 @@ export async function useHeroWeb({
     publish = plineWithContinuation,
     refresh = newsym,
     createTrap = maketrap,
-    activateTrap = triggerHeroTrap,
+    activateTrap = dotrap,
 }: {
     state?: GameState;
     publish?: MessagePublisher;
     refresh?: typeof newsym;
     createTrap?: typeof maketrap;
-    activateTrap?: typeof triggerHeroTrap;
+    activateTrap?: typeof dotrap;
 } = {}) {
     if (!heroCanSpinWeb(state)) return { used: false, spentTime: false };
 
