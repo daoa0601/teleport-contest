@@ -101,7 +101,7 @@ import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_
 import { namelessMonsterName } from './do_name.js';
 import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
-import { restartEggHatchTimer } from './egg.js';
+import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
@@ -2735,7 +2735,7 @@ async function announceRevival(event, state) {
 export async function turnObjectWithUndeadMagic(object, state = game) {
     if (object.otyp === EGG) {
         if (eggCanHatch(object, state))
-            restartEggHatchTimer(object);
+            attachEggHatchTimer(object);
         return true;
     }
     if (object.otyp !== CORPSE) {
@@ -2758,7 +2758,7 @@ export async function turnCarriedObjects(inventory, state = game) {
     for (const object of [...(inventory || [])]) {
         if (object.otyp === EGG) {
             if (eggCanHatch(object, state))
-                restartEggHatchTimer(object);
+                attachEggHatchTimer(object);
             continue;
         }
         if (object.otyp !== CORPSE)

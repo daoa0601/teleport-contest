@@ -27,7 +27,6 @@ import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
-import type { Hero } from './hero_types.js';
 import type { PropertyName } from './property_types.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
 import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
@@ -110,22 +109,6 @@ interface PetrificationAdvanceResult {
     turns?: number;
 }
 
-function petrificationMessage(turns: number, state: GameState): string | null {
-    if (turns === 5) return 'You are slowing down.';
-    if (turns === 4) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities are stiffening.'
-            : 'Your limbs are stiffening.';
-    }
-    if (turns === 3) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities have turned to stone.'
-            : 'Your limbs have turned to stone.';
-    }
-    if (turns === 2) return 'You have turned to stone.';
-    return turns === 1 ? 'You are a statue.' : null;
-}
-
 // C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({
     state = game,
@@ -135,8 +118,22 @@ export async function petrificationDialogue({
     const turns = hero.stonedTurns ?? 0;
     if (turns <= 0) return;
 
-    const message = petrificationMessage(turns, state);
-    if (message) await publish(message, { urgent: true });
+    // stoned_texts[SIZE - i], with "limbs" replaced for a limbless body.
+    if (turns > 0 && turns <= 5) {
+        let message: string;
+        if (turns === 5) message = 'You are slowing down.';
+        else if (turns === 4) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities are stiffening.'
+                : 'Your limbs are stiffening.';
+        } else if (turns === 3) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities have turned to stone.'
+                : 'Your limbs have turned to stone.';
+        } else if (turns === 2) message = 'You have turned to stone.';
+        else message = 'You are a statue.';
+        await publish(message, { urgent: true });
+    }
 
     if (turns === 5) {
         removeHeroSpeed(state);
@@ -160,25 +157,6 @@ export async function petrificationDialogue({
     await exerciseAttribute(A_DEX, false, state);
 }
 
-function vomitingMessage(state: GameState, nextTurns: number) {
-    if (nextTurns === 14) return 'You are feeling mildly nauseated.';
-    if (nextTurns === 11) {
-        return propertyIsActive('confusion', state)
-            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
-    }
-    if (nextTurns === 8) {
-        return propertyIsActive('stunned', state)
-            ? "You can't think straight."
-            : "You can't seem to think straight.";
-    }
-    if (nextTurns === 5) return 'You feel incredibly sick.';
-    if (nextTurns === 2) {
-        if (heroCannotVomit(state)) return 'You gag uncontrollably.';
-        return heroIsHallucinating(state)
-            ? 'You are about to hurl!' : 'You are about to vomit.';
-    }
-    return null;
-}
 
 // C timeout.c:vomiting_dialogue().
 export async function vomitingDialogue({
@@ -205,7 +183,23 @@ export async function vomitingDialogue({
         if (state.multi > 0) endVoluntaryMultiTurn(state);
     }
 
-    const message = vomitingMessage(state, nextTurns);
+    // vomiting_texts[], with "confused"/"can't seem to" adjusted when the
+    // matching condition already holds.
+    let message: string | null = null;
+    if (nextTurns === 14) message = 'You are feeling mildly nauseated.';
+    else if (nextTurns === 11) {
+        message = propertyIsActive('confusion', state)
+            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
+    } else if (nextTurns === 8) {
+        message = propertyIsActive('stunned', state)
+            ? "You can't think straight."
+            : "You can't seem to think straight.";
+    } else if (nextTurns === 5) message = 'You feel incredibly sick.';
+    else if (nextTurns === 2) {
+        if (heroCannotVomit(state)) message = 'You gag uncontrollably.';
+        else message = heroIsHallucinating(state)
+            ? 'You are about to hurl!' : 'You are about to vomit.';
+    }
     if (message) await publish(message);
 
     let vomited = false;
@@ -275,23 +269,23 @@ export async function strangulationDialogue({
     await exerciseAttribute(A_STR, false, state);
 }
 
-function sicknessMessage(hero: Hero) {
-    const turns = hero.sickTurns ?? 0;
-    if (turns % 2 === 0) return null;
-    const stage = Math.trunc(turns / 2);
-    const noun = ((hero.sickType ?? 0) & SICK_NONVOMITABLE)
-        ? 'illness' : 'sickness';
-    if (stage === 3) return `Your ${noun} feels worse.`;
-    if (stage === 2) return `Your ${noun} is severe.`;
-    return stage === 1 ? "You are at Death's door." : null;
-}
-
 // C timeout.c:sickness_dialogue().
 export async function sicknessDialogue({
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<void> {
     if (!heroIsSick(state)) return;
-    let message = sicknessMessage(state.u);
+    // sickness_texts[SIZE - i] on odd countdowns, with "illness" replaced
+    // by "sickness" for food poisoning.
+    const turns = state.u.sickTurns ?? 0;
+    let message: string | null = null;
+    if (turns % 2 !== 0) {
+        const stage = Math.trunc(turns / 2);
+        const noun = ((state.u.sickType ?? 0) & SICK_NONVOMITABLE)
+            ? 'illness' : 'sickness';
+        if (stage === 3) message = `Your ${noun} feels worse.`;
+        else if (stage === 2) message = `Your ${noun} is severe.`;
+        else if (stage === 1) message = "You are at Death's door.";
+    }
     if (message === "You are at Death's door." && heroIsHallucinating(state)) {
         // C mhe() uses the core RNG for hallucinated pronouns.
         const invitation = ['He is', 'She is', 'It is', 'They are'][rn2(4)];
@@ -302,22 +296,13 @@ export async function sicknessDialogue({
     await exerciseAttribute(A_CON, false, state);
 }
 
-export type LevitationTimeoutResult =
-    | { active: false; expired: false; flyingBypassed: false }
-    | { active: true; expired: false; flyingBypassed: false; turns: number }
-    | { active: false; expired: true; flyingBypassed: boolean; landed: 0 | 1 };
-
-export type FlyingTimeoutResult =
-    | { active: false; expired: false; landed: false }
-    | { active: true; expired: false; landed: false; turns: number }
-    | { active: false; expired: true; landed: boolean };
-
 const LEVITATION_TEXTS = [
     'You float slightly lower.',
     'You wobble unsteadily %s the %s.',
 ];
 
-// C timeout.c:352-378.  Message only; the timeout itself is not touched.
+// C timeout.c:levitation_dialogue().  Message only; the timeout itself is
+// not touched.
 // Extrinsic levitation (worn ring or boots, invoked artifact, or the
 // mid-drop carried source) suppresses the dialogue entirely, as does
 // inaccessible terrain which is not pool or lava.
@@ -379,39 +364,12 @@ interface SlimeAdvanceResult {
     genocided?: boolean;
 }
 
-function slimeMessage(turns: number, state: GameState, randomMonsterName: () => string): string | null {
-    if (turns === 9) {
-        return heroIsBlind(state)
-            ? null : `You are turning a little ${displayColorName('green', state)}.`;
-    }
-    if (turns === 7) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities are getting oozy.'
-            : 'Your limbs are getting oozy.';
-    }
-    if (turns === 5) return 'Your skin begins to peel away.';
-    if (turns !== 3 && turns !== 1) return null;
-    const hallucinating = heroIsHallucinating(state);
-    const form = hallucinating ? randomMonsterName() : 'green slime';
-    return turns === 3
-        ? `You are turning into ${withIndefiniteArticle(form)}.`
-        : `You have become ${withIndefiniteArticle(form)}.`;
-}
-
 function removeHeroSpeed(state: GameState): void {
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);
 }
 
-function cancelHeroPetrification(state: GameState): void {
-    const hero = state.u;
-    if (hero.stoned || (hero.stonedTurns ?? 0) > 0) state.context.botl = true;
-    hero.stonedTurns = 0;
-    hero.stoned = false;
-    delete hero.stoneKiller;
-    delete hero.stoneKillerFormat;
-}
-
+// C timeout.c:slime_dialogue().
 export async function slimeDialogue({
     state = game,
     publish = plineWithContinuation,
@@ -428,10 +386,30 @@ export async function slimeDialogue({
         await repaint(hero.ux, hero.uy);
     }
 
-    const message = slimeMessage(turns, state, randomMonsterName);
-    if (message) await publish(message, { urgent: true });
-
+    // slime_texts[SIZE - i - 1] on odd countdowns; the green warning needs
+    // sight, and the transformed-into names honor hallucination.
     const stage = Math.trunc(turns / 2);
+    if (turns % 2 !== 0 && stage >= 0 && stage < 5) {
+        let message: string | null = null;
+        if (turns === 9) {
+            message = heroIsBlind(state)
+                ? null : `You are turning a little ${displayColorName('green', state)}.`;
+        } else if (turns === 7) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities are getting oozy.'
+                : 'Your limbs are getting oozy.';
+        } else if (turns === 5) message = 'Your skin begins to peel away.';
+        else {
+            const hallucinating = heroIsHallucinating(state);
+            const form = hallucinating ? randomMonsterName() : 'green slime';
+            message = turns === 3
+                ? `You are turning into ${withIndefiniteArticle(form)}.`
+                : `You have become ${withIndefiniteArticle(form)}.`;
+        }
+        if (message) await publish(message, { urgent: true });
+    }
+
+
     if (stage === 3) {
         removeHeroSpeed(state);
         if (!Popeye('slimed', state)) await stopHeroOccupation(state, publish);
@@ -441,7 +419,7 @@ export async function slimeDialogue({
         && hero.deafTurns < 5) {
         hero.deafTurns = 5;
     } else if (stage === 1) {
-        cancelHeroPetrification(state);
+        clearHeroPetrification(state);
     }
     await exerciseAttribute(A_DEX, false, state);
 }
@@ -459,9 +437,9 @@ export async function burnAwayHeroSlime({
     return true;
 }
 
-// C timeout.c:nh_timeout() runs the Slimed countdown out with a bare
-// decrement, so the status line keeps "Slime" until something else
-// requests a redraw.
+// The bare Slimed reset shared by potion.c's make_slimed(0) and
+// slimed_to_death() below: no botl request, so the status line keeps
+// "Slime" until something else asks for a redraw.
 export function dropHeroSliming(hero: GameState['u']): void {
     hero.slimedTurns = 0;
     hero.slimed = false;
@@ -577,68 +555,17 @@ export async function breathingDialogue(state = game): Promise<void> {
         ? 'You seem to have some trouble breathing.' : 'The air here seems foul.');
 }
 
+
+// C timeout.c:sleep_dialogue().
+async function sleepDialogue(state: GameState): Promise<void> {
+    if (propertyTimeout('sleepy', state) === 4)
+        await plineWithContinuation('You yawn.');
+}
+
 // C timeout.c:done_timeout() ORs I_SPECIAL into a fatal intrinsic after its
 // timer has counted down; the port keeps that condition's flag set at zero.
 export function expiredFatally(active: boolean | undefined, turns: number | undefined): boolean {
     return !!active && !turns;
-}
-
-// C timeout.c:nh_timeout(): luck creeps toward its baseline before the
-// prayer invulnerability guard.
-export function recoverTimedLuck(state = game): void {
-    let baseline = state.flags.moonphase === FULL_MOON ? 1 : 0;
-    if (state.flags.friday13) baseline--;
-    if (state.quest_status?.killed_leader) baseline -= 4;
-    if (state.urole?.key === 'archeologist'
-        && (state.uarmh ?? state.u.uarmh)?.otyp === FEDORA) baseline++;
-
-    const hero = state.u;
-    const luck = hero.uluck ?? 0;
-    const interval = hero.uhave?.amulet || hero.ugangr ? 300 : 600;
-    if (luck === baseline || state.moves % interval !== 0) return;
-
-    // attrib.c:stone_luck(): count quantities, including luck artifacts.
-    // Uncursed items count for possession but do not favor either timeout.
-    let allStones = 0;
-    let blessedAndCursed = 0;
-    let luckstone = false;
-    for (const object of state.inventory) {
-        if (!confersLuck(object, state)) continue;
-        const quantity = object.quan;
-        allStones += object.cursed ? -quantity : quantity;
-        if (object.cursed) blessedAndCursed -= quantity;
-        else if (object.blessed) blessedAndCursed += quantity;
-        if (object.otyp === LUCKSTONE) luckstone = true;
-    }
-    const noStone = !luckstone && allStones === 0;
-    if (luck > baseline && (noStone || blessedAndCursed < 0)) hero.uluck = luck - 1;
-    else if (luck < baseline && (noStone || blessedAndCursed > 0)) hero.uluck = luck + 1;
-}
-
-// C timeout.c:nh_timeout(): the polymorph, creamed, and galloping counters
-// between the dialogues and the property loop.
-export async function advanceBodyTimeouts(state = game): Promise<void> {
-    const hero = state.u;
-    if (hero.mtimedone !== undefined && hero.mtimedone > 0 && --hero.mtimedone === 0) {
-        if (hero.umonnum === undefined) throw new Error('Timed polymorph has no species');
-        if (heroIsUnchanging(state)) {
-            hero.mtimedone = rnd(100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1);
-        } else if (isWereMonster({ mnum: hero.umonnum })) {
-            await revertHeroWereForm({ state });
-        } else {
-            await returnHeroToHumanForm(state);
-        }
-    }
-    if ((hero.ucreamed ?? 0) > 0) hero.ucreamed = (hero.ucreamed ?? 0) - 1;
-}
-
-// C timeout.c:nh_timeout(): the steed's gallop counter.
-export async function advanceGallopingTimeout(state = game): Promise<void> {
-    const hero = state.u;
-    if ((hero.ugallop ?? 0) <= 0) return;
-    hero.ugallop = (hero.ugallop ?? 0) - 1;
-    if (hero.ugallop === 0 && hero.usteed)
-        await plineWithContinuation(`${monsterName(hero.usteed, { state, capitalized: true })} stops galloping.`);
 }
 
 // C timeout.c decrements every intrinsic timeout in prop.h order. These
@@ -653,43 +580,6 @@ function advancePropertyTimeout(property: PropertyName, state: GameState): boole
     if (remaining <= 0) return false;
     setPropertyTimeout(property, remaining - 1, state);
     return remaining === 1;
-}
-
-// C timeout.c:784-793 case SLEEPY.
-async function advanceSleepinessTimeout(state: GameState): Promise<void> {
-    if (!advancePropertyTimeout('sleepy', state)) return;
-    if (heroIsUnconscious(state) || state.u.sleepResistance) {
-        setPropertyTimeout('sleepy', rnd(100), state);
-    } else if (propertyIsActive('sleepy', state)) {
-        await plineWithContinuation('You fall asleep.');
-        const duration = rnd(20);
-        await putHeroToSleep(duration, { state });
-        setPropertyTimeout('sleepy', duration + rnd(100), state);
-    }
-}
-
-// C timeout.c:902-931 case FUMBLING: the noise and follow-up counts after
-// slip_or_trip() has published its own message.
-async function finishFumblingTimeout(fumbled: boolean, publish: MessagePublisher) {
-    const game = requireInitializedGame();
-    if (fumbled) {
-        nomul(-2);
-        game._helplessDoneMessage = '';
-        game._helplessReason = 'fumbling';
-        if (invWeight(game) > -500) {
-            if (!heroIsDeaf(game)) await publish('You make a lot of noise!');
-            await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, game.u.ulevel * 20, game, publish);
-        }
-    }
-    game.u.fumblingFromIce = false;
-    if (game.u?.fumblingFromArmor || game.u.fumblingIntrinsic || propertyIsActive('fumbling', game))
-        game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
-    game.u.fumbling = !!(game.u?.fumblingFromArmor
-        || game.u.fumblingIntrinsic
-        || propertyIsActive('fumbling', game)
-        || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
-    // C timeout.c: a decor message deferred past the trip catches up here.
-    if (game.iflags.deferDecor) await deferredDecor(false);
 }
 
 export async function advanceHeroVomiting({
@@ -824,96 +714,44 @@ export async function advanceHeroStrangulation({
     return { died };
 }
 
-// C timeout.c:670-672 countdown plus the LEVITATION expiry case 794-804.
-// `previous` is captured before the decrement so float_down reports the
-// pre-expiry movement state.
-export async function advanceLevitationTimeout(
-    state: GameState = game,
-): Promise<LevitationTimeoutResult> {
-    // Expiry lands the hero through the live float-down owner.
-    requireLiveGame(state);
-    const hero = state.u;
-    const turns = hero.levitationTurns ?? 0;
-    if (turns <= 0)
-        return { active: false, expired: false, flyingBypassed: false };
 
-    const previous = captureLevitationState(state);
-    hero.levitationTurns = turns - 1;
-    // C macros read live state after the countdown; keep the projected
-    // hero fields in step before any expiry work.
-    refreshProperty('levitation', state);
-    if (hero.levitationTurns > 0)
-        return { active: true, expired: false, flyingBypassed: false,
-            turns: hero.levitationTurns };
 
-    // Timed Flying expiring on the same turn would make float_down report
-    // "stopped levitating and are now flying"; end it early to skip that
-    // false takeover.  Assumes levitation is handled before flying
-    // (timeout.c:795-802).
-    let flyingBypassed = false;
-    if ((hero.flyingTurns ?? 0) === 1) {
-        hero.flyingTurns = 0;
-        flyingBypassed = true;
-        refreshProperty('flying', state);
-    }
-    const landed = await floatHeroDown(I_SPECIAL | TIMEOUT, 0, state,
-        previous);
-    return { active: false, expired: true, flyingBypassed, landed };
-}
-
-// C timeout.c:805-812.  was_flying is read at entry, matching the pre-loop
-// capture when allmain runs this after advanceLevitationTimeout in C
-// property order: the levitation path's only Flying change this turn is the
-// flyingTurns === 1 bypass, which never reaches the expiry below.
-export async function advanceFlyingTimeout(
-    state: GameState = game,
-    { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},
-): Promise<FlyingTimeoutResult> {
-    // Flight expiry publishes the landing and runs spot effects on the
-    // live world.
-    requireLiveGame(state);
-    const hero = state.u;
-    const turns = hero.flyingTurns ?? 0;
-    if (turns <= 0) return { active: false, expired: false, landed: false };
-
-    const wasFlying = propertyIsActive('flying', state);
-    hero.flyingTurns = turns - 1;
-    // C macros read live state after the countdown; keep the projected
-    // hero fields in step before the landing checks.
-    refreshProperty('flying', state);
-    if (hero.flyingTurns > 0)
-        return { active: true, expired: false, landed: false,
-            turns: hero.flyingTurns };
-
-    if (wasFlying && !propertyIsActive('flying', state)) {
-        state.context.botl = true;
-        await publish('You land.');
-        await applyHeroLocationEffects(publish);
-        return { active: false, expired: true, landed: true };
-    }
-    return { active: false, expired: true, landed: false };
-}
-
-export async function finishWallPassageTimeout(state = game): Promise<void> {
-    if (propertyIsActive('passesWalls', state)) return;
-    await plineWithContinuation(heroIsSurroundedByRock(state)
-        ? formatFeltMessage('hemmed in again.', state)
-        : `You're back to your ${heroIsPolymorphed(state) ? 'unusual' : 'normal'} self again.`);
-}
-
-export async function finishBreathingTimeout(state = game): Promise<void> {
-    if (!heroIsBreathless(state) && heroIsInDangerousRegion(state))
-        await plineWithContinuation(state.u.poisonResistance
-            ? 'You cough.' : 'You cough and spit blood!');
-}
-
-// C timeout.c:588-948 nh_timeout().
-// C timeout.c:sleep_dialogue(): the "You yawn." at four turns of drowsiness.
+// C timeout.c:nh_timeout() (timeout.c:588-948): luck drifts back toward its
+// calendar baseline, the fatal-condition dialogues, one countdown pass over
+// u.uprops in the prop.h order, and run_timers().
 export async function nhTimeout(): Promise<void> {
     const game = requireInitializedGame();
     // C timeout.c:595-620: luck drifts toward its calendar baseline every
     // 600 turns (300 while carrying the Amulet or angering a god).
-    recoverTimedLuck(game);
+    {
+        let baseline = game.flags.moonphase === FULL_MOON ? 1 : 0;
+        if (game.flags.friday13) baseline--;
+        if (game.quest_status?.killed_leader) baseline -= 4;
+        if (game.urole?.key === 'archeologist'
+            && (game.uarmh ?? game.u.uarmh)?.otyp === FEDORA) baseline++;
+
+        const luck = game.u.uluck ?? 0;
+        const interval = game.u.uhave?.amulet || game.u.ugangr ? 300 : 600;
+        if (luck !== baseline && game.moves % interval === 0) {
+            // attrib.c:stone_luck(): count quantities, including luck
+            // artifacts.  Uncursed items count for possession but do not
+            // favor either timeout.
+            let allStones = 0;
+            let blessedAndCursed = 0;
+            let luckstone = false;
+            for (const object of game.inventory) {
+                if (!confersLuck(object, game)) continue;
+                const quantity = object.quan;
+                allStones += object.cursed ? -quantity : quantity;
+                if (object.cursed) blessedAndCursed -= quantity;
+                else if (object.blessed) blessedAndCursed += quantity;
+                if (object.otyp === LUCKSTONE) luckstone = true;
+            }
+            const noStone = !luckstone && allStones === 0;
+            if (luck > baseline && (noStone || blessedAndCursed < 0)) game.u.uluck = luck - 1;
+            else if (luck < baseline && (noStone || blessedAndCursed > 0)) game.u.uluck = luck + 1;
+        }
+    }
     // C timeout.c:621-622: prayer's u.uinvulnerable returns before the
     // dialogues, the countdown, and run_timers().
     if (game.u.invulnerable) return;
@@ -958,15 +796,38 @@ export async function nhTimeout(): Promise<void> {
     await levitationDialogue(game);
     await wallPassageDialogue(game);
     await breathingDialogue(game);
-    if (propertyTimeout('sleepy', game) === 4)
-        await plineWithContinuation('You yawn.');
+    if (propertyTimeout('sleepy', game) > 0) await sleepDialogue(game);
 
-    // C timeout.c:641-667: body counters between the dialogues and the
-    // property loop.
-    await advanceBodyTimeouts(game);
+    // C timeout.c:641-650: the polymorph and creamed counters between the
+    // dialogues and the property loop.
+    {
+        const hero = game.u;
+        if (hero.mtimedone !== undefined && hero.mtimedone > 0 && --hero.mtimedone === 0) {
+            if (hero.umonnum === undefined) throw new Error('Timed polymorph has no species');
+            if (heroIsUnchanging(game)) {
+                hero.mtimedone = rnd(100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1);
+            } else if (isWereMonster({ mnum: hero.umonnum })) {
+                await revertHeroWereForm({ state: game });
+            } else {
+                await returnHeroToHumanForm(game);
+            }
+        }
+        if ((hero.ucreamed ?? 0) > 0) hero.ucreamed = (hero.ucreamed ?? 0) - 1;
+    }
     if (game.program_state.gameover) return;
+    // C timeout.c:652-662: dissipate spell-based protection.
     await advanceSpellProtection(game);
-    await advanceGallopingTimeout(game);
+    // C timeout.c:664-667: the steed's gallop counter.
+    {
+        const hero = game.u;
+        if ((hero.ugallop ?? 0) > 0) {
+            hero.ugallop = (hero.ugallop ?? 0) - 1;
+            if (hero.ugallop === 0 && hero.usteed)
+                await plineWithContinuation(`${monsterName(hero.usteed, { state: game, capitalized: true })} stops galloping.`);
+        }
+    }
+    // C timeout.c:669: was_flying is sampled before the countdown loop.
+    const wasFlying = propertyIsActive('flying', game);
 
     // C timeout.c:670-945: one countdown loop over u.uprops in the prop.h
     // enum order. Each expiry runs its case at the point C prints it.
@@ -980,8 +841,48 @@ export async function nhTimeout(): Promise<void> {
         && --game.u.shockResistanceTurns === 0)
         refreshProperty('shockResistance', game);
     advancePropertyTimeout('poisonResistance', game);
-    await advanceCorpseResistanceTimeouts(game);
-    if (game.program_state?.gameover) return;
+    // C timeout.c:813-825 case ACID_RES, 826-844 case STONE_RES, in the
+    // loop order right after poison resistance. eating_dangerous_corpse()
+    // extends the countdown mid-meal; wielding_corpse() is the bare-handed
+    // cockatrice check at the end of STONE_RES.
+    requireLiveGame(game);
+    requirePlayingGame(game);
+    for (const property of ['acidResistance', 'stoneResistance'] as const) {
+        const timeout: 'acidResistanceTurns' | 'stoneResistanceTurns' = `${property}Turns`;
+        const remaining = game.u[timeout] ?? 0;
+        if (!(remaining > 0)) continue;
+        game.u[timeout] = remaining - 1;
+        if (game.u[timeout] > 0) continue;
+        refreshProperty(property, game);
+        if (game.u[property]) continue;
+        if (eating_dangerous_corpse(property, { state: game })) {
+            game.u[timeout] = 1;
+            refreshProperty(property, game);
+            continue;
+        }
+        if (!heroIsUnaware(game))
+            await plineWithContinuation(property === 'acidResistance'
+                ? 'You no longer feel safe from acid.'
+                : 'You no longer feel secure from petrification.');
+        if (property === 'stoneResistance' && !game.uarmg && !game.u.uarmg) {
+            const weapons = [game.uwep || game.u.uwep];
+            if (game.u.twoweap) weapons.push(game.uswapwep || game.u.uswapwep);
+            for (const object of weapons) {
+                if (object?.otyp !== CORPSE || object.corpsenm === undefined
+                    || !touchPetrifies(object.corpsenm) || game.u.stoneResistance) continue;
+                await plineWithContinuation(`You are wielding ${corpseName(object, { includeArticle: true })} in your bare ${makePlural(heroHandName(game))}.`);
+                const result = await resolveImmediatePetrification({
+                    state: game,
+                    killer: `resistance timing out while wielding ${killerObjectName(object, game)}`,
+                });
+                if (result.died) return;
+                if (!game.u.stoneResistance)
+                    // C wielding_corpse() unwields via remove_worn_item(obj, FALSE).
+                    await removeWornHeroItem(object, game, { unchainBall: false });
+            }
+        }
+        if (game.program_state.gameover) return;
+    }
     advanceSimplePropertyTimeouts(['drainResistance', 'sicknessResistance'], game);
     if (game.u.invulnerableTurns !== undefined && game.u.invulnerableTurns > 0) {
         game.u.invulnerableTurns--;
@@ -1054,8 +955,8 @@ export async function nhTimeout(): Promise<void> {
     }
     advancePropertyTimeout('hallucinationResistance', game);
 
-    // C timeout.c:902-931 case FUMBLING: fumbling messages only fire when a
-    // move took place.
+    // C timeout.c:902-931 case FUMBLING: slip_or_trip() and its noise run
+    // only when a move took place; the rest of the case is local.
     if (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0) {
         game.u.fumblingTurns--;
         if (game.u.fumblingTurns === 0) {
@@ -1065,10 +966,27 @@ export async function nhTimeout(): Promise<void> {
             if (game.u?.umoved && !levitating && !flying) {
                 await slipOrTrip(plineWithContinuation);
                 if (game.program_state.gameover) return;
-                await finishFumblingTimeout(true, plineWithContinuation);
-            } else {
-                await finishFumblingTimeout(false, plineWithContinuation);
+                nomul(-2);
+                game._helplessDoneMessage = '';
+                game._helplessReason = 'fumbling';
+                // The more you are carrying the more likely you
+                // are to make noise when you fumble.
+                if (invWeight(game) > -500) {
+                    if (!heroIsDeaf(game)) await plineWithContinuation('You make a lot of noise!');
+                    await wakeMonstersNearWithMessages(game.u.ux, game.u.uy, game.u.ulevel * 20, game, plineWithContinuation);
+                }
             }
+            // From outside means slippery ice; don't reset the counter if
+            // that's the only fumble reason.
+            game.u.fumblingFromIce = false;
+            if (game.u?.fumblingFromArmor || game.u.fumblingIntrinsic || propertyIsActive('fumbling', game))
+                game.u.fumblingTurns = (game.u.fumblingTurns ?? 0) + rnd(20);
+            game.u.fumbling = !!(game.u?.fumblingFromArmor
+                || game.u.fumblingIntrinsic
+                || propertyIsActive('fumbling', game)
+                || (game.u.fumblingTurns !== undefined && game.u.fumblingTurns > 0));
+            // A decor message deferred past the trip catches up here.
+            if (game.iflags.deferDecor) await deferredDecor(false);
         }
     }
 
@@ -1083,7 +1001,16 @@ export async function nhTimeout(): Promise<void> {
     }
 
     // C timeout.c:784-793 case SLEEPY, 28 no case: HUNGER.
-    await advanceSleepinessTimeout(game);
+    if (advancePropertyTimeout('sleepy', game)) {
+        if (heroIsUnconscious(game) || game.u.sleepResistance) {
+            setPropertyTimeout('sleepy', rnd(100), game);
+        } else if (propertyIsActive('sleepy', game)) {
+            await plineWithContinuation('You fall asleep.');
+            const sleeptime = rnd(20);
+            await putHeroToSleep(sleeptime, { state: game });
+            setPropertyTimeout('sleepy', sleeptime + rnd(100), game);
+        }
+    }
     advancePropertyTimeout('hunger', game);
 
     // C timeout.c:768-773 case SEE_INVIS.
@@ -1145,9 +1072,47 @@ export async function nhTimeout(): Promise<void> {
     ], game);
 
     // C timeout.c:794-812 cases LEVITATION and FLYING, in that order.
-    await advanceLevitationTimeout(game);
+    // Expiry lands the hero through the live float-down owner.
+    requireLiveGame(game);
+    {
+        const turns = game.u.levitationTurns ?? 0;
+        if (turns > 0) {
+            // `previous` is captured before the decrement so float_down
+            // reports the pre-expiry movement state.
+            const previous = captureLevitationState(game);
+            game.u.levitationTurns = turns - 1;
+            // C macros read live state after the countdown; keep the
+            // projected hero fields in step before any expiry work.
+            refreshProperty('levitation', game);
+            if (game.u.levitationTurns === 0) {
+                // Timed Flying expiring on the same turn would make
+                // float_down report "stopped levitating and are now flying";
+                // end it early to skip that false takeover.  Assumes
+                // levitation is handled before flying (timeout.c:795-802).
+                if ((game.u.flyingTurns ?? 0) === 1) {
+                    game.u.flyingTurns = 0;
+                    refreshProperty('flying', game);
+                }
+                await floatHeroDown(I_SPECIAL | TIMEOUT, 0, game, previous);
+            }
+        }
+    }
     if (game.program_state?.gameover) return;
-    await advanceFlyingTimeout(game);
+    requireLiveGame(game);
+    {
+        const turns = game.u.flyingTurns ?? 0;
+        if (turns > 0) {
+            game.u.flyingTurns = turns - 1;
+            // C macros read live state after the countdown; keep the
+            // projected hero fields in step before the landing checks.
+            refreshProperty('flying', game);
+            if (game.u.flyingTurns === 0 && wasFlying && !propertyIsActive('flying', game)) {
+                game.context.botl = true;
+                await plineWithContinuation('You land.');
+                await applyHeroLocationEffects(plineWithContinuation);
+            }
+        }
+    }
     if (game.program_state?.gameover) return;
 
     // C timeout.c:853-857 case WWALKING, 51 no case: SWIMMING,
@@ -1157,10 +1122,17 @@ export async function nhTimeout(): Promise<void> {
         && !propertyIsActive('waterWalking', game))
         await plineWithContinuation('Your temporary ability to walk on liquid has ended.');
     advancePropertyTimeout('swimming', game);
-    if (advancePropertyTimeout('magicalBreathing', game))
-        await finishBreathingTimeout(game);
-    if (advancePropertyTimeout('passesWalls', game))
-        await finishWallPassageTimeout(game);
+    // C timeout.c:883-889 case MAGICAL_BREATHING.
+    if (advancePropertyTimeout('magicalBreathing', game)
+        && !heroIsBreathless(game) && heroIsInDangerousRegion(game))
+        await plineWithContinuation(game.u.poisonResistance
+            ? 'You cough.' : 'You cough and spit blood!');
+    // C timeout.c:874-882 case PASSES_WALLS.
+    if (advancePropertyTimeout('passesWalls', game)
+        && !propertyIsActive('passesWalls', game))
+        await plineWithContinuation(heroIsSurroundedByRock(game)
+            ? formatFeltMessage('hemmed in again.', game)
+            : `You're back to your ${heroIsPolymorphed(game) ? 'unusual' : 'normal'} self again.`);
     advancePropertyTimeout('slowDigestion', game);
     advanceSimplePropertyTimeouts(['halfSpellDamage', 'halfPhysicalDamage'], game);
     advanceSimplePropertyTimeouts([
@@ -1213,12 +1185,40 @@ export async function putHeroToSleep(turns: number, {
     return state._helplessTurns;
 }
 
+// C timeout.c:learn_egg_type().
 export function learnEggType(mnum: number, state: GameState) {
     const adult = monsterOlderForm(mnum);
     if (!Array.isArray(state.mvitals)) state.mvitals = [];
     const vital = state.mvitals[adult]
         || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
     vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
+}
+
+// C timeout.c:attach_egg_hatch_timeout().
+export function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+    if (remaining > 0) {
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + remaining, game,
+        );
+        return;
+    }
+    // The legacy per-turn hatch trial: age 151 through 200, hatching when
+    // a roll of the age itself beats 150.
+    for (let age = 151; age <= 200; age++) {
+        if (rnd(age) <= 150) continue;
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + age, game,
+        );
+        return;
+    }
+}
+
+// C timeout.c:kill_egg(): prevent an egg from ever hatching.
+export function killEgg(egg: GameObject | null | undefined): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
 }
 
 // Saveable object and level-position timer ordering (folded from
@@ -1467,8 +1467,11 @@ function objectTimerIsGlobal(object: GameObject, state: GameState): boolean {
         && !!state._migratingMonsters?.includes(outer.ocarry);
 }
 
-// C timeout.c:obj_is_local(): a light is global when its outermost owner is
-// the hero or a migrating carrier, and level-local otherwise.
+// A light's global/local batch split: light.c decides with
+// `is_global = !obj_is_local(...)` (light.c:450,583), using its own local
+// `mon_is_local(mon)` macro — `(mon)->mx > 0` (light.c:373) — rather than
+// timeout.c's mon_is_local(); the timer queue's port of obj_is_local() is
+// objectTimerIsGlobal() above.
 export function lightObjectIsGlobal(object: GameObject): boolean {
     let outermost = object;
     while (outermost.where === 'contained' && outermost.container)
@@ -1509,58 +1512,6 @@ export function restoreSavedTimers(state: GameState = game): void {
     restoreLevelTimers(state);
 }
 
-type TimedCorpseResistance = 'acidResistance' | 'stoneResistance';
-
-const timedResistances: readonly TimedCorpseResistance[] = ['acidResistance', 'stoneResistance'];
-
-// C timeout.c:nh_timeout().
-// C timeout.c:ACID_RES/STONE_RES. Called in property order, after shock
-// resistance and before the later status timeouts.
-export async function advanceCorpseResistanceTimeouts(state: GameState = game) {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    for (const property of timedResistances) {
-        const timeout: `${TimedCorpseResistance}Turns` = `${property}Turns`;
-        const remaining = state.u[timeout] ?? 0;
-        if (!(remaining > 0)) continue;
-        state.u[timeout] = remaining - 1;
-        if (state.u[timeout] > 0) continue;
-        refreshProperty(property, state);
-        if (state.u[property]) continue;
-        if (eating_dangerous_corpse(property, { state })) {
-            state.u[timeout] = 1;
-            refreshProperty(property, state);
-            continue;
-        }
-        if (!heroIsUnaware(state))
-            await plineWithContinuation(property === 'acidResistance'
-                ? 'You no longer feel safe from acid.'
-                : 'You no longer feel secure from petrification.');
-        if (property === 'stoneResistance') {
-            await touchWieldedCorpseAfterResistanceExpires(state);
-            if (state.program_state.gameover) return;
-        }
-    }
-}
-
-// C timeout.c:nh_timeout().
-async function touchWieldedCorpseAfterResistanceExpires(state: GameState) {
-    if (state.uarmg || state.u.uarmg) return;
-    const weapons = [state.uwep || state.u.uwep];
-    if (state.u.twoweap) weapons.push(state.uswapwep || state.u.uswapwep);
-    for (const object of weapons) {
-        if (object?.otyp !== CORPSE || object.corpsenm === undefined || !touchPetrifies(object.corpsenm)
-            || state.u.stoneResistance) continue;
-        await plineWithContinuation(`You are wielding ${corpseName(object, { includeArticle: true })} in your bare ${makePlural(heroHandName(state))}.`);
-        const result = await resolveImmediatePetrification({
-            state, killer: `resistance timing out while wielding ${killerObjectName(object, state)}`,
-        });
-        if (result.died) return;
-        if (!state.u.stoneResistance)
-            // C wielding_corpse() unwields via remove_worn_item(obj, FALSE).
-            await removeWornHeroItem(object, state, { unchainBall: false });
-    }
-}
 
 // C timeout.c:slip_or_trip().  Fumbling arrival message, ice slides, and
 // the pet-loss dismount, all after the fumbling source's timeout fires.
@@ -1652,33 +1603,29 @@ export interface BurnTimerResult {
 }
 
 
-// C timeout.c:see_lamp_flicker().
-// C timeout.c:lantern_message().
-async function announceLampBurn(
-    object: GameObject, threshold: number, visible: boolean, byTouch: boolean,
-    state: GameState, owner: string,
+// C timeout.c:see_lamp_flicker().  Print a lamp flicker message with
+// tailer.  Only called if seen.
+async function seeLampFlicker(
+    object: GameObject, tailer: string, state: GameState,
 ): Promise<void> {
-    const floor = object.where === 'floor';
-    const lantern = object.otyp === BRASS_LANTERN;
-    if (threshold === 0) {
-        if (visible || byTouch) await plineWithContinuation(lantern
-            ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
-            : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
+    if (object.where === 'floor')
+        await plineWithContinuation(formatSeenMessage(
+            `${withIndefiniteArticle(objectName(object, state))} flicker${tailer}.`, state));
+    else
+        await plineWithContinuation(`${burnName(object, state)} flickers${tailer}.`);
+}
+
+// C timeout.c:lantern_message().  Print a dimming message for brass
+// lanterns.  Only called if seen.
+async function lanternMessage(object: GameObject, state: GameState): Promise<void> {
+    if (object.where === 'floor') {
+        await plineWithContinuation(formatSeenMessage('a lantern getting dim.', state));
         return;
     }
-    if (!visible || ![150, 100, 50, 25].includes(threshold)) return;
-    if (lantern) {
-        await plineWithContinuation(floor ? formatSeenMessage('a lantern getting dim.', state)
-            : object.where === 'inventory' ? 'Your lantern is getting dim.'
-                : `${burnOwner(object, state)} lantern is getting dim.`);
-        if (object.where === 'inventory' && heroIsHallucinating(state))
-            await plineWithContinuation('Batteries have not been invented yet.');
-    } else if (threshold === 25) await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
-        : `${burnName(object, state)} seems about to go out.`);
-    else await plineWithContinuation(floor
-        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`, state)
-        : `${burnName(object, state)} flickers${threshold === 50 ? ' considerably' : ''}.`);
+    await plineWithContinuation(object.where === 'inventory' ? 'Your lantern is getting dim.'
+        : `${burnOwner(object, state)} lantern is getting dim.`);
+    if (object.where === 'inventory' && heroIsHallucinating(state))
+        await plineWithContinuation('Batteries have not been invented yet.');
 }
 
 async function announceCandleBurn(
@@ -1738,9 +1685,33 @@ export async function runClaimedObjectBurnTimer(
     if (object.otyp === POT_OIL) {
         if (visible) await plineWithContinuation(object.where === 'floor'
             ? formatSeenMessage('a burning potion of oil go out.', state) : `${owner} potion of oil has burnt away.`);
-    } else if (CANDLE_TYPES.has(object.otyp))
+    } else if (CANDLE_TYPES.has(object.otyp)) {
+        // C timeout.c:1546-1670: candelabrum and candle countdowns.
         await announceCandleBurn(object, threshold, visible, byTouch, state, owner);
-    else await announceLampBurn(object, threshold, visible, byTouch, state, owner);
+    } else {
+        // C timeout.c:1474-1544: BRASS_LANTERN and OIL_LAMP.  The magic
+        // ages are 150, 100, 50, 25 and 0.
+        const lantern = object.otyp === BRASS_LANTERN;
+        const floor = object.where === 'floor';
+        if (threshold === 150 || threshold === 100 || threshold === 50) {
+            if (visible) {
+                if (lantern) await lanternMessage(object, state);
+                else await seeLampFlicker(object, threshold === 50 ? ' considerably' : '', state);
+            }
+        } else if (threshold === 25) {
+            if (visible) {
+                if (lantern) await lanternMessage(object, state);
+                else await plineWithContinuation(floor
+                    ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
+                    : `${burnName(object, state)} seems about to go out.`);
+            }
+        } else if (threshold === 0 && (visible || byTouch)) {
+            // Even if blind you'll know if holding it.
+            await plineWithContinuation(lantern
+                ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
+                : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
+        }
+    }
     const destroyed = threshold === 0 || object.otyp === POT_OIL
         ? await finishBurnedObject(object, state) : false;
     if (!destroyed && threshold > 0) beginObjectBurn(object, state, currentTurn);
@@ -1795,29 +1766,7 @@ function extinguishTimedLight(object: GameObject, state: GameState) {
     state.vision_full_recalc = 1;
 }
 
-function lampBurnTurns(age: number): number {
-    if (age > 150) return age - 150;
-    if (age > 100) return age - 100;
-    if (age > 50) return age - 50;
-    if (age > 25) return age - 25;
-    return age;
-}
 
-function candleBurnTurns(age: number): number {
-    if (age > 75) return age - 75;
-    if (age > 15) return age - 15;
-    return age;
-}
-
-function objectBurnTurns(object: GameObject) {
-    if (object.otyp === POT_OIL) {
-        const age = object.age ?? 0;
-        return object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
-    }
-    if (CANDLE_TYPES.has(object.otyp))
-        return candleBurnTurns(object.age ?? 0);
-    return lampBurnTurns(object.age ?? 0);
-}
 
 // C timeout.c:begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
@@ -1850,7 +1799,20 @@ export function beginObjectBurn(
     if (object.otyp === CANDELABRUM_OF_INVOCATION
         && (object.spe ?? 0) <= 0) return false;
     if ((object.age ?? 0) <= 0) return false;
-    const turns = objectBurnTurns(object);
+    // begin_burn()'s switch: magic times are 150/100/50/25/0 for lamps and
+    // 75/15/0 for candles; diluted oil burns three quarters as long.
+    const age = object.age ?? 0;
+    let turns: number;
+    if (object.otyp === POT_OIL) {
+        turns = object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
+    } else if (CANDLE_TYPES.has(object.otyp)) {
+        turns = age > 75 ? age - 75 : age > 15 ? age - 15 : age;
+    } else {
+        turns = age > 150 ? age - 150
+            : age > 100 ? age - 100
+                : age > 50 ? age - 50
+                    : age > 25 ? age - 25 : age;
+    }
     const timer = scheduleObjectTimer(
         object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state,
     );

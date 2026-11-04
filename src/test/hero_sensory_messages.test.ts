@@ -5,13 +5,12 @@ import { DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_CLOS
 import { cpostfx } from '../js/eat.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/timeout.js';
 import { dotrap, maketrap } from '../js/trap.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { resolveMonsterDoorPassage } from '../js/monmove.js';
 import { setPropertyTimeout } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { finishWallPassageTimeout } from '../js/timeout.js';
+import { nhTimeout, putHeroToSleep } from '../js/timeout.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -30,7 +29,8 @@ for (const cause of ['sleep', 'blackout'] as const) {
             game._helplessDoneMessage = 'You regain consciousness.';
         }
 
-        await finishWallPassageTimeout();
+        setPropertyTimeout('passesWalls', 1);
+        await nhTimeout();
 
         assert.equal(game._lastPlineMessage, 'You dream that you feel hemmed in again.');
     });

@@ -10,13 +10,12 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { moveloop_core } from '../js/allmain.js';
 import { A_STR, TIMEOUT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
-import { advanceCorpseResistanceTimeouts } from '../js/timeout.js';
+import { nhTimeout, putHeroToSleep } from '../js/timeout.js';
 import { eye_of_newt_buzz, cpostfx } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, GAUNTLETS_OF_POWER } from '../js/object_data.js';
@@ -233,7 +232,7 @@ void test('acid resistance expires while an independent permanent source survive
     refreshProperty('acidResistance');
     grantIntrinsicProperty('stoneResistance', 'outside');
 
-    await advanceCorpseResistanceTimeouts();
+    await nhTimeout();
 
     assert.equal(game.u.acidResistance, false);
     assert.equal(game.u.stoneResistance, true);
@@ -259,11 +258,11 @@ for (const [flesh, property] of [
         await rhack('e'.charCodeAt(0));
         assert.equal(game._occupation?.key, 'eat-food');
 
-        await advanceCorpseResistanceTimeouts();
+        await nhTimeout();
         assert.equal(game.u[property], true);
         assert.equal(game.u[`${property}Turns`], 1);
         await stopHeroOccupation();
-        await advanceCorpseResistanceTimeouts();
+        await nhTimeout();
 
         assert.equal(game.u[property], false);
         assert.equal(game.u[`${property}Turns`], 0);
@@ -276,7 +275,7 @@ void test('sleeping through resistance expiry suppresses its warning', async () 
     refreshProperty('acidResistance');
     await putHeroToSleep(10);
 
-    await advanceCorpseResistanceTimeouts();
+    await nhTimeout();
 
     assert.equal(game.u.acidResistance, false);
     assert.equal(game._pending_message || '', '');
@@ -323,7 +322,7 @@ void test('stone resistance ending while wielding flesh uses life saving and rel
     await setPrimaryWeapon(corpse);
     await flushPendingTopline();
 
-    await advanceCorpseResistanceTimeouts();
+    await nhTimeout();
 
     assert.ok(game.u.uhp > 0);
     assert.equal(game.u.umortality, 1);
@@ -340,7 +339,7 @@ void test('gloves keep wielded petrifying flesh safe when temporary resistance e
     await setPrimaryWeapon(corpse);
     await wearHeroArmor(await addInventoryObject(GAUNTLETS_OF_POWER));
 
-    await advanceCorpseResistanceTimeouts();
+    await nhTimeout();
 
     assert.equal(game.uwep, corpse);
     assert.equal(game.program_state.gameover || false, false);

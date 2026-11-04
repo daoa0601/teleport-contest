@@ -26,7 +26,7 @@ import { impossible } from './diagnostics.js';
 import { digActualHole, digCheck, liquidFlow, liquidForHole, watchDigging, freeHeroFromBuriedBall } from './dig.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, feel_newsym, glyphAt, howMonsterSeen, map_invisible, map_object, newsym, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterReflexiveAction } from './do_name.js';
-import { restartEggHatchTimer } from './egg.js';
+import { attachEggHatchTimer, killEgg } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving } from './engrave.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { explode } from './explosion.js';
@@ -2784,12 +2784,12 @@ export async function useRoyalJelly(stack, chooseTarget) {
         await syncPline(wasTimed || egg.corpsenm !== oldSpecies
             ? quiverMessage(egg, 'feebly')
             : 'Nothing seems to happen.');
-        stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+        killEgg(egg);
     }
     else {
         if ((egg.corpsenm ?? -1) !== -1) {
             if (!wasTimed)
-                restartEggHatchTimer(egg);
+                attachEggHatchTimer(egg);
             if (use.jelly.blessed && !egg.spe)
                 egg.spe = 2;
         }
