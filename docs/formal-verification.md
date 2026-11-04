@@ -320,9 +320,11 @@ The requested flag-token inventory falls from **1,195 to 235**; direct
 `mondata.ts` and `monster_data.ts`. C's raw mask copies, warning intersections,
 food-collection bit, migration matching and wants/waiting masks remain cited.
 The copied armed-species set is gone; `is_armed` scans the real attack row.
-The corrected `nolimbs` owner requires all of `M1_NOLIMBS` (`0x6000`). Its
-behavior regression failed on `0x4000` before the fix. Executor regressions
-also cover every 32-bit flag word and the high metallivore bit.
+The corrected `nolimbs` owner requires all of `M1_NOLIMBS` (`0x6000`). Behavior
+regressions preserve jackals' walking and staggering verbs and jaguars'
+claw-swing miss messages without changing species data. Executor regressions
+cover every 32-bit flag word, rejection of the old mask, and the high
+metallivore bit.
 
 The serial base/branch session comparison has **0 changed outcomes or first
 differences** across 344 sessions: public **43/44**, first 300 holdout **300/300**.

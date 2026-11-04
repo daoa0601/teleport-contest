@@ -164,6 +164,20 @@ void test('a blind attacker can miss wildly even when the hero is visible', asyn
     assert.match(messages(), /The grid bug snaps wildly and misses!/);
     assert.equal(game._occupation, occupation);
 });
+void test('a blind jaguar swings its claws when it attacks the wrong square', async () => {
+    await freshObjectRoom({ flags: { verbose: true } });
+    requirePlayingGame(game);
+    const jaguar = await createMonsterAt('jaguar', 11, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+    jaguar.mcansee = false;
+    jaguar.mux = 12;
+    jaguar.muy = 10;
+    const messages = observeMessages(/jaguar/);
+    const hp = game.u.uhp;
+    await performMonsterHeroAttack(jaguar, game, { random: () => 0 });
+    assert.match(messages(), /The jaguar swings wildly and misses!/);
+    assert.doesNotMatch(messages(), /lunges/);
+    assert.equal(game.u.uhp, hp);
+});
 void test('a wild attack at a wall of water names the empty water', async () => {
     const level = await freshObjectRoom({ flags: { verbose: true } });
     requirePlayingGame(game);
