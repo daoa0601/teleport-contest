@@ -13,7 +13,7 @@ import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } 
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './do.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';

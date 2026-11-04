@@ -11,8 +11,8 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { GOLD_PIECE, TIN_WHISTLE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
-import { finishTeleportArrival } from '../js/location_effects.js';
+import { teleds } from '../js/teleport.js';
+import { finishTeleportArrival } from '../js/teleport.js';
 import { moveVaultGuard } from '../js/vault.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { cansee, vision_recalc } from '../js/vision.js';
@@ -127,7 +127,7 @@ void test('a finished parked escort removes its corridor on a later world turn',
 void test('teleporting away with vault gold releases an angry guard immediately', async () => {
     const { guard } = await escort();
     setHeroGoldAmount(game, 50);
-    await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
+    await teleds(15, 10, game, { finishArrival: finishTeleportArrival });
     assert.equal(guard.mpeaceful, 0);
 });
 for (const whistle of [false, true]) {
@@ -148,7 +148,7 @@ for (const whistle of [false, true]) {
                 .map(row => row.map(cell => cell.ch).join('')).join('') ?? '');
             input.feed(' ');
         };
-        await moveHeroByTeleport(15, 10, game, { finishArrival: finishTeleportArrival });
+        await teleds(15, 10, game, { finishArrival: finishTeleportArrival });
         messages.push(game._pending_message);
         assert.equal(guard.mpeaceful, 0);
         assert.equal(cansee(guard.mx, guard.my), false);

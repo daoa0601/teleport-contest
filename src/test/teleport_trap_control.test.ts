@@ -4,7 +4,7 @@ import { TELEP_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { dotrap } from '../js/trap.js';
 import { resetInputState } from '../js/input.js';
-import { finishTeleportArrival } from '../js/location_effects.js';
+import { finishTeleportArrival } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 

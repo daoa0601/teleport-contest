@@ -10,7 +10,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { PICK_AXE, TOWEL } from '../js/object_data.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { promptDirection } from '../js/cmd.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -56,7 +56,7 @@ for (const relocation of ['teleport', 'hurtle'] as const) {
         // The move is east, but the retained direction points north. Its
         // square behind the landing is dry, unlike the old pool at ux0/uy0.
         pushKeys(' '.repeat(20));
-        if (relocation === 'teleport') await moveHeroByTeleport(14, 10);
+        if (relocation === 'teleport') await teleds(14, 10);
         else await hurtleHero(1, 0, 4);
         initRng(31n);
         const followingRoll = rn2(1000);
@@ -102,7 +102,7 @@ void test('a direction prompt can make a different pool count as continuous afte
     resetInputState().feed('k');
     assert.ok(await promptDirection());
     pushKeys(' '.repeat(20));
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
     initRng(31n);
     rn2(5);
     const followingRoll = rn2(1000);

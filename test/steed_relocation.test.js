@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { initRng, rn2, rnd } from '../js/rng.js';
 import { dismountHero, doride } from '../js/steed.js';
-import { moveHeroByTeleport, relocateMonsterTo } from '../js/teleport.js';
+import { teleds, relocateMonsterTo } from '../js/teleport.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
@@ -55,7 +55,7 @@ void test('mounting shows the same hallucinated steed as relocation onto its squ
     const reference = await hallucinatingRiderRoom();
     game.u.usteed = reference;
     initRng(19);
-    await moveHeroByTeleport(11, 10);
+    await teleds(11, 10);
     await flush_screen(1);
     const expected = requireScreenCell(10, 11);
     const steed = await hallucinatingRiderRoom();
@@ -80,7 +80,7 @@ async function hallucinatingDismountRoom() {
 void test('dismounting retains the former steed appearance shown during relocation', async () => {
     await hallucinatingDismountRoom();
     initRng(19);
-    await moveHeroByTeleport(9, 10);
+    await teleds(9, 10);
     await flush_screen(1);
     const expected = requireScreenCell(9, 11);
     const steed = await hallucinatingDismountRoom();

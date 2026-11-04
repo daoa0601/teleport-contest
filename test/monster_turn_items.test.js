@@ -13,7 +13,7 @@ import { installPagerInput } from './support/pager-input.js';
 import { pline } from '../js/pline.js';
 import { find_defensive, mloot_container, use_defensive, } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
-import { teleportMonsterToRandomLevel } from '../js/teleport.js';
+import { mlevel_tele_trap } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
 import { resetInputState } from '../js/input.js';
@@ -155,7 +155,7 @@ void test('a level teleport trap sends a monster into the legal dungeon range', 
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     installPagerInput(resetInputState(), { expected: /disappears/, limit: 2 });
-    const result = await teleportMonsterToRandomLevel(monster, trap, {
+    const result = await mlevel_tele_trap(monster, trap, {
         state: game, random: limit => limit === 5 ? 2 : 10,
     });
     assert.deepEqual(result?.destination, { dnum: 0, dlevel: 11 });

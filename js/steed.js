@@ -33,7 +33,7 @@ import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
-import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';
+import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
@@ -372,7 +372,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
     steed.headOnMap = false;
-    await moveHeroByTeleport(steed.mx, steed.my, game, {
+    await teleds(steed.mx, steed.my, game, {
         finishArrival: () => applyHeroLocationEffects(),
     });
     game.context.botl = true;
@@ -732,7 +732,7 @@ export async function dismountHero(reason, { state = game, random = rn2, announc
                 try {
                     // The shared teleds port renders the moved hero, then
                     // runs terrain and liquid effects while dismounting.
-                    const relocation = await moveHeroByTeleport(landing.x, landing.y, state, {
+                    const relocation = await teleds(landing.x, landing.y, state, {
                         allowDrag: true,
                         finishArrival: destination => finishDestinationSpotEffects({
                             oldx: destination.oldx, oldy: destination.oldy,

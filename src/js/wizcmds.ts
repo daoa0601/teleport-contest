@@ -36,7 +36,7 @@ import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, p
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hurtleHero, hurtleMonster } from './dothrow.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel, deliverSpecialLevelMessages, placeHeroAtRandomArrival } from './level_change.js';
 import { resolveHeroArrivalCollision } from './do.js';
 import { levelTeleport } from './level_teleport.js';

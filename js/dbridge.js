@@ -32,7 +32,7 @@ import { heroHasWaterWalking } from './do_wear.js';
 import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';
 import { updateMonsterRegions } from './regions.js';
-import { moveHeroByTeleport, enexto } from './teleport.js';
+import { teleds, enexto } from './teleport.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesWalls, monsterIsFlyer, monsterIsSwimmer } from './mondata.js';
 // C dbridge.c terrain predicates.
@@ -543,7 +543,7 @@ async function moveSurvivingHeroAway(entity, state) {
     if (!destination)
         return;
     await plineWithContinuation(`A ${heroIsHallucinating(state) ? 'normal' : 'strange'} force teleports you away...`);
-    await moveHeroByTeleport(destination.x, destination.y, state);
+    await teleds(destination.x, destination.y, state);
     entity.x = state.u.ux;
     entity.y = state.u.uy;
 }

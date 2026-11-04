@@ -39,7 +39,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, surfaceName, ceilingName } from './terrain_name.js';
 import { do_attack, prepareAppliedWeaponAttack } from './uhitm.js';
-import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted } from './teleport.js';
+import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
@@ -54,7 +54,7 @@ import { resetOccupations } from './cmd.js';
 import { maybeAdjustHeroBubble } from './elemental.js';
 import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
 import { requireShopGame } from './shop_types.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { placeHeroOnLevel } from './hero_location.js';
@@ -936,14 +936,11 @@ export async function finishLiquidDeath(options) {
     return await finishHeroDeath({ ...options, deathLineShown: options.deathLineShown ?? true });
 }
 export async function teleportHeroOutOfLiquid({ state, random, rollOne, publish, repaint, resetVision, recalculateVision, applyLandingEffects, }) {
-    const destination = safeTeleportDestination(state, random, rollOne);
-    if (!destination)
-        return null;
     // C trap.c:6936/7021 call safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT):
     // a light hero may drag an adjacent ball, and the verbose materialize
     // line precedes the landing effects (teleport.c:545-547).
-    const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
-        allowDrag: true,
+    const landing = await safe_teleds(state, {
+        random, rollOne, allowDrag: true,
         finishArrival: async (movement) => {
             if (state.flags?.verbose !== false) {
                 await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
@@ -954,7 +951,7 @@ export async function teleportHeroOutOfLiquid({ state, random, rollOne, publish,
             });
         },
     });
-    return arrival;
+    return landing ? landing.arrival : null;
 }
 async function finishLavaLifeSaving({ state, publish, random, rollOne, repaint, resetVision, recalculateVision, applyLandingEffects, die, }) {
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -1442,7 +1439,7 @@ export async function heroLiquidEffects(options = {}) {
             // C trap.c:5164 relocates through teleds(TELEDS_ALLOW_DRAG),
             // which resets the trap/hold state and drags the ball and chain
             // along, then runs the full destination effects below.
-            const { arrival: landing } = await moveHeroByTeleport(destination.x, destination.y, state, {
+            const { arrival: landing } = await teleds(destination.x, destination.y, state, {
                 allowDrag: true,
                 finishArrival: () => applyLandingEffects({
                     from: { x, y },
@@ -1474,30 +1471,29 @@ export async function heroLiquidEffects(options = {}) {
         }
         if (state.program_state.gameover)
             return { entered: true, moved: false, died: true };
-        const destination = safeTeleportDestination(state, random, rollOne);
-        if (destination) {
-            // C trap.c:5189 -> safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT)
-            // -> teleds(): a light hero may drag an adjacent ball, and the
-            // rescue relocation still prints the verbose materialize line
-            // (teleport.c:545-547).
-            const { arrival: escape } = await moveHeroByTeleport(destination.x, destination.y, state, {
-                allowDrag: true,
-                finishArrival: async (movement) => {
-                    if (state.flags?.verbose !== false) {
-                        await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
-                            ? 'the same' : 'a different'} location!`);
-                    }
-                    return finishLiquidTeleport(movement, {
-                        state, repaint, resetVision, recalculateVision, applyLandingEffects,
-                    });
-                },
-            });
-            if (!escape.died) {
+        // C trap.c:5189 -> safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT)
+        // -> teleds(): a light hero may drag an adjacent ball, and the
+        // rescue relocation still prints the verbose materialize line
+        // (teleport.c:545-547).
+        const escape = await safe_teleds(state, {
+            random, rollOne, allowDrag: true,
+            finishArrival: async (movement) => {
+                if (state.flags?.verbose !== false) {
+                    await publish(`You materialize in ${movement.oldx === movement.x && movement.oldy === movement.y
+                        ? 'the same' : 'a different'} location!`);
+                }
+                return finishLiquidTeleport(movement, {
+                    state, repaint, resetVision, recalculateVision, applyLandingEffects,
+                });
+            },
+        });
+        if (escape) {
+            if (!escape.arrival.died) {
                 await setHeroInWater(false, state);
                 state.underwater = false;
                 await announceTerrainRescue(DROWNING, state, publish);
             }
-            return escape;
+            return escape.arrival;
         }
         await publish("You're still drowning.");
     }

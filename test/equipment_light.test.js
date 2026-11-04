@@ -15,7 +15,7 @@ import { finishEnvironmentalMonsterDeath, removeMonsterFromGame } from '../js/mo
 import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/timeout.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { addInventoryItem } from '../js/invent.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
@@ -54,7 +54,7 @@ void test('gold dragon mail lights the dungeon while worn and moves with the her
     await applyArmorOnEffects(armor);
     await vision_recalc(0);
     assert.equal(cansee(13, 10), true);
-    await moveHeroByTeleport(20, 10);
+    await teleds(20, 10);
     await vision_recalc(0);
     assert.equal(cansee(13, 10), false);
     assert.equal(cansee(23, 10), true);

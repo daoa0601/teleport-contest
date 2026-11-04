@@ -14,7 +14,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { monsterFliesOrFloats } from '../js/mon.js';
 
-import { teleportMonsterThroughPortal } from '../js/teleport.js';
+import { mlevel_tele_trap } from '../js/teleport.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -107,7 +107,7 @@ for (const abuse of [30, 31]) {
         const trap = addTrap(source, MAGIC_PORTAL, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
         adjustHeroAlignment(-abuse);
 
-        await teleportMonsterThroughPortal(erinys, trap, { publish: async () => {} });
+        await mlevel_tele_trap(erinys, trap, { publish: async () => {} });
 
         assert.deepEqual(erinys.migrationDestination, { dnum: 0, dlevel: 2 });
         assert.equal(!!erinys.mconf, abuse <= 30);

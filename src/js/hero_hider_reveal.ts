@@ -29,7 +29,7 @@ import { EGG } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { isPoolAt } from './dbridge.js';
 import { ceilingName } from './terrain_name.js';
-import { moveHeroByTeleport, enexto } from './teleport.js';
+import { teleds, enexto } from './teleport.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterIsEel, monsterIsHider } from './mondata.js';
@@ -115,7 +115,7 @@ export async function revealConcealedHeroToAttacker(
             }
             // C teleds() ends with spoteffects(), so the landing square's
             // trap and autopickup take effect before the piercer strikes.
-            const { arrival } = await moveHeroByTeleport(landing.x, landing.y, state, { allowDrag: true });
+            const { arrival } = await teleds(landing.x, landing.y, state, { allowDrag: true });
             if (arrival.died || state.program_state?.gameover) return true;
             setMonsterApparentHeroPosition(monster, state, random, calls);
             await newsym(hero.ux, hero.uy);

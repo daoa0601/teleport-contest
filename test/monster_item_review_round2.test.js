@@ -13,7 +13,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { IRON_SHOES, KICKING_BOOTS, SPEED_BOOTS, LEASH, POT_HEALING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { teleportMonsterToRandomLevel } from '../js/teleport.js';
+import { mlevel_tele_trap } from '../js/teleport.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -221,7 +221,7 @@ void test('a cursed leash makes a teleporting pet yelp, wake a nearby sleeper, a
     game.multi = 5;
     const trap = addTrap(level, LEVEL_TELEP, 10, 10);
     installPagerInput(resetInputState(), { expected: /yelps/, limit: 4 });
-    await teleportMonsterToRandomLevel(pet, trap, { state: game });
+    await mlevel_tele_trap(pet, trap, { state: game });
     assert.match(game._pending_message || '', /little dog yelps!/);
     assert.equal(sleeper.msleeping, 0);
     assert.equal(game.context.run, 0);
@@ -247,7 +247,7 @@ void test('a leash stays attached while its slack message waits for acknowledgem
     };
     installPagerInput(input, { expected: /earlier|leash|disappears/, limit: 4 });
     await pline('An earlier message fills the line before the pet reaches the teleport trap.');
-    await teleportMonsterToRandomLevel(pet, trap, { state: game, random: limit => limit === 5 ? 2 : 10 });
+    await mlevel_tele_trap(pet, trap, { state: game, random: limit => limit === 5 ? 2 : 10 });
     assert.equal(checkedAttachment, true);
     assert.equal(leash.leashmon, 0);
     assert.equal(pet.mleashed, 0);

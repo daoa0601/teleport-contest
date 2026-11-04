@@ -75,7 +75,7 @@ import { clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying, heroRes
 import { animateStatue } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
-import { teleportHeroSafely } from './teleport.js';
+import { safe_teleds } from './teleport.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { newsym, see_monsters, shieldeff } from './display.js';
@@ -572,7 +572,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         clearHeroStrangulation(state);
         return;
     case Trouble.LAVA:
-        if (!await teleportHeroSafely()) await resetUtrap(false, state);
+        if (!await safe_teleds()) await resetUtrap(false, state);
         await announceTerrainRescue(DISSOLVED, state);
         return;
     case Trouble.STARVING:
@@ -609,7 +609,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         if (object) await uncursePrayerObject(requirePrayerObject(object), ringGlow(object, state), state);
         return;
     case Trouble.WALL:
-        if (await teleportHeroSafely()) await pline('Your surroundings change.');
+        if (await safe_teleds()) await pline('Your surroundings change.');
         else {
             hero.passesWallsTurns = d(4, 4) + 4;
             refreshProperty('passesWalls', state);

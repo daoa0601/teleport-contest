@@ -232,6 +232,7 @@ domove_fight_web	fightSeenWebWithForce
 avoid_trap_andor_region	confirmHeroStep
 invocation_message	announceInvocationSquare
 dotele	teleportHeroAtWill
+dotele	teleportAtWillCommand
 drop	dropHeroObject
 dosinkring	dropRingIntoSink
 finesse_ahriman	beginLevitatingArtifactDrop

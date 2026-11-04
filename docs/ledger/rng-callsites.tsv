@@ -2247,13 +2247,13 @@ src/js/mon.ts	dealWithMonsterOvercrowding	rn2	"[""2""]"	constant
 src/js/teleport.ts	randomMonsterRelocation	random	"[""ROWNO""]"	constant
 src/js/teleport.ts	randomMonsterRelocation	random	"[""remaining""]"	unproved
 src/js/teleport.ts	randomMonsterRelocation	rollOne	"[""COLNO - 1""]"	constant
-src/js/teleport.ts	safeTeleportDestination	random	"[""ROWNO""]"	constant
-src/js/teleport.ts	safeTeleportDestination	rollOne	"[""COLNO - 1""]"	constant
+src/js/teleport.ts	safe_teleds	random	"[""ROWNO""]"	constant
+src/js/teleport.ts	safe_teleds	rollOne	"[""COLNO - 1""]"	constant
 src/js/teleport.ts	teleportHero	random	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""++count""]"	guarded
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
-src/js/teleport.ts	teleportMonsterThroughPortal	random	"[""7""]"	constant
+src/js/teleport.ts	mlevel_tele_trap	random	"[""7""]"	constant
 src/js/teleport.ts	goodPosition	random	"[""13""]"	constant
 src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
 src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved

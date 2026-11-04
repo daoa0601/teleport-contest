@@ -14,7 +14,7 @@ import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
-    moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, safeTeleportDestination,
+    teleds, randomMonsterRelocation, relocateMonsterTo, safe_teleds,
 } from '../js/teleport.js';
 import { freshGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
@@ -69,13 +69,13 @@ void test('random teleport skips occupied squares, boulders, and traps', async (
     addTrap(state.level, TELEP_TRAP, 7, 5);
     const xs = [5, 6, 7, 8];
 
-    const destination = safeTeleportDestination(
-        state,
-        () => 5,
-        () => { const x = xs.shift(); assert.ok(x !== undefined); return x; },
-    );
+    const landing = await safe_teleds(state, {
+        random: () => 5,
+        rollOne: () => { const x = xs.shift(); assert.ok(x !== undefined); return x; },
+    });
 
-    assert.deepEqual(destination, { x: 8, y: 5 });
+    assert.ok(landing);
+    assert.deepEqual({ x: landing.movement.x, y: landing.movement.y }, { x: 8, y: 5 });
 });
 
 void test('fixed teleport clears its destination before moving the hero', async () => {
@@ -103,7 +103,7 @@ void test('fixed teleport clears its destination before moving the hero', async 
     // A swallowed teleport redraws the ordinary map after release. Build
     // its vision tables after the fixture's room terrain is installed.
     vision_reset();
-    await moveHeroByTeleport(20, 10, state);
+    await teleds(20, 10, state);
 
     assert.deepEqual({ x: state.u.ux, y: state.u.uy }, { x: 20, y: 10 });
     assert.deepEqual({ x: steed.mx, y: steed.my }, { x: 20, y: 10 });

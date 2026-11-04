@@ -14,7 +14,7 @@ import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { relocateMonsterTo, moveHeroByTeleport } from '../js/teleport.js';
+import { relocateMonsterTo, teleds } from '../js/teleport.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { maketrap } from '../js/trap.js';
@@ -69,7 +69,7 @@ void test('relocation updates a monster’s perceived position of a visible hero
     const orc = await createMonsterAt('hill orc', 11, 10);
     orc.mux = 10;
     orc.muy = 10;
-    await moveHeroByTeleport(18, 10);
+    await teleds(18, 10);
     await relocateMonsterTo(orc, 15, 10);
     assert.deepEqual([orc.mux, orc.muy], [18, 10]);
 });

@@ -32,7 +32,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties } from './monworn.js';
 import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, } from './mondata.js';
-import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, } from './teleport.js';
+import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, } from './teleport.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName } from './do_name.js';
 import { touchPetrifies, selfTouchPetrifyingWeapons, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM } from './stoning.js';
@@ -78,7 +78,7 @@ import { poisonHero } from './poison.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
 import { autopickupAtHero } from './pickup.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { encumber_msg } from './pickup.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
@@ -921,7 +921,7 @@ async function monsterTrapEffect(monster, trap, state, movement, random, rollDic
         return null;
     }
     if (trap.ttyp === MAGIC_PORTAL) {
-        const event = await teleportMonsterThroughPortal(monster, trap, {
+        const event = await mlevel_tele_trap(monster, trap, {
             state, random, force: !!movement.forcedTrapLanding, publish,
         });
         if (event) {
@@ -933,8 +933,8 @@ async function monsterTrapEffect(monster, trap, state, movement, random, rollDic
         return event;
     }
     if (trap.ttyp === LEVEL_TELEP) {
-        const event = await teleportMonsterToRandomLevel(monster, trap, {
-            state, random, rollOne, force: !!movement.forcedTrapLanding,
+        const event = await mlevel_tele_trap(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding, publish,
         });
         if (event) {
             movement.trap = event;
@@ -1014,8 +1014,8 @@ async function monsterTrapEffect(monster, trap, state, movement, random, rollDic
                 await seeTrap(trap, state);
             }
         }
-        const event = await teleportMonsterThroughHole(monster, trap, {
-            state, force: !!movement.forcedTrapLanding, publish,
+        const event = await mlevel_tele_trap(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding, publish,
         });
         if (!event)
             return null;
@@ -5064,7 +5064,7 @@ async function triggerTeleportTrap(trap, finishTeleport) {
             await teleportHero({ chooseDestination: askTeleportDestination });
             return true;
         }
-        await moveHeroByTeleport(destination.x, destination.y, game, { finishArrival: finishTeleport });
+        await teleds(destination.x, destination.y, game, { finishArrival: finishTeleport });
         return true;
     }
     finally {

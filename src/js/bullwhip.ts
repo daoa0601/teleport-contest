@@ -27,7 +27,7 @@ import { rnl, rn2, rnd } from './rng.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { heroIsBlind } from './senses.js';
-import { moveHeroByTeleport, enexto } from './teleport.js';
+import { teleds, enexto } from './teleport.js';
 import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -271,7 +271,7 @@ function pitEscapeDestination(targetX: number, targetY: number, monster: Monster
 
 async function moveHeroOutOfPit(destination: Position, state: GameState) {
     await resetUtrap(true, state);
-    const { arrival } = await moveHeroByTeleport(destination.x, destination.y, state, {
+    const { arrival } = await teleds(destination.x, destination.y, state, {
         allowDrag: true,
         finishArrival: async movement => {
             await newsym(movement.oldx, movement.oldy);

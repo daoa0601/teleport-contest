@@ -16,7 +16,7 @@ import {
 } from './object_data.js';
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig } from './hack.js';
 import type { Monster } from './monster_types.js';

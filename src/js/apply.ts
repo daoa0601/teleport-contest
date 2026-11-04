@@ -97,7 +97,7 @@ import type { InventoryClassification } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { lightDamage, lightRoom, transformMagicLampToOilLamp } from './light.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -139,7 +139,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
-import { askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
+import { askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -1692,7 +1692,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
             }),
     });
     if (state.program_state.gameover) return jumpResult(true, state);
-    await moveHeroByTeleport(destination.x, destination.y, state);
+    await teleds(destination.x, destination.y, state);
     if (state.program_state.gameover) return jumpResult(true, state);
     nomul(-1, state);
     state._helplessReason = 'jumping around';
