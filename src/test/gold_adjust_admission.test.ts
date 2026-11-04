@@ -3,8 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGoldObject, setHeroGoldAmount } from '../js/hero_gold.js';
-import { resetInputState } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { CLUB, DAGGER, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -71,7 +70,7 @@ void test('#adjust repairs a second gold stack without requesting a destination'
     game.inventory.push(misplaced);
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCannedKeys('#z');
+    queueCommandKeys('#z');
     planInput(input, t, []);
 
     await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
@@ -94,7 +93,7 @@ void test('gold repair keeps lowercase items first when inventory letters later 
     game.inventory.push(misplaced);
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCannedKeys('#z');
+    queueCommandKeys('#z');
     planInput(input, t, [{ prompt: /Coins/, keys: '\x1b' }]);
 
     await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
@@ -112,7 +111,7 @@ void test('moving a weapon keeps lowercase items first when inventory letters la
     const club = await addInventoryObject(CLUB, { invlet: 'A' });
     const input = resetInputState();
     input.feed('adjust\r');
-    queueCannedKeys('#b');
+    queueCommandKeys('#b');
     planInput(input, t, [
         { prompt: /Adjust letter to what/, keys: 'c' },
         { prompt: /Weapons/, keys: '\x1b' },

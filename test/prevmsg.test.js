@@ -7,8 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { nhgetch, resetInputState } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { nhgetch, queueCommandKeys, resetInputState } from '../js/input.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { ARROW, DAGGER } from '../js/object_data.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -364,7 +363,7 @@ void test('a line prompt records the answer typed into it', async (t) => {
     input.feed('name\r');
     // C rhack() pops CQ_CANNED before using its command argument; queue
     // the command as well as docallcmd()'s category and getobj()'s letter.
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     planInput(input, t, [{
             prompt: /What do you want to name these arrows named First Flight\?/,
             keys: 'Fletching\r',

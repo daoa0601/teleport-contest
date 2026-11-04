@@ -12,12 +12,12 @@
 // allmain.c.
 import { game, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
+import { commandResultCancelled, setMulti, clearCannedCommands, paranoidQuery } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
 import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL, BLINDFOLD, OBJECT_SUBTYPE, BATTLE_AXE } from './object_data.js';
-import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import { isBimanualObject, isSword, isFlimsyObject, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
 import { recordRandom } from './monster_action_types.js';
@@ -2755,7 +2755,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
                 continue;
             await removeHeroAccessory(ring, state);
             await dropInventoryObjectAtHero(ring, { state, publish });
-            cmdq_clear(CQ_CANNED, state);
+            clearCannedCommands(state);
         }
     }
     let otherWeapon = null;
@@ -2770,7 +2770,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
         slipped++;
         wasTwoWeapon = true;
         await setSecondaryWeapon(null, state);
-        cmdq_clear(CQ_CANNED, state);
+        clearCannedCommands(state);
         if (await canLetGo(secondary, '', state))
             await dropInventoryObjectAtHero(secondary, { state, publish });
     }
@@ -2796,7 +2796,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
         which = rightHanded ? 'right ' : 'left ';
     await publish(`${kind.startsWith('corpse') ? 'The' : 'Your'} ${otherWeapon ? 'other ' : ''}${kind} ${slipped ? 'also ' : ''}${slipVerb(plural)} from your ${which}${hand}.`);
     await setPrimaryWeapon(null, state);
-    cmdq_clear(CQ_CANNED, state);
+    clearCannedCommands(state);
     if (await canLetGo(primary, '', state))
         await dropInventoryObjectAtHero(primary, { state, publish });
 }

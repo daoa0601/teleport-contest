@@ -6,9 +6,9 @@
 // boxlock(), doorlock().
 import { currency } from './currency.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
-import { CQ_CANNED, A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
+import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
 import { isok } from './cmd.js';
-import { commandResultCancelled, cmdq_add_dir, cmdq_add_ec } from './cmd.js';
+import { commandResultCancelled } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT } from './object_data.js';
 import { doloot } from './pickup.js';
@@ -563,10 +563,12 @@ async function openLockedDoor(x, y) {
     if (flags & AUTOUNLOCK_KICK && !game.u.usteed
         && await promptYesNoQuit('Kick it?') === 'y') {
         // lock.c queues dokick with the door direction; the open command
-        // itself spends no turn, the kick that follows owns the action
-        // (lock.c:886-890).
-        cmdq_add_ec(CQ_CANNED, 'dokick');
-        cmdq_add_dir(CQ_CANNED, Math.sign(x - game.u.ux), Math.sign(y - game.u.uy), 0);
+        // itself spends no turn, the kick that follows owns the action.
+        game._cannedCommands ||= [];
+        game._cannedCommands.push({
+            kind: 'kick',
+            dx: Math.sign(x - game.u.ux), dy: Math.sign(y - game.u.uy),
+        });
         return false;
     }
     return Boolean(game.context.move);

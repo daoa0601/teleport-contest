@@ -8,8 +8,8 @@
 // hcolor(), rndcolor(), hliquid(), rndorcname(), noveltitle(),
 // lookup_novel().  The category menu is naming_categories.ts.
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, } from './const.js';
-import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
-import { CMDQ_KEY, CQ_CANNED } from './const.js';
+import { clearCannedCommands, takeQueuedAdjacentPosition, takeQueuedKey } from './cmd.js';
+import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
@@ -50,20 +50,27 @@ import { showGetposTip } from './hack.js';
 // C do_name.c:name_ok().
 // C do_name.c:call_ok().
 export async function doname() {
-    // C do_name.c:docallcmd(): one cmdq_pop() (do_name.c:511-518) chooses
-    // the naming category. Only a CMDQ_KEY selects one; every other
-    // popped entry clears CQ_CANNED and leaves ch 0, whose switch case
-    // does nothing (do_name.c:558-560). An empty queue asks the category
-    // menu.
+    // do_name.c:docallcmd() uses a queued key as the naming category.
+    // Only CMDQ_KEY selects one (do_name.c:511-518); any other entry —
+    // a direction, the user-input placeholder, or a queued command
+    // reached through an empty response queue — clears CQ_CANNED and
+    // leaves ch 0, whose switch case does nothing (do_name.c:558-560).
     let queuedChoice;
-    const cmdq = cmdq_pop();
-    if (cmdq) {
-        if (cmdq.typ === CMDQ_KEY)
-            queuedChoice = cmdq.key;
-        else {
-            cmdq_clear(CQ_CANNED);
+    if (game._inDoAgain) {
+        const queued = takeRepeatCommand();
+        if (queued && queued.kind === 'key')
+            queuedChoice = queued.key;
+        else if (queued) {
             queuedChoice = 0;
+            clearCannedCommands();
         }
+    }
+    else {
+        const queued = takeQueuedKey();
+        if (queued === 'user-input')
+            clearCannedCommands();
+        queuedChoice = typeof queued === 'object' ? queued.key
+            : queued === 'none' ? undefined : 0;
     }
     const choice = queuedChoice === undefined ? await chooseNamingCategory()
         : String.fromCharCode(queuedChoice);

@@ -1,6 +1,7 @@
-import { cmdq_clear, cmdq_pop } from './cmd.js';
+import { takeRepeatCommand } from './cmd.js';
+import { clearCannedCommands } from './cmd.js';
 import { game } from './gstate.js';
-import { CMDQ_KEY, CQ_CANNED } from './const.js';
+import { takeCommandResponse } from './input.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 
 
@@ -8,17 +9,17 @@ import { OBJECT_CLASS_SYMBOLS } from './display.js';
 // the filter, even when its caller supplied inventory letters instead.
 // Undefined means no queued answer; zero means the queue rejected a choice.
 export function takeQueuedInventoryChoice(classes: string | null = null): number | undefined {
-    // C invent.c:display_inventory(): one cmdq_pop() (invent.c:3430-3447)
-    // must yield a CMDQ_KEY naming a visible object of a filtered class;
-    // any other entry — or an unmatched letter — clears CQ_CANNED and
-    // returns 0.
-    const entry = cmdq_pop();
-    if (!entry) return undefined;
-    if (entry.typ === CMDQ_KEY) {
-        const object = game.inventory.find(item => item.invlet === String.fromCharCode(entry.key));
+    const entry = game._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
+    if (entry === undefined && (game._inDoAgain || !game._cannedCommands?.length))
+        return undefined;
+    const key = typeof entry === 'number' ? entry
+        : typeof entry === 'object' && 'kind' in entry && entry.kind === 'key'
+            ? entry.key : null;
+    if (key !== null) {
+        const object = game.inventory.find(item => item.invlet === String.fromCharCode(key));
         const symbol = object ? OBJECT_CLASS_SYMBOLS[object.oclass] : undefined;
-        if (object && (!classes || symbol !== undefined && classes.includes(symbol))) return entry.key;
+        if (object && (!classes || symbol !== undefined && classes.includes(symbol))) return key;
     }
-    cmdq_clear(CQ_CANNED);
+    clearCannedCommands();
     return 0;
 }

@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { CQ_CANNED, W_RINGL } from '../js/const.js';
-import { cmdq_peek } from '../js/cmd.js';
+import { W_RINGL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryReport } from '../js/inventory_reports.js';
@@ -9,7 +8,6 @@ import { queryObjectClasses } from '../js/pickup.js';
 
 import { DAGGER, POT_HEALING, RIN_PROTECTION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
-import { queueCannedKeys } from './support/canned-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('a filtered inventory report rejects a queued letter outside its native class filter', async () => {
@@ -18,12 +16,12 @@ void test('a filtered inventory report rejects a queued letter outside its nativ
     ring.invlet = 'a';
     game.uleft = ring;
     const input = resetInputState();
-    queueCannedKeys('aq');
+    input.queueCommandKeys('aq');
 
     const action = await inventoryReport('rings');
 
     assert.equal(action, null);
-    assert.equal(cmdq_peek(CQ_CANNED), null, 'an invalid inventory choice clears the remaining canned answers');
+    assert.equal(input.takeCommandResponse(), undefined, 'an invalid inventory choice clears the remaining canned answers');
 });
 
 void test('looking at inventory during a class query consumes its queued inventory selection', async () => {
@@ -31,7 +29,7 @@ void test('looking at inventory during a class query consumes its queued invento
     const dagger = await addInventoryObject(DAGGER);
     await addInventoryObject(POT_HEALING);
     const input = resetInputState();
-    queueCannedKeys(`i\n${dagger.invlet}\n`);
+    input.queueCommandKeys(`i\n${dagger.invlet}\n`);
     input.feed(' \x1b');
 
     const selection = await queryObjectClasses('put in', game.inventory);

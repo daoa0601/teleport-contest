@@ -1,8 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
-import { cmdq_add_ec, cmdq_add_int, cmdq_add_key, cmdq_clear } from '../js/cmd.js';
-import { CQ_CANNED, CQ_REPEAT } from '../js/const.js';
+import { rememberCommand, rememberObjectChoice } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -59,15 +58,12 @@ void test('repeating an individual naming quietly does nothing', async (t) => {
 void test('a non-key naming repeat skips the menu and discards canned commands', async (t) => {
     const input = freshTurnRoom();
     const naming = game.commandBindings.lookup('C'.charCodeAt(0));
-    assert.ok(naming?.command, 'the naming key must be bound');
-    cmdq_clear(CQ_REPEAT);
-    cmdq_add_ec(CQ_REPEAT, naming.command.handler);
-    cmdq_add_int(CQ_REPEAT, 2);
-    cmdq_add_key(CQ_REPEAT, 'a'.charCodeAt(0));
+    assert.ok(naming);
+    rememberCommand(naming, false);
+    rememberObjectChoice('a'.charCodeAt(0), 2);
     // Resume a repeat with a count where docallcmd() expects a category.
     game._inDoAgain = true;
-    cmdq_clear(CQ_CANNED);
-    cmdq_add_ec(CQ_CANNED, 'donull');
+    game._cannedCommands = [{ kind: 'command', name: 'wait' }];
     planInput(input, t, []);
     try {
         await rhack(0);
