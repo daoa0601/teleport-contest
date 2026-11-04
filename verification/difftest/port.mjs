@@ -73,7 +73,7 @@ const data = await import('../../js/object_data.js');
 const monsters = await import('../../js/monster_data.js');
 const constants = await import('../../js/const.js');
 const methods = await import('../../js/monster_attack_types.js');
-const { objectClassForType } = await import('../../js/o_init.js');
+const { objectClassForType } = data;
 const { armorSlotFor } = await import('../../js/do_wear.js');
 const { BOGUS_MONSTERS } = await import('../../js/random_text_data.js');
 if (process.argv.includes('--metadata')) {
