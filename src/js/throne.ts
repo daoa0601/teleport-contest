@@ -13,7 +13,7 @@ import {
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
 } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
@@ -118,7 +118,7 @@ async function announceAttributeChange(attribute: number, amount: number, condit
     if (message) await plineWithContinuation(message);
     if (result.changed && game._moveloopStarted
         && (attribute === A_STR || attribute === A_CON))
-        await reportHeroEncumbrance(game);
+        await encumber_msg(game);
     return result;
 }
 

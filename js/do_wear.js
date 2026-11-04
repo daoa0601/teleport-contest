@@ -53,7 +53,7 @@ import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
 import { changeHeroAlignmentFromHelmet } from './alignment.js';
 import { currentAttribute, attributeIsAtLimit } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
@@ -1329,7 +1329,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
     if (losingGloves) {
         if (object.otyp === GAUNTLETS_OF_POWER)
             learnObjectType(object.otyp, state);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         // C Gloves_off() cures only existing Glib; make_glib(0) without it
         // would mark the status line.
         if (state.u.glib)

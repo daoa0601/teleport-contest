@@ -1,5 +1,5 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
 import { isok } from './cmd.js';
 import type { DirectionVector } from './const.js';
@@ -879,7 +879,7 @@ export async function dismountHero(
                 died: true,
             };
         state.context.botl = true;
-        await reportHeroEncumbrance(state, announce);
+        await encumber_msg(state, announce);
         state.vision_full_recalc = 1;
     } else state.context.botl = true;
     if (isPolearm(state.uwep || hero.uwep)) state._unweapon = true;

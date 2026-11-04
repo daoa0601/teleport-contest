@@ -3,7 +3,7 @@ import {
     objectUnique, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR,
 } from './object_data.js';
 import { deityName } from './alignment.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { STRAT_WAITMASK } from './const.js';
 import { isok } from './cmd.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -69,6 +69,6 @@ export async function catchQuestObject(monster: Monster, object: GameObject, sta
     }
     // C addinv() preserves knowledge gained by xname() and finish_quest().
     await addInventoryItem(object, null, false);
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
     return true;
 }

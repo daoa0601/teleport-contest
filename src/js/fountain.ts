@@ -48,7 +48,7 @@ import { fruitName } from './fruit.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { setHeroGoldAmount } from './hero_gold.js';
 import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -446,7 +446,7 @@ async function blessedFountainDraught(loc: MapLocation): Promise<void> {
         }
         if (change.changed && state._moveloopStarted
             && (attribute === A_STR || attribute === A_CON))
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
         if (change.changed && littleLuck) break;
     }
     await displayMessageWindow();

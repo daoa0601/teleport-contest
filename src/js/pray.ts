@@ -21,7 +21,7 @@ import { reviveCorpseForHero, reviveCorpseImmediately } from './corpse_revival.j
 
 import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
 import { isok } from './cmd.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
@@ -658,7 +658,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         for (const index of attributeIndices)
             hero.acurr.a[index] = Math.max(hero.acurr.a[index], hero.amax.a[index]);
         state.context.botl = true;
-        await reportHeroEncumbrance(state, pline);
+        await encumber_msg(state, pline);
         return;
     }
     case Trouble.BLIND: {
@@ -1045,7 +1045,7 @@ async function restoreHeroVigor(): Promise<void> {
     if (hero.acurr.a[A_STR] < hero.amax.a[A_STR]) {
         hero.acurr.a[A_STR] = hero.amax.a[A_STR];
         game.context.botl = true;
-        await reportHeroEncumbrance(game, pline);
+        await encumber_msg(game, pline);
     }
     if (hero.uhunger < 900) await init_uhunger(game, pline);
     hero.uluck = Math.max(0, hero.uluck || 0);

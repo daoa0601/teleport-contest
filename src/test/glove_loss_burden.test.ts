@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -18,7 +18,7 @@ void test('losing gauntlets of power immediately reports the increased carrying 
     await rhack('W'.charCodeAt(0));
     for (let turn = 0; turn < 10 && !gloves.known; turn++) await moveloop_core();
     await addInventoryObject(ROCK, { quan: 80 });
-    await reportHeroEncumbrance();
+    await encumber_msg();
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message); };

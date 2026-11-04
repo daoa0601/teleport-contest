@@ -53,7 +53,7 @@ import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from 
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsCentaur, monsterIsMindFlayer, monsterIsMindless, monsterIsNonliving, monsterIsSlithy, monsterIsTelepathic, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, monsterWrappingAllowed, validVampireShiftForm, monsterHasEyes, monsterHasProperName, monsterIsAmphibious, monsterIsBreathless, monsterIsEel, monsterIsHumanoid, monsterPassesWalls, monsterPerceives, monsterDigests } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
@@ -580,7 +580,7 @@ export async function returnHeroToHumanForm(state = game, { publish = plineWithC
     endVoluntaryMultiTurn(state);
     state.context.botl = true;
     state.vision_full_recalc = 1;
-    await reportHeroEncumbrance(state, publish);
+    await encumber_msg(state, publish);
     if (wasFlying && !state.u.flying && state.u.usteed)
         await publish(`You and ${monsterName(state.u.usteed, { state })} return gently to the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
     const retouch = await retouchEquipment(2, { state, publish, die });
@@ -861,7 +861,7 @@ export async function polymonHero(mnum, options = {}) {
     await see_monsters();
     // dropz() may already have reported the new body's carrying capacity
     // while dropping armor. Native encumber_msg() shares that cached level.
-    await reportHeroEncumbrance(game);
+    await encumber_msg(game);
     const retouch = await retouchEquipment(2);
     if (retouch.died)
         return { transformed: true, mnum, died: true };
@@ -1343,7 +1343,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
     }
     game.context.botl = true;
     await see_monsters();
-    await reportHeroEncumbrance(game);
+    await encumber_msg(game);
     const retouch = await retouchEquipment(2);
     const selfTouch = retouch.died || game.uarmg || game.u?.uarmg ? retouch
         : await selfTouchPetrifyingWeapons();
@@ -1364,7 +1364,7 @@ async function unsuccessfulPolymorph() {
     const died = await finishHeroDeath({ killer: 'unsuccessful polymorph', deathLineShown: true });
     if (!died) {
         await newuhs(false);
-        await reportHeroEncumbrance(game);
+        await encumber_msg(game);
     }
     return { transformed: false, died };
 }

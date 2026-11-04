@@ -10,7 +10,7 @@ import { enchantWeapon } from '../js/read.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { healHeroLegs, dropInventoryObjectAtHero } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 
 import { AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE, HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH } from '../js/object_data.js';
 import { claimNextDueObjectTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
@@ -128,7 +128,7 @@ void test('a dissolving carried glob reports load relief only once', async () =>
     input.beforeRead = () => { messages.push(game._pending_message); input.feed(' '); };
 
     await runObjectTimer(timer, game.moves);
-    await reportHeroEncumbrance();
+    await encumber_msg();
     messages.push(game._pending_message);
 
     assert.equal(glob.where, 'gone');

@@ -102,7 +102,7 @@ import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCannotVomit, nameToMonster } from './mondata.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 
 interface PetrificationAdvanceResult {
     active: boolean;
@@ -738,7 +738,7 @@ export async function advanceHeroSickness({
         delete hero.sickCause;
         await exerciseAttribute(A_CON, false, state);
         const change = adjustAttribute(A_CON, -1, state);
-        if (change.changed && state._moveloopStarted) await reportHeroEncumbrance(state);
+        if (change.changed && state._moveloopStarted) await encumber_msg(state);
         return { active: false, died: false, recovered: true, turns: 0 };
     }
 

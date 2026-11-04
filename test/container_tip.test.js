@@ -5,7 +5,7 @@ import { LAVAPOOL } from '../js/const.js';
 import { BAG_OF_HOLDING, CAN_OF_GREASE, CHEST, CLUB, DAGGER, HORN_OF_PLENTY, ROCK, SACK, WAN_CANCELLATION } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -159,7 +159,7 @@ void test('tipping a floor chest into a carried bag reports the lighter load aft
     bag.contents = [rocks];
     bag.owt = objectWeight(bag);
     assert.equal(nearCapacity(game), SLT_ENCUMBER);
-    await reportHeroEncumbrance();
+    await encumber_msg();
     await runExtendedCommand('tip', 'ya' + ' '.repeat(20));
     assert.equal(bag.where, 'gone');
     assert.equal(nearCapacity(game), UNENCUMBERED);

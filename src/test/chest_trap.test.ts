@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { triggerChestTrap } from '../js/chest_trap.js';
 import { M_SEEN_COLD, M_SEEN_ELEC } from '../js/const.js';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { flush_screen } from '../js/display.js';
 
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -470,7 +470,7 @@ for (const held of [false, true]) {
         pushKeys(' '.repeat(10));
         initRng(7n);
 
-        const result = await useContainer(chest, { held });
+        const result = await use_container(chest, { held });
 
         assert.equal(result.spentTime, true);
         assert.equal(game._helplessTurns, 1);
@@ -485,7 +485,7 @@ void test('opening a carried trapped chest announces the opening before the trap
     const input = resetInputState();
     initRng(7n);
 
-    const opening = useContainer(chest, { held: true });
+    const opening = use_container(chest, { held: true });
     await Promise.race([opening, input.waitUntilBlocked()]);
     const text = requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
     input.feed(' '.repeat(10));

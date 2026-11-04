@@ -1,5 +1,5 @@
 // C dothrow.c:AutoReturn(), throwit(), and sho_obj_return_to_u().
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { heroArmName, heroFootName } from './body_parts.js';
 import { KILLED_BY, W_QUIVER, W_WEP } from './const.js';
@@ -48,7 +48,7 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
     if (!impaired && rn2(100) !== 0) {
         await plineWithContinuation(`${definiteObjectAction(object, 'return', state)} to your hand!`);
         const returned = await addInventoryItemBefore(object, oldSlot);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         if ((returned.owornmask ?? 0) & W_QUIVER)
             await setQuiverObject(null, state);
         await setPrimaryWeapon(returned, state);

@@ -12,7 +12,7 @@ import { definiteName } from './objnam.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { loseHeroHp } from './hack.js';
 const POISON_EFFECT = [
     'You feel weaker!',
@@ -90,7 +90,7 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
         state.context.botl = true;
         // adjattrib() calls encumber_msg() before poisontell() during play.
         if (state.program_state.in_moveloop && (target === A_STR || target === A_CON))
-            await reportHeroEncumbrance(state, line);
+            await encumber_msg(state, line);
         await line(poisonAttributeMessage(target, state));
     };
     const outcome = fatal
@@ -139,7 +139,7 @@ export async function poisonHero({ reason, killer, attribute, fatal = 30, state 
         deathCause: /poison/iu.test(killer) ? hpDeathCause : `poisoned by ${attributedKiller}`,
     }))
         return { damage, died: true, pagerOwned };
-    await reportHeroEncumbrance(state, line);
+    await encumber_msg(state, line);
     return {
         damage,
         died: false,

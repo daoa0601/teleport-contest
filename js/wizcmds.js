@@ -35,7 +35,7 @@ import { resolveHeroArrivalCollision } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { loseHeroExperience, gainExperienceLevel } from './exper.js';
 import { exerciseAttribute } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { withMonsterNoticesBlocked, applyHeroLiquidEffects, mayDig, showGetposTip, checkSpecialRoom } from './hack.js';
 import { dungeonDepth, depth } from './hacklib.js';
 import { specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth, levelIsWizardTower, sameDungeonLevel, specialPrototypeAt } from './dungeon.js';
@@ -82,7 +82,7 @@ export async function wizWish() {
         else
             game.flags.verbose = verbose;
     }
-    await reportHeroEncumbrance();
+    await encumber_msg();
 }
 // C wiz_polyself(): allow a chosen form without consuming a game turn.
 export async function wizPolyself() {

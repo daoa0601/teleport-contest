@@ -30,7 +30,7 @@ import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters } fro
 import { tryCallObjectType, healHeroLegs, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
@@ -274,7 +274,7 @@ export async function init_uhunger(
     hero.uhs = NOT_HUNGRY;
     if (!hero.atemp || !(hero.atemp.a[A_STR] < 0)) return;
     hero.atemp.a[A_STR] = 0;
-    await reportHeroEncumbrance(state, publish);
+    await encumber_msg(state, publish);
 }
 
 // C eat.c:eatmdone().
@@ -1885,7 +1885,7 @@ export async function eataccessory(object: GameObject, { state = game }: { state
             const message = attributeChangeMessage(attribute, change, state);
             if (message) await pline(message);
             if (state._moveloopStarted && [A_STR, A_CON].includes(attribute))
-                await reportHeroEncumbrance(state);
+                await encumber_msg(state);
             learnObjectType(object.otyp, state);
         }
     } else if ([ACCURACY, DAMAGE].includes(object.otyp)) {

@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHandName } from './body_parts.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { flyBoomerang } from './boomerang.js';
 import { plineWithContinuation } from './pline.js';
 import { hitMonsterWithThrownEggPieOrVenom, } from './hero_thrown_egg_pie_venom.js';
@@ -181,7 +181,7 @@ async function returnThrowToInventory(object, weaponMask, twoWeapons, oldSlot, s
         const child = parent === object ? sibling : object;
         const joined = await rejoinObjectStack(parent, child, state);
         if (joined) {
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
             return joined;
         }
         state.inventory.splice(state.inventory.indexOf(object), 1);
@@ -202,7 +202,7 @@ async function returnThrowToInventory(object, weaponMask, twoWeapons, oldSlot, s
         await setQuiverObject(returned, state);
     if (twoWeapons && !state.u.twoweap)
         setTwoWeaponCombat(true, state);
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
     return returned;
 }
 //# sourceMappingURL=ordinary_throw.js.map

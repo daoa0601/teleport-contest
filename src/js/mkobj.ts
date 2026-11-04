@@ -60,7 +60,7 @@ import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObje
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity } from './hack.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
@@ -1528,7 +1528,7 @@ export async function useHornOfPlenty(horn: GameObject, {
         } else if (target) {
             await addObjectToContainer(target, object);
             target.owt = objectWeight(target);
-            if (target.where === 'inventory') await reportHeroEncumbrance();
+            if (target.where === 'inventory') await encumber_msg();
         } else if (!heroCanReachFloor(game, { checkPit: true })) {
             await hitFloorWithObject(object);
         } else {
@@ -2108,7 +2108,7 @@ export async function finishGlobTimer(
     else scheduleNextGlobAttempt(event.glob, state, currentTurn);
     event.finishPending = false;
     event.finished = true;
-    await reportHeroEncumbrance(state, publish);
+    await encumber_msg(state, publish);
     return event;
 }
 

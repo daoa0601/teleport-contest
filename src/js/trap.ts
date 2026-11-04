@@ -117,7 +117,7 @@ import type { LevitationState, PropertyState } from './property_types.js';
 import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { setHeroGrip } from './mon.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
@@ -7186,7 +7186,7 @@ export async function floatHeroUp(
         await plineWithContinuation('You are no longer able to control your flight.');
     refreshMovementProperties(state);
     state.context.botl = true;
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
 }
 
 // C trap.c:float_down(hmask, emask).  The raw C bitmask arguments are kept:
@@ -7230,7 +7230,7 @@ export async function floatHeroDown(
                 `You are no longer trying to float up from the ${hold}.`);
         }
         refreshMovementProperties(state);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         return 0;
     }
 
@@ -7244,7 +7244,7 @@ export async function floatHeroDown(
             await plineWithContinuation(
                 'You have stopped levitating and are now flying.');
             refreshMovementProperties(state);
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
             return 1;
         }
     }
@@ -7254,7 +7254,7 @@ export async function floatHeroDown(
             `You float down, but you are still ${
                 monsterDigests(hero.ustuck) ? 'swallowed' : 'engulfed'}.`);
         refreshMovementProperties(state);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         return 1;
     }
 
@@ -7370,7 +7370,7 @@ export async function floatHeroDown(
     // Levitation gives maximum carrying capacity, so having it end can raise
     // encumbrance: after the landing messages, before traps and autopickup.
     refreshMovementProperties(state);
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
 
     // Falling through a trap door changes the level before this returns.
     const levelBefore = { dnum: hero.uz?.dnum, dlevel: hero.uz?.dlevel };

@@ -39,7 +39,7 @@ import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 const WEAPON_CLASS = 2;
 const SCROLL_CLASS = 9;
 export async function dotwoweapon() {
@@ -876,7 +876,7 @@ async function sharpenWormTeeth(uwep, scrollType, state) {
     if (scrollType !== null)
         learnObjectType(scrollType, state);
     if (multiple)
-        await reportHeroEncumbrance(state, pline);
+        await encumber_msg(state, pline);
 }
 // C chwepon() crysknife branch: degradation back into one worm tooth.
 async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
@@ -896,7 +896,7 @@ async function dullCrysknife(uwep, scrollBknown, scrollType, state) {
     if (scrollType !== null && scrollBknown)
         learnObjectType(scrollType, state);
     if (multiple)
-        await reportHeroEncumbrance(state, pline);
+        await encumber_msg(state, pline);
 }
 // C chwepon() bare-hands branch, including the cursed welded tin opener.
 async function strangeFeelingOn(scroll, amount, state) {

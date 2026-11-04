@@ -10,7 +10,7 @@ import type { DeathHandler } from './end.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
@@ -204,7 +204,7 @@ export async function gainHeroStrength(object: GameObject | null = null, amount 
             const message = attributeChangeMessage(A_STR, change, state);
             if (message) await plineWithContinuation(message);
         }
-        if (state._moveloopStarted) await reportHeroEncumbrance(state);
+        if (state._moveloopStarted) await encumber_msg(state);
     }
     return change;
 }
@@ -247,7 +247,7 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
     if (remainingLoss > 0 && (Upolyd(hero) || !wasPolymorphed)) {
         const change = adjustAttribute(A_STR, -remainingLoss, state);
         if (change.changed && state._moveloopStarted)
-            await reportHeroEncumbrance(state, publish);
+            await encumber_msg(state, publish);
     }
     return false;
 }
@@ -278,7 +278,7 @@ export function attributeChangeMessage(attribute: number, result: AttributeChang
 export async function exerciseAttribute(attribute: number, improving: boolean, state: GameState = game): Promise<void> {
     if (!accumulateAttributeExercise(attribute, improving, state)) return;
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
 }
 
 // C attrib.c:exercise() for Wisdom: exercise never calls encumber_msg().
@@ -332,7 +332,7 @@ export async function checkAttributeExercise(sourceTurn: number, state: GameStat
                     const message = attributeChangeMessage(attribute, change, state);
                     if (message) await plineWithContinuation(message);
                     if (state._moveloopStarted && (attribute === A_STR || attribute === A_CON))
-                        await reportHeroEncumbrance(state);
+                        await encumber_msg(state);
                     const explanations = EXERCISE_EXPLANATIONS[attribute];
                     if (!explanations)
                         throw new Error(`Attribute ${attribute} cannot accumulate exercise`);

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT, PARANOID_AUTOALL, PARANOID_CONFIRM } from '../js/const.js';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -31,7 +31,7 @@ void test('container category menus explain auto-selection and require another c
     const { chest } = await filledChest();
     const input = resetInputState();
     input.feed('o');
-    const looting = useContainer(chest, { held: true });
+    const looting = use_container(chest, { held: true });
     await input.waitUntilBlocked();
     const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('').trim()) || [];
     const autoSelect = rows.find(row => row.includes('Auto-select'));
@@ -49,7 +49,7 @@ void test('auto-selecting the weapon category takes weapons without an object se
     const { chest, club, potion } = await filledChest();
     const input = resetInputState();
     input.feed('o');
-    const looting = useContainer(chest, { held: true });
+    const looting = use_container(chest, { held: true });
     await input.waitUntilBlocked();
     input.feed('A)\n');
     const result = await Promise.race([
@@ -74,7 +74,7 @@ void test('container filters require both the selected class and bless/curse sta
     const input = resetInputState();
     input.feed('oA)U\n');
 
-    await useContainer(chest, { held: true });
+    await use_container(chest, { held: true });
 
     assert.ok(game.inventory.includes(club));
     assert.equal(chest.contents?.includes(potion), true);
@@ -86,7 +86,7 @@ void test('a count on a single just-picked stack stashes that many items directl
     const clubs = await addInventoryObject(CLUB, { quantity: 5, pickup_prev: true });
     const input = resetInputState();
     input.feed('i2P\n');
-    const looting = useContainer(chest, { held: true });
+    const looting = use_container(chest, { held: true });
     const result = await Promise.race([
         looting.then(value => ({ finished: true, value })),
         input.waitUntilBlocked().then(() => ({ finished: false, value: null })),
@@ -124,7 +124,7 @@ for (const { artifact, sight, expected } of [
         const input = resetInputState();
         input.feed('i');
 
-        const looting = useContainer(chest, { held: true });
+        const looting = use_container(chest, { held: true });
         await input.waitUntilBlocked();
         const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('').trim()) || [];
         const hint = rows.find(row => row.includes('Just picked up:')) || '';
@@ -145,7 +145,7 @@ void test('a just-picked held container and another item still require an item s
     await addInventoryObject(POT_HEALING);
     const input = resetInputState();
     input.feed('iP\n');
-    const looting = useContainer(chest, { held: true });
+    const looting = use_container(chest, { held: true });
     const boundary = await Promise.race([
         looting.then(() => 'finished' as const),
         input.waitUntilBlocked().then(() => 'input' as const),
@@ -170,7 +170,7 @@ void test('a rejected counted just-picked selection keeps both stacks and spends
     const input = resetInputState();
     input.feed('i2P\n');
 
-    const result = await useContainer(chest, { held: true });
+    const result = await use_container(chest, { held: true });
 
     const carried = game.inventory.filter(object => object.otyp === LOADSTONE);
     assert.equal(stones.quan, 3, 'The original loadstone stack keeps the unselected three.');
@@ -186,7 +186,7 @@ void test('paranoid auto-selection offers quit and cancels without moving items'
     game.flags.paranoia_bits = PARANOID_AUTOALL | PARANOID_CONFIRM;
     const input = resetInputState();
     input.feed('oA\n');
-    const looting = useContainer(chest, { held: true });
+    const looting = use_container(chest, { held: true });
     await input.waitUntilBlocked();
     const prompt = requireScreenRow(0).map(cell => cell.ch).join('').trimEnd();
     input.feed('quit\n');
@@ -210,7 +210,7 @@ void test('a single-class category menu leaves the implied-all hint for its firs
     for (const contents of [[club, cursedClub], [club, cursedClub, potion], [club, cursedClub, potion]]) {
         chest.contents = contents;
         input.feed('o');
-        const looting = useContainer(chest, { held: true });
+        const looting = use_container(chest, { held: true });
         await input.waitUntilBlocked();
         const rows = game.nhDisplay?.grid.map(row => row.map(cell => cell.ch).join('')) || [];
         hints.push(rows.some(row => row.includes("'a' is implied")));

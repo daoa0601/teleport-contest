@@ -4,7 +4,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { FAINTED, HUNGRY } from '../js/const.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
@@ -27,7 +27,7 @@ void test('hunger-induced burden pages the faint before monsters move after wiza
     monster.movement = 12;
     await addInventoryObject(ROCK, { quan: 128 });
     assert.equal(nearCapacity(game), MOD_ENCUMBER);
-    await reportHeroEncumbrance();
+    await encumber_msg();
     clearMessageWindow();
     const turn = game.moves;
     const input = resetInputState();

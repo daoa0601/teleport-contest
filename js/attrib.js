@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2, rnd } from './rng.js';
 import { propertyIsActive } from './properties.js';
@@ -159,7 +159,7 @@ export async function gainHeroStrength(object = null, amount = 0, { state = game
                 await plineWithContinuation(message);
         }
         if (state._moveloopStarted)
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
     }
     return change;
 }
@@ -199,7 +199,7 @@ export async function loseHeroStrength(amount, killer, { state = game, random = 
     if (remainingLoss > 0 && (Upolyd(hero) || !wasPolymorphed)) {
         const change = adjustAttribute(A_STR, -remainingLoss, state);
         if (change.changed && state._moveloopStarted)
-            await reportHeroEncumbrance(state, publish);
+            await encumber_msg(state, publish);
     }
     return false;
 }
@@ -231,7 +231,7 @@ export async function exerciseAttribute(attribute, improving, state = game) {
     if (!accumulateAttributeExercise(attribute, improving, state))
         return;
     if (state.moves > 0 && (attribute === A_STR || attribute === A_CON))
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
 }
 // C attrib.c:exercise() for Wisdom: exercise never calls encumber_msg().
 // Knowledge and identification can therefore use the same accumulation
@@ -289,7 +289,7 @@ export async function checkAttributeExercise(sourceTurn, state = game) {
                     if (message)
                         await plineWithContinuation(message);
                     if (state._moveloopStarted && (attribute === A_STR || attribute === A_CON))
-                        await reportHeroEncumbrance(state);
+                        await encumber_msg(state);
                     const explanations = EXERCISE_EXPLANATIONS[attribute];
                     if (!explanations)
                         throw new Error(`Attribute ${attribute} cannot accumulate exercise`);

@@ -1,4 +1,4 @@
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { isPoolAt } from './dbridge.js';
@@ -139,7 +139,7 @@ export async function releaseCarriedBall(state, showMessage = false) {
         await setQuiverObject(null, state);
     unlinkObject(ball, state);
     await finishInventoryRemoval(ball, state);
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
 }
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.

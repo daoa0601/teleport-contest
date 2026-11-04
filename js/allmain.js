@@ -66,7 +66,7 @@ import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
 import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { rndcurse } from './throne.js';
 import { resolveMonsterGaze, completeHeroAttackSlot, beginMonsterHeroAttack, monsterMissMessage, resolveMonsterSelfExplosion } from './mhitu.js';
 import { bot, statusEvalNextUnhilite, updateStatusLines } from './botl.js';
@@ -476,7 +476,7 @@ async function finishMoveloopPreamble() {
     const game = requireInitializedGame();
     // moveloop_preamble() sets botlx after assigning the gold encoding.
     game.context.botl = true;
-    await reportHeroEncumbrance();
+    await encumber_msg();
     if (game._deferSeeMonsters) {
         game._deferSeeMonsters = false;
         await see_monsters();
@@ -1157,7 +1157,7 @@ export async function runMoveloopCore() {
     if (g._heroTimePending) {
         // C checks burden before monsters move after every timed action.
         // Hunger can lower Strength without changing inventory.
-        await reportHeroEncumbrance(g);
+        await encumber_msg(g);
         for (;;) {
             const somebodyCanMove = await moveMonsters();
             if (g.program_state?.gameover)
@@ -1170,7 +1170,7 @@ export async function runMoveloopCore() {
                 // Timers can remove weight while the hero is still too slow
                 // to act; acknowledge that relief before monsters act again.
                 if (g.u.umovement < NORMAL_SPEED)
-                    await reportHeroEncumbrance(g);
+                    await encumber_msg(g);
             }
             // C allmain.c's do/while exits as soon as the hero can act;
             // no monster attack may spend the hero's movement ration.
@@ -1180,7 +1180,7 @@ export async function runMoveloopCore() {
         g._heroTimePending = false;
         g._heroActionSeq = (g._heroActionSeq ?? 0) + 1;
         // C moveloop_core() checks again after nh_timeout() can remove weight.
-        await reportHeroEncumbrance(g);
+        await encumber_msg(g);
         if (!g.program_state?.gameover)
             await finishHeroTookTime(g.moves || 1);
     }
