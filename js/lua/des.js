@@ -35,6 +35,10 @@ export const TRAP_TYPES = new Map([
     ['vibrating square', VIBRATING_SQUARE],
 ]);
 // Shared Lua boundary validation for des.* tables. Each binding owns its defaults and feature creation.
+// Also C sp_lev.c:get_table_coords_or_region(): inlined here (x1..y2 with
+// the region fallback).
+// Also C sp_lev.c:get_table_int_or_random(): inlined here (spe and quantity
+// accept "random").
 export function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false) {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');

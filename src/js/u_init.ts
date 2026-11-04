@@ -558,6 +558,7 @@ function knowsClass(oclass: number, role: RoleKey): void {
     }
 }
 
+// Also C u_init.c:u_init_role(): the role-specific discovery knowledge.
 function initializeRolePreknowledge(role: RoleKey): void {
     const pauper = !!game.u?.uroleplay?.pauper;
     if (role === 'archeologist') {
@@ -641,6 +642,7 @@ function startingInventoryRestrictions(): StartingInventoryRestrictions {
 
 // C ini_inv(): exclusions persist across a role's inventory tables and reset
 // before race inventory. The level-one-book threshold belongs to each table.
+// Also C u_init.c:ini_inv_obj_substitution(): inlined here after object creation.
 async function iniInv(
     table: readonly InitialInventoryEntry[],
     restrictions: StartingInventoryRestrictions = startingInventoryRestrictions(),
@@ -688,6 +690,7 @@ const FORBIDDEN_RANDOM_STARTING_ITEMS = new Set([
     RIN_AGGRAVATE_MONSTER, RIN_HUNGER, WAN_NOTHING, SPE_NOVEL,
 ]);
 
+// C u_init.c:ini_inv_mkobj_filter().
 async function randomStartingItem(
     oclass: number, gotLevelOneSpellbook: boolean,
     restrictions: StartingInventoryRestrictions,
@@ -879,6 +882,7 @@ const WISHING_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
+// C u_init.c:u_init_race().
 async function uInitRaceInventoryAndKnowledge(role: RoleKey): Promise<void> {
     const race = game.urace?.raceIndex;
     let preknown: number[] = [];
@@ -918,12 +922,15 @@ const PAUPER_PREKNOWLEDGE = new Map([
     ['samurai', FOOD_RATION],
 ]);
 
+// Also C u_init.c:pauper_reinit(): the role's one retained object discovery.
 function applyPauperPreknowledge(role: RoleKey | undefined): void {
     if (!role || !game.u?.uroleplay?.pauper) return;
     const otyp = PAUPER_PREKNOWLEDGE.get(role);
     if (otyp) recordObjectKnowledge(otyp);
 }
 
+// C u_init.c:u_init_inventory_attrs().
+// Also C u_init.c:u_init_role(): inlined here for role inventory and starting turn.
 export async function uInitInventoryAttrs(): Promise<boolean> {
     const heroRole = game.urole;
     if (!heroRole) return false;

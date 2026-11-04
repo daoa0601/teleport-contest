@@ -135,6 +135,7 @@ export function practiceNeededToAdvance(level: number): number {
     return level * level * 20;
 }
 
+// C u_init.c:skills_for_role().
 function roleMaximums(game: GameState): ReadonlyMap<number, number> | null {
     const key = game.urole?.key;
     if (!key) return null;
@@ -155,6 +156,7 @@ function roleMaximums(game: GameState): ReadonlyMap<number, number> | null {
     }[key];
 }
 
+// C u_init.c:restricted_spell_discipline(): inverted to report an allowed discipline.
 // Startup precedes skill_init(); admission uses the role's skill list.
 export function roleAllowsSpellbook(otyp: number, state: GameState): boolean {
     const skill = spellSkillType(otyp, state);
@@ -274,6 +276,8 @@ async function giveMayAdvanceMessage(skill: number, state: GameState): Promise<v
     }
 }
 
+// C weapon.c:skill_init().
+// Also C u_init.c:pauper_reinit(): inlined here for skill resets and two free slots.
 export function ensureHeroSkills(game: GameState): HeroSkill[] | null {
     if (game.u.weaponSkills) return game.u.weaponSkills;
     const maximums = roleMaximums(game);

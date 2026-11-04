@@ -306,6 +306,7 @@ const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
 const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
 const MS_LEADER = 36;
 const MS_NEMESIS = 37;
+// Also C bones.c:remove_mon_from_bones(): inlined here in the monster purge loop.
 export async function prepareBonesMonstersForSave() {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
@@ -530,6 +531,10 @@ function eachObjectInBonesGraph(level, visit) {
     };
     eachTopLevelBonesObject(level, walk);
 }
+// The resetobjs() pass over one object chain (monster invent, floor,
+// buried) for bones save and restore.
+// Also C bones.c:set_ghostly_objlist(): inlined here (the ghostly flag);
+// the hero invent marking in createBonesFromDeath() is the same helper.
 function resetBonesObjectList(objects, mode, ghostly = mode === 'save') {
     const kept = [];
     for (const object of objects || []) {
@@ -563,6 +568,8 @@ function resetBonesObjects(level, mode) {
 // C refs: bones.c savebones()/resetobjs(FALSE). The persistent payload owns
 // the level graph only. The saved-graph codec retains entity aliases and
 // container back-pointers; getbones() restores the GameMap prototype.
+// Also C bones.c:goodfruit(): inlined here — only fruits referenced by a
+// slime mold in the graph stay existing in the payload.
 export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds(game.datetime) || Date.now() / 1000) {
     const storage = game.storage;
     const location = game.u.uz;

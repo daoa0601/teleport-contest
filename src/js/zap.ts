@@ -2975,6 +2975,9 @@ export async function finishImmediateZap(state: GameState = game) {
     state.context.obj_zapped = false;
 }
 
+// A wand or spell striking the floor pile at <x,y>.
+// Also C mkobj.c:recreate_pile_at(): inlined here (boulders restack to the
+// top after polymorph may have left one buried).
 export async function hitFloorPileWithWand(wand: GameObject, x: number, y: number, { state = game, direction = 0 }: { state?: GameState; direction?: number } = {}): Promise<number> {
     requirePlayingGame(state);
     const column = state.level.objects[x];

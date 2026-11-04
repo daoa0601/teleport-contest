@@ -1109,6 +1109,8 @@ async function domouseaction(): Promise<void> {
 }
 
 // C cmd.c:domouseaction(), the optional mouse binding which chooses an action.
+// Also C stairs.c:On_stairs_up(): inlined here for the stairway under the hero.
+// Also C stairs.c:On_stairs_dn(): inlined here for the same direction choice.
 function mouseAction(click: Position): void {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;

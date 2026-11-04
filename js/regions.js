@@ -210,6 +210,8 @@ export function visibleRegionAt(state, x, y) {
         && region.ttl !== -2 && regionContains(region, x, y)) || null;
 }
 // C region.c:visible_region_summary().
+// Also C region.c:any_visible_region(): inlined here (the empty-summary
+// guard the #timeout caller tests).
 export function visibleRegionLines(state) {
     const visible = requireGameLevel(state).regions
         .filter(region => region.visible && region.ttl !== -2);

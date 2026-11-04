@@ -797,6 +797,7 @@ export function recordObjectCall(otyp, name, state = game) {
     state._objectCallNames[otyp] = name;
 }
 // C do_name.c:docall_xname().
+// Also C o_init.c:undiscover_object(): inlined here when the call name is cleared.
 export async function callObjectType(object, state = game) {
     if (!object.dknown)
         return { prompted: false, named: false, callName: null };

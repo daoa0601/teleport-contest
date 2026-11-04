@@ -82,6 +82,7 @@ export function setLevelTerrainLit(x: number, y: number, typ: number, lit: numbe
     }
     return true;
 }
+// C mkmaze.c:is_solid().
 function isSolidTile(x: number, y: number): boolean {
     if (!isok(x, y)) return true;
     return IS_STWALL(game.level?.at(x, y)?.typ ?? STONE);
@@ -218,6 +219,7 @@ export async function place_lregion(
     await impossible(`Couldn't place lregion type ${rtype}!`);
 }
 
+// C mkmaze.c:is_exclusion_zone().
 function excludedLregion(type: number, x: number, y: number): boolean {
     const direction = type === LR_UPTELE ? 'teleport-up' : 'teleport-down';
     return (type === LR_TELE || type === LR_UPTELE || type === LR_DOWNTELE)
@@ -424,6 +426,8 @@ async function fixupMedusa(active: ActiveSpecialLevel): Promise<void> {
         set_corpsenm(statue, rndmonnum());
 }
 
+// C mkmaze.c:baalz_fixup(): rebuild the beetle's nondiggable perimeter so
+// ordinary wallification keeps the leg walls.
 async function fixupBaalz(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     // mkmaze.c:baalz_fixup().  Corrmaze suppresses ordinary wallification so
@@ -549,6 +553,7 @@ export async function generateSpecialAndFixup(
 }
 
 // C mkmaze.c:fixup_special(), after the Lua level has finished construction.
+// Also C mkmaze.c:check_ransacked(): inlined here (the minetn-1 raid test).
 export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     const arrivalRegion = (
@@ -695,6 +700,7 @@ export function vibratingSquarePoint(): Position {
     return point;
 }
 
+// C mkmaze.c:populate_maze().
 async function populateRandomMaze(): Promise<void> {
     for (let count = rn1(8, 11); count > 0; count--) {
         const point = mazeFloorPoint();

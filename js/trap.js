@@ -5608,6 +5608,7 @@ async function rustIronGolemHero() {
 // C trap.c:trapeffect_hole(): the hero branch — the fall refusal on levels
 // without a bottom, the trap-door or hole message, and the destination
 // draw; the monster branch is inline in triggerMonsterTrap.
+// Also C dungeon.c:goto_hell(): the Castle-to-Valley destination; dotrap() completes travel.
 export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
     if (!trap || (trap.ttyp !== HOLE && trap.ttyp !== TRAPDOOR))
         return null;

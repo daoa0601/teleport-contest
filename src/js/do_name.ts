@@ -862,6 +862,7 @@ export type ObjectCallResult =
     | { prompted: true; named: true; callName: string };
 
 // C do_name.c:docall_xname().
+// Also C o_init.c:undiscover_object(): inlined here when the call name is cleared.
 export async function callObjectType(object: GameObject, state: GameState = game): Promise<ObjectCallResult> {
     if (!object.dknown) return { prompted: false, named: false, callName: null };
     // C docall() publishes buffered status before getlin() disables bot().

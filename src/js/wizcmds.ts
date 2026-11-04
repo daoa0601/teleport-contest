@@ -679,6 +679,8 @@ function freeLevelObject(object: GameObject): void {
 // deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
 // checkpoint is modeled by the save_engravings() rewind on the
 // flags.checkpoint path.
+// Also C dungeon.c:rm_mapseen(): inlined here (the overview record and
+// annotation of the replaced level are discarded).
 async function makemapPrepost(
     pre: boolean, wasInsideTower: boolean, pets: readonly Monster[] = [],
 ): Promise<readonly Monster[] | null> {
