@@ -192,7 +192,9 @@ async function adjustAbilities(abilities, origin, oldLevel, newLevel, publish) {
         }
         else if (oldLevel >= level && newLevel < level) {
             changed = revokeIntrinsicProperty(property, origin, game);
-            if (changed && !hasPermanentIntrinsicProperty(property, game)) {
+            // C announces crossing the level threshold even if a curse
+            // already removed this ability; other intrinsic sources suppress it.
+            if (!hasPermanentIntrinsicProperty(property, game)) {
                 const message = lossMessage || (gainMessage
                     ? `less ${gainMessage}` : '');
                 if (message)

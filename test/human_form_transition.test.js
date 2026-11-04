@@ -22,10 +22,10 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createDungeon } from './support/topology.js';
 import { loseHeroHp, nearCapacity } from '../js/hack.js';
-async function formTransitionRoom(debug = false) {
+async function formTransitionRoom(debug = false, hero = {}) {
     await freshObjectRoom({
         gameplaySeed: 143n,
-        hero: { urexp: 1000 },
+        hero: { urexp: 1000, ...hero },
         flags: { debug, bones: false, tombstone: false, disclose: '-i -a -v -c -o' },
     });
     requireFixtureGame(game);
@@ -176,10 +176,37 @@ void test('an unchanging amulet is discovered when a living monster body is forc
     assert.equal(minimalObjectName(amulet), 'amulet of unchanging');
     assert.match(text(), /Your .*amulet.* fails!/);
 });
-// C polyself.c:newman(): polyman() announces the renewed body and the later
-// encumber_msg() joins that topline instead of replacing it.
+// C polyself.c:newman(): adjabil() (polyself.c:364) runs before polyman()
+// announces the renewed body, so a caveman dropping past its level-7 speed
+// hears "You feel slow!" and the announcement joins that topline
+// (win/tty/topl.c:update_topl()); the encumbrance change no longer fits and
+// pages after the --More-- instead of replacing the announcement.
 void test('a renewed human body keeps its announcement before the encumbrance change', async () => {
     const { input, text } = await formTransitionRoom();
+    requirePlayingGame(game);
+    installPolymorphedHero('homunculus');
+    while (nearCapacity(game) === UNENCUMBERED)
+        await addInventoryObject(ROCK);
+    game._encumbranceLevel = nearCapacity(game);
+    await flushPendingTopline();
+    game.u.polymorphControl = true;
+    input.feed('human\n');
+    const result = await polymorphHero(POLY_CONTROLLED);
+    assert.equal('newman' in result && result.newman, true);
+    assert.equal(game.u.ulevel, 6, 'The seeded renewal drops the caveman from 8 to 6.');
+    assert.equal(nearCapacity(game), UNENCUMBERED);
+    const messages = `${text()}\n${game._pending_message ?? ''}`;
+    assert.match(messages, /You feel slow!  You feel like a new (?:man|woman)!--More--/);
+    assert.match(messages, /Your movements are now unencumbered\./);
+    assert.ok(messages.indexOf('You feel like a new')
+        < messages.lastIndexOf('Your movements are now unencumbered.'), 'The renewal announcement precedes the encumbrance change.');
+});
+// C polyself.c:newman() -> polyman() with no adjabil() message in between:
+// a renewal that crosses no level-ability threshold lets encumber_msg()'s
+// change join the announcement itself (win/tty/topl.c:update_topl() leaves
+// room for it within CO - 8 columns).
+void test('a renewal that loses no level intrinsic joins its encumbrance change', async () => {
+    const { input, text } = await formTransitionRoom(false, { ulevel: 6 });
     requirePlayingGame(game);
     installPolymorphedHero('homunculus');
     while (nearCapacity(game) === UNENCUMBERED)
