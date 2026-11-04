@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_CLOSED, D_ISOPEN, NO_MINVENT, PIT, STONE } from '../js/const.js';
-import { grantCorpseIntrinsic } from '../js/eat.js';
+import { cpostfx } from '../js/eat.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
@@ -131,7 +131,7 @@ void test('a floating eye corpse gives a sleeping hero a dream of mental acuity'
     freshPlayableRoom();
     await putHeroToSleep(5);
 
-    await grantCorpseIntrinsic(MONSTER_NAME.indexOf('floating eye'));
+    await cpostfx(MONSTER_NAME.indexOf('floating eye'));
 
     assert.equal(game.u.telepathy, true);
     assert.equal(game._lastPlineMessage, 'You dream that you feel a strange mental acuity.');
@@ -141,7 +141,7 @@ void test('a red dragon corpse keeps its native You message during sleep', async
     freshPlayableRoom();
     await putHeroToSleep(5);
 
-    await grantCorpseIntrinsic(MONSTER_NAME.indexOf('red dragon'));
+    await cpostfx(MONSTER_NAME.indexOf('red dragon'));
 
     assert.equal(game.u.fireResistance, true);
     assert.equal(game._lastPlineMessage, 'You feel a momentary chill.');

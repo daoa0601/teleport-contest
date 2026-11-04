@@ -10,7 +10,7 @@ import { deleteObject } from './shk.js';
 import { syncBlindness } from './senses.js';
 import { assignInventoryLetter } from './invent.js';
 import { findArmorClass } from './do_wear.js';
-import { restoreHeroNutrition } from './eat.js';
+import { init_uhunger } from './eat.js';
 const WORN_SLOTS = [
     ['uarm', W_ARM], ['uarmc', W_ARMC], ['uarmh', W_ARMH],
     ['uarms', W_ARMS], ['uarmg', W_ARMG], ['uarmf', W_ARMF], ['uarmu', W_ARMU],
@@ -127,7 +127,7 @@ async function restoreTutorialState(state) {
     // learned during the tutorial remain known, but user-given names clear.
     state._objectCallNames = {};
     state.spells = saved.spells;
-    await restoreHeroNutrition(state, plineWithContinuation);
+    await init_uhunger(state, plineWithContinuation);
     state._unweapon = !state.uwep;
     syncBlindness(state);
     findArmorClass(state);

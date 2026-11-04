@@ -27,7 +27,7 @@ import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_
 import { isok } from './cmd.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './monster_data.js';
 import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
-import { spendHeroNutrition } from './eat.js';
+import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
@@ -477,7 +477,7 @@ export async function teleportHeroAtWill({
     }
     if (result.died) return { ...result, spentTime: true };
     await bringLeashedFollowers(state, random);
-    if (!trap) await spendHeroNutrition(100, { state });
+    if (!trap) await morehungry(100, { state });
     return { ...result, died: !!state.program_state.gameover, spentTime: true };
 }
 

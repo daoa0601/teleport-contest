@@ -9,7 +9,7 @@ import { doGenocide, GENOCIDE_ON_THRONE } from '../js/read.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 
 import { pushKeys, resetInputState } from '../js/input.js';
-import { beginMealMimicry } from '../js/eat.js';
+import { cpostfx } from '../js/eat.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ROCK, WAN_LIGHT } from '../js/object_data.js';
 
@@ -169,7 +169,7 @@ void test('refusing delayed genocide resumes sight and strangulation, and consum
 void test('returning to human form ends a mimic meal without its delayed recovery message', async () => {
     const { text } = await formTransitionRoom();
     installPolymorphedHero('wolf');
-    await beginMealMimicry(20);
+    await cpostfx(MONSTER_NAME.indexOf('small mimic'));
     assert.equal(heroHasInvoluntaryDelay(), true);
 
     const result = await returnHeroToHumanForm();

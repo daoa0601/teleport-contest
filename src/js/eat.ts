@@ -13,7 +13,7 @@ import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName }
 import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';
 import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation } from './cmd.js';
-import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
+import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 
 import { impossible } from './diagnostics.js';
@@ -23,7 +23,6 @@ import { displayColorName, monsterName, randomDisplayMonsterName } from './do_na
 import { eggIsStale, isPyroliskEgg } from './egg_impact.js';
 import { reportHeroEncumbrance } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
-import type { DeathHandler } from './end.js';
 
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
 import { explode } from './explosion.js';
@@ -64,6 +63,7 @@ import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNa
 import type { MonsterDeathHandler } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import type { HeroContactAttack } from './monster_action_types.js';
+import type { HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsGiant, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import type { Monster } from './monster_types.js';
@@ -78,7 +78,7 @@ import type { MessagePublisher } from './pline.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import type { PropertyName, WornPropertySlot } from './property_types.js';
+import type { PropertyName } from './property_types.js';
 import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery } from './cmd.js';
@@ -102,8 +102,7 @@ import { captureLevitationState, floatHeroUp } from './trap.js';
 
 const M2_ELF = 0x00000010, M2_DWARF = 0x00000020, M2_ORC = 0x00000080;
 
-// C eat.c:eat_brains(), monster against monster. Called from uhitm.ts
-// (mhitm_ad_drin()'s monster branch).
+// Context for the monster-against-monster eat_brains branch.
 export interface BrainMealContext {
     state: GameState;
     visible: boolean;
@@ -168,11 +167,6 @@ const preparations: readonly TinPreparation[] = [
 ];
 
 interface FoodEffectOptions { state?: GameState; }
-
-export interface FoodEffectResult {
-    continueMeal: boolean;
-    heroDied: boolean;
-}
 
 const M1_HUMANOID = 0x00020000;
 const DRAGON_HIDE = 10;
@@ -247,9 +241,6 @@ const WAX = 2, FLESH = 4, LEATHER = 7, BONE = 9;
 const ANIMAL_INGREDIENTS = new Set([PANCAKE, FORTUNE_COOKIE, CREAM_PIE, CANDY_BAR, LUMP_OF_ROYAL_JELLY]);
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 
-export type FoodAdmission = { handled: true; spentTime: boolean; heroDied: boolean }
-    | { handled: false; food: GameObject; spentTime: false; heroDied: boolean };
-
 const FOOD_CLASS = 7, RING_CLASS = 4, AMULET_CLASS = 5, POTION_CLASS = 8;
 const SCROLL_CLASS = 9, COIN_CLASS = 12, BALL_CLASS = 15, CHAIN_CLASS = 16;
 const PAPER = 5;
@@ -265,7 +256,7 @@ interface VomitOptions {
 }
 
 // C eat.c:init_uhunger(). Hunger weakens temporary, not innate, strength.
-export async function restoreHeroNutrition(
+export async function init_uhunger(
     state: GameState = game, publish: MessagePublisher = plineWithContinuation,
 ): Promise<void> {
     requirePlayingGame(state);
@@ -279,7 +270,7 @@ export async function restoreHeroNutrition(
 }
 
 // C eat.c:eatmdone().
-export async function finishMealMimicry(state: GameState = game): Promise<void> {
+export async function eatmdone(state: GameState = game): Promise<void> {
     if (state._helplessDoneMessage === state._mimicMealMessage)
         state._helplessDoneMessage = null;
     state._mimicMealMessage = null;
@@ -290,7 +281,7 @@ export async function finishMealMimicry(state: GameState = game): Promise<void> 
 }
 
 // C eat.c:eatmupdate().
-export async function updateMealMimicry(state: GameState = game): Promise<void> {
+export async function eatmupdate(state: GameState = game): Promise<void> {
     if (!state._mimicMealMessage || state._helplessDoneMessage !== state._mimicMealMessage
         || state.u.m_ap_type !== M_AP_OBJECT) return;
     const hallucinating = heroIsHallucinating(state);
@@ -306,7 +297,7 @@ export async function updateMealMimicry(state: GameState = game): Promise<void> 
 }
 
 // C eat.c:food_xname(): eating describes one item, even in a larger stack.
-export function foodObjectName(object: GameObject, {
+export function food_xname(object: GameObject, {
     state = game, definite = false,
 }: { state?: GameState; definite?: boolean } = {}): string {
     if (object.otyp === CORPSE)
@@ -317,7 +308,7 @@ export function foodObjectName(object: GameObject, {
 
 // C eat.c:choke(). An initially hungry eater cannot choke merely because
 // the meal fills her up; canchoke retains the state from before the meal.
-export async function chokeHeroOnFood(food: GameObject | null | undefined, { state = game }: HungerOptions = {}) {
+export async function choke(food: GameObject | null | undefined, { state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     if (hero.uhs !== SATIATED && food?.otyp !== AMULET_OF_STRANGULATION) return;
@@ -334,12 +325,12 @@ export async function chokeHeroOnFood(food: GameObject | null | undefined, { sta
             return;
         }
         await plineWithContinuation('You stuff yourself and then vomit voluminously.');
-        await spendHeroNutrition(hero.hunger ? hero.uhunger - 60 : 1000, { state });
+        await morehungry(hero.hunger ? hero.uhunger - 60 : 1000, { state });
         if (state.program_state.gameover) return;
-        await vomitHero({ state, publish: plineWithContinuation });
+        await vomit({ state, publish: plineWithContinuation });
         return;
     }
-    await plineWithContinuation(food ? `You choke over your ${foodWord(food, state)}.`
+    await plineWithContinuation(food ? `You choke over your ${foodword(food, state)}.`
         : 'You choke over it.');
     const cause = !food ? 'a quick snack' : food.oclass === 12
         ? 'a very rich meal' : killerObjectName(food, state);
@@ -348,11 +339,11 @@ export async function chokeHeroOnFood(food: GameObject | null | undefined, { sta
         killer: cause, deathCause: `choked on ${cause}`, deathVerb: 'choked',
         deathType: CHOKING, deathLineShown: true,
     });
-    if (!died) await updateHeroHunger(false, { state });
+    if (!died) await newuhs(false, { state });
 }
 
 // C eat.c:obj_nutrition().
-export function foodNutrition(food: GameObject): number {
+export function obj_nutrition(food: GameObject): number {
     if (food.otyp === CORPSE) {
         const species = food.corpsenm;
         return species === undefined ? 0 : MONSTER_BODY_META[species]?.[1] ?? 0;
@@ -361,7 +352,7 @@ export function foodNutrition(food: GameObject): number {
 }
 
 // C eat.c:adj_victual_nutrition().
-function adjustedBiteNutrition(meal: FoodMeal, state: PlayingGameState) {
+function adj_victual_nutrition(meal: FoodMeal, state: PlayingGameState) {
     let nutrition = -meal.nmod;
     const race = requireMonsterData(MONSTER_FLAGS2, heroSpecies(state));
     const food = currentMealFood(meal);
@@ -380,7 +371,7 @@ function adjustedBiteNutrition(meal: FoodMeal, state: PlayingGameState) {
 // C eat.c:touchfood().
 // A bite splits the actual stack, including its timers and unpaid bill.
 // A carried bite is reinserted without merging; a full pack drops it instead.
-export async function touchFoodObject(food: GameObject, { state = game }: FoodOptions = {}): Promise<PreparedFoodObject | null> {
+export async function touchfood(food: GameObject, { state = game }: FoodOptions = {}): Promise<PreparedFoodObject | null> {
     requireLiveGame(state);
     const carried = food.where === 'inventory';
     const quantity = objectQuantity(food);
@@ -391,7 +382,7 @@ export async function touchFoodObject(food: GameObject, { state = game }: FoodOp
     }
     if (!food.oeaten) {
         await chargeAlteredUnpaidObject(food, 'bite', state);
-        food.oeaten = foodNutrition(food);
+        food.oeaten = obj_nutrition(food);
     }
     if (carried) {
         await freeInventoryObject(food, state);
@@ -419,41 +410,41 @@ export async function touchFoodObject(food: GameObject, { state = game }: FoodOp
     return food;
 }
 
-// C eat.c:touchfood().
+// Port boundary: narrow an object whose oeaten field has been initialized.
 export function requirePreparedFood(food: GameObject): asserts food is PreparedFoodObject {
     if (food.oeaten === undefined)
         throw new Error(`Food ${food.o_id} has not been prepared for eating`);
 }
 
+// C eat.c:recalc_wt().
+function recalc_wt(food: GameObject): void {
+    food.owt = objectWeight(food);
+}
+
 // C eat.c:do_reset_eat().
-async function resetFoodMeal(state: PlayingGameState) {
+async function do_reset_eat(state: PlayingGameState) {
     const meal = state.context.victual;
     if (meal?.piece && meal.piece.where !== 'gone') {
         meal.o_id = 0;
-        meal.piece = await touchFoodObject(meal.piece, { state });
+        meal.piece = await touchfood(meal.piece, { state });
         if (meal.piece) {
             meal.o_id = meal.piece.o_id;
-            meal.piece.owt = objectWeight(meal.piece);
+            recalc_wt(meal.piece);
         }
     }
     if (meal) meal.fullwarn = meal.eating = meal.doreset = false;
     await stopHeroOccupation(state);
-    if (!state.program_state.gameover) await updateHeroHunger(false, { state });
-}
-
-function roundNutritionTime(value: number, divisor: number) {
-    const quotient = Math.trunc(value / divisor);
-    return quotient + Number(2 * (value % divisor) >= divisor);
+    if (!state.program_state.gameover) await newuhs(false, { state });
 }
 
 // C eat.c:temp_resist().
-export function temporaryResistance(property: PropertyName) {
+export function temp_resist(property: PropertyName) {
     return propertyTimeout(property) && !(intrinsicPropertyMask(property) & ~TIMEOUT)
             && !extrinsicPropertyMask(property) && !propertyIsBlocked(property) ? 'temporarily ' : '';
 }
 
 // C eat.c:eating_dangerous_corpse().
-export function eatingDangerousCorpse(property: 'acidResistance' | 'stoneResistance', { state = game }: FoodOptions = {}) {
+export function eating_dangerous_corpse(property: 'acidResistance' | 'stoneResistance', { state = game }: FoodOptions = {}) {
     if (state._occupation?.key !== 'eat-food') return false;
     const food = state.context.victual?.piece;
     if (food?.otyp !== CORPSE || food.corpsenm === undefined || food.corpsenm < 0) return false;
@@ -466,7 +457,7 @@ export function eatingDangerousCorpse(property: 'acidResistance' | 'stoneResista
 }
 
 // C eat.c:eatfood().
-export async function continueFoodMeal(_occupation: FoodOccupation, state: GameState = game) {
+export async function eatfood(_occupation: FoodOccupation, state: GameState = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const meal = state.context.victual;
@@ -475,7 +466,7 @@ export async function continueFoodMeal(_occupation: FoodOccupation, state: GameS
         || food.where === 'floor' && food.ox === state.u.ux && food.oy === state.u.uy
             && state.level.objects[food.ox]?.[food.oy]?.includes(food));
     if (!available || !meal || meal.key !== 'eat-food') {
-        await resetFoodMeal(state);
+        await do_reset_eat(state);
         return false;
     }
     if (!meal.eating) {
@@ -483,33 +474,33 @@ export async function continueFoodMeal(_occupation: FoodOccupation, state: GameS
         return false;
     }
     if (++meal.usedtime > meal.reqtime) {
-        await finishFoodMeal(state, true);
+        await done_eating(state, true);
         return false;
     }
-    const choked = await takeFoodBite(state);
+    const choked = await bite(state);
     if (choked || state.program_state.gameover) state._occupation = null;
     return !choked && !state.program_state.gameover;
 }
 
-// C eat.c:eatfood().
+// Port boundary: require the shared context.victual food-meal state.
 function currentFoodMeal(state: GameState): FoodMeal {
     const meal = state.context.victual;
     if (!meal || meal.key !== 'eat-food') throw new Error('No food meal is active');
     return meal;
 }
 
-// C eat.c:eatfood().
+// Port boundary: require the food retained by context.victual.
 function currentMealFood(meal: FoodMeal): PreparedFoodObject {
     if (!meal.piece) throw new Error(`The current meal no longer has food object ${meal.o_id}`);
     return meal.piece;
 }
 
 // C eat.c:done_eating().
-async function finishFoodMeal(state: PlayingGameState, showMessage: boolean) {
+async function done_eating(state: PlayingGameState, showMessage: boolean) {
     const food = currentMealFood(currentFoodMeal(state));
     food.in_use = true;
     state._occupation = null;
-    await updateHeroHunger(false, { state });
+    await newuhs(false, { state });
     if (state.program_state.gameover) return;
     const endMessage = state._helplessDoneMessage;
     if (endMessage != null) {
@@ -522,17 +513,17 @@ async function finishFoodMeal(state: PlayingGameState, showMessage: boolean) {
         state._helplessDoneMessage = null;
     } else if (showMessage) {
         const verb = MONSTER_NAME[heroSpecies(state)] === 'fire elemental' ? 'consuming' : 'eating';
-        await pline(`You finish ${verb} ${foodObjectName(food, { state, definite: true })}.`);
+        await pline(`You finish ${verb} ${food_xname(food, { state, definite: true })}.`);
     }
     if (food.otyp === CORPSE || food.globby)
-        await applyCorpsePostEffects(corpseSpecies(food), { state });
-    else await applyOrdinaryFoodPostEffects(food, { state });
+        await cpostfx(corpseSpecies(food), { state });
+    else await fpostfx(food, { state });
     if (state.program_state.gameover) return;
     await consumeFoodObject(food, { state });
     state.context.victual = null;
 }
 
-// C eat.c:done_eating().
+// Shared carried()/useup()/useupf() expression used by meal and tin owners.
 export async function consumeFoodObject(food: GameObject, { all = false, state = game }: ConsumptionOptions = {}) {
     requireLiveGame(state);
     if (food.where === 'inventory') {
@@ -545,7 +536,7 @@ export async function consumeFoodObject(food: GameObject, { all = false, state =
 
 // C eat.c:eating_conducts().
 // Tins and brain eating use one shared log scope for food and both diets.
-export async function eatingConducts(species: number, { state = game }: FoodConductOptions = {}): Promise<void> {
+export async function eating_conducts(species: number, { state = game }: FoodConductOptions = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const name = requireMonsterData(MONSTER_NAME, species);
@@ -557,18 +548,18 @@ export async function eatingConducts(species: number, { state = game }: FoodCond
     if (!vegetarianCorpse(species)) {
         if (!state.u.uconduct.unvegetarian && !logged)
             recordGameLogEvent(`tasted meat (${name}) for the first time`, { state, flags: LL_CONDUCT });
-        await violateVegetarian(state);
+        await violated_vegetarian(state);
     }
 }
 
-// C eat.c:eating_conducts().
+// Shared u.uconduct.food++ and first-food livelog expression in eat.c.
 function incrementFood(message: string, state: PlayingGameState): boolean {
     const first = incrementConduct('food', state);
     if (first) recordGameLogEvent(message, { state, flags: LL_CONDUCT });
     return first;
 }
 
-// C eat.c:eating_conducts().
+// Shared u.uconduct field increment expression in eat.c.
 function incrementConduct(key: 'food' | 'unvegan' | 'unvegetarian', state: PlayingGameState): boolean {
     const conduct = state.u.uconduct;
     const first = !conduct[key];
@@ -576,67 +567,149 @@ function incrementConduct(key: 'food' | 'unvegan' | 'unvegetarian', state: Playi
     return first;
 }
 
-// C eat.c:eat_brains(), monster mind flayer eating the hero's brain.
-// Called from uhitm.ts (mhitm_ad_drin()'s hero branch).
-export async function eatHeroBrain(
-    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
-    publish: MessagePublisher, rollOne: typeof rnd,
-): Promise<boolean> {
-    rollOne(10);
-    const body = { mnum: heroSpecies(state) };
-    if (monsterIsNoncorporeal(body)) {
-        await publish('Your brain is unharmed.');
-        return false;
+interface HeroBrainMeal {
+    kind: 'hero-defender';
+    monster: Monster;
+    attack: HeroContactAttack;
+    state: PlayingGameState;
+    publish: MessagePublisher;
+    rollOne: typeof rnd;
+}
+
+interface MonsterBrainMeal {
+    kind: 'monster-defender';
+    attacker: Monster;
+    defender: Monster;
+    damage: number;
+    context: BrainMealContext;
+}
+
+interface HeroAttackerBrainMeal {
+    kind: 'hero-attacker';
+    monster: Monster;
+    context: HeroNaturalEffectContext;
+    result: HeroNaturalEffectResult;
+}
+
+interface MonsterBrainMealResult {
+    damage: number;
+    hitFlags: number;
+    heroDied: boolean;
+}
+
+export function eat_brains(meal: HeroBrainMeal): Promise<boolean>;
+export function eat_brains(meal: MonsterBrainMeal): Promise<MonsterBrainMealResult>;
+export function eat_brains(meal: HeroAttackerBrainMeal): Promise<void>;
+// C eat.c:eat_brains(). Participant types select the native combat branch.
+export async function eat_brains(meal: HeroBrainMeal | MonsterBrainMeal | HeroAttackerBrainMeal): Promise<boolean | MonsterBrainMealResult | void> {
+    if (meal.kind === 'hero-attacker') {
+        const { monster, context, result } = meal;
+        const { state, publish, rollOne } = context;
+        const extraDamage = rollOne(10);
+        if (monsterIsNoncorporeal(monster)) {
+            const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
+            await publish(`${owner} brain is unharmed.`);
+            return;
+        }
+        await publish(`You eat ${possessiveName(monsterName(monster, { state }))} brain!`);
+        if (fleshPetrifies(monster.mnum) && !heroResistsStoning(state) && !heroIsPetrifying(state)) {
+            await setHeroPetrificationTimeout(5, {
+                state, killer: monsterTypeName(monster.mnum, monster.female),
+                killerFormat: KILLED_BY_AN, publish,
+            });
+        }
+        await eating_conducts(monster.mnum, { state });
+        if (monsterIsMindless(monster.mnum)) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} doesn't notice.`);
+            return;
+        }
+        if (monsterIsRider(monster)) {
+            await publish('Ingesting that is fatal.');
+            const cause = `unwisely ate the brain of ${monsterTypeName(monster.mnum, monster.female)}`;
+            result.heroDied = await finishHeroDeath({
+                killer: cause, deathCause: cause, deathType: DIED, deathLineShown: true,
+            });
+            if (result.heroDied) {
+                result.done = true;
+                return;
+            }
+            exerciseWisdom(false, state);
+        }
+        else {
+            // Native morehungry() accepts negative nutrition and cannot choke.
+            await morehungry(-rollOne(30), { state });
+            const hero = state.u;
+            if (hero.acurr.a[A_INT] < hero.amax.a[A_INT]) {
+                // This repairs the base directly, including beneath a dunce cap.
+                hero.acurr.a[A_INT] = Math.min(hero.amax.a[A_INT], hero.acurr.a[A_INT] + rollOne(4));
+                state.context.botl = true;
+            }
+            exerciseWisdom(true, state);
+        }
+        result.damage += extraDamage;
+        await maybe_cannibal(monster.mnum, { state });
+        return;
     }
-    await publish('Your brain is eaten!');
-    if (fleshPetrifies(body.mnum)) {
-        if (canSeeMonster(monster))
-            await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
-        const stone = await prepareMonsterPetrification(monster, { publish });
-        if (stone.survived) return false;
-        await finishEnvironmentalMonsterDeath(monster, state, {
-            noCorpse: true, stoneRemains: stone.remains ?? null, publish,
-        });
-        return true;
-    }
-    const attributes = state.u.acurr?.a;
-    if (!attributes) throw new Error('Brain drain requires initialized hero attributes');
-    const minimum = state.urace.attrmin[A_INT];
-    if (attributes[A_INT] <= minimum) {
-        const options = { attribution: {
-            kind: 'death-inflicted-by', killer: 'brainlessness', deathCause: 'killed by brainlessness',
-        } } satisfies Parameters<typeof finishMonsterAttackDeath>[1];
-        if (propertyIsActive('lifeSaving', state) || state.u.lifeSaving) {
+    if (meal.kind === 'hero-defender') {
+        const { monster, attack, state, publish, rollOne } = meal;
+        rollOne(10);
+        const body = { mnum: heroSpecies(state) };
+        if (monsterIsNoncorporeal(body)) {
+            await publish('Your brain is unharmed.');
+            return false;
+        }
+        await publish('Your brain is eaten!');
+        if (fleshPetrifies(body.mnum)) {
+            if (canSeeMonster(monster))
+                await publish(`${monsterName(monster, { state, capitalized: true })} turns to stone!`);
+            const stone = await prepareMonsterPetrification(monster, { publish });
+            if (stone.survived)
+                return false;
+            await finishEnvironmentalMonsterDeath(monster, state, {
+                noCorpse: true, stoneRemains: stone.remains ?? null, publish,
+            });
+            return true;
+        }
+        const attributes = state.u.acurr?.a;
+        if (!attributes)
+            throw new Error('Brain drain requires initialized hero attributes');
+        const minimum = state.urace.attrmin[A_INT];
+        if (attributes[A_INT] <= minimum) {
+            const options = { attribution: {
+                    kind: 'death-inflicted-by', killer: 'brainlessness', deathCause: 'killed by brainlessness',
+                } } satisfies Parameters<typeof finishMonsterAttackDeath>[1];
+            if (propertyIsActive('lifeSaving', state) || state.u.lifeSaving) {
+                if (await finishMonsterAttackDeath(monster, options)) {
+                    attack.heroDied = true;
+                    return false;
+                }
+                await publish('Unfortunately your brain is still gone.');
+            }
+            else
+                await publish('Your last thought fades away.');
             if (await finishMonsterAttackDeath(monster, options)) {
                 attack.heroDied = true;
                 return false;
             }
-            await publish('Unfortunately your brain is still gone.');
-        } else await publish('Your last thought fades away.');
-        if (await finishMonsterAttackDeath(monster, options)) {
-            attack.heroDied = true;
-            return false;
+            attributes[A_INT] = minimum + 2;
+            await publish(formatFeltMessage('like a scarecrow.', state));
         }
-        attributes[A_INT] = minimum + 2;
-        await publish(formatFeltMessage('like a scarecrow.', state));
+        exerciseWisdom(false, state);
+        if (monster.mtame && !monster.isminion) {
+            const pet = monster.edog ?? monster.mextra?.edog;
+            if (!pet)
+                throw new Error('A brain-eating pet needs feeding state');
+            pet.hungrytime += rollOne(60);
+            monster.mconf = 0;
+        }
+        return true;
     }
-    exerciseWisdom(false, state);
-    if (monster.mtame && !monster.isminion) {
-        const pet = monster.edog ?? monster.mextra?.edog;
-        if (!pet) throw new Error('A brain-eating pet needs feeding state');
-        pet.hungrytime += rollOne(60);
-        monster.mconf = 0;
-    }
-    return true;
-}
-
-// C eat.c:eat_brains().
-export async function eatMonsterBrain(
-    attacker: Monster, defender: Monster, damage: number,
-    { state, visible, random, rollOne, publish, finishDeath }: BrainMealContext,
-): Promise<{ damage: number; hitFlags: number; heroDied: boolean }> {
+    const { attacker, defender, context } = meal;
+    const { state, visible, random, rollOne, publish, finishDeath } = context;
+    let damage = meal.damage;
     const extraDamage = rollOne(10);
-    if (attacker.mhp <= 0) return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: false };
+    if (attacker.mhp <= 0)
+        return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: false };
     if (monsterIsNoncorporeal(defender)) {
         if (visible) {
             const name = possessiveName(monsterName(defender, { state, capitalized: true }));
@@ -648,7 +721,6 @@ export async function eatMonsterBrain(
         const name = possessiveName(monsterName(defender, { state, capitalized: true }));
         await publish(`${name} brain is eaten!`);
     }
-
     if (fleshPetrifies(defender.mnum)) {
         if (visible && canSeeMonster(attacker)) {
             await publish(`${monsterName(attacker, { state, capitalized: true })} turns to stone!`);
@@ -656,18 +728,20 @@ export async function eatMonsterBrain(
         // eat_brains calls monstone directly: no food cure, resistance check,
         // or golem conversion precedes its life-saving and statue handling.
         const stone = await prepareMonsterPetrification(attacker, { publish });
-        if (stone.heroDied) return { damage, hitFlags: M_ATTK_MISS, heroDied: true };
-        if (stone.survived) return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
+        if (stone.heroDied)
+            return { damage, hitFlags: M_ATTK_MISS, heroDied: true };
+        if (stone.survived)
+            return { damage, hitFlags: M_ATTK_MISS, heroDied: false };
         const death = await finishDeath(attacker, {
             noCorpse: true, stoneRemains: stone.remains ?? null, random, publish,
         });
-        if (death.heroDied) return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: true };
+        if (death.heroDied)
+            return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: true };
         if (attacker.mtame && !visible) {
             await publish('You have a sad thought for a moment, then it passes.');
         }
         return { damage, hitFlags: M_ATTK_AGR_DIED, heroDied: false };
     }
-
     if (monsterIsMindless(defender.mnum)) {
         if (visible && canSpotMonster(defender)) {
             await publish(`${monsterName(defender, { state, capitalized: true })} doesn't notice.`);
@@ -682,7 +756,6 @@ export async function eatMonsterBrain(
             heroDied: !!death.heroDied,
         };
     }
-
     damage += extraDamage;
     if (damage >= defender.mhp && visible && canSpotMonster(defender)) {
         const name = possessiveName(monsterName(defender, { state, capitalized: true }));
@@ -690,7 +763,8 @@ export async function eatMonsterBrain(
     }
     if (attacker.mtame && !attacker.isminion) {
         const pet = attacker.edog || attacker.mextra?.edog;
-        if (!pet) throw new Error(`Brain-eating pet ${attacker.m_id} has no feeding state`);
+        if (!pet)
+            throw new Error(`Brain-eating pet ${attacker.m_id} has no feeding state`);
         // Unlike a regular meal, brains do not reset an overdue deadline or
         // reverse the HP penalty from starvation.
         pet.hungrytime += rollOne(60);
@@ -699,14 +773,14 @@ export async function eatMonsterBrain(
     return { damage, hitFlags: M_ATTK_HIT, heroDied: false };
 }
 
-// C eat.c:maybe_cannibal().
+// C eat.c:CANNIBAL_ALLOWED() macro.
 export function heroMayEatOwnKind(state: GameState = game): boolean {
     requirePlayingGame(state);
     return state.urole.key === 'caveman' || state.urace.name === 'orc';
 }
 
 // C eat.c:maybe_cannibal().
-export async function applyCannibalPenalty(
+export async function maybe_cannibal(
     mnum: number, { state = game, announce = true }: { state?: GameState; announce?: boolean } = {},
 ): Promise<boolean> {
     requirePlayingGame(state);
@@ -727,10 +801,10 @@ export async function applyCannibalPenalty(
 }
 
 // C eat.c:cprefx().
-export async function applyCorpsePreEffects(mnum: number, { state = game, food = null, tin = null }: CorpseOptions = {}) {
+export async function cprefx(mnum: number, { state = game, food = null, tin = null }: CorpseOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    await applyCannibalPenalty(mnum, { state });
+    await maybe_cannibal(mnum, { state });
     if (fleshPetrifies(mnum) && !heroResistsStoning(state)) {
         let transformed = false;
         if (formCanBecomeStoneGolem(heroSpecies(state), state)) {
@@ -738,7 +812,7 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
             if (state.program_state.gameover) return { stopped: true, heroDied: true };
         }
         if (!transformed) {
-            if (tin) await useUpTin(tin, { state });
+            if (tin) await use_up_tin(tin, { state });
             await plineWithContinuation('You turn to stone.');
             const heroDied = await finishHeroDeath({
                 killer: `tasting ${requireMonsterData(MONSTER_NAME, mnum)} meat`,
@@ -754,7 +828,7 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
         await plineWithContinuation(formatFeltMessage(`that eating the ${name} was a bad idea.`, state));
         grantIntrinsicProperty('aggravateMonster', 'outside', state);
     } else if (name === 'lizard') {
-        if (heroIsPetrifying(state)) await fixHeroPetrification({ state });
+        if (heroIsPetrifying(state)) await fix_petrification({ state });
     } else if (monsterIsRider({ mnum })) {
         await plineWithContinuation('Eating that is instantly fatal.');
         const cause = `unwisely ate the body of ${name}`;
@@ -775,13 +849,12 @@ export async function applyCorpsePreEffects(mnum: number, { state = game, food =
             startHeroSliming({ state, killer: '' });
         }
         if (requireMonsterData(MONSTER_FLAGS1, mnum) & M1_ACID && heroIsPetrifying(state))
-            await fixHeroPetrification({ state });
+            await fix_petrification({ state });
     }
     return { stopped: false, heroDied: !!state.program_state.gameover };
 }
 
-// C eat.c:852,1861: a body admits green-slime infection only when it is not
-// already sliming, not Unchanging, and not slimeproof.
+// Shared slime-admission expression in eat.c:cprefx() and eatcorpse().
 export function heroCanBeSlimed(state = game): boolean {
     const hero = state.u;
     return !heroIsSliming(state)
@@ -791,7 +864,7 @@ export function heroCanBeSlimed(state = game): boolean {
 
 // C eat.c:fix_petrification(): the timeout stops before its cure feedback.
 
-export async function fixHeroPetrification({ state = game }: { state?: GameState } = {}): Promise<boolean> {
+export async function fix_petrification({ state = game }: { state?: GameState } = {}): Promise<boolean> {
     if (!heroIsPetrifying(state)) return false;
     const message = heroIsHallucinating(state)
         ? `What a pity--you just ruined a future piece of ${currentAttribute(A_CHA, state) > 15 ? 'fine ' : ''}art!`
@@ -801,7 +874,7 @@ export async function fixHeroPetrification({ state = game }: { state?: GameState
 }
 
 // C eat.c:intrinsic_possible().
-export function intrinsicPossible(property: CorpseIntrinsic, mnum: number) {
+export function intrinsic_possible(property: CorpseIntrinsic, mnum: number) {
     const resistance = RESISTANCES.findIndex(resistance => resistance === property);
     if (resistance >= 0) return !!(requireMonsterData(MONSTER_CONVEYS, mnum) & (1 << resistance));
     if (property === 'telepathy') return TELEPATHIC_SPECIES.has(mnum);
@@ -810,7 +883,7 @@ export function intrinsicPossible(property: CorpseIntrinsic, mnum: number) {
 }
 
 // C eat.c:should_givit().
-export function shouldGiveIntrinsic(property: CorpseIntrinsic | 'strength', mnum: number) {
+export function should_givit(property: CorpseIntrinsic | 'strength', mnum: number) {
     let chance = 15;
     if (property === 'poisonResistance'
         && (mnum === KILLER_BEE || mnum === SCORPION) && !rn2(4)) chance = 1;
@@ -821,70 +894,76 @@ export function shouldGiveIntrinsic(property: CorpseIntrinsic | 'strength', mnum
 }
 
 // C eat.c:temp_givit().
-function shouldGiveTemporaryResistance(property: CorpseIntrinsic, mnum: number) {
+function temp_givit(property: CorpseIntrinsic, mnum: number) {
     const chance = property === 'stoneResistance' ? 6
         : property === 'acidResistance' ? 3 : 0;
     return chance > 0 && requireMonsterData(MONSTER_LEVEL, mnum) > rn2(chance);
 }
 
 // C eat.c:givit().
-export async function grantCorpseIntrinsic(mnum: number, { state = game }: CorpseIntrinsicOptions = {}) {
+export async function givit(property: CorpseIntrinsic, mnum: number, { state = game }: CorpseIntrinsicOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const property = chooseCorpseIntrinsic(mnum);
-    if (!property) return;
-    if (property === 'strength') {
-        await gainHeroStrength(null, 0, { state });
+    if (!should_givit(property, mnum)
+        && !temp_givit(property, mnum))
         return;
-    }
-    if (!shouldGiveIntrinsic(property, mnum)
-        && !shouldGiveTemporaryResistance(property, mnum)) return;
-
     const timed = property === 'acidResistance' || property === 'stoneResistance';
+    if (!timed && hasIntrinsicProperty(property, 'outside', state))
+        return;
+    let message: string;
+    const hallucinating = heroIsHallucinating(state);
+    switch (property) {
+        case 'fireResistance':
+            message = hallucinating ? "You be chillin'." : 'You feel a momentary chill.';
+            break;
+        case 'coldResistance':
+            message = formatFeltMessage('full of hot air.', state);
+            break;
+        case 'sleepResistance':
+            message = formatFeltMessage('wide awake.', state);
+            break;
+        case 'disintegrationResistance':
+            message = formatFeltMessage(hallucinating ? 'totally together, man.' : 'very firm.', state);
+            break;
+        case 'shockResistance':
+            message = hallucinating ? formatFeltMessage('grounded in reality.', state)
+                : 'Your health currently feels amplified!';
+            break;
+        case 'poisonResistance':
+            message = formatFeltMessage(state.u.poisonResistance ? 'especially healthy.' : 'healthy.', state);
+            break;
+        case 'telepathy':
+            message = formatFeltMessage(hallucinating ? 'in touch with the cosmos.' : 'a strange mental acuity.', state);
+            break;
+        case 'teleportation':
+            message = formatFeltMessage(hallucinating ? 'diffuse.' : 'very jumpy.', state);
+            break;
+        case 'teleportControl':
+            message = formatFeltMessage(hallucinating ? 'centered in your personal space.' : 'in control of yourself.', state);
+            break;
+        case 'acidResistance':
+            message = formatFeltMessage(hallucinating ? 'secure from flashbacks.' : 'less concerned about being harmed by acid.', state);
+            break;
+        case 'stoneResistance':
+            message = formatFeltMessage(hallucinating ? 'unusually limber.' : 'less concerned about becoming petrified.', state);
+            break;
+    }
     if (timed) {
         if (!state.u[property])
-            await plineWithContinuation(intrinsicMessage(property, state));
+            await plineWithContinuation(message);
         const timeout: `${TimedCorpseResistance}Turns` = `${property}Turns`;
         state.u[timeout] = Math.min(TIMEOUT, (state.u[timeout] || 0) + d(3, 6));
         refreshProperty(property, state);
         return;
     }
-    if (hasIntrinsicProperty(property, 'outside', state)) return;
-    await plineWithContinuation(intrinsicMessage(property, state));
+    await plineWithContinuation(message);
     grantIntrinsicProperty(property, 'outside', state);
-    if (property === 'telepathy' && heroIsBlind(state)) await see_monsters();
-}
-
-// C eat.c:givit().
-function intrinsicMessage(property: CorpseIntrinsic, state: GameState): string {
-    const hallucinating = heroIsHallucinating(state);
-    switch (property) {
-    case 'fireResistance':
-        return hallucinating ? "You be chillin'." : 'You feel a momentary chill.';
-    case 'coldResistance': return formatFeltMessage('full of hot air.', state);
-    case 'sleepResistance': return formatFeltMessage('wide awake.', state);
-    case 'disintegrationResistance':
-        return formatFeltMessage(hallucinating ? 'totally together, man.' : 'very firm.', state);
-    case 'shockResistance':
-        return hallucinating ? formatFeltMessage('grounded in reality.', state)
-            : 'Your health currently feels amplified!';
-    case 'poisonResistance':
-        return formatFeltMessage(state.u.poisonResistance ? 'especially healthy.' : 'healthy.', state);
-    case 'telepathy':
-        return formatFeltMessage(hallucinating ? 'in touch with the cosmos.' : 'a strange mental acuity.', state);
-    case 'teleportation':
-        return formatFeltMessage(hallucinating ? 'diffuse.' : 'very jumpy.', state);
-    case 'teleportControl':
-        return formatFeltMessage(hallucinating ? 'centered in your personal space.' : 'in control of yourself.', state);
-    case 'acidResistance':
-        return formatFeltMessage(hallucinating ? 'secure from flashbacks.' : 'less concerned about being harmed by acid.', state);
-    case 'stoneResistance':
-        return formatFeltMessage(hallucinating ? 'unusually limber.' : 'less concerned about becoming petrified.', state);
-    }
+    if (property === 'telepathy' && heroIsBlind(state))
+        await see_monsters();
 }
 
 // C eat.c:eye_of_newt_buzz().
-export async function corpseEnergyBuzz({ state = game }: CorpseIntrinsicOptions = {}) {
+export async function eye_of_newt_buzz({ state = game }: CorpseIntrinsicOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const hero = state.u;
@@ -905,10 +984,11 @@ export async function corpseEnergyBuzz({ state = game }: CorpseIntrinsicOptions 
 }
 
 // C eat.c:cpostfx().
-export async function applyCorpsePostEffects(mnum: number, { state = game, tin = null }: CorpseOptions = {}) {
+export async function cpostfx(mnum: number, { state = game, tin = null }: CorpseOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (state._mimicMealMessage) await finishMealMimicry(state);
+    if (state._mimicMealMessage)
+        await eatmdone(state);
     const hero = state.u;
     const name = requireMonsterData(MONSTER_NAME, mnum);
     if (HUMAN_WERE_FORMS.has(mnum)) {
@@ -918,86 +998,141 @@ export async function applyCorpsePostEffects(mnum: number, { state = game, tin =
     }
     let checkIntrinsics = false;
     switch (name) {
-    case 'wraith':
-        await gainExperienceLevel({ state });
-        break;
-    case 'nurse':
-        if (Upolyd(hero)) hero.mh = hero.mhmax;
-        else hero.uhp = hero.uhpmax;
-        await makeBlinded(0, { state, talk: !hero.ucreamed });
-        state.context.botl = true;
-        checkIntrinsics = true;
-        break;
-    case 'stalker':
-    case 'yellow light':
-    case 'giant bat':
-    case 'bat':
-        if (name === 'stalker') await eatStalker(state);
-        if (name !== 'bat')
+        case 'wraith':
+            await gainExperienceLevel({ state });
+            break;
+        case 'nurse':
+            if (Upolyd(hero))
+                hero.mh = hero.mhmax;
+            else
+                hero.uhp = hero.uhpmax;
+            await makeBlinded(0, { state, talk: !hero.ucreamed });
+            state.context.botl = true;
+            checkIntrinsics = true;
+            break;
+        case 'stalker':
+        case 'yellow light':
+        case 'giant bat':
+        case 'bat':
+            if (name === 'stalker') {
+                if (!heroIsInvisible(state)) {
+                    hero.invisibleTurns = rn1(100, 50);
+                    syncHeroInvisibility(state);
+                    if (!heroIsBlind(state) && !invisibilityIsBlocked(state))
+                        await showInvisibilityMessage(state);
+                }
+                else {
+                    if (!hasPermanentIntrinsicProperty('invisible', state))
+                        await plineWithContinuation(formatFeltMessage('hidden!', state));
+                    grantIntrinsicProperty('invisible', 'outside', state);
+                    grantIntrinsicProperty('seeInvisible', 'outside', state);
+                    syncHeroInvisibility(state);
+                }
+                await newsym(hero.ux, hero.uy);
+            }
+            if (name !== 'bat')
+                await makeStunned((hero.stunnedTurns || 0) + 30, { state, talk: false });
             await makeStunned((hero.stunnedTurns || 0) + 30, { state, talk: false });
-        await makeStunned((hero.stunnedTurns || 0) + 30, { state, talk: false });
-        break;
-    case 'giant mimic':
-    case 'large mimic':
-    case 'small mimic':
-        await beginMealMimicry(name === 'giant mimic' ? 50 : name === 'large mimic' ? 40 : 20, { state });
-        break;
-    case 'quantum mechanic':
-        await plineWithContinuation('Your velocity suddenly seems very uncertain!');
-        if (hasPermanentIntrinsicProperty('fast', state)) {
-            removePermanentIntrinsicProperty('fast', state);
-            await plineWithContinuation('You seem slower.');
-        } else {
-            grantIntrinsicProperty('fast', 'outside', state);
-            await plineWithContinuation('You seem faster.');
-        }
-        break;
-    case 'lizard':
-        if ((hero.stunnedTurns ?? 0) > 2) await makeStunned(2, { state, talk: false });
-        if ((hero.confusionTurns ?? 0) > 2) await makeConfused(2, { state, talk: false });
-        checkIntrinsics = true;
-        break;
-    case 'chameleon':
-    case 'doppelganger':
-    case 'sandestin':
-    case 'genetic engineer':
-        if (heroIsUnchanging(state)) await plineWithContinuation(formatFeltMessage('momentarily different.', state));
-        else {
-            if (tin) {
-                await useUpTin(tin, { state });
-                await gainHeroNutrition(200 + ((requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & M1_METALLIVORE) ? 5 : 0), { state });
-                if (state.program_state.gameover) break;
+            break;
+        case 'giant mimic':
+        case 'large mimic':
+        case 'small mimic':
+            {
+                const turns = name === 'giant mimic' ? 50 : name === 'large mimic' ? 40 : 20;
+                if (requireMonsterData(MONSTER_SYMBOL, heroSpecies(state)) === S_MIMIC || heroIsUnchanging(state))
+                    break;
+                const hallucinating = heroIsHallucinating(state);
+                const shape = hallucinating ? 'an orange' : 'a pile of gold';
+                const conduct = hero.uconduct;
+                if (!conduct.polyselfs)
+                    recordGameLogEvent(`changed form for the first time by mimicking ${shape}`, { state, flags: LL_CONDUCT });
+                conduct.polyselfs = (conduct.polyselfs || 0) + 1;
+                await plineWithContinuation(`You can't resist the temptation to mimic ${shape}.`);
+                if (hero.usteed) {
+                    await dismountHero(DISMOUNT_FELL, { state });
+                    if (state.program_state.gameover)
+                        break;
+                }
+                nomul(-turns, state);
+                state._helplessReason = 'pretending to be a pile of gold';
+                const original = Upolyd(hero) ? monsterTypeName(heroSpecies(state), state.flags.female) : state.urace.noun;
+                const nowHallucinating = heroIsHallucinating(state);
+                state._mimicMealMessage = nowHallucinating
+                    ? `You suddenly dread being peeled and mimic ${withIndefiniteArticle(original)} again!`
+                    : `You now prefer mimicking ${withIndefiniteArticle(original)} again.`;
+                state._helplessDoneMessage = state._mimicMealMessage;
+                state._afterMove = { kind: 'end-mimic-meal' };
+                hero.m_ap_type = M_AP_OBJECT;
+                hero.mappearance = nowHallucinating ? ORANGE : GOLD_PIECE;
+                await newsym(hero.ux, hero.uy);
+                await flush_screen(1);
+                await flushPendingTopline();
             }
-            await plineWithContinuation(name === 'genetic engineer'
-                ? 'You undergo a freakish metamorphosis.' : 'You feel a change coming over you.');
-            await polymorphHero();
-        }
-        break;
-    case 'displacer beast':
-        await gainCorpseDisplacement({ state });
-        break;
-    case 'disenchanter':
-        await attrcurse();
-        break;
-    case 'Death':
-    case 'Pestilence':
-    case 'Famine':
-        break;
-    case 'mind flayer':
-    case 'master mind flayer':
-        if (hero.acurr.a[A_INT] < state.urace.attrmax[A_INT]) {
-            if (!rn2(2)) {
-                await plineWithContinuation('Yum!  That was real brain food!');
-                const change = adjustAttribute(A_INT, 1, state);
-                const message = attributeChangeMessage(A_INT, change, state);
-                if (message) await plineWithContinuation(message);
-                break;
+            break;
+        case 'quantum mechanic':
+            await plineWithContinuation('Your velocity suddenly seems very uncertain!');
+            if (hasPermanentIntrinsicProperty('fast', state)) {
+                removePermanentIntrinsicProperty('fast', state);
+                await plineWithContinuation('You seem slower.');
             }
-        } else await plineWithContinuation('For some reason, that tasted bland.');
-        checkIntrinsics = true;
-        break;
-    default:
-        checkIntrinsics = true;
+            else {
+                grantIntrinsicProperty('fast', 'outside', state);
+                await plineWithContinuation('You seem faster.');
+            }
+            break;
+        case 'lizard':
+            if ((hero.stunnedTurns ?? 0) > 2)
+                await makeStunned(2, { state, talk: false });
+            if ((hero.confusionTurns ?? 0) > 2)
+                await makeConfused(2, { state, talk: false });
+            checkIntrinsics = true;
+            break;
+        case 'chameleon':
+        case 'doppelganger':
+        case 'sandestin':
+        case 'genetic engineer':
+            if (heroIsUnchanging(state))
+                await plineWithContinuation(formatFeltMessage('momentarily different.', state));
+            else {
+                if (tin) {
+                    await use_up_tin(tin, { state });
+                    await lesshungry(200 + ((requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & M1_METALLIVORE) ? 5 : 0), { state });
+                    if (state.program_state.gameover)
+                        break;
+                }
+                await plineWithContinuation(name === 'genetic engineer'
+                    ? 'You undergo a freakish metamorphosis.' : 'You feel a change coming over you.');
+                await polymorphHero();
+            }
+            break;
+        case 'displacer beast':
+            await gainCorpseDisplacement({ state });
+            break;
+        case 'disenchanter':
+            await attrcurse();
+            break;
+        case 'Death':
+        case 'Pestilence':
+        case 'Famine':
+            break;
+        case 'mind flayer':
+        case 'master mind flayer':
+            if (hero.acurr.a[A_INT] < state.urace.attrmax[A_INT]) {
+                if (!rn2(2)) {
+                    await plineWithContinuation('Yum!  That was real brain food!');
+                    const change = adjustAttribute(A_INT, 1, state);
+                    const message = attributeChangeMessage(A_INT, change, state);
+                    if (message)
+                        await plineWithContinuation(message);
+                    break;
+                }
+            }
+            else
+                await plineWithContinuation('For some reason, that tasted bland.');
+            checkIntrinsics = true;
+            break;
+        default:
+            checkIntrinsics = true;
     }
     if (checkIntrinsics && !state.program_state.gameover) {
         const attacks = requireMonsterData(MONSTER_ATTACKS, mnum);
@@ -1006,67 +1141,23 @@ export async function applyCorpsePostEffects(mnum: number, { state = game, tin =
             await makeHallucinated((hero.hallucinationTurns || 0) + 200, { state, talk: false });
         }
         if (attacks.some(([type]) => type === AT_MAGC) || name === 'newt')
-            await corpseEnergyBuzz({ state });
-        await grantCorpseIntrinsic(mnum, { state });
+            await eye_of_newt_buzz({ state });
+        const property = corpse_intrinsic(mnum);
+        if (property === 'strength')
+            await gainHeroStrength(null, 0, { state });
+        else if (property)
+            await givit(property, mnum, { state });
     }
     return { heroDied: !!state.program_state.gameover };
 }
 
-// C eat.c:cpostfx().
-async function eatStalker(state: PlayingGameState) {
-    const hero = state.u;
-    if (!heroIsInvisible(state)) {
-        hero.invisibleTurns = rn1(100, 50);
-        syncHeroInvisibility(state);
-        if (!heroIsBlind(state) && !invisibilityIsBlocked(state)) await showInvisibilityMessage(state);
-    } else {
-        if (!hasPermanentIntrinsicProperty('invisible', state)) await plineWithContinuation(formatFeltMessage('hidden!', state));
-        grantIntrinsicProperty('invisible', 'outside', state);
-        grantIntrinsicProperty('seeInvisible', 'outside', state);
-        syncHeroInvisibility(state);
-    }
-    await newsym(hero.ux, hero.uy);
-}
-
-// C eat.c:cpostfx().
-export async function beginMealMimicry(turns: number, { state = game }: { state?: GameState } = {}): Promise<void> {
-    requirePlayingGame(state);
-    const hero = state.u;
-    if (requireMonsterData(MONSTER_SYMBOL, heroSpecies(state)) === S_MIMIC || heroIsUnchanging(state)) return;
-    const hallucinating = heroIsHallucinating(state);
-    const shape = hallucinating ? 'an orange' : 'a pile of gold';
-    const conduct = hero.uconduct;
-    if (!conduct.polyselfs)
-        recordGameLogEvent(`changed form for the first time by mimicking ${shape}`, { state, flags: LL_CONDUCT });
-    conduct.polyselfs = (conduct.polyselfs || 0) + 1;
-    await plineWithContinuation(`You can't resist the temptation to mimic ${shape}.`);
-    if (hero.usteed) {
-        await dismountHero(DISMOUNT_FELL, { state });
-        if (state.program_state.gameover) return;
-    }
-    nomul(-turns, state);
-    state._helplessReason = 'pretending to be a pile of gold';
-    const original = Upolyd(hero) ? monsterTypeName(heroSpecies(state), state.flags.female) : state.urace.noun;
-    const nowHallucinating = heroIsHallucinating(state);
-    state._mimicMealMessage = nowHallucinating
-        ? `You suddenly dread being peeled and mimic ${withIndefiniteArticle(original)} again!`
-        : `You now prefer mimicking ${withIndefiniteArticle(original)} again.`;
-    state._helplessDoneMessage = state._mimicMealMessage;
-    state._afterMove = { kind: 'end-mimic-meal' };
-    hero.m_ap_type = M_AP_OBJECT;
-    hero.mappearance = nowHallucinating ? ORANGE : GOLD_PIECE;
-    await newsym(hero.ux, hero.uy);
-    await flush_screen(1);
-    await flushPendingTopline();
-}
-
 // C eat.c:corpse_intrinsic().
-export function chooseCorpseIntrinsic(mnum: number): CorpseIntrinsic | 'strength' | null {
+export function corpse_intrinsic(mnum: number): CorpseIntrinsic | 'strength' | null {
     const giant = monsterIsGiant(mnum);
     let count = giant ? 1 : 0;
     let selected: CorpseIntrinsic | 'strength' | null = giant ? 'strength' : null;
     for (const property of CANDIDATES) {
-        if (!intrinsicPossible(property, mnum)) continue;
+        if (!intrinsic_possible(property, mnum)) continue;
         if (!rn2(++count)) selected = property;
     }
     if (giant && count === 1 && !rn2(2)) selected = null;
@@ -1074,7 +1165,7 @@ export function chooseCorpseIntrinsic(mnum: number): CorpseIntrinsic | 'strength
 }
 
 // C eat.c:violated_vegetarian().
-async function violateVegetarian(state: PlayingGameState): Promise<void> {
+async function violated_vegetarian(state: PlayingGameState): Promise<void> {
     incrementConduct('unvegetarian', state);
     if (state.urole.key !== 'monk') return;
     await pline(formatFeltMessage('guilty.', state));
@@ -1082,7 +1173,7 @@ async function violateVegetarian(state: PlayingGameState): Promise<void> {
 }
 
 // C eat.c:costly_tin().
-async function costlyTin(alteration: 'destroy' | 'open', state: PlayingGameState) {
+async function costly_tin(alteration: 'destroy' | 'open', state: PlayingGameState) {
     const opening = currentTinOpening(state);
     let tin = currentTin(state);
     const billable = tin.where === 'inventory' ? tin.unpaid
@@ -1101,7 +1192,7 @@ async function costlyTin(alteration: 'destroy' | 'open', state: PlayingGameState
 // C eat.c:tin_variety_txt().
 // Native tin_variety_txt(): preparation labels are accepted only as whole
 // prefixes followed by a space and the monster that supplies the meat.
-export function parseTinPreparation(text: string): { variety: number | null; remaining: string } {
+export function tin_variety_txt(text: string): { variety: number | null; remaining: string } {
     for (const [variety, preparation] of preparations.entries()) {
         if (preparation.name && text.toLowerCase().startsWith(`${preparation.name} `))
             return { variety, remaining: text.slice(preparation.name.length + 1) };
@@ -1110,8 +1201,8 @@ export function parseTinPreparation(text: string): { variety: number | null; rem
 }
 
 // C eat.c:tin_details().
-export function tinDetails(tin: TinDescription, species = tinSpecies(tin), { state = game }: TinOptions = {}) {
-    const variety = tinVariety(tin, true);
+export function tin_details(tin: TinDescription, species = tinSpecies(tin), { state = game }: TinOptions = {}) {
+    const variety = tin_variety(tin, true);
     if (variety === SPINACH_TIN) return 'tin of spinach';
     if (species === -1) return 'empty tin';
     const contents = vegetarianCorpse(species) ? requireMonsterData(MONSTER_NAME, species) : `${requireMonsterData(MONSTER_NAME, species)} meat`;
@@ -1124,7 +1215,7 @@ export function tinDetails(tin: TinDescription, species = tinSpecies(tin), { sta
 }
 
 // C eat.c:set_tin_variety().
-export function setTinVariety(tin: GameObject, mode = RANDOM_TIN) {
+export function set_tin_variety(tin: GameObject, mode = RANDOM_TIN) {
     if (mode === SPINACH_TIN) {
         tin.corpsenm = -1;
         tin.spe = 1;
@@ -1138,7 +1229,7 @@ export function setTinVariety(tin: GameObject, mode = RANDOM_TIN) {
     }
     let variety;
     if (mode === HEALTHY_TIN) {
-        variety = tinVariety(tin);
+        variety = tin_variety(tin);
         if (variety < 0 || variety >= preparations.length) variety = ROTTEN_TIN;
         while (variety === ROTTEN_TIN && !tin.cursed || !tinPreparation(variety).fodder)
             variety = rn2(preparations.length - 1);
@@ -1152,7 +1243,7 @@ export function setTinVariety(tin: GameObject, mode = RANDOM_TIN) {
 }
 
 // C eat.c:tin_variety().
-export function tinVariety(tin: TinContents, display = false) {
+export function tin_variety(tin: TinContents, display = false) {
     const species = tinSpecies(tin);
     let variety = tin.spe === 1 ? SPINACH_TIN : tin.cursed ? ROTTEN_TIN
         : tin.spe < 0 ? -tin.spe - 1 : rn2(preparations.length - 1);
@@ -1163,7 +1254,7 @@ export function tinVariety(tin: TinContents, display = false) {
     return variety;
 }
 
-// C eat.c:tin_variety().
+// C eat.c tintxts[] access with a checked preparation index.
 function tinPreparation(variety: number): TinPreparation {
     const preparation = preparations[variety];
     if (!preparation) throw new RangeError(`Invalid tin preparation ${variety}`);
@@ -1171,7 +1262,7 @@ function tinPreparation(variety: number): TinPreparation {
 }
 
 // C eat.c:use_up_tin().
-export async function useUpTin(tin: GameObject, { state = game }: TinOptions = {}) {
+export async function use_up_tin(tin: GameObject, { state = game }: TinOptions = {}) {
     requirePlayingGame(state);
     await consumeFoodObject(tin, { state });
     if (state.context.tin) {
@@ -1181,147 +1272,143 @@ export async function useUpTin(tin: GameObject, { state = game }: TinOptions = {
 }
 
 // C eat.c:consume_tin().
-async function consumeTin(message: string, { state }: { state: PlayingGameState }) {
+async function consume_tin(message: string, { state }: {
+    state: PlayingGameState;
+}) {
     // Metal has already been swallowed when corpse effects change the form.
     const alwaysEat = eatsMetal(state);
     let tin: GameObject | null = currentTin(state);
-    const variety = tinVariety(tin);
+    const variety = tin_variety(tin);
     if (tin.otrapped || tin.cursed && variety !== HOMEMADE_TIN && rn2(8) === 0) {
-        if (await triggerBoobyTrap('tin', { state })) return;
-        tin = await costlyTin('destroy', state);
-        await useUpTin(tin, { state });
+        if (await triggerBoobyTrap('tin', { state }))
+            return;
+        tin = await costly_tin('destroy', state);
+        await use_up_tin(tin, { state });
         return;
     }
     await plineWithContinuation(message);
-    if (variety === SPINACH_TIN) {
-        await consumeSpinach(tin, alwaysEat, state);
-        return;
-    }
-    const species = tinSpecies(tin);
-    if (species === -1) {
-        await plineWithContinuation(heroIsHallucinating(state)
-            ? `It's full of ${rn2(2) ? 'air elemental souffle' : 'dehydrated water'}.`
-            : 'It turns out to be empty.');
-        observeObject(tin, state);
-        tin.known = true;
-        tin = await costlyTin('open', state);
-        await useUpTin(tin, { state });
-        if (alwaysEat) await gainHeroNutrition(5, { state });
-        return;
-    }
-    const smell = tinSmell(species, state);
-    if (!alwaysEat) {
-        await plineWithContinuation(`It smells like ${smell}.`);
-        if (await promptYesNo('Eat it?') === 'n') {
-            await discardTin(tin, state, !heroIsHallucinating(state));
+    if (variety !== SPINACH_TIN) {
+        const species = tinSpecies(tin);
+        if (species === -1) {
+            await plineWithContinuation(heroIsHallucinating(state)
+                ? `It's full of ${rn2(2) ? 'air elemental souffle' : 'dehydrated water'}.`
+                : 'It turns out to be empty.');
+            observeObject(tin, state);
+            tin.known = true;
+            tin = await costly_tin('open', state);
+            await use_up_tin(tin, { state });
+            if (alwaysEat)
+                await lesshungry(5, { state });
             return;
         }
+        let smell: string;
+        if (['cockatrice', 'chickatrice'].includes(requireMonsterData(MONSTER_NAME, species))
+            && (propertyIsActive('stoneResistance', state) || heroIsHallucinating(state)))
+            smell = 'chicken';
+        else if (heroIsHallucinating(state))
+            smell = makePlural(randomDisplayMonsterName());
+        else if (species === PM_WIZARD || requireMonsterData(MONSTER_GENO, species) & G_UNIQ
+            && !(monsterHasProperName(species))
+            && species !== PM_HIGH_CLERIC && species !== PM_LONG_WORM_TAIL)
+            smell = `the ${requireMonsterData(MONSTER_NAME, species)}`;
+        else
+            smell = monsterHasProperName(species) ? requireMonsterData(MONSTER_NAME, species) : makePlural(requireMonsterData(MONSTER_NAME, species));
+        if (!alwaysEat) {
+            await plineWithContinuation(`It smells like ${smell}.`);
+            if (await promptYesNo('Eat it?') === 'n') {
+                if (state.flags.verbose !== false)
+                    await plineWithContinuation('You discard the open tin.');
+                if (!heroIsHallucinating(state)) {
+                    observeObject(tin, state);
+                    tin.known = true;
+                }
+                tin = await costly_tin('open', state);
+                await use_up_tin(tin, { state });
+                return;
+            }
+        }
+        state.context.victual = null;
+        const preparation = tinPreparation(variety);
+        await plineWithContinuation(`You consume ${preparation.name} ${requireMonsterData(MONSTER_NAME, species)}.`);
+        await eating_conducts(species, { state });
+        observeObject(tin, state);
+        tin.known = true;
+        tin = await costly_tin('open', state);
+        const pre = await cprefx(species, { state, tin });
+        if (pre.heroDied || state.program_state.gameover || !state.context.tin?.tin)
+            return;
+        const post = await cpostfx(species, { state, tin });
+        if (post.heroDied || state.program_state.gameover || !state.context.tin?.tin)
+            return;
+        if (preparation.nutrition < 0)
+            startHeroVomiting({ state, turns: rn1(15, 10) });
+        else {
+            const nutrition = (variety === HOMEMADE_TIN
+                ? Math.min(preparation.nutrition, requireMonsterData(MONSTER_BODY_META, species)[1])
+                : preparation.nutrition) + (alwaysEat ? 5 : 0);
+            await use_up_tin(tin, { state });
+            await lesshungry(nutrition, { state });
+            if (state.program_state.gameover)
+                return;
+            tin = null;
+        }
+        if (preparation.greasy) {
+            const old = state.u.glibTurns || 0;
+            setSlipperyHands(old + rn1(11, 5), state);
+            const fingers = state.uarmg ? armorSimpleName(state.uarmg, state) : makePlural(heroFingerName(state));
+            await plineWithContinuation(`Eating ${preparation.name} food made your ${fingers} ${old ? 'even more' : 'very'} slippery.`);
+        }
     }
-    state.context.victual = null;
-    const preparation = tinPreparation(variety);
-    await plineWithContinuation(`You consume ${preparation.name} ${requireMonsterData(MONSTER_NAME, species)}.`);
-    await eatingConducts(species, { state });
-    observeObject(tin, state);
-    tin.known = true;
-    tin = await costlyTin('open', state);
-    const pre = await applyCorpsePreEffects(species, { state, tin });
-    if (pre.heroDied || state.program_state.gameover || !state.context.tin?.tin) return;
-    const post = await applyCorpsePostEffects(species, { state, tin });
-    if (post.heroDied || state.program_state.gameover || !state.context.tin?.tin) return;
-    if (preparation.nutrition < 0) startHeroVomiting({ state, turns: rn1(15, 10) });
     else {
-        const nutrition = (variety === HOMEMADE_TIN
-            ? Math.min(preparation.nutrition, requireMonsterData(MONSTER_BODY_META, species)[1])
-            : preparation.nutrition) + (alwaysEat ? 5 : 0);
-        await useUpTin(tin, { state });
-        await gainHeroNutrition(nutrition, { state });
-        if (state.program_state.gameover) return;
+        await plineWithContinuation(tin.cursed
+            ? `It contains some decaying${heroIsBlind(state) ? '' : ` ${displayColorName('green', state)}`} substance.`
+            : 'It contains spinach.');
+        if (!tin.cursed) {
+            observeObject(tin, state);
+            tin.known = true;
+        }
+        if (!alwaysEat && await promptYesNo('Eat it?') === 'n') {
+            if (state.flags.verbose !== false)
+                await plineWithContinuation('You discard the open tin.');
+            tin = await costly_tin('open', state);
+            await use_up_tin(tin, { state });
+            return;
+        }
+        incrementFood('ate for the first time (spinach)', state);
+        if (!tin.cursed) {
+            const fixed = state.u.fixedAbilities || propertyIsActive('sustainAbility', state);
+            const character = heroIsHallucinating(state) ? "Swee'pea"
+                : !fixed ? 'Popeye' : state.flags.female ? 'Olive Oyl' : 'Bluto';
+            await plineWithContinuation(`This makes you feel like ${character}!`);
+        }
+        await gainHeroStrength(tin, 0, { state, giveMessage: false });
+        tin = await costly_tin('open', state);
+        const nutrition = (tin.blessed ? 600 : tin.cursed ? 200 + rnd(400) : 400 + rnd(200))
+            + (alwaysEat ? 5 : 0);
+        await use_up_tin(tin, { state });
+        await lesshungry(nutrition, { state });
         tin = null;
     }
-    if (preparation.greasy) {
-        const old = state.u.glibTurns || 0;
-        setSlipperyHands(old + rn1(11, 5), state);
-        const fingers = state.uarmg ? armorSimpleName(state.uarmg, state) : makePlural(heroFingerName(state));
-        await plineWithContinuation(`Eating ${preparation.name} food made your ${fingers} ${old ? 'even more' : 'very'} slippery.`);
-    }
-    if (tin) await useUpTin(tin, { state });
+    if (tin)
+        await use_up_tin(tin, { state });
 }
 
-// C eat.c:consume_tin().
-async function consumeSpinach(tin: GameObject, alwaysEat: boolean, state: PlayingGameState) {
-    await plineWithContinuation(tin.cursed
-        ? `It contains some decaying${heroIsBlind(state) ? '' : ` ${displayColorName('green', state)}`} substance.`
-        : 'It contains spinach.');
-    if (!tin.cursed) {
-        observeObject(tin, state);
-        tin.known = true;
-    }
-    if (!alwaysEat && await promptYesNo('Eat it?') === 'n') {
-        await discardTin(tin, state, false);
-        return;
-    }
-    recordSpinachConsumption({ state });
-    if (!tin.cursed) {
-        const fixed = state.u.fixedAbilities || propertyIsActive('sustainAbility', state);
-        const character = heroIsHallucinating(state) ? "Swee'pea"
-            : !fixed ? 'Popeye' : state.flags.female ? 'Olive Oyl' : 'Bluto';
-        await plineWithContinuation(`This makes you feel like ${character}!`);
-    }
-    await gainHeroStrength(tin, 0, { state, giveMessage: false });
-    tin = await costlyTin('open', state);
-    const nutrition = (tin.blessed ? 600 : tin.cursed ? 200 + rnd(400) : 400 + rnd(200))
-        + (alwaysEat ? 5 : 0);
-    await useUpTin(tin, { state });
-    await gainHeroNutrition(nutrition, { state });
-}
-
-// C eat.c:consume_tin().
-async function discardTin(tin: GameObject, state: PlayingGameState, learnContents: boolean) {
-    if (state.flags.verbose !== false) await plineWithContinuation('You discard the open tin.');
-    if (learnContents) {
-        observeObject(tin, state);
-        tin.known = true;
-    }
-    tin = await costlyTin('open', state);
-    await useUpTin(tin, { state });
-}
-
-// C eat.c:consume_tin().
-function tinSmell(species: number, state: GameState) {
-    if (['cockatrice', 'chickatrice'].includes(requireMonsterData(MONSTER_NAME, species))
-        && (propertyIsActive('stoneResistance', state) || heroIsHallucinating(state)))
-        return 'chicken';
-    if (heroIsHallucinating(state)) return makePlural(randomDisplayMonsterName());
-    if (species === PM_WIZARD || requireMonsterData(MONSTER_GENO, species) & G_UNIQ
-        && !(monsterHasProperName(species))
-        && species !== PM_HIGH_CLERIC && species !== PM_LONG_WORM_TAIL)
-        return `the ${requireMonsterData(MONSTER_NAME, species)}`;
-    return monsterHasProperName(species) ? requireMonsterData(MONSTER_NAME, species) : makePlural(requireMonsterData(MONSTER_NAME, species));
-}
-
-// C eat.c:consume_tin().
+// Port boundary: require the tin retained by context.tin.
 function currentTin(state: GameState): GameObject {
     const tin = currentTinOpening(state).tin;
     if (!tin) throw new Error('The tin being opened has already been consumed');
     return tin;
 }
 
-// C eat.c:consume_tin().
+// Port boundary: require corpsenm before reading tin contents.
 function tinSpecies(tin: TinContents): number {
     if (tin.corpsenm === undefined)
         throw new Error(`Tin ${tin.o_id} has no contents species`);
     return tin.corpsenm;
 }
 
-// C eat.c:consume_tin().
-export function recordSpinachConsumption({ state = game }: FoodConductOptions = {}): boolean {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    return incrementFood('ate for the first time (spinach)', state);
-}
-
 // C eat.c:opentin().
-export async function continueTinOpening(opening: TinOpening, state: GameState = game) {
+export async function opentin(opening: TinOpening, state: GameState = game) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const tin = state.context.tin?.tin;
@@ -1338,14 +1425,14 @@ export async function continueTinOpening(opening: TinOpening, state: GameState =
         await plineWithContinuation('You give up your attempt to open the tin.');
         state._occupation = null;
     } else if (opening.usedtime >= opening.reqtime) {
-        await consumeTin('You succeed in opening the tin.', { state });
+        await consume_tin('You succeed in opening the tin.', { state });
         state._occupation = null;
     }
     state.context.move = state.program_state.gameover ? 0 : 1;
     return true;
 }
 
-// C eat.c:opentin().
+// Port boundary: require the shared context.tin opening state.
 function currentTinOpening(state: GameState): TinOpening {
     const opening = state.context.tin;
     if (!opening) throw new Error('No tin is being opened');
@@ -1353,7 +1440,7 @@ function currentTinOpening(state: GameState): TinOpening {
 }
 
 // C eat.c:start_tin().
-export async function startTin(tin: GameObject, { state = game }: TinOptions = {}) {
+export async function start_tin(tin: GameObject, { state = game }: TinOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     const weapon = state.uwep;
@@ -1396,27 +1483,27 @@ export async function startTin(tin: GameObject, { state = game }: TinOptions = {
     state.context.tin = opening;
     if (!duration) {
         if (message === undefined) throw new Error('Instant tin opening requires a message');
-        await consumeTin(message, { state });
+        await consume_tin(message, { state });
     } else state._occupation = opening;
     state.context.move = state.program_state.gameover ? 0 : 1;
     return { started: true, completed: duration === 0, heroDied: !!state.program_state.gameover };
 }
 
-// C eat.c:start_tin().
+// Shared splitobj(tin, 1) expression in costly_tin() and start_tin().
 function splitTin(tin: GameObject, state: PlayingGameState) {
     const split = splitObjectStack(tin, 1, state);
     if (!split) throw new Error(`Tin stack ${tin.o_id} could not be split`);
     return split;
 }
 
-// C eat.c:start_tin().
+// C mondata.h:metallivorous() expression used by tin functions.
 function eatsMetal(state: PlayingGameState) {
     return !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & M1_METALLIVORE);
 }
 
-// C eat.c:Hear_again()/unfaint(). allmain calls this after the awaited
+// C eat.c:Hear_again(). allmain calls this after the awaited
 // recovery message, so neither hearing nor hunger changes before acknowledgment.
-export async function regainHearingAfterHelplessness({ state = game }: HungerOptions = {}) {
+export async function Hear_again({ state = game }: HungerOptions = {}) {
     if (rn2(2) === 0) {
         await makeDeaf(0, { state, talk: false });
         state.context.botl = true;
@@ -1425,10 +1512,10 @@ export async function regainHearingAfterHelplessness({ state = game }: HungerOpt
 
 // C eat.c:rottenfood().
 // The caller halves remaining nutrition and decides whether a meal can start.
-export async function applyRottenFood(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<boolean> {
+export async function rottenfood(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<boolean> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    await pline(`Blecch!  ${objectIsRottable(food, state) ? 'Rotten' : 'Awful'} ${foodWord(food, state)}!`);
+    await pline(`Blecch!  ${objectIsRottable(food, state) ? 'Rotten' : 'Awful'} ${foodword(food, state)}!`);
     if (!rn2(4)) {
         await pline(formatFeltMessage(`rather ${heroIsHallucinating(state) ? 'trippy' : heroLightHeadedFeeling(state)}.`, state));
         await makeConfused((state.u.confusionTurns || 0) + d(2, 4), { state, talk: false });
@@ -1454,7 +1541,7 @@ export async function applyRottenFood(food: GameObject, { state = game }: FoodEf
     return false;
 }
 
-// C eat.c:eatcorpse().
+// Port boundary: require corpsenm before indexing monster data.
 function corpseSpecies(food: GameObject): number {
     if (food.corpsenm === undefined)
         throw new Error(`Corpse ${food.o_id} has no species`);
@@ -1463,12 +1550,23 @@ function corpseSpecies(food: GameObject): number {
 
 // C eat.c:eatcorpse().
 // The caller has installed context.victual and keeps its food identity.
-export async function prepareCorpseMeal(food: GameObject, { state = game }: CorpseMealOptions = {}) {
+export async function eatcorpse(food: GameObject, { state = game }: CorpseMealOptions = {}): Promise<0 | 1 | 2 | null> {
     requirePlayingGame(state);
     const meal = state.context.victual;
-    if (!meal || meal.key !== 'eat-food') throw new Error('Corpse preparation requires an active food meal');
-    const species = mealCorpseSpecies(food), glob = !!food.globby;
-    await recordCorpseDiet(food, { state });
+    if (!meal || meal.key !== 'eat-food')
+        throw new Error('Corpse preparation requires an active food meal');
+    const species = corpseSpecies(food), glob = !!food.globby;
+    const name = withIndefiniteArticle(food_xname(food, { state }));
+    let logged = false;
+    if (!veganCorpse(species) && incrementConduct('unvegan', state)) {
+        recordGameLogEvent(`consumed animal products for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
+        logged = true;
+    }
+    if (!vegetarianCorpse(species)) {
+        if (!state.u.uconduct.unvegetarian && !logged)
+            recordGameLogEvent(`tasted meat for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
+        await violated_vegetarian(state);
+    }
     let rotted = 0;
     if (!nonrottingCorpse(species)) {
         const age = food.on_ice
@@ -1479,133 +1577,111 @@ export async function prepareCorpseMeal(food: GameObject, { state = game }: Corp
     const stoneable = heroWouldPetrifyFromFlesh(species, state);
     const slimeable = species === PM_GREEN_SLIME && heroCanBeSlimed(state);
     if (!glob && !stoneable && !slimeable && rotted > 5) {
-        await eatTaintedCorpse(food, state);
-        return 'consumed';
+        const cannibal = await maybe_cannibal(species, { state, announce: false });
+        const kind = requireMonsterData(MONSTER_SYMBOL, species) === S_FUNGUS ? 'fungoid vegetation'
+            : vegetarianCorpse(species) ? 'protoplasm' : 'meat';
+        await pline(`Ulch - that ${kind} was tainted${cannibal ? ', you cannibal' : ''}!`);
+        if (propertyIsActive('sicknessResistance', state)) {
+            await pline("It doesn't seem at all sickening, though...");
+        }
+        else {
+            let turns = rn1(10, 10);
+            const sickTurns = state.u.sickTurns ?? 0;
+            if (heroIsSick(state) && turns > sickTurns)
+                turns = Math.max(1, sickTurns - 1);
+            await startHeroSickness({ state, turns,
+                cause: corpseName(food, { adjective: 'rotted' }), type: SICK_VOMITABLE });
+            await pline('(It must have died too long ago to be safe to eat.)');
+        }
+        await consumeFoodObject(food, { state });
+        return 2;
     }
-
     let tastedHazard = false;
     if (requireMonsterData(MONSTER_FLAGS1, species) & M1_ACID && !propertyIsActive('acidResistance', state)) {
         tastedHazard = true;
         await pline('You have a very bad case of stomach acid.');
         await loseHeroHp(rnd(15), glob ? 'acidic glob' : 'acidic corpse', { state });
-    } else if (requireMonsterData(MONSTER_FLAGS1, species) & M1_POIS && rn2(5)) {
+    }
+    else if (requireMonsterData(MONSTER_FLAGS1, species) & M1_POIS && rn2(5)) {
         tastedHazard = true;
         await pline('Ecch - that must have been poisonous!');
-        if (propertyIsActive('poisonResistance', state)) await pline('You seem unaffected by the poison.');
-        else await poisonHeroStrengthAndHp(rnd(4), rnd(15), glob ? 'poisonous glob' : 'poisonous corpse', { state });
-    } else if ((rotted > 5 || rotted > 3 && rn2(5))
+        if (propertyIsActive('poisonResistance', state))
+            await pline('You seem unaffected by the poison.');
+        else
+            await poisonHeroStrengthAndHp(rnd(4), rnd(15), glob ? 'poisonous glob' : 'poisonous corpse', { state });
+    }
+    else if ((rotted > 5 || rotted > 3 && rn2(5))
         && !propertyIsActive('sicknessResistance', state)) {
         tastedHazard = true;
         await pline(formatFeltMessage(`${heroIsSick(state) ? 'very ' : ''}sick.`, state));
         await loseHeroHp(rnd(8), glob ? 'rotted glob' : 'cadaver', { state });
     }
-    if (state.program_state.gameover) return 'dead';
+    if (state.program_state.gameover)
+        return null;
     meal.reqtime = 3 + ((glob ? food.owt : requireMonsterData(MONSTER_BODY_META, species)[0]) >> 6);
-
     if (!tastedHazard && !nonrottingCorpse(species) && (food.orotten || !rn2(7))) {
-        const passedOut = await applyRottenFood(food, { state });
+        const passedOut = await rottenfood(food, { state });
         if (passedOut) {
             food.orotten = true;
-            if (!await touchFoodObject(food, { state })) return 'delayed';
+            if (!await touchfood(food, { state }))
+                return 1;
         }
         if (!requireMonsterData(MONSTER_BODY_META, species)[1]) {
-            if (!passedOut) await pline('The corpse rots away completely.');
+            if (!passedOut)
+                await pline('The corpse rots away completely.');
             await consumeFoodObject(food, { state });
-            return 'consumed';
+            return 2;
         }
-        if (passedOut) return 'delayed';
-        await consumeRemainingFood(food, 2, { state });
-    } else if (['cockatrice', 'chickatrice'].includes(requireMonsterData(MONSTER_NAME, species))
+        if (passedOut)
+            return 1;
+        await consume_oeaten(food, 2, { state });
+    }
+    else if (['cockatrice', 'chickatrice'].includes(requireMonsterData(MONSTER_NAME, species))
         && (propertyIsActive('stoneResistance', state) || heroIsHallucinating(state))) {
         await pline('This tastes just like chicken!');
-    } else if (requireMonsterData(MONSTER_NAME, species) === 'floating eye'
+    }
+    else if (requireMonsterData(MONSTER_NAME, species) === 'floating eye'
         && requireMonsterData(MONSTER_NAME, heroSpecies(state)) === 'raven') {
         await pline('You peck the eyeball with delight.');
-    } else if (!tastedHazard) {
-        await describeCorpseTaste(food, rotted, state);
     }
-    return 'ready';
-}
-
-// C eat.c:eatcorpse().
-async function eatTaintedCorpse(food: GameObject, state: PlayingGameState) {
-    const species = mealCorpseSpecies(food);
-    const cannibal = await applyCannibalPenalty(species, { state, announce: false });
-    const kind = requireMonsterData(MONSTER_SYMBOL, species) === S_FUNGUS ? 'fungoid vegetation'
-        : vegetarianCorpse(species) ? 'protoplasm' : 'meat';
-    await pline(`Ulch - that ${kind} was tainted${cannibal ? ', you cannibal' : ''}!`);
-    if (propertyIsActive('sicknessResistance', state)) {
-        await pline("It doesn't seem at all sickening, though...");
-    } else {
-        let turns = rn1(10, 10);
-        const sickTurns = state.u.sickTurns ?? 0;
-        if (heroIsSick(state) && turns > sickTurns)
-            turns = Math.max(1, sickTurns - 1);
-        await startHeroSickness({ state, turns,
-            cause: corpseName(food, { adjective: 'rotted' }), type: SICK_VOMITABLE });
-        await pline('(It must have died too long ago to be safe to eat.)');
+    else if (!tastedHazard) {
+        const flags = requireMonsterData(MONSTER_FLAGS1, heroSpecies(state));
+        const carnivore = !!(flags & M1_CARNIVORE), herbivore = !!(flags & M1_HERBIVORE);
+        const yummy = veganCorpse(species) ? !carnivore && herbivore : carnivore && !herbivore;
+        const palatable = (vegetarianCorpse(species) ? herbivore : carnivore)
+            && rn2(10) && (rotted < 1 || !rn2(rotted + 1));
+        const choices = ['Tokay', 'Istringy', 'Igamey', 'Ifatty', 'Itough'];
+        const tasteIndex = vegetarianCorpse(species) ? 0 : rn2(choices.length);
+        const taste = choices[tasteIndex];
+        if (taste === undefined)
+            throw new RangeError(`Unknown corpse taste index ${tasteIndex}`);
+        const hallucinating = heroIsHallucinating(state);
+        const verb = hallucinating || palatable && taste[0] === 'I' ? 'is' : 'tastes';
+        let description;
+        if (hallucinating) {
+            if (yummy)
+                description = requireMonsterData(MONSTER_NAME, heroSpecies(state)) === 'tiger' ? 'gr-r-reat' : 'gnarly';
+            else
+                description = palatable ? 'copacetic' : 'grody';
+        }
+        else {
+            description = yummy ? 'delicious' : palatable ? taste.slice(1) : 'terrible';
+        }
+        const prefix = monsterHasProperName(species) ? ''
+            : requireMonsterData(MONSTER_GENO, species) & G_UNIQ ? 'The ' : 'This ';
+        const name = food_xname(food, { state }).replace(/^the /i, '');
+        await pline(`${prefix}${name} ${verb} ${description}${yummy || !palatable ? '!' : '.'}`);
     }
-    await consumeFoodObject(food, { state });
-}
-
-// C eat.c:eatcorpse().
-async function describeCorpseTaste(food: GameObject, rotted: number, state: PlayingGameState) {
-    const species = mealCorpseSpecies(food), flags = requireMonsterData(MONSTER_FLAGS1, heroSpecies(state));
-    const carnivore = !!(flags & M1_CARNIVORE), herbivore = !!(flags & M1_HERBIVORE);
-    const yummy = veganCorpse(species) ? !carnivore && herbivore : carnivore && !herbivore;
-    const palatable = (vegetarianCorpse(species) ? herbivore : carnivore)
-        && rn2(10) && (rotted < 1 || !rn2(rotted + 1));
-    const choices = ['Tokay', 'Istringy', 'Igamey', 'Ifatty', 'Itough'];
-    const tasteIndex = vegetarianCorpse(species) ? 0 : rn2(choices.length);
-    const taste = choices[tasteIndex];
-    if (taste === undefined) throw new RangeError(`Unknown corpse taste index ${tasteIndex}`);
-    const hallucinating = heroIsHallucinating(state);
-    const verb = hallucinating || palatable && taste[0] === 'I' ? 'is' : 'tastes';
-    let description;
-    if (hallucinating) {
-        if (yummy) description = requireMonsterData(MONSTER_NAME, heroSpecies(state)) === 'tiger' ? 'gr-r-reat' : 'gnarly';
-        else description = palatable ? 'copacetic' : 'grody';
-    } else {
-        description = yummy ? 'delicious' : palatable ? taste.slice(1) : 'terrible';
-    }
-    const prefix = monsterHasProperName(species) ? ''
-        : requireMonsterData(MONSTER_GENO, species) & G_UNIQ ? 'The ' : 'This ';
-    const name = foodObjectName(food, { state }).replace(/^the /i, '');
-    await pline(`${prefix}${name} ${verb} ${description}${yummy || !palatable ? '!' : '.'}`);
-}
-
-// C eat.c:eatcorpse().
-function mealCorpseSpecies(food: GameObject): number {
-    if (food.corpsenm === undefined) throw new Error(`Corpse ${food.o_id} has no species`);
-    return food.corpsenm;
-}
-
-// C eat.c:eatcorpse().
-export async function recordCorpseDiet(food: GameObject, { state = game }: FoodConductOptions = {}): Promise<void> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    const species = food.corpsenm;
-    if (species === undefined) throw new Error('Corpse consumption requires a species.');
-    const name = withIndefiniteArticle(foodObjectName(food, { state }));
-    let logged = false;
-    if (!veganCorpse(species) && incrementConduct('unvegan', state)) {
-        recordGameLogEvent(`consumed animal products for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
-        logged = true;
-    }
-    if (!vegetarianCorpse(species)) {
-        if (!state.u.uconduct.unvegetarian && !logged)
-            recordGameLogEvent(`tasted meat for the first time, by eating ${name}`, { state, flags: LL_CONDUCT });
-        await violateVegetarian(state);
-    }
+    return 0;
 }
 
 // C eat.c:start_eating().
-async function startFoodMeal(food: PreparedFoodObject, partlyEaten: boolean, state: PlayingGameState) {
+async function start_eating(food: PreparedFoodObject, partlyEaten: boolean, state: PlayingGameState) {
     const meal = currentFoodMeal(state);
     meal.fullwarn = meal.doreset = false;
     meal.eating = true;
     if (food.otyp === CORPSE || food.globby) {
-        const effect = await applyCorpsePreEffects(corpseSpecies(food), { state, food });
+        const effect = await cprefx(corpseSpecies(food), { state, food });
         if (effect.stopped || !state.context.victual?.piece || !meal.eating) return;
     }
     // C eat.c:2048/2056/2059: `old_nomovemsg = gn.nomovemsg` and the two
@@ -1613,12 +1689,12 @@ async function startFoodMeal(food: PreparedFoodObject, partlyEaten: boolean, sta
     // nomovemsg (e.g. hurtle()'s "") counts as set: done_eating(FALSE)
     // consumes it instead of being suppressed and restored around it.
     const oldMessage = state._helplessDoneMessage ?? null;
-    if (await takeFoodBite(state)) {
+    if (await bite(state)) {
         if (state.program_state.gameover) return;
         if (++meal.usedtime >= meal.reqtime) {
             const chokingMessage = state._helplessDoneMessage;
             if (oldMessage === null) state._helplessDoneMessage = null;
-            await finishFoodMeal(state, false);
+            await done_eating(state, false);
             if (oldMessage === null) {
                 if (chokingMessage === undefined) delete state._helplessDoneMessage;
                 else state._helplessDoneMessage = chokingMessage;
@@ -1628,21 +1704,21 @@ async function startFoodMeal(food: PreparedFoodObject, partlyEaten: boolean, sta
     }
     if (state.program_state.gameover) return;
     if (++meal.usedtime >= meal.reqtime) {
-        await finishFoodMeal(state, meal.reqtime > 1 || partlyEaten);
+        await done_eating(state, meal.reqtime > 1 || partlyEaten);
         return;
     }
-    meal.text = `eating ${foodObjectName(food, { state, definite: true })}`;
+    meal.text = `eating ${food_xname(food, { state, definite: true })}`;
     state._occupation = { key: 'eat-food', text: meal.text };
 }
 
 // C eat.c:eating_glob(). True while this glob is the meal in progress.
-export function activelyEatingGlob(glob: GameObject, state: GameState): boolean {
+export function eating_glob(glob: GameObject, state: GameState): boolean {
     return state._occupation?.key === 'eat-food'
         && state.context.victual?.piece === glob;
 }
 
 // C eat.c:garlic_breath().
-async function garlicBreath(state: PlayingGameState): Promise<void> {
+async function garlic_breath(state: PlayingGameState): Promise<void> {
     for (const monster of [...state.level.monsters].reverse()) {
         if (monster.mhp <= 0 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR
             || NO_OLFACTION.has(requireMonsterData(MONSTER_SYMBOL, monster.mnum))) continue;
@@ -1655,116 +1731,104 @@ async function garlicBreath(state: PlayingGameState): Promise<void> {
 }
 
 // C eat.c:fprefx().
-// Called only on an untouched, non-rotten ordinary food after touchfood.
-// context.victual.reqtime is still the full native food delay at this point.
-export async function applyOrdinaryFoodFirstBite(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<FoodEffectResult> {
+export async function fprefx(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<boolean> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const type = food.otyp;
     const species = heroSpecies(state);
     if (type === EGG) {
         if (isPyroliskEgg(food)) {
-            if (state.inventory.includes(food)) await consumeInventoryItem(food, state);
-            else await useUpFloorObject(food, 1, { state });
+            if (state.inventory.includes(food))
+                await consumeInventoryItem(food, state);
+            else
+                await useUpFloorObject(food, 1, { state });
             await explode(state.u.ux, state.u.uy, -11, d(3, 6), 0, EXPL_FIERY, { state });
-            return mealResult(state, false);
+            return false;
         }
         if (eggIsStale(food, state)) {
             await pline('Ugh.  Rotten egg.');
             startHeroVomiting({ state, turns: Math.min(TIMEOUT, (state.u.vomitingTurns || 0) + d(10, 4)) });
-            return mealResult(state);
+            return !state.program_state.gameover;
         }
-    } else if (type === FOOD_RATION) {
-        if (state.u.uhunger <= 200) await pline(heroIsHallucinating(state)
-            ? 'Oh wow, like, superior, man!' : 'This food really hits the spot!');
-        else if (state.u.uhunger < 700) await pline(`This satiates your ${heroStomachName(state)}!`);
-        return mealResult(state);
-    } else if (type === TRIPE_RATION) {
-        await tasteTripe(species, state);
-        return mealResult(state);
-    } else if (type === LEMBAS_WAFER) {
-        if (heroHasRace('orc', M2_ORC, state)) {
+    }
+    else if (type === FOOD_RATION) {
+        if (state.u.uhunger <= 200)
+            await pline(heroIsHallucinating(state)
+                ? 'Oh wow, like, superior, man!' : 'This food really hits the spot!');
+        else if (state.u.uhunger < 700)
+            await pline(`This satiates your ${heroStomachName(state)}!`);
+        return !state.program_state.gameover;
+    }
+    else if (type === TRIPE_RATION) {
+        const flags = requireMonsterData(MONSTER_FLAGS1, species);
+        if ((flags & M1_CARNIVORE) && !(flags & M1_HUMANOID)) {
+            await pline('This tripe ration is surprisingly good!');
+        }
+        else if ((heroIsPolymorphed(state)
+            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ORC) : state.urace.name === 'orc')) {
+            await pline(heroIsHallucinating(state) ? 'Tastes great!  Less filling!' : 'Mmm, tripe... not bad!');
+        }
+        else {
+            await pline('Yak - dog food!');
+            addExperience(1, 0, state);
+            await checkExperienceLevel();
+            if (rn2(2) && state.urole.key !== 'caveman' && state.urace.name !== 'orc')
+                startHeroVomiting({ state, turns: rn1(currentFoodMeal(state).reqtime, 14) });
+        }
+        return !state.program_state.gameover;
+    }
+    else if (type === LEMBAS_WAFER) {
+        if ((heroIsPolymorphed(state)
+            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ORC) : state.urace.name === 'orc')) {
             await pline('!#?&* elf kibble!');
-            return mealResult(state);
+            return !state.program_state.gameover;
         }
-        if (heroHasRace('elf', M2_ELF, state)) {
+        if ((heroIsPolymorphed(state)
+            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ELF) : state.urace.name === 'elf')) {
             await pline('A little goes a long way.');
-            return mealResult(state);
+            return !state.program_state.gameover;
         }
-    } else if (type === CLOVE_OF_GARLIC) {
+    }
+    else if (type === CLOVE_OF_GARLIC) {
         if (monsterIsUndead(species)) {
-            startHeroVomiting({ state, turns: rn1(requireFoodMeal(state).reqtime, 5) });
-            return mealResult(state);
+            startHeroVomiting({ state, turns: rn1(currentFoodMeal(state).reqtime, 5) });
+            return !state.program_state.gameover;
         }
-        await garlicBreath(state);
-        if (state.program_state.gameover) return mealResult(state, false);
+        await garlic_breath(state);
+        if (state.program_state.gameover)
+            return false;
     }
-    await ordinaryFoodFeedback(food, state);
-    return mealResult(state);
-}
-
-// C eat.c:fprefx().
-async function tasteTripe(species: number, state: PlayingGameState): Promise<void> {
-    const flags = requireMonsterData(MONSTER_FLAGS1, species);
-    if ((flags & M1_CARNIVORE) && !(flags & M1_HUMANOID)) {
-        await pline('This tripe ration is surprisingly good!');
-    } else if (heroHasRace('orc', M2_ORC, state)) {
-        await pline(heroIsHallucinating(state) ? 'Tastes great!  Less filling!' : 'Mmm, tripe... not bad!');
-    } else {
-        await pline('Yak - dog food!');
-        addExperience(1, 0, state);
-        await checkExperienceLevel();
-        if (rn2(2) && state.urole.key !== 'caveman' && state.urace.name !== 'orc')
-            startHeroVomiting({ state, turns: rn1(requireFoodMeal(state).reqtime, 14) });
-    }
-}
-
-// C eat.c:fprefx().
-function heroHasRace(name: 'orc' | 'elf', speciesFlag: number, state: PlayingGameState): boolean {
-    return heroIsPolymorphed(state)
-        ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & speciesFlag) : state.urace.name === name;
-}
-
-// C eat.c:fprefx().
-async function ordinaryFoodFeedback(food: GameObject, state: PlayingGameState): Promise<void> {
-    const name = foodObjectName(food, { state });
+    const name = food_xname(food, { state });
     const hallucinating = heroIsHallucinating(state);
     if (food.otyp === SLIME_MOLD && !food.cursed && food.spe === state.context.current_fruit) {
         await pline(`My, this is a ${hallucinating ? 'primo' : 'yummy'} ${name}!`);
-    } else if (food.otyp === APPLE && food.cursed && !heroResistsSleep(state)) {
-        return;
-    // The configured native build defines MACOS and UNIX. Apples take the
-    // Mac branch; pears retain the UNIX core-dump message.
-    } else if (food.otyp === APPLE) {
+    }
+    else if (food.otyp === APPLE && food.cursed && !heroResistsSleep(state)) {
+        return !state.program_state.gameover;
+        // The configured native build defines MACOS and UNIX. Apples take the
+        // Mac branch; pears retain the UNIX core-dump message.
+    }
+    else if (food.otyp === APPLE) {
         await pline('Delicious!  Must be a Macintosh!');
-    } else if (food.otyp === PEAR) {
-        if (!hallucinating) await pline('Core dumped.');
+    }
+    else if (food.otyp === PEAR) {
+        if (!hallucinating)
+            await pline('Core dumped.');
         else {
             const fault = rnd(100);
             await pline(`${fault <= 75 ? 'Segmentation fault' : fault <= 99 ? 'Bus error' : "Yo\' mama"} -- core dumped.`);
         }
-    } else {
+    }
+    else {
         const taste = food.cursed ? (hallucinating ? 'grody!' : 'terrible!')
             : BLAND_FOODS.has(food.otyp) ? 'bland.' : hallucinating ? 'gnarly!' : 'delicious!';
         await pline(`This ${name} is ${taste}`);
     }
-}
-
-// C eat.c:fprefx().
-function mealResult(state: GameState, continueMeal = true): FoodEffectResult {
-    const heroDied = !!state.program_state.gameover;
-    return { continueMeal: continueMeal && !heroDied, heroDied };
-}
-
-// C eat.c:fprefx().
-function requireFoodMeal(state: GameState): FoodMeal {
-    const meal = state.context.victual;
-    if (meal?.key !== 'eat-food') throw new Error('This food effect requires an ordinary food meal.');
-    return meal;
+    return !state.program_state.gameover;
 }
 
 // C eat.c:bounded_increase().
-function boundedIncrease(old: number, amount: number, objectType: number, state: GameState): number {
+function bounded_increase(old: number, amount: number, objectType: number, state: GameState): number {
     const worn = [state.uleft, state.uright].filter(
         (ring): ring is GameObject => ring != null && ring.otyp === objectType);
     const wornBonus = objectType === PROTECTION ? 0 : worn.reduce((sum, ring) => sum + ring.spe, 0);
@@ -1785,12 +1849,12 @@ function boundedIncrease(old: number, amount: number, objectType: number, state:
 }
 
 // C eat.c:accessory_has_effect().
-function accessoryEffectMessage(object: GameObject) {
+function accessory_has_effect(object: GameObject) {
     return pline(`Magic spreads through your body as you digest the ${object.oclass === 4 ? 'ring' : 'amulet'}.`);
 }
 
 // C eat.c:eataccessory().
-export async function digestAccessory(object: GameObject, { state = game }: { state?: GameState } = {}): Promise<void> {
+export async function eataccessory(object: GameObject, { state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
     const property = requireObjectData(OBJECT_PROPERTY, object.otyp);
@@ -1806,7 +1870,7 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
     if (NO_DIGESTED_EFFECT.has(object.otyp)) return;
 
     if ([ADORNMENT, STRENGTH, CONSTITUTION].includes(object.otyp)) {
-        await accessoryEffectMessage(object);
+        await accessory_has_effect(object);
         const attribute = object.otyp === ADORNMENT ? A_CHA : object.otyp === STRENGTH ? A_STR : A_CON;
         const change = adjustAttribute(attribute, object.spe, state);
         if (change.changed) {
@@ -1817,44 +1881,44 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
             learnObjectType(object.otyp, state);
         }
     } else if ([ACCURACY, DAMAGE].includes(object.otyp)) {
-        await accessoryEffectMessage(object);
+        await accessory_has_effect(object);
         const field = object.otyp === ACCURACY ? 'uhitinc' : 'udaminc';
-        state.u[field] = boundedIncrease(state.u[field] || 0, object.spe, object.otyp, state);
+        state.u[field] = bounded_increase(state.u[field] || 0, object.spe, object.otyp, state);
     } else if (object.otyp === PROTECTION || object.otyp === GUARDING) {
-        await accessoryEffectMessage(object);
+        await accessory_has_effect(object);
         grantIntrinsicProperty('protection', 'outside', state);
-        state.u.ublessed = boundedIncrease(state.u.ublessed || 0,
+        state.u.ublessed = bounded_increase(state.u.ublessed || 0,
             object.otyp === PROTECTION ? object.spe : 2, object.otyp, state);
         // Native eataccessory() leaves find_ac() to the next input boundary,
         // after monsters have used the armor class from before this meal.
         state._armorClassDirty = true;
         state.context.botl = true;
     } else if (object.otyp === FREE_ACTION) {
-        if (!hasIntrinsicProperty('sleepResistance', 'outside', state)) await accessoryEffectMessage(object);
+        if (!hasIntrinsicProperty('sleepResistance', 'outside', state)) await accessory_has_effect(object);
         if (!state.u.sleepResistance) await pline(formatFeltMessage('wide awake.', state));
         grantIntrinsicProperty('sleepResistance', 'outside', state);
     } else if (object.otyp === CHANGE) {
-        await accessoryEffectMessage(object);
+        await accessory_has_effect(object);
         learnObjectType(object.otyp, state);
         changeHeroSex(state);
         await pline(`You are suddenly very ${state.flags.female ? 'feminine' : 'masculine'}!`);
         state.context.botl = true;
     } else if (object.otyp === UNCHANGING) {
         if (!state.u.unchanging && heroIsPolymorphed(state)) {
-            await accessoryEffectMessage(object);
+            await accessory_has_effect(object);
             learnObjectType(object.otyp, state);
             await returnHeroToHumanForm(state);
         }
     } else if (object.otyp === STRANGULATION) {
-        await chokeHeroOnFood(object, { state });
+        await choke(object, { state });
     } else if (object.otyp === SLEEP) {
         const delay = rnd(100);
         const oldDelay = propertyTimeout('sleepy', state);
-        if (!hasIntrinsicProperty('sleepy', 'outside', state)) await accessoryEffectMessage(object);
+        if (!hasIntrinsicProperty('sleepy', 'outside', state)) await accessory_has_effect(object);
         grantIntrinsicProperty('sleepy', 'outside', state);
         if (!oldDelay || delay < oldDelay) setPropertyTimeout('sleepy', delay, state);
     } else if (property) {
-        if (!hasIntrinsicProperty(property, 'outside', state)) await accessoryEffectMessage(object);
+        if (!hasIntrinsicProperty(property, 'outside', state)) await accessory_has_effect(object);
         if (object.otyp === LEVITATION) {
             // The generic intrinsic gain is immediately undone by C. Only
             // this temporary flight remains, and existing levitation wins.
@@ -1870,7 +1934,8 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
         if (object.otyp === SEE_INVISIBLE) {
             await refreshHeroSeeing({ state });
             const innateSight = monsterPerceives(state.u.umonnum);
-            if (heroIsInvisible(state) && !oldIntrinsic && !extrinsicProperty(property, state)
+            if (heroIsInvisible(state) && !oldIntrinsic && !(hasWornProperty(property, state) || hasInvokedProperty(property, state)
+        || hasCarriedProperty(property, null, state))
                 && !innateSight && !heroIsBlind(state)) {
                 await newsym(state.u.ux, state.u.uy);
                 await pline('Suddenly you can see yourself.');
@@ -1878,7 +1943,8 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
             }
         } else if (object.otyp === INVISIBILITY) {
             syncHeroInvisibility(state);
-            if (!oldIntrinsic && !extrinsicProperty(property, state) && !invisibilityIsBlocked(state)
+            if (!oldIntrinsic && !(hasWornProperty(property, state) || hasInvokedProperty(property, state)
+        || hasCarriedProperty(property, null, state)) && !invisibilityIsBlocked(state)
                 && !state.u.seeInvisible && !heroIsBlind(state)) {
                 await newsym(state.u.ux, state.u.uy);
                 await pline(`Your body takes on a ${heroIsHallucinating(state) ? 'normal' : 'strange'} transparency...`);
@@ -1890,17 +1956,11 @@ export async function digestAccessory(object: GameObject, { state = game }: { st
     }
 }
 
-// C eat.c:eataccessory().
-function extrinsicProperty(property: PropertyName, state: GameState): boolean {
-    return hasWornProperty(property, state) || hasInvokedProperty(property, state)
-        || hasCarriedProperty(property, null, state);
-}
-
 // C eat.c:eatspecial().
-async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: PlayingGameState) {
+async function eatspecial(object: GameObject, meal: NonfoodMeal, state: PlayingGameState) {
     // C lesshungry() wants an occupation to handle choke messages correctly.
     setOccupation({ key: 'eat-food', text: 'eating non-food' }, state);
-    await gainHeroNutrition(meal.nmod, { state });
+    await lesshungry(meal.nmod, { state });
     state._occupation = null;
     state.context.victual = null;
     if (state.program_state.gameover) return;
@@ -1916,7 +1976,7 @@ async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: P
             : object.oclass === SCROLL_CLASS && label === 'YUM YUM' ? `Yum${object.blessed ? '!' : '.'}` : 'Needs salt...');
     }
     if (object.oclass === POTION_CLASS) await drinkPotion(object, { state, consume: false });
-    else if ([RING_CLASS, AMULET_CLASS].includes(object.oclass)) await digestAccessory(object, { state });
+    else if ([RING_CLASS, AMULET_CLASS].includes(object.oclass)) await eataccessory(object, { state });
     else if (object.otyp === LEASH && object.leashmon) releaseObjectLeash(object, state);
     if (state.program_state.gameover) return;
     if (object.otyp === TRIDENT && !object.cursed) {
@@ -1940,7 +2000,7 @@ async function finishNonFoodMeal(object: GameObject, meal: NonfoodMeal, state: P
 }
 
 // C eat.c:foodword().
-export function foodWord(food: GameObject, state: GameState = game) {
+export function foodword(food: GameObject, state: GameState = game) {
     if (food.oclass === 7) return 'food';
     const material = objectMaterial(food, state);
     if (food.oclass === 13 && material === 19 && food.dknown)
@@ -1954,80 +2014,111 @@ export function foodWord(food: GameObject, state: GameState = game) {
 }
 
 // C eat.c:fpostfx().
-export async function applyOrdinaryFoodPostEffects(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<FoodEffectResult> {
+export async function fpostfx(food: GameObject, { state = game }: FoodEffectOptions = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
     switch (food.otyp) {
-    case SPRIG_OF_WOLFSBANE:
-        await purifyHeroLycanthropy({ state });
-        break;
-    case CARROT:
-        if (!engulfingAttackBlinds(state))
-            await makeBlinded(state.u.ucreamed || 0, { state });
-        break;
-    case FORTUNE_COOKIE:
-        await readCookieFortune(food, { state });
-        if (!heroIsBlind(state))
-            recordLiteracy('became literate by reading the fortune inside a cookie', { state });
-        break;
-    case LUMP_OF_ROYAL_JELLY:
-        await eatRoyalJelly(food, { state });
-        break;
-    case EGG:
-        await eatPetrifyingEgg(food);
-        break;
-    case EUCALYPTUS_LEAF:
-        if (!food.cursed) {
-            await cureHeroSicknessWithMessages(state);
-            if (cureHeroVomiting(state) && !heroIsUnaware(state))
-                await pline(formatFeltMessage('much less nauseated now.', state));
+        case SPRIG_OF_WOLFSBANE:
+            await purifyHeroLycanthropy({ state });
+            break;
+        case CARROT: {
+            let blinds = false;
+            if (state.u.uswallow) {
+                const swallower = state.u.ustuck;
+                if (!swallower)
+                    throw new Error('An engulfed hero must have a swallowing monster.');
+                blinds = requireMonsterData(MONSTER_ATTACKS, swallower.mnum).some(([method, damage]) => method === AT_ENGL && damage === AD_BLND);
+            }
+            if (!blinds)
+                await makeBlinded(state.u.ucreamed || 0, { state });
+            break;
         }
-        break;
-    case APPLE:
-        if (food.cursed && !heroResistsSleep(state)) {
-            if (state.urace.name === 'dwarf' && heroIsHallucinating(state))
-                await pline('"Heigh-ho, ho-hum, I think I\'ll skip work today."');
-            else if (heroIsDeaf(state) || state.flags.acoustics === false)
-                await pline('You fall asleep.');
-            else
-                await publishHeardMessage('sinister laughter as you fall asleep...', pline, state);
-            await putHeroToSleep(rn1(11, 20), { state });
+        case FORTUNE_COOKIE:
+            await readCookieFortune(food, { state });
+            if (!heroIsBlind(state))
+                recordLiteracy('became literate by reading the fortune inside a cookie', { state });
+            break;
+        case LUMP_OF_ROYAL_JELLY: {
+            const hero = state.u;
+            if (heroIsPolymorphed(state) && hero.umonnum === PM_KILLER_BEE
+                && !heroIsUnchanging(state)) {
+                const transformation = await polymonHero(PM_QUEEN_BEE);
+                if (transformation.transformed)
+                    break;
+            }
+            await gainHeroStrength(food, 1, { state });
+            const hitPointChange = rnd(20) * (food.cursed ? -1 : 1);
+            state.context.botl = true;
+            if (heroIsPolymorphed(state)) {
+                hero.mh += hitPointChange;
+                if (hero.mh > hero.mhmax) {
+                    if (rn2(17) === 0)
+                        hero.mhmax++;
+                    hero.mh = hero.mhmax;
+                }
+                else if (hero.mh <= 0) {
+                    const restored = await returnHeroToHumanForm(state, { publish: plineWithContinuation, die: finishHeroDeath });
+                    if (restored.died)
+                        return;
+                }
+            }
+            else {
+                hero.uhp += hitPointChange;
+                if (hero.uhp > hero.uhpmax) {
+                    if (rn2(17) === 0) {
+                        hero.uhpmax++;
+                        hero.uhppeak = Math.max(hero.uhppeak, hero.uhpmax);
+                    }
+                    hero.uhp = hero.uhpmax;
+                }
+                else if (hero.uhp <= 0) {
+                    await finishHeroDeath({
+                        killer: 'rotten lump of royal jelly',
+                        deathType: POISONING,
+                    });
+                    return;
+                }
+            }
+            if (!food.cursed) {
+                await healHeroLegs(state, { publish: plineWithContinuation });
+            }
+            break;
         }
-        break;
+        case EGG:
+            await eatPetrifyingEgg(food);
+            break;
+        case EUCALYPTUS_LEAF:
+            if (!food.cursed) {
+                await cureHeroSicknessWithMessages(state);
+                if (cureHeroVomiting(state) && !heroIsUnaware(state))
+                    await pline(formatFeltMessage('much less nauseated now.', state));
+            }
+            break;
+        case APPLE:
+            if (food.cursed && !heroResistsSleep(state)) {
+                if (state.urace.name === 'dwarf' && heroIsHallucinating(state))
+                    await pline('"Heigh-ho, ho-hum, I think I\'ll skip work today."');
+                else if (heroIsDeaf(state) || state.flags.acoustics === false)
+                    await pline('You fall asleep.');
+                else
+                    await publishHeardMessage('sinister laughter as you fall asleep...', pline, state);
+                await putHeroToSleep(rn1(11, 20), { state });
+            }
+            break;
     }
-    return mealResult(state);
 }
 
-// C eat.c:fpostfx().
+// C youprop.h:Sleep_resistance expression used by fprefx() and fpostfx().
 function heroResistsSleep(state: GameState): boolean {
     return !!state.u.sleepResistance || propertyIsActive('sleepResistance', state);
 }
 
-// C eat.c:fpostfx().
-function engulfingAttackBlinds(state: GameState): boolean {
-    if (!state.u.uswallow) return false;
-    const swallower = state.u.ustuck;
-    if (!swallower) throw new Error('An engulfed hero must have a swallowing monster.');
-    return requireMonsterData(MONSTER_ATTACKS, swallower.mnum).some(
-        ([method, damage]) => method === AT_ENGL && damage === AD_BLND);
-}
-
 // C eat.c:edibility_prompts().
-export async function checkFoodEdibility(object: FoodSelection, { state = game }: { state?: GameState } = {}): Promise<boolean> {
+export async function edibility_prompts(object: FoodSelection, { state = game }: { state?: GameState } = {}): Promise<boolean> {
     requireLiveGame(state);
     requirePlayingGame(state);
     if ('kind' in object || !state.u.uedibility) return true;
-    const warning = edibilityWarning(object, state);
-    if (!warning) return true;
-    const quantity = objectQuantity(object);
-    const answer = await promptYesNo(`${warning}  Eat ${quantity === 1 ? 'it' : 'one'} anyway?`);
-    await immediatePline(`Your ${heroNoseName(state)} stops tingling and your sense of smell returns to normal.`);
-    state.u.uedibility = 0;
-    return answer === 'y';
-}
-
-// C eat.c:edibility_prompts().
-function edibilityWarning(object: GameObject, state: PlayingGameState): string | null {
+    let warning: string | null = null;
     const corpse = object.otyp === CORPSE;
     const species = object.corpsenm;
     const hero = state.u;
@@ -2061,55 +2152,41 @@ function edibilityWarning(object: GameObject, state: PlayingGameState): string |
     const flags = corpse && species !== undefined
         ? requireMonsterData(MONSTER_FLAGS1, species) : 0;
     if (corpse && rotted > 5 && !hero.sicknessResistance)
-        return `${smell} like ${pronoun} could be tainted!`;
-    if (stoneOrSlime)
-        return `${smell} like ${pronoun} could be something very dangerous!`;
-    if (corpse && rotted > 5)
-        return `${smell} like ${pronoun} could be tainted.`;
-    if (object.orotten || corpse && rotted > 3)
-        return `${smell} like ${pronoun} could be rotten!`;
-    if (corpse && (flags & M1_POIS) && !hero.poisonResistance)
-        return `${smell} like ${pronoun} might be poisonous!`;
-    if (object.otyp === APPLE && object.cursed && !hero.sleepResistance)
-        return `${smell} like ${pronoun} might have been poisoned.`;
-    if (corpse && !vegetarianCorpse(species)
+        warning = `${smell} like ${pronoun} could be tainted!`;
+    else if (stoneOrSlime)
+        warning = `${smell} like ${pronoun} could be something very dangerous!`;
+    else if (corpse && rotted > 5)
+        warning = `${smell} like ${pronoun} could be tainted.`;
+    else if (object.orotten || corpse && rotted > 3)
+        warning = `${smell} like ${pronoun} could be rotten!`;
+    else if (corpse && (flags & M1_POIS) && !hero.poisonResistance)
+        warning = `${smell} like ${pronoun} might be poisonous!`;
+    else if (object.otyp === APPLE && object.cursed && !hero.sleepResistance)
+        warning = `${smell} like ${pronoun} might have been poisoned.`;
+    else if (corpse && !vegetarianCorpse(species)
         && !conduct.unvegetarian && state.urole.key === 'monk')
-        return `${smell} unhealthy.`;
-    if (corpse && (flags & M1_ACID) && !hero.acidResistance)
-        return `${smell} rather acidic.`;
-    if (heroIsPolymorphed(state) && hero.umonnum === RUST_MONSTER
+        warning = `${smell} unhealthy.`;
+    else if (corpse && (flags & M1_ACID) && !hero.acidResistance)
+        warning = `${smell} rather acidic.`;
+    else if (heroIsPolymorphed(state) && hero.umonnum === RUST_MONSTER
         && objectIsMetallic(object, state) && object.oerodeproof)
-        return `${smell} disgusting to you right now.`;
-    if (!conduct.unvegan && ([LEATHER, BONE, DRAGON_HIDE, WAX].includes(material)
+        warning = `${smell} disgusting to you right now.`;
+    else if (!conduct.unvegan && ([LEATHER, BONE, DRAGON_HIDE, WAX].includes(material)
         || corpse && !veganCorpse(species)))
-        return `${smell} foul and unfamiliar to you.`;
-    if (!conduct.unvegetarian && ([LEATHER, BONE, DRAGON_HIDE].includes(material)
+        warning = `${smell} foul and unfamiliar to you.`;
+    else if (!conduct.unvegetarian && ([LEATHER, BONE, DRAGON_HIDE].includes(material)
         || corpse && !vegetarianCorpse(species)))
-        return `${smell} unfamiliar to you.`;
-    return null;
+        warning = `${smell} unfamiliar to you.`;
+    if (!warning) return true;
+    const quantity = objectQuantity(object);
+    const answer = await promptYesNo(`${warning}  Eat ${quantity === 1 ? 'it' : 'one'} anyway?`);
+    await immediatePline(`Your ${heroNoseName(state)} stops tingling and your sense of smell returns to normal.`);
+    state.u.uedibility = 0;
+    return answer === 'y';
 }
 
 // C eat.c:doeat_nonfood().
-export async function recordNonfoodConduct(food: GameObject, { state = game }: FoodConductOptions = {}): Promise<void> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    const name = foodObjectName(food, { state });
-    let logged = incrementFood(`ate for the first time (${name})`, state);
-    const material = objectMaterial(food, state);
-    if (![LEATHER, BONE, DRAGON_HIDE, WAX].includes(material)) return;
-    if (incrementConduct('unvegan', state) && !logged) {
-        recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
-        logged = true;
-    }
-    if (material !== WAX) {
-        if (!state.u.uconduct.unvegetarian && !logged)
-            recordGameLogEvent(`tasted meat by-products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
-        await violateVegetarian(state);
-    }
-}
-
-// C eat.c:doeat_nonfood().
-async function eatNonFood(object: GameObject, state: PlayingGameState) {
+export async function doeat_nonfood(object: GameObject, state: PlayingGameState) {
     const material = objectMaterial(object, state);
     const nutrition = object.otyp === SCR_MAIL ? 0 : object.oclass === COIN_CLASS
         ? Math.min(2000, Math.trunc(objectQuantity(object) / 100))
@@ -2118,31 +2195,47 @@ async function eatNonFood(object: GameObject, state: PlayingGameState) {
     const meal: NonfoodMeal = { piece: object, o_id: object.o_id, reqtime: 1,
         usedtime: 0, nmod: nutrition, canchoke: currentHungerState(state) === SATIATED, eating: true };
     state.context.victual = meal;
-    await recordNonfoodConduct(object, { state });
+    const name = food_xname(object, { state });
+    let logged = incrementFood(`ate for the first time (${name})`, state);
+    if ([LEATHER, BONE, DRAGON_HIDE, WAX].includes(material)) {
+        if (incrementConduct('unvegan', state) && !logged) {
+            recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
+            logged = true;
+        }
+        if (material !== WAX) {
+            if (!state.u.uconduct.unvegetarian && !logged)
+                recordGameLogEvent(`tasted meat by-products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
+            await violated_vegetarian(state);
+        }
+    }
     let noDelicious = object.otyp === SCR_MAIL || material === PAPER;
     if (object.cursed) {
-        await applyRottenFood(object, { state });
+        await rottenfood(object, { state });
         noDelicious = true;
     }
     if (object.oclass === 2 && object.opoisoned) {
         await pline('Ecch - that must have been poisonous!');
-        if (state.u.poisonResistance) await pline('You seem unaffected by the poison.');
+        if (state.u.poisonResistance)
+            await pline('You seem unaffected by the poison.');
         else {
             const name = objectName(object, state);
             if (await poisonHeroStrengthAndHp(rnd(4), rnd(15), name, {
                 state, deathCause: `killed by ${withIndefiniteArticle(name)}`,
-            })) return;
+            }))
+                return;
         }
-    } else if (!noDelicious) {
+    }
+    else if (!noDelicious) {
         let namedArtifact = false;
         if (objectHasPersonalName(object, state)) {
             const orb = artifactByName('The Orb of Detection', state);
-            if (!orb) throw new Error('The Orb of Detection is missing from artifact data');
+            if (!orb)
+                throw new Error('The Orb of Detection is missing from artifact data');
             namedArtifact = (object.oartifact ?? 0) < orb.id;
         }
         await pline(`${namedArtifact ? '' : 'This '}${object.oclass === COIN_CLASS ? 'gold' : objectName(object, state)} is delicious!`);
     }
-    await finishNonFoodMeal(object, meal, state);
+    await eatspecial(object, meal, state);
 }
 
 // C eat.c:doeat().
@@ -2154,29 +2247,134 @@ export async function doeat() {
         state.context.move = 0;
         return;
     }
-    const admission = await handleFoodAdmission(selection, { state });
-    if (admission.handled) {
-        state.context.move = admission.heroDied ? 0 : Number(admission.spentTime);
+    if (exceedsActionCapacity(state)) {
+        await pline("You can't do that while carrying so much stuff.");
+        state.context.move = 0;
         return;
     }
-    let food = admission.food;
+    if (!await edibility_prompts(selection, { state })) {
+        state.context.move = 0;
+        return;
+    }
+    if ('kind' in selection) {
+        await chewIronBars({ state });
+        state.context.move = state.program_state.gameover ? 0 : 1;
+        return;
+    }
+    if (!isEdibleFood(selection, state)) {
+        await pline('You cannot eat that!');
+        state.context.move = 0;
+        return;
+    }
+    if ((selection.owornmask ?? 0) & (W_ARMOR | W_TOOL | W_AMUL | W_SADDLE)) {
+        await pline("You can't eat something you're wearing.");
+        state.context.move = 0;
+        return;
+    }
+    if (selection.where === 'inventory') {
+        const touch = await retouchHeroObject(selection, { state });
+        if (touch.died || touch.rejected) {
+            state.context.move = state.program_state.gameover ? 0 : 1;
+            return;
+        }
+    }
+    else {
+        const touch = await touchArtifactByHero(selection, artifactById(selection.oartifact, state), { state });
+        if (touch.died || touch.allowed === false) {
+            state.context.move = state.program_state.gameover ? 0 : 1;
+            return;
+        }
+    }
+    if (objectIsMetallic(selection, state)
+        && state.u.umonnum === RUST_MONSTER && selection.oerodeproof) {
+        let food = selection;
+        food.rknown = true;
+        if (objectQuantity(food) > 1) {
+            const carried = food.where === 'inventory';
+            const split = splitObjectStack(food, carried ? 1 : objectQuantity(food) - 1, state);
+            if (!split)
+                throw new Error(`Edible stack ${food.o_id} could not be split`);
+            if (carried)
+                food = split;
+        }
+        await pline(`Ulch - that ${objectName(food, state)} was rustproofed!`);
+        food.oerodeproof = false;
+        await makeStunned((state.u.stunnedTurns || 0) + rn2(10), { state });
+        if (isWeldedPrimary(food, state) || food.cursed && ((food.owornmask ?? 0) & W_RING)) {
+            food.bknown = true;
+            await pline(`You spit out the ${objectName(food, state)}.`);
+            state.context.move = state.program_state.gameover ? 0 : 1;
+            return;
+        }
+        await pline(`You spit the ${objectName(food, state)} out onto the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
+        if (food.where === 'inventory') {
+            if (food.owornmask)
+                await removeWornHeroItem(food, state);
+            if (state.program_state.gameover) {
+                state.context.move = 0;
+                return;
+            }
+            await freeInventoryObject(food, state);
+            if (state.program_state.gameover) {
+                state.context.move = 0;
+                return;
+            }
+            await dropObjectAtHero(food, { state });
+        }
+        if (food.where === 'floor')
+            await stack_object(food, state);
+        state.context.move = state.program_state.gameover ? 0 : 1;
+        return;
+    }
+    if (selection.otyp === RIN_SLOW_DIGESTION) {
+        await pline('This ring is indigestible!');
+        await rottenfood(selection, { state });
+        if (selection.dknown)
+            await tryCallObjectType(selection, state);
+        state.context.move = state.program_state.gameover ? 0 : 1;
+        return;
+    }
+    if (selection.oclass !== FOOD_CLASS) {
+        await doeat_nonfood(selection, state);
+        state.context.move = state.program_state.gameover ? 0 : 1;
+        return;
+    }
+    let food = selection;
     if (food === state.context.victual?.piece) {
-        await resumeFoodMeal(food, state);
-        if (!state.program_state.gameover) state.context.move = 1;
+        const meal = currentFoodMeal(state);
+        const lastBite = meal.usedtime + 1 >= meal.reqtime;
+        if (currentHungerState(state) !== SATIATED)
+            meal.canchoke = false;
+        meal.o_id = 0;
+        const resumedFood = await touchfood(food, { state });
+        if (resumedFood) {
+            meal.piece = resumedFood;
+            meal.o_id = resumedFood.o_id;
+        }
+        else
+            await do_reset_eat(state);
+        if (state.program_state.gameover)
+            return;
+        await pline(`You ${lastBite ? 'consume the last bite of' : 'resume'} your meal.`);
+        if (resumedFood)
+            await start_eating(resumedFood, false, state);
+        if (!state.program_state.gameover)
+            state.context.move = 1;
         return;
     }
     if (food.otyp === TIN) {
-        await startTin(food, { state });
-        if (!state.program_state.gameover) state.context.move = 1;
+        await start_tin(food, { state });
+        if (!state.program_state.gameover)
+            state.context.move = 1;
         return;
     }
-
-    const firstFoodLogged = recordFoodConsumption(food, { state });
+    const firstFoodLogged = incrementFood(`ate for the first time - ${food_xname(food, { state })}`, state);
     const partlyEaten = !!food.oeaten;
-    const preparedFood = await touchFoodObject(food, { state });
+    const preparedFood = await touchfood(food, { state });
     if (!preparedFood) {
-        await resetFoodMeal(state);
-        if (!state.program_state.gameover) state.context.move = 1;
+        await do_reset_eat(state);
+        if (!state.program_state.gameover)
+            state.context.move = 1;
         return;
     }
     food = preparedFood;
@@ -2188,183 +2386,80 @@ export async function doeat() {
     state.context.victual = meal;
     let dontStart = false;
     if (food.otyp === CORPSE || food.globby) {
-        const result = await prepareCorpseMeal(food, { state });
-        if (result === 'dead') return;
-        if (result === 'consumed') {
+        const result = await eatcorpse(food, { state });
+        if (result === null)
+            return;
+        if (result === 2) {
             state.context.victual = null;
             state.context.move = 1;
             return;
         }
-        dontStart = result === 'delayed';
-    } else {
-        await recordOrdinaryFoodDiet(food, { state, firstFoodLogged });
+        dontStart = result === 1;
+    }
+    else {
+        let logged = firstFoodLogged;
+        const name = food_xname(food, { state });
+        if (objectMaterial(food, state) === FLESH) {
+            if (incrementConduct('unvegan', state) && !logged) {
+                recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
+                logged = true;
+            }
+            if (food.otyp !== EGG) {
+                if (!state.u.uconduct.unvegetarian && !logged)
+                    recordGameLogEvent(`tasted meat for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
+                await violated_vegetarian(state);
+            }
+        }
+        else if (ANIMAL_INGREDIENTS.has(food.otyp)) {
+            if (incrementConduct('unvegan', state) && !logged)
+                recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state, flags: LL_CONDUCT });
+        }
         meal.reqtime = requireObjectData(OBJECT_DELAY, food.otyp);
-        if (ordinaryFoodIsRotten(food, state)) {
-            dontStart = await applyRottenFood(food, { state });
-            if (dontStart) food.orotten = true;
-            await consumeRemainingFood(food, 1, { state });
-        } else if (!partlyEaten) {
-            const effect = await applyOrdinaryFoodFirstBite(food, { state });
-            if (effect.heroDied) return;
-            if (!effect.continueMeal) {
-                await resetFoodMeal(state);
+        if (food.otyp !== FORTUNE_COOKIE && (food.cursed
+            || ![LEMBAS_WAFER, CRAM_RATION].includes(food.otyp)
+                && state.moves - food.age > (food.blessed ? 50 : 30)
+                && (food.orotten || !rn2(7)))) {
+            dontStart = await rottenfood(food, { state });
+            if (dontStart)
+                food.orotten = true;
+            await consume_oeaten(food, 1, { state });
+        }
+        else if (!partlyEaten) {
+            const continueMeal = await fprefx(food, { state });
+            if (state.program_state.gameover)
+                return;
+            if (!continueMeal) {
+                await do_reset_eat(state);
                 state.context.move = 1;
                 return;
             }
-        } else {
+        }
+        else {
             await pline(`You ${meal.reqtime === 1 ? 'eat' : 'begin eating'} ${await inventoryItemDescription(food)}.`);
         }
     }
-    const nutrition = foodNutrition(food);
-    meal.reqtime = nutrition ? roundNutritionTime(meal.reqtime * preparedFood.oeaten, nutrition) : 0;
+    const nutrition = obj_nutrition(food);
+    if (nutrition) {
+        const remainingTime = meal.reqtime * preparedFood.oeaten;
+        const quotient = Math.trunc(remainingTime / nutrition);
+        meal.reqtime = quotient + Number(2 * (remainingTime % nutrition) >= nutrition);
+    }
+    else
+        meal.reqtime = 0;
     meal.nmod = !meal.reqtime || !preparedFood.oeaten ? 0
         : preparedFood.oeaten >= meal.reqtime ? -Math.trunc(preparedFood.oeaten / meal.reqtime)
             : meal.reqtime % preparedFood.oeaten;
     meal.canchoke = currentHungerState(state) === SATIATED;
-    if (dontStart) food.owt = objectWeight(food);
-    else await startFoodMeal(preparedFood, partlyEaten, state);
-    if (!state.program_state.gameover) state.context.move = 1;
-}
-
-// C eat.c:doeat().
-async function resumeFoodMeal(originalFood: GameObject, state: PlayingGameState) {
-    const meal = currentFoodMeal(state);
-    const lastBite = meal.usedtime + 1 >= meal.reqtime;
-    if (currentHungerState(state) !== SATIATED) meal.canchoke = false;
-    meal.o_id = 0;
-    const food = await touchFoodObject(originalFood, { state });
-    if (food) {
-        meal.piece = food;
-        meal.o_id = food.o_id;
-    } else await resetFoodMeal(state);
-    if (state.program_state.gameover) return;
-    await pline(`You ${lastBite ? 'consume the last bite of' : 'resume'} your meal.`);
-    if (food) await startFoodMeal(food, false, state);
-}
-
-// C eat.c:doeat().
-function ordinaryFoodIsRotten(food: GameObject, state: GameState) {
-    if (food.otyp === FORTUNE_COOKIE) return false;
-    if (food.cursed) return true;
-    return ![LEMBAS_WAFER, CRAM_RATION].includes(food.otyp)
-        && state.moves - food.age > (food.blessed ? 50 : 30)
-        && (food.orotten || !rn2(7));
-}
-
-// C eat.c:doeat().
-// doeat increments food before touchfood; the returned flag belongs only to
-// that invocation's ordinary-food diet log scope. Corpse diet starts a new one.
-export function recordFoodConsumption(food: GameObject, { state = game }: FoodConductOptions = {}): boolean {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    return incrementFood(`ate for the first time - ${foodObjectName(food, { state })}`, state);
-}
-
-// C eat.c:doeat().
-export async function recordOrdinaryFoodDiet(
-    food: GameObject,
-    { state = game, firstFoodLogged = false }: FoodConductOptions & { firstFoodLogged?: boolean } = {},
-): Promise<void> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    let logged = firstFoodLogged;
-    const name = foodObjectName(food, { state });
-    if (objectMaterial(food, state) === FLESH) {
-        if (incrementConduct('unvegan', state) && !logged) {
-            recordGameLogEvent(`consumed animal products for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
-            logged = true;
-        }
-        if (food.otyp !== EGG) {
-            if (!state.u.uconduct.unvegetarian && !logged)
-                recordGameLogEvent(`tasted meat for the first time, by eating ${withIndefiniteArticle(name)}`, { state, flags: LL_CONDUCT });
-            await violateVegetarian(state);
-        }
-    } else if (ANIMAL_INGREDIENTS.has(food.otyp)) {
-        if (incrementConduct('unvegan', state) && !logged)
-            recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state, flags: LL_CONDUCT });
-    }
-}
-
-// C eat.c:doeat().
-export async function handleFoodAdmission(object: FoodSelection, { state = game }: FoodOptions = {}): Promise<FoodAdmission> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    if (exceedsActionCapacity(state)) {
-        await pline("You can't do that while carrying so much stuff.");
-        return admissionResult(true, false, state);
-    }
-    if (!await checkFoodEdibility(object, { state })) return admissionResult(true, false, state);
-    if ('kind' in object) {
-        await chewIronBars({ state });
-        return admissionResult(true, true, state);
-    }
-    if (!isEdibleFood(object, state)) {
-        await pline('You cannot eat that!');
-        return admissionResult(true, false, state);
-    }
-    if ((object.owornmask ?? 0) & (W_ARMOR | W_TOOL | W_AMUL | W_SADDLE)) {
-        await pline("You can't eat something you're wearing.");
-        return admissionResult(true, false, state);
-    }
-    if (object.where === 'inventory') {
-        const touch = await retouchHeroObject(object, { state });
-        if (touch.died || touch.rejected) return admissionResult(true, true, state);
-    } else {
-        const touch = await touchArtifactByHero(object, artifactById(object.oartifact, state), { state });
-        if (touch.died || touch.allowed === false) return admissionResult(true, true, state);
-    }
-    if (objectIsMetallic(object, state)
-        && state.u.umonnum === RUST_MONSTER && object.oerodeproof) {
-        await spitOutRustproofObject(object, state);
-        return admissionResult(true, true, state);
-    }
-    if (object.otyp === RIN_SLOW_DIGESTION) {
-        await pline('This ring is indigestible!');
-        await applyRottenFood(object, { state });
-        if (object.dknown) await tryCallObjectType(object, state);
-        return admissionResult(true, true, state);
-    }
-    if (object.oclass === FOOD_CLASS)
-        return { handled: false, food: object, spentTime: false, heroDied: !!state.program_state.gameover };
-    await eatNonFood(object, state);
-    return admissionResult(true, true, state);
-}
-
-// C eat.c:doeat().
-function admissionResult(handled: true, spentTime: boolean, state: GameState): FoodAdmission {
-    return { handled, spentTime, heroDied: !!state.program_state.gameover };
-}
-
-// C eat.c:doeat().
-async function spitOutRustproofObject(object: GameObject, state: PlayingGameState) {
-    object.rknown = true;
-    if (objectQuantity(object) > 1) {
-        const carried = object.where === 'inventory';
-        const split = splitObjectStack(object, carried ? 1 : objectQuantity(object) - 1, state);
-        if (!split) throw new Error(`Edible stack ${object.o_id} could not be split`);
-        if (carried) object = split;
-    }
-    await pline(`Ulch - that ${objectName(object, state)} was rustproofed!`);
-    object.oerodeproof = false;
-    await makeStunned((state.u.stunnedTurns || 0) + rn2(10), { state });
-    if (isWeldedPrimary(object, state) || object.cursed && ((object.owornmask ?? 0) & W_RING)) {
-        object.bknown = true;
-        await pline(`You spit out the ${objectName(object, state)}.`);
-        return;
-    }
-    await pline(`You spit the ${objectName(object, state)} out onto the ${surfaceName(state.u.ux, state.u.uy, state)}.`);
-    if (object.where === 'inventory') {
-        if (object.owornmask) await removeWornHeroItem(object, state);
-        if (state.program_state.gameover) return;
-        await freeInventoryObject(object, state);
-        if (state.program_state.gameover) return;
-        await dropObjectAtHero(object, { state });
-    }
-    if (object.where === 'floor') await stack_object(object, state);
+    if (dontStart)
+        food.owt = objectWeight(food);
+    else
+        await start_eating(preparedFood, partlyEaten, state);
+    if (!state.program_state.gameover)
+        state.context.move = 1;
 }
 
 // C eat.c:use_tin_opener().
-export async function useTinOpener(tool: GameObject, { state = game, swapWeapons }: TinOpenerOptions = {}) {
+export async function use_tin_opener(tool: GameObject, { state = game, swapWeapons }: TinOpenerOptions = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     if (!state.inventory.some(object => object.otyp === TIN)) {
@@ -2391,113 +2486,49 @@ export async function useTinOpener(tool: GameObject, { state = game, swapWeapons
         if (usedTime) commandResultSpentTime(state);
         return { usedTime, cancelled: true, heroDied: false };
     }
-    const result = await startTin(tin, { state });
+    const result = await start_tin(tin, { state });
     return { usedTime: true, cancelled: false, heroDied: result.heroDied };
 }
 
 // C eat.c:bite().
-// C eat.c:recalc_wt().
-async function takeFoodBite(state: PlayingGameState) {
+async function bite(state: PlayingGameState) {
     const meal = currentFoodMeal(state);
     if (meal.canchoke && state.u.uhunger >= 2000) {
-        await chokeHeroOnFood(meal.piece, { state });
+        await choke(meal.piece, { state });
         return true;
     }
     if (meal.doreset) {
-        await resetFoodMeal(state);
+        await do_reset_eat(state);
         return false;
     }
     state.context.forceSaveHungerState = true;
     try {
         if (meal.nmod < 0) {
-            await gainHeroNutrition(adjustedBiteNutrition(meal, state), { state });
+            await lesshungry(adj_victual_nutrition(meal, state), { state });
             if (state.program_state.gameover) return true;
-            await consumeRemainingFood(currentMealFood(meal), meal.nmod, { state });
+            await consume_oeaten(currentMealFood(meal), meal.nmod, { state });
         } else if (meal.nmod > 0 && meal.usedtime % meal.nmod) {
-            await gainHeroNutrition(1, { state });
+            await lesshungry(1, { state });
             if (state.program_state.gameover) return true;
-            await consumeRemainingFood(currentMealFood(meal), -1, { state });
+            await consume_oeaten(currentMealFood(meal), -1, { state });
         }
     } finally {
         delete state.context.forceSaveHungerState;
     }
     const food = currentMealFood(meal);
-    food.owt = objectWeight(food);
+    recalc_wt(food);
     return false;
 }
 
 // C eat.c:gethungry().
-function ringCostsNutrition(ring: GameObject | null | undefined, slot: Extract<WornPropertySlot, 'uleft' | 'uright'>) {
-    if (!ring || ring.otyp === MEAT_RING) return false;
-    if ((ring.spe || 0) !== 0 || !OBJECT_CHARGED[ring.otyp]) return true;
-    if (ring.otyp !== RIN_PROTECTION) return false;
-    const sources = game.u._propertySources?.protection;
-    const others = (sources?.worn || []).filter(source => source.slot !== slot);
-    if (sources?.invoked || sources?.carried?.length) return false;
-    if (!others.length) return true;
-    // Two +0 protection rings charge the left ring only.
-    return slot === 'uleft' && others.length === 1 && others[0]?.slot === 'uright'
-        && game.uright?.otyp === RIN_PROTECTION && !(game.uright.spe || 0);
-}
-
-// C eat.c:gethungry().
-function regenerationCostsNutrition() {
-    const hero = game.u;
-    const sources = hero._propertySources?.regeneration;
-    return hero.regenerationIntrinsic || (hero.regenerationTurns ?? 0) > 0
-        || Object.keys(sources?.intrinsic || {}).some(origin => origin !== 'form')
-        || sources?.worn?.some(source => source.slot !== 'uwep')
-        || !!sources?.carried?.length;
-}
-
-// C eat.c:gethungry().
-function accessoryNutritionCost(accessoryTime: number) {
-    const u = game.u;
-    let cost = 0;
-    if (accessoryTime % 2) {
-        if (regenerationCostsNutrition()) cost++;
-        if (nearCapacity(game) > 1) cost++;
-        return cost;
-    }
-
-    // Hunger and Conflict are independent C properties and can both charge.
-    if (u.hunger) cost++;
-    if (hasNonArtifactConflict(game)) cost++;
-    switch (accessoryTime) {
-    case 0:
-        if (u.slowDigestion
-            && game.uright?.otyp !== RIN_SLOW_DIGESTION
-            && game.uleft?.otyp !== RIN_SLOW_DIGESTION) cost++;
-        break;
-    case 4:
-        if (ringCostsNutrition(game.uleft, 'uleft')) cost++;
-        break;
-    case 8:
-        if (game.uamul?.otyp !== undefined
-            && game.uamul.otyp !== FAKE_AMULET_OF_YENDOR) cost++;
-        break;
-    case 12:
-        if (ringCostsNutrition(game.uright, 'uright')) cost++;
-        break;
-    case 16:
-        if (u.uhave?.amulet || u.haveAmulet
-            || game.inventory?.some(object => object.otyp === AMULET_OF_YENDOR))
-            cost++;
-        break;
-    default:
-        break;
-    }
-    return cost;
-}
-
-// C eat.c:gethungry().
-export async function getHungry({ invulnerable = false } = {}) {
+export async function gethungry({ invulnerable = false } = {}) {
     const state = requireInitializedGame();
     const u = state.u;
-    if (invulnerable || u.invulnerable || game.iflags?.debug_hunger) return null;
-    if (!Number.isInteger(u.uhunger)) u.uhunger = 900;
+    if (invulnerable || u.invulnerable || game.iflags?.debug_hunger)
+        return null;
+    if (!Number.isInteger(u.uhunger))
+        u.uhunger = 900;
     u.uhs ??= currentHungerState(game);
-
     // C checks awareness before diet or slow digestion: an unaware hero
     // spends this random draw even in a body which does not eat.
     const currentFormEats = !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(game))
@@ -2506,22 +2537,86 @@ export async function getHungry({ invulnerable = false } = {}) {
         && currentFormEats && !u.slowDigestion)
         u.uhunger--;
     const accessoryTime = rn2(20);
-    u.uhunger -= accessoryNutritionCost(accessoryTime);
-    await updateHeroHunger(true);
+    if (accessoryTime % 2) {
+        const sources = u._propertySources?.regeneration;
+        const regenerates = u.regenerationIntrinsic || (u.regenerationTurns ?? 0) > 0
+            || Object.keys(sources?.intrinsic || {}).some(origin => origin !== 'form')
+            || sources?.worn?.some(source => source.slot !== 'uwep')
+            || !!sources?.carried?.length;
+        if (regenerates)
+            u.uhunger--;
+        if (nearCapacity(game) > 1)
+            u.uhunger--;
+    }
+    else {
+        // Hunger and Conflict are independent C properties and can both charge.
+        if (u.hunger)
+            u.uhunger--;
+        if (hasNonArtifactConflict(game))
+            u.uhunger--;
+        switch (accessoryTime) {
+            case 0:
+                if (u.slowDigestion
+                    && game.uright?.otyp !== RIN_SLOW_DIGESTION
+                    && game.uleft?.otyp !== RIN_SLOW_DIGESTION)
+                    u.uhunger--;
+                break;
+            case 4: {
+                const ring = game.uleft;
+                if (ring && ring.otyp !== MEAT_RING) {
+                    const sources = game.u._propertySources?.protection;
+                    const others = (sources?.worn || []).filter(source => source.slot !== 'uleft');
+                    const soleProtection = !sources?.invoked && !sources?.carried?.length
+                        && (!others.length || others.length === 1 && others[0]?.slot === 'uright'
+                            && game.uright?.otyp === RIN_PROTECTION && !(game.uright.spe || 0));
+                    if ((ring.spe || 0) !== 0 || !OBJECT_CHARGED[ring.otyp]
+                        || ring.otyp === RIN_PROTECTION && soleProtection)
+                        u.uhunger--;
+                }
+                break;
+            }
+            case 8:
+                if (game.uamul?.otyp !== undefined
+                    && game.uamul.otyp !== FAKE_AMULET_OF_YENDOR)
+                    u.uhunger--;
+                break;
+            case 12: {
+                const ring = game.uright;
+                if (ring && ring.otyp !== MEAT_RING) {
+                    const sources = game.u._propertySources?.protection;
+                    const others = (sources?.worn || []).filter(source => source.slot !== 'uright');
+                    const soleProtection = !sources?.invoked && !sources?.carried?.length
+                        && (!others.length);
+                    if ((ring.spe || 0) !== 0 || !OBJECT_CHARGED[ring.otyp]
+                        || ring.otyp === RIN_PROTECTION && soleProtection)
+                        u.uhunger--;
+                }
+                break;
+            }
+            case 16:
+                if (u.uhave?.amulet || u.haveAmulet
+                    || game.inventory?.some(object => object.otyp === AMULET_OF_YENDOR))
+                    u.uhunger--;
+                break;
+            default:
+                break;
+        }
+    }
+    await newuhs(true);
     return accessoryTime;
 }
 
 // C eat.c:morehungry(). A zero or negative amount still runs newuhs(TRUE).
-export async function spendHeroNutrition(amount: number, { state = game }: HungerOptions = {}) {
+export async function morehungry(amount: number, { state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     state.u.uhs ??= currentHungerState(state);
     state.u.uhunger = (state.u.uhunger ?? 900) - amount;
-    await updateHeroHunger(true, { state });
+    await newuhs(true, { state });
 }
 
 // C eat.c:lesshungry(). Fullness belongs to this common boundary, including
 // nutrition received outside a meal.
-export async function gainHeroNutrition(amount: number, { state = game }: HungerOptions = {}) {
+export async function lesshungry(amount: number, { state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     const hero = state.u;
     hero.uhs ??= currentHungerState(state);
@@ -2531,7 +2626,7 @@ export async function gainHeroNutrition(amount: number, { state = game }: Hunger
         || state.context.forceSaveHungerState;
     if (hero.uhunger >= 2000) {
         if (!eating || victual?.canchoke) {
-            await chokeHeroOnFood(eating ? victual?.piece
+            await choke(eating ? victual?.piece
                 : state._occupation?.key === 'open-tin' ? state.context.tin?.tin ?? null : null, { state });
             if (state.program_state.gameover) return;
             if (eating && victual?.eating) victual.doreset = true;
@@ -2556,13 +2651,13 @@ export async function gainHeroNutrition(amount: number, { state = game }: Hunger
             }
         }
     }
-    await updateHeroHunger(false, { state });
+    await newuhs(false, { state });
 }
 
 // C eat.c:unfaint().
-export async function recoverHeroFromFainting({ state = game }: HungerOptions = {}) {
+export async function unfaint({ state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
-    await regainHearingAfterHelplessness({ state });
+    await Hear_again({ state });
     if (state.u.uhs > FAINTING) state.u.uhs = FAINTING;
     await stopHeroOccupation(state);
     await bot();
@@ -2570,32 +2665,28 @@ export async function recoverHeroFromFainting({ state = game }: HungerOptions = 
 
 // C eat.c:reset_faint() calls unmul("You revive.") only when unfaint
 // owns the recovery. A different involuntary delay must remain in place.
-export async function resetHeroFaint({ state = game }: HungerOptions = {}) {
+export async function reset_faint({ state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     if (state._afterMove?.kind !== 'unfaint') return false;
     await finishHeroHelplessness('You revive.', state);
     return true;
 }
 
-// C eat.c:newuhs().
+// C eat.c newuhs() thresholds, shared without changing FAINTED or STARVED.
 export function currentHungerState(state: GameState = game) {
     if (state.u.uhs === FAINTED || state.u.uhs === STARVED) return state.u.uhs;
     const nutrition = state.u.uhunger ?? 900;
-    return nutritionState(nutrition);
-}
-
-// C eat.c:newuhs().
-function nutritionState(nutrition: number) {
     return nutrition > 1000 ? SATIATED : nutrition > 150 ? NOT_HUNGRY
         : nutrition > 50 ? HUNGRY : nutrition > 0 ? WEAK : FAINTING;
 }
 
-// C eat.c:newuhs(). Eating saves the state from before the first bite so
-// recovery prose describes the whole meal, rather than each intermediate bite.
-export async function updateHeroHunger(increasing: boolean, { state = game }: HungerOptions = {}) {
+// C eat.c:newuhs().
+export async function newuhs(increasing: boolean, { state = game }: HungerOptions = {}) {
     requirePlayingGame(state);
     const hero = state.u;
-    let next = nutritionState(hero.uhunger ?? 900);
+    const nutrition = hero.uhunger ?? 900;
+    let next = nutrition > 1000 ? SATIATED : nutrition > 150 ? NOT_HUNGRY
+        : nutrition > 50 ? HUNGRY : nutrition > 0 ? WEAK : FAINTING;
     const context = state.context;
     if (state._occupation?.key === 'eat-food' || context.forceSaveHungerState) {
         // newuhs() changes uhs here without requesting a status redraw.
@@ -2611,28 +2702,72 @@ export async function updateHeroHunger(increasing: boolean, { state = game }: Hu
     if (next === FAINTING) {
         const rounded = Math.sign(hero.uhunger)
             * Math.trunc((Math.abs(hero.uhunger) + 5) / 10);
-        if (old === FAINTED) next = FAINTED;
+        if (old === FAINTED)
+            next = FAINTED;
         if (old <= WEAK || rn2(20 - rounded) >= 19) {
             if (old !== FAINTED && (state.multi ?? 0) >= 0
                 && !((state._helplessTurns ?? 0) > 0)) {
-                await faintFromHunger(10 - rounded, state);
-                if (state.program_state.gameover) return;
+                const duration = 10 - rounded;
+                await stopHeroOccupation(state);
+                await plineWithContinuation('You faint from lack of food.');
+                await makeDeaf((state.u.deafTurns ?? 0) + duration, { state, talk: false });
+                nomul(-duration, state);
+                state._helplessReason = 'fainted from lack of food';
+                state._helplessDoneMessage = 'You regain consciousness.';
+                state._afterMove = { kind: 'unfaint' };
+                // C eat.c:newuhs(): "if (!Levitation) selftouch("Falling, you");" —
+                // gloves do not shield the hero from the wielded corpse.
+                if (!propertyIsActive('levitation', state)) {
+                    await selfTouchPetrifyingWeapons({
+                        messageStart: 'Falling, you', state, publish: plineWithContinuation,
+                    });
+                }
+                if (state.program_state.gameover)
+                    return;
                 next = FAINTED;
             }
-        } else if (hero.uhunger < -(100 + 10 * currentAttribute(A_CON, state))) {
+        }
+        else if (hero.uhunger < -(100 + 10 * currentAttribute(A_CON, state))) {
             hero.uhs = STARVED;
             await bot();
-            await dieFromHunger('starvation', state);
+            await plineWithContinuation('You die from starvation.');
+            const died = await finishHeroDeath({
+                killer: 'starvation', deathCause: 'died of starvation', deathVerb: 'starved',
+                deathType: STARVING, deathLineShown: true,
+            });
+            if (!died)
+                await newuhs(false, { state });
             return;
         }
     }
-    if (next === old) return;
-
+    if (next === old)
+        return;
     hero.atemp ||= { a: [0, 0, 0, 0, 0, 0] };
-    if (next >= WEAK && old < WEAK) hero.atemp.a[A_STR] = -1;
-    else if (next < WEAK && old >= WEAK) hero.atemp.a[A_STR] = 0;
+    if (next >= WEAK && old < WEAK)
+        hero.atemp.a[A_STR] = -1;
+    else if (next < WEAK && old >= WEAK)
+        hero.atemp.a[A_STR] = 0;
     if (next === HUNGRY || next === WEAK) {
-        await plineWithContinuation(hungerMessage(next, increasing, state));
+        let message: string;
+        if (heroIsHallucinating(state)) {
+            message = next === HUNGRY
+                ? increasing ? 'You are getting the munchies.' : 'You now have a lesser case of the munchies.'
+                : increasing ? 'The munchies are interfering with your motor capabilities.' : 'You still have the munchies.';
+        }
+        else if (next === HUNGRY) {
+            message = !increasing ? 'You only feel hungry now.'
+                : hero.uhunger < 145 ? 'You feel hungry.' : 'You are beginning to feel hungry.';
+        }
+        else if (increasing && (['wizard', 'valkyrie'].includes(state.urole.key)
+            || state.urace.name === 'elf')) {
+            const name = ['wizard', 'valkyrie'].includes(state.urole.key) ? state.urole.name.m : 'Elf';
+            message = `${name} needs food, badly!`;
+        }
+        else {
+            message = !increasing ? 'You are still weak.'
+                : hero.uhunger < 45 ? 'You feel weak.' : 'You are beginning to feel weak.';
+        }
+        await plineWithContinuation(message);
         if (increasing && state._occupation
             && !['eat-food', 'open-tin'].includes(state._occupation.key))
             await stopHeroOccupation(state);
@@ -2641,78 +2776,19 @@ export async function updateHeroHunger(increasing: boolean, { state = game }: Hu
     hero.uhs = next;
     state.context.botl = true;
     await bot();
-    if ((Upolyd(hero) ? hero.mh : hero.uhp) < 1)
-        await dieFromHunger('exhaustion', state);
-}
-
-// C eat.c:newuhs().
-function hungerMessage(next: number, increasing: boolean, state: PlayingGameState) {
-    if (heroIsHallucinating(state)) {
-        if (next === HUNGRY) return increasing
-            ? 'You are getting the munchies.' : 'You now have a lesser case of the munchies.';
-        return increasing ? 'The munchies are interfering with your motor capabilities.'
-            : 'You still have the munchies.';
-    }
-    if (next === HUNGRY) return !increasing ? 'You only feel hungry now.'
-        : state.u.uhunger < 145 ? 'You feel hungry.' : 'You are beginning to feel hungry.';
-    if (increasing && (['wizard', 'valkyrie'].includes(state.urole?.key)
-        || state.urace?.name === 'elf')) {
-        const name = ['wizard', 'valkyrie'].includes(state.urole?.key)
-            ? state.urole.name.m : 'Elf';
-        return `${name} needs food, badly!`;
-    }
-    return !increasing ? 'You are still weak.'
-        : state.u.uhunger < 45 ? 'You feel weak.' : 'You are beginning to feel weak.';
-}
-
-// C eat.c:newuhs().
-async function faintFromHunger(duration: number, state: PlayingGameState) {
-    await stopHeroOccupation(state);
-    await plineWithContinuation('You faint from lack of food.');
-    await makeDeaf((state.u.deafTurns ?? 0) + duration, { state, talk: false });
-    nomul(-duration, state);
-    state._helplessReason = 'fainted from lack of food';
-    state._helplessDoneMessage = 'You regain consciousness.';
-    state._afterMove = { kind: 'unfaint' };
-    // C eat.c:newuhs(): "if (!Levitation) selftouch("Falling, you");" —
-    // gloves do not shield the hero from the wielded corpse.
-    if (!propertyIsActive('levitation', state)) {
-        await selfTouchPetrifyingWeapons({
-            messageStart: 'Falling, you', state, publish: plineWithContinuation,
+    if ((Upolyd(hero) ? hero.mh : hero.uhp) < 1) {
+        await plineWithContinuation('You die from hunger and exhaustion.');
+        const died = await finishHeroDeath({
+            killer: 'exhaustion', deathCause: 'died of exhaustion', deathVerb: 'starved',
+            deathType: STARVING, deathLineShown: true,
         });
+        if (!died)
+            await newuhs(false, { state });
     }
 }
 
-// C eat.c:newuhs().
-async function dieFromHunger(cause: 'starvation' | 'exhaustion', state: PlayingGameState) {
-    await plineWithContinuation(cause === 'starvation'
-        ? 'You die from starvation.' : 'You die from hunger and exhaustion.');
-    const died = await finishHeroDeath({
-        killer: cause, deathCause: `died of ${cause}`, deathVerb: 'starved',
-        deathType: STARVING, deathLineShown: true,
-    });
-    if (!died) await updateHeroHunger(false, { state });
-}
-
 // C eat.c:vomit().
-function installVomitingHelplessness(state: GameState) {
-    if (currentMulti(state) < -2) return;
-    nomul(-2, state);
-    state._helplessReason = 'vomiting';
-    state._helplessDoneMessage = 'You can move again.';
-}
-
-// C eat.c:vomit().
-async function cureFoodPoisoningByVomiting(state: GameState, publish: MessagePublisher) {
-    const hero = state.u;
-    if (!((hero.sickType ?? 0) & SICK_VOMITABLE)) return false;
-    // potion.c make_sick(0): the cure line pages before Sick is cleared and
-    // botl is raised, so the --More-- it raises still shows the old status.
-    return cureHeroSicknessWithMessages(state, SICK_VOMITABLE, publish);
-}
-
-// C eat.c:vomit().
-export async function vomitHero({
+export async function vomit({
     state = game,
     publish = immediatePline,
     angerAltar = altarWrath,
@@ -2728,12 +2804,17 @@ export async function vomitHero({
     if (cannotVomit) {
         await publish('Your jaw gapes convulsively.');
     } else {
-        await cureFoodPoisoningByVomiting(state, publish);
+        if ((hero.sickType ?? 0) & SICK_VOMITABLE)
+            await cureHeroSicknessWithMessages(state, SICK_VOMITABLE, publish);
         if (hungerState >= FAINTING)
             await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
     }
 
-    installVomitingHelplessness(state);
+    if (currentMulti(state) >= -2) {
+        nomul(-2, state);
+        state._helplessReason = 'vomiting';
+        state._helplessDoneMessage = 'You can move again.';
+    }
     if (cannotVomit || hungerState >= FAINTING)
         return { spewed: false, cannotVomit };
 
@@ -2767,8 +2848,8 @@ export async function vomitHero({
 // C eat.c:consume_oeaten().
 // Native consume_oeaten(): positive adjustments divide by a power of two;
 // negative adjustments subtract a bite. Zero remains reserved for untouched food.
-export async function consumeRemainingFood(food: GameObject, adjustment: number, { state = game }: FoodOptions = {}) {
-    if (!foodNutrition(food)) {
+export async function consume_oeaten(food: GameObject, adjustment: number, { state = game }: FoodOptions = {}) {
+    if (!obj_nutrition(food)) {
         const type = food.otyp === CORPSE ? 'corpse' : food.otyp === EGG ? 'egg'
             : food.otyp === TIN ? 'tin' : null;
         const name = type ? `${type} [${food.corpsenm}]` : String(food.otyp);
@@ -2787,7 +2868,7 @@ export async function consumeRemainingFood(food: GameObject, adjustment: number,
 
 // C eat.c:Popeye(): do not interrupt opening a tin which might cure the
 // current threat. Unknown contents are given the benefit of the doubt.
-export function openingTinMaySaveHero(
+export function Popeye(
     threat: 'hunger' | 'stoned' | 'slimed' | 'sick' | 'vomiting', state: GameState = game,
 ): boolean {
     if (state._occupation?.key !== 'open-tin') return false;
@@ -2814,73 +2895,12 @@ export function openingTinMaySaveHero(
 }
 
 // C eat.c:Finish_digestion(). Corpse post-effects once digestion completes.
-export async function finishHeroDigestion(state: GameState = game): Promise<void> {
+export async function Finish_digestion(state: GameState = game): Promise<void> {
     const species = state._digestedMonsterSpecies;
     if (species === undefined || species === null) return;
-    await applyCorpsePostEffects(species, { state });
+    await cpostfx(species, { state });
     state._digestedMonsterSpecies = null;
-}
-
-interface RoyalJellyEffect {
-    transformed: boolean;
-    died: boolean;
 }
 
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
-
-// C eat.c:fpostfx(): the LUMP_OF_ROYAL_JELLY case.
-export async function eatRoyalJelly(jelly: GameObject, {
-    state = game,
-    publish = plineWithContinuation,
-    die = finishHeroDeath,
-}: { state?: GameState; publish?: MessagePublisher; die?: DeathHandler } = {}): Promise<RoyalJellyEffect> {
-    requireLiveGame(state);
-    requirePlayingGame(state);
-    const hero = state.u;
-    if (heroIsPolymorphed(state) && hero.umonnum === PM_KILLER_BEE
-        && !heroIsUnchanging(state)) {
-        const transformation = await polymonHero(PM_QUEEN_BEE);
-        if (transformation.transformed)
-            return { transformed: true, died: !!transformation.died };
-    }
-
-    await gainHeroStrength(jelly, 1, { state });
-
-    const hitPointChange = rnd(20) * (jelly.cursed ? -1 : 1);
-    state.context.botl = true;
-    if (heroIsPolymorphed(state)) {
-        hero.mh += hitPointChange;
-        if (hero.mh > hero.mhmax) {
-            if (rn2(17) === 0) hero.mhmax++;
-            hero.mh = hero.mhmax;
-        } else if (hero.mh <= 0) {
-            const restored = await returnHeroToHumanForm(
-                state, { publish, die },
-            );
-            if (restored.died) return { transformed: true, died: true };
-        }
-    } else {
-        hero.uhp += hitPointChange;
-        if (hero.uhp > hero.uhpmax) {
-            if (rn2(17) === 0) {
-                hero.uhpmax++;
-                hero.uhppeak = Math.max(
-                    hero.uhppeak, hero.uhpmax,
-                );
-            }
-            hero.uhp = hero.uhpmax;
-        } else if (hero.uhp <= 0) {
-            const died = await die({
-                killer: 'rotten lump of royal jelly',
-                deathType: POISONING,
-            });
-            return { transformed: false, died: !!died };
-        }
-    }
-
-    if (!jelly.cursed) {
-        await healHeroLegs(state, { publish });
-    }
-    return { transformed: false, died: false };
-}

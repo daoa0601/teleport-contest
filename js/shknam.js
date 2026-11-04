@@ -18,7 +18,7 @@ import { depth as depth_of_level, ledgerNo } from './hacklib.js';
 import { GOLD_PIECE, OBJECT_BASES, OBJECT_PROB, SPE_NOVEL, TOUCHSTONE, CORPSE, EGG, TIN, POT_FRUIT_JUICE, POT_BOOZE, POT_WATER, POT_HEALING, POT_FULL_HEALING, POT_OIL, ICE_BOX, LEATHER_GLOVES, ELVEN_CLOAK, SCR_FOOD_DETECTION, LUMP_OF_ROYAL_JELLY, WAX_CANDLE, TALLOW_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, WAN_LIGHT, SCR_LIGHT, SPE_LIGHT } from './object_data.js';
 import { mksobj, mksobj_at, mkobj_at, linkObjectToMonsterInventory } from './mkobj.js';
 import { objectMaterial } from './o_init.js';
-import { setTinVariety } from './eat.js';
+import { set_tin_variety } from './eat.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { setMonsterMalign } from './makemon.js';
@@ -937,7 +937,7 @@ async function mkveggy_at(x, y) {
         throw new Error('Vegetarian shop selection has no eligible food.');
     const object = await mksobj_at(selected, x, y, true, true);
     if (object?.otyp === TIN)
-        setTinVariety(object, HEALTHY_TIN);
+        set_tin_variety(object, HEALTHY_TIN);
     return object;
 }
 export async function stockShopRoom(sroom) {

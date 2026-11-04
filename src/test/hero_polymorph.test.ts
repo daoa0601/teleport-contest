@@ -14,7 +14,7 @@ import { requireGameLevel, game } from '../js/gstate.js';
 import { loseHeroHp } from '../js/hack.js';
 import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
-import { spendHeroNutrition } from '../js/eat.js';
+import { morehungry } from '../js/eat.js';
 import { triggerHeroTrap } from '../js/trap.js';
 import { retouchEquipment } from '../js/hero_retouch.js';
 import { polymorphHero } from '../js/polyself.js';
@@ -472,7 +472,7 @@ void test('random polymorph can renew the human body instead of changing species
         game.urace = requiredRace(race => race.name === 'human');
         game.u.umonster = game.u.umonnum = MONSTER_NAME.indexOf('archeologist');
         game.u.acurr.a[A_CON] = 25;
-        await spendHeroNutrition(899);
+        await morehungry(899);
         pushKeys('                                ');
 
         const result = await polymorphHero();

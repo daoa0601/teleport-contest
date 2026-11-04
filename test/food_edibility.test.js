@@ -1,7 +1,7 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { doeat, checkFoodEdibility } from '../js/eat.js';
+import { doeat, edibility_prompts } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { InputGate, bindInputGate, pushKeys } from '../js/input.js';
 import { APPLE } from '../js/object_data.js';
@@ -55,7 +55,7 @@ void test('the food warning accounts for time on ice without changing corpse age
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('newt'), { age: 0, on_ice: true, blessed: false, cursed: false });
     const gate = new InputGate();
     bindInputGate(gate);
-    const choice = checkFoodEdibility(corpse);
+    const choice = edibility_prompts(corpse);
     await gate.waitUntilBlocked();
     assert.match(game._pending_message, /could be rotten!/);
     assert.doesNotMatch(game._pending_message, /tainted/);

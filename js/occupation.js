@@ -1,7 +1,7 @@
 // Interrupt ongoing work without cancelling an involuntary delay.
 // C allmain.c:stop_occupation(), eat.c:maybe_finished_meal().
 import { plineWithContinuation } from './pline.js';
-import { continueFoodMeal } from './eat.js';
+import { eatfood } from './eat.js';
 import { game } from './gstate.js';
 import { cmdq_clear } from './cmd.js';
 import { CQ_CANNED } from './const.js';
@@ -13,7 +13,7 @@ export async function stopHeroOccupation(state = game, publish = plineWithContin
         if (finishMeal && occupation.key === 'eat-food'
             && (state.context.victual?.usedtime ?? 0) >= (state.context.victual?.reqtime ?? 0)) {
             state._occupation = null;
-            await continueFoodMeal(occupation, state);
+            await eatfood(occupation, state);
         }
         else {
             await publish(`You stop ${occupation.text}.`);

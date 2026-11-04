@@ -11,7 +11,7 @@ import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './polyself.js';
-import { resetHeroFaint } from './eat.js';
+import { reset_faint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
@@ -62,7 +62,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         return false;
     }
     if (state.u.uhs === FAINTED)
-        await resetHeroFaint({ state });
+        await reset_faint({ state });
     else {
         await stopHeroOccupation(state);
         if ((state.multi ?? 0) > 0)

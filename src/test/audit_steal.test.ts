@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
-import { continueFoodMeal, doeat } from '../js/eat.js';
+import { eatfood, doeat } from '../js/eat.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
@@ -183,7 +183,7 @@ void test('a monkey cannot steal the last bite of a finished meal and flees befo
     for (let bite = 0; (food.oeaten ?? 0) > 1 && bite < 10; bite++) {
         const occupation = game._occupation;
         assert.ok(occupation?.key === 'eat-food');
-        await continueFoodMeal(occupation, game);
+        await eatfood(occupation, game);
     }
     assert.equal(food.oeaten, 1);
     assert.ok(game._occupation);

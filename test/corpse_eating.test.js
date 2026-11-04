@@ -1,5 +1,5 @@
 import { installPagerInput } from './support/pager-input.js';
-import { touchFoodObject, applyCannibalPenalty, applyCorpsePostEffects, applyCorpsePreEffects, } from '../js/eat.js';
+import { touchfood, maybe_cannibal, cpostfx, cprefx, } from '../js/eat.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
@@ -34,8 +34,8 @@ async function room(options = {}) {
     });
     return input;
 }
-const eatBefore = (name, options = {}) => applyCorpsePreEffects(species(name), options);
-const eatAfter = (name, options = {}) => applyCorpsePostEffects(species(name), options);
+const eatBefore = (name, options = {}) => cprefx(species(name), options);
+const eatAfter = (name, options = {}) => cpostfx(species(name), options);
 void test('human flesh gives a human aggravation and one luck penalty per turn', async () => {
     await room();
     requirePlayingGame(game);
@@ -49,8 +49,8 @@ void test('human flesh gives a human aggravation and one luck penalty per turn',
 void test('an earlier non-cannibal bite suppresses another cannibal check that turn', async () => {
     await room();
     requirePlayingGame(game);
-    assert.equal(await applyCannibalPenalty(species('lichen')), false);
-    assert.equal(await applyCannibalPenalty(species('human')), false);
+    assert.equal(await maybe_cannibal(species('lichen')), false);
+    assert.equal(await maybe_cannibal(species('human')), false);
     assert.equal(game.u.uluck || 0, 0);
 });
 void test('cave dwellers may eat their own kind and domestic animals', async () => {
@@ -117,7 +117,7 @@ void test('life saving stops a petrifying meal without removing its corpse', asy
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const corpse = placeCreatedObject(await untimedCorpse(species('cockatrice')), game.u.ux, game.u.uy);
-    const piece = await touchFoodObject(corpse);
+    const piece = await touchfood(corpse);
     assert.ok(piece);
     game.context.victual = {
         key: 'eat-food',
@@ -164,7 +164,7 @@ void test('a life-saved Rider meal revives its actual corpse and ends eating', a
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
     await wearHeroAccessory(amulet, 'uamul');
     const corpse = placeCreatedObject(await untimedCorpse(species('Death')), game.u.ux, game.u.uy);
-    const piece = await touchFoodObject(corpse);
+    const piece = await touchfood(corpse);
     assert.ok(piece);
     game.context.victual = {
         key: 'eat-food',
@@ -328,7 +328,7 @@ void test('a wraith grants a real experience level', async () => {
 void test('human werewolf meat infects lycanthropy despite sharing its animal name', async () => {
     await room();
     requirePlayingGame(game);
-    await applyCorpsePostEffects(263);
+    await cpostfx(263);
     assert.equal(game.u.ulycn, 21);
     assert.equal(game.u.drainResistance, true);
 });

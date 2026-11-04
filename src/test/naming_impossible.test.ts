@@ -15,7 +15,7 @@ import { PanicTermination } from '../js/panic_termination.js';
 import { inventoryItemDescription, selectInventoryObject } from '../js/invent.js';
 import { LEASH, POT_HEALING, SACK, TIN, TIN_OPENER } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
-import { useTinOpener } from '../js/eat.js';
+import { use_tin_opener } from '../js/eat.js';
 import { quoteShopGoods, SELL_DELIBERATE, SELL_NORMAL, sellHeroDroppedObject, setSellDisposition } from '../js/shk.js';
 import { enableRngLog, getRngLog } from '../js/rng.js';
 import { priceQuoteSuffix } from '../js/shk.js';
@@ -323,7 +323,7 @@ void test('a stopped message window still shows a tin opener report before the w
     game._suppressMessagesUntilInput = true;
     const screens = recordScreens();
 
-    await useTinOpener(opener);
+    await use_tin_opener(opener);
 
     const diagnostic = firstScreenIndex(screens, /unpaid_cost: object wasn't on any bill\./);
     const question = firstScreenIndex(screens, /Really wield/);

@@ -13,7 +13,7 @@ import { waterDamageObject, triggerHeroTrap } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { throneSitEffect } from './throne.js';
 import type { ThroneOptions } from './throne.js';
-import { spendHeroNutrition } from './eat.js';
+import { morehungry } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { dropObjectAtHero } from './do.js';
@@ -112,7 +112,7 @@ async function layEgg(): Promise<boolean> {
     await pline(`You ${waterEggLayer() ? 'spawn' : 'lay'} an egg.`);
     await dropObjectAtHero(egg);
     if (egg.where === 'floor') await stack_object(egg);
-    await spendHeroNutrition(nutrition);
+    await morehungry(nutrition);
     return !game.program_state.gameover;
 }
 

@@ -8,7 +8,7 @@ import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { waterDamageObject, triggerHeroTrap } from './trap.js';
 import { throneSitEffect } from './throne.js';
-import { spendHeroNutrition } from './eat.js';
+import { morehungry } from './eat.js';
 import { heroCanReachFloor } from './engrave.js';
 import { burnAwayHeroSlime, heroGoldAmount, loseHeroHp } from './hack.js';
 import { dropObjectAtHero } from './do.js';
@@ -105,7 +105,7 @@ async function layEgg() {
     await dropObjectAtHero(egg);
     if (egg.where === 'floor')
         await stack_object(egg);
-    await spendHeroNutrition(nutrition);
+    await morehungry(nutrition);
     return !game.program_state.gameover;
 }
 async function sitOnObject(object) {

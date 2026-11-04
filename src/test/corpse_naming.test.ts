@@ -9,7 +9,7 @@ import {mksobj, set_corpsenm, addObjectToContainer, placeCreatedObject} from '..
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, ICE_BOX, STATUE } from '../js/object_data.js';
 import { corpseName, killerObjectName } from '../js/objnam.js';
-import { foodObjectName } from '../js/eat.js';
+import { food_xname } from '../js/eat.js';
 import { initRng } from '../js/rng.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -135,8 +135,8 @@ void test('food and killer names share species grammar but food ignores the stac
 
     assert.equal(corpseName(body), 'jackal corpses');
     assert.equal(killerObjectName(body), 'jackal corpses');
-    assert.equal(foodObjectName(body), 'jackal corpse');
-    assert.equal(foodObjectName(body, { definite: true }), 'the jackal corpse');
+    assert.equal(food_xname(body), 'jackal corpse');
+    assert.equal(food_xname(body, { definite: true }), 'the jackal corpse');
 });
 
 void test('unique and personally named corpses preserve their definite and possessive grammar', async () => {
@@ -144,7 +144,7 @@ void test('unique and personally named corpses preserve their definite and posse
     set_corpsenm(body, MONSTER_NAME.indexOf('Oracle'));
     body.quan = 2;
     assert.equal(await inventoryItemDescription(body), "the Oracle's 2 corpses");
-    assert.equal(foodObjectName(body, { definite: true }), "the Oracle's corpse");
+    assert.equal(food_xname(body, { definite: true }), "the Oracle's corpse");
     set_corpsenm(body, MONSTER_NAME.indexOf('Medusa'));
-    assert.equal(foodObjectName(body, { definite: true }), "Medusa's corpse");
+    assert.equal(food_xname(body, { definite: true }), "Medusa's corpse");
 });

@@ -35,7 +35,7 @@ import { healHeroLegs } from './do.js';
 import { confersLuck } from './invent.js';
 import { clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { clearHeroTrap, announceTerrainRescue } from './trap.js';
-import { currentHungerState, restoreHeroNutrition } from './eat.js';
+import { currentHungerState, init_uhunger } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
@@ -577,7 +577,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     case Trouble.STARVING:
     case Trouble.HUNGRY:
         await pline(`Your ${heroStomachName(state)} feels content.`);
-        await restoreHeroNutrition(state, pline);
+        await init_uhunger(state, pline);
         state.context.botl = true;
         return;
     case Trouble.SICK:
@@ -1042,7 +1042,7 @@ async function restoreHeroVigor(): Promise<void> {
         game.context.botl = true;
         await reportHeroEncumbrance(game, pline);
     }
-    if (hero.uhunger < 900) await restoreHeroNutrition(game, pline);
+    if (hero.uhunger < 900) await init_uhunger(game, pline);
     hero.uluck = Math.max(0, hero.uluck || 0);
     hero.ucreamed = 0;
     const { regainedSight } = setHeroBlindnessTurns(0);

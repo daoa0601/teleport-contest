@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { STONING, TURNED_SLIME } from '../js/const.js';
-import { applyCorpsePreEffects } from '../js/eat.js';
+import { cprefx } from '../js/eat.js';
 import { finishOrdinaryDeath } from '../js/end.js';
 import { useHeroGaze } from '../js/polyself.js';
 import { hurtleHero } from '../js/dothrow.js';
@@ -57,7 +57,7 @@ void test('tasting petrifying flesh keeps the native action phrase on the tombst
             tombstone = visibleText();
     };
     installPagerInput(input, { expected: /stone|Goodbye|points|You were/i, limit: 8 });
-    await applyCorpsePreEffects(MONSTER_NAME.indexOf('cockatrice'));
+    await cprefx(MONSTER_NAME.indexOf('cockatrice'));
     assert.equal(loadScoreRecords()[0]?.death, 'petrified by tasting cockatrice meat');
     assert.match(tombstone, /petrified by/);
     assert.match(tombstone, /tasting/);

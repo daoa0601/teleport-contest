@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, G_GENOD, ICE, NO_MINVENT, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
-import { doeat, applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood } from '../js/eat.js';
+import { doeat, fprefx, fpostfx, rottenfood } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { addInventoryItem } from '../js/invent.js';
 import { races } from '../js/roles.js';
@@ -38,9 +38,9 @@ void test('biting a pyrolisk egg consumes it before its fire explosion', async (
     grantIntrinsicProperty('fireResistance', 'potion');
     const egg = await addInventoryObject(EGG, { corpsenm: MONSTER_NAME.indexOf('pyrolisk') });
     const web = addTrap(level, WEB, game.u.ux + 1, game.u.uy, { tseen: true });
-    const result = await applyOrdinaryFoodFirstBite(egg);
-    assert.equal(result.continueMeal, false);
-    assert.equal(result.heroDied, false);
+    const result = await fprefx(egg);
+    assert.equal(result, false);
+    assert.equal(!!game.program_state.gameover, false);
     assert.equal(game.inventory.includes(egg), false);
     assert.equal(egg.where, 'gone');
     assert.equal(level.traps.includes(web), false);
@@ -51,8 +51,8 @@ void test('a stale egg extends nausea even when the hero is already vomiting', a
     game.u.vomiting = true;
     game.u.vomitingTurns = 12;
     const egg = await addInventoryObject(EGG, { age: game.moves - 401, corpsenm: -1 });
-    const result = await applyOrdinaryFoodFirstBite(egg);
-    assert.equal(result.continueMeal, true);
+    const result = await fprefx(egg);
+    assert.equal(result, true);
     assert.ok(game.u.vomitingTurns >= 22 && game.u.vomitingTurns <= 52);
     assert.equal(game._pending_message, 'Ugh.  Rotten egg.');
 });
@@ -78,7 +78,7 @@ void test('lembas preference follows the polymorphed species instead of the birt
     requirePlayingGame(game);
     installPolymorphedHero('elf');
     const wafer = await addInventoryObject(LEMBAS_WAFER);
-    await applyOrdinaryFoodFirstBite(wafer);
+    await fprefx(wafer);
     assert.equal(game._pending_message, 'A little goes a long way.');
 });
 void test('garlic nauseates undead forms without frightening nearby monsters', async () => {
@@ -99,7 +99,7 @@ void test('an ordinary garlic bite frightens nearby creatures that can smell', a
     const ant = await createMonsterAt('giant ant', 11, 10, NO_MINVENT);
     const blob = await createMonsterAt('acid blob', 10, 11, NO_MINVENT);
     const garlic = await addInventoryObject(CLOVE_OF_GARLIC);
-    await applyOrdinaryFoodFirstBite(garlic);
+    await fprefx(garlic);
     assert.equal(!!ant.mflee, true);
     assert.equal(blob.mflee || 0, 0);
     assert.match(game._pending_message, /This clove of garlic is delicious!/);
@@ -109,7 +109,7 @@ void test('the configured native build gives apples Mac feedback and pears UNIX 
         await foodRoom();
         requirePlayingGame(game);
         const fruit = await addInventoryObject(type);
-        await applyOrdinaryFoodFirstBite(fruit);
+        await fprefx(fruit);
         assert.equal(game._pending_message, message);
     }
 });
@@ -118,7 +118,7 @@ void test('a ration names the current form stomach', async () => {
     requirePlayingGame(game);
     installPolymorphedHero('giant spider');
     const ration = await addInventoryObject(FOOD_RATION);
-    await applyOrdinaryFoodFirstBite(ration);
+    await fprefx(ration);
     assert.equal(game._pending_message, 'This satiates your digestive tract!');
 });
 void test('carrots do not clear the blindness of a swallowing dust vortex', async () => {
@@ -129,7 +129,7 @@ void test('carrots do not clear the blindness of a swallowing dust vortex', asyn
     game.u.ustuck = vortex;
     setHeroBlindnessTurns(15);
     const carrot = await addInventoryObject(CARROT);
-    await applyOrdinaryFoodPostEffects(carrot);
+    await fpostfx(carrot);
     assert.equal(game.u.blindTurns, 15);
 });
 void test('fortune cookies record the first reading once, while blind reading breaks no literacy conduct', async () => {
@@ -170,7 +170,7 @@ void test('royal jelly still strengthens a killer bee when queen bees are genoci
     requireMonsterVital(queen).mvflags |= G_GENOD;
     const strength = game.u.acurr.a[A_STR];
     const jelly = await addInventoryObject(LUMP_OF_ROYAL_JELLY);
-    await applyOrdinaryFoodPostEffects(jelly);
+    await fpostfx(jelly);
     assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('killer bee'));
     assert.equal(game.u.acurr.a[A_STR], strength + 1);
 });
@@ -181,7 +181,7 @@ void test('rotten food confuses a fungus using its native sensation', async () =
     game.u.confusionTurns = 3;
     const ration = await addInventoryObject(FOOD_RATION);
     initRng(5n);
-    const passedOut = await applyRottenFood(ration);
+    const passedOut = await rottenfood(ration);
     assert.equal(passedOut, false);
     assert.ok(game.u.confusionTurns >= 5 && game.u.confusionTurns <= 11);
     assert.match(game._pending_message, /You feel rather sporulated\./);
@@ -200,7 +200,7 @@ void test('rotten food extends masked blindness while the Eyes preserve sight', 
     setHeroBlindnessTurns(5);
     const ration = await addInventoryObject(FOOD_RATION);
     initRng(7n);
-    await applyRottenFood(ration);
+    await rottenfood(ration);
     assert.ok((game.u.blindTurns ?? 0) > 5);
     assert.equal(heroIsBlind(), false);
     assert.match(game._pending_message, /Your vision clears\./);
@@ -212,7 +212,7 @@ void test('a blind hero who faints from rotten food feels the actual surface', a
     setHeroBlindnessTurns(30);
     const ration = await addInventoryObject(FOOD_RATION);
     initRng(1n);
-    const passedOut = await applyRottenFood(ration);
+    const passedOut = await rottenfood(ration);
     assert.equal(passedOut, true);
     assert.equal(heroIsDeaf(), true);
     assert.equal(heroIsUnconscious(), true);
@@ -240,7 +240,7 @@ void test('rotten-food unconsciousness and temporary deafness end through ordina
             return 27;
         } };
     initRng(1n);
-    await applyRottenFood(ration);
+    await rottenfood(ration);
     assert.equal(heroIsUnconscious(), true);
     const start = game.moves;
     for (let turn = 0; turn < 20 && heroIsUnconscious(); turn++)

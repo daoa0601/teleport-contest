@@ -34,7 +34,7 @@ import { cansee, clearAreaCells, couldsee } from './vision.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { floatingAbove } from './levitation_commands.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
-import { spendHeroNutrition, updateHeroHunger, vomitHero } from './eat.js';
+import { morehungry, newuhs, vomit } from './eat.js';
 import { showEnlightenment } from './insight.js';
 import { fruitName } from './fruit.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
@@ -298,7 +298,7 @@ export async function drinkFountain(loc) {
         // and the elapsed-turn scheduler applies its normal hunger cost.
         await plineWithContinuation('The cool draught refreshes you.');
         game.u.uhunger = (game.u.uhunger ?? 900) + rnd(10);
-        await updateHeroHunger(false);
+        await newuhs(false);
         if (game.program_state.gameover)
             return true;
         if (blessed)
@@ -317,10 +317,10 @@ export async function drinkFountain(loc) {
         // allmain.c:moveloop_core().  Foul water first removes 11..30 points
         // of nutrition, then nomul(-2) makes the next two global turns happen
         // without accepting a hero command.
-        await spendHeroNutrition(11 + rn2(20));
+        await morehungry(11 + rn2(20));
         if (game.program_state.gameover)
             return true;
-        await vomitHero({ state: game });
+        await vomit({ state: game });
         if (game.program_state.gameover)
             return true;
     }
@@ -345,7 +345,7 @@ export async function drinkFountain(loc) {
     }
     else if (fate === 24) {
         await plineWithContinuation("This water's no good!");
-        await spendHeroNutrition(11 + rn2(20));
+        await morehungry(11 + rn2(20));
         if (game.program_state.gameover)
             return true;
         await exerciseAttribute(A_CON, false);
@@ -885,9 +885,9 @@ export async function drinkSink({ state = game } = {}) {
             break;
         case 9:
             await pline('Gaggg... this tastes like sewage!  You vomit.');
-            await spendHeroNutrition(rn1(30 - currentAttribute(A_CON, state), 11), { state });
+            await morehungry(rn1(30 - currentAttribute(A_CON, state), 11), { state });
             if (!state.program_state.gameover)
-                await vomitHero({ state });
+                await vomit({ state });
             break;
         case 10:
             await pline(`This ${displayLiquidName('water', state)} contains toxic wastes!`);

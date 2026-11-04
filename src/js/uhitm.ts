@@ -54,7 +54,7 @@ import { abusePetAfterHeroHit, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
 import type { HurtleDeathHandler, HurtleLiquidDeathHandler } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
-import { applyCannibalPenalty, eatHeroBrain, eatingConducts, eatMonsterBrain, spendHeroNutrition, updateHeroHunger } from './eat.js';
+import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { wipeHeroEngraving } from './engrave.js';
@@ -3599,7 +3599,7 @@ export async function drainHeroBrain(
     }
     if (helmet?.otyp !== DUNCE_CAP) {
         const mortality = hero.umortality ?? 0;
-        const eaten = await eatHeroBrain(monster, attack, state, publish, rollOne);
+        const eaten = await eat_brains({ kind: 'hero-defender', monster, attack, state, publish, rollOne });
         if ((hero.umortality ?? 0) > mortality) attack.skipBrainDrain = true;
         if (!eaten || state.program_state.gameover) return;
     }
@@ -3661,8 +3661,9 @@ export async function resolveMonsterBrainAttack(
 
     const amulet = wornAmulet(defender);
     const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
-    const result = await eatMonsterBrain(attacker, defender, damage, {
-        state, visible, random, rollOne, publish, finishDeath,
+    const result = await eat_brains({
+        kind: 'monster-defender', attacker, defender, damage,
+        context: { state, visible, random, rollOne, publish, finishDeath },
     });
     return { ...result, skipBrainDrain: lifeSaving && !wornAmulet(defender) };
 }
@@ -4918,7 +4919,7 @@ export async function resolveHeroCombatEngulf(defender: Monster, attack: AttackT
     const fatal = (touchPetrifies(species) && !heroResistsStoning(state))
         || (damageType === AD_DGST && (rider || (species === PM_MEDUSA && !heroResistsStoning(state))));
     if (damageType === AD_DGST && (!state.u.slowDigestion || fatal))
-        await eatingConducts(species, { state });
+        await eating_conducts(species, { state });
     if (fatal && !rider) {
         await publish(`You ${digests ? 'englut' : 'engulf'} ${monsterName(defender, { state })}.`);
         const rawName = monsterTypeName(species, !!defender.female);
@@ -4984,7 +4985,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
 }: Required<Pick<HeroCombatEngulfOptions, 'publish' | 'random' | 'rollDice'>>): Promise<HeroCombatEngulfResult> {
     const amulet = wornMonsterLifeSaver(defender);
     if (amulet) await destroyObjectFromMonsterInventory(defender, amulet, state, { silently: true, publish });
-    await updateHeroHunger(false, { state });
+    await newuhs(false, { state });
     if (state.program_state.gameover) return { nativeResult: M_ATTK_MISS, heroDied: true };
     const previous = state._monsterSwallower;
     state._monsterSwallower = { kind: 'hero' };
@@ -6130,7 +6131,7 @@ export async function resolveMonsterContactEffect(
     }
     else if (attack.damageType === AD_FAMN) {
         await exerciseAttribute(A_CON, false, state);
-        if (state.u.uhs !== FAINTED) await spendHeroNutrition(random(40) + 40, { state });
+        if (state.u.uhs !== FAINTED) await morehungry(random(40) + 40, { state });
     }
     else if (attack.damageType === AD_CONF) {
         const duration = attack.damage ?? 0;
@@ -6404,59 +6405,11 @@ export async function applyHeroNaturalBrain(
     }
 
     const amulet = monster.minvent?.find(object => (object.owornmask ?? 0) & W_AMUL);
-    await heroEatsMonsterBrain(monster, context, result);
+    await eat_brains({ kind: 'hero-attacker', monster, context, result });
     if (amulet?.otyp === AMULET_OF_LIFE_SAVING
         && !monster.minvent?.some(object => (object.owornmask ?? 0) & W_AMUL))
         result.skipBrainDrain = true;
     return result;
-}
-
-async function heroEatsMonsterBrain(
-    monster: Monster, context: HeroNaturalEffectContext, result: HeroNaturalEffectResult,
-): Promise<void> {
-    const { state, publish, rollOne } = context;
-    const extraDamage = rollOne(10);
-    if (monsterIsNoncorporeal(monster)) {
-        const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
-        await publish(`${owner} brain is unharmed.`);
-        return;
-    }
-    await publish(`You eat ${possessiveName(monsterName(monster, { state }))} brain!`);
-    if (fleshPetrifies(monster.mnum) && !heroResistsStoning(state) && !heroIsPetrifying(state)) {
-        await setHeroPetrificationTimeout(5, {
-            state, killer: monsterTypeName(monster.mnum, monster.female),
-            killerFormat: KILLED_BY_AN, publish,
-        });
-    }
-    await eatingConducts(monster.mnum, { state });
-    if (monsterIsMindless(monster.mnum)) {
-        await publish(`${monsterName(monster, { state, capitalized: true })} doesn't notice.`);
-        return;
-    }
-    if (monsterIsRider(monster)) {
-        await publish('Ingesting that is fatal.');
-        const cause = `unwisely ate the brain of ${monsterTypeName(monster.mnum, monster.female)}`;
-        result.heroDied = await finishHeroDeath({
-            killer: cause, deathCause: cause, deathType: DIED, deathLineShown: true,
-        });
-        if (result.heroDied) {
-            result.done = true;
-            return;
-        }
-        exerciseWisdom(false, state);
-    } else {
-        // Native morehungry() accepts negative nutrition and cannot choke.
-        await spendHeroNutrition(-rollOne(30), { state });
-        const hero = state.u;
-        if (hero.acurr.a[A_INT] < hero.amax.a[A_INT]) {
-            // This repairs the base directly, including beneath a dunce cap.
-            hero.acurr.a[A_INT] = Math.min(hero.amax.a[A_INT], hero.acurr.a[A_INT] + rollOne(4));
-            state.context.botl = true;
-        }
-        exerciseWisdom(true, state);
-    }
-    result.damage += extraDamage;
-    await applyCannibalPenalty(monster.mnum, { state });
 }
 
 // ─── C uhitm.c:mhitm_ad_poly(), hero attacker (from hero_natural_polymorph.ts) ───

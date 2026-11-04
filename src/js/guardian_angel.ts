@@ -16,7 +16,7 @@ import { heroIsBlind, heroIsDeaf } from './senses.js';
 
 import { heroHasConflict } from './hero_conflict.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { regainHearingAfterHelplessness } from './eat.js';
+import { Hear_again } from './eat.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { selectHandToHandWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -54,7 +54,7 @@ export async function loseGuardianAngel(
 
 // C minion.c:gain_guardian_angel(), called only on the first Astral arrival.
 export async function gainGuardianAngel(state: PlayingGameState = requireInitializedGame()): Promise<void> {
-    await regainHearingAfterHelplessness({ state });
+    await Hear_again({ state });
     if (heroHasConflict(state)) {
         await plineWithContinuation(heroIsDeaf(state)
             ? formatFeltMessage('a booming voice:', state) : 'A voice booms:');

@@ -92,7 +92,7 @@ import { hasShopkeeperData } from './shop_types.js';
 import type { ShopGameState } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
-import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
+import { corpse_intrinsic, should_givit } from './eat.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -2229,7 +2229,7 @@ export async function grantMonsterCorpseIntrinsic(
     monster: Monster, species: number, state: GameState = game,
 ): Promise<void> {
     requireLiveGame(state);
-    const property = chooseCorpseIntrinsic(species);
+    const property = corpse_intrinsic(species);
     const visible = canSeeMonster(monster);
     if (monster.mhp <= 0) return;
 
@@ -2253,7 +2253,7 @@ export async function grantMonsterCorpseIntrinsic(
 
     // Native still makes the chance roll for properties that monsters cannot
     // retain, such as strength, telepathy, teleportation, acid, or petrification.
-    if (!property || !shouldGiveIntrinsic(property, species)) return;
+    if (!property || !should_givit(property, species)) return;
     await grantMonsterIntrinsic(monster, property, state);
 }
 

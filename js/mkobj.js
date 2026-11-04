@@ -4,7 +4,7 @@ import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_CO
 import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
-import { activelyEatingGlob, setTinVariety } from './eat.js';
+import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
@@ -373,7 +373,7 @@ async function mksobj_init(otmp, artif, definition) {
                         if (!nutrition || ((MONSTER_GENO[mndx] ?? 0) & 0x0010))
                             continue;
                         otmp.corpsenm = mndx;
-                        setTinVariety(otmp, RANDOM_TIN);
+                        set_tin_variety(otmp, RANDOM_TIN);
                         break;
                     }
                 }
@@ -1899,7 +1899,7 @@ export async function runClaimedGlobTimer(claimed, state = game, currentTurn = s
             gone: false, message: null,
         };
     }
-    const beingEaten = activelyEatingGlob(glob, state);
+    const beingEaten = eating_glob(glob, state);
     const waitsOnIce = ice === 'buried'
         || (ice === 'on-ice' && currentTurn % 3 === 1);
     if (beingEaten || waitsOnIce) {

@@ -10,7 +10,7 @@ import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, EGG, FIGURINE, LOADSTONE, SLIME_MOLD, STATUE, TIN } from '../js/object_data.js';
 import { decodeSavedGraph, encodeSavedGraph, isSavedRecord } from '../js/saved_graph.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { tinDetails } from '../js/eat.js';
+import { tin_details } from '../js/eat.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -182,7 +182,7 @@ void test('generic food and absent shape metadata survive restore alongside the 
     assert.equal(restoredMonster.mappearance, LOW_PM);
     const restoredTin = game.inventory.find(object => object.o_id === tin.o_id);
     assert.ok(restoredTin);
-    assert.equal(tinDetails(restoredTin), 'empty tin');
+    assert.equal(tin_details(restoredTin), 'empty tin');
     assert.equal(game.inventory.find(object => object.o_id === egg.o_id)?.corpsenm, NON_PM);
     assert.equal(game.inventory.find(object => object.o_id === corpse.o_id)?.corpsenm, LOW_PM);
 });

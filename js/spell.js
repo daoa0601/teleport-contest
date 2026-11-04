@@ -27,7 +27,7 @@ import { heroIsSick } from './potion.js';
 import { makeBlinded, makeConfused, makeStunned } from './potion.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
-import { spendHeroNutrition } from './eat.js';
+import { morehungry } from './eat.js';
 import { wakeMonster, monstersInFmonOrder } from './mon.js';
 import { monsterHasShockResistance } from './mondata.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, requireMonsterData, } from './monster_data.js';
@@ -769,7 +769,7 @@ export async function checkSpellCast(spell, { state = game } = {}) {
         return { allowed: false, spentTime: !!amuletDrains, energy };
     }
     if (memorized.otyp !== SPE_DETECT_FOOD)
-        await spendHeroNutrition(castingNutritionCost(energy, state), { state });
+        await morehungry(castingNutritionCost(energy, state), { state });
     if (state.program_state.gameover)
         return { allowed: false, spentTime: true, energy };
     const chance = percentSuccess(memorized, state);

@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { startHeroSickness } from '../js/potion.js';
 import { poisonHero } from '../js/poison.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
-import { eatRoyalJelly } from '../js/eat.js';
+import { fpostfx } from '../js/eat.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
@@ -29,9 +29,9 @@ void test('fatal cursed royal jelly uses an article in its poisoning record and 
     };
     installPagerInput(input, { expected: /feel weak|die|poison|Goodbye|points|You were/i, limit: 8 });
 
-    const result = await eatRoyalJelly(jelly);
+    await fpostfx(jelly);
 
-    assert.equal(result.died, true);
+    assert.equal(game.program_state.gameover, true);
     assert.equal(loadScoreRecords()[0]?.death, 'poisoned by a rotten lump of royal jelly');
     assert.ok(pages.some(page => /\|\s+poisoned by a\s+\|/.test(page)),
         'The tombstone includes the poisoning prefix and the killer article.');

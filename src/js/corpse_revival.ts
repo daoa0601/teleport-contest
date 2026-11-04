@@ -9,7 +9,7 @@ import { plineWithContinuation } from './pline.js';
 import { makePetWary, tameMonster } from './dog.js';
 import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
-import { updateHeroHunger } from './eat.js';
+import { newuhs } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore } from './invent.js';
 import { useUpInventoryStack } from './invent.js';
@@ -414,7 +414,7 @@ async function stopCorpseMeal(corpse: GameObject, state: GameState) {
     if (!corpse.oeaten) corpse.oeaten = 1;
     // Revival retains the body until makemon has used it, even on the last bite.
     await stopHeroOccupation(state, plineWithContinuation, { finishMeal: false });
-    await updateHeroHunger(false, { state });
+    await newuhs(false, { state });
 }
 
 async function reviveCorpse(

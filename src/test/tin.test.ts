@@ -20,7 +20,7 @@ import { objectQuantity } from '../js/mkobj.js';
 import { addShopObjectToBill } from '../js/shk.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setSlipperyHands } from '../js/potion.js';
-import { continueTinOpening, setTinVariety, startTin, tinDetails, tinVariety, useTinOpener } from '../js/eat.js';
+import { opentin, set_tin_variety, start_tin, tin_details, tin_variety, use_tin_opener } from '../js/eat.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -77,7 +77,7 @@ async function finishOpening() {
     let turns = 0;
     while (game._occupation) {
         assert.ok(++turns <= 51, 'Opening occupation did not terminate');
-        await continueTinOpening(openingTin());
+        await opentin(openingTin());
     }
     await flushPendingTopline();
     return turns;
@@ -94,15 +94,15 @@ for (const [tool, turns] of [[DAGGER, 3], [AXE, 6]] as const) {
         await wield(tool);
         const food = await tin();
         const hunger = game.u.uhunger;
-        const result = await startTin(food);
+        const result = await start_tin(food);
         assert.equal(result.started, true);
         assert.equal(result.completed, false);
         for (let turn = 1; turn < turns; turn++) {
-            await continueTinOpening(openingTin());
+            await opentin(openingTin());
             assert.ok(game.inventory.includes(food), `Tin consumed before turn ${turns}`);
             assert.equal(game.u.uhunger, hunger);
         }
-        await continueTinOpening(openingTin());
+        await opentin(openingTin());
         assert.equal(game._occupation, null);
         assert.equal(game.inventory.includes(food), false);
         assert.equal(game.u.uhunger, hunger + 50);
@@ -119,7 +119,7 @@ void test('a blessed opener opens an unblessed tin immediately', async t => {
     requirePlayingGame(game);
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin();
-    const result = await startTin(food);
+    const result = await start_tin(food);
     assert.equal(result.completed, true);
     assert.equal(game._occupation, undefined);
     assert.equal(game.inventory.includes(food), false);
@@ -130,7 +130,7 @@ void test('hands are required even for a blessed tin', async t => {
     requirePlayingGame(game);
     installPolymorphedHero('kitten');
     const food = await tin({ blessed: true });
-    const result = await startTin(food);
+    const result = await start_tin(food);
     assert.equal(result.started, false);
     assert.ok(game.inventory.includes(food));
     assert.match(game._last_message, /cannot handle the tin/);
@@ -142,7 +142,7 @@ void test('a metallivore bites a tin without hands or an eating prompt', async t
     installPolymorphedHero('rock mole');
     const food = await tin();
     const hunger = game.u.uhunger;
-    const result = await startTin(food);
+    const result = await start_tin(food);
     assert.equal(result.completed, true);
     assert.equal(game.inventory.includes(food), false);
     assert.equal(game.u.uhunger, hunger + 55);
@@ -155,7 +155,7 @@ void test('slippery bare hands drop one unopened tin from a carried stack', asyn
     const food = await tin({ quan: 3 });
     setSlipperyHands(10);
     const hunger = game.u.uhunger;
-    const result = await startTin(food);
+    const result = await start_tin(food);
     assert.equal(result.started, false);
     assert.equal(objectQuantity(food), 2);
 
@@ -177,7 +177,7 @@ void test('a dagger can still open tins while the hero has slippery hands', asyn
     await wield(DAGGER);
     setSlipperyHands(10);
     const food = await tin();
-    await startTin(food);
+    await start_tin(food);
     assert.equal(await finishOpening(), 3);
     assert.equal(game.inventory.includes(food), false);
 });
@@ -189,9 +189,9 @@ void test('leaving a floor tin stops opening without consuming it', async t => {
     const food = await floorObject(TIN, game.u.ux, game.u.uy, {
         initialize: false, spe: -7, corpsenm: species('lichen'),
     });
-    await startTin(food);
+    await start_tin(food);
     game.u.ux++;
-    await continueTinOpening(openingTin());
+    await opentin(openingTin());
     assert.equal(game._occupation, null);
     assert.equal(food.where, 'floor');
 });
@@ -203,9 +203,9 @@ void test('losing floor reach stops opening a floor tin', async t => {
     const food = await floorObject(TIN, game.u.ux, game.u.uy, {
         initialize: false, spe: -7, corpsenm: species('lichen'),
     });
-    await startTin(food);
+    await start_tin(food);
     game.u.levitating = true;
-    await continueTinOpening(openingTin());
+    await opentin(openingTin());
     assert.equal(game._occupation, null);
     assert.equal(food.where, 'floor');
 });
@@ -220,7 +220,7 @@ void test('refusing the contents discards one tin and learns its contents', asyn
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ quan: 2 });
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.equal(objectQuantity(food), 1);
     assert.equal(food.known, true);
     assert.equal(game.u.uhunger, hunger);
@@ -235,7 +235,7 @@ void test('empty tins are discarded without counting a meal', async t => {
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ corpsenm: -1 });
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.inventory.includes(food), false);
     assert.equal(food.known, true);
     assert.equal(game.u.uhunger, hunger);
@@ -248,7 +248,7 @@ void test('a metallivore obtains nutrition from an empty tin itself', async t =>
     installPolymorphedHero('rock mole');
     const food = await tin({ corpsenm: -1 });
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.u.uhunger, hunger + 5);
     assert.equal(game.u.uconduct.food || 0, 0);
 });
@@ -264,7 +264,7 @@ void test('blessed spinach increases Strength and grants 600 nutrition', async t
     const food = await tin({ spe: 1, corpsenm: -1, blessed: true });
     const strength = currentAttribute(A_STR);
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.ok(currentAttribute(A_STR) > strength);
     assert.equal(game.u.uhunger, hunger + 600);
     assert.equal(game.u.uconduct.food, 1);
@@ -281,7 +281,7 @@ void test('refusing cursed spinach leaves its contents unidentified', async t =>
     requirePlayingGame(game);
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ spe: 1, corpsenm: -1, cursed: true });
-    await startTin(food);
+    await start_tin(food);
     assert.equal(food.known, false);
     assert.equal(game.inventory.includes(food), false);
     assert.equal(game.u.uconduct.food || 0, 0);
@@ -297,7 +297,7 @@ void test('rotten contents start vomiting without adding nutrition', async t => 
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ spe: -1, corpsenm: species('newt') });
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.u.uhunger, hunger);
     assert.ok(game.u.vomitingTurns != null, 'Expected game.u.vomitingTurns to be initialized');
     assert.ok(game.u.vomitingTurns >= 10 && game.u.vomitingTurns <= 24);
@@ -313,7 +313,7 @@ void test('homemade tins cannot grant more nutrition than their corpse', async t
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ spe: -2, corpsenm: species('newt'), blessed: true });
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.u.uhunger, hunger + 20);
 });
 
@@ -328,7 +328,7 @@ void test('fried contents grease hands even when gloves are worn', async t => {
     await wield(TIN_OPENER, { blessed: true });
     game.uarmg = await addInventoryObject(LEATHER_GLOVES);
     const food = await tin({ spe: -4 });
-    await startTin(food);
+    await start_tin(food);
     assert.ok(game.u.glibTurns != null, 'Expected game.u.glibTurns to be initialized');
     assert.ok(game.u.glibTurns >= 5 && game.u.glibTurns <= 15);
     assert.match(game._last_message, /gloves very slippery/);
@@ -343,7 +343,7 @@ void test('an explicitly trapped tin explodes before offering contents', async t
     const food = await tin({ otrapped: true });
     const hp = game.u.uhp;
     const hunger = game.u.uhunger;
-    await startTin(food);
+    await start_tin(food);
     assert.ok(game.u.uhp < hp);
     assert.ok(game.u.stunnedTurns != null, 'Expected game.u.stunnedTurns to be initialized');
     assert.ok(game.u.stunnedTurns > 0);
@@ -365,7 +365,7 @@ void test('fatal petrifying contents consume the tin before death', async t => {
     game.flags.disclose = '-i -a -v -c -o';
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ corpsenm: species('cockatrice') });
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.inventory.includes(food), false);
     assert.ok(game.context.tin != null, 'Expected game.context.tin to be initialized');
     assert.equal(game.context.tin.tin, null);
@@ -377,12 +377,12 @@ void test('healthy tins replace meat with spinach and preserve suitable vegetari
     await room(t);
     requirePlayingGame(game);
     const meat = await tin({ corpsenm: species('newt') });
-    setTinVariety(meat, HEALTHY_TIN);
-    assert.equal(tinDetails(meat), 'tin of spinach');
+    set_tin_variety(meat, HEALTHY_TIN);
+    assert.equal(tin_details(meat), 'tin of spinach');
     const vegetable = await tin({ spe: -6 });
-    setTinVariety(vegetable, HEALTHY_TIN);
+    set_tin_variety(vegetable, HEALTHY_TIN);
     assert.equal(vegetable.corpsenm, species('lichen'));
-    assert.equal(tinDetails(vegetable, vegetable.corpsenm, { state: game }), 'tin of lichen');
+    assert.equal(tin_details(vegetable, vegetable.corpsenm, { state: game }), 'tin of lichen');
 });
 
 void test('identified preparation names reflect curse and nonrotting species', async t => {
@@ -391,20 +391,20 @@ void test('identified preparation names reflect curse and nonrotting species', a
     const food = await tin({ spe: -4, known: true, cknown: true });
     assert.match(await inventoryItemDescription(food), /tin of french fried lichen/);
     food.cursed = true;
-    assert.equal(tinVariety(food, true), HOMEMADE_TIN);
+    assert.equal(tin_variety(food, true), HOMEMADE_TIN);
     assert.match(await inventoryItemDescription(food), /homemade tin of lichen/);
     food.corpsenm = species('newt');
-    assert.equal(tinVariety(food, true), ROTTEN_TIN);
+    assert.equal(tin_variety(food, true), ROTTEN_TIN);
     assert.match(await inventoryItemDescription(food), /rotten tin of newt meat/);
     food.spe = 1;
-    assert.equal(tinVariety(food, true), SPINACH_TIN);
+    assert.equal(tin_variety(food, true), SPINACH_TIN);
 });
 
 void test('applying an opener with no carried tin takes no time', async t => {
     await room(t);
     requirePlayingGame(game);
     const opener = await addInventoryObject(TIN_OPENER);
-    const result = await useTinOpener(opener);
+    const result = await use_tin_opener(opener);
     assert.equal(result.usedTime, false);
     assert.equal(game.uwep, null);
 });
@@ -418,7 +418,7 @@ void test('canceling tin selection keeps the time spent wielding an opener', asy
         { prompt: /now wield.*tin opener/, keys: ' ' },
         { prompt: /What do you want to open\?/, keys: '\x1b' },
     ]);
-    const result = await useTinOpener(opener);
+    const result = await use_tin_opener(opener);
     assert.equal(result.usedTime, true);
     assert.equal(result.cancelled, true);
     assert.equal(game.uwep, opener);
@@ -436,8 +436,8 @@ void test('saving during opening preserves tin identity and stops the occupation
     const storage = memoryStorage();
     await wield(DAGGER);
     const food = await tin();
-    await startTin(food);
-    await continueTinOpening(openingTin());
+    await start_tin(food);
+    await opentin(openingTin());
     assert.equal(await saveGame(storage), true);
     assert.equal(await restoreGame('Tin eater', storage), true);
     const restored = game.inventory.find(object => object.otyp === TIN);
@@ -445,7 +445,7 @@ void test('saving during opening preserves tin identity and stops the occupation
     assert.ok(game.context.tin != null, 'Expected game.context.tin to be initialized');
     assert.equal(game.context.tin.tin, restored);
     assert.equal(game._occupation, null);
-    await startTin(restored);
+    await start_tin(restored);
     assert.equal(await finishOpening(), 3);
     assert.equal(game.inventory.includes(restored), false);
 });
@@ -482,7 +482,7 @@ void test('opening one unpaid tin preserves the bill and identity of the unopene
     const food = await tin({ quan: 3 });
     await addShopObjectToBill(food, game, { silent: true });
     assert.equal(food.unpaid, true);
-    await startTin(food);
+    await start_tin(food);
     assert.equal(objectQuantity(food), 2);
     assert.equal(food.unpaid, true);
     const remaining = shopkeeper.eshk.bill.find(entry => entry.bo_id === food.o_id);
@@ -509,7 +509,7 @@ void test('a fatal trap stops before charging or consuming its tin', async t => 
     game.flags.disclose = '-i -a -v -c -o';
     await wield(TIN_OPENER, { blessed: true });
     const food = await tin({ otrapped: true });
-    await startTin(food);
+    await start_tin(food);
     assert.equal(game.program_state.gameover, true);
     assert.notEqual(food.where, 'gone');
     assert.ok(game.context.tin != null, 'Expected game.context.tin to be initialized');
@@ -531,7 +531,7 @@ void test('a tin is consumed before its nutrition can cause fatal choking', asyn
     game.flags.disclose = '-i -a -v -c -o';
     await wield(DAGGER);
     const food = await tin({ spe: -4 });
-    await startTin(food);
+    await start_tin(food);
     await finishOpening();
     assert.equal(game.program_state.gameover, true);
     assert.equal(food.where, 'gone');
