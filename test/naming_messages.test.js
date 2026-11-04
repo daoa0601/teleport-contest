@@ -32,7 +32,7 @@ import { dropObjectAtHero } from '../js/do.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
-import { beginMonsterRockTrap, finishMonsterRockTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { chargeAlteredUnpaidObject } from '../js/shk.js';
 import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap } from '../js/trap.js';
 import { bookCursed, studyBook } from '../js/spell.js';
@@ -177,9 +177,13 @@ void test('a named ghost keeps its possessive name when a rock trap runs dry', a
         monster: { species: 'ghost' }, trap: { once: true, tseen: true },
     });
     setMonsterGivenName(monster, 'James');
-    const event = await beginMonsterRockTrap(monster, trap, game, { random: () => 0 });
+    requirePlayingGame(game);
     const messages = [];
-    await finishMonsterRockTrap(monster, event, game, { publish: text => { messages.push(text); } });
+    await mintrap(monster, game, {
+        forcetrap: true,
+        random: () => 0,
+        publish: (text) => { messages.push(text); },
+    });
     assert.equal(messages[0], "A trap door above James' ghost opens, but nothing falls out!");
 });
 void test('a named ghost keeps its possessive name when a projectile trap runs dry', async () => {
