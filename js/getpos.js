@@ -433,6 +433,8 @@ function gatherValidLocations(isValidLocation, state = game) {
 }
 // C gloc_filter_init()/gloc_filter_floodfill(): target areas follow known
 // terrain classes. From a doorway, use the side of the last movement.
+// Also C getpos.c:gloc_filter_floodfill_matcharea(): inlined here (a
+// square matches when its class equals the seed's, and it has been seen).
 function getposArea(state) {
     const area = new Set();
     if (state.iflags.getloc_filter !== 2)
@@ -572,6 +574,9 @@ export async function selectTravelMenuPosition(describe) {
         game.iflags.getloc_filter = previousFilter;
     }
 }
+// C getpos.c:getpos(): the cursor-position loop (also see the file banner).
+// Also C getpos.c:getpos_toggle_hilite_state(): inlined here (the '$' key
+// cycles normal / symbols / background).
 export async function selectMapPosition({ start, prompt, goal, describe, afterPaint = null, isValidLocation = null, highlightHero = true, force = true, }) {
     const queued = takeQueuedAdjacentPosition();
     if (queued !== undefined)
@@ -599,6 +604,8 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
         hilite.state = next;
         await setMapPositionHighlights(isValidLocation, hilite.state === 'background');
     };
+    // C getpos.c:getpos_refresh(). Called after help or a redraw: drop a
+    // temporary symbol marking, refresh the map, keep background highlighting.
     const refreshHilite = async () => {
         if (hilite.state === 'symbols') {
             await clearMarking();

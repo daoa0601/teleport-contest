@@ -709,6 +709,8 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn });
 }
 
+// Also C allmain.c:regen_pw(): inlined here (the power-recovery block
+// before teleportitis and shape changes).
 async function finishInitialTurnMaintenanceAfterRegions({
     sourceTurn, capacity,
 }: TurnMaintenance): Promise<MaintenancePhase> {

@@ -1040,6 +1040,8 @@ export async function showTerrainCodes(): Promise<void> {
 }
 
 // C wizcmds.c:wiz_levltyp_legend().
+// Also C cmd.c:levltyp_to_name(): inlined here (TERRAIN_NAMES indexed
+// directly; C's other callers are nhlua and a dead mon.c branch).
 export async function showTerrainCodeLegend(): Promise<void> {
     const lines = ['#terrain encodings:', ''];
     const half = TERRAIN_NAMES.length / 2;

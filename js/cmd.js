@@ -239,6 +239,8 @@ async function performWaitCommand(force = game.iflags.menu_requested) {
     game.context.move = 1;
 }
 // C cmd.c:can_do_extcmd(). Admission precedes prefixes and handler setup.
+// Also C cmd.c:ecname_from_fn(): inlined here (command.name is the
+// ext_func_tab name C looks up from the function pointer).
 async function commandAllowed(command) {
     if (!command)
         return true;
@@ -477,6 +479,11 @@ async function repeatLastCommand() {
         game.iflags.menu_requested = false;
     }
 }
+// C cmd.c's four movement-prefix commands, each a branch here:
+// Also C cmd.c:do_reqmenu(): inlined here (menu_requested toggle).
+// Also C cmd.c:do_fight(): inlined here (forcefight toggle).
+// Also C cmd.c:do_rush(): inlined here (run = 2, DOMOVE_RUSH).
+// Also C cmd.c:do_run(): inlined here (run = 3, DOMOVE_RUSH).
 async function applyMovementPrefix(command, movement) {
     if (command.handler === 'do_reqmenu') {
         if (game.iflags.menu_requested) {
@@ -507,6 +514,35 @@ async function applyMovementPrefix(command, movement) {
     }
     throw new Error(`Unimplemented movement prefix: ${command.name}`);
 }
+// C cmd.c:set_move_cmd(). This is rhack()'s MOVEMENTCMD dispatch tail
+// with the twenty-four one-line movement wrappers inlined: the key's case
+// and any pending prefix select the mode those wrappers each passed to
+// set_move_cmd(dir, run).
+// Also C cmd.c:dxdy_moveok(): inlined here (the grid-bug diagonal refusal).
+// Also C cmd.c:do_move_west(): inlined here (set_move_cmd(DIR_W, 0)).
+// Also C cmd.c:do_move_northwest(): inlined here (set_move_cmd(DIR_NW, 0)).
+// Also C cmd.c:do_move_north(): inlined here (set_move_cmd(DIR_N, 0)).
+// Also C cmd.c:do_move_northeast(): inlined here (set_move_cmd(DIR_NE, 0)).
+// Also C cmd.c:do_move_east(): inlined here (set_move_cmd(DIR_E, 0)).
+// Also C cmd.c:do_move_southeast(): inlined here (set_move_cmd(DIR_SE, 0)).
+// Also C cmd.c:do_move_south(): inlined here (set_move_cmd(DIR_S, 0)).
+// Also C cmd.c:do_move_southwest(): inlined here (set_move_cmd(DIR_SW, 0)).
+// Also C cmd.c:do_run_west(): inlined here (set_move_cmd(DIR_W, 1)).
+// Also C cmd.c:do_run_northwest(): inlined here (set_move_cmd(DIR_NW, 1)).
+// Also C cmd.c:do_run_north(): inlined here (set_move_cmd(DIR_N, 1)).
+// Also C cmd.c:do_run_northeast(): inlined here (set_move_cmd(DIR_NE, 1)).
+// Also C cmd.c:do_run_east(): inlined here (set_move_cmd(DIR_E, 1)).
+// Also C cmd.c:do_run_southeast(): inlined here (set_move_cmd(DIR_SE, 1)).
+// Also C cmd.c:do_run_south(): inlined here (set_move_cmd(DIR_S, 1)).
+// Also C cmd.c:do_run_southwest(): inlined here (set_move_cmd(DIR_SW, 1)).
+// Also C cmd.c:do_rush_west(): inlined here (set_move_cmd(DIR_W, 3)).
+// Also C cmd.c:do_rush_northwest(): inlined here (set_move_cmd(DIR_NW, 3)).
+// Also C cmd.c:do_rush_north(): inlined here (set_move_cmd(DIR_N, 3)).
+// Also C cmd.c:do_rush_northeast(): inlined here (set_move_cmd(DIR_NE, 3)).
+// Also C cmd.c:do_rush_east(): inlined here (set_move_cmd(DIR_E, 3)).
+// Also C cmd.c:do_rush_southeast(): inlined here (set_move_cmd(DIR_SE, 3)).
+// Also C cmd.c:do_rush_south(): inlined here (set_move_cmd(DIR_S, 3)).
+// Also C cmd.c:do_rush_southwest(): inlined here (set_move_cmd(DIR_SW, 3)).
 async function dispatchMovement(binding, prefixes) {
     const key = binding.key ?? 0;
     const ch = String.fromCharCode(key);
@@ -1121,6 +1157,8 @@ export async function terrainCommand() {
 async function doTerrainOverview() {
     await terrainCommand();
 }
+// C cmd.c:here_cmd_menu(): inlined here (there_cmd_menu at the hero's own
+// square with CLICK_1; C doherecmdmenu() is this function's own name).
 async function doherecmdmenu() {
     enqueueContextMenu(await selectContextMenu(game.u.ux, game.u.uy, CLICK_1));
 }
@@ -1225,6 +1263,8 @@ function mouseAction(click) {
     }
     queue(contextMenuCommand({ action: 'move', x: game.u.ux + Math.sign(dx), y: game.u.uy + Math.sign(dy) }));
 }
+// Also C cmd.c:act_on_act(): the MCMD-action-to-command mapping half;
+// the queued-answer half is contextMenuResponses() below.
 function contextMenuCommand(selection) {
     switch (selection.action) {
         case 'move':
@@ -1354,8 +1394,15 @@ function contextMenuResponses(selection) {
         case 'wait': return;
     }
 }
-// C cmd.c:there_cmd_menu_common().
-// C cmd.c:there_cmd_menu_far().
+// C cmd.c:there_cmd_menu(). The dispatcher frame: menu window, self /
+// next2u / far entry sections, the no-entry move-or-travel fallback, the
+// single-entry shortcut, and the selection that feeds enqueueContextMenu
+// (act_on_act()).
+// Also C cmd.c:there_cmd_menu_common(): inlined here (the look-at entry
+// and the CLICK_1/CLICK_2 suppression).
+// Also C cmd.c:there_cmd_menu_far(): inlined here (the throw and travel
+// entries for a distant CLICK_1).
+// Also C cmd.c:mcmd_addmenu(): inlined here (tty_add_menu per entry).
 export async function selectContextMenu(x, y, click) {
     const entries = [];
     const add = (action, text) => entries.push({ action, text });
@@ -1916,6 +1963,7 @@ async function readExtendedCommand() {
 }
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary. Completion expands visually while typed input advances the cursor.
+// Also C cmd.c:extcmd_initiator(): inlined here (the '#' initiator key).
 async function editExtendedCommand() {
     let command = '';
     let completion = null;
@@ -2103,6 +2151,9 @@ export async function changeCommandAutocompletions() {
             setCommandAutocomplete(command.name, selected.has(command));
     }
 }
+// Also C cmd.c:extcmds_match(): inlined here (the CMD_NOT_AVAILABLE and
+// WIZMODECMD eligibility filter of the window-port matcher; the prefix
+// match half is completeExtendedCommand()).
 export function availableExtendedCommands() {
     return NATIVE_COMMANDS.filter(command => command.name !== null
         && !(command.flags & (NATIVE_COMMAND_FLAGS.CMD_NOT_AVAILABLE | NATIVE_COMMAND_FLAGS.INTERNALCMD))
@@ -2921,6 +2972,8 @@ export async function ynSingleKey(message, cursorOffset = 0) {
 // getdir() call; after the help or redraw retry, every further key comes
 // from readchar() (repeating) or yn_function() (ordinary play), never from
 // the command queue again.
+// Also C cmd.c:redraw_cmd(): inlined here (the doredraw retry check that
+// keeps the redraw key out of the recorded answer).
 export async function readDirectionKey(message = 'In what direction? ', retry = false) {
     // C cmd.c:getdir() pops one entry (cmd.c:3962); cmdq_pop() selects
     // CQ_REPEAT during do-again, otherwise CQ_CANNED. Only CMDQ_DIR and
@@ -2973,6 +3026,11 @@ function queuedDirectionKey({ dirx, diry, dirz }) {
     // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
 }
+// C cmd.c:getdir(): the direction-question loop with its key handling,
+// movecmd() translation, confdir() and help_dir() assists.
+// Also C cmd.c:redraw_cmd(): inlined here (the doredraw retry branch).
+// Also C cmd.c:dxdy_moveok(): inlined here (the grid-bug refusal that
+// ends the question with "You can't orient yourself that direction.").
 export async function promptDirection(readKey = readDirectionKey, { ctrlCommandHint = false } = {}) {
     let retry = false;
     for (;;) {
@@ -3086,6 +3144,8 @@ export async function restoreCommandMap() {
 }
 // C help_dir(): use the current movement bindings and hide diagonals when
 // the hero's body cannot use them. Explicit help omits the error heading.
+// Also C cmd.c:show_direction_keys(): inlined here (the direction-key
+// diagram, grid-bug form included).
 export function directionAssistPage(invalidDirection = true, ctrlHintKey = null) {
     const bindings = game.commandBindings;
     const key = (direction) => visibleCommandKey(bindings.keyForDirection(direction) ?? 0);
@@ -3168,6 +3228,8 @@ export async function yn_function(query, responses, defaultAnswer = '', addComma
 // cmd.c:yn_function_menu(): the preselected answer wins when the menu is
 // cancelled; choosing another answer overrides it. This path keeps yn_number
 // from the previous tty question because it never calls tty_yn_function().
+// Also C cmd.c:yn_func_menu_opt(): inlined here (one menu entry per
+// response letter, the default marked selected).
 async function queryResponseMenu(query, responses, defaultAnswer) {
     const choices = responses === 'rl' ? [['r', 'Right'], ['l', 'Left']]
         : responses === 'hsq' ? [['h', 'Hide'], ['s', 'Spin a web'], ['q', 'Quit']]
@@ -3264,6 +3326,8 @@ export function readcharPoskey() {
 }
 // C cmd.c:readchar_core(). Escape prefixes only have meaning in command,
 // direction, and position input. Ordinary prompts keep a literal Escape.
+// Also C cmd.c:click_to_cmd(): inlined here (store the click location and
+// queue the mouse button's bound command).
 async function readcharCore(inputState) {
     // Native fuzzer input skips the keyboard's NUL, EOF, and Escape decoding.
     if (game.iflags.debug_fuzzer)
@@ -3494,6 +3558,10 @@ export function controlKeyHintLines(key) {
 // C cmd.c:dokeylist().
 // C cmd.c:keylist_func_has_key().
 // C cmd.c:keylist_putcmds().
+// Also C cmd.c:show_direction_keys(): inlined here (the direction-key
+// diagram at the top of the list).
+// Also C cmd.c:spkey_name(): inlined here (the "[name]" labels of keyless
+// special keys use the spkeys_binds names).
 export async function showKeyBindings() {
     const bindings = game.commandBindings;
     const used = new Set([3]); // SIGINT is reserved even if a key is rebound.

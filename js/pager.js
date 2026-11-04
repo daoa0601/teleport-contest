@@ -1145,6 +1145,8 @@ export async function contactHelp() {
     ]);
 }
 // C pager.c:setopt_cmd().
+// Also C cmd.c:cmdname_from_func(): inlined here (the "#reqmenu" and
+// "#options" fallbacks are the full names cmdname_from_func(TRUE) returns).
 export function setOptionsCommand() {
     const bindings = game.commandBindings;
     const full = bindings.keyForCommand('optionsfull');

@@ -2614,6 +2614,8 @@ export async function redrawMap() {
 
 // C display.c:row_refresh(). Repaint the current glyph buffer without
 // recomputing vision or choosing new hallucinated appearances.
+// Also C getpos.c:mapxy_valid(): inlined here (the installed valid-location
+// callback decides the background frame color, FALSE when none is set).
 export function row_refresh(start: number, stop: number, y: number): void {
     const display = game.nhDisplay;
     if (!display || y < 0 || y >= ROWNO) return;

@@ -441,6 +441,8 @@ function trapPredicament(final: EnlightenmentFinal, wizard: boolean): string {
 }
 
 // C getpos.c:dxdy_to_dist_descr(dx, dy, TRUE).
+// Also C cmd.c:directionname(): inlined here (DIRECTION_NAMES holds the
+// eight directionname() strings).
 function distanceDescription(dx: number, dy: number): string {
     if (!dx && !dy) return 'here';
     const direction = DIRECTION_NAMES.find(entry => entry.dx === dx && entry.dy === dy);
