@@ -60,7 +60,7 @@ import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge }
 import { AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_CHARGED, OBJECT_DELAY, OBJECT_NAMES, OBJECT_NUTRITION, OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, requireObjectData } from './object_data.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
-import { pline as immediatePline, plineWithContinuation as pline, plineWithContinuation } from './pline.js';
+import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation } from './pline.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -420,9 +420,15 @@ async function finishFoodMeal(state, showMessage) {
     await updateHeroHunger(false, { state });
     if (state.program_state.gameover)
         return;
-    if (state._helplessDoneMessage) {
+    const endMessage = state._helplessDoneMessage;
+    if (endMessage != null) {
+        // C eat.c:551 `if (gn.nomovemsg)` tests the pointer, so the empty
+        // nomovemsg hurtle() left still counts as set: pline1("") reaches
+        // update_topl(""), whose append widens the topline gap by two
+        // blank columns without glyphs or a pager, and done_eating()
+        // clears the message instead of announcing the finished meal.
         if (showMessage)
-            await pline(state._helplessDoneMessage);
+            await pline1(endMessage);
         state._helplessDoneMessage = null;
     }
     else if (showMessage) {

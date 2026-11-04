@@ -69,14 +69,20 @@ export async function verbalize(message: string): Promise<void> {
 }
 
 
-// C pline.c:vpline(). Await the window port before recording the last message.
+// C pline.c:vpline(). Await the window port before recording the last
+// message.  The empty-line guard `if (!line || !*line) return;` tests the
+// caller's format: the port receives already-formatted text, so a direct
+// empty message is dropped, while the `unpackedArgument` path below keeps
+// vpline()'s substituted "%s" argument, which is never format-filtered.
 export async function plineWithContinuation(msg: string, {
     noRepeat = false, urgent = false, overrideMessageType = false, position,
-}: ToplineOptions = {}): Promise<number | null | undefined> {
+}: ToplineOptions = {}, unpackedArgument = false,
+): Promise<number | null | undefined> {
     const location = position ?? game.iflags.messageLocation;
     delete game.iflags.messageLocation;
     msg = msg.split('\0', 1)[0] ?? '';
-    if (!msg || game.program_state.wizkit_wishing) return;
+    if (!msg && !unpackedArgument) return;
+    if (game.program_state.wizkit_wishing) return;
     if (game.flags.accessiblemsg && location && isok(location.x, location.y)) {
         const mode = game.iflags.getpos_coords;
         const coordinates = coordinateDescription(location.x, location.y,
@@ -112,6 +118,16 @@ export async function plineWithContinuation(msg: string, {
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
     return messageType === MSGTYP_STOP ? await displayMessageWindow() : dismissal;
+}
+
+// C include/hack.h:1026 `#define pline1(cstr) pline("%s", cstr)`.  vpline()'s
+// empty-line filter tests the "%s" format, never the substituted argument,
+// so pline1("") still reaches putmesg("") and update_topl()'s append, which
+// widens the topline by two blank columns without glyphs or a pager
+// (eat.c:done_eating() relies on this while hurtle() has set nomovemsg="").
+export async function pline1(msg: string, options: ToplineOptions = {},
+): Promise<number | null | undefined> {
+    return plineWithContinuation(msg, options, true);
 }
 
 // Replace the message line without tty's update_topl() negotiation. Only the

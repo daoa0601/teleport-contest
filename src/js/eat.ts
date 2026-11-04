@@ -74,7 +74,7 @@ import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import type { FoodMeal, FoodOccupation, NonfoodMeal, PreparedFoodObject, TinOpening } from './occupation_types.js';
-import { pline as immediatePline, plineWithContinuation as pline, plineWithContinuation } from './pline.js';
+import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { altarWrath } from './pray.js';
@@ -512,8 +512,14 @@ async function finishFoodMeal(state: PlayingGameState, showMessage: boolean) {
     state._occupation = null;
     await updateHeroHunger(false, { state });
     if (state.program_state.gameover) return;
-    if (state._helplessDoneMessage) {
-        if (showMessage) await pline(state._helplessDoneMessage);
+    const endMessage = state._helplessDoneMessage;
+    if (endMessage != null) {
+        // C eat.c:551 `if (gn.nomovemsg)` tests the pointer, so the empty
+        // nomovemsg hurtle() left still counts as set: pline1("") reaches
+        // update_topl(""), whose append widens the topline gap by two
+        // blank columns without glyphs or a pager, and done_eating()
+        // clears the message instead of announcing the finished meal.
+        if (showMessage) await pline1(endMessage);
         state._helplessDoneMessage = null;
     } else if (showMessage) {
         const verb = MONSTER_NAME[heroSpecies(state)] === 'fire elemental' ? 'consuming' : 'eating';
