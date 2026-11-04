@@ -23,7 +23,7 @@ import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
-import { finishHeroDeath, scoreDeathCause } from './end.js';
+import { finishHeroDeath } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { GameMap } from './game.js';

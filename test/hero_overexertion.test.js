@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { nomul } from '../js/hack.js';
-import { scoreDeathCause } from '../js/end.js';
+import { DTHSZ, formatKiller } from '../js/topten.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -59,7 +59,7 @@ for (const previousDelay of [0, 20]) {
             game._helplessReason = 'paralyzed by a monster';
         }
         await checkHeroAttackOverexertion();
-        assert.equal(scoreDeathCause('killed by a newt', null), 'killed by a newt, while sleeping');
+        assert.equal(formatKiller('killed by a newt', DTHSZ + 1, true), 'killed by a newt, while sleeping');
         assert.equal(game._helplessTurns, Math.max(10, previousDelay));
         assert.equal(game.u.usleep, game.moves);
         assert.equal(game._helplessDoneMessage, 'You can move again.');

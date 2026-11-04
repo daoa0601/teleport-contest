@@ -11,7 +11,7 @@
 // bones_name.ts.
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
-import { COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, In_quest, Invocation_lev, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd, } from './const.js';
+import { BUFSZ, COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, In_quest, Invocation_lev, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd, } from './const.js';
 import { GameMap } from './game.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -19,7 +19,8 @@ import { flush_screen, newsym } from './display.js';
 import { nhgetch } from './input.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
-import { finishHeroDeath, scoreDeathCause } from './end.js';
+import { finishHeroDeath } from './end.js';
+import { DTHSZ, formatKiller } from './topten.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
@@ -227,7 +228,11 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
             deathSquare.typ = GRAVE;
             if (!wasGrave)
                 deathSquare.emptygrave = 1;
-            makeEngravingAt(x, y, `${game.plname || 'player'}, ${deathCause}`, null, 0, HEADSTONE);
+            // C end.c:1316-1318 prefixes the player name and formats the
+            // rest with the remaining buffer: formatkiller(eos(pbuf),
+            // BUFSZ - strlen(pbuf), how, TRUE).
+            const name = game.plname || 'player';
+            makeEngravingAt(x, y, `${name}, ${formatKiller(deathCause, BUFSZ - (name.length + 2), true)}`, null, 0, HEADSTONE);
         }
     }
     if (game.flags?.debug) {
@@ -598,7 +603,9 @@ export function saveBonesLevel(deathCause = '', when = recorderLocalEpochSeconds
         game.urace.filecode.slice(0, 3), game.flags.female ? 'Fem' : 'Mal', alignment,
     ].join('-');
     payload.level.bonesInfo = [
-        { who, how: scoreDeathCause(deathCause, null), when: recorderTimestamp(when),
+        // C bones.c:585 formats cemetery.how with formatkiller(
+        // newbones->how, sizeof == DTHSZ + 1, how, TRUE).
+        { who, how: formatKiller(deathCause, DTHSZ + 1, true), when: recorderTimestamp(when),
             frpx: game.u.ux, frpy: game.u.uy, bonesknown: false },
         ...(payload.level.bonesInfo ?? []),
     ];
