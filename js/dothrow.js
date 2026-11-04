@@ -1400,9 +1400,13 @@ async function settleLiquid(options, remaining) {
         }
         return false;
     }
+    // C dothrow.c:926-928 resets the counter directly (`gm.multi = 0;
+    // (void) drown(); return FALSE;`) so drown() may crawl the hero out;
+    // it touches neither gm.multi_reason nor gn.nomovemsg, so hurtle()'s
+    // reason and its empty-but-set end message ("") both survive until
+    // the next nomul(0) (reason only, hack.c:4170), done_eating() or
+    // unmul() consumes them.
     setMulti(0);
-    game._helplessReason = null;
-    game._helplessDoneMessage = null;
     // C hurtle_step() calls drown() directly, then stops even if a swimmer
     // survives in place. pooleffects() would check the steed too early.
     await heroLiquidEffects({

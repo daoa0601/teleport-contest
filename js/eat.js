@@ -1570,16 +1570,20 @@ async function startFoodMeal(food, partlyEaten, state) {
         if (effect.stopped || !state.context.victual?.piece || !meal.eating)
             return;
     }
-    const oldMessage = state._helplessDoneMessage;
+    // C eat.c:2048/2056/2059: `old_nomovemsg = gn.nomovemsg` and the two
+    // `if (!old_nomovemsg)` tests examine the pointer, so an empty-but-set
+    // nomovemsg (e.g. hurtle()'s "") counts as set: done_eating(FALSE)
+    // consumes it instead of being suppressed and restored around it.
+    const oldMessage = state._helplessDoneMessage ?? null;
     if (await takeFoodBite(state)) {
         if (state.program_state.gameover)
             return;
         if (++meal.usedtime >= meal.reqtime) {
             const chokingMessage = state._helplessDoneMessage;
-            if (!oldMessage)
+            if (oldMessage === null)
                 state._helplessDoneMessage = null;
             await finishFoodMeal(state, false);
-            if (!oldMessage) {
+            if (oldMessage === null) {
                 if (chokingMessage === undefined)
                     delete state._helplessDoneMessage;
                 else
