@@ -25,7 +25,6 @@ import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, } from './display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
-import { placeObject, stack_object } from './floor_object.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -78,7 +77,7 @@ import { snuffThrownCandle } from './thrown_object.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { requirePerceivedHero } from './monmove.js';
 import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
-import { objectWeight } from './mkobj.js';
+import { objectWeight, placeObject, stack_object } from './mkobj.js';
 import { calcCapacity } from './hack.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);

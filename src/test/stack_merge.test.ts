@@ -8,7 +8,7 @@ import { mergeObjectStacks } from '../js/invent.js';
 import { ARROW, DAGGER, GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 import { claimNextDueObjectTimer } from '../js/timeout.js';
-import { runClaimedGlobTimer, startGlobTimeout } from '../js/glob.js';
+import {runClaimedGlobTimer, startGlobTimeout} from '../js/mkobj.js';
 import { pushKeys } from '../js/input.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

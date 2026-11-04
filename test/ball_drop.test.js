@@ -7,7 +7,7 @@ import { pushKeys } from '../js/input.js';
 import { dropBall, setBallAndChainFelt } from '../js/ball.js';
 import { setHeroTrap, floatHeroDown } from '../js/trap.js';
 import { punishHero } from '../js/read.js';
-import { placeObjectSynchronously, remove_object } from '../js/floor_object.js';
+import { placeObjectSynchronously, remove_object } from '../js/mkobj.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { floorObject } from './support/game-objects.js';
 import { HEAVY_IRON_BALL, ROCK } from '../js/object_data.js';

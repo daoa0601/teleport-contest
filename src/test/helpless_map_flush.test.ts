@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { nomul } from '../js/hack.js';
 import { flush_screen, newsym } from '../js/display.js';
-import { placeObject } from '../js/floor_object.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { mksobj } from '../js/mkobj.js';
+import {mksobj, placeObject} from '../js/mkobj.js';
 import { BOULDER } from '../js/object_data.js';
 import { freshTurnRoom } from './support/playable-room.js';
 

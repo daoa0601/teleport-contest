@@ -14,7 +14,7 @@ import { plineWithContinuation } from './pline.js';
 import { dropBoulderIntoLiquid } from './do.js';
 import { scatterDrawbridgeDebris } from './drawbridge_debris.js';
 import { game, requireGameLevel } from './gstate.js';
-import { remove_object } from './floor_object.js';
+import { remove_object } from './mkobj.js';
 import { BOULDER } from './object_data.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid } from './mon.js';
 import { delobj } from './invent.js';

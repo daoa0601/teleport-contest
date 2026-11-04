@@ -4,7 +4,7 @@ import { D_CLOSED, D_ISOPEN, D_NODOOR, DOOR, ENGRAVE, ROOM, VWALL } from '../js/
 import { rhack } from '../js/cmd.js';
 import { feel_location, map_object } from '../js/display.js';
 import { makeEngravingAt } from '../js/engrave.js';
-import { remove_object } from '../js/floor_object.js';
+import { remove_object } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';

@@ -5,7 +5,7 @@ import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 
 import { MM_NOGRP, NON_PM, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
-import { remove_object } from '../js/floor_object.js';
+import {remove_object} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';

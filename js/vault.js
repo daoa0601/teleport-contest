@@ -38,9 +38,8 @@ import { randomMonsterRelocation, moveMonsterNextToHero, teleportHero, askTelepo
 import { deleteTrap } from './trap.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { impossible } from './diagnostics.js';
-import { placeObject, remove_object, stack_object } from './floor_object.js';
 import { heroFormSticks } from './polyself.js';
-import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
+import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object, stack_object } from './mkobj.js';
 import { deleteObject } from './shk.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { currency } from './currency.js';

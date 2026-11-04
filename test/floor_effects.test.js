@@ -5,8 +5,7 @@ import assert from 'node:assert/strict';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { landFloorObject } from '../js/floor_effects.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { placeCreatedObject } from '../js/floor_object.js';
-import { unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
+import { unlinkObject, addCreatedObjectToContainer, placeCreatedObject, meldNearbyFloorGlobs } from '../js/mkobj.js';
 import { learnObjectType } from '../js/o_init.js';
 import { CHEST, FIRE_HORN, GLOB_OF_BLACK_PUDDING, GOLD_PIECE, POT_HEALING, POT_OIL, SPE_BOOK_OF_THE_DEAD, TOOLED_HORN, UNICORN_HORN, } from '../js/object_data.js';
 import { LAVAPOOL } from '../js/const.js';
@@ -16,7 +15,6 @@ import { plineWithContinuation } from '../js/pline.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { waterDamageObject } from '../js/trap.js';
 import { cansee, couldsee, vision_recalc } from '../js/vision.js';
-import { meldNearbyFloorGlobs } from '../js/glob.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('a fire horn survives landing in lava', async () => {

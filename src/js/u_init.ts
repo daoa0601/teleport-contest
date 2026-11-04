@@ -22,7 +22,6 @@ import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './do_name.js';
 import { impossible } from './diagnostics.js';
 import { setMonsterMalign } from './makemon.js';
-import { nextIdent } from './ident.js';
 import { rn2, rnd, d, rne } from './rng.js';
 import { findMonsterNearPosition } from './mklev.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
@@ -75,7 +74,7 @@ import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.j
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, nextIdent} from './mkobj.js';
 
 interface InitialInventoryEntry {
     typ: number;

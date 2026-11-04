@@ -8,7 +8,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { applyFloorEffects } from '../js/floor_effects.js';
-import { remove_object } from '../js/floor_object.js';
+import {remove_object} from '../js/mkobj.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { polymonHero } from '../js/polyself.js';

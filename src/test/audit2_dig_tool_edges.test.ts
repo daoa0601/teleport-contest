@@ -8,7 +8,7 @@ import { AXE, BOULDER, PICK_AXE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 
 // C dig.c use_pick_axe2(): whacking a boulder with an applied axe throws
 // sparks, and one blow in three vibrates the handle hard enough to hurt.

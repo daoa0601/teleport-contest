@@ -1,11 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { CORPSTAT_FEMALE, CORPSTAT_MALE, TREE, TREE_LOOTED, TREE_SWARM, W_NONDIGGABLE, W_NONPASSWALL, } from '../js/const.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { addFruit } from '../js/fruit.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { mayDig } from '../js/hack.js';
-import { mksobj } from '../js/mkobj.js';
+import { mksobj, placeCreatedObject } from '../js/mkobj.js';
 import { BAG_OF_TRICKS, GLOB_OF_GRAY_OOZE, LAND_MINE, MAGIC_MARKER, MIRROR, OBJECT_NAMES, POT_HEALING, RED_DRAGON_SCALES, SACK, SCR_LIGHT, SLIME_MOLD, SPEED_BOOTS, TALLOW_CANDLE, TIN, WAX_CANDLE, } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
 import { readObjectName } from '../js/objnam.js';

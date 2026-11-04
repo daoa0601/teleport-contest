@@ -14,9 +14,8 @@ import { scatterFloorObjects } from './scatter.js';
 import { vision_note_blocker_change } from './vision.js';
 import { dropBoulderIntoLiquid } from './do.js';
 import { BOULDER } from './object_data.js';
-import { unlinkObject } from './mkobj.js';
+import { unlinkObject, updateIceObjectTimersAt } from './mkobj.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { updateIceObjectTimersAt } from './floor_object.js';
 function levelHasNoPits(state) {
     return Is_airlevel(state.u?.uz) || Is_waterlevel(state.u?.uz);
 }

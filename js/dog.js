@@ -43,7 +43,7 @@ import { deliverOrcRaidLoot } from './orc_raid.js';
 import { tryMonsterTrapEscape } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.js';
-import { placeObject } from './floor_object.js';
+import { placeObject } from './mkobj.js';
 import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
 const M2_DOMESTIC = 0x00400000;

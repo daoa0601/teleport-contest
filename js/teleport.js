@@ -49,8 +49,7 @@ import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { placeObject } from './floor_object.js';
-import { unlinkObject } from './mkobj.js';
+import { unlinkObject, placeObject } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 function requireLevel(state) {
     if (!state.level)

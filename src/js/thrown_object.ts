@@ -20,7 +20,6 @@ import {
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -64,7 +63,7 @@ import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, placeObject, stack_object} from './mkobj.js';
 
 const VENOM_CLASS = 17;
 

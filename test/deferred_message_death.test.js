@@ -10,7 +10,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/level_change.js';
-import { placeObjectSynchronously } from '../js/floor_object.js';
+import { placeObjectSynchronously } from '../js/mkobj.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { untimedCorpse } from './support/game-objects.js';
 import { createDungeon } from './support/topology.js';

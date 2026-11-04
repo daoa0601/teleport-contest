@@ -17,7 +17,7 @@ import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/trap.js';
 import { landFloorObject } from '../js/floor_effects.js';
-import { announceGlobMerge } from '../js/glob.js';
+import {announceGlobMerge} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { restartAmuletStrangulation } from '../js/polyself.js';
 import { pushKeys } from '../js/input.js';

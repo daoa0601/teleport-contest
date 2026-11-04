@@ -5,7 +5,7 @@ import { SORTLOOT_INUSE, SORTLOOT_LOOT, SORTLOOT_PETRIFY, W_WEP, W_AMUL } from '
 import { game } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { resetInputState, pushKeys } from '../js/input.js';
-import { mksobj, set_corpsenm, addObjectToContainer } from '../js/mkobj.js';
+import {mksobj, set_corpsenm, addObjectToContainer, placeCreatedObject} from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, BAG_OF_TRICKS, BOW, CORPSE, DAGGER, DART,
@@ -26,7 +26,6 @@ import { applyNethackrc } from '../js/options.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';

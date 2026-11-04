@@ -13,7 +13,6 @@ src/js/character_name.ts	role.c
 src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
-src/js/container.ts	mkobj.c
 src/js/currency.ts	invent.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
@@ -34,10 +33,8 @@ src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
-src/js/floor_object.ts	mkobj.c
 src/js/floor_object_display.ts	invent.c
 src/js/fruit.ts	objnam.c
-src/js/glob.ts	mkobj.c
 src/js/glyph_customizations.ts	display.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
@@ -51,8 +48,6 @@ src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
-src/js/horn_of_plenty.ts	mkobj.c
-src/js/ident.ts	mkobj.c
 src/js/immediate_monster_magic.ts	mon.c
 src/js/inventory_prompt.ts	invent.c
 src/js/isaac64.ts	isaac64.c

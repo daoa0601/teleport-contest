@@ -23,7 +23,7 @@ import { ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPB
 import { isok } from './cmd.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
-import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout } from './mkobj.js';
+import {objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, updateContainerWeights, restoreRejectedSplit, startGlobTimeout} from './mkobj.js';
 
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, objectClassForType, observeObject } from './o_init.js';
@@ -36,7 +36,6 @@ import { showMultiSelectWindow, snapshotMenuUnderlay, showDisclosureOverlay, res
 import type { ChoiceMenuEntry, CountedSelection, MenuUnderlay, MultiSelectItem, MultiSelectSection, PageLocalMultiSelectItem, SelectableMenuItem } from './windows.js';
 import { addInventoryItem } from './u_init.js';
 import { recordHeroPrizeAcquisition, finishInventoryRemoval, useUpInventoryStack, freeInventoryObject } from './hero_inventory.js';
-import { remove_object } from './floor_object.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { promptYesNoQuit, getLine, promptChoice, tty_yn_function } from './query.js';
 import { yn_function, paranoidYesNoQuit } from './cmd.js';
@@ -52,11 +51,9 @@ import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { triggerChestTrap } from './chest_trap.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
-import { useHornOfPlenty } from './horn_of_plenty.js';
 import { surfaceName, ceilingName, waterbodyName } from './terrain_name.js';
 import { chooseInventoryObject, getobj } from './inventory_prompt.js';
-import { isContainer, updateContainerWeights, restoreRejectedSplit } from './container.js';
-import type { TransferStack } from './container.js';
+import type {TransferStack} from './mkobj.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -84,7 +81,6 @@ import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { containerContents } from './end.js';
 import { bot } from './botl.js';
-import { startGlobTimeout } from './glob.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject, willWeld } from './wield.js';
 import { objectShedsLight, snuffLitObject } from './light.js';
 import { scatterFloorObjects } from './scatter.js';

@@ -8,7 +8,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 // C dothrow.c swallowit() (1466-1474) never hands the chained ball to the
 // engulfer: throwing the carried attached ball while swallowed hits the
 // engulfer, then the ball stays with the punished hero at her position.

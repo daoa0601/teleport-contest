@@ -7,7 +7,6 @@ import type { MessagePublisher } from './pline.js';
 import { artifactById } from './artifacts.js';
 import { touchArtifactByHero } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
-import { placeObject } from './floor_object.js';
 import { freeInventoryObject } from './hero_inventory.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 
@@ -18,7 +17,7 @@ import { objectQuantity, splitObjectStack } from './mkobj.js';
 import { heroCanReachFloor } from './engrave.js';
 import { inventoryItemDescription } from './invent.js';
 import { reassignInventoryLetters } from './inventory_prompt.js';
-import { unlinkObject } from './mkobj.js';
+import {unlinkObject, placeObject} from './mkobj.js';
 
 import { observeObjectForNaming } from './objnam.js';
 

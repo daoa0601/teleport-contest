@@ -9,7 +9,7 @@ import { APPLE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 
 async function foodSenseRoom() {
     await freshObjectRoom({ hero: { uedibility: 1 }, flags: { tips: false } });

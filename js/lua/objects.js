@@ -2,9 +2,7 @@
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, OBJECT_TIMER_KIND } from '../const.js';
 import { isok } from '../cmd.js';
 import { buryObject } from '../dig.js';
-import { isContainer } from '../container.js';
 import { newsym } from '../display.js';
-import { placeObject } from '../floor_object.js';
 import { game } from '../gstate.js';
 import { removeHeroEquipment } from '../hero_equipment.js';
 import { finishInventoryRemoval } from '../hero_inventory.js';
@@ -22,7 +20,7 @@ import { luaInteger } from './arguments.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
 import { deleteObject } from '../shk.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer } from '../timeout.js';
-import { objectWeight } from '../mkobj.js';
+import { objectWeight, isContainer, placeObject } from '../mkobj.js';
 class ObjectHandle extends LuaUserdata {
 }
 const LOCATIONS = {

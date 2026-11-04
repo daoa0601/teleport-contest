@@ -7,7 +7,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
 import { observeDistantObjectForNaming } from './objnam.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { splitObjectStack } from './mkobj.js';
+import {splitObjectStack, remove_object} from './mkobj.js';
 
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -51,7 +51,6 @@ import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { remove_object } from './floor_object.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { checkMonsterGearNextTurn } from './monworn.js';
 import { releaseMonsterLeash } from './apply.js';

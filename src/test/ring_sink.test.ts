@@ -1,4 +1,4 @@
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';

@@ -18,11 +18,10 @@ import { shopGetPrice, SELL_DELIBERATE, SELL_DONTSELL, SELL_NORMAL, sellHeroDrop
 import {
     MONSTER_CONVEYS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION,
 } from '../js/monster_data.js';
-import { addCreatedObjectToContainer, addObjectToContainer } from '../js/mkobj.js';
+import {addCreatedObjectToContainer, addObjectToContainer, placeCreatedObject} from '../js/mkobj.js';
 import {
     floorObject, knownObject, uninitializedObject,
 } from './support/game-objects.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { createStaffedShop, setShopkeeperGold } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { heroGoldAmount, monsterGoldAmount } from '../js/hack.js';

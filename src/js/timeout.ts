@@ -87,11 +87,10 @@ import {
 } from './trap.js';
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
 import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
-import { runClaimedGlobTimer, finishGlobTimer } from './glob.js';
 import { meltIce } from './zap.js';
 
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, runClaimedGlobTimer, finishGlobTimer} from './mkobj.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { carriedObjectOwner, deleteObject } from './shk.js';
 import { possessiveName } from './hacklib.js';

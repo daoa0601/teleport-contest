@@ -2,7 +2,7 @@ import { createDungeon } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COLNO, HOLE, ROOM, ROWNO, STONE } from '../js/const.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { deliverMigratingObjects, impactDrop, shipObject } from '../js/dokick.js';

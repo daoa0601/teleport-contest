@@ -10,8 +10,7 @@ import { pline } from '../js/pline.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { cansee } from '../js/vision.js';
 import { delobj } from '../js/invent.js';
-import { placeCreatedObject } from '../js/floor_object.js';
-import { unlinkObject, addObjectToContainer } from '../js/mkobj.js';
+import {unlinkObject, addObjectToContainer, placeCreatedObject} from '../js/mkobj.js';
 import { addShopObjectToBill, itemizedShopBill, deleteObject } from '../js/shk.js';
 import {
     AMULET_OF_YENDOR, MAGIC_LAMP, OIL_LAMP, OBJECT_NAMES,

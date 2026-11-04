@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { COULD_SEE, M_AP_OBJECT, P_BASIC, P_POLEARMS, W_WEP } from '../js/const.js';
 import { map_invisible, map_object, newsym } from '../js/display.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { BOULDER, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

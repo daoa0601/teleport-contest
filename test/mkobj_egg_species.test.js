@@ -1,8 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buryObject } from '../js/dig.js';
-import { placeCreatedObject } from '../js/floor_object.js';
-import { set_corpsenm } from '../js/mkobj.js';
+import { set_corpsenm, placeCreatedObject } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { EGG } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';

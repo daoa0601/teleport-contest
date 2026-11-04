@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import { DUST, P_BASIC, P_EXPERT, P_FLAIL, W_WEP } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DART, GRAPPLING_HOOK, ROCK } from '../js/object_data.js';

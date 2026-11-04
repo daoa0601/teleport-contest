@@ -3,7 +3,7 @@ import test from 'node:test';
 import { restoregamePreamble } from '../js/allmain.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { hideMonsterUnder } from '../js/mon.js';
-import { remove_object } from '../js/floor_object.js';
+import {remove_object} from '../js/mkobj.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';

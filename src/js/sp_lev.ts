@@ -6,7 +6,7 @@
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
 
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight } from './mkobj.js';
+import {mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object, stack_object} from './mkobj.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
@@ -29,7 +29,6 @@ import type { DesOperations, DesOptions, DesObjectOptions, DesMonsterOptions, De
 import { objectToLuaTable } from './lua/runtime.js';
 import type { LuaValue } from './lua/runtime.js';
 import { luaString } from './lua/arguments.js';
-import { remove_object, stack_object } from './floor_object.js';
 import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { rnd_rect, get_rect, split_rects } from './rect.js';

@@ -1,6 +1,6 @@
 // C light.c:show_transient_light()/transient_light_cleanup().
 import { canSeeMonster, canSpotMonster, flush_screen, map_invisible } from './display.js';
-import { placeObjectSynchronously, remove_object } from './floor_object.js';
+import {placeObjectSynchronously, remove_object} from './mkobj.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { objectLightRadius } from './light.js';
 import { vision_recalc } from './vision.js';

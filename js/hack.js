@@ -17,7 +17,6 @@ import { clearCannedCommands, currentMulti, setMulti, xyToDirection } from './cm
 import { displayLiquidName, monsterName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
-import { placeObject, stack_object, updateIceObjectTimersAt, remove_object } from './floor_object.js';
 import { heroCanReachFloor } from './engrave.js';
 import { heroIsUnaware } from './senses.js';
 import { putHeroToSleep } from './timeout.js';
@@ -75,7 +74,7 @@ import { runSafepetDisplacement } from './uhitm.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
-import { objectWeight, quantity, splitObjectStack } from './mkobj.js';
+import { objectWeight, quantity, splitObjectStack, placeObject, stack_object, updateIceObjectTimersAt, remove_object } from './mkobj.js';
 import { floorObjectDescription } from './floor_object_display.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';

@@ -9,7 +9,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { FOUNTAIN, HOLE, NO_MINVENT, ROOM, STONE, OBJECT_TIMER_KIND } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { level_difficulty } from '../js/dungeon.js';
-import { placeCreatedObject, remove_object } from '../js/floor_object.js';
+import {placeCreatedObject, remove_object} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
