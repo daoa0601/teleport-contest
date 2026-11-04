@@ -238,8 +238,13 @@ def show_path(model, label, p):
         value = model.eval(ret, model_completion=True)
     else:
         text = returned_text(p)
-        value = ('null' if text is not None and z3.is_false(model.eval(text[1], model_completion=True))
-                 else model.eval(text[0], model_completion=True) if text is not None else 'none')
+        value = 'none'
+        if text is not None:
+            content, present = text
+            if z3.is_false(model.eval(present, model_completion=True)):
+                value = 'null'
+            else:
+                value = model.eval(content, model_completion=True)
     events = ['%s%s' % (e.shape.format(*[model.eval(v, model_completion=True) for v in e.values]), '')
               for e in p.events]
     pos = {s: model.eval(p.pos[s], model_completion=True) for s in STREAMS}

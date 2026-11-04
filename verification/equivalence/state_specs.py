@@ -17,7 +17,7 @@ from state_world import (native_objects, AT_ENGL, AT_WEAP,
                          capacity_arguments, sign_state, sign_arguments,
                          weight_arguments, weight_domain, weight_state)
 from core import select_int
-from state_world import (native_objects, _objects_member, _property_masks, erosion_matters_guard,
+from state_world import (_objects_member, _property_masks, erosion_matters_guard,
                          monster_state, native_monsters,
                          object_predicate_arguments,
                          object_predicate_state, present_monster_arguments,
@@ -247,7 +247,7 @@ CAPACITY_ASSUMPTIONS = HERO_ASSUMPTIONS + (
     'youprop.h property masks: W_ARMF boot bit, one lumped other-extrinsic slot, intrinsic-or-timed sources, FROMOUTSIDE terrain and I_SPECIAL trap bits',
     'polyself.c:float_vs_flight/steed_vs_stealth: entry block bits satisfy their invariants; all four modified property masks are restored',
     'properties.js records: worn uarmf source is the only boot slot; intrinsic record nonempty and the timeout field cover HLevitation/HFlying',
-    'disp.botl is TRUE at entry; weight_cap may request the same native redraw flag',
+    'disp.botl and the related game.context.botl are TRUE at entry; weight_cap may repeat that redraw request without changing either entry value',
     'do_wear.c:Boots_on defers the encumbrance benefit exactly while the port sees pendingArmorAction wear of the boots',
 )
 
@@ -777,7 +777,7 @@ OBJECT_MACRO_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS + (
 )
 
 CLASS_INVARIANT_ASSUMPTION = (
-    'mkobj.c keeps oclass equal to objects[otyp].oc_class on every struct obj and no initial row carries class 0, so the port\'s objectClass fallback (object_data.js:objectClassForType and its OBJECT_CLASS table) never fires inside these entry domains',
+    'mkobj.c initializes oclass from objects[otyp].oc_class; these claims relate that initialized class on both sides, while each owner tests the stored instance class directly',
 )
 
 ARTIFACT_OBJECT_ASSUMPTIONS = (
@@ -787,9 +787,8 @@ ARTIFACT_OBJECT_ASSUMPTIONS = (
 
 def classed_object_state(prefix):
     """object_predicate_state plus the mkobj oclass invariant. obj.h's
-    class-guarded macros read otmp->oclass; the port routes them through
-    objectClass(), whose fallback fires only when oclass is zero, which no
-    initial row and no mkobj-made object has."""
+    class-guarded macros read otmp->oclass; both sides use the initialized
+    class here, although the owners also reject the zero class directly."""
     def state(world, front, modules):
         object_predicate_state(prefix)(world, front, modules)
         object_table_index_precondition(world, front, world.c_state[f'{prefix}.otyp'][0])

@@ -364,6 +364,7 @@ def capacity_state(world, front, modules):
     world.c_globals[f'u.uprops[{stealth}].blocked'] = CVal(_mask((
         z3.And(present, z3.Not(flying_active), z3.Not(levitating_active)), FROMOUTSIDE)), LONG)
     world.c_globals['disp.botl'] = CVal(z3.IntVal(1), (8, True))
+    world.js_values['game.context.botl'] = V('bool', z3.BoolVal(True))
     # Symbolic enum names name the same cells in the restoration contract.
     for prop, fields in (('LEVITATION', ('extrinsic', 'blocked')),
                          ('FLYING', ('blocked',)), ('STEALTH', ('blocked',))):

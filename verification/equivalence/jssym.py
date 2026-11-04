@@ -673,9 +673,30 @@ class JSExec:
             prefix = n.children[0].type in ('++', '--')
             return [(path, new if prefix else old)]
         if t == 'assignment_expression':
-            if n.child_by_field_name('left').type != 'identifier':
+            left = n.child_by_field_name('left')
+            if left.type == 'member_expression':
+                member = left.child_by_field_name('property')
+                if member.type != 'property_identifier':
+                    raise Unsupported('JavaScript write outside a local binding')
+                out = []
+                for p, owner in self.eval(path, left.child_by_field_name('object')):
+                    if owner.kind != 'obj':
+                        raise Unsupported('JavaScript write outside a local binding')
+                    key = f'{owner.v}.{member.text.decode()}'
+                    initial = self.m.world.js_values.get(key)
+                    if initial is None:
+                        raise Unsupported('JavaScript write outside a local binding')
+                    for q, value in self.eval(p, n.child_by_field_name('right')):
+                        # A read-only claim may repeat a known entry value.
+                        # Changing the cell is an obligation failure; it never
+                        # silently changes the model's immutable entry state.
+                        self.m.oblige(q, self._equal(initial, value),
+                                      'JavaScript write changes read-only state', self.where(n))
+                        out.append((q, value))
+                return out
+            if left.type != 'identifier':
                 raise Unsupported('JavaScript write outside a local binding')
-            target = n.child_by_field_name('left').text.decode()
+            target = left.text.decode()
             if target not in path.env:
                 raise Unsupported('JavaScript write outside a local binding')
             out = []
