@@ -969,7 +969,8 @@ async function monsterTrapEffect(monster, trap, state, movement, random, rollDic
         return event;
     }
     if (trap.ttyp === SLP_GAS_TRAP) {
-        const event = await beginMonsterSleepGasTrap(monster, trap, state, {
+        const event = await trapeffectSlpGasTrap(monster, trap, {
+            state, movement, publish,
             rollOne: (range) => {
                 const result = rollOne(range);
                 calls.push(`rnd(${range})`);
@@ -977,8 +978,7 @@ async function monsterTrapEffect(monster, trap, state, movement, random, rollDic
             },
         });
         movement.trap = event;
-        if (sleepGasTrapNeedsResume(event))
-            movement.deferredAfterMonsterTrap = true;
+        movement.deferredAfterMonsterTrap = true;
         return event;
     }
     if (trap.ttyp === ARROW_TRAP || trap.ttyp === DART_TRAP) {
@@ -1251,11 +1251,8 @@ export async function finishDeferredMonsterTrap(monster, movement, event, state,
             // appears-reveal and death fields remain.
             break;
         case 'sleep-gas':
-            await finishMonsterSleepGasTrap(monster, event, {
-                state,
-                publish,
-                ...(describeMonster ? { describeMonster } : {}),
-            });
+            // The effect completed inside trapeffectSlpGasTrap; only the
+            // appears-reveal and death fields remain.
             break;
         case 'squeaky-board':
             // The effect completed inside trapeffectSqkyBoard; only the
@@ -3110,31 +3107,58 @@ export async function finishMonsterBearTrap(monster, event, state = game, { publ
     event.finished = true;
     return event;
 }
-// C trap.c:trapeffect_slp_gas_trap(): the monster branch — susceptible
-// monsters fall asleep and are seen to do so.
-export async function beginMonsterSleepGasTrap(monster, trap, state = game, { rollOne = rnd } = {}) {
+// C trap.c:trapeffect_slp_gas_trap(): the hero branch — resistors stay
+// awake inside the cloud, others fall asleep, and the steed's
+// steedintrap() sleep follows; the monster branch — susceptible monsters
+// fall asleep and are seen to do so.
+async function trapeffectSlpGasTrap(mtmp, trap, { state = game, movement, rollOne = rnd, publish = async () => { }, describeMonster, } = {}) {
+    if (isHeroDefender(mtmp, state)) {
+        const hero = game.u;
+        await seeTrap(trap);
+        const breathless = !!hero.breathless
+            || !!(heroFormFlags() & M1_BREATHLESS);
+        if (hero.sleepResistance || breathless) {
+            await plineWithContinuation('You are enveloped in a cloud of gas!');
+            monstersObserveHeroResistance(M_SEEN_SLEEP, game);
+        }
+        else {
+            await plineWithContinuation('A cloud of gas puts you to sleep!');
+            await putHeroToSleep(rnd(25), { state: game });
+            monstersForgetHeroResistance(M_SEEN_SLEEP, game);
+        }
+        const steed = hero.usteed;
+        if (steed && !monsterResistsSleep(steed)
+            && !monsterIsBreathless(steed.mnum) && !monsterIsHelpless(steed)) {
+            steed.mx = hero.ux;
+            steed.my = hero.uy;
+            if (await putMonsterToSleep(steed, rnd(25))) {
+                // C trap.c:3137: Monnam(steed); the name is not in-sight gated.
+                const name = monsterName(steed, { capitalized: true });
+                await plineWithContinuation(`${name} suddenly falls asleep!`);
+            }
+        }
+        return { kind: 'sleep-gas', slept: true, trap, finished: true, inSight: false, seeSquare: false };
+    }
+    const monster = mtmp;
+    const describe = describeMonster
+        ?? (target => monsterName(target, { state, capitalized: true }));
     const visibility = monsterTrapVisibility(monster, state);
     const susceptible = !monsterResistsSleep(monster) &&
         !monsterIsBreathless(monster.mnum) &&
         !monsterIsHelpless(monster);
     const slept = susceptible ? await putMonsterToSleep(monster, rollOne(25)) : false;
-    return {
+    const event = {
         kind: 'sleep-gas',
         trap,
         slept,
         finished: !(slept && visibility.inSight),
         ...visibility,
     };
-}
-export function sleepGasTrapNeedsResume(event) {
-    return event?.kind === 'sleep-gas' && !event.finished;
-}
-export async function finishMonsterSleepGasTrap(monster, event, { state = game, publish = async () => { }, describeMonster = target => monsterName(target, { state, capitalized: true }) } = {}) {
-    if (!event || event.finished)
-        return event;
-    await publish(`${describeMonster(monster)} suddenly falls asleep!`);
-    await seeTrap(event.trap, state);
-    event.finished = true;
+    if (!event.finished) {
+        await publish(`${describe(monster)} suddenly falls asleep!`);
+        await seeTrap(event.trap, state);
+        event.finished = true;
+    }
     return event;
 }
 export async function beginMonsterRustTrap(monster, trap, state = game) {
@@ -5159,36 +5183,6 @@ function heroPassesRocks() {
     const flags = heroFormFlags();
     return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
 }
-// C trap.c:trapeffect_slp_gas_trap(): the hero branch — resistors stay
-// awake inside the cloud, others fall asleep, and the steed's
-// steedintrap() sleep follows; the monster branch is
-// beginMonsterSleepGasTrap.
-async function triggerSleepingGasTrap(trap) {
-    const hero = game.u;
-    await seeTrap(trap);
-    const breathless = !!hero.breathless
-        || !!(heroFormFlags() & M1_BREATHLESS);
-    if (hero.sleepResistance || breathless) {
-        await plineWithContinuation('You are enveloped in a cloud of gas!');
-        monstersObserveHeroResistance(M_SEEN_SLEEP, game);
-    }
-    else {
-        await plineWithContinuation('A cloud of gas puts you to sleep!');
-        await putHeroToSleep(rnd(25), { state: game });
-        monstersForgetHeroResistance(M_SEEN_SLEEP, game);
-    }
-    const steed = hero.usteed;
-    if (!steed || monsterResistsSleep(steed)
-        || monsterIsBreathless(steed.mnum) || monsterIsHelpless(steed))
-        return;
-    steed.mx = hero.ux;
-    steed.my = hero.uy;
-    if (!await putMonsterToSleep(steed, rnd(25)))
-        return;
-    // C trap.c:3137: Monnam(steed); the name is not in-sight gated.
-    const name = monsterName(steed, { capitalized: true });
-    await plineWithContinuation(`${name} suddenly falls asleep!`);
-}
 // ── moved from src/js/hero_polymorph_trap.ts ──
 const WAND_CLASS = 12;
 // C trap.c:trapeffect_poly_trap(): the hero branch — the trigger message
@@ -5864,7 +5858,7 @@ async function trapeffectSelector(hero, trap, { finishTeleport = null, gotoLevel
             await triggerRollingBoulderTrap(trap);
             break;
         case SLP_GAS_TRAP:
-            await triggerSleepingGasTrap(trap);
+            await trapeffectSlpGasTrap(game.u, trap, { publish: plineWithContinuation });
             break;
         case RUST_TRAP:
             await triggerRustTrap(trap);

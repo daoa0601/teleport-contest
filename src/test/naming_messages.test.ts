@@ -43,7 +43,6 @@ import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/t
 import { initRng } from '../js/rng.js';
 import { mintrap } from '../js/trap.js';
 import { chargeAlteredUnpaidObject } from '../js/shk.js';
-import { beginMonsterSleepGasTrap, finishMonsterSleepGasTrap } from '../js/trap.js';
 import { bookCursed, studyBook } from '../js/spell.js';
 import { applyThrowSlip } from '../js/throw_state.js';
 import { flyHeroThrownObject } from '../js/thrown_object.js';
@@ -271,10 +270,12 @@ void test('an invisible but seen sleeper keeps its invisibility adjective', asyn
     requirePlayingGame(game);
     game.u.seeInvisible = true;
     monster.minvis = true;
-    const event = await beginMonsterSleepGasTrap(monster, trap, game, { rollOne: () => 5 });
     const messages: string[] = [];
 
-    await finishMonsterSleepGasTrap(monster, event, { publish: text => { messages.push(text); } });
+    await mintrap(monster, game, {
+        rollOne: () => 5,
+        publish: (text: string) => { messages.push(text); },
+    });
 
     assert.equal(messages[0], 'The invisible kitten suddenly falls asleep!');
 });
