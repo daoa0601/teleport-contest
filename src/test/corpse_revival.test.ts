@@ -10,7 +10,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { GameObject } from '../js/object_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { createCorpstatAt, mksobj, set_corpsenm, addCreatedObjectToContainer } from '../js/mkobj.js';
+import { mkcorpstat, mksobj, set_corpsenm, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition } from '../js/steed.js';
@@ -70,7 +70,7 @@ async function reviveNow(corpse: GameObject, seed = 12) {
 void test('a new troll corpse can receive the missing revival timer', async () => {
     await freshState();
     requirePlayingGame(game);
-    const corpse = await createCorpstatAt(CORPSE, null, PM_TROLL, 12, 10, 8);
+    const corpse = await mkcorpstat(CORPSE, null, PM_TROLL, 12, 10, 8);
 
     const [timer] = objectTimers(corpse);
     assert.ok(timer);

@@ -16,7 +16,7 @@ import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { gotoLevel } from '../js/level_change.js';
-import {createCorpstatAt, placeCreatedObject} from '../js/mkobj.js';
+import {mkcorpstat, placeCreatedObject} from '../js/mkobj.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -353,7 +353,7 @@ for (const body of ['corpse', 'statue']) {
         const troll = MONSTER_NAME.indexOf('troll');
         const object = body === 'corpse'
             ? placeCreatedObject(await untimedCorpse(troll), 14, 10)
-            : await createCorpstatAt(STATUE, null, troll, 14, 10, 0);
+            : await mkcorpstat(STATUE, null, troll, 14, 10, 0);
 
         const result = body === 'corpse'
             ? await reviveCorpseByMagic(object, game)

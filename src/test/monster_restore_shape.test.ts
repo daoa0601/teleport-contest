@@ -10,7 +10,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from '../js/mon.js';
 import { CORPSE, RIN_PROTECTION_FROM_SHAPE_CHANGERS, STATUE } from '../js/object_data.js';
@@ -182,7 +182,7 @@ for (const bodyType of [CORPSE, STATUE]) {
         await freshObjectRoom();
         const original = await createMonsterAt('chameleon', 11, 10, NO_MINVENT);
         await changeMonsterForm(original, MONSTER_NAME.indexOf('little dog'));
-        const body = await createCorpstatAt(bodyType, original, original.mnum, 11, 10, CORPSTAT_INIT);
+        const body = await mkcorpstat(bodyType, original, original.mnum, 11, 10, CORPSTAT_INIT);
         await removeMonsterFromGame(original);
         const ring = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);
         await wearHeroAccessory(ring, 'uleft');

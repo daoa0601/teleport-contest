@@ -8,7 +8,7 @@ import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { automaticSearch } from '../js/detect.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { APPLE, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
@@ -107,7 +107,7 @@ void test('searching beside a statue trap releases its monster', async () => {
     const x = game.u.ux - 1;
     const y = game.u.uy - 1;
     initRng(9403n);
-    const statue = await createCorpstatAt(STATUE, null, PM_JACKAL, x, y, 0);
+    const statue = await mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
     addTrap(level, STATUE_TRAP, x, y, { tseen: false });
     initRng(14n);
 

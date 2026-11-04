@@ -34,7 +34,7 @@ import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap.js';
 import { addFruit } from './fruit.js';
-import { addObjectToContainer, createCorpstatAt, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
+import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
 import { restoreMonsterInventoryOwnership } from './mon.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
@@ -219,7 +219,7 @@ export async function createBonesFromDeath(deathCause, promptDeathQuestion, when
     const formFlags = game.mvitals?.[heroForm]?.mvflags ?? MONSTER_GENO[heroForm] ?? 0;
     if (arise === NON_PM && !(formFlags & G_NOCORPSE)) {
         const species = Upolyd(game.u) ? heroForm : game.urace?.mnum ?? PM_HUMAN;
-        corpse = await createCorpstatAt(CORPSE, null, species, x, y, CORPSTAT_INIT);
+        corpse = await mkcorpstat(CORPSE, null, species, x, y, CORPSTAT_INIT);
         corpse.name = `${game.plname || 'player'} corpse`;
         corpse.oname = game.plname || 'player';
         const deathSquare = level.at(x, y);

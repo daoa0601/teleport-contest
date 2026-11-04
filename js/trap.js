@@ -43,7 +43,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct, finishHeroDeath } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex, loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
-import { mksobj, objectWeight, unlinkObject, createCorpstatAt, rndmonnumAdj, objectIsFlammable, objectIsRottable } from './mkobj.js';
+import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
@@ -6501,7 +6501,7 @@ export async function maketrap(x, y, typ) {
             && ((MONSTER_FLAGS2[statueMonster] ?? 0) & M2_JEWELS)
             && Math.sign(game.u?.ualign?.type ?? 0)
                 === Math.sign(MONSTER_ALIGNMENT[statueMonster] ?? 0));
-        const statue = await createCorpstatAt(STATUE, null, statueMonster, x, y, 0);
+        const statue = await mkcorpstat(STATUE, null, statueMonster, x, y, 0);
         const temporary = await makemon(statue.corpsenm ?? null, 0, 0, MM_NOCOUNTBIRTH | MM_NOMSG);
         if (temporary) {
             await putGeneratedMonsterInventoryInStatue(temporary, statue);

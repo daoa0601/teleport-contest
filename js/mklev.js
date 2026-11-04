@@ -1,7 +1,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, GEM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt } from './mkobj.js';
+import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, mkcorpstat, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt } from './mkobj.js';
 import { restoreMonsterInventoryOwnership } from './mon.js';
 import { oinit, objectMaterial } from './o_init.js';
 import { isRoom } from './map_types.js';
@@ -1876,7 +1876,7 @@ async function makeniche(trap_type) {
                     if (rn2(3)) {
                         const S_HUMAN = 53;
                         const human = mkclass(S_HUMAN, 0);
-                        await createCorpstatAt(CORPSE, null, human, xx, yy + dy, 1);
+                        await mkcorpstat(CORPSE, null, human, xx, yy + dy, 1);
                     }
                 }
                 if (!level.flags.noteleport) {
@@ -2119,7 +2119,7 @@ export async function mktrap_victim(trap) {
     }
     if (victim_mnum === PM_HUMAN && rn2(25))
         victim_mnum = rn1(PM_WIZARD - PM_ARCHAEOLOGIST, PM_ARCHAEOLOGIST);
-    const corpse = await createCorpstatAt(CORPSE, null, victim_mnum, x, y, 8); // CORPSTAT_INIT
+    const corpse = await mkcorpstat(CORPSE, null, victim_mnum, x, y, 8); // CORPSTAT_INIT
     // C makes every trap-victim corpse older than TAINT_AGE after creating
     // it.  The existing rot timer is intentionally left unchanged; dogfood()
     // observes the backdated age immediately and classifies it as unsafe.
@@ -2327,7 +2327,7 @@ export async function fill_ordinary_room(croom, bonus_items) {
         await mkgrave_room(croom);
     // Statue
     if (!rn2(20) && somexyspace(croom, pos)) {
-        await createCorpstatAt(STATUE, null, null, pos.x, pos.y, 8);
+        await mkcorpstat(STATUE, null, null, pos.x, pos.y, 8);
     }
     // Bonus items
     let skip_chests = false;

@@ -7,7 +7,7 @@ import { DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DUST, D_BROKEN, D_LOCKED, HOL
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { BOULDER, CLUB, EGG, MIRROR, OBJECT_NAMES, POT_WATER, ROCK, SPE_FORCE_BOLT, STATUE, WAN_STRIKING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { finishScheduledLevelChange } from '../js/level_change.js';
@@ -134,7 +134,7 @@ void test('force bolt releases the monster from a statue trap', async () => {
     requireFixtureGame(game);
     await learnSpell(SPE_FORCE_BOLT);
     initRng(9401n);
-    const statue = await createCorpstatAt(STATUE, null, PM_JACKAL, 12, 10, 0);
+    const statue = await mkcorpstat(STATUE, null, PM_JACKAL, 12, 10, 0);
     const club = await knownObject(CLUB, { where: 'contained', spe: 0 });
     club.container = statue;
     statue.contents = [club];

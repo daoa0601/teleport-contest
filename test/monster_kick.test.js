@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { hurtleHero } from '../js/dothrow.js';
 import { pushKey } from '../js/input.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { AMULET_OF_LIFE_SAVING, OBJECT_NAMES, STATUE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
@@ -161,7 +161,7 @@ void test('kicking a statue trap releases its monster', async () => {
     const x = 11;
     const y = 10;
     initRng(9403n);
-    const statue = await createCorpstatAt(STATUE, null, PM_JACKAL, x, y, 0);
+    const statue = await mkcorpstat(STATUE, null, PM_JACKAL, x, y, 0);
     addTrap(level, STATUE_TRAP, x, y, { tseen: false });
     initRng(17n);
     await kickDirection('l');

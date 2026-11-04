@@ -5,7 +5,7 @@ import { decodeBonesPayload } from '../js/bones_validation.js';
 import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createCorpstatAt, addObjectToContainer } from '../js/mkobj.js';
+import { mkcorpstat, addObjectToContainer } from '../js/mkobj.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -31,7 +31,7 @@ void test('a unique corpse in bones loses its revival and becomes a rotting dopp
     const storage = memoryStorage();
     bonesRoom(storage);
     const death = await createMonsterAt('Death', 12, 10, NO_MINVENT);
-    await createCorpstatAt(CORPSE, death, death.mnum, 13, 10, CORPSTAT_INIT);
+    await mkcorpstat(CORPSE, death, death.mnum, 13, 10, CORPSTAT_INIT);
     await removeMonsterFromGame(death);
     assert.equal(saveBonesLevel(), true);
     bonesRoom(storage);

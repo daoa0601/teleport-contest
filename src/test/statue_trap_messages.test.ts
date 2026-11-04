@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { STATUE_TRAP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { STATUE } from '../js/object_data.js';
 import { addTrap } from './support/level-state.js';
@@ -14,7 +14,7 @@ for (const species of ['jackal', 'stone golem']) {
     void test(`stepping on a ${species} statue trap describes the statue ${species === 'jackal' ? 'coming to life' : 'moving'}`, async () => {
         const level = await freshObjectRoom({ flags: { pickup: false } });
         requirePlayingGame(game);
-        await createCorpstatAt(STATUE, null, MONSTER_NAME.indexOf(species), 11, 10, 0);
+        await mkcorpstat(STATUE, null, MONSTER_NAME.indexOf(species), 11, 10, 0);
         addTrap(level, STATUE_TRAP, 11, 10);
         const input = resetInputState();
         input.beforeRead = () => input.feed(' ');

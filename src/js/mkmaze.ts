@@ -25,7 +25,7 @@ import { stopLevelTimer } from './timeout.js';
 import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
 import { load_special } from './sp_lev_lua.js';
 import { goodPosition } from './teleport_rules.js';
-import {createCorpstatAt, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
+import {mkcorpstat, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
 import { makemon } from './makemon.js';
 import { occupied } from './mkroom.js';
 import { createMaze } from './maze_terrain.js';
@@ -418,7 +418,7 @@ async function fixupMedusa(active: ActiveSpecialLevel): Promise<void> {
     const point = medusaRoomPoint(room);
     const statue = topTen
         ? await createToptenObject(STATUE, point.x, point.y)
-        : await createCorpstatAt(STATUE, null, null, point.x, point.y, 0);
+        : await mkcorpstat(STATUE, null, null, point.x, point.y, 0);
     for (let tries = 0; tries < 99
         && statue && !medusaPetrifiable(statue.corpsenm); tries++)
         set_corpsenm(statue, rndmonnum());
