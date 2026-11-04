@@ -147,6 +147,8 @@ async function okToThrow(): Promise<boolean> {
     return true;
 }
 
+// Also C dothrow.c:find_launcher(): inlined in the fireassist branch that
+// prefers a matching known non-cursed launcher, then unknown BUC.
 export async function dofire(): Promise<void> {
     // C dothrow.c:ok_to_throw() reads the count from gc.command_count; a
     // queued dofire (fireassist swap chains) finds it untouched because
@@ -312,6 +314,11 @@ export async function dothrow(selectedItem: GameObject | null = null): Promise<v
     await throwCommand(selectedItem);
 }
 
+// Also C artifact.c:is_art(): inlined here; the Mjollnir checks (wielded
+// before throwing, strength minimum, getobj suggestion) compare oartifact
+// names.
+// Also C dothrow.c:throw_ok(): inlined as the throwClassification callback
+// passed to the inventory chooser.
 async function throwCommand(
     selectedItem: GameObject | null = null, capabilityChecked = false, suppliedShotLimit: number | null = null,
 ): Promise<void> {
@@ -1129,6 +1136,7 @@ export function objectBreaksOnImpact(object: GameObject, random = rn2) {
     return glassObject || object.oclass === POTION_CLASS
         || BREAKABLE_TYPES.has(object.otyp);
 }
+// C dothrow.c:breakmsg().
 async function publishBreakMessage(object: GameObject, visible: boolean, publish: MessagePublisher, state: GameState) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
@@ -1215,6 +1223,8 @@ async function settleBrokenShopObject(
         await makeAngryShopkeeper(resident, state);
     shop.break_seq = sequence;
 }
+// C dothrow.c:hero_breaks(): breaktest() [objectBreaksOnImpact], breakmsg()
+// [publishBreakMessage], then breakobj() [breakObjectAtLocation].
 export async function breakFloorObject(object: GameObject, {
     x = object.ox,
     y = object.oy,

@@ -200,6 +200,7 @@ async function dropMonsterIntoChasm(monster, x, y) {
         showKillMessage: false,
     });
 }
+// C music.c:do_pit().
 async function openChasm(x, y, hadPitBeforeEarthquake) {
     const location = requireGameLevel(game).at(x, y);
     if (!location)
@@ -312,6 +313,7 @@ async function shakeTerrain(x, y, hadPitBeforeEarthquake) {
         addShopDamage(x, y, 0);
     return true;
 }
+// C music.c:do_earthquake().
 export async function createEarthquake(requestedForce) {
     requirePlayingGame(game);
     const force = Math.max(1, Math.min(13, requestedForce));

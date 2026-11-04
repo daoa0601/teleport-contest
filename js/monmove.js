@@ -814,6 +814,8 @@ export function monsterAvoidsSokobanPushLocation(monster, x, y, state = requireI
     return (state.level?.objects?.[bx]?.[by] || []).some((object) => object.otyp === BOULDER);
 }
 // C monmove.c:watch_on_duty(). A warning does not consume the watchman's move.
+// Also C lock.c:picking_lock(): inlined as the pick-lock occupation test
+// that targets the hero's facing square.
 async function watchOnDuty(monster, state, random, calls) {
     if ((monster?.mnum !== PM_WATCHMAN && monster?.mnum !== PM_WATCH_CAPTAIN) || !monster.mpeaceful)
         return false;

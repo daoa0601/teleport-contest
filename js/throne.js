@@ -397,6 +397,8 @@ export async function attrcurse({ publish = plineWithContinuation } = {}) {
     }
     return null;
 }
+// Also C artifact.c:spec_ability(): inlined here; selfWilled is the
+// artifact's SPFX_INTEL flag, checked with rn2(10) < 8 before cursing.
 export async function rndcurse({ publish = plineWithContinuation, } = {}) {
     const state = game;
     const hero = state.u;

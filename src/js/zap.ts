@@ -2586,6 +2586,9 @@ function finishReplacementType(source: GameObject, target: GameObject, id: numbe
         break;
     }
 }
+// C zap.c:poly_obj(): restoring the replacement's equipment slot.
+// Also C worn.c:wearmask_to_obj(): inlined here as the slot reads after
+// wearing the replacement, which an amulet of change may destroy.
 async function replaceWornItem(
     old: GameObject, replacement: GameObject, mask: number, state: PlayingGameState,
 ): Promise<GameObject | null> {

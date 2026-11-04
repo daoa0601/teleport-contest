@@ -1840,6 +1840,7 @@ export type MonsterStoningCureResult =
     | { consumed: true; cure: GameObject; died: boolean; heroDied?: boolean };
 
 // C muse.c:mcould_eat_tin().
+// Also C wield.c:mwelded(): inlined here as the W_WEP and willWeld test.
 export function mcould_eat_tin(monster: Monster): boolean {
     if (monsterIsAnimal(monster)) return false;
     const inventory = monster.minvent || monster.inventory || [];

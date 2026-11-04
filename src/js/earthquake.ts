@@ -223,6 +223,7 @@ async function dropMonsterIntoChasm(monster: Monster, x: number, y: number): Pro
     });
 }
 
+// C music.c:do_pit().
 async function openChasm(
     x: number,
     y: number,
@@ -341,6 +342,7 @@ async function shakeTerrain(x: number, y: number, hadPitBeforeEarthquake: boolea
     return true;
 }
 
+// C music.c:do_earthquake().
 export async function createEarthquake(requestedForce: number) {
     requirePlayingGame(game);
     const force = Math.max(1, Math.min(13, requestedForce));

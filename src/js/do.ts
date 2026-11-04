@@ -92,6 +92,8 @@ import { randomMonsterRelocation, enexto } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './mondata.js';
 
+// Also C invent.c:any_obj_ok(): inlined as the drop chooser's
+// GETOBJ_SUGGEST callback below.
 export async function dodrop(): Promise<void> {
     const inShop = !!game.u?.ushops?.[0];
     if (inShop) setSellDisposition(SELL_DELIBERATE);
@@ -938,6 +940,9 @@ interface TraditionalDropSelection {
 // menu-driven drop pass. C do.c:menudrop_split(): splitting a counted
 // stack before dropping its share. C do.c:count_justpicked() and
 // C do.c:find_justpicked(): the justPicked drop path.
+// Also C pickup.c:add_valid_menu_class(): inlined here as the chosen
+// drop categories passed to the matcher.
+// Also C pickup.c:allow_all(): inlined here as the constant-true matcher.
 export async function dropMultipleObjects(): Promise<number> {
     if (!game.inventory.length) {
         await pline('You have nothing to drop.');
@@ -1110,6 +1115,10 @@ async function traditionalDropCategories(combo: boolean): Promise<TraditionalDro
     return { categories, all: response.includes('a'), menu: response.includes('m'), requireUnpaid };
 }
 
+// Also C invent.c:safeq_xprname(): inlined here as the full-name prompt
+// callback, with the inventory letter and no final period.
+// Also C invent.c:safeq_shortxprname(): inlined here as the short-name
+// fallback passed to objectQuestion().
 async function dropTraditionally(selection: TraditionalDropSelection): Promise<number> {
     const sorted = sortObjects(game.inventory, { mode: SORTLOOT_INVLET });
     const classes = selection.categories.filter((category): category is number => typeof category === 'number');

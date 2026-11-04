@@ -172,6 +172,9 @@ export async function releaseCarriedBall(state: GameState, showMessage = false):
 
 // C unplacebc()/placebc(): swallowing removes the floor pair but leaves a
 // carried ball in the pack. Expulsion returns the chain to the hero's square.
+// Also C ball.c:check_restriction(): inlined here as the _ballChainRestriction
+// guard; placeBallAndChain/restoreBallAndChainPlacement repeat it for the
+// pinned (covetous) placement path.
 export async function unplaceBallAndChain(state: GameState = game): Promise<void> {
     if (state._ballChainRestriction) {
         await impossible('unplacebc denied, restriction in place', { state });

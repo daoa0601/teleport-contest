@@ -112,6 +112,9 @@ export const ARTIFACTS = ARTIFACT_DATA.map((artifact) => {
         wieldedProperties: wieldedProperties(artifact),
     };
 });
+// C artifact.c:spec_m2(). The artifact's mtype mask; its only C use is
+// set_artifact_intrinsic's SPFX_WARN branch, so this form returns the mask
+// only for a warning artifact that targets monster flags.
 export function artifactWarningMask(object, state = game) {
     const artifact = artifactById(object?.oartifact, state);
     return artifact?.flags.includes('SPFX_WARN') && artifact.target.kind === 'flag2'
@@ -334,6 +337,8 @@ export function createRandomArtifact(object, { maximumValue = 99, adjustEnchantm
         throw new Error('Artifact selection requires a candidate');
     return finishArtifactGeneration(object, artifact, adjustEnchantment, state);
 }
+// C artifact.c:mk_artifact(): the shared naming, erosion reset and
+// optional enchantment adjustment after selecting an artifact.
 function finishArtifactGeneration(object, artifact, adjustEnchantment, state) {
     object.oeroded = object.oeroded2 = 0;
     nameArtifact(object, artifact, { state });

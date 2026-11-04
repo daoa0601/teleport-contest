@@ -708,6 +708,7 @@ const HEALING_BONUS_SPELLS = new Set([
     SPE_HEALING, SPE_EXTRA_HEALING, SPE_CURE_BLINDNESS,
     SPE_CURE_SICKNESS, SPE_RESTORE_ABILITY, SPE_REMOVE_CURSE,
 ]);
+// C spell.c:spelleffects_check().
 // Only a memorized entry can reach ordinary casting. Forced effects bypass
 // this admission owner and create their pseudo-object in the caller.
 export async function checkSpellCast(spell, { state = game } = {}) {
@@ -785,6 +786,8 @@ export async function rejectCasting(state = game) {
 }
 // The port stores knowledge as the turn on which it expires. Casting does
 // not refresh it; every elapsed global turn ages all memorized spells.
+// Also C spell.c:age_spells(): the per-turn decrnknow() loop is replaced
+// by this expiry-deadline subtraction.
 export function currentSpellKnowledge(spell, state = game) {
     if (!spell || !Number.isInteger(spell.know))
         return 0;
@@ -1024,6 +1027,7 @@ async function selectTraditionalSpell(spells) {
     await plineWithContinuation("That's enough tries.");
     return null;
 }
+// C spell.c:dospellmenu().
 async function showSpellMenu(title, { state, order = null, view = false, preselected = null, }) {
     const tabSeparated = !!state.iflags.menu_tab_sep;
     const debug = !!state.flags.debug;
@@ -1178,6 +1182,8 @@ export async function castSkilledElementalSpell(pseudo, { state = game } = {}) {
 // C spell.c:throwspell().
 // C spell.c:spell_aim_step().
 // C spell.c:can_center_spell_location().
+// Also C spell.c:display_spell_target_positions(): inlined as the valid-
+// position highlights below (the hero's own square is not highlighted).
 async function chooseSpellCenter(state) {
     if (state.u.uinwater) {
         await plineWithContinuation("You're joking!  In this weather?");

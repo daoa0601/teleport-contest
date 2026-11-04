@@ -46,6 +46,10 @@ export function isEdibleFood(object, state = game) {
         return true;
     return object.oclass === FOOD_CLASS;
 }
+// C eat.c:floorfood().
+// Also C eat.c:eat_ok(): inlined as the inventory chooser callback at the
+// end (edible suggested, gold excluded for its own message, others
+// selectable).
 export async function selectFoodToEat({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

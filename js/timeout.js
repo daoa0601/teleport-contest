@@ -1739,6 +1739,8 @@ export function endObjectBurn(object, state = game, currentTurn = state.moves ??
     return cleanupObjectBurn(object, timer.deadline, state, currentTurn);
 }
 // C timeout.c:cleanup_burn(), also called when Lua stops a burning object's timer.
+// Also C light.c:delete_ls(): inlined as the lamplit/_litSeq clearing and
+// vision_full_recalc that removes the source.
 export function cleanupObjectBurn(object, deadline, state = game, currentTurn = state.moves ?? 0) {
     if (!object.lamplit)
         return false;

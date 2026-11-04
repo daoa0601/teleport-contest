@@ -5115,6 +5115,8 @@ function webCuttingWeapon(trap: Trap, state: GameState): GameObject | null {
     return state.u.twoweap && secondary && isBlade(secondary) ? secondary : null;
 }
 
+// Also C artifact.c:attacks(): inlined here; attack?.damageType === 'fire'
+// is the fiery-blade test that guarantees the web-cut roll.
 function untrapFailureRoll(trap: Trap, state: GameState, random: (limit: number) => number): number {
     let chance = 3;
     if (trap.ttyp === WEB) {
@@ -5250,6 +5252,8 @@ async function failMonsterRescue(monster: Monster, trap: Trap, {
     }
 }
 
+// Also C artifact.c:attacks(): inlined here for the "burns through" branch;
+// attack?.damageType === 'fire' is the fiery-blade test.
 async function disarmHoldingTrap(trap: Trap, options: FloorTrapOptions): Promise<boolean> {
     const result = await tryDisarm(trap, options);
     if (result < 2) return result !== 0;

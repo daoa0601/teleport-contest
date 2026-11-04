@@ -53,6 +53,10 @@ export function isEdibleFood(object: GameObject | null | undefined, state: GameS
     return object.oclass === FOOD_CLASS;
 }
 
+// C eat.c:floorfood().
+// Also C eat.c:eat_ok(): inlined as the inventory chooser callback at the
+// end (edible suggested, gold excluded for its own message, others
+// selectable).
 export async function selectFoodToEat({ state = game }: { state?: GameState } = {}): Promise<FoodSelection | null> {
     requireLiveGame(state);
     requirePlayingGame(state);

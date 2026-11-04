@@ -641,6 +641,9 @@ export async function kickDoor(x, y, average, responses) {
     }
 }
 // Also C mon.c:get_iter_mons_xy(): inlined here for the first watchman witness.
+// Also C dokick.c:watchman_thief_arrest(): inlined here for a broken door.
+// Also C dokick.c:watchman_door_damage(): inlined here as the D_WARNED
+// warning or vandal-arrest branch.
 async function witnessDoorKick(x, y, broken) {
     requirePlayingGame(game);
     if (!inTown(game.level, x, y))
@@ -1162,6 +1165,8 @@ function unitWeight(object) {
         return objectWeight(object);
     return objectWeight({ ...object, quan: 1, quantity: 1 });
 }
+// Also C artifact.c:is_art(): inlined here as the oartifact name test that
+// pins Mjollnir's kick range to 1.
 function kickRange(object, state, dx, dy, martial, rollOne) {
     let slide = false;
     let range = Math.trunc(currentStrength(state) / 2)
@@ -1194,6 +1199,9 @@ function kickRange(object, state, dx, dy, martial, rollOne) {
         range = 1;
     return { range, slide };
 }
+// C dokick.c:really_kick_object().
+// Also C dokick.c:kick_object(): inlined here as the top-of-pile selection
+// and the object name used if the kick hurts the hero.
 export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 0, dy = state.u?.dy ?? 0, publish = plineWithContinuation, random = rn2, rollOne = rnd, captureFlight = null, } = {}) {
     const object = state.level?.objects?.[x]?.[y]?.[0];
     if (!object)
@@ -1422,6 +1430,8 @@ function inEndgame(state) {
 function onStronghold(state) {
     return sameLevel(state.u?.uz, state.stronghold_level);
 }
+// Also C dokick.c:drop_to(): the MIGR_RANDOM case — stronghold drops go to
+// the valley, endgame and bottom levels go nowhere.
 function trapDestination(state) {
     if (onStronghold(state))
         return state.valley_level || null;
@@ -1429,6 +1439,9 @@ function trapDestination(state) {
         return null;
     return levelBelow(state);
 }
+// C dokick.c:down_gate().
+// Also C dokick.c:drop_to(): inlined here for stairs and ladders; the
+// MIGR_RANDOM destination is selected by trapDestination() above.
 function downwardGate(state, x, y) {
     if (onQuestStart(state) && !okToQuest(state))
         return null;
@@ -1506,6 +1519,7 @@ function addToMigration(object, gate, state) {
     state.migratingObjects ||= [];
     state.migratingObjects.unshift(object);
 }
+// C dokick.c:otransit_msg().
 async function publishTransitMessage(object, gate, stays, impact, publish, state) {
     const plural = objectNameIsPlural(object, state);
     if (!impact.count && !impact.chainThere) {
@@ -1738,6 +1752,7 @@ async function deliverAtPassage(object, migration, state, position, publish, ran
         rollOne,
     });
 }
+// C dokick.c:obj_delivery().
 export async function deliverMigratingObjects(state = requireInitializedGame(), { nearHero = false, publish = async () => { }, random = rn2, rollOne = rnd, } = {}) {
     let delivered = 0;
     let position = null;

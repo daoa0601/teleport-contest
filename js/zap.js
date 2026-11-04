@@ -2419,6 +2419,9 @@ function finishReplacementType(source, target, id, state) {
             break;
     }
 }
+// C zap.c:poly_obj(): restoring the replacement's equipment slot.
+// Also C worn.c:wearmask_to_obj(): inlined here as the slot reads after
+// wearing the replacement, which an amulet of change may destroy.
 async function replaceWornItem(old, replacement, mask, state) {
     const twoHanded = isBimanualObject(old);
     const twoWeapons = !!state.u.twoweap;

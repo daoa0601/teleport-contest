@@ -356,6 +356,8 @@ const MZ_SMALL = 1;
 
 interface ArmorWearDecision { refusal: string | null; checkedWeldedWeapon: GameObject | null }
 
+// Also C do_wear.c:already_wearing(): inlined in this decision as the
+// occupied-slot refusal ("You are already wearing ...").
 export function armorWearDecision(object: GameObject, state: GameState = game): ArmorWearDecision {
     const slot = armorSlotFor(object.otyp);
     const form = heroMonsterForm(state);
@@ -824,6 +826,10 @@ type SelectOff = (object: GameObject) => Promise<void>;
 // C do_wear.c:menu_remarm(): the category and object pick lists for 'A',
 // including the combination-style class prompt and the BUC category
 // filter from pickup.c:query_category()/allow_category().
+// Also C pickup.c:add_valid_menu_class(): inlined here as the chosen
+// categories passed to matchesCategories().
+// Also C pickup.c:menu_class_present(): category membership is checked
+// directly, without a global valid_menu_classes filter.
 export async function selectBulkTakeoff(selectOff: SelectOff): Promise<void> {
     const style = game.flags.menu_style ?? MENU_FULL;
     let categories: Category[] = ['all'];
@@ -877,6 +883,9 @@ function bucCategory(object: GameObject): BucCategory {
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
+// C invent.c:count_buc(): the priest bless/curse knowledge pass and the
+// per-status tallies for the removal-category menu (query_classes in
+// pickup.ts builds the same set for pickup menus).
 function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
     // Native count_buc() grants priest knowledge before applying is_worn().
     if (game.urole?.key === 'priest')
@@ -901,6 +910,8 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
         && (!categories.includes('P') || !!object.pickup_prev);
 }
 
+// Also C pickup.c:count_categories(): inlined as the single-category skip
+// below (one class and no special filter needs no menu).
 async function categoryMenu(): Promise<Category[]> {
     const worn = wornInventory();
     const classes = inventoryClassOrder().filter(oclass => worn.some(object => object.oclass === oclass));
@@ -2221,6 +2232,8 @@ const RIN_INCREASE_ACCURACY = OBJECT_NAMES.indexOf('increase accuracy');
 const RIN_INCREASE_DAMAGE = OBJECT_NAMES.indexOf('increase damage');
 
 // C do_wear.c:stuck_ring(). Find what prevents this ring from coming off.
+// Also C do_wear.c:unchanger(): inlined here as the limb-blocking cursed
+// amulet of unchanging.
 export function ringRemovalObstacle(
     ring: GameObject | null | undefined, type: number, state: GameState = game,
 ): GameObject | null {

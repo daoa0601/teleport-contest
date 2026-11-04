@@ -102,6 +102,8 @@ async function okToThrow() {
     }
     return true;
 }
+// Also C dothrow.c:find_launcher(): inlined in the fireassist branch that
+// prefers a matching known non-cursed launcher, then unknown BUC.
 export async function dofire() {
     // C dothrow.c:ok_to_throw() reads the count from gc.command_count; a
     // queued dofire (fireassist swap chains) finds it untouched because
@@ -264,6 +266,11 @@ async function finishOrdinaryMapPotionKill(monster, death = {}) {
 export async function dothrow(selectedItem = null) {
     await throwCommand(selectedItem);
 }
+// Also C artifact.c:is_art(): inlined here; the Mjollnir checks (wielded
+// before throwing, strength minimum, getobj suggestion) compare oartifact
+// names.
+// Also C dothrow.c:throw_ok(): inlined as the throwClassification callback
+// passed to the inventory chooser.
 async function throwCommand(selectedItem = null, capabilityChecked = false, suppliedShotLimit = null) {
     const shotLimit = suppliedShotLimit === null
         ? Math.max(0, game._commandCount || 0)
@@ -917,6 +924,7 @@ export function objectBreaksOnImpact(object, random = rn2) {
     return glassObject || object.oclass === POTION_CLASS
         || BREAKABLE_TYPES.has(object.otyp);
 }
+// C dothrow.c:breakmsg().
 async function publishBreakMessage(object, visible, publish, state) {
     if ([EGG, MELON].includes(object.otyp)) {
         await publish('Splat!');
@@ -998,6 +1006,8 @@ async function settleBrokenShopObject(object, x, y, fromInventory, state, publis
         await makeAngryShopkeeper(resident, state);
     shop.break_seq = sequence;
 }
+// C dothrow.c:hero_breaks(): breaktest() [objectBreaksOnImpact], breakmsg()
+// [publishBreakMessage], then breakobj() [breakObjectAtLocation].
 export async function breakFloorObject(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
     requireLiveGame(state);
     if (!objectBreaksOnImpact(object, random)) {

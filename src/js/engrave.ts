@@ -806,6 +806,10 @@ async function wandEngraveEffects(
 
 // The #engrave command.  C engrave.c doengrave(); engrave.c:engrave() runs as
 // the occupation installed at the end.
+// Also C engrave.c:doengrave_ctx_init(): inlined here as EngraveSetup
+// and the jello/frosted/oetype captures.
+// Also C engrave.c:doengrave_sfx_item(): inlined here as the stylus effects.
+// Also C engrave.c:doengrave_ctx_verb(): inlined here as the everb/eloc switch.
 export async function doengrave(state: GameState = game): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);

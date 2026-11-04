@@ -93,6 +93,7 @@ export async function finishReturningThrow({ state, object, impact, impaired, tw
     }
     return true;
 }
+// C dothrow.c:sho_obj_return_to_u().
 async function showReturnFlight(object, impact, state) {
     const dx = state.u.dx ?? 0, dy = state.u.dy ?? 0;
     if (!(dx || dy) || impact.x === state.u.ux && impact.y === state.u.uy)

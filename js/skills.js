@@ -477,6 +477,7 @@ export async function doenhance() {
         }
     }
 }
+// C weapon.c:add_skills_to_menu().
 function enhancementMenu(speedy, state) {
     const skills = initializedSkills(state);
     const available = skills.filter((_proficiency, skill) => canAdvanceHeroSkill(skill, { state, speedy })).length;

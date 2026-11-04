@@ -143,6 +143,8 @@ export async function distantObjectName(object: GameObject, format: (object: Gam
 }
 
 // objnam.c:xname() visible name without inventory annotations.
+// Also C objnam.c:xcalled(): inlined as the "<class> called <name>"
+// compositions below; JS string concatenation needs no truncation.
 // Unlike doname(), this omits quantity, beatitude, enchantment, and article.
 export function objectName(
     object: ObjectNameView, state: GameState = game, { minimal = false } = {},
@@ -731,6 +733,8 @@ export function pluralizeObjectNoun(object: Pick<GameObject, 'otyp'>, noun: stri
 
 // C objnam.c:obj_is_pname()/not_fully_identified(). An artifact only uses its
 // personal name after its identity and relevant object properties are known.
+// Also C artifact.c:undiscovered_artifact(): inlined here as the
+// _artifactDiscoveries membership test.
 export function objectHasPersonalName(object: ObjectNameView, state: GameState = game): boolean {
     if (!object.oartifact || !(object.oextra?.oname || object.oname)) return false;
     if (state.program_state?.gameover || state.iflags?.override_ID
@@ -2426,7 +2430,11 @@ function pluralCompoundIndex(text: string): number {
     return result;
 }
 
-// C objnam.c:ch_ksound().
+// C objnam.c:makeplural().
+// Also C objnam.c:ch_ksound(): inlined here as the CH_K_SUFFIXES check.
+// Also C objnam.c:singplur_lookup(): the shared as-is and one-off
+// exception lookups below (makeSingular repeats them with the
+// singular-side exceptions).
 export function makePlural(value: string | null | undefined): string {
     const text = (value ?? '').replace(/^ +/, '');
     if (!text) return 's';
@@ -2530,6 +2538,8 @@ const SINGULAR_SUBJECTS = [
 
 // C objnam.c:makesingular(). Fruit registration and name lookup share the
 // same suffix and compound decisions as ordinary object grammar.
+// Also C objnam.c:singplur_lookup(): the shared as-is and one-off exception
+// lookups, mirrored from makePlural above with the singular-side exceptions.
 export function makeSingular(value: string | null | undefined): string {
     const text = (value ?? '').replace(/^ +/, '');
     if (!text) return '';
@@ -2919,6 +2929,7 @@ export async function paymentObjectDescription(object: GameObject, quantity: num
 // C objnam.c:doname_base(). Inventory and floor feedback share the same
 // knowledge, quantities, physical state, equipment annotations, and prices.
 // Callers observe the object separately before formatting it.
+// Also C objnam.c:strprepend(): inlined here as the prefix and noun join.
 export async function objectDescription(object: GameObject, {
     state = game, withPrice = false, primaryHandDetail, projectPrimaryHand = false,
     vagueQuantity = false,

@@ -176,6 +176,9 @@ export const ARTIFACTS: readonly Artifact[] = ARTIFACT_DATA.map((artifact) => {
     };
 });
 
+// C artifact.c:spec_m2(). The artifact's mtype mask; its only C use is
+// set_artifact_intrinsic's SPFX_WARN branch, so this form returns the mask
+// only for a warning artifact that targets monster flags.
 export function artifactWarningMask(
     object: Pick<GameObject, 'oartifact'> | null | undefined,
     state: GameState = game,
@@ -434,6 +437,8 @@ export function createRandomArtifact(
     return finishArtifactGeneration(object, artifact, adjustEnchantment, state);
 }
 
+// C artifact.c:mk_artifact(): the shared naming, erosion reset and
+// optional enchantment adjustment after selecting an artifact.
 function finishArtifactGeneration(
     object: GameObject,
     artifact: Artifact,
