@@ -19,8 +19,10 @@ export class TemporaryMapEffect {
     changeGlyph(glyph) {
         this.glyph = glyph;
     }
+    // C display.c:tmp_at()
     // Callers with their own frame publication draw before flushing.
     // show() supplies tmp_at()'s ordinary flush boundary.
+    // Also C display.c:tether_glyph(): inlined here for the previous tether position.
     async draw(x, y) {
         if (!isok(x, y))
             return false;

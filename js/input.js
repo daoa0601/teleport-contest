@@ -127,6 +127,8 @@ export function pushKey(key) {
 export function pushKeys(keys) {
     activeInputGate.feed(keys);
 }
+// C wintty.c:tty_nhgetch()
+// Also C wintty.c:tty_nh_poskey(): the Unix tty path reads a key through this same entry point.
 export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a
     // target selection made by an action resumed from the command queue.

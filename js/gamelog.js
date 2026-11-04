@@ -9,6 +9,7 @@ export { LL_NONE, LL_WISH, LL_ACHIEVE, LL_UMONST, LL_DIVINEGIFT, LL_LIFESAVE, LL
 export function isSpoilerGameLogEvent(entry) {
     return ((entry.flags ?? 0) & LL_SPOILER) !== 0;
 }
+// C pline.c:gamelog_add()
 export function recordGameLogEvent(text, { state = game, turn = state.moves || 1, flags = LL_NONE, } = {}) {
     if (!text)
         return null;

@@ -1312,6 +1312,8 @@ ensure_way_out	generate_way_out_method
 ensure_way_out	selection_floodfill
 ensure_way_out	selection_getpoint
 enter_explore_mode	paranoid_query
+erase_menu_or_text	docrt
+erase_menu_or_text	flush_screen
 erode_obj	rnl
 escape_from_sticky_mon	nomul
 escape_from_sticky_mon	rn2
@@ -1696,6 +1698,8 @@ hitum_cleave	isok
 hitum_cleave	known_hitum
 hitum_cleave	rnd
 hitum_cleave	unmap_invisible
+hmenu_doextversion	doextversion
+hmenu_dowhatis	dowhatis
 hmon_hitmon_barehands	rnd
 hmon_hitmon_jousting	d
 hmon_hitmon_jousting	uwepgone
@@ -1810,6 +1814,7 @@ invault	newsym
 invault	nomul
 invault	reset_faint
 invault	rn2
+invert_all_on_page	set_item_state
 invoke_banish	isok
 invoke_banish	rn2
 invoke_blinding_ray	flashburn
@@ -3258,6 +3263,7 @@ randomkey	rnd
 randrace	rn2
 randrole	rn2
 randrole_filtered	rn2
+rank	rank_of
 read_engr_at	surface
 readchar	readchar_core
 readchar_core	randomkey
@@ -3589,6 +3595,7 @@ selection_size_description	selection_getbounds
 selection_size_description	selection_is_irregular
 sense_trap	rn2
 sense_trap	rnd
+set_all_on_page	set_item_state
 set_artifact_intrinsic	get_artifact
 set_artifact_intrinsic	make_hallucinated
 set_artifact_intrinsic	see_monsters
@@ -3839,6 +3846,7 @@ test_move	closed_door
 test_move	doorless_door
 test_move	isok
 test_move	nomul
+tether_glyph	zapdir_to_glyph
 theft_petrifies	instapetrify
 themerooms_post_level_generate	wallification
 there_cmd_menu	test_move
@@ -3917,6 +3925,7 @@ tmp_at	isok
 tmp_at	newsym
 toggle_blindness	see_monsters
 toggle_blindness	vision_recalc
+toggle_menu_curr	set_item_state
 toggle_stealth	learnring
 toss_up	ceiling
 toss_up	done
@@ -4031,8 +4040,10 @@ try_lift	calc_capacity
 try_lift	rnl
 tt_oname	get_rnd_toptenentry
 tty_destroy_nhwindow	tty_dismiss_nhwindow
+tty_display_file	docrt
 tty_display_nhwindow	process_menu_window
 tty_doprev_message	redotoplin
+tty_nhgetch	randomkey
 tty_select_menu	tty_dismiss_nhwindow
 tty_select_menu	tty_display_nhwindow
 tty_start_menu	tty_clear_nhwindow
@@ -4112,6 +4123,7 @@ unmap_object	map_engraving
 unplacebc_and_covet_placebc	rnd
 unplacebc_core	maybe_unhide_at
 unplacebc_core	newsym
+unset_all_on_page	set_item_state
 untouchable	get_artifact
 untrap	can_reach_floor
 untrap	disarm_box

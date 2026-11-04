@@ -64,6 +64,10 @@ function saveKey(name: string | null | undefined, prefix = SAVE_PREFIX): string 
     return `${prefix}${String(name || 'player').toLowerCase()}`;
 }
 
+// Snapshot persistent state, including the message window's recall history.
+// Also C save.c:save_msghistory(): inlined here with the rest of the saved state.
+// Also C topl.c:msghistory_snapshot(): inlined here before serializing the oldest-first history.
+// Also C topl.c:tty_getmsghistory(): inlined here; saving reads the history array directly.
 function snapshotState(): SavedGame {
     // C save_msghistory() -> getmsghistory() flushes the pending topline
     // into the ring before the messages are written out.
@@ -124,6 +128,9 @@ function restoreSavedMonsters(state: PersistentState): void {
     ], 0);
 }
 
+// C save.c:dosave()
+// Also C wintty.c:tty_exit_nhwindows(): inlined here when the saved game exits its windows.
+// Also C wintty.c:tty_suspend_nhwindows(): inlined here to clear the screen and print the farewell.
 export async function dosave(): Promise<void> {
     // C save.c:dosave() clears WIN_MESSAGE before asking and after either
     // answer. Acknowledgment alone leaves the seen question on tty.

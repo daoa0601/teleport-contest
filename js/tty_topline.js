@@ -240,6 +240,7 @@ export function showUnrememberedTopline(message, { flushPending = false } = {}) 
 }
 // C win/tty/topl.c:topl_putsym(): key queries wrap without a More prompt.
 // Return the rows covered so tty_yn_function's cleanup can restore the map.
+// Also C topl.c:putsyms(): inlined here to write the prompt's cells.
 export function renderKeyPrompt(message, cursorOffset = 0) {
     const display = game.nhDisplay;
     const lines = toplineRows(message, display?.cols ?? COLNO);

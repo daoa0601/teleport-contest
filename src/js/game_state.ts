@@ -512,6 +512,8 @@ export interface PlayingGameState extends GameState {
     level: GameMap;
 }
 
+// C decl.c:decl_globals_init()
+// Also C decl.c:program_state_init(): inlined here; each game starts with fresh process flags.
 export function createGameState(): GameState {
     return {
         u: createHeroState(), urole: null, urace: null, initAlignment: null,

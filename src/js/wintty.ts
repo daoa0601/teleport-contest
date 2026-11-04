@@ -38,6 +38,7 @@ const ANSI_COLOR = [
 ];
 
 // ── Serialize a map row with DEC line-drawing and ANSI colors ──
+// Also C wintty.c:end_glyphout(): inlined here to end color and graphics modes after the row.
 function render_map_row(y: number) {
     if (!game.level) return '';
     let firstCol = -1, lastCol = -1;
@@ -203,11 +204,12 @@ const capacityText: readonly (readonly string[])[] = [
     ['', 'Brd', 'Strs', 'Strn', 'Ovtx', 'Ovld'],
 ];
 
-// wintty.c:make_things_fit() tries all condition abbreviations, then both
+// C wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
 // C wintty.c:shrink_enc().
 // C wintty.c:shrink_dlvl().
 // C wintty.c:set_condition_length().
+// Also C botl.c:stat_cap_indx(): inlined here; fields.capacity supplies the cached index.
 export function renderStatusLine2(
     fields: StatusLine2Fields,
     columns: number,

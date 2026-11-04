@@ -740,6 +740,7 @@ function scoreListLines(current: ScoreRecord, update: ScoreUpdate, stopPrinting:
 
 // C end.c:really_done()/topten(): raw scores have no input wait. NHW_TEXT
 // scores retain tty paging, then exit_nhwindows clears the terminal.
+// Also C wintty.c:tty_raw_print_bold(): inlined here for bold raw score rows.
 async function finishScoreDisplay(current: ScoreRecord, { stopPrinting = false } = {}) {
     const update = updateScoreRecord(current);
     const mode = game.flags.debug ? 'wizard'

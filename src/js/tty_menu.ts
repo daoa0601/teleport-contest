@@ -99,6 +99,7 @@ export function selectableMenuText(key: string, text: string, marker = '-'): str
     return `${key} ${marker} ${text.slice(0, BUFSZ - 1)}`;
 }
 
+// Also C wintty.c:toggle_menu_attr(): inlined here as each menu cell's color and attribute.
 export function paintMenuPage<T extends TextMenuLine>(
     d: GameDisplay, menu: DisplayedMenuLayout<T>, page: number,
     rows: readonly PaintedMenuRow[], underlay: MenuUnderlay | null,
@@ -195,6 +196,8 @@ export function tty_create_nhwindow<T>(_type: typeof NHW_MENU): TtyMenuWindow<T>
     return { entries: [], layout: null, offx: 0, active: false, cancelled: false, destroyed: false, underlay: null };
 }
 
+// C wintty.c:tty_clear_nhwindow()
+// Also C wintty.c:free_window_info(): inlined here to release the menu's rows and layout.
 export async function tty_clear_nhwindow<T>(window: TtyMenuWindow<T>): Promise<void> {
     requireWindow(window);
     // Native clear erases an active window without dismissing it. A full
@@ -326,6 +329,8 @@ export async function tty_display_and_dismiss<T>(
     return result;
 }
 
+// C wintty.c:tty_dismiss_nhwindow()
+// Also C wintty.c:erase_menu_or_text(): inlined here to erase a full-screen or corner menu.
 export async function tty_dismiss_nhwindow<T>(window: TtyMenuWindow<T>, roleSelection = false): Promise<void> {
     window.cancelled = false;
     if (!window.active) return;
@@ -386,6 +391,12 @@ function requireWindow<T>(window: TtyMenuWindow<T>): void {
     if (window.destroyed) throw new Error('The tty menu window has been destroyed');
 }
 
+// C wintty.c:process_menu_window()
+// Also C wintty.c:invert_all(): inlined here.
+// Also C wintty.c:invert_all_on_page(): inlined here.
+// Also C wintty.c:set_all_on_page(): inlined here.
+// Also C wintty.c:unset_all_on_page(): inlined here.
+// Also C wintty.c:toggle_menu_curr(): toggleItem changes selection; this loop repaints it.
 async function process_menu_window<T>(
     d: GameDisplay, rows: TtyMenuRow<T>[], layout: DisplayedMenuLayout<TtyMenuRow<T>>,
     how: MenuPickMode, underlay: MenuUnderlay | null,
@@ -507,6 +518,7 @@ async function process_menu_window<T>(
     }
 }
 
+// C wintty.c:toggle_menu_curr()
 function toggleItem<T>(row: TtyMenuRow<T>, count: number): void {
     if (row.selected && count === -1) {
         row.selected = false;
