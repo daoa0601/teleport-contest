@@ -26,13 +26,12 @@ import { setMonsterGivenName, monsterName } from '../js/do_name.js';
 import { tryKickReel } from '../js/dokick.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { hurtleMonster, breakFloorObject } from '../js/dothrow.js';
-import { beginMonsterPitTrap, finishMonsterPitTrap, tryMonsterTrapEscape } from '../js/trap.js';
+import { mintrap, tryMonsterTrapEscape } from '../js/trap.js';
 import { AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE, } from '../js/object_data.js';
 import { dropObjectAtHero } from '../js/do.js';
 import { hitMonsterWithSupportedPotion } from '../js/potion.js';
 import { beginMonsterProjectileTrap, finishMonsterProjectileTrap } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
-import { mintrap } from '../js/trap.js';
 import { chargeAlteredUnpaidObject } from '../js/shk.js';
 import { bookCursed, studyBook } from '../js/spell.js';
 import { applyThrowSlip } from '../js/throw_state.js';
@@ -198,9 +197,12 @@ void test('a named ghost keeps its possessive name when a projectile trap runs d
 void test('a named monster disguise is retained in a pit message', async () => {
     const { monster, trap } = await freshMonsterTrapRoom(PIT, { monster: { species: 'kitten' } });
     setMonsterGivenName(monster, 'Mittens');
-    const event = beginMonsterPitTrap(monster, trap);
+    requirePlayingGame(game);
     const messages = [];
-    await finishMonsterPitTrap(monster, event, { rollOne: () => 1, publish: text => { messages.push(text); } });
+    await mintrap(monster, game, {
+        rollOne: () => 1,
+        publish: (text) => { messages.push(text); },
+    });
     assert.equal(messages[0], 'Mittens falls into a pit!');
 });
 void test('a named ghost keeps its possessive name while escaping a bear trap', async () => {

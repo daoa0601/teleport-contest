@@ -1097,7 +1097,13 @@ async function monsterTrapEffect(
         return event;
     }
     if (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) {
-        const event = beginMonsterPitTrap(monster, trap, state, {
+        const event = await trapeffectPit(monster, trap, {
+            state, movement, publish, random,
+            rollOne: (range: number) => {
+                const result = rollOne(range);
+                calls.push(`rnd(${range})`);
+                return result;
+            },
             forced: !!movement.forcedTrapLanding,
         });
         if (!event) return null;
@@ -1451,13 +1457,8 @@ export async function finishDeferredMonsterTrap(
             break;
         }
         case 'pit-trap':
-            await finishMonsterPitTrap(monster, event, {
-                publish,
-                random,
-                rollOne: recordedRollOne,
-                ...(describeMonster ? { describeMonster } : {}),
-                state,
-            });
+            // The effect completed inside trapeffectPit; only the
+            // appears-reveal and death fields remain.
             break;
         case 'falling-rock':
         case 'spent-rock-trap':
@@ -1686,16 +1687,165 @@ function monsterIsUngrounded(monster: Monster, state: GameState): boolean {
         || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
 
-// C trap.c:trapeffect_pit(): the monster branch — grounded, size, and worm
-// checks decide whether the monster falls, spiked damage is staged, and
-// mtrapped is set for non-wallwalkers.
-export function beginMonsterPitTrap(
-    monster: Monster,
+// C trap.c:trapeffect_pit(): the hero branch — refusal while flying or
+// clinging, the fall and spike messages with iron-shoe protection,
+// set_utrap, and the ridden steed's hit; the monster branch — grounded,
+// size, and worm checks decide whether the monster falls, the fall
+// message, the hit, and the pit's trap result.
+async function trapeffectPit(
+    mtmp: Hero | Monster,
     trap: Trap | null | undefined,
-    state: GameState = game,
-    { forced = false } = {},
-): MonsterPitTrap | null {
+    {
+        state = game, movement,
+        publish = plineWithContinuation, random, rollOne = rnd,
+        describeMonster,
+        forced = false, viaSitting = false, tookPlunge = false, recursiveTrap = false,
+    }: {
+        state?: GameState; movement?: MonsterMovement;
+        publish?: MessagePublisher; random?: (limit: number) => number;
+        rollOne?: (sides: number) => number;
+        describeMonster?: (monster: Monster) => string;
+        forced?: boolean; viaSitting?: boolean; tookPlunge?: boolean; recursiveTrap?: boolean;
+    } = {},
+): Promise<MonsterPitTrap | null> {
     if (!trap) return null;
+    if (isHeroDefender(mtmp, state)) {
+        requirePlayingGame(game);
+        const hero = game.u;
+        const formFlags = heroFormFlags();
+        const sokoban = !!game.level.flags?.sokoban_rules;
+        const previousPit = trapAt(game, hero.ux0, hero.uy0);
+        const fromPit = !!hero.utrap && hero.utraptype === TT_PIT
+            && previousPit && is_pit(previousPit.ttyp);
+        const conjoined = fromPit && pitsAreConjoined(previousPit, trap);
+        const adjacent = adjNonconjoinedPit(trap);
+        const alreadyKnown = !!trap.tseen;
+        const flying = hero.flying || game.flying;
+        // C trap.c:1836: plunged is TOOKPLUNGE only.  FAILEDUNTRAP never
+        // reaches a pit: untrap() refuses pit targets before try_disarm().
+        const plunged = tookPlunge;
+        if (!sokoban && (hero.levitating || game.levitating
+            || (flying && !plunged && !viaSitting))) return null;
+        await feelTrap(trap);
+        if (!sokoban && (formFlags & M1_CLING) && !plunged) {
+            if (alreadyKnown) {
+                await plineWithContinuation(
+                    formatSeenMessage(`${trap.madeby_u ? 'your' : 'a'} ${trap.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit below you.`));
+            } else {
+                await plineWithContinuation(
+                    `${trap.madeby_u ? 'Your' : 'A'} pit ${trap.ttyp === SPIKED_PIT ? 'full of spikes ' : ''}opens up under you!`);
+                await plineWithContinuation("You don't fall in!");
+            }
+            return null;
+        }
+        const steed = hero.usteed;
+        // C trap.c:1842-1847: suppress the article in steed messages when using
+        // its name (never chosen while hallucinating), and pass the "poor"
+        // adjective plus SUPPRESS_SADDLE through x_monnam().  Each branch names
+        // the steed only when it prints, so a hallucinating rider draws one
+        // random identity per message.
+        const steedArticle = MGIVENNAME(steed) && !heroIsHallucinating(game) ? 'none' : 'the';
+        // C trap.c:1877: the careful descent is chosen by iflags.menu_requested
+        // (the 'm' prefix), not context.nopick: travel sets nopick without it.
+        const deliberate = !sokoban && !steed && !!game.iflags.menu_requested && alreadyKnown;
+        if (!sokoban) {
+            if (steed) {
+                await plineWithContinuation(recursiveTrap
+                    ? `You and ${monsterName(steed, {
+                        state: game, article: steedArticle, suppressSaddle: true,
+                    })} fall into ${trap.madeby_u ? 'your' : 'a'} pit!`
+                    : `You lead ${monsterName(steed, {
+                        state: game, article: steedArticle, adjective: 'poor',
+                        suppressSaddle: true,
+                    })} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
+            } else if (deliberate) {
+                await plineWithContinuation(`You carefully ${heroLocomotion('lower yourself')} into the pit.`);
+            } else if (conjoined) {
+                await plineWithContinuation('You move into an adjacent pit.');
+            } else if (adjacent) {
+                await plineWithContinuation(
+                    `You stumble over debris${rn2(5) === 0 ? ' between the pits' : ''}.`);
+            } else {
+                await plineWithContinuation(
+                    `You ${plunged ? (flying ? 'dive' : 'plunge') : 'fall'} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
+            }
+        }
+        const role = String(game.urole?.key || game.urole?.name || '').toLowerCase();
+        if (role === 'ranger' && !trap.madeby_u && !trap.once && In_quest(hero.uz)
+            && specialPrototypeAt(hero.uz.dnum, hero.uz.dlevel)?.endsWith('-loca')) {
+            await plineWithContinuation('Fortunately it has a bottom after all...');
+            trap.once = 1;
+        } else if (heroMonsterForm() === 218 || heroMonsterForm() === PM_PIT_FIEND) {
+            await plineWithContinuation("How pitiful.  Isn't that the pits?");
+        }
+        let spiked = trap.ttyp === SPIKED_PIT;
+        const ironShoes = heroIronShoes();
+        if (spiked && ironShoes) {
+            // C trap.c:1902: Yname2(uarmf) names the worn footgear ("iron
+            // shoes", "kicking boots"); the verb stays singular.
+            await plineWithContinuation(
+                `${ownedObjectName(ironShoes, game)} protects you from the sharp iron spikes.`);
+            spiked = false;
+        } else if (spiked) {
+            await plineWithContinuation(steed
+                ? `${monsterName(steed, {
+                    state: game, article: steedArticle, adjective: 'poor',
+                    suppressSaddle: true, capitalized: true,
+                })} ${conjoined ? 'steps' : 'lands'} on a set of sharp iron spikes!`
+                : `You ${conjoined ? 'step' : 'land'} on a set of sharp iron spikes!`);
+        }
+        setHeroTrap(rn2(6) + 2, TT_PIT);
+        game.context.botl = true;
+        if (steed) {
+            // C steedintrap(): a ridden steed takes the pit's hit instead of the hero.
+            steed.mx = hero.ux;
+            steed.my = hero.uy;
+            if (steed.mhp > 0) steed.mhp -= rnd(trap.ttyp === PIT ? 6 : 10);
+            if (steed.mhp <= 0) {
+                // m_detach() dismounts; steedintrap()'s dismount_steed() then
+                // finds no steed.
+                await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
+            }
+            return null;
+        }
+        const mortality = hero.umortality || 0;
+        if (spiked) {
+            const damage = physicalDamage(rnd(conjoined ? 4 : adjacent ? 6 : 10));
+            const killer = plunged ? 'deliberately plunged into a pit of iron spikes'
+                : conjoined || deliberate ? 'stepped into a pit of iron spikes'
+                    : adjacent ? 'stumbled into a pit of iron spikes'
+                        : 'fell into a pit of iron spikes';
+            if (await loseHeroHp(damage, killer, { deathCause: killer })) return null;
+            if (rn2(6) === 0) {
+                const poison = await poisonHero({
+                    reason: 'spikes',
+                    killer: conjoined || adjacent || deliberate
+                        ? 'stepping on poison spikes' : 'fall onto poison spikes',
+                    attribute: A_STR,
+                    fatal: (hero.umortality || 0) > mortality ? 0 : 8,
+                });
+                if (poison.died) return null;
+            }
+        } else if (!conjoined && !deliberate && !(plunged && (flying || (formFlags & M1_CLING)))) {
+            const killer = plunged ? 'deliberately plunged into a pit' : 'fell into a pit';
+            if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), killer,
+                { deathCause: killer })) return null;
+        }
+        const ball = game.uball || hero.uball;
+        if (heroIsPunished(game) && ball && !game.inventory.includes(ball)) {
+            await unplaceBallAndChain(game);
+            if (await fallWithIronBall(game)) return null;
+            await placeBallAndChain(game);
+        }
+        if (!conjoined) await selfTouchPetrifyingWeapons({ messageStart: 'Falling, you' });
+        game.vision_full_recalc = 1;
+        await exerciseAttribute(A_STR, false);
+        await exerciseAttribute(A_DEX, false);
+        return null;
+    }
+    const monster = mtmp;
+    const describe = describeMonster
+        ?? (target => canonicalMonsterName(target, { state, capitalized: true }));
     const ungrounded = monsterIsUngrounded(monster, state);
     const sokoban = !!state.level?.flags.sokoban_rules;
     const falls = !(ungrounded && forced && !sokoban);
@@ -1706,7 +1856,7 @@ export function beginMonsterPitTrap(
     const relevantSpikes = spiked && !monsterWearsIronShoes(monster);
     if (falls && !monsterPassesWalls(monster.mnum))
         monster.mtrapped = 1;
-    return {
+    const event: MonsterPitTrap = {
         kind: 'pit-trap',
         trap,
         spiked,
@@ -1718,22 +1868,6 @@ export function beginMonsterPitTrap(
         falls,
         dragged: ungrounded && falls,
     };
-}
-
-// C trap.c:trapeffect_pit(): the monster branch's completion — the fall
-// message, the hit, and the pit's trap result.
-export async function finishMonsterPitTrap(
-    monster: Monster,
-    event: MonsterPitTrap | null,
-    {
-        publish = plineWithContinuation,
-        random,
-        rollOne = rnd,
-        state = game,
-        describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }),
-    }: PitTrapOptions = {},
-): Promise<MonsterPitTrap | null> {
-    if (!event || event.finished) return event;
     if (!event.falls) {
         if (event.inSight) {
             await seeTrap(event.trap, state);
@@ -1745,7 +1879,7 @@ export async function finishMonsterPitTrap(
     if (event.inSight) {
         const owner = event.trap.madeby_u ? 'your' : 'a';
         await publish(
-            `${describeMonster(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`,
+            `${describe(monster)} ${event.dragged ? 'is dragged' : 'falls'} into ${owner} pit!`,
         );
         if (monster.mnum === PM_PIT_VIPER || monster.mnum === PM_PIT_FIEND)
             await publish("How pitiful.  Isn't that the pits?");
@@ -4299,15 +4433,15 @@ async function fallIntoMinePit(
     // trapeffect_pit(), including when the victim is immune to the fall.
     monsterLearnsTrap(monster, trap);
     monstersSeeTrap(state, trap);
-    const pit = beginMonsterPitTrap(monster, trap, state, { forced: true });
-    if (!pit) return;
-    await finishMonsterPitTrap(monster, pit, {
+    const pit = await trapeffectPit(monster, trap, {
         state,
         publish: options.publish,
         random: options.random,
         rollOne: options.rollOne,
         describeMonster: options.describeMonster,
+        forced: true,
     });
+    if (!pit) return;
     if (pit.death) event.death = pit.death;
     if (pit.killed) event.killed = true;
 }
@@ -5669,148 +5803,6 @@ function heroWearsIronShoes() {
     return !!heroIronShoes();
 }
 
-// C trap.c:trapeffect_pit(): the hero branch — refusal while flying or
-// clinging, the fall and spike messages with iron-shoe protection,
-// set_utrap, and the ridden steed's hit. trap.c t_at(): the previousPit
-// find over the level's traps. C trap.c:adj_nonconjoined_pit(): the
-// adjacent branch (hero.dx || hero.dy) below.
-async function triggerPit(
-    trap: Trap,
-    { viaSitting = false, tookPlunge = false, recursiveTrap = false } = {},
-) {
-    requirePlayingGame(game);
-    const hero = game.u;
-    const formFlags = heroFormFlags();
-    const sokoban = !!game.level.flags?.sokoban_rules;
-    const previousPit = game.level.traps.find(candidate =>
-        candidate.tx === hero.ux0 && candidate.ty === hero.uy0);
-    const fromPit = !!hero.utrap && hero.utraptype === TT_PIT
-        && previousPit && is_pit(previousPit.ttyp);
-    const conjoined = fromPit && pitsAreConjoined(previousPit, trap);
-    const adjacent = fromPit && (hero.dx || hero.dy);
-    const alreadyKnown = !!trap.tseen;
-    const flying = hero.flying || game.flying;
-    // C trap.c:1836: plunged is TOOKPLUNGE only.  FAILEDUNTRAP never
-    // reaches a pit: untrap() refuses pit targets before try_disarm().
-    const plunged = tookPlunge;
-    if (!sokoban && (hero.levitating || game.levitating
-        || (flying && !plunged && !viaSitting))) return;
-    await feelTrap(trap);
-    if (!sokoban && (formFlags & M1_CLING) && !plunged) {
-        if (alreadyKnown) {
-            await plineWithContinuation(
-                formatSeenMessage(`${trap.madeby_u ? 'your' : 'a'} ${trap.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit below you.`));
-        } else {
-            await plineWithContinuation(
-                `${trap.madeby_u ? 'Your' : 'A'} pit ${trap.ttyp === SPIKED_PIT ? 'full of spikes ' : ''}opens up under you!`);
-            await plineWithContinuation("You don't fall in!");
-        }
-        return;
-    }
-    const steed = hero.usteed;
-    // C trap.c:1842-1847: suppress the article in steed messages when using
-    // its name (never chosen while hallucinating), and pass the "poor"
-    // adjective plus SUPPRESS_SADDLE through x_monnam().  Each branch names
-    // the steed only when it prints, so a hallucinating rider draws one
-    // random identity per message.
-    const steedArticle = MGIVENNAME(steed) && !heroIsHallucinating(game) ? 'none' : 'the';
-    // C trap.c:1877: the careful descent is chosen by iflags.menu_requested
-    // (the 'm' prefix), not context.nopick: travel sets nopick without it.
-    const deliberate = !sokoban && !steed && !!game.iflags.menu_requested && alreadyKnown;
-    if (!sokoban) {
-        if (steed) {
-            await plineWithContinuation(recursiveTrap
-                ? `You and ${monsterName(steed, {
-                    state: game, article: steedArticle, suppressSaddle: true,
-                })} fall into ${trap.madeby_u ? 'your' : 'a'} pit!`
-                : `You lead ${monsterName(steed, {
-                    state: game, article: steedArticle, adjective: 'poor',
-                    suppressSaddle: true,
-                })} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
-        } else if (deliberate) {
-            await plineWithContinuation(`You carefully ${heroLocomotion('lower yourself')} into the pit.`);
-        } else if (conjoined) {
-            await plineWithContinuation('You move into an adjacent pit.');
-        } else if (adjacent) {
-            await plineWithContinuation(
-                `You stumble over debris${rn2(5) === 0 ? ' between the pits' : ''}.`);
-        } else {
-            await plineWithContinuation(
-                `You ${plunged ? (flying ? 'dive' : 'plunge') : 'fall'} into ${trap.madeby_u ? 'your' : 'a'} pit!`);
-        }
-    }
-    const role = String(game.urole?.key || game.urole?.name || '').toLowerCase();
-    if (role === 'ranger' && !trap.madeby_u && !trap.once && In_quest(hero.uz)
-        && specialPrototypeAt(hero.uz.dnum, hero.uz.dlevel)?.endsWith('-loca')) {
-        await plineWithContinuation('Fortunately it has a bottom after all...');
-        trap.once = 1;
-    } else if (heroMonsterForm() === 218 || heroMonsterForm() === PM_PIT_FIEND) {
-        await plineWithContinuation("How pitiful.  Isn't that the pits?");
-    }
-    let spiked = trap.ttyp === SPIKED_PIT;
-    const ironShoes = heroIronShoes();
-    if (spiked && ironShoes) {
-        // C trap.c:1902: Yname2(uarmf) names the worn footgear ("iron
-        // shoes", "kicking boots"); the verb stays singular.
-        await plineWithContinuation(
-            `${ownedObjectName(ironShoes, game)} protects you from the sharp iron spikes.`);
-        spiked = false;
-    } else if (spiked) {
-        await plineWithContinuation(steed
-            ? `${monsterName(steed, {
-                state: game, article: steedArticle, adjective: 'poor',
-                suppressSaddle: true, capitalized: true,
-            })} ${conjoined ? 'steps' : 'lands'} on a set of sharp iron spikes!`
-            : `You ${conjoined ? 'step' : 'land'} on a set of sharp iron spikes!`);
-    }
-    setHeroTrap(rn2(6) + 2, TT_PIT);
-    game.context.botl = true;
-    if (steed) {
-        // C steedintrap(): a ridden steed takes the pit's hit instead of the hero.
-        steed.mx = hero.ux;
-        steed.my = hero.uy;
-        if (steed.mhp > 0) steed.mhp -= rnd(trap.ttyp === PIT ? 6 : 10);
-        if (steed.mhp <= 0) {
-            // m_detach() dismounts; steedintrap()'s dismount_steed() then
-            // finds no steed.
-            await finishMonsterTrapDeath(steed, game, { damageType: AD_PHYS });
-        }
-        return;
-    }
-    const mortality = hero.umortality || 0;
-    if (spiked) {
-        const damage = physicalDamage(rnd(conjoined ? 4 : adjacent ? 6 : 10));
-        const killer = plunged ? 'deliberately plunged into a pit of iron spikes'
-            : conjoined || deliberate ? 'stepped into a pit of iron spikes'
-                : adjacent ? 'stumbled into a pit of iron spikes'
-                    : 'fell into a pit of iron spikes';
-        if (await loseHeroHp(damage, killer, { deathCause: killer })) return;
-        if (rn2(6) === 0) {
-            const poison = await poisonHero({
-                reason: 'spikes',
-                killer: conjoined || adjacent || deliberate
-                    ? 'stepping on poison spikes' : 'fall onto poison spikes',
-                attribute: A_STR,
-                fatal: (hero.umortality || 0) > mortality ? 0 : 8,
-            });
-            if (poison.died) return;
-        }
-    } else if (!conjoined && !deliberate && !(plunged && (flying || (formFlags & M1_CLING)))) {
-        const killer = plunged ? 'deliberately plunged into a pit' : 'fell into a pit';
-        if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), killer,
-            { deathCause: killer })) return;
-    }
-    const ball = game.uball || hero.uball;
-    if (heroIsPunished(game) && ball && !game.inventory.includes(ball)) {
-        await unplaceBallAndChain(game);
-        if (await fallWithIronBall(game)) return;
-        await placeBallAndChain(game);
-    }
-    if (!conjoined) await selfTouchPetrifyingWeapons({ messageStart: 'Falling, you' });
-    game.vision_full_recalc = 1;
-    await exerciseAttribute(A_STR, false);
-    await exerciseAttribute(A_DEX, false);
-}
 
 function webTrapDuration(strength: number) {
     if (strength <= 3) return rn2(6) + 6;
@@ -6916,7 +6908,7 @@ async function trapeffectSelector(
         break;
     case PIT:
     case SPIKED_PIT:
-        await triggerPit(trap, { viaSitting, tookPlunge, recursiveTrap });
+        await trapeffectPit(game.u, trap, { viaSitting, tookPlunge, recursiveTrap });
         break;
     case WEB:
         await triggerWeb(trap, { viaSitting, failedUntrap, forceTrap, noWebMessage });
