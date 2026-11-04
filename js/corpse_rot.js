@@ -3,7 +3,7 @@ import { plineWithContinuation } from './pline.js';
 import { newsym } from './display.js';
 import { game, requireLiveGame, requireGameLevel } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval } from './invent.js';
 import { heroSpecies } from './polyself.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_FLAGS1, monsterHidesUnder } from './monster_data.js';

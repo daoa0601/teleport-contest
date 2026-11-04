@@ -15,7 +15,7 @@ import { mksobj } from '../js/mkobj.js';
 import { pickUpMonsterFloorObject } from '../js/mon.js';
 import { addObjectToMonsterInventory, dropMonsterObject } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { makeWish } from '../js/zap.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';

@@ -1,4 +1,4 @@
-import { currency } from '../js/currency.js';
+import { currency } from '../js/invent.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import test from 'node:test';

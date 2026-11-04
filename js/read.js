@@ -59,7 +59,7 @@ import { levelHasCeiling } from './dungeon.js';
 import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName } from './mondata.js';
 import { addExperience } from './exper.js';
 import { chwepon, isWeldedPrimary, objectEnchantment, setWeaponEnchantment } from './wield.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
 import { getLine, promptYesNo } from './query.js';

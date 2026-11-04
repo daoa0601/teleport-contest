@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { HELMET, LONG_SWORD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, artifactObject } from './support/game-objects.js';

@@ -46,7 +46,7 @@ import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_I
 import { canMakeBones, createBonesFromDeath } from './bones.js';
 import { restoreLaunchedObjectForBones } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery } from './cmd.js';

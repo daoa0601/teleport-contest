@@ -29,7 +29,7 @@ import { rnd } from './rng.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './do.js';
-import { freeInventoryObject } from './hero_inventory.js';
+import { freeInventoryObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
 
 import { definiteName, killerObjectName, objectCombatName, objectNameIsPlural, ownedObjectName } from './objnam.js';

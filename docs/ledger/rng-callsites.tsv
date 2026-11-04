@@ -227,7 +227,7 @@ src/js/crystal_ball.ts	useCrystalBall	rn2	"[""100""]"	constant
 src/js/crystal_ball.ts	useCrystalBall	rnd	"[""charged ? 10 : 2""]"	constant
 src/js/crystal_ball.ts	useCrystalBall	rnd	"[""charged ? 4 : 2""]"	constant
 src/js/crystal_ball.ts	useCrystalBall	rnd	"[""difficulty""]"	constant
-src/js/currency.ts	currency	random	"[""CURRENCIES.length""]"	constant
+src/js/invent.ts	currency	random	"[""CURRENCIES.length""]"	constant
 src/js/demon_talk.ts	demandDemonBribe	random	"[""1000""]"	constant
 src/js/demon_talk.ts	demandDemonBribe	rollOne	"[""5 * currentAttribute(A_CHA, state)""]"	invariant
 src/js/demon_talk.ts	demandDemonBribe	rollOne	"[""80""]"	constant
@@ -670,7 +670,7 @@ src/js/cmd.ts	randomKey	rn2	"[""5""]"	constant
 src/js/cmd.ts	randomKey	rn2	"[""7""]"	constant
 src/js/cmd.ts	randomKey	rn2	"[""NATIVE_COMMAND_CONSTANTS.N_DIRS""]"	unproved
 src/js/cmd.ts	randomKey	rnd	"[""game.iflags.wc_eight_bit_input ? 255 : 127""]"	constant
-src/js/inventory_prompt.ts	mimeInventoryAction	rn2	"[""2""]"	constant
+src/js/invent.ts	mimeInventoryAction	rn2	"[""2""]"	constant
 src/js/hack.ts	continueChewingTerrain	rnd	"[""20""]"	constant
 src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant
 src/js/apply.ts	escapeJumpTrap	rn1	"[""10"", ""11""]"	constant

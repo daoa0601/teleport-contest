@@ -15,7 +15,7 @@ import {
     restoreLevitationSources, setCarriedProperty, setInvokedProperty,
     stashLevitationSources,
 } from '../js/properties.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { W_ART, W_ARTI } from '../js/const.js';
 

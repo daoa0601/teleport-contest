@@ -53,7 +53,7 @@ import {
     GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, LUCKSTONE, MAGIC_LAMP, OIL_LAMP, POT_OIL,
     ROCK, TALLOW_CANDLE, WAX_CANDLE,
 } from './object_data.js';
-import { confersLuck } from './hero_inventory.js';
+import { confersLuck } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { heroFootName, heroHandName, heroNeckName } from './body_parts.js';
@@ -91,7 +91,7 @@ import { meltIce } from './zap.js';
 
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import {objectWeight, runClaimedGlobTimer, finishGlobTimer} from './mkobj.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { carriedObjectOwner, deleteObject } from './shk.js';
 import { possessiveName } from './hacklib.js';
 import { getObjectLocation } from './zap.js';

@@ -13,7 +13,7 @@ import { setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DUNCE_CAP, CORNUTHAUM, MUMMY_WRAPPING, RIN_INVISIBILITY, OBJECT_NAMES, SPEED_BOOTS, TOWEL } from '../js/object_data.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';

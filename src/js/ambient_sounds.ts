@@ -32,7 +32,7 @@ import { findVaultGuard } from './vault.js';
 
 import { rn2, rnd } from './rng.js';
 import { recorderLocalHour } from './calendar.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { roles } from './roles.js';
 
 import { chatWithQuestCharacter } from './quest.js';

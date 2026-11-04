@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { CORPSE, KATANA, UNICORN_HORN } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

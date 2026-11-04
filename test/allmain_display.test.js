@@ -5,7 +5,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

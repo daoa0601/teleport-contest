@@ -10,7 +10,7 @@ import { heroIsBlind } from './senses.js';
 import type { Monster } from './monster_types.js';
 
 import { moneyToMonster } from './shk.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { monsterName } from './do_name.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';

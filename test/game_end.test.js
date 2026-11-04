@@ -8,7 +8,7 @@ import { pushKey, resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { PanicTermination } from '../js/panic_termination.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { unopenedCatBox } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

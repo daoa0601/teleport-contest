@@ -7,7 +7,7 @@ import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './dete
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
@@ -31,13 +31,13 @@ import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
-import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
+import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle } from './invent.js';
 import { lightDamage, lightRoom } from './light.js';
 import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsWhirly, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
@@ -82,7 +82,7 @@ import { fractureRock } from './rock_breakage.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';
 import { vegetarianCorpse } from './food_traits.js';
-import { updateInventoryPresentation } from './u_init.js';
+import { updateInventoryPresentation } from './invent.js';
 import { changeBoxLockByMagic } from './box_magic.js';
 import { shopkeeperName } from './shknam.js';
 import { roomsAt, loseHeroHp, exceedsActionCapacity } from './hack.js';
@@ -515,33 +515,6 @@ async function probeVertically(source, x, y, state) {
     }
     if (!found)
         await plineWithContinuation('Your probe reveals nothing.');
-}
-// C invent.c:display_binventory(): objects beneath the probed surface.
-async function displayBuriedInventory(x, y, state) {
-    const pile = state.level.objects[x]?.[y] || [];
-    let underwhat = 'here', count = 0;
-    if ((isPoolAt(x, y, state) || isLavaAt(x, y, state)) && !(state.underwater || state.u.uinwater) && pile.length) {
-        const liquid = displayLiquidName(isPoolAt(x, y, state) ? 'water' : 'lava', state);
-        count = pile.length;
-        if (pile.length === 1) {
-            const object = pile[0];
-            if (!object)
-                throw new Error('A visible one-object pile must contain its object.');
-            const plural = objectNameIsPlural(object, state);
-            await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
-            underwhat = plural || armorUsesPairGrammar(OBJECT_NAMES[object.otyp] ?? '') ? 'under them' : 'beneath it';
-        }
-        else {
-            await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });
-            underwhat = 'beneath them';
-        }
-    }
-    const buried = (state.level.buriedObjects || []).filter(object => object.ox === x && object.oy === y);
-    for (const object of buried)
-        observeObject(object, state);
-    if (buried.length)
-        await showProbedObjectInventory(buried, `Things that are buried ${underwhat}:`, { state });
-    return count + buried.length;
 }
 // C zap.c:weffects(). Zapping and spell casting share the effect dispatch;
 // callers own charge use and direction input.
@@ -2085,21 +2058,6 @@ export async function showProbedObjectInventory(objects, title, { state = game, 
         sections.push({ heading: oclass === null ? null : objectClassHeading(oclass), items });
     }
     await showInventoryWindow(sections, { title });
-}
-// C invent.c:cinv_doname(): the probing contents menu names the box with
-// "trapped" inserted before its lock state even though doname() already
-// shows a just-learned trap, so a trapped box is named twice.
-async function probedContentsTitle(object, state) {
-    let name = await objectDescription(object, { state });
-    if (!object.otrapped)
-        return name;
-    const locked = name.indexOf(' locked ');
-    const unlocked = name.indexOf(' unlocked ');
-    if (locked >= 0 && (unlocked < 0 || locked < unlocked))
-        name = name.replace(' locked ', ' trapped locked ');
-    else if (unlocked >= 0)
-        name = name.replace(' unlocked ', ' trapped unlocked ');
-    return name.replace('an trapped ', 'a trapped ');
 }
 // Cancellation changes an actual object, including worn bonuses and timers.
 // C ref: zap.c cancel_item() and blank_novel().

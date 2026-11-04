@@ -7,13 +7,13 @@ import { LANDMINE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
-import { freeInventoryObject } from '../js/hero_inventory.js';
+import { freeInventoryObject } from '../js/invent.js';
 import { consumeInventoryItem } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { doneObjectCleanup } from '../js/end.js';
 import { AMULET_OF_YENDOR, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, SPE_BOOK_OF_THE_DEAD, GOLD_PIECE, POT_HEALING, SCR_IDENTIFY } from '../js/object_data.js';
 import { propertyIsActive } from '../js/properties.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';

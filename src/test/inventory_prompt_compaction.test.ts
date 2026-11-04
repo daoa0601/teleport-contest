@@ -3,7 +3,7 @@ import test from 'node:test';
 import { GETOBJ_SUGGEST } from '../js/const.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { getobj } from '../js/inventory_prompt.js';
+import { getobj } from '../js/invent.js';
 import { DAGGER } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

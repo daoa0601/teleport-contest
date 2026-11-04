@@ -5,7 +5,7 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { mksobj } from '../js/mkobj.js';
 import { OBJECT_NAMES, RING_MAIL, SPLINT_MAIL } from '../js/object_data.js';
 import { erodeObject } from '../js/trap.js';
-import { addCreatedInventoryItem } from '../js/u_init.js';
+import { addCreatedInventoryItem } from '../js/invent.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 void test('Samurai startup supplies known lacquered armor which resists rust and corrosion', async () => {

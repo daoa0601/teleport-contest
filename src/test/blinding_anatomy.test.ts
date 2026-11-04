@@ -11,7 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE } from '../js/object_data.js';
 import { polymonHero } from '../js/polyself.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { cansee } from '../js/vision.js';
 import { artifactObject } from './support/game-objects.js';
 import { applyInventoryObject } from './support/commands.js';

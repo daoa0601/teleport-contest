@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { GETOBJ_EXCLUDE_INACCESS, W_WEP } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { chooseInventoryObject } from '../js/inventory_prompt.js';
+import { chooseInventoryObject } from '../js/invent.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

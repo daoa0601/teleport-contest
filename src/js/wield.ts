@@ -16,9 +16,9 @@ import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
 import { learnObjectType, objectClassForType } from './o_init.js';
 import { inventoryItemDescription } from './invent.js';
-import { getobj } from './inventory_prompt.js';
-import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
-import { addInventoryItem } from './u_init.js';
+import { getobj } from './invent.js';
+import { freeInventoryObject, useUpInventoryStack } from './invent.js';
+import { addInventoryItem } from './invent.js';
 import { isBimanualObject, isWeaponTool, isWetTowel, isLauncherAmmunition, isMissileObject, isPolearm } from './object_properties.js';
 import type { WeaponCandidate } from './object_properties.js';
 import { resetBulkTakeoff, cancelSlotTakeoff } from './do_wear.js';

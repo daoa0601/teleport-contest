@@ -13,7 +13,7 @@ import { scheduleObjectTimer } from '../js/timeout.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { runDueTimers } from '../js/timeout.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';

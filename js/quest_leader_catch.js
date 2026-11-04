@@ -15,7 +15,7 @@ import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
 import { heroIsDeaf } from './senses.js';
 import { settleThrownShopObject } from './dothrow.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItem } from './invent.js';
 // Null leaves ordinary hit admission to the caller. False means the leader
 // could not catch the item, so it falls without an attack roll.
 export async function catchQuestObject(monster, object, state) {

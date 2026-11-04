@@ -63,7 +63,7 @@ import { woundHeroLegs } from './do.js';
 import { applyHeroFormPassive } from './hero_form_passive.js';
 import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource } from './muse.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

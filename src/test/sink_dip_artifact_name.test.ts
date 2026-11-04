@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { discoverArtifact } from '../js/artifacts.js';
 import { SINK } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { initRng } from '../js/rng.js';
 import { artifactObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';

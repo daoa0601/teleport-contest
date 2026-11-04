@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { STR19, W_WEP } from '../js/const.js';
 import { AKLYS, BOOMERANG, CLUB, CREAM_PIE, HELMET, POT_WATER, ROCK, SCR_IDENTIFY } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import {
     setPrimaryWeapon,
     setQuiverObject,

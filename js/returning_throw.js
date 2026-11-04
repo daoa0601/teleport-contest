@@ -18,7 +18,7 @@ import { propertyIsActive } from './properties.js';
 import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
-import { addInventoryItemBefore } from './u_init.js';
+import { addInventoryItemBefore } from './invent.js';
 import { cansee } from './vision.js';
 import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './wield.js';
 import { loseHeroHp } from './hack.js';

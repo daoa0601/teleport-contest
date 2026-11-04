@@ -8,7 +8,7 @@ import {
 } from './egg_impact.js';
 import {placeObject} from './mkobj.js';
 import { game } from './gstate.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { monsterName } from './do_name.js';
 import { monsterTypeName } from './monster_data.js';

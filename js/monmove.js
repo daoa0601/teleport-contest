@@ -75,7 +75,7 @@ import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './trap.js
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './trap.js';
 import { heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
-import { canLetGo } from './hero_inventory.js';
+import { canLetGo } from './do.js';
 import { canFallThrough } from './mklev.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';

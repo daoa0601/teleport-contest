@@ -63,7 +63,7 @@ import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { expelHero } from './hero_expulsion.js';
 
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { getObjectClassBounds } from './object_data.js';
 

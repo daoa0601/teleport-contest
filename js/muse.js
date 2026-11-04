@@ -37,7 +37,8 @@ import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap,
 import { monsterIsScaredAt, makeMonsterFlee, monsterWantsFloorObject, isAccessibleAt } from './monmove.js';
 import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
+import { canLetGo } from './do.js';
+import { finishInventoryRemoval } from './invent.js';
 import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, paralyzeMonster, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance } from './mon.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';

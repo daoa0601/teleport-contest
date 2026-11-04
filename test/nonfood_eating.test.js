@@ -14,7 +14,7 @@ import { objectQuantity } from '../js/mkobj.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { moveVaultGuard } from '../js/vault.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { installPolymorphedHero } from './support/hero-state.js';

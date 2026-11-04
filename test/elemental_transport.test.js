@@ -15,7 +15,7 @@ import { freshSpecialLevel } from './support/special-level.js';
 import { createSpecialLevel } from './support/topology.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { punishHero } from '../js/read.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { unlinkObject } from '../js/mkobj.js';
 import { pushKeys } from '../js/input.js';
 import { moveObject } from '../js/hack.js';

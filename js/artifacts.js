@@ -48,7 +48,7 @@ import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { cureHeroSickness, heroIsSick } from './potion.js';
 import { showEnlightenment } from './insight.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';

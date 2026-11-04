@@ -13,7 +13,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { unlinkObject } from '../js/mkobj.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, DAGGER, GOLD_PIECE, LEASH, LOADSTONE, OBJECT_NAMES, STATUE } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject, artifactObject, knownObject, untimedCorpse } from './support/game-objects.js';

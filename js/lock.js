@@ -4,7 +4,7 @@
 // reset_pick()/maybe_reset_pick(), u_have_forceable_weapon(),
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
 import { isok } from './cmd.js';

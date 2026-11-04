@@ -7,7 +7,7 @@ import { currentAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { LL_UMONST, recordGameLogEvent } from './gamelog.js';

@@ -14,7 +14,7 @@ import {
 
 import { unlinkObject, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { addShopObjectToBill, getCostOfShopItem, unpaidObjectCost } from '../js/shk.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { addInventoryObject, floorObject, uninitializedObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';

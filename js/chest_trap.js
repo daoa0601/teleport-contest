@@ -8,7 +8,7 @@ import { nomul, loseHeroHp } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroHasFreeAction } from './do_wear.js';
 import { A_CON, A_DEX, A_STR, Luck, M_SEEN_ELEC } from './const.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { bot } from './botl.js';
 import { shieldeff } from './display.js';
 import { randomColorName } from './do_name.js';

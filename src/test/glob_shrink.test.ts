@@ -21,7 +21,7 @@ import {
 import { claimNextDueObjectTimer, objectTimers, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 
 import { stopHeroOccupation } from '../js/occupation.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { nearCapacity } from '../js/hack.js';

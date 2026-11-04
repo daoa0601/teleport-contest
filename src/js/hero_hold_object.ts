@@ -7,7 +7,7 @@ import type { MessagePublisher } from './pline.js';
 import { artifactById } from './artifacts.js';
 import { touchArtifactByHero } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
-import { freeInventoryObject } from './hero_inventory.js';
+import { freeInventoryObject } from './invent.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 
 import { hitFloorWithObject } from './dothrow.js';
@@ -16,7 +16,7 @@ import { objectQuantity, splitObjectStack } from './mkobj.js';
 
 import { heroCanReachFloor } from './engrave.js';
 import { inventoryItemDescription } from './invent.js';
-import { reassignInventoryLetters } from './inventory_prompt.js';
+import { reassignInventoryLetters } from './invent.js';
 import {unlinkObject, placeObject} from './mkobj.js';
 
 import { observeObjectForNaming } from './objnam.js';
@@ -27,7 +27,7 @@ import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
 import { heroIsPolymorphed } from './polyself.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItem } from './invent.js';
 
 import { pickupBurden } from './pickup.js';
 import { reportHeroEncumbrance } from './pickup.js';

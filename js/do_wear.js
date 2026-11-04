@@ -26,7 +26,7 @@ import { retouchHeroObject } from './hero_retouch.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
 import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
-import { chooseInventoryObject, compactInventoryLetters } from './inventory_prompt.js';
+import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -65,7 +65,7 @@ import { experienceRankIndex } from './exper.js';
 import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { heroIsInDangerousRegion } from './regions.js';
 import { heroCanBeStrangled } from './polyself.js';
-import { canLetGo } from './hero_inventory.js';
+import { canLetGo } from './do.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
 import { weaponDescription } from './weapon.js';
 export async function doputon() {

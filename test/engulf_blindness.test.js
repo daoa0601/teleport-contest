@@ -18,7 +18,7 @@ import { readObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { initRng } from '../js/rng.js';
 import { heroIsBlind } from '../js/senses.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { applyInventoryObject, readInventoryObject, runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';

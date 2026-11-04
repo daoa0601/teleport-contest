@@ -8,7 +8,7 @@ import { pline } from '../js/pline.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { selectInventoryObject } from '../js/invent.js';
-import { chooseInventoryObject } from '../js/inventory_prompt.js';
+import { chooseInventoryObject } from '../js/invent.js';
 import { DAGGER } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

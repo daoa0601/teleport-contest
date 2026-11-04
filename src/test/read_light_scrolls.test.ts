@@ -11,7 +11,7 @@ import { GOLD_DRAGON_SCALE_MAIL, OIL_LAMP, SCR_LIGHT, WAX_CANDLE } from '../js/o
 import { withIndefiniteArticle } from '../js/objnam.js';
 
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { readInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';

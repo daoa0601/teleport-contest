@@ -44,7 +44,7 @@ import { gainCorpseDisplacement } from './hero_displacement.js';
 
 import { removeWornHeroItem } from './hero_equipment.js';
 import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting } from './potion.js';
-import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
+import { freeInventoryObject, useUpInventoryStack } from './invent.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
@@ -55,7 +55,7 @@ import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { meltIce } from './zap.js';
 
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
 import {objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object} from './mkobj.js';
@@ -93,7 +93,7 @@ import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './dbridge.js';
 import { attrcurse } from './throne.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItem } from './invent.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone } from './wield.js';

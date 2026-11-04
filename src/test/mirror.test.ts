@@ -19,7 +19,7 @@ import { AMULET_OF_LIFE_SAVING, MIRROR, RIN_FREE_ACTION, SHIELD_OF_REFLECTION, S
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { vision_recalc } from '../js/vision.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';

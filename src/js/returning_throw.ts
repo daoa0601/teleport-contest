@@ -22,7 +22,7 @@ import { rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { captureThrownObjectFlight } from './thrown_object.js';
 
-import { addInventoryItemBefore } from './u_init.js';
+import { addInventoryItemBefore } from './invent.js';
 import { cansee } from './vision.js';
 import { setPrimaryWeapon, setQuiverObject, setTwoWeaponCombat } from './wield.js';
 import type { GameState } from './game_state.js';

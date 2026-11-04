@@ -10,7 +10,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { BURN, DUST, ENGRAVE, ENGR_BLOOD, HEADSTONE, ICE, NO_MINVENT, PIT, STONE } from '../js/const.js';
 import { engravingAt, makeEngravingAt, wipeHeroEngraving } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
-import { canLetGo } from '../js/hero_inventory.js';
+import { canLetGo } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys } from '../js/input.js';
 import { AMULET_OF_REFLECTION, GOLD_PIECE, LOADSTONE, LONG_SWORD, ROCK, WAR_HAMMER } from '../js/object_data.js';

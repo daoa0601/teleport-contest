@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { maybeAbsorbItem } from '../js/steal.js';
 import { BOULDER, DAGGER, TWO_HANDED_SWORD } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { makeBlinded } from '../js/potion.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { farlookLocationDescription } from '../js/pager.js';
 import { flush_screen, newsym } from '../js/display.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
-import { showFloorPile } from '../js/floor_object_display.js';
+import { showFloorPile } from '../js/invent.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
 import { nhgetch, resetInputState } from '../js/input.js';
 import { APPLE, FOOD_RATION, LEASH } from '../js/object_data.js';

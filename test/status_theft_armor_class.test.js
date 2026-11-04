@@ -7,7 +7,7 @@ import { MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { useUpInventoryStack } from '../js/hero_inventory.js';
+import { useUpInventoryStack } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES, SMALL_SHIELD } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';

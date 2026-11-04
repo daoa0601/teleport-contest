@@ -68,12 +68,12 @@ import {
     removeObjectFromMonsterInventory, updateMonsterEquipment,
 } from './monworn.js';
 import { landFloorObject } from './floor_effects.js';
-import { inventoryItem } from './u_init.js';
+import { inventoryItem } from './invent.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';
 import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifacts.js';
 import { objectResistsDestruction } from './zap.js';
-import { freeInventoryObject, finishInventoryRemoval } from './hero_inventory.js';
+import { freeInventoryObject, finishInventoryRemoval } from './invent.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

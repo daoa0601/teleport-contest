@@ -9,7 +9,7 @@ import {
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { Monster } from '../js/monster_types.js';
 import type { GameObject } from '../js/object_types.js';
-import { finishInventoryRemoval } from '../js/hero_inventory.js';
+import { finishInventoryRemoval } from '../js/invent.js';
 import { pushKey } from '../js/input.js';
 import { mksobj, unlinkObject } from '../js/mkobj.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -17,7 +17,7 @@ import { dropMonsterObject } from '../js/steal.js';
 import { FIGURINE } from '../js/object_data.js';
 import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

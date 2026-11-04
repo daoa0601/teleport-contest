@@ -10,7 +10,7 @@ import type { GameObject } from '../js/object_types.js';
 import { CORPSE, DAGGER, STATUE } from '../js/object_data.js';
 import { addShopObjectToBill, objectOwnershipPrefix, shopResident } from '../js/shk.js';
 import { animateStatue } from '../js/statue_trap.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

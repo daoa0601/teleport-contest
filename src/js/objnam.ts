@@ -13,7 +13,7 @@ import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectConte
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
 import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
 import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, Luck, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
@@ -248,31 +248,6 @@ export function objectCombatName(object: GameObject, {
     return name.replace(/^the /iu, '');
 }
 
-// invent.c:loot_xname() ignores counts and individual user names. Its
-// temporary adjustments group water, towels, and globs without altering them.
-export function lootObjectName(object: GameObject, state: GameState = game): string {
-    const view: GameObject = { ...object, quan: 1, quantity: 1,
-        blessed: object.otyp === POT_WATER ? false : object.blessed,
-        cursed: object.otyp === POT_WATER ? false : object.cursed,
-        spe: object.otyp === TOWEL ? 0 : object.spe,
-        owt: object.globby ? 20 : object.owt,
-    };
-    if (object.oclass === POTION_CLASS) view.odiluted = false;
-    if (!object.oartifact) {
-        delete view.oname;
-        if (view.oextra) {
-            view.oextra = { ...view.oextra };
-            delete view.oextra.oname;
-        }
-    }
-    const nameState = { ...state, flags: { ...state.flags, debug: false } };
-    let name = object.otyp === CORPSE ? corpseName(view, { singular: true })
-        : objectName(view, nameState);
-    if (object.otyp === TOWEL) name += object.spe >= 3 ? 'x' : object.spe > 0 ? 'y' : 'z';
-    if (object.globby) name += object.owt <= 100 ? 'a' : object.owt <= 300 ? 'b'
-        : object.owt <= 500 ? 'c' : 'd';
-    return name;
-}
 
 // C objnam.c:killer_xname()/bare_artifactname(). Death causes describe the
 // actual object without teaching the living hero or changing its user names.

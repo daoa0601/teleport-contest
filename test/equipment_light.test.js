@@ -16,7 +16,7 @@ import { unwieldMonsterWeapon, wieldMonsterWeapon } from '../js/weapon.js';
 import { OBJECT_NAMES, OIL_LAMP, WAX_CANDLE } from '../js/object_data.js';
 import { beginObjectBurn, endObjectBurn } from '../js/timeout.js';
 import { moveHeroByTeleport } from '../js/teleport.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';

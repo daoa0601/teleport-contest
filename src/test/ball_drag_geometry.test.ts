@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { unlinkObject } from '../js/mkobj.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

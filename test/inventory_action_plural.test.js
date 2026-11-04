@@ -4,7 +4,7 @@ import { discoverArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon, setQuiverObject } from '../js/wield.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

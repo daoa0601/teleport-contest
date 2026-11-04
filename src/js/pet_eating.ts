@@ -1,4 +1,4 @@
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 // A pet's meal, from nutritional recovery through the observable eating
 // message to consumption. C refs: dogmove.c dog_nutrition() and dog_eat().
 import type { GameState } from './game_state.js';

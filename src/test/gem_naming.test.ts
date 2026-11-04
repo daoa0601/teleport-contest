@@ -5,7 +5,7 @@ import { ddoinv, inventoryItemDescription } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { DIAMOND, EMERALD, FLINT, JADE, LOADSTONE, ROCK, RUBY } from '../js/object_data.js';
 import { mksobj } from '../js/mkobj.js';
-import { addCreatedInventoryItem } from '../js/u_init.js';
+import { addCreatedInventoryItem } from '../js/invent.js';
 import { learnObjectType, observeObject } from '../js/o_init.js';
 import { recordObjectCall } from '../js/do_name.js';
 

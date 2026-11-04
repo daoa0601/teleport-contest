@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { consumeInventoryItem } from './invent.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { recordLiteracy } from './literacy.js';
 import { mksobj } from './mkobj.js';
 import {

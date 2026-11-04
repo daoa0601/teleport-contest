@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { AKLYS, BOOMERANG, ROCK, SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { rhack } from '../js/cmd.js';
 import { redrawMap } from '../js/display.js';
 import { pushKey, resetInputState } from '../js/input.js';

@@ -6,7 +6,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { resetInputState } from '../js/input.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { ALCHEMY_SMOCK, CANDY_BAR, CAN_OF_GREASE, CORNUTHAUM, CREDIT_CARD, DUNCE_CAP, FORTUNE_COOKIE, HAWAIIAN_SHIRT, MAGIC_MARKER, OBJECT_NAMES, RING_MAIL, SCR_BLANK_PAPER, SPE_FORCE_BOLT, } from '../js/object_data.js';
 import { readOrdinaryObject } from '../js/readable_objects.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

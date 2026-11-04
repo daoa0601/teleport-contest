@@ -29,7 +29,7 @@ import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js'
 import { plineWithContinuation as pline } from './pline.js';
 import { plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit } from './query.js';
-import { getobj } from './inventory_prompt.js';
+import { getobj } from './invent.js';
 import { requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { ACCESSIBLE, ALTAR, A_WIS, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, } from './const.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -58,7 +58,7 @@ import { monsterName } from './do_name.js';
 import { makemonAt } from './makemon.js';
 import { exerciseAttribute } from './attrib.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { impossible } from './diagnostics.js';
 import { MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { exceedsActionCapacity } from './hack.js';

@@ -22,7 +22,7 @@ import { makemonNear } from './mklev.js';
 import { mkclassAligned } from './makemon.js';
 import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { getLine } from './query.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { detachHeroGold } from './hero_gold.js';

@@ -86,7 +86,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { objectResistsDestruction } from './zap.js';
