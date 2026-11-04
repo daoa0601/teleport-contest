@@ -5,7 +5,7 @@ from csym import CElement, CPtr, CVal
 from jssym import V
 from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
                    INT_MAX, LONG, SCHAR, Spec, ULEVEL, UnrelatedState,
-                   WEAPON_DAMAGE)
+                   WEAPON_DAMAGE, int_argument)
 from state_world import (AT_ENGL, AT_WEAP,
                          capacity_state, direction_arguments, direction_state,
                          experience_arguments,
@@ -17,7 +17,8 @@ from state_world import (AT_ENGL, AT_WEAP,
                          capacity_arguments, sign_state, sign_arguments,
                          weight_arguments, weight_domain, weight_state)
 from core import select_int
-from state_world import (_objects_member, erosion_matters_guard, monster_state,
+from state_world import (_objects_member, _property_masks, erosion_matters_guard,
+                         monster_state, native_monsters,
                          object_predicate_arguments,
                          object_predicate_state, present_monster_arguments,
                          real_object_precondition, resistance_state,
@@ -1288,4 +1289,280 @@ STATE_SPECS += [
          mutants=[('js/mondata.js', "?.name === 'Excalibur'", "?.name === 'Stormbringer'"),
                   ('js/mondata.js', 'return monsterHasEyes(mnum);',
                    'return !monsterHasEyes(mnum);')]),
+]
+
+# ---- fv-equivalence-batch-8: the pure mons[]-table functions of mondata.c ----
+
+# cantvomit, noattacks, num_horns, little_to_big, big_to_little,
+# big_little_match, same_race, can_blow and max_passive_dmg now each have one
+# exported port owner (mondata.js speciesCannotVomit / sameMonsterRace /
+# speciesCanBlow / maxPassiveMonsterDamage, monster_data.js
+# monsterHasNoAttacks / monsterHornCount / monsterOlderForm / (the existing
+# monsterYoungerForm and monsterGrowthFamilyMatch), makemon.js
+# monsterBirthLimit). These claims execute the real mondata.c and makemon.c
+# bodies over the initial species tables.
+
+GROWNUPS_ASSUMPTIONS = PREDICATE_ASSUMPTIONS + (
+    'mondata.c:little_to_big/big_to_little scan the static const grownups[][] table; the emitted MONSTER_GROWTH_TARGET vector stores the same 67 growth edges plus one identity entry per species',
+)
+
+
+def int64_argument(s):
+    return int_argument(s, 'mndx')
+
+
+def grownups_state(world, front, modules):
+    # Each grownups scan runs 67 matching rows plus the {NON_PM, NON_PM}
+    # terminator, and the emitted reverse scan may walk all 383 vector
+    # entries, so the default 12-step unroll bound cannot cover it.
+    # NUMMONS (383) is pinned in each spec's pre instead: the C-int
+    # narrowing probes must be able to leave the table domain.
+    world.join_paths = True
+    world.unroll = 400
+    world.c_globals['mons'] = native_monsters(world, front)
+
+
+def growth_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    return ([CVal(values['montype'], LONG)], [V('num', values['montype'])])
+
+
+def same_race_state(world, front, modules):
+    grownups_state(world, front, modules)
+    values = {name: value for name, value, _ in world.params}
+    world.pre.extend([values['left'] < front.enum_value('NUMMONS'),
+                      values['right'] < front.enum_value('NUMMONS')])
+
+
+def same_race_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    present = values['native_pointer_present'] != 0
+    return ([CPtr(present, CElement('mons', values['left'])),
+             CPtr(present, CElement('mons', values['right']))],
+            [V('num', values['left']), V('num', values['right'])])
+
+
+def growth_pair_state(world, front, modules):
+    grownups_state(world, front, modules)
+
+
+def growth_pair_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    return ([CVal(values['montyp1'], LONG), CVal(values['montyp2'], LONG)],
+            [V('num', values['montyp1']), V('num', values['montyp2'])])
+
+
+STATE_SPECS += [
+    Spec('cantvomit:tables', 'cantvomit', 'speciesCannotVomit',
+         [('species', INT), ('native_pointer_present', INT)], js_file='js/mondata.js',
+         assumptions=PREDICATE_ASSUMPTIONS + (
+             'mondata.c:cantvomit: the native pointer identity tests (PM_ROCK_MOLE, PM_WOODCHUCK, PM_PONY, PM_HORSE, PM_WARHORSE) correspond to the emitted species-index comparisons',
+         ), require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[('js/mondata.js', '&& mnum !== PM_ROCK_MOLE && mnum !== PM_WOODCHUCK)',
+                   '&& mnum !== PM_ROCK_MOLE + 1 && mnum !== PM_WOODCHUCK)'),
+                  ('js/mondata.js',
+                   'return mnum === PM_PONY || mnum === PM_HORSE || mnum === PM_WARHORSE;',
+                   'return mnum === PM_PONY || mnum === PM_HORSE;')]),
+    Spec('noattacks:tables', 'noattacks', 'monsterHasNoAttacks',
+         [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS + (
+             'mondata.c:noattacks: the emitted MONSTER_ATTACKS rows correspond field-for-field to the native mons[].mattk arrays; AT_BOOM rows are not attacks on either side',
+         ), require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, '.some(([type]) => type !== AT_NONE && type !== AT_BOOM);',
+                   '.some(([type]) => type !== AT_NONE);')]),
+    Spec('num_horns:tables', 'num_horns', 'monsterHornCount',
+         [('species', INT), ('native_pointer_present', INT)], slow=True, js_file=MONSTER_DATA,
+         assumptions=PREDICATE_ASSUMPTIONS + (
+             'mondata.c:num_horns: monsndx(ptr) is the pmidx of mons[species]; the emitted PM_* case labels are the same species indices',
+         ), require_counterexamples=True,
+         configure=species_predicate_state, arguments=species_predicate_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[(MONSTER_DATA, "const PM_HORNED_DEVIL = MONSTER_NAME.indexOf('horned devil');",
+                   "const PM_HORNED_DEVIL = MONSTER_NAME.indexOf('minotaur');"),
+                  (MONSTER_DATA, "const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');",
+                   "const PM_KI_RIN = MONSTER_NAME.indexOf('white unicorn');")]),
+    Spec('little_to_big:tables', 'little_to_big', 'monsterOlderForm',
+         [('montype', LONG)], slow=True, js_file=MONSTER_DATA,
+         assumptions=GROWNUPS_ASSUMPTIONS, require_counterexamples=True,
+         configure=grownups_state, arguments=growth_arguments,
+         pre=lambda s: [s['montype'] >= 0, s['montype'] < 383],
+         probes=[('montype narrows to C int', lambda s: [s['montype'] == 2 ** 32 + 5])],
+         mutants=[(MONSTER_DATA, 'return MONSTER_GROWTH_TARGET[mnum] ?? mnum;',
+                   'return MONSTER_GROWTH_TARGET[mnum + 1] ?? mnum;')]),
+    Spec('big_to_little:tables', 'big_to_little', 'monsterYoungerForm',
+         [('montype', LONG)], slow=True, js_file=MONSTER_DATA,
+         assumptions=GROWNUPS_ASSUMPTIONS + (
+             'mondata.c:big_to_little takes the first grownups[] row whose grown form matches; grownups[] is ordered by the younger index, so the emitted findIndex over MONSTER_GROWTH_TARGET returns the same source species',
+         ), require_counterexamples=True,
+         configure=grownups_state, arguments=growth_arguments,
+         pre=lambda s: [s['montype'] >= 0, s['montype'] < 383],
+         probes=[('montype narrows to C int', lambda s: [s['montype'] == 2 ** 32 + 60])],
+         mutants=[(MONSTER_DATA, 'if (candidate !== mnum && grown === mnum)',
+                   'if (candidate !== mnum && grown !== mnum)')]),
+    Spec('big_little_match:tables', 'big_little_match', 'monsterGrowthFamilyMatch',
+         [('montyp1', LONG), ('montyp2', LONG)], js_file=MONSTER_DATA, slow=True,
+         assumptions=GROWNUPS_ASSUMPTIONS + (
+             'mondata.c:big_little_match reads mons[montyp].mlet through the same initial table; the emitted MONSTER_SYMBOL read corresponds',
+         ), require_counterexamples=True,
+         configure=growth_pair_state, arguments=growth_pair_arguments,
+         pre=lambda s: [s['montyp1'] >= 0, s['montyp1'] < 383,
+                        s['montyp2'] >= 0, s['montyp2'] < 383],
+         probes=[('montyp1 outside mons[]', lambda s: [s['montyp1'] == 10000,
+                                                       s['montyp2'] == 0])],
+         mutants=[(MONSTER_DATA, 'if (grown === right)\n            return true;',
+                   'if (grown !== right)\n            return true;')]),
+    Spec('same_race:tables', 'same_race', 'sameMonsterRace',
+         [('left', INT), ('right', INT), ('native_pointer_present', INT)],
+         js_file='js/mondata.js', slow=True,
+         assumptions=PREDICATE_ASSUMPTIONS + (
+             'mondata.c:same_race: the native is_* race macros expand to mons[] flag/symbol reads over the same initial table; the emitted MONSTER_FLAGS2/MONSTER_SYMBOL reads and the mondata.js module constants (GOLEM, KOBOLD, IMP, class and undead letters, kobold/gargoyle/bee/longworm/tengu species) correspond to the native pointer identities and letters they replace',
+         ), require_counterexamples=True,
+         configure=same_race_state, arguments=same_race_arguments,
+         pre=lambda s: [s['left'] >= 0, s['right'] >= 0, s['native_pointer_present'] == 1],
+         probes=[('null native species pointer', lambda s: [s['left'] >= 0, s['right'] >= 0,
+                                                           s['native_pointer_present'] == 0])],
+         mutants=[('js/mondata.js', 'if (left === TENGU || right === TENGU)\n        return false;',
+                   'if (left === TENGU)\n        return false;'),
+                  ('js/mondata.js', 'return rightClass === KOBOLD || kobolds.has(right);',
+                   'return rightClass === KOBOLD;')]),
+    Spec('mbirth_limit:tables', 'mbirth_limit', 'monsterBirthLimit',
+         [('mndx', LONG)], js_file='js/makemon.js',
+         assumptions=(
+             'makemon.c:mbirth_limit: PM_NAZGUL and PM_ERINYS correspond to the emitted MONSTER_NAME.indexOf constants; MAXMONNO is 120 in both sources',
+         ), require_counterexamples=True,
+         pre=int64_argument,
+         probes=[('mndx narrows to C int', lambda s: [s['mndx'] == 2 ** 32 + 231])],
+         mutants=[('js/makemon.js', 'PM_NAZGUL ? 9', 'PM_NAZGUL ? 8')]),
+]
+
+
+CAN_BLOW_ASSUMPTIONS = (
+    'mondata.c:can_blow: the monster argument is a modeled struct monst distinct from &gy.youmonst, so the hero-only Strangled re-check does not run; that check is ported in polyself.js heroCanBlow and stays outside this claim',
+    'monst.c:monst_globals_init: mons[] and the emitted MONSTER_SOUND/MONSTER_SIZE/MONSTER_SYMBOL/MONSTER_FLAGS1 rows retain their initial values',
+    'mondata.h:is_silent/breathless/verysmall/has_head expand to the same four mons[] fields the emitted speciesCanBlow reads',
+)
+
+
+def can_blow_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    return ([CPtr(values['native_monster_present'] != 0, 'monster')],
+            [V('num', values['species'])])
+
+
+def can_blow_state(world, front, modules):
+    monster_state(world, front, modules)
+    # can_blow's hero re-check is `mtmp == &gy.youmonst && Strangled`; the
+    # modeled monster is a distinct state object, so the comparison is
+    # concretely false and the hero property read stays on the dead branch.
+    world.c_globals['gy.youmonst'] = CVal(z3.IntVal(0), INT)
+
+
+STATE_SPECS += [
+    Spec('can_blow:tables', 'can_blow', 'speciesCanBlow',
+         [('species', INT), ('native_monster_present', INT)], js_file='js/mondata.js',
+         assumptions=CAN_BLOW_ASSUMPTIONS, require_counterexamples=True,
+         configure=can_blow_state, arguments=can_blow_arguments,
+         pre=lambda s: [s['species'] >= 0, s['native_monster_present'] == 1],
+         probes=[('null native monster pointer', lambda s: [s['species'] >= 0,
+                                                           s['native_monster_present'] == 0])],
+         mutants=[('js/mondata.js', 'return !(requireMonsterData(MONSTER_FLAGS1, mnum) & (M1_BREATHLESS | M1_NOHEAD))',
+                   'return !(requireMonsterData(MONSTER_FLAGS1, mnum) & M1_BREATHLESS)'),
+                  ('js/mondata.js', '&& requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL',
+                   '&& requireMonsterData(MONSTER_SIZE, mnum) > MZ_SMALL')]),
+]
+
+
+PASSIVE_ASSUMPTIONS = (
+    'mondata.c:max_passive_dmg: mdef.data and magr.data point to mons[defender_species] and mons[aggressor_species]; emitted defender.mnum and aggressor.mnum equal those species',
+    'monst.c:monst_globals_init: mons[] and the emitted MONSTER_ATTACKS/MONSTER_LEVEL tables retain their initial values',
+    'mondata.c:Resists_Elem (via monst.h resists_fire/cold/elec/acid) and mondata.js monsterHasFire/Cold/Shock/AcidResistance return the same 0/1 element result for the same aggressor; the masks behind them are mon_resistancebits, covered separately by mon_resistancebits:state, and their weapon/inventory branches are outside this contract',
+    'mondata.h:completelyburns/rots/rusts pointer tests correspond to the emitted species-index comparisons',
+    'struct monst mhp is int; the domain keeps |mhp| <= 1000000 so every C product stays in range',
+)
+
+
+def passive_pair_state(world, front, modules):
+    world.join_paths = True
+    world.c_globals['mons'] = native_monsters(world, front)
+    values = {name: value for name, value, _ in world.params}
+    defender, aggressor = values['defender_species'], values['aggressor_species']
+    world.pre.extend([defender >= 0, defender < front.enum_value('NUMMONS'),
+                      aggressor >= 0, aggressor < front.enum_value('NUMMONS')])
+    world.c_globals['mdef.data'] = CPtr(True, CElement('mons', defender))
+    world.c_globals['magr.data'] = CPtr(True, CElement('mons', aggressor))
+    world.js_state['defender.mnum'] = defender
+    world.js_state['aggressor.mnum'] = aggressor
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    world.c_globals['magr.mhp'] = CVal(symbols['magr.mhp'], INT)
+    # The four element resistance helpers enter as equal 0/1 call contracts;
+    # their shared mask arithmetic is proved by mon_resistancebits:state.
+    values = {name: value for name, value, _ in world.params}
+    pointer = CPtr(values['native_pair_present'] != 0, 'magr')
+    record = V('obj', 'aggressor')
+    for native, js, element, prop in (
+            ('resists_acid', 'monsterHasAcidResistance', 'acid', 'ACID_RES'),
+            ('resists_cold', 'monsterHasColdResistance', 'cold', 'COLD_RES'),
+            ('resists_fire', 'monsterHasFireResistance', 'fire', 'FIRE_RES'),
+            ('resists_elec', 'monsterHasShockResistance', 'shock', 'SHOCK_RES')):
+        result = symbols[f'resists.{element}']
+        index = CVal(z3.IntVal(front.enum_value(prop)), (32, True))
+        world.c_calls['Resists_Elem'] = world.c_calls.get('Resists_Elem', []) + [
+            ([pointer, index], CVal(result, (32, True)))]
+        world.js_calls[('js/mondata.js', js)] = [
+            ([record], V('num', world.js_state[f'resists.{element}.js']))]
+
+
+def passive_pair_arguments(world, front):
+    values = {name: value for name, value, _ in world.params}
+    present = values['native_pair_present'] != 0
+    return ([CPtr(present, 'mdef'), CPtr(present, 'magr')],
+            [V('obj', 'defender'), V('obj', 'aggressor')])
+
+
+def passive_pair_domain(s):
+    return [s['defender_species'] >= 0, s['aggressor_species'] >= 0,
+            s['native_pair_present'] == 1,
+            s['magr.mhp'] >= -1000000, s['magr.mhp'] <= 1000000,
+            s['resists.fire'] >= 0, s['resists.fire'] <= 1,
+            s['resists.cold'] >= 0, s['resists.cold'] <= 1,
+            s['resists.shock'] >= 0, s['resists.shock'] <= 1,
+            s['resists.acid'] >= 0, s['resists.acid'] <= 1]
+
+
+STATE_SPECS += [
+    Spec('max_passive_dmg:state', 'max_passive_dmg', 'maxPassiveMonsterDamage',
+         [('defender_species', INT), ('aggressor_species', INT),
+          ('native_pair_present', INT)],
+         slow=True, js_file='js/mondata.js',
+         state=[('magr.mhp', INT, 'aggressor.mhp'),
+                ('resists.fire', (32, True), 'resists.fire.js'),
+                ('resists.cold', (32, True), 'resists.cold.js'),
+                ('resists.shock', (32, True), 'resists.shock.js'),
+                ('resists.acid', (32, True), 'resists.acid.js')],
+         assumptions=PASSIVE_ASSUMPTIONS, require_counterexamples=True,
+         configure=passive_pair_state, arguments=passive_pair_arguments,
+         pre=passive_pair_domain,
+         probes=[('null native monster pointers', lambda s: [
+             s['defender_species'] >= 0, s['aggressor_species'] >= 0,
+             s['native_pair_present'] == 0,
+             s['magr.mhp'] >= -1000000, s['magr.mhp'] <= 1000000,
+             s['resists.fire'] >= 0, s['resists.fire'] <= 1]),
+                 ('fire resistance result correspondence omitted', UnrelatedState(
+                     lambda s: passive_pair_domain(s) + [s['defender_species'] == 111],
+                     ('resists.fire',)))],
+         mutants=[('js/mondata.js', 'return count * sides * contactCount;',
+                   'return count * sides * contactCount + 1;'),
+                  ('js/mondata.js',
+                   '![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)',
+                   '![AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)')]),
 ]

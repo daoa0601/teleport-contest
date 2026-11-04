@@ -44,6 +44,7 @@ class Path:
     ret: object = None
     returned: bool = False
     broken: bool = False
+    continued: bool = False
     heap: dict = field(default_factory=dict)   # C global-state writes: key -> CVal
 
     @property
@@ -52,7 +53,8 @@ class Path:
 
     def fork(self) -> 'Path':
         return Path(list(self.pc), [dict(f) for f in self.frames], dict(self.pos),
-                    list(self.events), self.ret, self.returned, self.broken, dict(self.heap))
+                    list(self.events), self.ret, self.returned, self.broken,
+                    self.continued, dict(self.heap))
 
 
 @dataclass
@@ -139,7 +141,8 @@ class Machine:
         for path in paths:
             for index, other in enumerate(groups):
                 if (path.events or other.events or path.returned != other.returned
-                        or path.broken != other.broken or len(path.frames) != len(other.frames)
+                        or path.broken != other.broken or path.continued != other.continued
+                        or len(path.frames) != len(other.frames)
                         or any(a.keys() != b.keys() for a, b in zip(path.frames, other.frames))
                         or any(not z3.eq(path.pos[s], other.pos[s]) for s in STREAMS)):
                     continue
@@ -250,6 +253,8 @@ class Machine:
                 for statement in group:
                     paths = seq(paths, lambda q, s=statement: execute(q, s))
             for q in paths:
+                # A break belongs to this switch; a continue executed inside
+                # the arms still belongs to the enclosing loop.
                 q.broken = False
             out.extend(paths)
         return out
@@ -287,6 +292,7 @@ class Machine:
                     p.broken = False
                     out.append(p)
                 else:
+                    p.continued = False
                     current.append(p)
         return out
 
@@ -336,7 +342,7 @@ def seq(paths, fn):
     """Apply fn to every live path; returned paths pass through unchanged."""
     out = []
     for p in paths:
-        out.extend([p] if p.returned or p.broken else fn(p))
+        out.extend([p] if p.returned or p.broken or p.continued else fn(p))
     return out
 
 

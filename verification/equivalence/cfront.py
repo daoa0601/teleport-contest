@@ -86,6 +86,47 @@ class CFront:
                             return value
         raise Unsupported(f'no enumerator {name}')
 
+    def enum_type(self, name: str, file: Path | None = None):
+        """The compatible integer type clang chose for one C enum.
+
+        C11 6.7.2.2p4 lets the implementation pick the compatible type among
+        int, unsigned int and their longs; clang uses an unsigned type when
+        every declared enumerator is nonnegative (its IntegralCast nodes on
+        enum uses name that type; the EnumDecl itself carries none in this
+        JSON, and the filtered dump omits implicit enumerator values). Ask
+        clang to evaluate the two facts once per enum instead of probing
+        every constant, and reject 64-bit representations.
+        """
+        key = ('type', file, name)
+        if key in self._enum_values:
+            return self._enum_values[key]
+        for source in [file] if file is not None else self.files:
+            matches = [obj for obj in self._dump(source, name)
+                       if obj.get('kind') == 'EnumDecl' and obj.get('name') == name]
+            if len(matches) != 1:
+                continue
+            unsigned = self._probe_enum(name, source, f'(enum {name}) - 1 > 0')
+            wide = self._probe_enum(name, source, f'sizeof(enum {name}) > 4')
+            if wide:
+                raise Unsupported(f'64-bit C enum {name} is not modeled')
+            chosen = (32, not unsigned)
+            self._enum_values[key] = chosen
+            return chosen
+        raise Unsupported(f'no C enum {name}')
+
+    def _probe_enum(self, name: str, file: Path, expression: str) -> int:
+        cmd = ['clang', '-fsyntax-only', f'-I{self.include}', *CFLAGS,
+               '-x', 'c', '-Xclang', '-ast-dump=json', '-Xclang',
+               '-ast-dump-filter=verification_enum_type', '-']
+        source = f'#include "{file}"\nenum {{ verification_enum_type = {expression} }};\n'
+        output = subprocess.run(cmd, input=source, capture_output=True,
+                                text=True, check=True).stdout
+        for decl in _objects(output):
+            value = _find_enum(decl, 'verification_enum_type')
+            if value is not None:
+                return value
+        raise Unsupported(f'clang could not evaluate {expression} for enum {name}')
+
     def constant_array(self, name: str, file: Path) -> dict:
         """Only immutable array definitions; initializers are interpreted by CExec."""
         matches = [obj for obj in self._dump(file, name)

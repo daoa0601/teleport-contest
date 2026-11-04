@@ -2,15 +2,16 @@
 // C ref: mondata.c name_to_mon() and name_to_monclass().
 
 import {
-    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE,
+    MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE,
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid,
     monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall,
     monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS,
-    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem,
+    monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterOlderForm,
 } from './monster_data.js';
 import {
-    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
-    AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_HUGS, AD_SEDU, AD_SSEX,
+    AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM,
+    AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE,
+    AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX,
 } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
 import { dragonFormForArmor } from './polyself.js';
@@ -372,19 +373,27 @@ export function canTrack(mnum: number, state: GameState = game): boolean {
     return monsterHasEyes(mnum);
 }
 
-// Native mondata.c:same_race(). Species families used by cannibalism.
-const species = (name: string) => MONSTER_NAME.indexOf(name);
-const symbol = (name: string) => requireMonsterData(MONSTER_SYMBOL, species(name));
+// C mondata.c:same_race(). Species families used by cannibalism.
+function species(name: string) {
+    return MONSTER_NAME.indexOf(name);
+}
+
+function symbol(name: string) {
+    return requireMonsterData(MONSTER_SYMBOL, species(name));
+}
 const GOLEM = symbol('stone golem');
 const KOBOLD = symbol('kobold');
 const IMP = symbol('imp');
 const raceFlags = [0x08, 0x10, 0x20, 0x40, 0x80, 0x2000];
-const classFamilies = ['ogre', 'water nymph', 'plains centaur', 'red dragon', 'red naga'].map(symbol);
-const undeadFamilies = ['human zombie', 'human mummy', 'vampire', 'lich', 'wraith', 'ghost'].map(symbol);
-const kobolds = new Set(['kobold zombie', 'kobold mummy'].map(species));
-const gargoyles = new Set(['gargoyle', 'winged gargoyle'].map(species));
-const bees = new Set(['killer bee', 'queen bee'].map(species));
-const longWorms = new Set(['baby long worm', 'long worm', 'long worm tail'].map(species));
+const classFamilies = [symbol('ogre'), symbol('water nymph'),
+    symbol('plains centaur'), symbol('red dragon'), symbol('red naga')];
+const undeadFamilies = [symbol('human zombie'), symbol('human mummy'),
+    symbol('vampire'), symbol('lich'), symbol('wraith'), symbol('ghost')];
+const kobolds = new Set([species('kobold zombie'), species('kobold mummy')]);
+const gargoyles = new Set([species('gargoyle'), species('winged gargoyle')]);
+const bees = new Set([species('killer bee'), species('queen bee')]);
+const longWorms = new Set([species('baby long worm'), species('long worm'),
+    species('long worm tail')]);
 const TENGU = species('tengu');
 
 export function sameMonsterRace(left: number, right: number): boolean {
@@ -393,8 +402,11 @@ export function sameMonsterRace(left: number, right: number): boolean {
     const rightFlags = requireMonsterData(MONSTER_FLAGS2, right);
     const leftClass = requireMonsterData(MONSTER_SYMBOL, left);
     const rightClass = requireMonsterData(MONSTER_SYMBOL, right);
-    for (const flag of raceFlags)
+    for (let i = 0; i < raceFlags.length; i++) {
+        const flag = raceFlags[i];
+        if (flag === undefined) continue;
         if (leftFlags & flag) return !!(rightFlags & flag);
+    }
     if (leftClass === GOLEM) return rightClass === GOLEM;
     if (monsterIsMindFlayer(left)) return monsterIsMindFlayer(right);
     if (leftClass === KOBOLD || kobolds.has(left))
@@ -411,19 +423,26 @@ export function sameMonsterRace(left: number, right: number): boolean {
         if (undeadFamilies.includes(leftClass)) return leftClass === rightClass;
     } else if (monsterIsUndead(right)) return false;
     if (leftClass === rightClass) {
-        for (const nextForm of [monsterYoungerForm,
-            (mnum: number) => requireMonsterData(MONSTER_GROWTH_TARGET, mnum)]) {
-            let current = left;
-            for (;;) {
-                const next = nextForm(current);
-                if (next === current) break;
-                if (next === right) return true;
-                current = next;
-            }
+        // left !== right here; test all smaller forms of left against right,
+        // then all larger ones (mondata.c:same_race()).
+        let current = left;
+        for (;;) {
+            const next = monsterYoungerForm(current);
+            if (next === current) break;
+            if (next === right) return true;
+            current = next;
+        }
+        current = left;
+        for (;;) {
+            const next = monsterOlderForm(current);
+            if (next === current) break;
+            if (next === right) return true;
+            current = next;
         }
     }
-    for (const family of [gargoyles, bees, longWorms])
-        if (family.has(left)) return family.has(right);
+    if (gargoyles.has(left)) return gargoyles.has(right);
+    if (bees.has(left)) return bees.has(right);
+    if (longWorms.has(left)) return longWorms.has(right);
     return false;
 }
 
@@ -816,11 +835,84 @@ const PM_PONY = 100;
 const PM_HORSE = 104;
 const PM_WARHORSE = 105;
 
-// C mondata.c:cantvomit().
+// C mondata.c:cantvomit(). Rats and mice are incapable of vomiting;
+// likewise with horses. The body decides for any monster species.
+export function speciesCannotVomit(mnum: number): boolean {
+    if (MONSTER_SYMBOL[mnum] === S_RODENT
+        && mnum !== PM_ROCK_MOLE && mnum !== PM_WOODCHUCK) return true;
+    return mnum === PM_PONY || mnum === PM_HORSE || mnum === PM_WARHORSE;
+}
+
+// mondata.c:cantvomit(gy.youmonst.data) for the hero's current form.
 export function heroCannotVomit(state: GameState) {
     const form = heroMonsterForm(state);
-    if (form == null) return false;
-    if (MONSTER_SYMBOL[form] === S_RODENT
-        && form !== PM_ROCK_MOLE && form !== PM_WOODCHUCK) return true;
-    return form === PM_PONY || form === PM_HORSE || form === PM_WARHORSE;
+    return form != null && speciesCannotVomit(form);
+}
+const PM_PAPER_GOLEM = MONSTER_NAME.indexOf('paper golem');
+const PM_STRAW_GOLEM = MONSTER_NAME.indexOf('straw golem');
+const PM_WOOD_GOLEM = MONSTER_NAME.indexOf('wood golem');
+const PM_LEATHER_GOLEM = MONSTER_NAME.indexOf('leather golem');
+const PM_IRON_GOLEM = MONSTER_NAME.indexOf('iron golem');
+
+// C mondata.c:max_passive_dmg().  dog_move() uses the defender's maximum
+// passive retaliation, multiplied by the attacker's number of contact
+// attacks, as a deterministic safety gate before any melee to-hit roll.
+export function maxPassiveMonsterDamage(defender: Monster, aggressor: Monster) {
+    // each attack by the aggressor can result in passive damage
+    const aggressorAttacks = MONSTER_ATTACKS[aggressor?.mnum] || [];
+    let contactCount = 0;
+    for (let i = 0; i < aggressorAttacks.length; i++) {
+        const attack = aggressorAttacks[i];
+        if (!attack) continue;
+        switch (attack[0]) {
+        case AT_CLAW:
+        case AT_BITE:
+        case AT_KICK:
+        case AT_BUTT:
+        case AT_TUCH:
+        case AT_STNG:
+        case AT_HUGS:
+        case AT_ENGL:
+        case AT_TENT:
+        case AT_WEAP:
+            contactCount++;
+            break;
+        case AT_NONE:
+        case AT_SPIT:
+        case AT_BREA:
+        case AT_EXPL:
+        case AT_BOOM:
+        case AT_GAZE:
+        case AT_MAGC:
+        default:
+            break;
+        }
+    }
+    if (!contactCount) return 0;
+
+    const defenderAttacks = MONSTER_ATTACKS[defender?.mnum] || [];
+    for (let i = 0; i < defenderAttacks.length; i++) {
+        const attack = defenderAttacks[i];
+        if (!attack) continue;
+        const [attackType, damageType, dice, sides] = attack;
+        if (attackType !== AT_NONE && attackType !== AT_BOOM) continue;
+        // These bodies are destroyed by contact regardless of resistance or
+        // HP: mondata.h completelyburns/rots/rusts by species identity.
+        if (damageType === AD_FIRE && (aggressor.mnum === PM_PAPER_GOLEM
+            || aggressor.mnum === PM_STRAW_GOLEM)
+            || damageType === AD_DCAY && (aggressor.mnum === PM_WOOD_GOLEM
+                || aggressor.mnum === PM_LEATHER_GOLEM)
+            || damageType === AD_RUST && aggressor.mnum === PM_IRON_GOLEM)
+            return aggressor.mhp * contactCount;
+        const resisted =
+            (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
+            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
+            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
+            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
+        if (resisted) return 0;
+        if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)) return 0;
+        const count = dice || (MONSTER_LEVEL[defender.mnum] ?? 0) + 1;
+        return count * sides * contactCount;
+    }
+    return 0;
 }

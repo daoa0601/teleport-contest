@@ -42,7 +42,7 @@ import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, monsterOlderForm, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
@@ -1105,7 +1105,7 @@ export async function putHeroToSleep(turns, { state = game, doneMessage = 'You w
     return state._helplessTurns;
 }
 export function learnEggType(mnum, state) {
-    const adult = MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+    const adult = monsterOlderForm(mnum);
     if (!Array.isArray(state.mvitals))
         state.mvitals = [];
     const vital = state.mvitals[adult]

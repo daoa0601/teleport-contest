@@ -57,7 +57,7 @@ export interface HatchedEgg {
 export type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
 
 import { makemonNear } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterTypeName, monsterYoungerForm } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterOlderForm, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
@@ -313,7 +313,7 @@ export async function finishEggHatchTimer(
     const carried = egg.where === 'inventory';
     if (event.learnPending) {
         if (!Array.isArray(state.mvitals)) state.mvitals = [];
-        const adult = MONSTER_GROWTH_TARGET[event.mnum] ?? event.mnum;
+        const adult = monsterOlderForm(event.mnum);
         const vital = state.mvitals[adult]
             || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
         vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;

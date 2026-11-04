@@ -30,7 +30,7 @@ import { updateMonsterRegions } from './regions.js';
 import { goodPosition } from './teleport_rules.js';
 import { ALLOW_M, ALLOW_MDISP, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
-import { AD_ACID, AD_COLD, AD_DCAY, AD_ELEC, AD_FIRE, AD_PHYS, AD_RUST, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_HUGS, AT_KICK, AT_NONE, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
+import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { remove_object } from './floor_object.js';
@@ -41,7 +41,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';
 import { touchPetrifies } from './stoning.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterLocomotion, } from './mondata.js';
+import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { getTrack } from './track.js';
@@ -623,39 +623,6 @@ export async function performPetRangedAttack(pet, state, { forced = false, rando
 }
 async function petAttacksMonster(pet, target, state, random, rollDice, rollOne, calls, selected) {
     return await beginMonsterMeleeAttack(pet, target, state, random, rollDice, rollOne, calls, 'pet', selected);
-}
-// C mondata.c:max_passive_dmg().  dog_move() uses the defender's maximum
-// passive retaliation, multiplied by the pet's number of contact attacks, as
-// a deterministic safety gate before any melee to-hit roll is allowed.
-export function maxPassiveMonsterDamage(defender, aggressor) {
-    const contactTypes = new Set([
-        AT_CLAW, AT_BITE, AT_KICK, AT_BUTT, AT_TUCH, AT_STNG, AT_HUGS,
-        AT_ENGL, AT_TENT, AT_WEAP,
-    ]);
-    const contactCount = (MONSTER_ATTACKS[aggressor?.mnum] || []).filter(([attackType]) => contactTypes.has(attackType)).length;
-    if (!contactCount)
-        return 0;
-    const species = MONSTER_NAME[aggressor.mnum];
-    for (const [attackType, damageType, dice, sides] of MONSTER_ATTACKS[defender?.mnum] || []) {
-        if (attackType !== AT_NONE && attackType !== AT_BOOM)
-            continue;
-        // These bodies are destroyed by contact regardless of resistance or HP.
-        if (damageType === AD_FIRE && (species === 'paper golem' || species === 'straw golem')
-            || damageType === AD_DCAY && (species === 'wood golem' || species === 'leather golem')
-            || damageType === AD_RUST && species === 'iron golem')
-            return aggressor.mhp * contactCount;
-        const resisted = (damageType === AD_FIRE && monsterHasFireResistance(aggressor)) ||
-            (damageType === AD_COLD && monsterHasColdResistance(aggressor)) ||
-            (damageType === AD_ELEC && monsterHasShockResistance(aggressor)) ||
-            (damageType === AD_ACID && monsterHasAcidResistance(aggressor));
-        if (resisted)
-            return 0;
-        if (![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType))
-            return 0;
-        const count = dice || (MONSTER_LEVEL[defender.mnum] ?? 0) + 1;
-        return count * sides * contactCount;
-    }
-    return 0;
 }
 // C dogmove.c:dog_move() newdogpos: the ALLOW_U mattacku(), the swap to the
 // chosen square, the reluctant-step line, mon_track_add(), dog_eat(), and

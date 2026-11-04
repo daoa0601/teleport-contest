@@ -28,7 +28,7 @@ import { occupied } from './mkroom.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
-import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsGolem, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsGolem, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterOlderForm, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { monsterDeathCount } from './mon.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
@@ -2013,7 +2013,7 @@ function isHomeElementalAt(mnum: number, state: GrowthState): boolean {
 
 function targetSpecies(mnum: number, killedMonster: Monster | null): number {
     if (!killedMonster && mnum === PM_KILLER_BEE) return PM_QUEEN_BEE;
-    return MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+    return monsterOlderForm(mnum);
 }
 
 function resultingGender(monster: Monster, newType: number): boolean {

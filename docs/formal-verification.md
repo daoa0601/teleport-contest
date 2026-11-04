@@ -180,6 +180,16 @@ split `rnl` row use this batch's complete runs.
 | `isaac64_init` | `isaac64.c:isaac64_init` ↔ frozen same name | Byte seed length 0..INT_MAX capped at 2048; no initial context values assumed | Proved reseed summary | 0.1 s |
 | `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
+| `cantvomit:tables` | `mondata.c:cantvomit` ↔ `mondata.js:speciesCannotVomit` | Valid initial species; pointer identity tests (rock mole, woodchuck, horses) vs species indices | 2×4 | 4.9 s |
+| `noattacks:tables` | `mondata.c:noattacks` ↔ `monster_data.js:monsterHasNoAttacks` | Valid initial species; corresponding six-record attack rows; AT_BOOM skipped on both sides | 2×2 | 4.7 s |
+| `num_horns:tables` (slow) | `mondata.c:num_horns` ↔ `monster_data.js:monsterHornCount` | Valid initial species; `monsndx(ptr)` pmidx switch vs emitted PM_* case labels | 3×3 | 39.3 s |
+| `little_to_big:tables` (slow) | `mondata.c:little_to_big` ↔ `monster_data.js:monsterOlderForm` | `0 <= montype < NUMMONS`; grownups[] scan vs growth vector read | 1×1 | 17.4 s |
+| `big_to_little:tables` (slow) | `mondata.c:big_to_little` ↔ `monster_data.js:monsterYoungerForm` | Same domain; first reverse edge of the ordered grownups[] table | 1×1 | 15.8 s |
+| `big_little_match:tables` (slow) | `mondata.c:big_little_match` ↔ `monster_data.js:monsterGrowthFamilyMatch` | Both indices valid species; `mons[].mlet` letter test then both growth directions | 1×1 | 85.5 s |
+| `same_race:tables` (slow) | `mondata.c:same_race` ↔ `mondata.js:sameMonsterRace` | Both species valid; the is_* race macros and pointer identities vs flags/symbol reads and module constants | 1×1 | 243.5 s |
+| `can_blow:tables` | `mondata.c:can_blow` ↔ `mondata.js:speciesCanBlow` | Valid species; monster distinct from `&gy.youmonst`, so the hero Strangled re-check stays dead | 2×4 | 9.7 s |
+| `mbirth_limit:tables` | `makemon.c:mbirth_limit` ↔ `makemon.js:monsterBirthLimit` | Any C int species index; PM_NAZGUL/PM_ERINYS and MAXMONNO=120 agree | 3×3 | 1.1 s |
+| `max_passive_dmg:state` (slow) | `mondata.c:max_passive_dmg` ↔ `mondata.js:maxPassiveMonsterDamage` | Valid species pair; `|mhp| <= 10^6`; Resists_Elem/monsterHas*Resistance enter as equal 0/1 call contracts (mon_resistancebits covers the masks) | 1×1 | 57.3 s |
 
 **Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
 including **56 domain probes** and **60 mutant checks**, and wrote the ledger
@@ -540,6 +550,62 @@ mutants (13.0 s, 6.0 s, 3.9 s). The CI-parity
 `npm run compile` and `npm run check` passed, the focused
 executor/query/selection suite is 99 passing tests, and the 36 ledger CLI
 tests passed.
+
+**Species-table function batch (fv-equivalence-batch-8).** Ten more claims
+give the remaining pure `mons[]`-table functions of mondata.c (plus
+makemon.c's birth limit) exactly one exported port owner each and execute
+the real C bodies. cantvomit lives in `mondata.js:speciesCannotVomit`
+(the hero wrapper `heroCannotVomit` delegates to it), noattacks/num_horns/
+little_to_big/big_to_little/big_little_match live in
+`monster_data.js:monsterHasNoAttacks/monsterHornCount/monsterOlderForm/
+monsterYoungerForm/monsterGrowthFamilyMatch`, same_race and the
+can_blow table half live in `mondata.js:sameMonsterRace/speciesCanBlow`,
+and max_passive_dmg moved from dogmove.js to
+`mondata.js:maxPassiveMonsterDamage`, beside its C file's owner module.
+The scattered inline reads of the growth vector (egg.js egg hatching,
+egg_species.js can_be_hatched, timeout.js learnEggType, makemon.js
+grow_up's targetSpecies) now call `monsterOlderForm`; mon.js and
+invent.js keep direct reads because concurrent fold units own those
+files.
+
+The growth claims read the real static `grownups[][2]` table through the
+C executor (enum pm types map to int; the member-array decay
+`struct attack *mattk = ptr->mattk` and its `mattk[i].aatyp` subscript
+are modeled for noattacks; C and JavaScript `continue` jump to the
+for-update, and `for (;;)` fixed-point walks are modeled), while the JS
+side reads the emitted `MONSTER_GROWTH_TARGET` vector — the claims prove
+the two tables agree on every species. `num_horns` executes the C switch
+over `monsndx(ptr)` against the emitted PM_* switch labels (identifier
+case labels naming immutable module constants are accepted).
+`max_passive_dmg:state` relates two monsters (`data -> &mons[species]`,
+`|mhp| <= 10^6`) and takes the four element resistance helpers
+(`Resists_Elem` / `monsterHasFire/Cold/Shock/AcidResistance`) as equal
+0/1 call contracts, since their shared mask arithmetic is already proved
+by `mon_resistancebits:state`; its probe drops the fire contract pinned
+to a fire-vortex defender. `can_blow` proves the species-table half with
+a monster distinct from `&gy.youmonst` (the hero Strangled re-check is
+ported in polyself.js heroCanBlow and stays outside), and
+`mbirth_limit` covers every C int with a narrowing probe at
+`2^32 + PM_NAZGUL`. levl_follower stays unproved (it reads the monster's
+inventory through mon_has_amulet), mstrength and its static
+mstrength_ranged_attk are compiled out under `NH_STATUS_RELEASED`, and
+ranged_attk has no caller in the pinned C and deliberately no port
+(PR 610 dropped an unused port for it in review).
+
+Four of the ten claims stay in the fast job. The two two-species growth
+claims `big_little_match:tables` (85.5 s) and `same_race:tables`
+(243.5 s) are marked slow, and so are `max_passive_dmg:state`,
+`num_horns:tables`, `big_to_little:tables` and `little_to_big:tables`:
+with their probes and mutants they took 312 s, 77 s, 45 s and 41 s on a
+hosted runner, which pushed the fast `equivalence` job past its 30-minute
+timeout. All six join `experience:tables`/`mcalcmove:tables` in the
+nightly `--slow-only` job. Every claim has a concrete failing
+probe and two killed mutants with concrete counterexamples. No port-vs-C
+fidelity bug was found: each rewritten owner was also checked
+exhaustively over all 383 species against its previous implementation,
+and all 44 public sessions plus the first 300 holdout deep sessions
+replay identically base vs branch (seed2200's known screen-only miss
+unchanged).
 
 The complete 91-claim run exited 0 in **1015.6 s**, including **90 domain
 probes** and **103 mutant checks** (20 claims, 21 probes and 20 mutants
