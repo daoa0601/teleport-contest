@@ -7,13 +7,12 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
 import { makeConfused, makeStunned } from './potion.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { makeMonsterFlee } from './monmove.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import type { ArtifactHitDefender, ArtifactHitResult } from './artifacts.js';
@@ -22,6 +21,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
+import { monsterSpeciesSticks } from './mondata.js';
 
 type MagicbaneEffect = 'probe' | 'stun' | 'scare' | 'cancel';
 
@@ -210,7 +210,6 @@ export async function applyMagicbaneHit(
 function magicbaneEnchantment(object: Pick<GameObject, 'spe' | 'enchantment'>) {
     return object.spe ?? object.enchantment ?? 0;
 }
-
 
 function monsterCastsSpells(monster: Pick<Monster, 'mnum'>) {
     return (MONSTER_ATTACKS[monster.mnum] || []).some(([attackType]) => attackType === AT_MAGC);

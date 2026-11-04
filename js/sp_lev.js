@@ -16,7 +16,7 @@ import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './m
 import { setWallState } from './wall_topology.js';
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
 import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
@@ -52,14 +52,14 @@ import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoo
 import { beginObjectBurn } from './timeout.js';
 import { monsterEmitsLight, vision_reset } from './vision.js';
 import { SpecialSelection, match_maptyps, mapCharacterType, specialSelectionMatch } from './selvar.js';
-import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, M2_DWARF, M2_FEMALE, M2_GNOME, M2_MALE, M2_SHAPESHIFTER, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, canDigDown, canFallThrough, findMonsterNearPosition, is_hole, is_pit, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, stairway_add, topologize } from './mklev.js';
+import { CANDELABRUM_OF_INVOCATION, G_IGNORE, G_NOGEN, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, NO_TRAP, PIT, PM_BLACK_LIGHT, PM_FIRE_ELEMENTAL, PM_GIANT_SPIDER, PM_MINOTAUR, PM_SALAMANDER, PM_STALKER, PM_VAMPIRE, PM_VAMPIRE_BAT, PM_VLAD_THE_IMPALER, RIN_TELEPORTATION, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SCR_TELEPORTATION, SQKY_BOARD, S_MIMIC, TELEP_TRAP, TRAPDOOR, TRAPNUM, VIBRATING_SQUARE, WAN_DIGGING, WAN_TELEPORTATION, WEB, XLIM, YLIM, add_door, add_room, add_subroom, canDigDown, canFallThrough, findMonsterNearPosition, is_hole, is_pit, makecorridors, maybe_sdoor, mkstairs, mktrap, mktrap_victim, okdoor, stairway_add, topologize } from './mklev.js';
 import { make_engr_at } from './engrave.js';
 import { fix_wall_spines, setLevelTerrainLit, setLevelTerrainType, vibratingSquarePoint } from './mkmaze.js';
 import { makeroguerooms } from './extralev.js';
 import { stockShopRoom } from './shknam.js';
 import { specialShrinePriest } from './priest.js';
 import { makeSpecialDrawbridge } from './dbridge.js';
-import { monsterHasStoneResistance, monsterPolymorphsWhenStoned, setMonsterSpecies } from './mondata.js';
+import { is_dwarf, is_gnome, is_male, is_shapeshifter, monsterHasStoneResistance, monsterIsFemale, monsterPolymorphsWhenStoned, setMonsterSpecies, monsterIsAmphibious, monsterIsFlyer, monsterIsSwimmer, monsterPassesWalls, monsterIsGolem, monsterIsPlayerMonster, monsterIsVampireShifter } from './mondata.js';
 import { roomForIndex, roomsAt } from './hack.js';
 export async function fillVault(room) {
     if (!room)
@@ -251,13 +251,12 @@ export async function fill_empty_maze(mappedCells) {
 }
 // C sp_lev.c:pm_to_humidity().
 function pm_to_humidity(mndx) {
-    const flags = MONSTER_FLAGS1[mndx] ?? 0;
     const symbol = MONSTER_SYMBOL[mndx];
-    let humidity = symbol === 57 || (flags & (0x00000002 | 0x00000200))
+    let humidity = symbol === 57 || (monsterIsSwimmer(mndx) || monsterIsAmphibious(mndx))
         ? WET : DRY;
-    if ((flags & 0x00000001) || symbol === 5 || symbol === 25)
+    if (monsterIsFlyer(mndx) || symbol === 5 || symbol === 25)
         humidity |= HOT | WET;
-    if ((flags & 0x00000008) || symbol === 54)
+    if (monsterPassesWalls(mndx) || symbol === 54)
         humidity |= SOLID;
     if (mndx === 30 || mndx === 110
         || mndx === PM_FIRE_ELEMENTAL || mndx === PM_SALAMANDER)
@@ -2014,7 +2013,7 @@ export async function create_monster(context, options) {
         && options.align !== 'random';
     // Named requests resolve sex before the alignment and species draws.
     const requestedFemale = monsterType !== null && options.nameFemale === null
-        && !((MONSTER_FLAGS2[monsterType] ?? 0) & (M2_MALE | M2_FEMALE)) ? !!rn2(2) : null;
+        && !(is_male(monsterType) || monsterIsFemale(monsterType)) ? !!rn2(2) : null;
     if (!explicitAlignment)
         inducedAlignment(80);
     const alignment = explicitAlignment ? Amask2align(sp_amask_to_amask(options.align)) : null;
@@ -2036,9 +2035,10 @@ export async function create_monster(context, options) {
     const inMines = dungeonName === 'The Gnomish Mines'
         || prototype === 'minefill' || prototype === 'minetn' || prototype === 'minend';
     const race = game.urace?.noun;
-    const selfMask = race === 'dwarf' ? M2_DWARF : race === 'gnome' ? M2_GNOME : 0;
-    if (species !== null && inMines && selfMask
-        && ((MONSTER_FLAGS2[species] ?? 0) & selfMask) && rn2(3))
+    const sameRace = species === null ? false
+        : race === 'dwarf' ? is_dwarf(species)
+            : race === 'gnome' && is_gnome(species);
+    if (inMines && sameRace && rn2(3))
         species = null;
     let location;
     if (species !== null) {
@@ -2088,9 +2088,8 @@ export async function create_monster(context, options) {
     if (monster) {
         const explicitFemale = options.female === true || options.female === 1
             ? true : options.female === false || options.female === 0 ? false : null;
-        const fixedSex = monsterType == null ? 0 : MONSTER_FLAGS2[monsterType] ?? 0;
-        const requestedFemale = fixedSex & M2_FEMALE ? true
-            : fixedSex & M2_MALE ? false
+        const requestedFemale = monsterIsFemale(monsterType ?? -1) ? true
+            : is_male(monsterType ?? -1) ? false
                 : explicitFemale ?? (monsterType == null ? false : !!monster.female);
         const appearance = options.appearance;
         if (appearance && !game.u.protectionFromShapeChangers && !game.protectionFromShapeChangers
@@ -2109,7 +2108,7 @@ export async function create_monster(context, options) {
                             && monster.minvent?.some(object => object.otyp === CANDELABRUM_OF_INVOCATION)) {
                             type = base;
                         }
-                        else if ((MONSTER_FLAGS2[type] ?? 0) & M2_SHAPESHIFTER) {
+                        else if (is_shapeshifter(type)) {
                             if (!ismnum(base))
                                 throw new Error('A vampire shape needs its natural species');
                             type = base;

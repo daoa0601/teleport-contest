@@ -42,7 +42,7 @@ import { refreshHeroSeeing } from './hero_seeing.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, monsterOlderForm, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
@@ -64,7 +64,7 @@ import { heroIsSurroundedByRock } from './pray.js';
 import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
-import { heroCannotVomit, nameToMonster } from './mondata.js';
+import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm } from './mondata.js';
 import { encumber_msg } from './pickup.js';
 // C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {

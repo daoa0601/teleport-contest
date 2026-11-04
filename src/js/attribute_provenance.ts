@@ -11,12 +11,12 @@ import {
 } from './const.js';
 import { artifactById } from './artifacts.js';
 import { heroFaceName } from './body_parts.js';
-import { MONSTER_FLAGS1, monsterHasEyes } from './monster_data.js';
 import { CORNUTHAUM, MUMMY_WRAPPING } from './object_data.js';
 import { ownedSimpleObjectName } from './objnam.js';
 import { propertyTimeout } from './properties.js';
 import { blindnessBlocked, blindfolded, isEyesOfTheOverworld } from './senses.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
+import { monsterHasEyes } from './mondata.js';
 
 export type InnateSource = 'none' | 'role' | 'race' | 'outside' | 'experience' | 'form' | 'lycanthropy';
 const SLOT_MASKS: Readonly<Record<WornPropertySlot, number>> = {

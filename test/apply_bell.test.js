@@ -19,7 +19,7 @@ import { initRng } from '../js/rng.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { initializePet } from '../js/dog.js';
 import { punishHero } from '../js/read.js';
-import { MONSTER_NAME, monsterIsUndead } from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { BEAR_TRAP, CLOUD, DOOR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, G_GONE, MFAST, NO_MINVENT, PIT, ROCKTRAP, SDOOR, TT_WEB, VIBRATING_SQUARE, WEB, } from '../js/const.js';
 import { BELL, BELL_OF_OPENING, CHEST, SPEED_BOOTS } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -28,6 +28,7 @@ import { createMonsterAt, createSaddledSteed } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 import { applyInventoryObject } from './support/commands.js';
 import { memoryStorage } from './support/memory-storage.js';
+import { monsterIsUndead } from '../js/mondata.js';
 function screen() {
     assert.ok(game.nhDisplay);
     return game.nhDisplay.grid.map((row) => row.map((cell) => cell.ch).join('')).join('\n');

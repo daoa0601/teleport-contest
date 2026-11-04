@@ -10,33 +10,31 @@
 // list_vanquished()/num_gone()/list_genocided()/doborn(), youhiding(),
 // mstatusline(), ustatusline().
 
-import { fromWhat, heroHasNoEyes, intrinsicPropertyMask } from './attribute_provenance.js';
-import { levitationAtWill, propertyTimeout } from './properties.js';
+import { fromWhat, heroHasNoEyes, intrinsicPropertyMask, extrinsicPropertyMask, veryFast } from './attribute_provenance.js';
+import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-
-import { heroIsHallucinating } from './senses.js';
-import { makePlural, withIndefiniteArticle } from './objnam.js';
-
-import { game } from './gstate.js';
+import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, blindnessBlocked } from './senses.js';
+import { makePlural, withIndefiniteArticle, simpleObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
+import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { expiredFatally } from './timeout.js';
-
-
 import { pline } from './pline.js';
-import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow } from './windows.js';
-import { gameLogEvents, isSpoilerGameLogEvent } from './gamelog.js';
+import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow, ATR_NONE, showInventoryWindow } from './windows.js';
+import { gameLogEvents, isSpoilerGameLogEvent, recordGameLogEvent } from './gamelog.js';
 import {
-     G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd,
-    ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL,
-    ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE,
-    ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN,
-    ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE,
-    P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
+    G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK,
+    ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO,
+    ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY,
+    M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
+    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX,
+    A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level,
+    LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
+    PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP,
 } from './const.js';
-
-import { simpleArmorName, fingersOrGloves } from './do_wear.js';
-
-import { SHIELD_OF_REFLECTION } from './object_data.js';
+import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
+import {
+    SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE,
+    OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, ROBE, TOWEL,
+} from './object_data.js';
 import {
     canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
 } from './skills.js';
@@ -44,58 +42,34 @@ import { weaponDescription } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
-import { monsterDigests } from './monster_data.js';
-import { feelingAfterSelfGenocide, heroHasBeenGenocided } from './polyself.js';
-import { heroIsSick } from './potion.js';
-import { heroFormSticks } from './polyself.js';
+import { possessiveName, depth, endgameLevelName, ordinalSuffix, upstart } from './hacklib.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import {
+    feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings,
+    heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying,
+    heroMonsterForm, heroPassesWalls,
+} from './polyself.js';
+import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
-import { simpleObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { heroLegName, monsterLegName } from './body_parts.js';
-import { surfaceName } from './terrain_name.js';
+import { heroLegName, monsterLegName, heroFingerName, heroHandedName, heroHasEyes } from './body_parts.js';
+import { surfaceName, ceilingName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
-import { STRAT_WAITMASK } from './const.js';
 import { monsterAlignmentType } from './priest.js';
-import { MONSTER_NAME, MONSTER_SIZE, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 import { wormSegmentIndexAt } from './worm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { visibleRegionAt } from './regions.js';
 import { monsterHiddenConditions } from './pager.js';
-import {
-    blindfolded, heroIsBlind, heroIsDeaf, permanentBlind,
-} from './senses.js';
 import type { PropertyName } from './property_types.js';
-
-import type { TextPage } from './windows.js';
+import type { TextPage, InventoryMenuItem, TextMenuEntry } from './windows.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-import { invWeight, nearCapacity } from './hack.js';
-
-import { extrinsicPropertyMask, veryFast } from './attribute_provenance.js';
-import { hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
-import { blindnessBlocked } from './senses.js';
-import { simpleObjectTypeName } from './objnam.js';
-import { requireInitializedGame, requirePlayingGame } from './gstate.js';
-import { ATR_NONE, showInventoryWindow } from './windows.js';
-import type { InventoryMenuItem, TextMenuEntry } from './windows.js';
-import { recordGameLogEvent } from './gamelog.js';
+import { invWeight, nearCapacity, heroGoldAmount } from './hack.js';
 import { stopDisclosure, ynQuestion } from './end.js';
 import type { DisclosureDefault } from './end.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP } from './const.js';
-import { armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
-import { AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, ROBE, TOWEL } from './object_data.js';
-import { depth, endgameLevelName, ordinalSuffix, upstart } from './hacklib.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterHasProperName, monsterIsClinger, monsterIsEel, monsterIsFlyer, monsterTypeName } from './monster_data.js';
-import { floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls } from './polyself.js';
-import { heroIsVomiting } from './potion.js';
-import { heroFingerName, heroHasEyes, heroHandedName } from './body_parts.js';
-import { ceilingName, waterbodyName } from './terrain_name.js';
-import { heroGoldAmount } from './hack.js';
-import { objectMaterial } from './o_init.js';
 import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
 import { magicNegation } from './mhitu.js';
-import { confersLuck } from './invent.js';
+import { confersLuck, currency } from './invent.js';
 import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
 import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, maximumAttribute } from './attrib.js';
@@ -104,13 +78,16 @@ import { artifactById } from './artifacts.js';
 import { recorderLocalHour } from './calendar.js';
 import { costlySpot } from './shk.js';
 import { hiddenGold } from './vault.js';
-import { currency } from './invent.js';
 import { experienceRankIndex, newExperienceThreshold } from './exper.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
 import { levelHasCeiling } from './dungeon.js';
 import type { DungeonLocation } from './dungeon_types.js';
+import {
+    is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal,
+    monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer,
+} from './mondata.js';
 
 export interface EnlightenmentOptions { basic?: boolean; magic?: boolean }
 
@@ -144,7 +121,7 @@ export function backgroundEnlightenmentLines(final: EnlightenmentFinal = 0): str
     const lines = ['', ' Background:'];
     if (Upolyd(u)) {
         const species = monsterTypeName(u.umonnum, !!game.flags.female);
-        const formGender = (MONSTER_FLAGS2[u.umonnum] ?? 0) & 0x70000 ? '' : `${game.flags.female ? 'female' : 'male'} `;
+        const formGender = (is_male(u.umonnum) || monsterIsFemale(u.umonnum) || is_neuter(u.umonnum)) ? '' : `${game.flags.female ? 'female' : 'male'} `;
         const vampire = (u.mcham ?? -1) >= 0 ? monsterTypeName(u.mcham ?? -1, !!game.flags.female) : null;
         const currentForm = vampire && vampire !== species
             ? `${withIndefiniteArticle(`${formGender}${vampire}`)} in ${species} form`
@@ -805,7 +782,7 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
         are(`polymorphed into ${withIndefiniteArticle(vampire || formName || 'creature')}${
             vampire && vampire !== formName ? ` in ${formName} form` : ''}${wizard ? ` (${u.mtimedone})` : ''}`);
     }
-    if (((MONSTER_FLAGS1[u.umonnum ?? -1] ?? 0) & 0x00400000) && game.flags.female) can('lay eggs');
+    if (lays_eggs(u.umonnum ?? -1) && game.flags.female) can('lay eggs');
     const lycanthrope = (u.ulycn ?? -1) >= 0 ? monsterTypeName(u.ulycn ?? -1, !!game.flags.female) : null;
     if (lycanthrope) are(`${withIndefiniteArticle(lycanthrope)}${u.umonnum === u.ulycn
         ? ` in beast form${wizard ? ` (${u.mtimedone})` : ''}` : ''}`);
@@ -891,7 +868,6 @@ export function monkArmorPenalty(): number {
     return game.uarm && game.urole?.key === 'monk' && !Upolyd(game.u)
         ? game.urole.spellcasting.armor : 0;
 }
-
 
 // C enlightenment() uses add_menu_str() while the game is in progress.
 // The shared disclosure lines already include the tty menu leading column.
@@ -1443,7 +1419,7 @@ export async function doGenocided() {
 // "traditional" order is monster level high to low, then internal index.
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const G_UNIQ = 0x1000;
-const M2_PNAME = 0x00080000;
+
 const VANQ_MLVL_MNDX = 0;
 const VANQ_MSTR_MNDX = 1;
 const VANQ_ALPHA_SEP = 2;

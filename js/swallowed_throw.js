@@ -18,7 +18,7 @@ import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { delobj } from './invent.js';
-import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { rnd } from './rng.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES } from './potion.js';
@@ -26,6 +26,7 @@ import { touchPetrifies } from './stoning.js';
 import { offerThrownFood } from './thrown_food.js';
 import { detachThrownUnit, finishHeroThrownObjectLanding, prepareHeroThrownTarget, snuffThrownCandle } from './thrown_object.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
+import { monsterDigests, monsterIsAnimal, monsterIsWhirly } from './mondata.js';
 const PM_AIR_ELEMENTAL = 154;
 function possessive(name) {
     return /s$/i.test(name) ? `${name}'` : `${name}'s`;

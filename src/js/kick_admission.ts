@@ -6,24 +6,23 @@ import { game, requirePlayingGame } from './gstate.js';
 import { heroLegName } from './body_parts.js';
 import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB } from './const.js';
 import { heroPassesWalls, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterDigests, monsterIsVerySmall } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
 import { makePlural } from './objnam.js';
-
 import { promptYesNo } from './query.js';
 import { rn2 } from './rng.js';
 import { strikeSteed } from './steed.js';
 import { nearCapacity, SLT_ENCUMBER } from './hack.js';
-
+import { monsterDigests, monsterHasNoLimbs, monsterIsSlithy, monsterIsVerySmall } from './mondata.js';
 
 export async function admitHeroKick(): Promise<boolean> {
     requirePlayingGame(game);
     const hero = game.u;
     const species = heroSpecies();
-    const flags = MONSTER_FLAGS1[species] ?? 0;
+
     let refusal: string | null = null;
-    if ((flags & 0x00006000) === 0x00006000 || (flags & 0x00080000)) {
+    if (monsterHasNoLimbs(species) || monsterIsSlithy(species)) {
         refusal = 'You have no legs to kick with.';
     } else if (monsterIsVerySmall(species)) {
         refusal = 'You are too small to do any kicking.';

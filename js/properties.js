@@ -2,9 +2,9 @@
 // C ref: prop.h intrinsic and extrinsic property masks.
 import { game } from './gstate.js';
 import { I_SPECIAL, TIMEOUT, TT_PIT, W_ART, W_ARTI } from './const.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
+import { monsterIsFlyer, monsterIsSwimmer } from './mondata.js';
 const permanentOrigins = ['role', 'experience', 'race', 'outside'];
 const movementProperties = ['levitation', 'flying', 'swimming', 'stealth'];
 export function propertyTimeout(property, state = game) {
@@ -103,9 +103,9 @@ export function propertyIsActive(property, state = game) {
         const sources = existingPropertyRecord(property, state);
         return !!(sources?.worn.length || sources?.invoked || sources?.carried.length);
     }
-    const steedFlags = hero.usteed ? (MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) : 0;
-    const fromSteed = property === 'flying' ? steedFlags & 0x01
-        : property === 'swimming' ? steedFlags & 0x02 : false;
+    const steed = hero.usteed;
+    const fromSteed = !!steed && (property === 'flying' ? monsterIsFlyer(steed.mnum)
+        : property === 'swimming' && monsterIsSwimmer(steed.mnum));
     if (!propertySourceIsActive(property, state) && !fromSteed)
         return false;
     if (property === 'levitation' || property === 'flying' || property === 'invisible' || property === 'clairvoyant')

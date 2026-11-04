@@ -23,7 +23,7 @@ import type {
 } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym,
 } from './display.js';
@@ -36,7 +36,7 @@ import {
     M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT,
 } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless } from './mondata.js';
+import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
@@ -104,13 +104,9 @@ import {
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport_rules.js';
 
-const M2_ELF = 0x00000010;
-const M2_ORC = 0x00000080;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const G_UNIQ = 0x1000;
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
-const M1_WALLWALK = 0x08;
+
 const MZ_HUGE = 4;
 const S_MIMIC = 13;
 const S_TROLL = 46;
@@ -280,8 +276,8 @@ export async function attackMonsterWithMonster(
         defender.msleeping = 0;
     }
     await revealMonsterCombatDefender(defender, state);
-    if (((MONSTER_FLAGS2[aggressor.mnum] ?? 0) & M2_ELF)
-        && ((MONSTER_FLAGS2[defender.mnum] ?? 0) & M2_ORC)) threshold++;
+    if (is_elf(aggressor.mnum)
+        && is_orc(defender.mnum)) threshold++;
     const visible = canSeeMonsterCombat(aggressor, defender);
     // An out-of-sequence attack counts as this monster's action, but the
     // defender's discovery message completes before the action is stamped.
@@ -1353,9 +1349,9 @@ async function paralyzeAttacker(attacker: Monster, defender: Monster, duration: 
     duration = Math.min(127, duration);
     if (defender.mnum === PM_FLOATING_EYE) {
         if (random(4) === 0) duration = 127;
-        const flags = MONSTER_FLAGS1[attacker.mnum] ?? 0;
-        if (!attacker.mcansee || (flags & M1_NOEYES) || !defender.mcansee
-            || (defender.minvis && !(flags & M1_SEE_INVIS))) {
+
+        if (!attacker.mcansee || !monsterHasEyes(attacker.mnum) || !defender.mcansee
+            || (defender.minvis && !monsterPerceives(attacker.mnum))) {
             // passivemm returns M_ATTK_HIT here even after a missed attack.
             return { stopped: false, hit: true };
         }

@@ -1,18 +1,18 @@
 // Expulsion from an engulfing monster, including the hero's landing.
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
-import { releaseHeroFromMonster, redrawAfterRelease } from './mon.js';
-import { moveMonsterNextToHero } from './mon.js';
+import { releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { game } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
 import { heroFormSticks } from './polyself.js';
 import { RLOC_NOMSG } from './const.js';
-import { MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly, } from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { AD_COLD, AD_ELEC, AT_ENGL } from './monster_attack_types.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
+import { monsterDigests, monsterEnfolds, monsterIsWhirly } from './mondata.js';
 // C monmove.c:release_hero(). A monster can end its own hold, but cannot
 // release a sticky hero's grip. Expulsion also settles the hero's landing.
 export async function releaseMonsterHold(monster, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {

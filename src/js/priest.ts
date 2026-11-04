@@ -15,16 +15,16 @@ import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName, hallucinatedDeityName } from './alignment.js';
 import { heroSpineName } from './body_parts.js';
-import { nomul } from './hack.js';
+import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';
-import { setMonsterMalign } from './makemon.js';
+import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';
 import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
-import { cansee, couldSeeFromHero, couldsee } from './vision.js';
+import { couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import {
@@ -32,7 +32,6 @@ import {
     ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL,
     In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
 } from './const.js';
-
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
@@ -41,28 +40,23 @@ import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './
 import { shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsDisplaced } from './do_wear.js';
-
 import { heroIsInvisible } from './hero_invisibility.js';
 import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterPerceives, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName, randomDisplayMonsterIdentity } from './do_name.js';
 import type { MonsterArticle } from './do_name.js';
 import { heroIsHallucinating } from './senses.js';
 import { indefiniteArticlePrefix } from './objnam.js';
-
-import { makemon, makemonAt } from './makemon.js';
-import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
+import { questMonsterAlignment } from './role_monsters.js';
 import { mksobj, mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
 import { xdir, ydir } from './mklev.js';
-import { roomForRoomno, roomsAt, checkSpecialRoom } from './hack.js';
+import { is_minion, monsterPerceives } from './mondata.js';
 
-const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
-const M1_SEE_INVIS = 0x01000000;
 
 function sameLevel(
     left: DungeonLocation | null | undefined, right: DungeonLocation | null | undefined,
@@ -163,7 +157,7 @@ export function inHeroSanctuary(
     monster: Monster | null, x: number, y: number, state: GameState = game,
 ): boolean {
     if (monster) {
-        if (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MINION)
+        if (is_minion(monster.mnum)
             || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(monster.mnum))
             return false;
         x = monster.mx;
@@ -546,7 +540,6 @@ export async function specialShrinePriest(
     }
     return priest;
 }
-
 
 // ---------------------------------------------------------------------------
 // C priest.c:move_special() and pri_move().

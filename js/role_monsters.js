@@ -10,6 +10,7 @@ const M3_CLOSE = 0x0080;
 const M3_WANTSARTI = 0x0010;
 const M3_WAITFORU = 0x0040;
 export function questMonsterFlags2(species, state = game) {
+    // C role.c:role_init() copies and rewrites the shared mflags2 word.
     const flags = MONSTER_FLAGS2[species] ?? 0;
     const role = state.urole;
     if (species === role?.neminum)
@@ -19,6 +20,7 @@ export function questMonsterFlags2(species, state = game) {
     return flags;
 }
 export function questMonsterFlags3(species, state = game) {
+    // C role.c:role_init() copies and rewrites the shared mflags3 word.
     const flags = MONSTER_FLAGS3[species] ?? 0;
     if (species === state.urole?.neminum)
         return (flags & ~M3_CLOSE) | M3_WANTSARTI | M3_WAITFORU;

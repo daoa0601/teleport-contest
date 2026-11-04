@@ -6,22 +6,21 @@ import {
 } from './object_data.js';
 import { P_SLING, RLOC_MSG } from './const.js';
 import { plineWithContinuation } from './pline.js';
-import { reportHeroThrownMiss } from './dothrow.js';
-import { MONSTER_ALIGNMENT, monsterIsUnicorn } from './monster_data.js';
+import { reportHeroThrownMiss, settleThrownShopObject } from './dothrow.js';
+import { MONSTER_ALIGNMENT } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
-
 import { objectMaterial } from './o_init.js';
 import { definiteName, objectName } from './objnam.js';
 import { rn2 } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { settleThrownShopObject } from './dothrow.js';
 import { objectTypeKnown } from './shk.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
+import { monsterIsUnicorn } from './mondata.js';
 
 const GEMSTONE = 20;
 const MINERAL = 21;

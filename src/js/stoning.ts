@@ -4,51 +4,31 @@
 // timeout.c stoned_dialogue(); potion.c make_stoned() lives in potion.ts
 // (setHeroPetrificationTimeout).
 
-import { heroIsHallucinating, heroIsBlind, heroIsDeaf } from './senses.js';
-import { endVoluntaryMultiTurn, nomul } from './hack.js';
-import { exerciseAttribute } from './attrib.js';
+import { heroIsBlind } from './senses.js';
 import { heroHandName } from './body_parts.js';
 import { makePlural, withIndefiniteArticle, corpseName, killerObjectName, objectMonsterName } from './objnam.js';
 import { objectQuantity } from './mkobj.js';
 import type { PetrificationKillerFormat } from './potion.js';
-import { A_DEX, G_GENOD, KILLED_BY, KILLED_BY_AN, NEW_MOON, NO_KILLER_PREFIX, STONING, TIMEOUT, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
-import { canSpotMonster } from './display.js';
-import { displayMessageWindow } from './tty_topline.js';
+import { G_GENOD, KILLED_BY, KILLED_BY_AN, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
-import type { RandomBelow } from './monster_action_types.js';
-import { game, requireLiveGame } from './gstate.js';
-import { cureHeroVomiting } from './potion.js';
-import { healHeroLegs } from './do.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, monsterIsGolem } from './monster_data.js';
+import { game } from './gstate.js';
+import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
-import { monsterName, randomDisplayMonsterSubject } from './do_name.js';
-import { possessiveName } from './hacklib.js';
 import { CORPSE, EGG } from './object_data.js';
-import { heroHasNoLimbs, heroIsPolymorphed, polymonHero } from './polyself.js';
-import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
-import { clearHeroSliming } from './potion.js';
-import { stopHeroOccupation } from './occupation.js';
-import { formatHeardMessage } from './hero_speech.js';
-import { Popeye } from './eat.js';
+import { heroIsPolymorphed, polymonHero } from './polyself.js';
 import { uswapwepgone, uwepgone } from './wield.js';
-import { rn2 } from './rng.js';
 import { resolveImmediatePetrification } from './trap.js';
+import { monsterIsGolem } from './mondata.js';
 
 const PM_CHICKATRICE = 9;
 const PM_COCKATRICE = 10;
 const PM_MEDUSA = 284;
 export const PM_STONE_GOLEM = 257;
-const S_GOLEM = 55;
-const G_UNIQ = 0x1000;
-const M2_PNAME = 0x00080000;
-
 
 interface PetrificationContactResult {
     touched: boolean;
@@ -111,10 +91,6 @@ export function clearHeroPetrification(state: GameState = game): boolean {
     delete hero.stoneKillerFormat;
     return wasPetrifying;
 }
-
-
-
-
 
 // C mondata.c:poly_when_stoned(): a non-stone golem hero becomes a stone
 // golem only if stone golems have not been genocided.

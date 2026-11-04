@@ -7,21 +7,20 @@ import { plineWithContinuation } from './pline.js';
 import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './dbridge.js';
-
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import { makemonNear } from './mklev.js';
-import { makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
+import { makemonAt, rndmonstAdj, monsterBirthLimit, setMonsterMalign } from './makemon.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { setMonsterMalign } from './makemon.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
-import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { ensureHeroSkills } from './skills.js';
 import { rn2 } from './rng.js';
+import { speciesHasWeaponAttack } from './mondata.js';
 
 function familiarSpecies(object: GameObject | null, state: GameState): number | null {
     if (object) {
@@ -115,7 +114,7 @@ export async function makeFamiliar(
     monster.msleeping = 0;
     setMonsterMalign(monster, state);
     await newsym(monster.mx, monster.my);
-    if (monster.mtame && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+    if (monster.mtame && speciesHasWeaponAttack(monster.mnum)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state, { publish: announce });
     }

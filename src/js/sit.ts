@@ -22,26 +22,25 @@ import { dropObjectAtHero } from './do.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import {mksobj, set_corpsenm, objectWeight, stack_object} from './mkobj.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterIsEel } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { monsterPossessive } from './mondata.js';
+import {
+    monsterPossessive, lays_eggs, monsterIsAmorphous, monsterIsHumanoid, monsterIsSlithy,
+    eggs_in_water,
+} from './mondata.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { heroFormFlags, heroFormHidesWithoutCover, heroMonsterForm, heroFormSticks } from './polyself.js';
+import { heroFormHidesWithoutCover, heroMonsterForm, heroFormSticks } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { splitSittingGremlin } from './fountain.js';
 
 const CLOTH = 6;
-const M1_SWIM = 0x00000002;
-const M1_AMORPHOUS = 0x00000004;
-const M1_HUMANOID = 0x00020000;
-const M1_SLITHY = 0x00080000;
-const M1_OVIPAROUS = 0x00400000;
+
 const S_DRAGON = 30;
-const S_EEL = 57;
+
 const PM_GREMLIN = 40;
 const PM_TRAPPER = 99;
 const PM_FIRE_ELEMENTAL = 155;
@@ -51,7 +50,7 @@ const PM_SALAMANDER = 329;
 
 function formIsHumanoid() {
     return heroMonsterForm(game) == null
-        || !!(heroFormFlags(game) & M1_HUMANOID);
+        || monsterIsHumanoid(heroMonsterForm(game) ?? -1);
 }
 
 function objectQuantity(object: GameObject): number {
@@ -60,10 +59,7 @@ function objectQuantity(object: GameObject): number {
 
 function waterEggLayer() {
     const form = heroMonsterForm(game);
-    return form != null
-        && (heroFormFlags(game) & (M1_OVIPAROUS | M1_SWIM))
-            === (M1_OVIPAROUS | M1_SWIM)
-        && monsterIsEel(form);
+    return form !== null && eggs_in_water(form);
 }
 
 // C sit.c:lay_an_egg().
@@ -121,11 +117,11 @@ async function sitOnObject(object: GameObject): Promise<void> {
     }
 
     const name = definiteName(objectCombatName(object, { includeCorpseSpecies: false }));
-    await pline(heroFormFlags(game) & M1_SLITHY
+    await pline(monsterIsSlithy(heroMonsterForm(game) ?? -1)
         ? `You coil up around ${name}.`
         : `You sit on ${name}.`);
     if (object.otyp === CORPSE
-        && (MONSTER_FLAGS1[object.corpsenm ?? -1] ?? 0) & M1_AMORPHOUS) {
+        && monsterIsAmorphous({ mnum: object.corpsenm ?? -1 })) {
         await pline("It's squishy...");
     } else if (object.otyp === CREAM_PIE) {
         if (!heroIsDeaf()) await pline('Squelch!');
@@ -231,7 +227,7 @@ export async function dosit({
     }
     if (u?.ustuck && !heroFormSticks(game)) {
         const holder = u.ustuck;
-        const humanoid = (MONSTER_FLAGS1[holder.mnum] ?? 0) & M1_HUMANOID;
+        const humanoid = monsterIsHumanoid(holder.mnum);
         const subject = monsterName(holder, { capitalized: true });
         await pline(humanoid
             ? `${subject} won't offer ${monsterPossessive(holder)} lap.`
@@ -305,7 +301,7 @@ export async function dosit({
     } else if (typ === THRONE) {
         await pline('You sit on the opulent throne.');
         await throneSitEffect({ gotoLevel, chooseTeleportDestination });
-    } else if (heroFormFlags(game) & M1_OVIPAROUS) {
+    } else if (lays_eggs(heroMonsterForm(game) ?? -1)) {
         if (!await layEgg()) {
             game.context.move = 0;
             return;

@@ -2,16 +2,14 @@
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { begForFood } from './ambient_sounds.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroIsHallucinating } from './senses.js';
 import { cansee, couldsee } from './vision.js';
+import { carnivorous, herbivorous } from './mondata.js';
 const DOG_WEAK = 500;
 const DOG_STARVE = 750;
-const M1_CARNIVORE = 0x20000000;
-const M1_HERBIVORE = 0x40000000;
 // A starvation attempt ends this pet action even when an amulet saves it.
 // Check only at dog_move entry; sleeping, frozen and eating pets wait until
 // their next movement opportunity, as in dochug()/m_move().
@@ -20,7 +18,7 @@ export async function applyPetHunger(monster, state) {
     const dog = monster.mtame ? monster.edog ?? monster.mextra?.edog : null;
     if (!dog || state.moves <= dog.hungrytime + DOG_WEAK)
         return false;
-    const diet = (MONSTER_FLAGS1[monster.mnum] ?? 0) & (M1_CARNIVORE | M1_HERBIVORE);
+    const diet = (carnivorous(monster.mnum) || herbivorous(monster.mnum));
     if (!diet) {
         dog.hungrytime = state.moves + DOG_WEAK;
         return false;

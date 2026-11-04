@@ -15,15 +15,16 @@ import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
 import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd } from './const.js';
-import { isok } from './cmd.js';
+import { isok, setMulti, paranoidQuery } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
-import { setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
-import { achievementEntries, recordAchievement } from './insight.js';
+import {
+    achievementEntries, recordAchievement, finalConductLines, listGenocided, setVanqOrder, showFinalAttributes,
+    vanquishedLines, vanquishedTypeCount,
+} from './insight.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { expelHero } from './hero_expulsion.js';
 import { releaseHeroFromMonster } from './mon.js';
-
 import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { scheduleLevelChange } from './level_change.js';
@@ -34,15 +35,12 @@ import { clearMessageWindow, displayMessageWindow, flushPendingTopline, resetTop
 import { vision_recalc } from './vision.js';
 import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, deleteObject } from './shk.js';
 import type { ShopExitOutcome } from './shk.js';
-import { pline, plineWithContinuation } from './pline.js';
-import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects } from './invent.js';
-import { finalConductLines, showFinalAttributes } from './insight.js';
-import { listGenocided, setVanqOrder, vanquishedLines, vanquishedTypeCount } from './insight.js';
-
+import { plineWithContinuation } from './pline.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects, currency } from './invent.js';
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import type { TextMenuLine, TextPage } from './windows.js';
 import { artifactById } from './artifacts.js';
-import { MONSTER_GENO, MONSTER_NAME, monsterHasProperName, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import {mksobj, isContainer, placeObjectSynchronously, stack_object} from './mkobj.js';
@@ -57,10 +55,8 @@ import { dungeonOverviewDisclosure } from './dungeon.js';
 import { canMakeBones, createBonesFromDeath } from './bones.js';
 import { restoreLaunchedObjectForBones } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { currency } from './invent.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
-import { paranoidQuery } from './cmd.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster } from './death_remains.js';
 import { loadScoreRecords, saveScoreRecords } from './score_records.js';
 import type { ScoreOutcome, ScoreRecord } from './score_records.js';
@@ -74,6 +70,7 @@ import { restoreBallAndChainPlacement } from './ball.js';
 import { isAccessibleAt } from './monmove.js';
 import { resetUtrap } from './trap.js';
 import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
+import { monsterHasProperName } from './mondata.js';
 
 export interface DeathDamage {
     hpKey: 'mh' | 'uhp';

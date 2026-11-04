@@ -1,4 +1,4 @@
-import { setHeroGrip } from './mon.js';
+import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, sendMonsterToLimbo } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
@@ -23,15 +23,13 @@ import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } fr
 import { rn2, rnd } from './rng.js';
 import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_SYMBOL, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { AMULET_OF_YENDOR, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
-import { releaseHeroFromMonster } from './mon.js';
-import { maybeUnhideAt, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
@@ -50,12 +48,11 @@ import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
+import { monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './mondata.js';
 export function requireLevel(state) {
     if (!state.level)
         throw new Error('Teleportation requires a dungeon level.');
 }
-const M1_WALLWALK = 0x00000008;
-const M1_TPORT = 0x02000000;
 const S_ELEMENTAL = 31;
 const S_MIMIC = 13;
 function wornRing(state, objectType) {
@@ -74,7 +71,7 @@ export function heroHasTeleportation(state) {
 }
 export function heroFormCanTeleport(state) {
     return Upolyd(state.u) && state.u.umonnum !== undefined
-        && !!(monsterCanTeleport(state.u.umonnum));
+        && monsterCanTeleport(state.u.umonnum);
 }
 export function heroCanTeleport(state = game) {
     return heroHasTeleportation(state) || heroFormCanTeleport(state);
@@ -530,7 +527,7 @@ function monsterRelocationCandidates(monster, state) {
     const centerX = Math.trunc(COLNO / 2);
     const centerY = Math.trunc(ROWNO / 2);
     const maxRadius = Math.max(centerX, centerY, COLNO - 1 - centerX, ROWNO - 1 - centerY);
-    const passesWalls = !!monsterPassesWalls(monster.mnum);
+    const passesWalls = monsterPassesWalls(monster.mnum);
     const candidates = [];
     for (let radius = 0; radius <= maxRadius; radius++) {
         const lox = centerX - radius;

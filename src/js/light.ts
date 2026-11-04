@@ -3,15 +3,15 @@
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
-import { wakeMonstersNearWithMessages, finishMonsterKilled, maybeUnhideAt } from './mon.js';
+import { wakeMonstersNearWithMessages, finishMonsterKilled } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroSpecies } from './polyself.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
-import { definiteObjectAction, minimalObjectName, makePlural, withIndefiniteArticle, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming } from './objnam.js';
-import { game, requireGameLevel } from './gstate.js';
+import { definiteObjectAction, minimalObjectName, withIndefiniteArticle, objectNameIsPlural, ownedObjectName } from './objnam.js';
+import { game } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { plineWithContinuation } from './pline.js';
@@ -25,21 +25,20 @@ import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { artifactById, artifactEmitsLight } from './artifacts.js';
-import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS, OBJECT_TIMER_KIND } from './const.js';
+import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
-
-import { unblessObjectState, uncurseObjectState, objectWeight } from './mkobj.js';
-import { monsterDigests, monsterIsWhirly } from './monster_data.js';
-import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, POT_WATER, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
+import {
+    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP,
+    POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+} from './object_data.js';
 import { rnd } from './rng.js';
-import { learnObjectType } from './o_init.js';
 import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
-import { useUpInventoryStack } from './invent.js';
+import { heroIsBlind, heroIsDeaf } from './senses.js';
+import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
 import { loseHeroHp, roomForRoomno } from './hack.js';
+import { monsterDigests, monsterIsWhirly } from './mondata.js';
 
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;
@@ -193,7 +192,6 @@ export function snuffLightSource(x: number, y: number, state: GameState = game):
     }
     if (target) snuffOrdinaryLight(target);
 }
-
 
 // C light.c:save_light_sources() writes a batch (the global lights, or one
 // level's lights) newest-first, and restore_light_sources() pushes each
@@ -413,14 +411,12 @@ export async function lightDamage(
     return damage;
 }
 
-
 // C light.c:new_light_source() prepends to light_base, so each lighting
 // gives the object the newest slot in the list order that snuff searches.
 export function registerObjectLightSource(object: GameObject, state: GameState): void {
     state._lightSerial = (state._lightSerial ?? 0) + 1;
     object._litSeq = state._lightSerial;
 }
-
 
 // apply.c:dorub() performs this type change before the released djinni can
 // grant a fatal wish.  A lit magic lamp already has a light source but no
@@ -439,12 +435,4 @@ export function transformMagicLampToOilLamp(
     if (object.lamplit) beginObjectBurn(object, state, currentTurn);
     return true;
 }
-
-
-
-
-
-
-
-
 

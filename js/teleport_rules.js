@@ -8,7 +8,7 @@ import { collectNearbyCoords } from './u_init.js';
 import { rn2 } from './rng.js';
 import { ACCESSIBLE, ALTAR, D_CLOSED, D_LOCKED, DOOR, IS_STWALL, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, MM_IGNORELAVA, MM_IGNOREWATER, WATER, W_NONPASSWALL } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, monsterHasEyes, monsterIsCovetous, monsterIsEel } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { BOULDER, SCR_SCARE_MONSTER } from './object_data.js';
 import { hasCompletedEngraving } from './engrave.js';
 import { monsterAtPosition } from './steed.js';
@@ -19,18 +19,10 @@ import { monsterInAir } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasWaterWalking } from './do_wear.js';
 import { heroLikesLava } from './polyself.js';
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_SWIM = 0x00000002;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_NOEYES = 0x00001000;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
-const M2_ROCKTHROW = 0x08000000;
+import { monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord, is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, } from './mondata.js';
 const G_UNIQ = 0x1000;
 const S_ANGEL = 27;
 const S_DEMON = 56;
-const S_EEL = 57;
 const S_HUMAN = 53;
 const S_VAMPIRE = 48;
 const PM_FLOATING_EYE = 28;
@@ -42,9 +34,8 @@ const PM_FAMINE = 313;
 const PM_SALAMANDER = 329;
 // C teleport.c:m_blocks_teleporting().
 function monsterIsDemonRuler(monster) {
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
     return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
-        && !!(flags & (M2_LORD | M2_PRINCE));
+        && (is_lord(monster?.mnum) || is_prince(monster?.mnum));
 }
 function demonCourtBlocksTeleport(monster, state) {
     const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
@@ -112,8 +103,6 @@ export function goodPosition(x, y, subject, { state = game, gpflags = 0, random 
     const occupant = monsterAtPosition(level, x, y);
     if (occupant && avoidMonsters)
         return false;
-    const flags1 = monster ? MONSTER_FLAGS1[monster.mnum] ?? 0 : 0;
-    const flags2 = monster ? MONSTER_FLAGS2[monster.mnum] ?? 0 : 0;
     const pool = isPoolAt(x, y, state);
     const lava = isLavaAt(x, y, state);
     if (monster) {
@@ -125,11 +114,11 @@ export function goodPosition(x, y, subject, { state = game, gpflags = 0, random 
             if (isHero) {
                 return propertyIsActive('swimming', state)
                     || propertyIsActive('magicalBreathing', state)
-                    || !!(flags1 & M1_AMPHIBIOUS)
+                    || monsterIsAmphibious(monster.mnum)
                     || (surface && (propertyIsActive('levitation', state)
                         || propertyIsActive('flying', state) || heroHasWaterWalking(state)));
             }
-            return !!(flags1 & M1_SWIM) || (surface && monsterInAir(monster, state));
+            return monsterIsSwimmer(monster.mnum) || (surface && monsterInAir(monster, state));
         }
         else if (monsterIsEel(mnum) && random(13) && !ignoreWater) {
             return false;
@@ -147,10 +136,10 @@ export function goodPosition(x, y, subject, { state = game, gpflags = 0, random 
             return monsterInAir(monster, state)
                 || mnum === PM_FIRE_ELEMENTAL || mnum === PM_SALAMANDER;
         }
-        if ((flags1 & M1_WALLWALK)
+        if (monsterPassesWalls(monster.mnum)
             && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL)))
             return true;
-        if ((flags1 & M1_AMORPHOUS) && location.typ === DOOR
+        if (monsterIsAmorphous(monster) && location.typ === DOOR
             && (location.doormask & (D_CLOSED | D_LOCKED)))
             return true;
         if (gpflags & GP_CHECKSCARY) {
@@ -165,7 +154,7 @@ export function goodPosition(x, y, subject, { state = game, gpflags = 0, random 
         && !(location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)));
     if (!accessible && !(pool && ignoreWater) && !(lava && ignoreLava))
         return false;
-    if (!(flags2 & M2_ROCKTHROW) && level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
+    if (!monsterThrowsRocks(monster?.mnum ?? -1) && level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
         return false;
     if (avoidMonsters && level.exclusionZones?.some(zone => zone.type === 'monster-generation'
         && x >= zone.lx && x <= zone.hx && y >= zone.ly && y <= zone.hy))
@@ -210,7 +199,7 @@ function monsterTypeScaredFromPosition(mndx, x, y, state) {
     const inFinalDungeon = !!state.u?.uz && !!state.astral_level
         && state.u.uz.dnum === state.astral_level.dnum;
     if (inHell || inFinalDungeon || mndx === PM_MINOTAUR
-        || (!monsterHasEyes(mndx)))
+        || !monsterHasEyes(mndx))
         return false;
     return hasCompletedEngraving('Elbereth', x, y, state);
 }

@@ -1,16 +1,10 @@
-import { formatFeltMessage } from './hero_speech.js';
-import type { Monster } from './monster_types.js';
-import type { PlayingGameState } from './game_state.js';
-import type { RandomBelow } from './monster_action_types.js';
-
-export interface MonsterSummoningResult {
-    count: number;
-    created: Monster[];
-}
-
 // Monster summoning by demons, minions, and the Wizard of Yendor.
 // C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
 
+import { formatFeltMessage } from './hero_speech.js';
+import type { Monster, MinionData } from './monster_types.js';
+import type { PlayingGameState } from './game_state.js';
+import type { RandomBelow } from './monster_action_types.js';
 import { artifactById } from './artifacts.js';
 import { deityName } from './alignment.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
@@ -20,23 +14,27 @@ import { cleanupTransientLight, showTransientLight } from './transient_light.js'
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear } from './mklev.js';
 import { mkclassAligned } from './makemon.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { currency } from './invent.js';
 import { getLine } from './query.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { detachHeroGold } from './hero_gold.js';
-import type { MinionData } from './monster_types.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isWereMonster, summonWereAttackHelp } from './were.js';
 import { heroGoldAmount } from './hack.js';
+import {
+    is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince,
+} from './mondata.js';
+
+export interface MonsterSummoningResult {
+    count: number;
+    created: Monster[];
+}
 
 const S_DEMON = 56;
-const M2_DEMON = 0x00000100;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
-const M2_MINION = 0x00001000;
+
 const G_GONE = 0x03;
 
 const PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
@@ -105,7 +103,7 @@ export async function summonMonsterAttackHelp(
     if (
         monster.mcan ||
         (monster.cham ?? -1) >= 0 ||
-        (!(monsterIsDemon(monster.mnum))
+        (!monsterIsDemon(monster.mnum)
             && !isWereMonster(monster))
     )
         return null;
@@ -135,8 +133,8 @@ function matchesAlignment(mnum: number, alignment: number) {
 export function normalDemon(alignment: number): number | null {
     const mnum = mkclassAligned(S_DEMON, 0, alignment);
     if (mnum == null) return null;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    return flags & M2_DEMON && !(flags & (M2_LORD | M2_PRINCE)) ? mnum : null;
+
+    return is_ndemon(mnum) ? mnum : null;
 }
 
 export function demonLord(alignment: number): number | null {
@@ -160,7 +158,7 @@ function demonPrince(alignment: number): number | null {
 function lawfulMinion(): number | null {
     for (let attempts = 20; attempts > 0; attempts--) {
         const mnum = mkclassAligned(27, 0, A_NONE);
-        if (mnum != null && !((MONSTER_FLAGS2[mnum] ?? 0) & M2_LORD)) return mnum;
+        if (mnum != null && !is_lord(mnum)) return mnum;
     }
     return null;
 }
@@ -182,8 +180,8 @@ function summonedType(
     alignment: number,
 ): { mnum: number | null; double: 'demon' | 'minion' | null } {
     const mnum = monster?.mnum ?? PM_WIZARD_OF_YENDOR;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    if ((flags & M2_DEMON && flags & M2_PRINCE) || mnum === PM_WIZARD_OF_YENDOR) {
+
+    if ((is_dprince(mnum)) || mnum === PM_WIZARD_OF_YENDOR) {
         return {
             mnum: !rn2(20)
                 ? demonPrince(alignment)
@@ -193,7 +191,7 @@ function summonedType(
             double: 'demon',
         };
     }
-    if (flags & M2_DEMON && flags & M2_LORD) {
+    if (is_dlord(mnum)) {
         return {
             mnum: !rn2(50)
                 ? demonPrince(alignment)
@@ -205,14 +203,14 @@ function summonedType(
     }
     if (MONSTER_NAME[mnum] === 'bone devil')
         return { mnum: MONSTER_NAME.indexOf('skeleton'), double: null };
-    if (flags & M2_DEMON && !(flags & (M2_LORD | M2_PRINCE))) {
+    if (is_ndemon(mnum)) {
         return {
             mnum: !rn2(20) ? demonLord(alignment) : !rn2(6) ? normalDemon(alignment) : mnum,
             double: null,
         };
     }
-    if (flags & M2_MINION && alignment > 0) {
-        const lord = !!(flags & M2_LORD);
+    if (is_minion(mnum) && alignment > 0) {
+        const lord = is_lord(mnum);
         return {
             mnum: lord && !rn2(20) ? lawfulLord() : lord || !rn2(6) ? lawfulMinion() : mnum,
             double: 'minion',
@@ -263,11 +261,10 @@ export function monsterCensus(spotted = false): number {
 }
 
 export async function msummon(monster: Monster | null = null): Promise<MonsterSummoningResult> {
-    const summonerFlags = MONSTER_FLAGS2[monster?.mnum ?? -1] ?? 0;
     const weapon = game.uwep || game.u?.uwep;
     if (
         monster &&
-        summonerFlags & M2_DEMON &&
+        monsterIsDemon(monster?.mnum ?? -1) &&
         artifactById(weapon?.oartifact)?.name === 'Demonbane'
     ) {
         if (canSeeMonster(monster)) {
@@ -282,11 +279,11 @@ export async function msummon(monster: Monster | null = null): Promise<MonsterSu
     if (mnum == null) return { count: 0, created: [] };
 
     let count = 1;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
+
     if (selection.double && !rn2(4)) {
         const eligible = selection.double === 'demon'
-            ? !!(flags & M2_DEMON) && !(flags & (M2_LORD | M2_PRINCE))
-            : !(flags & M2_LORD);
+            ? is_ndemon(mnum)
+            : !is_lord(mnum);
         if (eligible) count = 2;
     }
     if ((MONSTER_GENO[mnum] ?? 0) & 0x1000) count = 1;

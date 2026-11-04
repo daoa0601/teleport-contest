@@ -2,11 +2,9 @@
 // C ref: polyself.c mbodypart().  Keep each exported body part tied to the
 // corresponding source table rather than deriving one part from another.
 import { game } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM, monsterHasEyes } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { AT_CLAW } from './monster_attack_types.js';
-const M1_NOEYES = 0x00001000;
-const M1_HUMANOID = 0x00020000;
-const M1_SLITHY = 0x00080000;
+import { monsterIsHumanoid, monsterIsSlithy, eyecount, } from './mondata.js';
 const S_BLOB = 2;
 const S_COCKATRICE = 3;
 const S_DOG = 4;
@@ -26,7 +24,6 @@ const S_PUDDING = 42;
 const S_YETI = 51;
 const S_EEL = 57;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
-const PM_CYCLOPS = MONSTER_NAME.indexOf('Cyclops');
 const PM_ROTHE = 81;
 const PM_KI_RIN = 124;
 const PM_RAVEN = 128;
@@ -56,7 +53,6 @@ function humanoidHasClaws(mnum) {
 }
 export function monsterArmName(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
         || mnum === PM_OWLBEAR)
         return 'foreleg';
@@ -64,7 +60,7 @@ export function monsterArmName(mnum) {
         return 'arm';
     if (mnum === PM_JELLYFISH || mnum === PM_KRAKEN)
         return 'tentacle';
-    if (flags & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return 'arm';
     if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
         return 'wing';
@@ -79,7 +75,7 @@ export function monsterArmName(mnum) {
         return 'anterior segment';
     if (symbol === S_SPIDER)
         return 'pedipalp';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'vestigial limb';
     if (symbol === S_EYE)
         return 'appendage';
@@ -93,7 +89,6 @@ export function monsterArmName(mnum) {
 }
 export function monsterFootName(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
         || mnum === PM_OWLBEAR)
         return 'rear paw';
@@ -114,7 +109,7 @@ export function monsterFootName(mnum) {
         return 'posterior segment';
     if (symbol === S_SPIDER)
         return 'claw';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'rear region';
     if (symbol === S_EYE)
         return 'lower appendage';
@@ -124,23 +119,22 @@ export function monsterFootName(mnum) {
         return 'lower current';
     if (symbol === S_FUNGUS)
         return 'root';
-    if (flags & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return 'foot';
     return 'rear claw';
 }
 export function monsterHandName(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
         || mnum === PM_OWLBEAR)
         return 'paw';
     if (symbol === S_YETI)
         return 'hand';
-    if ((flags & M1_HUMANOID) && humanoidHasClaws(mnum))
+    if (monsterIsHumanoid(mnum) && humanoidHasClaws(mnum))
         return 'claw';
     if (mnum === PM_JELLYFISH || mnum === PM_KRAKEN)
         return 'tentacle';
-    if (flags & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return 'hand';
     if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
         return 'wing';
@@ -155,7 +149,7 @@ export function monsterHandName(mnum) {
         return 'segment';
     if (symbol === S_SPIDER)
         return 'pedipalp';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'scale gap';
     if (symbol === S_EYE)
         return 'tentacle';
@@ -224,7 +218,7 @@ export function heroToeName(state = game) {
         return 'posterior setae';
     if (symbol === S_SPIDER)
         return 'claw';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'rear scale';
     if (symbol === S_EYE)
         return 'lower tentacle tip';
@@ -234,7 +228,7 @@ export function heroToeName(state = game) {
         return 'edge';
     if (symbol === S_FUNGUS)
         return 'rhizome tip';
-    return (MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID ? 'toe' : 'rear claw tip';
+    return monsterIsHumanoid(mnum) ? 'toe' : 'rear claw tip';
 }
 export function heroHandName(state = game) {
     return monsterHandName(currentHeroMonsterNumber(state));
@@ -242,13 +236,12 @@ export function heroHandName(state = game) {
 export function heroHandedName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
         || mnum === PM_OWLBEAR)
         return 'pawed';
     if (symbol === S_YETI)
         return 'handed';
-    if (flags & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return humanoidHasClaws(mnum) ? 'clawed' : 'handed';
     if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
         return 'winged';
@@ -263,7 +256,7 @@ export function heroHandedName(state = game) {
         return 'segmented';
     if (symbol === S_SPIDER)
         return 'palped';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'scale gapped';
     if (symbol === S_EYE)
         return 'tentacled';
@@ -317,7 +310,7 @@ export function heroFingerName(state = game) {
         return 'finger';
     if (mnum === PM_JELLYFISH || mnum === PM_KRAKEN)
         return 'tentacle';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return 'finger';
     if (symbol === S_COCKATRICE || mnum === PM_RAVEN)
         return 'wing';
@@ -332,7 +325,7 @@ export function heroFingerName(state = game) {
         return 'setae';
     if (symbol === S_SPIDER)
         return 'pedipalp';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'large scale';
     if (symbol === S_EYE)
         return 'tentacle';
@@ -347,10 +340,9 @@ export function heroFingerName(state = game) {
 export function heroFingerTipName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     if (symbol === S_YETI && mnum !== PM_OWLBEAR)
         return 'fingertip';
-    if (flags & M1_HUMANOID)
+    if (monsterIsHumanoid(mnum))
         return 'fingertip';
     // C mbodypart() only maps jellyfish to "tentacle" for ARM, FINGER, HAND,
     // FOOT, and TOE; FINGERTIP falls through to the per-symbol tables.
@@ -367,7 +359,7 @@ export function heroFingerTipName(state = game) {
         return 'setae';
     if (symbol === S_SPIDER)
         return 'tarsus';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'large scale tip';
     if (symbol === S_EYE)
         return 'tentacle tip';
@@ -405,7 +397,7 @@ export function heroHairName(state = game) {
         return 'setae';
     if (symbol === S_SPIDER)
         return 'hair';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY || symbol === 30)
+    if (monsterIsSlithy(mnum) || symbol === 30)
         return 'scales';
     if (symbol === S_EYE)
         return 'cilia';
@@ -415,7 +407,7 @@ export function heroHairName(state = game) {
         return 'currents';
     if (symbol === S_FUNGUS)
         return 'spores';
-    return (MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID ? 'hair' : 'fur';
+    return monsterIsHumanoid(mnum) ? 'hair' : 'fur';
 }
 // C mbodypart(NOSE).
 export function heroNoseName(state = game) {
@@ -435,7 +427,7 @@ export function heroNoseName(state = game) {
         return 'prostomium';
     if (symbol === S_SPIDER)
         return 'labrum';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'forked tongue';
     if (symbol === S_EYE)
         return 'olfactory nerve';
@@ -465,7 +457,7 @@ export function monsterLegName(mnum) {
         return 'posterior';
     if (symbol === S_SPIDER)
         return 'leg';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'rear region';
     if (symbol === S_EYE)
         return 'lower tentacle';
@@ -475,7 +467,7 @@ export function monsterLegName(mnum) {
         return 'lower current';
     if (symbol === S_FUNGUS)
         return 'rhizome';
-    return (MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID ? 'leg' : 'rear limb';
+    return monsterIsHumanoid(mnum) ? 'leg' : 'rear limb';
 }
 // C mbodypart(NECK). A body without a humanoid neck still has its own name
 // for that region, for example a spider's cephalothorax or an eye's equator.
@@ -492,7 +484,7 @@ export function monsterNeckName(mnum) {
         return 'clitellum';
     if (symbol === S_SPIDER)
         return 'cephalothorax';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'neck';
     if (symbol === S_EYE)
         return 'equator';
@@ -514,7 +506,7 @@ export function heroSpineName(state = game) {
         return 'beam';
     if (symbol === S_EEL && mnum !== PM_JELLYFISH)
         return 'dorsal fin';
-    if (symbol === S_WORM || (MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (symbol === S_WORM || monsterIsSlithy(mnum))
         return 'length';
     if (symbol === S_SPIDER)
         return 'abdomen';
@@ -540,7 +532,7 @@ export function heroLightHeadedFeeling(state = game) {
         return 'over stretched';
     if (symbol === S_SPIDER)
         return 'spun out';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'light headed';
     if (symbol === S_EYE)
         return 'rotational';
@@ -560,7 +552,7 @@ export function monsterStomachName(mnum) {
         return 'beam';
     if (symbol === S_SPIDER)
         return 'digestive tract';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'stomach';
     return (symbol !== undefined && [S_EYE, S_VORTEX, S_ELEMENTAL, S_FUNGUS].includes(symbol))
         ? 'interior' : 'stomach';
@@ -568,12 +560,9 @@ export function monsterStomachName(mnum) {
 export function heroHasEyes(state = game) {
     return heroEyeCount(state) > 0;
 }
-// C mondata.h:eyecount(). Eye count is anatomy, independent of sight.
+// Eye count uses the current body, independently of sight.
 export function heroEyeCount(state = game) {
-    const mnum = currentHeroMonsterNumber(state);
-    if (!monsterHasEyes(mnum))
-        return 0;
-    return mnum === PM_CYCLOPS || mnum === PM_FLOATING_EYE ? 1 : 2;
+    return eyecount(currentHeroMonsterNumber(state));
 }
 // C mbodypart(EYE).
 export function heroEyeName(state = game) {
@@ -585,7 +574,7 @@ export function heroEyeName(state = game) {
         return 'beam';
     if (symbol === S_WORM)
         return 'light sensitive cell';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'eye';
     if (symbol === S_EYE)
         return 'optic nerve';
@@ -605,7 +594,7 @@ export function monsterFaceName(mnum) {
         return 'premaxillary';
     if (symbol === S_WORM)
         return 'clitellum';
-    if ((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'face';
     if (symbol === S_EYE)
         return 'body';

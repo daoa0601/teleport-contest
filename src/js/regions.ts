@@ -1,18 +1,16 @@
-import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
-
 // regions.js — Shared level-region construction.
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 
-import { ACCESSIBLE, M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd } from './const.js';
+import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
+import { isPoolAt } from './dbridge.js';
+import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';
-
 import type { DeathHandler } from './end.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -20,15 +18,13 @@ import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { GasCloud, Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
-
 import { heroIsBreathless } from './polyself.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
 import { makePlural } from './objnam.js';
-
 import { refreshProperty } from './properties.js';
 import { teleportHeroSafely } from './teleport.js';
 import { validCloudPosition } from './read.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsNonliving, monsterIsVampireShifter, monsterHasEyes, monsterIsBreathless, monsterIsEel } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_SOUND } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AD_DRST, AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { d, rn2, rnd } from './rng.js';
@@ -36,16 +32,15 @@ import { heroIsBlind } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { cansee, vision_note_blocker_change, visionCellBlocksLight } from './vision.js';
 import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasPoisonResistance,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasPoisonResistance, monsterHasEyes,
+    monsterIsBreathless, monsterIsEel, monsterIsNonliving, monsterIsVampireShifter,
 } from './mondata.js';
 import { loseHeroHp } from './hack.js';
 
 const GAS_BAD = 0;
 const GAS_MINOR = 1;
 export const GAS_OK = 2;
-const M1_BREATHLESS = 0x00000400;
-const M1_NOEYES = 0x00001000;
-const S_EEL = 57;
+
 const PM_FOG_CLOUD = 106;
 const PM_STEAM_VORTEX = 110;
 const PM_VROCK = 295;

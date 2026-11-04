@@ -1,8 +1,8 @@
 // Species rules shared by corpse timers and revival.
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { is_dwarf, is_elf } from './mondata.js';
 const S_HUMANOID = 8, S_KOBOLD = 11, S_ORC = 15;
 const S_GNOME = 33, S_GIANT = 34, S_KOP = 37, S_HUMAN = 53;
-const M2_ELF = 0x10, M2_DWARF = 0x20;
 const PM_ETTIN = MONSTER_NAME.indexOf('ettin');
 const PM_KOBOLD_ZOMBIE = MONSTER_NAME.indexOf('kobold zombie');
 const PM_GNOME_ZOMBIE = MONSTER_NAME.indexOf('gnome zombie');
@@ -18,14 +18,13 @@ export function zombieForm(mnum) {
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === undefined)
         return null;
-    const race = MONSTER_FLAGS2[mnum] ?? 0;
     switch (symbol) {
         case S_KOBOLD: return PM_KOBOLD_ZOMBIE;
         case S_ORC: return PM_ORC_ZOMBIE;
         case S_GIANT: return mnum === PM_ETTIN ? PM_ETTIN_ZOMBIE : PM_GIANT_ZOMBIE;
         case S_HUMAN:
-        case S_KOP: return race & M2_ELF ? PM_ELF_ZOMBIE : PM_HUMAN_ZOMBIE;
-        case S_HUMANOID: return race & M2_DWARF ? PM_DWARF_ZOMBIE : null;
+        case S_KOP: return is_elf(mnum) ? PM_ELF_ZOMBIE : PM_HUMAN_ZOMBIE;
+        case S_HUMANOID: return is_dwarf(mnum) ? PM_DWARF_ZOMBIE : null;
         case S_GNOME: return PM_GNOME_ZOMBIE;
         default: return null;
     }

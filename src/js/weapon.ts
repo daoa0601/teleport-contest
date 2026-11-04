@@ -4,95 +4,60 @@
 
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import {
-    objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE,
-    BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG,
-    ELVEN_BOW, LOADSTONE, OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData,
-    HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE,
-    OBJECT_SMALL_DAMAGE, OBJECT_HIT_BONUS, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE,
-    TIN, TOUCHSTONE,
+    objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW,
+    BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
+    OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData, HEAVY_IRON_BALL, TIN_OPENER, TOWEL,
+    OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_HIT_BONUS, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE,
+    ROCK, STATUE, TIN, TOUCHSTONE,
 } from './object_data.js';
 import { bypassObject } from './worn.js';
 import {
-    NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE,
-    NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING,
-    W_ARMG, W_ARMS, W_WEP,
+    NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON,
+    NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, P_AXE, P_PICK_AXE,
+    Upolyd, WT_IRON_BALL_INCR, P_FLAIL, P_SPEAR,
 } from './const.js';
 import {
-    definiteObjectAction,
-    objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName,
+    definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
+    observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
 } from './objnam.js';
-import { artifactById, artifactEmitsLight, monsterCanTouchArtifact } from './artifacts.js';
+import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifacts.js';
 import { monsterHandName } from './body_parts.js';
-import { canSeeMonster, monsterVisible, newsym } from './display.js';
+import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SYMBOL, monsterIsBig, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './mon.js';
 import {unlinkMonsterObject, placeObject, stack_object} from './mkobj.js';
 import { monsterName } from './do_name.js';
-import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
+import {
+    monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight,
+    monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade,
+    monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver,
+    monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance,
+} from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { makePlural, makeSingular } from './objnam.js';
-
 import { touchPetrifies } from './stoning.js';
-import { heroIsBlind } from './senses.js';
-import { isBimanualObject } from './object_properties.js';
-import { rn2 } from './rng.js';
+import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
+import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
-import { isPolearm, isWetTowel, type WeaponCandidate } from './object_properties.js';
 import { possessiveName } from './hacklib.js';
-import { monsterWeaponSwingVerb } from './mhitu.js';
 import { willWeld } from './wield.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import { monsterHasStoneResistance } from './mondata.js';
-import {
-    AKLYS_LIM,
-    P_AXE,
-    P_DAGGER,
-    P_LANCE,
-    P_PICK_AXE,
-    P_POLEARMS,
-    P_SABER,
-    P_SHORT_SWORD,
-    P_WHIP,
-} from './const.js';
-import { isMissileObject, isWeaponTool } from './object_properties.js';
-import { artifactDamageBonus, artifactStrikesShade } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
-import { A_STR, Upolyd, WT_IRON_BALL_INCR } from './const.js';
 import { heroSpecies } from './polyself.js';
-import {
-    MONSTER_SIZE,
-    monsterHatesBlessings,
-    monsterHatesLight,
-    monsterHatesSilver,
-    monsterIsShade,
-    monsterIsThickSkinned,
-    monsterIsWooden,
-    monsterSpeciesHatesSilver,
-} from './monster_data.js';
-
 import { objectMaterial } from './o_init.js';
-import { d, rnd } from './rng.js';
 import type { ArtifactDefender } from './artifacts.js';
 import { isPoolAt } from './dbridge.js';
-
-import { artifactToHitBonus } from './artifacts.js';
-import { P_SPEAR } from './const.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { Hero } from './hero_types.js';
-import { MONSTER_MOVE } from './monster_data.js';
-import { P_FLAIL } from './const.js';
-
 import { SKILL_NAMES } from './skills.js';
-import { isLauncherAmmunition } from './object_properties.js';
 
 interface WeaponMessageOptions {
     publish?: MessagePublisher;
@@ -111,12 +76,6 @@ export interface MonsterRangedWeapon {
     launcher: GameObject | null;
 }
 
-const M2_GIANT = 0x00002000;
-const M2_STRONG = 0x04000000;
-const M2_ROCKTHROW = 0x08000000;
-const M2_JEWELS = 0x20000000;
-const M1_MINDLESS = 0x00010000;
-const M1_ANIMAL = 0x00040000;
 const S_KOP = 37;
 const PM_BALROG = MONSTER_NAME.indexOf('balrog');
 
@@ -146,15 +105,14 @@ export function selectMonsterRangedWeapon(
     monster: Monster, state: GameState = game,
 ): MonsterRangedWeapon | null {
     const inventory = monster.minvent || monster.inventory || [];
-    const flags1 = requireMonsterData(MONSTER_FLAGS1, monster.mnum);
-    const flags2 = requireMonsterData(MONSTER_FLAGS2, monster.mnum);
+
     const egg = selectMonsterWeaponOfType(monster, EGG, state);
     if (egg) return { weapon: egg, launcher: null };
     if (MONSTER_SYMBOL[monster.mnum] === S_KOP) {
         const pie = selectMonsterWeaponOfType(monster, CREAM_PIE, state);
         if (pie) return { weapon: pie, launcher: null };
     }
-    if (flags2 & M2_ROCKTHROW) {
+    if (monsterThrowsRocks(monster.mnum)) {
         const boulder = selectMonsterWeaponOfType(monster, BOULDER, state);
         if (boulder) return { weapon: boulder, launcher: null };
     }
@@ -166,7 +124,7 @@ export function selectMonsterRangedWeapon(
     if (distance !== null && distance <= 13 && couldsee(monster.mx, monster.my)) {
         if (current && artifactById(current.oartifact, state)?.name === 'Snickersnee')
             return { weapon: current, launcher: current };
-        const twoHands = (flags2 & M2_STRONG)
+        const twoHands = strongmonst(monster.mnum)
             && !((monster.misc_worn_check ?? 0) & W_ARMS);
         for (const type of POLEARM_PREFERENCE) {
             // C weapon.c:574 reads objects[pwep[i]].oc_bimanual raw on the
@@ -177,14 +135,14 @@ export function selectMonsterRangedWeapon(
                 return { weapon: polearm, launcher: polearm };
         }
     }
-    if (!cannotSwitch && !(flags1 & (M1_MINDLESS | M1_ANIMAL))) {
+    if (!cannotSwitch && !(monsterIsMindless(monster.mnum) || monsterIsAnimal({ mnum: monster.mnum }))) {
         const aklys = selectMonsterWeaponOfType(monster, AKLYS, state);
         const range = returningWeaponRangeSquared(aklys);
         if (aklys && range !== null && distance !== null && distance <= range
             && couldsee(monster.mx, monster.my)) return { weapon: aklys, launcher: aklys };
     }
     for (const type of RANGED_WEAPON_PREFERENCE) {
-        if (type === DART && !(flags2 & M2_JEWELS)) {
+        if (type === DART && !likes_gems(monster.mnum)) {
             const sling = inventory.find(object => object.otyp === SLING);
             if (sling) {
                 const gem = inventory.find(object => object.oclass === GEM_CLASS
@@ -243,8 +201,8 @@ export function selectHandToHandWeapon(
     monster: Monster, state: GameState = game,
 ): GameObject | null {
     const inventory = monster.minvent || monster.inventory || [];
-    const flags = requireMonsterData(MONSTER_FLAGS2, monster.mnum);
-    const canUseBothHands = !!(flags & M2_STRONG)
+
+    const canUseBothHands = strongmonst(monster.mnum)
         && !((monster.misc_worn_check ?? 0) & W_ARMS);
     // Artifact preference uses touch_artifact(), not the material check below.
     for (const object of inventory) {
@@ -256,7 +214,7 @@ export function selectHandToHandWeapon(
     }
 
     let favorite: number | null = null;
-    if (flags & M2_GIANT) favorite = CLUB;
+    if (monsterIsGiant(monster.mnum)) favorite = CLUB;
     else if (monster.mnum === PM_BALROG && (state.uwep || state.u?.uwep))
         favorite = BULLWHIP;
     if (favorite !== null) {
@@ -436,7 +394,7 @@ export async function updateMonsterWeaponAfterPolymorph(monster: Monster, state:
         return null;
     }
 
-    if (!MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+    if (!speciesHasWeaponAttack(monster.mnum)) {
         await unwieldMonsterWeapon(monster, state, { weapon, publish });
         monster.weaponCheck = NO_WEAPON_WANTED;
         if (cansee(monster.mx, monster.my)) {
@@ -674,9 +632,6 @@ export function heroStrengthDamageBonus(state: GameState): number {
 
 // C weapon.c:hitval() and dothrow.c:omon_adj().
 
-const M1_SWIM = 0x00000002;
-const M1_WALLWALK = 0x00000008;
-const M1_THICK_HIDE = 0x00200000;
 const S_DRAGON = 30;
 const S_GIANT = 34;
 const S_JABBERWOCK = 36;
@@ -724,12 +679,12 @@ export function weaponHitBonus(object: GameObject, defender: Hero | Monster, {
         && [S_XORN, S_DRAGON, S_JABBERWOCK, S_NAGA, S_GIANT].includes(symbol)) {
         bonus += 2;
     }
-    if (object.otyp === TRIDENT && (flags & M1_SWIM)) {
+    if (object.otyp === TRIDENT && monsterIsSwimmer(target.mnum)) {
         if (isPoolAt(target.mx, target.my, state)) bonus += 4;
         else if (symbol === S_EEL || symbol === S_SNAKE) bonus += 2;
     }
     if (weapon && skill === P_PICK_AXE
-        && (flags & M1_WALLWALK) && (flags & M1_THICK_HIDE)) {
+        && monsterPassesWalls(target.mnum) && monsterIsThickSkinned({ mnum: target.mnum })) {
         bonus += 2;
     }
     if (object.oartifact) {

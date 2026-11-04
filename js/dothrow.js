@@ -5,47 +5,42 @@ import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL
 import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OBJECT_NAMES, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok } from './cmd.js';
+import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsBig, monsterThrowsRocks, MONSTER_BODY_META, MONSTER_NAME, monsterDigests, monsterIsWhirly, monsterTypeName } from './monster_data.js';
-import { artifactById, artifactToHitBonus } from './artifacts.js';
-import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero } from './polyself.js';
+import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { artifactById } from './artifacts.js';
+import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
 import { isLauncherAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, A_CHA, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { weaponHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle } from './objnam.js';
-import { inventoryItemDescription, delobj } from './invent.js';
-import { chooseInventoryObject } from './invent.js';
+import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { objectMaterial } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
-import { promptDirection } from './cmd.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster } from './mon.js';
-import { canLetGo } from './do.js';
-import { freeInventoryObject } from './invent.js';
+import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName } from './body_parts.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley, endHeroVolley } from './hero_multishot.js';
 import { encumber_msg } from './pickup.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
-import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
+import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
 import { dist2, possessiveName } from './hacklib.js';
-import { dropObjectAtHero } from './do.js';
 import { resolveGoldMonsterContact, shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { captureHeroProjectileName } from './uhitm.js';
 import { capitalizedDefiniteName, rayMissMessage } from './ray_hit_message.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
-import { makeBlinded } from './potion.js';
 import { offerThrownFood } from './thrown_food.js';
 import { throwOrdinaryObject } from './ordinary_throw.js';
 import { monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
@@ -66,10 +61,9 @@ import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { objectResistsDestruction } from './zap.js';
-import { costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, makeShopkeeperHappy, objectIsUnpaid, removeObjectAndContentsFromBill, sellHeroDroppedObject, shopResident } from './shk.js';
+import { costlySpot, stolenValue, makeAngryShopkeeper, insideShopRoomAt, containedGold, donateGold, objectIsUnpaid, removeObjectAndContentsFromBill, sellHeroDroppedObject, shopResident, } from './shk.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroGoldAmount, heroLiquidEffects, heroTestMove, heroTightDiagonalReason, inventoryWeight, loseHeroHp, nomul, switchHeroTerrain, roomsAt } from './hack.js';
-import { currency } from './invent.js';
+import { exceedsActionCapacity, checkSpecialRoom, finishDestinationSpotEffects, heroBadRock, heroLiquidEffects, heroTightDiagonalReason, loseHeroHp, nomul, switchHeroTerrain, roomsAt, } from './hack.js';
 import { heroCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroDeath } from './end.js';
 import { hitHeroWithFallingArtifact } from './falling_artifact.js';
@@ -78,14 +72,11 @@ import { levelHasCeiling } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { walkPathCells } from './path_walk.js';
-import { monsterObjectPronoun } from './mondata.js';
-import { hiddenGold } from './vault.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { hasShopkeeperData, requireShopGame } from './shop_types.js';
+import { requireShopGame } from './shop_types.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { finishMonsterEating } from './dogmove.js';
-const M2_ROCKTHROW = 0x08000000;
 // C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
@@ -364,7 +355,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     }
     if (mjollnir && currentAttribute(A_STR) < STR19(25)
         || item.otyp === BOULDER
-            && !(monsterThrowsRocks(game.u.umonnum))) {
+            && !monsterThrowsRocks(game.u.umonnum)) {
         if (splitParent)
             await rejoinObjectStack(splitParent, item, game);
         await pline("It's too heavy.");
@@ -659,12 +650,6 @@ export async function resolveMapPotionThrow({ state = game, item, objectClass, s
 // Moving a monster after a forceful hit.
 // C refs: dothrow.c:will_hurtle()/mhurtle()/mhurtle_to_doom()/mhitm_knockback().
 // ---------------------------------------------------------------------------
-const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_SLITHY = 0x00080000;
-const M1_THICK_HIDE = 0x00200000;
-const M1_NOLIMBS = 0x00006000;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const PM_GRID_BUG = 116;
@@ -675,20 +660,19 @@ function monsterAt(state, x, y, ignoredMonster) {
         && monster.mx === x && monster.my === y) || null;
 }
 export function staggerVerb(mnum) {
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT)
         return 'wobbles';
-    if (flags & M1_FLY)
+    if (monsterIsFlyer(mnum))
         return (MONSTER_SIZE[mnum] ?? 2) <= 1
             ? 'flutters' : 'staggers';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'falters';
-    if (flags & M1_AMORPHOUS)
+    if (monsterIsAmorphous({ mnum }))
         return 'trembles';
     if ((MONSTER_MOVE[mnum] ?? 0) === 0)
         return 'pulsates';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS)
+    if (monsterHasNoLimbs(mnum))
         return 'falters';
     return 'staggers';
 }
@@ -865,7 +849,7 @@ export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state 
     if (rnd(100) >= skill)
         return { staggered: false };
     if (monsterIsBig(monster.mnum)
-        || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_THICK_HIDE)) {
+        || monsterIsThickSkinned({ mnum: monster.mnum })) {
         return { staggered: false };
     }
     if (canSpotMonster(monster)) {
@@ -1187,10 +1171,6 @@ function heroForm() {
     requirePlayingGame(game);
     return Upolyd(game.u) ? game.u.umonnum : null;
 }
-function heroFormFlags() {
-    const form = heroForm();
-    return form === null ? 0 : MONSTER_FLAGS1[form] ?? 0;
-}
 function floorBoulder(x, y) {
     return (game.level?.objects?.[x]?.[y] || [])
         .find(object => object.otyp === BOULDER) || null;
@@ -1202,7 +1182,7 @@ function heroHurtleMonsterAt(x, y) {
 }
 function wallPassage(location) {
     const hasAbility = !!(game.u.passesWalls
-        || (heroFormFlags() & M1_WALLWALK));
+        || monsterPassesWalls(heroMonsterForm() ?? -1));
     return {
         hasAbility,
         mayPass: hasAbility
@@ -1595,7 +1575,6 @@ export function shouldMulchMissile(object, { monsterMoving = false } = {}) {
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
-const M1_UNSOLID = 0x00100000;
 // C dothrow.c:toss_up(). The hero tosses an object upwards; it falls back.
 export async function tossObjectUp(object, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
     requirePlayingGame(state);
@@ -1654,9 +1633,8 @@ export async function tossObjectUp(object, { state = game, publish = plineWithCo
     const silver = material === SILVER;
     const hatesSilver = heroHatesSilver(state);
     const lessDamage = objectIsHardHelmet(helmet) && (!silver || !hatesSilver);
-    const formFlags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
     let harmless = object.oclass !== RING_CLASS && (material === GEMSTONE || material === MINERAL)
-        && !!(formFlags & M1_WALLWALK) && !(formFlags & M1_UNSOLID);
+        && passes_rocks(heroSpecies(state));
     let damage = rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne });
     let artifactMessage = false;
     if (object.oartifact && !harmless) {

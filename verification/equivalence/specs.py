@@ -324,3 +324,6 @@ SPECS += STATE_SPECS
 
 from object_specs import OBJECT_SPECS
 SPECS += OBJECT_SPECS
+
+from flag_specs import FLAG_SPECS
+SPECS += FLAG_SPECS

@@ -1,8 +1,8 @@
 // Hero eating and nutrition. Ports from eat.c.
 import { RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectDelay, objectCharged, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, OBJECT_NUTRITION, OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, requireObjectData, } from './object_data.js';
-import { heroCannotVomit, sameMonsterRace } from './mondata.js';
-import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands } from './potion.js';
+import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, } from './mondata.js';
+import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting, } from './potion.js';
 import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -13,7 +13,7 @@ import { extrinsicPropertyMask, intrinsicPropertyMask } from './attribute_proven
 import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';
-import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation } from './cmd.js';
+import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation, paranoidQuery } from './cmd.js';
 import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { impossible } from './diagnostics.js';
@@ -33,22 +33,18 @@ import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { nomul, loseHeroHp, chewIronBars, stopRun, exceedsActionCapacity, nearCapacity } from './hack.js';
 import { possessiveName } from './hacklib.js';
-import { heroAcidBreathAttack, hitHeroWithRay } from './zap.js';
+import { heroAcidBreathAttack, hitHeroWithRay, meltIce } from './zap.js';
 import { hasNonArtifactConflict } from './hero_conflict.js';
 import { gainCorpseDisplacement } from './hero_displacement.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting } from './potion.js';
-import { freeInventoryObject, useUpInventoryStack } from './invent.js';
+import { freeInventoryObject, useUpInventoryStack, addInventoryItem, chooseInventoryObject, consumeInventoryItem, inventoryItemDescription } from './invent.js';
 import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import { retouchEquipment, retouchHeroObject } from './hero_retouch.js';
 import { refreshHeroSeeing } from './hero_seeing.js';
-import { heroIsUnaware } from './senses.js';
+import { heroIsUnaware, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { putHeroToSleep } from './timeout.js';
-import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
+import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm, heroIsSlimeproof, } from './polyself.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { meltIce } from './zap.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject } from './invent.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
 import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object } from './mkobj.js';
@@ -56,7 +52,7 @@ import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsGiant, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, PM_GREEN_SLIME, } from './monster_data.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -66,30 +62,19 @@ import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
-import { paranoidQuery } from './cmd.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { readCookieFortune } from './rumor.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { SELL_DONTSELL, SELL_NORMAL, chargeAlteredUnpaidObject, costlySpot, setSellDisposition } from './shk.js';
-import { heroIsSlimeproof } from './polyself.js';
-import { PM_GREEN_SLIME } from './monster_data.js';
 import { dismountHero } from './steed.js';
 import { surfaceName } from './terrain_name.js';
 import { isIceAt } from './dbridge.js';
 import { attrcurse } from './throne.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { addInventoryItem } from './invent.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
-import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone } from './wield.js';
-import { wieldTool } from './wield.js';
+import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone, wieldTool } from './wield.js';
 import { captureLevitationState, floatHeroUp } from './trap.js';
-const M2_ELF = 0x00000010, M2_DWARF = 0x00000020, M2_ORC = 0x00000080;
-const M1_METALLIVORE = 0x80000000;
-const M1_CARNIVORE = 0x20000000;
-const M1_HERBIVORE = 0x40000000;
 const G_UNIQ = 0x1000;
-const M2_PNAME = 0x00080000;
 const PM_WIZARD = MONSTER_NAME.indexOf('Wizard of Yendor');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_LONG_WORM_TAIL = MONSTER_NAME.indexOf('long worm tail');
@@ -116,21 +101,17 @@ const preparations = [
     { name: 'pureed', nutrition: 500, fodder: true },
     { name: '', nutrition: 0 },
 ];
-const M1_HUMANOID = 0x00020000;
 const DRAGON_HIDE = 10;
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const BLAND_FOODS = new Set([CRAM_RATION, K_RATION, C_RATION]);
 // Native olfaction is based on monster class, not eyes or living anatomy.
 const NO_OLFACTION = new Set([2, 5, 10, 22, 25, 31, 32, 42, 55]);
-const M1_ACID = 0x08000000;
 const PM_STONE_GOLEM = MONSTER_NAME.indexOf('stone golem');
 // The human were-forms and their animal forms share neutral display names.
 const HUMAN_WERE_FORMS = new Set([261, 262, 263]);
 const domesticAnimals = new Set(['little dog', 'dog', 'large dog', 'kitten', 'housecat', 'large cat']);
 const S_MIMIC = requireMonsterData(MONSTER_SYMBOL, MONSTER_NAME.indexOf('small mimic'));
-const M1_TPORT = 0x02000000, M1_TPORT_CNTRL = 0x04000000;
-const M2_GIANT = 0x00002000;
 const TELEPATHIC_SPECIES = new Set([
     'floating eye', 'mind flayer', 'master mind flayer',
 ].map(name => MONSTER_NAME.indexOf(name)));
@@ -143,7 +124,6 @@ const RESISTANCES = [
     'acidResistance', 'stoneResistance',
 ];
 const CANDIDATES = [...RESISTANCES, 'telepathy', 'teleportation', 'teleportControl'];
-const M1_POIS = 0x10000000;
 const S_FUNGUS = 32;
 const type = (name) => OBJECT_NAMES.indexOf(name);
 const ADORNMENT = type('adornment'), STRENGTH = type('gain strength');
@@ -259,11 +239,10 @@ export function obj_nutrition(food) {
 // C eat.c:adj_victual_nutrition().
 function adj_victual_nutrition(meal, state) {
     let nutrition = -meal.nmod;
-    const race = requireMonsterData(MONSTER_FLAGS2, heroSpecies(state));
     const food = currentMealFood(meal);
-    const elf = Upolyd(state.u) ? race & M2_ELF : state.urace.name === 'elf';
-    const orc = Upolyd(state.u) ? race & M2_ORC : state.urace.name === 'orc';
-    const dwarf = Upolyd(state.u) ? race & M2_DWARF : state.urace.name === 'dwarf';
+    const elf = Upolyd(state.u) ? is_elf(heroSpecies(state)) : state.urace.name === 'elf';
+    const orc = Upolyd(state.u) ? is_orc(heroSpecies(state)) : state.urace.name === 'orc';
+    const dwarf = Upolyd(state.u) ? is_dwarf(heroSpecies(state)) : state.urace.name === 'dwarf';
     if (food.otyp === LEMBAS_WAFER) {
         if (elf)
             nutrition += Math.trunc((nutrition + 2) / 4);
@@ -368,7 +347,7 @@ export function eating_dangerous_corpse(property, { state = game } = {}) {
             && requireGameLevel(state).objects[food.ox]?.[food.oy]?.includes(food);
     if (!available)
         return false;
-    return property === 'acidResistance' ? !!(requireMonsterData(MONSTER_FLAGS1, food.corpsenm) & M1_ACID)
+    return property === 'acidResistance' ? acidic(food.corpsenm)
         : property === 'stoneResistance' && fleshPetrifies(food.corpsenm);
 }
 // C eat.c:eatfood().
@@ -669,7 +648,7 @@ export async function maybe_cannibal(mnum, { state = game, announce = true } = {
     if ((state._cannibalCheckMove ?? 0) === state.moves)
         return false;
     state._cannibalCheckMove = state.moves;
-    const ownRace = !!(requireMonsterData(MONSTER_FLAGS2, mnum) & state.urace.selfmask);
+    const ownRace = !!(your_race(mnum, state));
     const sameForm = Upolyd(state.u) && sameMonsterRace(heroSpecies(state), mnum);
     const sameWereKind = state.u.ulycn >= 0 && wereBeastForSpecies(mnum) === state.u.ulycn;
     if (heroMayEatOwnKind(state) || !(ownRace || sameForm || sameWereKind))
@@ -740,7 +719,7 @@ export async function cprefx(mnum, { state = game, food = null, tin = null } = {
             await plineWithContinuation("You don't feel very well.");
             startHeroSliming({ state, killer: '' });
         }
-        if (requireMonsterData(MONSTER_FLAGS1, mnum) & M1_ACID && heroIsPetrifying(state))
+        if (acidic(mnum) && heroIsPetrifying(state))
             await fix_petrification({ state });
     }
     return { stopped: false, heroDied: !!state.program_state.gameover };
@@ -769,8 +748,7 @@ export function intrinsic_possible(property, mnum) {
         return !!(requireMonsterData(MONSTER_CONVEYS, mnum) & (1 << resistance));
     if (property === 'telepathy')
         return TELEPATHIC_SPECIES.has(mnum);
-    const flag = property === 'teleportation' ? M1_TPORT : M1_TPORT_CNTRL;
-    return !!(requireMonsterData(MONSTER_FLAGS1, mnum) & flag);
+    return property === 'teleportation' ? monsterCanTeleport(mnum) : monsterControlsTeleport(mnum);
 }
 // C eat.c:should_givit().
 export function should_givit(property, mnum) {
@@ -987,7 +965,7 @@ export async function cpostfx(mnum, { state = game, tin = null } = {}) {
             else {
                 if (tin) {
                     await use_up_tin(tin, { state });
-                    await lesshungry(200 + ((requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & M1_METALLIVORE) ? 5 : 0), { state });
+                    await lesshungry(200 + (metallivorous(heroSpecies(state)) ? 5 : 0), { state });
                     if (state.program_state.gameover)
                         break;
                 }
@@ -1197,7 +1175,7 @@ async function consume_tin(message, { state }) {
         else if (heroIsHallucinating(state))
             smell = makePlural(randomDisplayMonsterName());
         else if (species === PM_WIZARD || requireMonsterData(MONSTER_GENO, species) & G_UNIQ
-            && !(monsterHasProperName(species))
+            && !monsterHasProperName(species)
             && species !== PM_HIGH_CLERIC && species !== PM_LONG_WORM_TAIL)
             smell = `the ${requireMonsterData(MONSTER_NAME, species)}`;
         else
@@ -1398,7 +1376,7 @@ function splitTin(tin, state) {
 }
 // C mondata.h:metallivorous() expression used by tin functions.
 function eatsMetal(state) {
-    return !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & M1_METALLIVORE);
+    return metallivorous(heroSpecies(state));
 }
 // C eat.c:Hear_again(). allmain calls this after the awaited
 // recovery message, so neither hearing nor hunger changes before acknowledgment.
@@ -1496,12 +1474,12 @@ export async function eatcorpse(food, { state = game } = {}) {
         return 2;
     }
     let tastedHazard = false;
-    if (requireMonsterData(MONSTER_FLAGS1, species) & M1_ACID && !propertyIsActive('acidResistance', state)) {
+    if (acidic(species) && !propertyIsActive('acidResistance', state)) {
         tastedHazard = true;
         await pline('You have a very bad case of stomach acid.');
         await loseHeroHp(rnd(15), glob ? 'acidic glob' : 'acidic corpse', { state });
     }
-    else if (requireMonsterData(MONSTER_FLAGS1, species) & M1_POIS && rn2(5)) {
+    else if (poisonous(species) && rn2(5)) {
         tastedHazard = true;
         await pline('Ecch - that must have been poisonous!');
         if (propertyIsActive('poisonResistance', state))
@@ -1544,8 +1522,7 @@ export async function eatcorpse(food, { state = game } = {}) {
         await pline('You peck the eyeball with delight.');
     }
     else if (!tastedHazard) {
-        const flags = requireMonsterData(MONSTER_FLAGS1, heroSpecies(state));
-        const carnivore = !!(flags & M1_CARNIVORE), herbivore = !!(flags & M1_HERBIVORE);
+        const carnivore = carnivorous(heroSpecies(state)), herbivore = herbivorous(heroSpecies(state));
         const yummy = veganCorpse(species) ? !carnivore && herbivore : carnivore && !herbivore;
         const palatable = (vegetarianCorpse(species) ? herbivore : carnivore)
             && rn2(10) && (rotted < 1 || !rn2(rotted + 1));
@@ -1664,12 +1641,11 @@ export async function fprefx(food, { state = game } = {}) {
         return !state.program_state.gameover;
     }
     else if (type === TRIPE_RATION) {
-        const flags = requireMonsterData(MONSTER_FLAGS1, species);
-        if ((flags & M1_CARNIVORE) && !(flags & M1_HUMANOID)) {
+        if (carnivorous(species) && !monsterIsHumanoid(species)) {
             await pline('This tripe ration is surprisingly good!');
         }
         else if ((heroIsPolymorphed(state)
-            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ORC) : state.urace.name === 'orc')) {
+            ? is_orc(heroSpecies(state)) : state.urace.name === 'orc')) {
             await pline(heroIsHallucinating(state) ? 'Tastes great!  Less filling!' : 'Mmm, tripe... not bad!');
         }
         else {
@@ -1683,12 +1659,12 @@ export async function fprefx(food, { state = game } = {}) {
     }
     else if (type === LEMBAS_WAFER) {
         if ((heroIsPolymorphed(state)
-            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ORC) : state.urace.name === 'orc')) {
+            ? is_orc(heroSpecies(state)) : state.urace.name === 'orc')) {
             await pline('!#?&* elf kibble!');
             return !state.program_state.gameover;
         }
         if ((heroIsPolymorphed(state)
-            ? !!(requireMonsterData(MONSTER_FLAGS2, heroSpecies(state)) & M2_ELF) : state.urace.name === 'elf')) {
+            ? is_elf(heroSpecies(state)) : state.urace.name === 'elf')) {
             await pline('A little goes a long way.');
             return !state.program_state.gameover;
         }
@@ -2079,8 +2055,8 @@ export async function edibility_prompts(object, { state = game } = {}) {
         if (species === PM_GREEN_SLIME || object.otyp === GLOB_OF_GREEN_SLIME)
             stoneOrSlime = !hero.unchanging && !state.unchanging && !heroIsSlimeproof(state);
     }
-    const flags = corpse && species !== undefined
-        ? requireMonsterData(MONSTER_FLAGS1, species) : 0;
+    if (corpse && species !== undefined)
+        requireMonsterData(MONSTER_FLAGS1, species);
     if (corpse && rotted > 5 && !hero.sicknessResistance)
         warning = `${smell} like ${pronoun} could be tainted!`;
     else if (stoneOrSlime)
@@ -2089,14 +2065,14 @@ export async function edibility_prompts(object, { state = game } = {}) {
         warning = `${smell} like ${pronoun} could be tainted.`;
     else if (object.orotten || corpse && rotted > 3)
         warning = `${smell} like ${pronoun} could be rotten!`;
-    else if (corpse && (flags & M1_POIS) && !hero.poisonResistance)
+    else if (corpse && (poisonous(species ?? -1)) && !hero.poisonResistance)
         warning = `${smell} like ${pronoun} might be poisonous!`;
     else if (object.otyp === APPLE && object.cursed && !hero.sleepResistance)
         warning = `${smell} like ${pronoun} might have been poisoned.`;
     else if (corpse && !vegetarianCorpse(species)
         && !conduct.unvegetarian && state.urole.key === 'monk')
         warning = `${smell} unhealthy.`;
-    else if (corpse && (flags & M1_ACID) && !hero.acidResistance)
+    else if (corpse && (acidic(species ?? -1)) && !hero.acidResistance)
         warning = `${smell} rather acidic.`;
     else if (heroIsPolymorphed(state) && hero.umonnum === RUST_MONSTER
         && objectIsMetallic(object, state) && object.oerodeproof)
@@ -2460,8 +2436,7 @@ export async function gethungry({ invulnerable = false } = {}) {
     u.uhs ??= currentHungerState(game);
     // C checks awareness before diet or slow digestion: an unaware hero
     // spends this random draw even in a body which does not eat.
-    const currentFormEats = !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(game))
-        & (M1_METALLIVORE | M1_CARNIVORE | M1_HERBIVORE));
+    const currentFormEats = (metallivorous(heroSpecies(game)) || carnivorous(heroSpecies(game)) || herbivorous(heroSpecies(game)));
     if ((!heroIsUnaware(game) || rn2(10) === 0)
         && currentFormEats && !u.slowDigestion)
         u.uhunger--;
@@ -2753,7 +2728,7 @@ export async function vomit({ state = game, publish = immediatePline, angerAltar
         await angerAltar(x, y, state);
     const form = heroMonsterForm(state);
     if (form != null
-        && ((MONSTER_FLAGS1[form] ?? 0) & M1_ACID)
+        && acidic(form)
         && isIceAt(x, y, state)) {
         await melt(x, y, {
             message: 'Your stomach acid melts straight through the ice!',
@@ -2803,9 +2778,9 @@ export function Popeye(threat, state = game) {
         case 'hunger': return species !== -1 || tin.spe === 1;
         case 'stoned':
             return species >= 0 && (MONSTER_NAME[species] === 'lizard'
-                || !!(requireMonsterData(MONSTER_FLAGS1, species) & 0x08000000));
+                || acidic(species));
         case 'slimed':
-            return species >= 0 && (!!(requireMonsterData(MONSTER_FLAGS2, species) & 0x00004000)
+            return species >= 0 && (is_shapeshifter(species)
                 || requireMonsterData(MONSTER_ATTACKS, species).some(([, damage]) => damage === AD_POLY));
         case 'sick':
         case 'vomiting': return false;

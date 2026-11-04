@@ -1,9 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import {
-    MONSTER_NAME, monsterGrowthFamilyMatch, monsterIsNonliving,
-} from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { monsterGrowthFamilyMatch, monsterIsNonliving } from '../js/mondata.js';
 
 const monsterType = (name: string) => MONSTER_NAME.indexOf(name);
 

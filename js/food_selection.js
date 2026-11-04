@@ -12,7 +12,7 @@ import { deleteTrap, resetUtrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -21,7 +21,7 @@ import { promptYesNoQuit } from './query.js';
 import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { exceedsActionCapacity } from './hack.js';
-const METALLIVORE = 0x80000000;
+import { metallivorous } from './mondata.js';
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 const FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
@@ -29,7 +29,7 @@ const GHOUL = MONSTER_NAME.indexOf('ghoul');
 // C hands_obj represents the terrain being eaten, not an inventory object.
 export const IRON_BARS_FOOD = Object.freeze({ kind: 'iron-bars' });
 export function heroEatsMetal(state = game) {
-    return !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & METALLIVORE);
+    return metallivorous(heroSpecies(state));
 }
 export function isEdibleFood(object, state = game) {
     if (!object || objectUnique(object.otyp))

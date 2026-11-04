@@ -9,16 +9,15 @@ import { pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';
-import { zapHeroWithObject } from './zap.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_SYMBOL, } from './monster_data.js';
+import { zapHeroWithObject, monsterResistsEffect, zapRayWithObject } from './zap.js';
+import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { revealMonsterAppearance } from './mon.js';
+import { revealMonsterAppearance, releaseHeroFromMonster } from './mon.js';
 import { displayRayName } from './ray_name.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
-import { monsterResistsSleep } from './mondata.js';
+import { monsterResistsSleep, is_mercenary, monsterIsMindless } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { releaseHeroFromMonster } from './mon.js';
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import { BUGLE, DRUM_OF_EARTHQUAKE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, MAGIC_HARP, TOOLED_HORN, WOODEN_FLUTE, WOODEN_HARP, } from './object_data.js';
 import { learnObjectType } from './o_init.js';
@@ -29,12 +28,9 @@ import { heroCanBlow, heroFormSticks } from './polyself.js';
 import { d, rnd, rn2 } from './rng.js';
 import { promptYesNoQuit } from './query.js';
 import { promptDirection } from './cmd.js';
-import { zapRayWithObject, monsterResistsEffect } from './zap.js';
 import { tameMonster } from './dog.js';
 import { loseHeroHp } from './hack.js';
 const G_UNIQ = 0x1000;
-const M1_MINDLESS = 0x00010000;
-const M2_MERC = 0x00000200;
 const S_MIMIC = 13;
 const S_NYMPH = 14;
 const S_SNAKE = 45;
@@ -75,7 +71,7 @@ async function awakenMonster(monster, scary) {
         return;
     }
     if (!scary
-        || ((MONSTER_FLAGS1[monster.mnum] || 0) & M1_MINDLESS)
+        || monsterIsMindless(monster.mnum)
         || monsterResistsInstrument(monster)
         || !instrumentCanScare(monster))
         return;
@@ -203,7 +199,7 @@ async function calmNymphs(distance) {
 export async function awakenSoldiers(distance, bugler = null) {
     for (const monster of liveMonsters()) {
         const dist = bugler ? (bugler.mx - monster.mx) ** 2 + (bugler.my - monster.my) ** 2 : monsterDistance(monster);
-        const mercenary = (MONSTER_FLAGS2[monster.mnum] || 0) & M2_MERC;
+        const mercenary = is_mercenary(monster.mnum);
         if (mercenary && monster.mnum !== PM_GUARD) {
             if (!monster.mtame)
                 monster.mpeaceful = 0;

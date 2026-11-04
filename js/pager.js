@@ -1,32 +1,29 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 import { ROCK_CLASS } from './objclass.js';
-import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
-import { canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, } from './display.js';
+import { A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED, def_warnsyms, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel, is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT, MONSEEN_WARNMON, MONSEEN_XRAYVIS, PIT, ROCKTRAP, ROWNO, SCORR, STONE, STRAT_WAITMASK, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TREE, TRAP_EXPLANATIONS, TRAPPED_CHEST, TRAPPED_DOOR, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, Upolyd, VIBRATING_SQUARE, WEB, } from './const.js';
+import { canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol, swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange, OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS, } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
-import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterDigests, monsterTypeName, } from './monster_data.js';
-import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
+import { makePlural, withIndefiniteArticle, singularObjectName } from './objnam.js';
 import { visibleRegionAt } from './regions.js';
-import { isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
+import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { cmdq_clear, cmdq_pop, yn_function } from './cmd.js';
+import { cmdq_clear, cmdq_pop, yn_function, commandResultCancelled, describeCommandKey, keyText, showKeyBindings, visibleCommandKey, promptDirection, readDirectionKey, restoreCommandMap, showExtendedCommandList, } from './cmd.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { getLine, promptYesNo } from './query.js';
-import { commandResultCancelled, describeCommandKey, keyText, showKeyBindings, visibleCommandKey, } from './cmd.js';
 import { selectMapPosition } from './getpos.js';
 import { decodeMixedLiteral, showChoiceWindow, showDisclosureOverlay, showMultiSelectWindow, showTextWindow, } from './windows.js';
 import { encyclopediaEntries, encyclopediaMatches, encyclopediaSupplementalName } from './encyclopedia.js';
 import { monsterAtPosition } from './steed.js';
-import { heroIsPolymorphed } from './polyself.js';
+import { heroIsPolymorphed, heroFormSticks, heroSpecies } from './polyself.js';
 import { selectInventoryObject } from './invent.js';
 import { typedSymbolDescription } from './look_symbols.js';
-import { singularObjectName } from './objnam.js';
 import { warningSymbols } from './warning_symbols.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
@@ -36,19 +33,16 @@ import { dist2 } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { cansee, couldsee } from './vision.js';
-import { findDrawbridgeAt } from './dbridge.js';
-import { heroFormSticks, heroSpecies } from './polyself.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
-import { promptDirection, readDirectionKey, restoreCommandMap } from './cmd.js';
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
-import { showExtendedCommandList } from './cmd.js';
 import { option_help } from './options.js';
 import { doextversion } from './extversion.js';
 import { shouldShowGetposTip, showGetposTip } from './hack.js';
 import { levelTimers } from './timeout.js';
+import { is_orc, monsterDigests, monsterHidesUnder, monsterIsClinger, monsterIsFlyer, monsterIsHider } from './mondata.js';
 // C pager.c:ice_descr().
 export function iceDescriptionAt(x, y, { state = game, probing = false } = {}) {
     const location = requireGameLevel(state).requireAt(x, y);
@@ -357,13 +351,12 @@ export async function monsterHiddenConditions(monster, state, { showAlternateMon
         conditions.push(`masquerading as ${withIndefiniteArticle(form)}`);
     }
     else if (!appearance && monster.mundetected) {
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        if (flags & 0x80) {
+        if (monsterHidesUnder(monster.mnum)) {
             conditions.push(`hiding under ${await objectAtMonsterDescription(monster, state)}`);
         }
-        else if (flags & 0x100) {
-            const ceiling = (flags & 0x10) && MONSTER_SYMBOL[monster.mnum] !== 13
-                || (flags & 1);
+        else if (monsterIsHider(monster.mnum)) {
+            const ceiling = monsterIsClinger(monster.mnum) && MONSTER_SYMBOL[monster.mnum] !== 13
+                || monsterIsFlyer(monster.mnum);
             conditions.push(`hiding on the ${ceiling ? 'ceiling' : surfaceName(x, y, state)}`);
         }
         else {
@@ -480,6 +473,7 @@ export function monsterSeenDescription(monster) {
             descriptions.push('paranoid delusion');
         else {
             const mask = (game.context.warntype?.obj ?? 0) | (game.context.warntype?.polyd ?? 0);
+            // C pager.c:lookat() intersects the warning mask and raw mflags2 before naming the category.
             const speciesFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
             const category = [[0x08, 'human'], [0x10, 'elf'], [0x80, 'orc'], [0x100, 'demon']];
             const name = category.find(([bit]) => mask & speciesFlags & bit)?.[1]
@@ -503,11 +497,10 @@ export async function selfLookDetails() {
         result += `, mimicking ${await objectAtMapDescription(hero.ux, hero.uy, glyphAt(hero.ux, hero.uy), game, 'hidden')}`;
     }
     else if (!appearance && hero.uundetected) {
-        const flags = MONSTER_FLAGS1[species] ?? 0;
-        if (flags & 0x80)
+        if (monsterHidesUnder(species))
             result += ', hiding under something';
-        else if (flags & 0x100) {
-            const ceiling = !!(flags & 0x10) && MONSTER_SYMBOL[species] !== 13 || !!(flags & 1);
+        else if (monsterIsHider(species)) {
+            const ceiling = monsterIsClinger(species) && MONSTER_SYMBOL[species] !== 13 || monsterIsFlyer(species);
             result += `, hiding on the ${ceiling ? 'ceiling' : surfaceName(hero.ux, hero.uy)}`;
         }
         else
@@ -534,7 +527,7 @@ export function selfTrapDescription() {
 // C pager.c:do_supplemental_info(). The native without-asking branch does
 // not set yes_to_moreinfo, so verbose look does not open this extra window.
 export async function offerMonsterSupplement(monster, name, withoutAsking) {
-    if (withoutAsking || heroIsHallucinating() || !((MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x80))
+    if (withoutAsking || heroIsHallucinating() || !is_orc(monster.mnum))
         return;
     if (!name || name.length >= 255)
         return;

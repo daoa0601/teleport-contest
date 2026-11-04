@@ -22,7 +22,6 @@ import {
     WAX_CANDLE,
 } from './object_data.js';
 import { armorBonus } from './do_wear.js';
-
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
@@ -31,31 +30,36 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, newsym } from './displa
 import { plineWithContinuation } from './pline.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
-import { verbForSubject, withIndefiniteArticle } from './objnam.js';
-
+import { verbForSubject, withIndefiniteArticle, rndClass } from './objnam.js';
 import { visibleRegionAt } from './regions.js';
 import { monsterEmitsLight, block_point, visionCellBlocksLight } from './vision.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { level_difficulty, specialLevelAt } from './dungeon.js';
-import { hatchableEggSpecies } from './mon.js';
+import { hatchableEggSpecies, monsterDeathCount, restoreMonsterInventoryOwnership, hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
-import { beginObjectBurn } from './timeout.js';
-import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer } from './mkobj.js';
-import { restoreMonsterInventoryOwnership } from './mon.js';
-import { occupied } from './mkroom.js';
+import { beginObjectBurn, stopObjectTimer } from './timeout.js';
+import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, addCreatedObjectToContainer, nextIdent, objectWeight } from './mkobj.js';
 import { monsterAlignmentType, monsterAlignmentValue } from './priest.js';
 import { ensureMinionData } from './minion.js';
 import { tameMonster } from './dog.js';
-import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterIsAmorphous, monsterIsGolem, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsWhirly, monsterOlderForm, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
-import { monsterDeathCount } from './mon.js';
+import {
+    MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL,
+    MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol,
+    monsterTypeName, requireMonsterData,
+} from './monster_data.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
-import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
+import {
+    monsterSubjectPronoun, setMonsterSpecies, always_peaceful, monsterIsAlwaysHostile, race_peaceful,
+    race_hostile, is_minion, is_male, is_prince, is_shapeshifter, monsterIsAmorphous, monsterIsFemale,
+    monsterIsFlyer, monsterIsGolem, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal,
+    monsterIsNonliving, monsterIsPlayerMonster, monsterIsSwimmer, monsterIsWhirly, monsterOlderForm,
+    monsterThrowsRocks, speciesHasWeaponAttack, is_neuter, is_ndemon, is_dprince,
+    is_lord, extra_nasty, strongmonst, is_dwarf, likes_gold, likes_gems, monsterIsDemon, monsterIsGiant,
+} from './mondata.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { MonsterPopulationState, MonsterVital, Monster, MonsterBirthState, PetData } from './monster_types.js';
-
-import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
 import {
@@ -65,26 +69,19 @@ import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { rnd_defensive_item, rnd_misc_item, rnd_offensive_item } from './muse.js';
 import { deleteObject } from './shk.js';
-import { stopObjectTimer } from './timeout.js';
-import { rndClass } from './objnam.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
 import { registerQuestLeader } from './quest.js';
 import { createParticularMonster } from './read.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { questMonsterAlignment, questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
-
+import { questMonsterAlignment, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { goodPosition } from './teleport_rules.js';
-
 import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear } from './mklev.js';
-import { getShopItem } from './shknam.js';
+import { getShopItem, shopkeeperName } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import type { Position } from './map_types.js';
 import type { GameObject } from './object_types.js';
-import { shopkeeperName } from './shknam.js';
 import { inTown, roomForIndex } from './hack.js';
-import {objectWeight, nextIdent} from './mkobj.js';
 
-const M1_MINDLESS = 0x00010000;
 const G_NOGEN = 0x0200;
 const G_IGNORE = 0x8000;
 const PLACEHOLDER_MONSTERS = new Set([72, 169, 260, 264]);
@@ -155,10 +152,7 @@ const PM_MINOTAUR = 177;
 const PM_ETTIN = 174;
 const PM_ALIGNED_CLERIC = 275;
 const PM_HIGH_CLERIC = 276;
-const PM_MORDOR_ORC = 74;
-const PM_URUK_HAI = 75;
-const PM_ORC_SHAMAN = 76;
-const PM_ORC_CAPTAIN = 77;
+
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
 const PM_SOLDIER = 277;
@@ -176,8 +170,7 @@ const PM_PESTILENCE = 312;
 const PM_WIZARD = 343;
 const PM_SALAMANDER = 329;
 const S_MIMIC = 13;
-const S_ANGEL = 27;
-const S_DEMON = 56;
+
 const FLINT = 473;
 const PM_HOBBIT = 43;
 const PM_GIANT_EEL = 319;
@@ -186,21 +179,8 @@ const PM_LONG_WORM = 114;
 const PM_BLACK_LIGHT = 119;
 const PM_STALKER = 153;
 const CHAIN_MAIL = 128;
-const M2_DWARF = 0x00000020;
-const M2_DEMON = 0x00000100;
-const M2_JEWELS = 0x20000000;
-const M2_LORD = 0x00000400;
-const M2_PRINCE = 0x00000800;
-const M2_MINION = 0x00001000;
-const M2_GIANT = 0x00002000;
-const M2_MALE = 0x00010000;
-const M2_FEMALE = 0x00020000;
-const M2_NEUTER = 0x00040000;
-const M2_HOSTILE = 0x00100000;
-const M2_PEACEFUL = 0x00200000;
-const M2_NASTY = 0x02000000;
-const M2_STRONG = 0x04000000;
-const M2_GREEDY = 0x10000000;
+
+
 const G_LGROUP = 0x0040;
 const G_SGROUP = 0x0080;
 
@@ -371,13 +351,13 @@ function wrongElementalPlaneSpecies(mndx: number): boolean {
     const monsterClass = MONSTER_SYMBOL[mndx];
     if (monsterClass === 31) return !isHomeElemental(mndx); // S_ELEMENTAL
     if (Is_earthlevel(game.u.uz)) return false;
-    const flags = requireMonsterData(MONSTER_FLAGS1, mndx);
-    if (Is_waterlevel(game.u.uz)) return !(flags & 0x02); // M1_SWIM
+
+    if (Is_waterlevel(game.u.uz)) return !monsterIsSwimmer(mndx); // M1_SWIM
     if (Is_firelevel(game.u.uz))
         return !(requireMonsterData(MONSTER_RESISTS, mndx) & 0x01); // MR_FIRE
     if (Is_airlevel(game.u.uz)) {
         const species = { mnum: mndx };
-        return !((flags & 0x01) && monsterClass !== 20) // flyer, excluding S_TRAPPER
+        return !(monsterIsFlyer(mndx) && monsterClass !== 20) // flyer, excluding S_TRAPPER
             && monsterClass !== 5 && monsterClass !== 25 // S_EYE / S_LIGHT floaters
             && !monsterIsAmorphous(species)
             && !monsterIsNoncorporeal(species)
@@ -399,9 +379,8 @@ export function rndmonstAdj(minAdjustment = 0, maxAdjustment = 0): number | null
 // attitude before inventory creation; the live hero alignment record is an
 // input, so prayer and other alignment mutations remain observable here.
 export function peaceMinded(mndx: number): boolean {
-    const flags = questMonsterFlags2(mndx);
-    if (flags & M2_PEACEFUL) return true;
-    if (flags & M2_HOSTILE) return false;
+    if (always_peaceful(mndx)) return true;
+    if (monsterIsAlwaysHostile(mndx)) return false;
     const sound = questMonsterSound(mndx);
     if (sound === 36 || sound === 38) return true;
     if (sound === 37) return false;
@@ -411,8 +390,8 @@ export function peaceMinded(mndx: number): boolean {
 
     const race = game.urace;
     if (!race) throw new Error('monster attitude requires a chosen hero race');
-    if (flags & race.lovemask) return true;
-    if (flags & race.hatemask) return false;
+    if (race_peaceful(mndx)) return true;
+    if (race_hostile(mndx)) return false;
 
     const monsterAlignment = questMonsterAlignment(mndx);
     const heroAlignment = game.u?.ualign?.type || 0;
@@ -422,7 +401,7 @@ export function peaceMinded(mndx: number): boolean {
     const record = Math.max(-15, game.u?.ualign?.record ?? 0);
     // Deity minions use a deterministic straying check.  This gate precedes
     // the ordinary two-roll co-aligned attitude calculation.
-    if (flags & M2_MINION) return record >= 0;
+    if (is_minion(mndx)) return record >= 0;
     return !!rn2(16 + record) && !!rn2(2 + Math.abs(monsterAlignment));
 }
 
@@ -671,16 +650,15 @@ export function setMonsterMalign(monster: Monster, state: GameState = game): voi
     const coaligned = Math.sign(alignment)
         === Math.sign(state.u?.ualign?.type ?? 0);
     const absoluteAlignment = Math.abs(alignment);
-    const flags = questMonsterFlags2(monster.mnum, state);
 
     if (questMonsterSound(monster.mnum, state) === MS_LEADER) {
         monster.malign = -20;
     } else if (alignment === A_NONE) {
         monster.malign = peaceful ? 0 : 20;
-    } else if (flags & M2_PEACEFUL) {
+    } else if (always_peaceful(monster.mnum, state)) {
         monster.malign = (peaceful ? -3 : 3)
             * Math.max(5, absoluteAlignment);
-    } else if (flags & M2_HOSTILE) {
+    } else if (monsterIsAlwaysHostile(monster.mnum, state)) {
         monster.malign = coaligned ? 0 : Math.max(5, absoluteAlignment);
     } else if (coaligned) {
         monster.malign = peaceful
@@ -745,18 +723,16 @@ export async function makemon(
     const monsterId = nextIdent();
     const { level: baseLevel, hp } = newMonsterHitPoints(mndx);
 
-    const genderFlags = questMonsterFlags2(mndx);
-    const isNeutralDemon = !!(genderFlags & M2_DEMON)
-        && !(genderFlags & (M2_LORD | M2_PRINCE));
+    const isNeutralDemon = is_ndemon(mndx);
     const isQuestLeaderType = mndx === game.urole?.ldrnum;
     const isQuestNemesis = mndx === game.urole?.neminum;
-    const femaleOk = !(genderFlags & (M2_MALE | M2_NEUTER));
-    const maleOk = !(genderFlags & (M2_FEMALE | M2_NEUTER));
-    const monsterFemale = (genderFlags & M2_FEMALE) ? true
+    const femaleOk = !is_male(mndx) && !is_neuter(mndx);
+    const maleOk = !monsterIsFemale(mndx) && !is_neuter(mndx);
+    const monsterFemale = monsterIsFemale(mndx) ? true
         : ((mmflags & MM_FEMALE) && femaleOk) ? true
-            : (genderFlags & M2_MALE) ? false
+            : is_male(mndx) ? false
                 : ((mmflags & MM_MALE) && maleOk) ? false
-                    : (genderFlags & M2_NEUTER) ? false
+                    : is_neuter(mndx) ? false
                         : isQuestLeaderType
                             ? game.quest_status?.ldrgend === 1
                             : isQuestNemesis
@@ -771,7 +747,7 @@ export async function makemon(
     if (MONSTER_SYMBOL[mndx] === 15 && game.urace?.name === 'elf') { // S_ORC
         peaceful = false;
     } else if (MONSTER_SYMBOL[mndx] === 21 // S_UNICORN
-        && (genderFlags & M2_JEWELS) !== 0
+        && likes_gems(mndx)
         && Math.sign(game.u?.ualign?.type ?? 0)
             === Math.sign(MONSTER_ALIGNMENT[mndx] ?? 0)) {
         peaceful = true;
@@ -801,7 +777,7 @@ export async function makemon(
     };
     const monsterIndex = level.monsters.push(pendingMonster) - 1;
     allocateMonsterBirthExtensions(pendingMonster, mmflags);
-    if (!(requireMonsterData(MONSTER_FLAGS1, mndx) & M1_MINDLESS)) {
+    if (!monsterIsMindless(mndx)) {
         if (In_sokoban(game.u.uz))
             pendingMonster.mtrapseen = (1 << (PIT - 1)) | (1 << (HOLE - 1));
         if (Is_stronghold(game.u.uz))
@@ -883,7 +859,7 @@ export async function makemon(
     // makemon() establishes these attitudes before inventory selection.
     // Peaceful monsters decline invisibility items when the hero cannot see
     // invisible, including princes made peaceful despite MM_ANGRY.
-    const bribingPrince = (genderFlags & M2_DEMON) !== 0 && (genderFlags & M2_PRINCE) !== 0
+    const bribingPrince = is_dprince(mndx)
         && MONSTER_SOUND[mndx] === MS_BRIBE;
     const wieldedArtifact = game.uwep?.oartifact;
     const baneWielded = wieldedArtifact !== undefined
@@ -966,16 +942,16 @@ export async function makemon(
         }
     };
     const giveGeneralMonsterWeapon = async () => {
-        const bias = ((genderFlags & M2_LORD) ? 1 : 0)
-            + ((genderFlags & M2_PRINCE) ? 2 : 0)
-            + ((genderFlags & M2_NASTY) ? 1 : 0);
+        const bias = (is_lord(mndx) ? 1 : 0)
+            + (is_prince(mndx) ? 2 : 0)
+            + (extra_nasty(mndx) ? 1 : 0);
         switch (rnd(14 - 2 * bias)) {
         case 1:
-            if (genderFlags & M2_STRONG) await mongets(BATTLE_AXE);
+            if (strongmonst(mndx)) await mongets(BATTLE_AXE);
             else await mInitthrow(DART, 12);
             break;
         case 2:
-            if (genderFlags & M2_STRONG) await mongets(TWO_HANDED_SWORD);
+            if (strongmonst(mndx)) await mongets(TWO_HANDED_SWORD);
             else {
                 await mongets(CROSSBOW);
                 await mInitthrow(CROSSBOW_BOLT, 12);
@@ -986,11 +962,11 @@ export async function makemon(
             await mInitthrow(18, 12); // ARROW
             break;
         case 4:
-            if (genderFlags & M2_STRONG) await mongets(LONG_SWORD);
+            if (strongmonst(mndx)) await mongets(LONG_SWORD);
             else await mInitthrow(DAGGER, 3);
             break;
         case 5:
-            await mongets((genderFlags & M2_STRONG) ? LUCERN_HAMMER : AKLYS);
+            await mongets(strongmonst(mndx) ? LUCERN_HAMMER : AKLYS);
             break;
         default:
             break;
@@ -1023,10 +999,10 @@ export async function makemon(
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 27
         && monsterIsHumanoid(mndx)
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) {
+        && speciesHasWeaponAttack(mndx)) {
         // C ref: m_initweap(), humanoid S_ANGEL.  Minion weapons and shields
         // deliberately bypass mongets()/ordinary object initialization.
-        const isLord = !!(genderFlags & 0x00000400);
+        const isLord = is_lord(mndx);
         const weapon = await mksobj(rn2(3) ? LONG_SWORD : SILVER_MACE, false, false);
         const promote = !rn2(20) || isLord;
         if (promote && monsterAlignmentType(pendingMonster) === A_LAWFUL) {
@@ -1062,7 +1038,7 @@ export async function makemon(
         if (!rn2(10)) await mongets(DWARVISH_CLOAK);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 8
-        && (genderFlags & M2_DWARF)) {
+        && (is_dwarf(mndx))) {
         // C ref: makemon.c m_initweap(), S_HUMANOID/is_dwarf().  Keep the
         // complete equipment tree together because every optional item feeds
         // the same ordinary object constructor and erosion rules.
@@ -1215,8 +1191,8 @@ export async function makemon(
         if (firstKitItem <= 2) await mongets(POT_HEALING);
         await mongets(WAN_STRIKING);
     } else if (MONSTER_SYMBOL[mndx] === 56
-        && (genderFlags & M2_DEMON)
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) {
+        && (monsterIsDemon(mndx))
+        && speciesHasWeaponAttack(mndx)) {
         // C m_initweap(), S_DEMON: fixed demon weapons are added before the
         // same bias-sensitive general armament table used by normal monsters.
         if (mndx === PM_BALROG) {
@@ -1232,7 +1208,7 @@ export async function makemon(
             await mongets(81); // FLAIL
         }
         await giveGeneralMonsterWeapon();
-    } else if (MONSTER_HAS_WEAPON_ATTACK.has(mndx) && receivesClericEquipment(mndx)) {
+    } else if (speciesHasWeaponAttack(mndx) && receivesClericEquipment(mndx)) {
         // C makemon() skips m_initweap() for unarmed species, even when
         // the hero's role makes them Cleric quest representatives.
         const mace = await mksobj(MACE, false, false);
@@ -1252,7 +1228,7 @@ export async function makemon(
         await mongets(rn2(4) ? SHURIKEN : DART);
         await mongets(rn2(4) ? SHORT_SWORD : AXE);
         await giveOffensiveMonsterItem();
-    } else if (MONSTER_HAS_WEAPON_ATTACK.has(mndx)
+    } else if (speciesHasWeaponAttack(mndx)
         && ['student', 'attendant', 'abbot', 'acolyte', 'guide', 'apprentice']
         .includes(MONSTER_NAME[mndx] ?? '')) {
         // C makemon() calls m_initweap() only for armed species. Abbots
@@ -1293,7 +1269,7 @@ export async function makemon(
         if (!rn2(3)) await mongets(rn2(2) ? CLUB : RUBBER_HOSE);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 15
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) { // S_ORC
+        && speciesHasWeaponAttack(mndx)) { // S_ORC
         // C ref: makemon.c m_initweap(), S_ORC.  The common helm probe
         // precedes a subtype-specific equipment graph; an orc captain chooses
         // one of the two ranked subtypes before entering the same graph.
@@ -1332,14 +1308,14 @@ export async function makemon(
         // observable during summon-nasties.
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 49
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) { // S_WRAITH
+        && speciesHasWeaponAttack(mndx)) { // S_WRAITH
         // C ref: makemon.c:m_initweap().  Armed wraith-class monsters receive
         // both fixed weapons before the shared offensive-item reservoir.
         await mongets(KNIFE);
         await mongets(LONG_SWORD);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 52
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) { // S_ZOMBIE
+        && speciesHasWeaponAttack(mndx)) { // S_ZOMBIE
         // C ref: makemon.c m_initweap(), S_ZOMBIE.  Armed skeletons first
         // probe for leather armor and a knife/short sword, then rejoin the
         // shared offensive-item tail.
@@ -1347,7 +1323,7 @@ export async function makemon(
         if (!rn2(4)) await mongets(rn2(3) ? KNIFE : SHORT_SWORD);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 34
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) { // S_GIANT
+        && speciesHasWeaponAttack(mndx)) { // S_GIANT
         // C ref: makemon.c m_initweap().  Giants independently probe for a
         // throwing boulder (ettins get a club) and, except for ettins, a
         // heavy melee weapon before the common offensive-item reservoir.
@@ -1376,21 +1352,21 @@ export async function makemon(
         await mongets(rn2(7) ? SPEAR : rn2(3) ? 33 : STILETTO);
         await giveOffensiveMonsterItem();
     } else if (MONSTER_SYMBOL[mndx] === 33 // S_GNOME
-        && MONSTER_HAS_WEAPON_ATTACK.has(mndx)) {
+        && speciesHasWeaponAttack(mndx)) {
         // C ref: makemon.c m_initweap(), default class armament.  Gnomes do
         // not have a dedicated switch case, so armed gnomes reach this table;
         // leader/ruler ranks narrow it through the lord/prince bias.
-        const bias = ((genderFlags & 0x00000400) ? 1 : 0)
-            + ((genderFlags & 0x00000800) ? 2 : 0)
-            + ((genderFlags & M2_NASTY) ? 1 : 0);
+        const bias = (is_lord(mndx) ? 1 : 0)
+            + (is_prince(mndx) ? 2 : 0)
+            + (extra_nasty(mndx) ? 1 : 0);
         const weaponRoll = rnd(14 - (2 * bias));
         switch (weaponRoll) {
         case 1:
-            if (genderFlags & M2_STRONG) await mongets(BATTLE_AXE);
+            if (strongmonst(mndx)) await mongets(BATTLE_AXE);
             else await mInitthrow(DART, 12);
             break;
         case 2:
-            if (genderFlags & M2_STRONG) await mongets(TWO_HANDED_SWORD);
+            if (strongmonst(mndx)) await mongets(TWO_HANDED_SWORD);
             else {
                 await mongets(CROSSBOW);
                 await mInitthrow(CROSSBOW_BOLT, 12);
@@ -1401,17 +1377,17 @@ export async function makemon(
             await mInitthrow(18, 12); // ARROW
             break;
         case 4:
-            if (genderFlags & M2_STRONG) await mongets(LONG_SWORD);
+            if (strongmonst(mndx)) await mongets(LONG_SWORD);
             else await mInitthrow(DAGGER, 3);
             break;
         case 5:
-            await mongets((genderFlags & M2_STRONG) ? LUCERN_HAMMER : AKLYS);
+            await mongets(strongmonst(mndx) ? LUCERN_HAMMER : AKLYS);
             break;
         default:
             break;
         }
         await giveOffensiveMonsterItem();
-    } else if (MONSTER_HAS_WEAPON_ATTACK.has(mndx)) {
+    } else if (speciesHasWeaponAttack(mndx)) {
         if (M_INITWEAP_SWITCH_CLASSES.has(requireMonsterData(MONSTER_SYMBOL, mndx))) {
             // This explicit class arm has no additional behavior in the
             // currently ported constructor, but it still bypasses default.
@@ -1449,7 +1425,7 @@ export async function makemon(
         if (!rn2(8) || (game.in_mklev && Is_earthlevel(game.u?.uz)))
             await mongets(WAN_DIGGING);
     } else if (initializeMonsterEquipment && MONSTER_SYMBOL[mndx] === 34
-        && (genderFlags & M2_GIANT)) {
+        && (monsterIsGiant(mndx))) {
         // C ref: makemon.c m_initinv(), is_giant().  Each iteration chooses
         // one weighted gem/glass type, creates it without ordinary object
         // initialization, and replaces its stack size with rn1(2,3).
@@ -1552,7 +1528,7 @@ export async function makemon(
     // C ref: makemon.c m_initinv().  Greedy monsters get a final gold gate
     // after the defensive and miscellaneous reservoirs.  Amount dice depend
     // on whether class-specific equipment already populated the inventory.
-    if (initializeMonsterEquipment && (genderFlags & M2_GREEDY)
+    if (initializeMonsterEquipment && (likes_gold(mndx))
         && !monsterInventory.some(object => object.otyp === GOLD_PIECE)
         && !rn2(5)) {
         const amount = d(level_difficulty(), hasMonsterInventory ? 5 : 10);
@@ -1565,6 +1541,7 @@ export async function makemon(
     // covetous species unless the caller explicitly supplies MM_NOWAIT.
     // STRAT_APPEARMSG is consumed by the first visible relocation message;
     // it cannot be reconstructed later from the monster's current species.
+    // C makemon.c:makemon() reads the raw waiting and covetous masks together.
     const flags3 = questMonsterFlags3(mndx);
     let monsterStrategy = 0;
     if (!(mmflags & MM_NOWAIT)) {
@@ -1866,6 +1843,7 @@ function speciesAfterBirth(
     const unique = !!(generation & G_UNIQ_POPULATION);
     const exhausted = born >= limit && !(generation & G_NOGEN);
     const extinct = (unique && species !== PM_HIGH_CLERIC) || exhausted;
+
     const mvflags = previousFlags | (extinct ? G_EXTINCT : 0);
     return { admitted, born, mvflags };
 }
@@ -1879,13 +1857,13 @@ export function monsterBirthLimit(species: number): number {
 export async function giveMonsterStartingObject(monster: Monster, type: number): Promise<GameObject | null> {
     if (!type) return null;
     const object = await mksobj(type, true, false);
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+
     if (MONSTER_SYMBOL[monster.mnum] === 56) {
         if (object.blessed) {
             object.blessed = false;
             object.cursed = true;
         }
-    } else if ((flags & 0x1000) && monsterAlignmentType(monster) === 1) {
+    } else if (is_minion(monster.mnum) && monsterAlignmentType(monster) === 1) {
         object.cursed = false;
         object.spe = Math.max(0, object.spe);
         object.oerodeproof = true;
@@ -1907,7 +1885,7 @@ export async function giveMonsterStartingObject(monster: Monster, type: number):
         object.blessed = false;
         object.cursed = true;
     }
-    if (flags & 0x800) {
+    if (is_prince(monster.mnum)) {
         if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
         else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
     }
@@ -1971,9 +1949,6 @@ export interface MonsterGrowthOptions {
     calls?: RollLog | null;
 }
 
-const M2_SHAPESHIFTER = 0x00004000;
-const M1_HUMANOID = 0x00020000;
-const S_GOLEM = 55;
 const PM_KILLER_BEE = 1;
 const PM_QUEEN_BEE = 5;
 const PM_AIR_ELEMENTAL_GROWTH = 154;
@@ -2008,9 +1983,8 @@ function targetSpecies(mnum: number, killedMonster: Monster | null): number {
 }
 
 function resultingGender(monster: Monster, newType: number): boolean {
-    const flags = MONSTER_FLAGS2[newType] ?? 0;
-    if (flags & M2_MALE) return false;
-    if (flags & M2_FEMALE) return true;
+    if (is_male(newType)) return false;
+    if (monsterIsFemale(newType)) return true;
     return !!monster.female;
 }
 
@@ -2025,7 +1999,7 @@ function growthMessage(
     });
     const verb = oldFemale !== newFemale
         ? 'changes into'
-        : (MONSTER_FLAGS1[newType] ?? 0) & M1_HUMANOID
+        : monsterIsHumanoid(newType)
             ? 'becomes' : 'grows up into';
     return `${subject} ${verb} ${withIndefiniteArticle(newName)}.`;
 }
@@ -2185,7 +2159,7 @@ export function finishMonsterGrowth(monster: Monster, growth: MonsterGrowth | nu
     // Fatal growth calls mondied before the normal form-change tail.
     if (!growth.genocided) {
         if (monster.cham === growth.oldType
-            && ((MONSTER_FLAGS2[growth.newType] ?? 0) & M2_SHAPESHIFTER))
+            && is_shapeshifter(growth.newType))
             monster.cham = growth.newType;
         monster.female = growth.newFemale;
     }

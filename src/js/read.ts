@@ -29,12 +29,18 @@ import {
     WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES,
     objectDirection, requireObjectData,
 } from './object_data.js';
-import { exerciseAttribute, exerciseWisdom, exerciseAttribute as exerciseAttributeNamed } from './attrib.js';
+import { exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, someHeroArmor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
-import { A_CON, A_DEX, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR } from './const.js';
+import {
+    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
+    G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame,
+    In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE,
+    MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR,
+    SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
+} from './const.js';
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -49,17 +55,17 @@ import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from 
 import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroMonsterForm, heroSpecies, polymorphHero, rememberPolymorphGenocide, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
 import { sokobanGuilt, erosionMatters } from './trap.js';
-import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription } from './invent.js';
+import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
 import { withMonsterNoticesBlocked, showGetposTip, loseHeroHp, exceedsActionCapacity } from './hack.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAmorphous, monsterIsHuman, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterTypeName, requireMonsterData, monsterHasProperName, monsterIsDemon, monsterPassesWalls } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import type { ObjectInscriptionView } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState } from './mkobj.js';
+import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
 import { askTeleportDestination, teleportHero } from './teleport.js';
 import { levelTeleport } from './level_teleport.js';
 import { d, rn2, rn1, rnd } from './rng.js';
@@ -67,26 +73,28 @@ import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { chargeAlteredUnpaidObject, deleteObject, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
-import { dropCursedSecondaryWeapon } from './wield.js';
+import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
 import { cansee, couldsee } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { listGenocided } from './insight.js';
 import type { DeathHandler } from './end.js';
-import { mksobj } from './mkobj.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
 import { drainHeroWeaponSkills } from './skills.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
-import { loseHeroSpellMemory } from './spell.js';
+import { loseHeroSpellMemory, studyBook } from './spell.js';
 import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
-import { MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName } from './mondata.js';
+import {
+    MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
+    nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
+    monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
+    monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls,
+} from './mondata.js';
 import { addExperience } from './exper.js';
-import { chwepon, isWeldedPrimary, objectEnchantment, setWeaponEnchantment } from './wield.js';
-import { chooseInventoryObject } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import { recordLiteracy } from './literacy.js';
@@ -95,11 +103,9 @@ import { readOrdinaryObject } from './readable_objects.js';
 import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
-import { studyBook } from './spell.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
-import type { Monster } from './monster_types.js';
-import type { MonsterVital } from './monster_types.js';
+import type { Monster, MonsterVital } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -1324,7 +1330,6 @@ function sourceTypeKnown(source: GameObject, state: GameState): boolean {
         || !!state._knownObjectTypes?.has(source.otyp);
 }
 
-
 // C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
 // position? NOT the same thing as canCenterCloud; region.c's cloud growth
 // (regions.ts) shares the test through this export.
@@ -1573,7 +1578,6 @@ async function scrollEffect(
     }
 }
 
-
 // ---------------------------------------------------------------------------
 // Falling boulders. C refs: read.c drop_boulder_on_player(),
 // drop_boulder_on_monster().
@@ -1594,8 +1598,6 @@ export interface FallingBoulderResult {
     dropped: true;
     heroDied: boolean;
 }
-
-const M1_WALLWALK = 0x00000008;
 
 // C read.c:drop_boulder_on_player().
 export async function dropBoulderOnHero({
@@ -1722,7 +1724,7 @@ interface GenocideOptions { finishHeroDeath?: DeathHandler | undefined }
 const GENOCIDE_REALLY = 1, GENOCIDE_PLAYER = 2;
 export const GENOCIDE_ON_THRONE = 4;
 const G_GENO = 0x0020, G_UNIQ = 0x1000;
-const M2_DEMON = 0x00000100, M2_PNAME = 0x00080000;
+
 const MS_LEADER = 36, MS_NEMESIS = 37, MS_GUARDIAN = 38;
 const S_INVISIBLE = 35;
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
@@ -2038,7 +2040,6 @@ function canAnnounceImmuneSpecies(species: number): boolean {
         && (species !== PM_NINJA || role.key === 'samurai');
 }
 
-
 // ---------------------------------------------------------------------------
 // Punishment. C refs: read.c punish(), unpunish().
 // ---------------------------------------------------------------------------
@@ -2281,7 +2282,7 @@ async function createRequestedMonsters(request: CreationRequest): Promise<boolea
 }
 
 function creationFlags(request: CreationRequest, species: number | null): number {
-    const fixedGender = species !== null && (requireMonsterData(MONSTER_FLAGS2, species) & 0x00030000);
+    const fixedGender = species !== null && (is_male(species) || monsterIsFemale(species));
     const setGender = request.genderConflict || !fixedGender;
     const gender = setGender && request.gender === 1 ? MM_FEMALE
         : setGender && request.gender === 0 ? MM_MALE : 0;
@@ -2290,10 +2291,9 @@ function creationFlags(request: CreationRequest, species: number | null): number
 }
 
 function canHideCreatedMonster(monster: Monster): boolean {
-    const traits = requireMonsterData(MONSTER_FLAGS1, monster.mnum);
     const symbol = requireMonsterData(MONSTER_SYMBOL, monster.mnum);
-    return !!(traits & 0x00000100) && symbol !== 13
-        || !!(traits & 0x00000080) && !!game.level?.objects[monster.mx]?.[monster.my]?.length
+    return monsterIsHider(monster.mnum) && symbol !== 13
+        || monsterHidesUnder(monster.mnum) && !!game.level?.objects[monster.mx]?.[monster.my]?.length
         || symbol === 57 && isPoolAt(monster.mx, monster.my);
 }
 

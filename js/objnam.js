@@ -1,7 +1,7 @@
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
-import { guardianGenus } from './mon.js';
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
+import { guardianGenus, hatchableEggSpecies } from './mon.js';
 import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { objectProb, objectMaterial, observeObject } from './o_init.js';
@@ -18,7 +18,7 @@ import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN,
 import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight, objectIsFlammable, objectIsRottable, isContainer, placeCreatedObject } from './mkobj.js';
 import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterHasProperName, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
@@ -26,21 +26,18 @@ import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.js';
 import { equipmentLightDescription } from './light.js';
-import { beginObjectBurn } from './timeout.js';
+import { beginObjectBurn, scheduleObjectTimer, stopLevelTimer } from './timeout.js';
 import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from './display.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
-import { nameToMonster, resolveMonsterNamePrefix } from './mondata.js';
+import { nameToMonster, resolveMonsterNamePrefix, is_male, is_neuter, is_were, monsterHasProperName, monsterIsFemale, monsterIsHuman, monsterIsVerySmall, } from './mondata.js';
 import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
-import { scheduleObjectTimer, stopLevelTimer } from './timeout.js';
-import { hatchableEggSpecies } from './mon.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt } from './pager.js';
-import { deleteEngravingAt } from './engrave.js';
+import { deleteEngravingAt, make_grave } from './engrave.js';
 import { fireDamageChain, deleteTrap, trapName, waterDamageObject, erosionMatters as trapErosionMatters, objectIsVulnerableToErosion, resetUtrap, maketrap } from './trap.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
-import { make_grave } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
@@ -373,24 +370,27 @@ export function definiteName(name, state = game) {
 }
 // Native rumors.c:CapitalMon() includes capitalized species names and titles,
 // but excludes individual names in both the real and hallucinatory tables.
-const CAPITALIZED_MONSTER_TITLES = [
-    ...MONSTER_NAME.flatMap((name, species) => {
-        const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
-        const personal = monsterHasProperName(species);
-        if (unique && (personal || name === 'high cleric' || name === 'long worm tail'))
-            return [];
-        return [name, monsterTypeName(species), monsterTypeName(species, true)];
-    }),
-    ...BOGUS_MONSTERS.flatMap(name => {
-        const code = name.charAt(0);
-        if (code && '-+='.includes(code))
-            return [];
-        return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
-    }),
-].filter(name => /^[A-Z]/u.test(name));
+// Read trait owners after module initialization; their module also uses objnam.
+function capitalizedMonsterTitles() {
+    return [
+        ...MONSTER_NAME.flatMap((name, species) => {
+            const unique = !!((MONSTER_GENO[species] ?? 0) & 0x1000);
+            const personal = monsterHasProperName(species);
+            if (unique && (personal || name === 'high cleric' || name === 'long worm tail'))
+                return [];
+            return [name, monsterTypeName(species), monsterTypeName(species, true)];
+        }),
+        ...BOGUS_MONSTERS.flatMap(name => {
+            const code = name.charAt(0);
+            if (code && '-+='.includes(code))
+                return [];
+            return ['_', '|'].includes(code) ? [name.slice(1)] : [name];
+        }),
+    ].filter(name => /^[A-Z]/u.test(name));
+}
 // C rumors.c:CapitalMon().
 function capitalizedMonsterTitle(name) {
-    return CAPITALIZED_MONSTER_TITLES.some(title => name.startsWith(title)
+    return capitalizedMonsterTitles().some(title => name.startsWith(title)
         && (name.length === title.length || [' ', "'"].includes(name.charAt(title.length))));
 }
 // C simple_typename()/obj_typename(): type knowledge alone selects the name.
@@ -1943,11 +1943,6 @@ export async function finishWishWeight(object, parsed) {
 // C objnam.c:readobjnam(), depicted gender, species admission, and food
 // contents. Species changes use the normal corpse and egg timer owner.
 // ---------------------------------------------------------------------------
-const M2_WERE = 0x00000004;
-const M2_HUMAN = 0x00000008;
-const M2_MALE = 0x00010000;
-const M2_FEMALE = 0x00020000;
-const M2_NEUTER = 0x00040000;
 const G_UNIQ = 0x1000;
 const PM_GRAY_DRAGON = MONSTER_NAME.indexOf('gray dragon');
 const PM_YELLOW_DRAGON = MONSTER_NAME.indexOf('yellow dragon');
@@ -1974,12 +1969,10 @@ export async function applyWishSpecies(object, parsed, wizardWish) {
         return;
     let species = requestedSpecies === MONSTER_NAME.indexOf('long worm tail')
         ? MONSTER_NAME.indexOf('long worm') : requestedSpecies;
-    let flags = MONSTER_FLAGS2[species] ?? 0;
     const noCorpse = (MONSTER_GENO[species] ?? 0) & G_NOCORPSE
         || (game.mvitals?.[species]?.mvflags ?? 0) & G_NOCORPSE;
-    if (object.otyp !== FIGURINE && flags & M2_WERE && noCorpse) {
+    if (object.otyp !== FIGURINE && is_were(species) && noCorpse) {
         species = counterWereSpecies(species) ?? species;
-        flags = MONSTER_FLAGS2[species] ?? 0;
     }
     const unique = !!((MONSTER_GENO[species] ?? 0) & G_UNIQ);
     const leavesCorpse = !((MONSTER_GENO[species] ?? 0) & G_NOCORPSE)
@@ -2006,7 +1999,7 @@ export async function applyWishSpecies(object, parsed, wizardWish) {
             set_corpsenm(object, hatchableEggSpecies(species));
             break;
         case FIGURINE:
-            if (!unique && (!(flags & M2_HUMAN) || flags & M2_WERE)
+            if (!unique && (!monsterIsHuman(species) || is_were(species))
                 && species !== MONSTER_NAME.indexOf('mail daemon'))
                 object.corpsenm = species;
             break;
@@ -2028,16 +2021,15 @@ export function applyWishedTinVariety(object, parsed, wizardWish) {
 function wishedGender(species, parsed) {
     if (species === null)
         return CORPSTAT_RANDOM;
-    const flags = MONSTER_FLAGS2[species] ?? 0;
-    if (flags & M2_NEUTER)
+    if (is_neuter(species))
         return CORPSTAT_NEUTER;
-    if (parsed.gender === 1 && !(flags & M2_MALE))
+    if (parsed.gender === 1 && !is_male(species))
         return CORPSTAT_FEMALE;
-    if (parsed.gender === 0 && !(flags & M2_FEMALE))
+    if (parsed.gender === 0 && !monsterIsFemale(species))
         return CORPSTAT_MALE;
-    if (flags & M2_MALE)
+    if (is_male(species))
         return CORPSTAT_MALE;
-    if (flags & M2_FEMALE)
+    if (monsterIsFemale(species))
         return CORPSTAT_FEMALE;
     return rn2(2) ? CORPSTAT_MALE : CORPSTAT_FEMALE;
 }

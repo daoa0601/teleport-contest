@@ -11,7 +11,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { splitHeroMonsterForm } from './potion.js';
 import { applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BOOM, AT_NONE, AT_WEAP, } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './dothrow.js';
 import { passiveDamage } from './uhitm.js';
 import { petrifyMonsterAttacker } from './mhitm.js';
@@ -24,9 +24,7 @@ import { returnHeroToHumanForm } from './polyself.js';
 import { mon_reflects } from './muse.js';
 import { d, rn2 } from './rng.js';
 import { contactIsProtected } from './stoning.js';
-import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, } from './mondata.js';
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
+import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterHasEyes, monsterPerceives, } from './mondata.js';
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 // C mhitu.c:passiveum(): the old form's passive counterattack. assess_dmg()
 // is damageAttacker below; the AD_ENCH branch calls zap.c:drain_item() as
@@ -177,9 +175,8 @@ async function freezeAttacker(monster, turns, { state, random, publish }) {
     if (state.u.umonnum === PM_FLOATING_EYE) {
         if (random(4) === 0)
             turns = 127;
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        if (!monster.mcansee || (flags & M1_NOEYES) || random(3) === 0
-            || (heroIsInvisible(state) && !(flags & M1_SEE_INVIS)))
+        if (!monster.mcansee || !monsterHasEyes(monster.mnum) || random(3) === 0
+            || (heroIsInvisible(state) && !monsterPerceives(monster.mnum)))
             return { attackerStopped: false };
         if (heroIsBlind(state)) {
             await publish('As a blind floating eye, you cannot defend yourself.');

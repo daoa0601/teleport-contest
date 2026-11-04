@@ -6,15 +6,15 @@ import { initializePet } from './dog.js';
 import { game, requireLiveGame } from './gstate.js';
 import { isPoolAt } from './dbridge.js';
 import { makemonNear } from './mklev.js';
-import { makemonAt, rndmonstAdj, monsterBirthLimit } from './makemon.js';
+import { makemonAt, rndmonstAdj, monsterBirthLimit, setMonsterMalign } from './makemon.js';
 import { resolveMonsterLiquid } from './mon.js';
-import { setMonsterMalign } from './makemon.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
-import { MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { wieldMonsterWeapon } from './weapon.js';
 import { ensureHeroSkills } from './skills.js';
 import { rn2 } from './rng.js';
+import { speciesHasWeaponAttack } from './mondata.js';
 function familiarSpecies(object, state) {
     if (object) {
         const species = object.corpsenm;
@@ -109,7 +109,7 @@ export async function makeFamiliar(object = null, x = game.u.ux, y = game.u.uy, 
     monster.msleeping = 0;
     setMonsterMalign(monster, state);
     await newsym(monster.mx, monster.my);
-    if (monster.mtame && MONSTER_HAS_WEAPON_ATTACK.has(monster.mnum)) {
+    if (monster.mtame && speciesHasWeaponAttack(monster.mnum)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state, { publish: announce });
     }

@@ -3,16 +3,16 @@
 import { FOOD_CLASS } from './objclass.js';
 import { objectMaterial } from './o_init.js';
 import { STRAT_WAITMASK } from './const.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { reportHeroThrownMiss } from './dothrow.js';
 import { BANANA, CORPSE } from './object_data.js';
 import { ACCFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
 import { tameMonster } from './dog.js';
+import { is_domestic } from './mondata.js';
 const PM_MONKEY = MONSTER_NAME.indexOf('monkey');
 const PM_APE = MONSTER_NAME.indexOf('ape');
 const PM_LICHEN = MONSTER_NAME.indexOf('lichen');
-const M2_DOMESTIC = 0x00400000;
 const S_UNICORN = 21;
 const VEGGY = 3;
 // The caller has already made the ordinary contact rolls. A null result lets
@@ -35,7 +35,7 @@ export async function offerThrownFood(monster, object, state) {
 function befriendsWithFood(monster, object) {
     if (monster.mnum === PM_MONKEY || monster.mnum === PM_APE)
         return object.otyp === BANANA;
-    if (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DOMESTIC)
+    if (!is_domestic(monster.mnum)
         || object.oclass !== FOOD_CLASS)
         return false;
     return MONSTER_SYMBOL[monster.mnum] !== S_UNICORN

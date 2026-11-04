@@ -2,13 +2,12 @@
 
 import { G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
-import { monsterYoungerForm } from './monster_data.js';
 import { FIGURINE } from './object_data.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
-
 import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimer } from './object_types.js';
+import { monsterYoungerForm } from './mondata.js';
 
 function figurineSpeciesGenocided(figurine: GameObject, state: GameState): boolean {
     const mnum = figurine?.corpsenm;

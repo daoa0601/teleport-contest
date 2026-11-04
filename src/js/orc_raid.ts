@@ -6,24 +6,22 @@ import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from 
 import { upstart } from './hacklib.js';
 import { addFruit } from './fruit.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { makemonAt } from './makemon.js';
-import { mkobj, mksobj, deallocateObject } from './mkobj.js';
+import { makemonAt, setMonsterMalign } from './makemon.js';
+import { mkobj, mksobj, deallocateObject, objectWeight } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { setMonsterMalign } from './makemon.js';
 import {
     CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES,
     LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY,
     SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
-
 import { randomTypeByDescription } from './objnam.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { migrateMonsterOffLevel } from './dog.js';
-import { objectWeight } from './mkobj.js';
+import { is_orc } from './mondata.js';
 
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');
@@ -63,7 +61,7 @@ export async function createOrcRaid(): Promise<void> {
     // C fmon is newest-first; the runtime monster array stores births in order.
     for (const monster of [...state.level.monsters].reverse()) {
         if (monster.dead || monster.mhp <= 0) continue;
-        if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ORC && !monster.name && rn2(10)) {
+        if (is_orc(monster.mnum) && !monster.name && rn2(10)) {
             if (monster.mnum !== PM_ORC_CAPTAIN) nameOrc(monster, gang);
         }
     }
@@ -74,8 +72,6 @@ export async function createOrcRaid(): Promise<void> {
         await sendRaiderToLowerMines(monster, false, state);
     }
 }
-
-
 
 function nameOrc(monster: Monster, gang: string | null, suffix = ''): void {
     const name = upstart(randomOrcName());

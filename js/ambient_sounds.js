@@ -4,20 +4,18 @@
 import { WEAPON_CLASS } from './objclass.js';
 import { hallucinatedDeityName } from './alignment.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd } from './const.js';
-import { isok } from './cmd.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, } from './const.js';
+import { isok, commandResultCancelled, promptDirection, readDirectionKey } from './cmd.js';
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
-import { commandResultCancelled } from './cmd.js';
-import { nomul } from './hack.js';
+import { nomul, heroGoldAmount, roomForRoomno, stopRun } from './hack.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsAnimal, monsterIsFlyer, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
+import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
-import { promptDirection, readDirectionKey } from './cmd.js';
 import { monsterName, novelTitle, randomDisplayMonsterName } from './do_name.js';
-import { monsterPossessive, sameMonsterRace } from './mondata.js';
+import { monsterPossessive, sameMonsterRace, carnivorous, herbivorous, is_dwarf, is_elf, is_gnome, is_lord, is_mercenary, is_minion, is_prince, likes_magic, monsterIsAnimal, monsterIsFlyer, monsterIsHumanoid, monsterIsPlayerMonster, monsterIsSilent, monsterIsUndead, monsterIsVampireShifter, } from './mondata.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { STATUE, SPE_NOVEL, GOLD_PIECE } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
@@ -25,7 +23,7 @@ import { monsterAtPosition } from './steed.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { searchSpecial } from './mkroom.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { priestIsInOwnTemple } from './priest.js';
+import { priestIsInOwnTemple, monsterAlignmentType } from './priest.js';
 import { findVaultGuard } from './vault.js';
 import { rn2, rnd } from './rng.js';
 import { recorderLocalHour } from './calendar.js';
@@ -36,7 +34,6 @@ import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumor.js';
 import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
-import { monsterAlignmentType } from './priest.js';
 import { resolveHeroSeduction } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
@@ -45,10 +42,6 @@ import { aggravateMonsters, publishMonsterCuss } from './wizard.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
 import { shopkeeperInOwnShop, quoteShopGoods, chatWithShopkeeper } from './shk.js';
 import { cansee } from './vision.js';
-import { roomForRoomno, stopRun, heroGoldAmount } from './hack.js';
-const M1_FLY = 0x00000001;
-const M2_LORD_OR_PRINCE = 0x00000c00;
-const M2_MERC = 0x00000200;
 const S_ANT = 1;
 const MS_ANIMAL = 17;
 // C sounds.c:dosounds(): periodic ambient noise. The shop branch's
@@ -72,7 +65,7 @@ export async function dosounds(state = requireInitializedGame()) {
             'a slow drip.', 'a gurgling noise.', 'dishes being washed!',
         ], rn2(2) + hallu);
     if (flags.has_court && !rn2(200)) {
-        const resident = livingResidents(state).find(monster => (monster.msleeping || (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_LORD_OR_PRINCE)
+        const resident = livingResidents(state).find(monster => (monster.msleeping || (is_lord(monster.mnum) || is_prince(monster.mnum)))
             && !monsterIsAnimal(monster) && monInRoom(monster, COURT, state));
         if (resident) {
             const selection = rn2(3) + hallu;
@@ -149,7 +142,7 @@ export async function dosounds(state = requireInitializedGame()) {
         for (const monster of [...state.level.monsters].reverse()) {
             if (monster.dead || monster.mhp <= 0)
                 continue;
-            if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MERC
+            if (is_mercenary(monster.mnum)
                 && monInRoom(monster, BARRACKS, state)
                 && (monster.msleeping || ++count > 5)) {
                 await hearChoice(state, [
@@ -379,8 +372,6 @@ const MS_NEMESIS = 37;
 const MS_ORACLE = 40;
 const MS_GUARDIAN = 38;
 const MS_GROAN = 44;
-const M1_CARNIVORE = 0x20000000;
-const M1_HERBIVORE = 0x40000000;
 const MS_SELL = 39;
 const PM_DINGO = MONSTER_NAME.indexOf('dingo');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
@@ -418,7 +409,7 @@ export function monsterGrowlSound(monster) {
 export async function begForFood(monster, state) {
     requireLiveGame(state);
     if (monster.msleeping || !monster.mcanmove
-        || !((MONSTER_FLAGS1[monster.mnum] ?? 0) & (M1_CARNIVORE | M1_HERBIVORE)))
+        || !(carnivorous(monster.mnum) || herbivorous(monster.mnum)))
         return;
     const sound = MONSTER_SOUND[monster.mnum] ?? MS_SILENT;
     if (sound !== MS_SILENT && sound <= MS_ANIMAL) {
@@ -678,10 +669,6 @@ const MS_RIDER = 35;
 const MS_PRIEST = 41;
 const MS_SPELL = 42;
 const MS_BOAST = 43;
-const M2_ELF = 0x10;
-const M2_DWARF = 0x20;
-const M2_GNOME = 0x40;
-const M2_MAGIC = 0x80000000;
 const S_CENTAUR = 29;
 const S_NYMPH = 14;
 export async function publishMonsterConversation(monster, sound, state) {
@@ -779,7 +766,7 @@ export async function publishMonsterConversation(monster, sound, state) {
             if (!monster.mpeaceful)
                 await publishMonsterCuss(monster, state);
             else
-                reply.speech = (MONSTER_FLAGS2[monster.mnum] ?? 0) & 0x1000
+                reply.speech = is_minion(monster.mnum)
                     && monsterAlignmentType(monster) === 1 ? "It's not too late." : "We're all doomed.";
             break;
         case MS_SEDUCE:
@@ -849,16 +836,15 @@ function humanoidReply(monster, state) {
         return { action: 'asks for a potion of healing.' };
     if (monster.mtame && !monster.isminion && state.moves > (monster.edog?.hungrytime ?? 0))
         return { speech: "I'm hungry." };
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    if (flags & M2_ELF)
+    if (is_elf(monster.mnum))
         return { action: 'curses orcs.' };
-    if (flags & M2_DWARF)
+    if (is_dwarf(monster.mnum))
         return { action: 'talks about mining.' };
-    if (flags & M2_MAGIC)
+    if (likes_magic(monster.mnum))
         return { action: 'talks about spellcraft.' };
     if (MONSTER_SYMBOL[monster.mnum] === S_CENTAUR)
         return { action: 'discusses hunting.' };
-    if (flags & M2_GNOME) {
+    if (is_gnome(monster.mnum)) {
         const plan = heroIsHallucinating(state) ? rn2(4) : 0;
         return { speech: plan % 2 ? plan === 1 ? 'Phase one, collect underpants.' : 'Phase three, profit!'
                 : 'Many enter the dungeon, and few return to the sunlit lands.' };

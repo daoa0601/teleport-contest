@@ -4,31 +4,31 @@
 
 import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
 import {
-    objectClassForType, objectSkill, LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW,
-    ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL,
-    IRON_CHAIN, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData,
+    objectClassForType, objectSkill, LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW,
+    ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER,
+    BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData,
 } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import type { GameObject } from './object_types.js';
-import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SPE_LIM, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
-import { monsterIsHumanoid, MONSTER_ATTACKS, MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
+import {
+    A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE,
+    P_BOW, P_CROSSBOW, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP,
+} from './const.js';
+
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
-import { inventoryItemDescription } from './invent.js';
-import { getobj } from './invent.js';
-import { freeInventoryObject, useUpInventoryStack } from './invent.js';
-import { addInventoryItem } from './invent.js';
+import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack } from './invent.js';
 import { isBimanualObject, isWeaponTool, isWetTowel, isLauncherAmmunition, isMissileObject, isPolearm } from './object_properties.js';
 import type { WeaponCandidate } from './object_properties.js';
-import { resetBulkTakeoff, cancelSlotTakeoff } from './do_wear.js';
+import { resetBulkTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
-import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, setWornArtifactProperties, setArtifactWarningWielded, restrictName } from './artifacts.js';
+import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifacts.js';
 import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
@@ -39,16 +39,17 @@ import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
-import { erosionMatters, resolveImmediatePetrification } from './trap.js';
-import { setnotworn, setworn, recalculateTelepathyRange } from './worn.js';
+import { resolveImmediatePetrification } from './trap.js';
+import { setnotworn, setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { makeHallucinated, strangeFeeling } from './potion.js';
+import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
-import { AT_WEAP } from './monster_attack_types.js';
+
 import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
+import { monsterIsHumanoid, could_twoweap } from './mondata.js';
 
 
 export async function dotwoweapon() {
@@ -686,10 +687,9 @@ export async function mergeHeroWeaponSlots(
 // C refs: wield.c can_twoweapon(), dotwoweapon(), drop_uswapwep(),
 // untwoweapon().
 
-// C mondata.h could_twoweap() examines only the first three attacks.
+// Two-weapon anatomy follows the current body, independent of equipment.
 export function heroCanUseTwoWeapons(state: GameState = game): boolean {
-    return requireMonsterData(MONSTER_ATTACKS, heroSpecies(state)).slice(0, 3)
-        .filter(([type]) => type === AT_WEAP).length > 1;
+    return could_twoweap(heroSpecies(state));
 }
 
 function weaponName(object: GameObject, state: GameState): string {

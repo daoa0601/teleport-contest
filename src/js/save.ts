@@ -1,7 +1,7 @@
 // save.js — Web-Storage-backed save and restore.
 // C refs: save.c and restore.c.
 
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterHidesUnder, monsterIsEel, resetErinys } from './monster_data.js';
+import { MONSTER_SYMBOL, resetErinys } from './monster_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, displayMessageWindow, rememberToplines } from './tty_topline.js';
@@ -18,17 +18,15 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { encodeSavedGraph, isSavedRecord } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import type { SavedGame } from './persistent_state_validation.js';
-import { cmdq_clear } from './cmd.js';
+import { cmdq_clear, isok } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
 import { rollQuestFigureGenders } from './startup.js';
 import type { PersistentState } from './state_schema.js';
 import type { StorageBackend } from './storage.js';
 import { resolveDungeonIdentities } from './dungeon.js';
-import { purgeDeadMonsters, attemptMonsterRestrap, hideMonsterUnder } from './mon.js';
-import { restoreMonsterInventoryOwnership } from './mon.js';
+import { purgeDeadMonsters, attemptMonsterRestrap, hideMonsterUnder, restoreMonsterInventoryOwnership } from './mon.js';
 import { CQ_CANNED, CQ_REPEAT, FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd, AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, ismnum } from './const.js';
-import { isok } from './cmd.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './wield.js';
@@ -52,6 +50,7 @@ import type {
     SavedMonsterTraits, ShopBillEntry, ShopkeeperData, VaultGuardData, WormSegment,
 } from './monster_types.js';
 import type { Position } from './map_types.js';
+import { monsterHidesUnder, monsterIsEel, monsterIsHider } from './mondata.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -778,14 +777,13 @@ export function validSavedMonsterTraits(value: unknown, context: SavedEntityCont
 // (can_hide_under_obj()).
 // ---------------------------------------------------------------------------
 
-const M1_CONCEAL = 0x80, M1_HIDE = 0x100;
-const S_EEL = 57, S_MIMIC = 13;
+const S_MIMIC = 13;
 
 // C restore.c:getlev() rechecks existing cover before catch-up and shape
 // changes. A saved mundetected bit alone does not establish valid cover.
 export async function restoreMonsterCover(monster: Monster, state: GameState = game): Promise<void> {
     if (monster !== state.u.usteed && monster.mundetected
-        && (monsterHidesUnder(monster.mnum)))
+        && monsterHidesUnder(monster.mnum))
         await hideMonsterUnder(monster, state);
 }
 
@@ -793,9 +791,9 @@ export async function restoreMonsterCover(monster: Monster, state: GameState = g
 // Only that square's vision bits are hidden, and hideunder sees restored vision.
 export async function hideMonsterOnRestore(monster: Monster, state: GameState = game): Promise<void> {
     requireLiveGame(state);
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const hiderUnder = !!(flags & M1_CONCEAL) || monsterIsEel(monster.mnum);
-    if (!(flags & M1_HIDE) && !hiderUnder) return;
+
+    const hiderUnder = monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum);
+    if (!monsterIsHider(monster.mnum) && !hiderUnder) return;
     if (monster.mundetected || M_AP_TYPE(monster)) return;
     const row = state.viz_array?.[monster.my];
     const savedVision = row?.[monster.mx];
@@ -803,7 +801,7 @@ export async function hideMonsterOnRestore(monster: Monster, state: GameState = 
         throw new Error('Restoring monster hiding requires an initialized vision square.');
     row[monster.mx] = savedVision & ~(IN_SIGHT | COULD_SEE);
     try {
-        if (flags & M1_HIDE) await attemptMonsterRestrap(monster, state);
+        if (monsterIsHider(monster.mnum)) await attemptMonsterRestrap(monster, state);
         if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC && !M_AP_TYPE(monster))
             await attemptMonsterRestrap(monster, state);
     } finally {

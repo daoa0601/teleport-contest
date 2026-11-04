@@ -26,10 +26,10 @@ import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed } from './display.js';
 import { splitMonster } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterCanEngulf, monsterClassSymbol, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterTypeName, monsterYoungerForm, requireMonsterData, speciesEatsCorpses } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap } from './mondata.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
@@ -119,7 +119,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { resolveMonsterGaze } from './mhitu.js';
 import type { MonsterGazeOptions } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
-import { monsterOlderForm } from './monster_data.js';
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
@@ -128,7 +127,6 @@ import { exerciseAttribute } from './attrib.js';
 import { pline as lifeSavingLine } from './pline.js';
 import { releaseHeroGrip } from './polyself.js';
 import { makePetWary } from './dog.js';
-import { monsterIsVampire } from './monster_data.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { AMULET_OF_LIFE_SAVING } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
@@ -141,18 +139,6 @@ import { AD_STCK, AT_HUGS } from './monster_attack_types.js';
 import { docrt } from './display.js';
 import { placeBallAndChain } from './ball.js';
 
-const M1_SWIM = 0x00000002;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_CLING = 0x00000010;
-const M1_NEEDPICK = 0x00000040;
-const M1_MINDLESS = 0x00010000;
-const M1_SLITHY = 0x00080000;
-const M1_SEE_INVIS = 0x01000000;
-const M1_REGEN = 0x00800000;
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_BREATHLESS = 0x00000400;
-const M1_TPORT = 0x02000000;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
 const PM_FIRE_ELEMENTAL = 155;
@@ -302,10 +288,7 @@ export async function killGenocidedMonsters(state: GameState = game): Promise<Ge
 }
 
 export function monsterSurvivesPool(monster: Monster, { waterWall = false } = {}): boolean {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const safeFlags = M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS
-        | (waterWall ? 0 : M1_CLING);
-    return !!(flags & safeFlags);
+    return cant_drown(monster.mnum) || (!waterWall && monsterIsClinger(monster.mnum));
 }
 
 function heroKeepsSteedAboveLiquid(monster: Monster, state: GameState, waterWall: boolean): boolean {
@@ -352,9 +335,9 @@ export function monsterLavaReaction(monster: Monster, state: GameState = game): 
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !isLavaAt(monster.mx, monster.my, state)) return null;
 
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+
     const likesLava = monsterLikesLava(monster);
-    if (monsterInAir(monster, state) || (flags & M1_CLING) || likesLava)
+    if (monsterInAir(monster, state) || monsterIsClinger(monster.mnum) || likesLava)
         return { kind: 'safe' };
     const fireResistant = monsterHasFireResistance(monster);
     return { kind: fireResistant ? 'scorch' : 'burn' };
@@ -436,8 +419,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
                 monster.minvent || monster.inventory || [], [], state, { publish: announce },
             );
         } else if (reaction.kind === 'drown') {
-            const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-            if ((flags & M1_TPORT)
+            if (monsterCanTeleport(monster.mnum)
                 // tele_restrict() reports the blocked escape.
                 && !await reportMonsterTeleportRestriction(monster, { state, publish: announce })) {
                 const relocation = await randomMonsterRelocation(monster, {
@@ -471,8 +453,7 @@ export async function resolveMonsterLiquid<DeathResult = MonsterLiquidDeathResul
     } else {
         const lava = monsterLavaReaction(monster, state);
         if (lava && lava.kind !== 'safe') {
-            const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-            if ((flags & M1_TPORT)
+            if (monsterCanTeleport(monster.mnum)
                 // tele_restrict() reports the blocked escape.
                 && !await reportMonsterTeleportRestriction(monster, { state, publish: announce })) {
                 const relocation = await randomMonsterRelocation(monster, {
@@ -611,7 +592,7 @@ export async function* monsterDistressEvents(
             if (monster.dead || (monster.mhp ?? 1) <= 0) continue;
         }
         if (
-            (distressTurn % 20 === 0 || (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_REGEN) &&
+            (distressTurn % 20 === 0 || regenerates(monster.mnum)) &&
             isFiniteNumber(monster.mhp) &&
             isFiniteNumber(monster.mhpmax)
         ) {
@@ -711,12 +692,7 @@ export function resistConflict(
 
 // Native mon.c:mon_allowflags(). Conflict resistance belongs to the moving
 // caller (monAllowFlags below); these helpers compute the body-based bits.
-const M1_TUNNEL = 0x00000020;
-const M1_UNSOLID = 0x00100000;
-const M1_METALLIVORE = 0x80000000;
-const M2_MINION = 0x00001000;
-const M2_GIANT = 0x00002000;
-const M2_ROCKTHROW = 0x08000000;
+
 const S_GHOST = 54;
 const MZ_LARGE = 3;
 const PM_MINOTAUR = MONSTER_NAME.indexOf('minotaur');
@@ -725,19 +701,18 @@ export function monsterMovementBaseFlags(monster: Monster, state: GameState = ga
     let flags = monster.mtame
         ? ALLOW_M | ALLOW_TRAPS | ALLOW_SANCT | ALLOW_SSM
         : monster.mpeaceful ? ALLOW_SANCT | ALLOW_SSM : ALLOW_U;
-    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const kind = MONSTER_FLAGS2[monster.mnum] ?? 0;
+
     if (monster.isshk) flags |= ALLOW_SSM;
     if (monster.ispriest) flags |= ALLOW_SSM | ALLOW_SANCT;
-    if (body & M1_WALLWALK) flags |= ALLOW_ROCK | ALLOW_WALL;
-    if (kind & M2_ROCKTHROW || monsterCanBreakBoulder(monster)) flags |= ALLOW_ROCK;
+    if (monsterPassesWalls(monster.mnum)) flags |= ALLOW_ROCK | ALLOW_WALL;
+    if (monsterThrowsRocks(monster.mnum) || monsterCanBreakBoulder(monster)) flags |= ALLOW_ROCK;
     if (monsterCanTunnel(monster, state)) flags |= ALLOW_DIG;
-    if (kind & M2_GIANT) flags |= BUSTDOOR;
+    if (monsterIsGiant(monster.mnum)) flags |= BUSTDOOR;
     if (monsterCanOpenDoor(monster)) flags |= OPENDOOR;
     if (monsterCanUnlockDoor(monster)) flags |= UNLOCKDOOR;
     if (monsterPassesBars(monster)
         && (monster !== state.u.ustuck || carriedHeroPassesBars(state))) flags |= ALLOW_BARS;
-    if (kind & M2_MINION || monsterIsRider(monster)) flags |= ALLOW_SANCT;
+    if (is_minion(monster.mnum) || monsterIsRider(monster)) flags |= ALLOW_SANCT;
     if (monsterIsUnicorn(monster.mnum) && !monsterTeleportRestricted(monster, state)) flags |= NOTONL;
     if (monsterIsHuman(monster.mnum) || monster.mnum === PM_MINOTAUR) flags |= ALLOW_SSM;
     if (monsterIsUndead(monster.mnum) && MONSTER_SYMBOL[monster.mnum] !== S_GHOST
@@ -755,9 +730,8 @@ export function monsterCanUnlockDoor(monster: Monster): boolean {
 }
 
 export function monsterCanTunnel(monster: Monster, state: GameState = game): boolean {
-    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (!(body & M1_TUNNEL) || Is_rogue_level(state.u.uz, state)) return false;
-    if (!(body & M1_NEEDPICK) || monster.mpeaceful && !heroHasConflict(state)) return true;
+    if (!tunnels(monster.mnum) || Is_rogue_level(state.u.uz, state)) return false;
+    if (!needspick(monster.mnum) || monster.mpeaceful && !heroHasConflict(state)) return true;
     const { mux: targetX, muy: targetY } = monster;
     if (targetX === undefined || targetY === undefined)
         throw new Error('A tunneling monster needs its perceived hero position.');
@@ -776,8 +750,7 @@ const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
 const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
 const PM_NURSE = MONSTER_NAME.indexOf('nurse');
 const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
-const M1_NOEYES = 0x00001000;
-const M2_SHAPESHIFTER = 0x00004000;
+
 const MIMIC_SPECIES = new Set(['small mimic', 'large mimic', 'giant mimic'].map(name => MONSTER_NAME.indexOf(name)));
 
 export interface MonsterConsumptionOptions {
@@ -790,7 +763,7 @@ export interface MonsterConsumptionOptions {
 function polymorphFood(object: GameObject): boolean {
     if (![CORPSE, EGG, TIN].includes(object.otyp)
         || object.corpsenm === undefined || object.corpsenm < 0) return false;
-    return !!((MONSTER_FLAGS2[object.corpsenm] ?? 0) & M2_SHAPESHIFTER)
+    return is_shapeshifter(object.corpsenm)
         || !!MONSTER_ATTACKS[object.corpsenm]?.some(([, damage]) => damage === AD_POLY);
 }
 
@@ -918,8 +891,7 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
     let treeOk = false;
     if (!(flags & ALLOW_DIG)) return { rockOk, treeOk };
 
-    const speciesFlags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    if (!(speciesFlags & M1_NEEDPICK)) return { rockOk: true, treeOk: true };
+    if (!needspick(monster?.mnum)) return { rockOk: true, treeOk: true };
 
     const inventory = monster?.minvent || monster?.inventory || [];
     const wielded = monsterWieldedWeapon(monster);
@@ -945,12 +917,6 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
 // C mon.c:can_touch_safely(), curr_mon_load(), max_mon_load() and can_carry().
 // ---------------------------------------------------------------------------
 
-const M1_NOHANDS = 0x00002000;
-const M2_STRONG = 0x04000000;
-const M2_GREEDY = 0x10000000;
-const M2_JEWELS = 0x20000000;
-const M2_COLLECT = 0x40000000;
-const M2_MAGIC = 0x80000000;
 const MZ_HUMAN = 2;
 const SILVER = 14;
 const RIDERS = new Set(['Death', 'Pestilence', 'Famine']
@@ -969,9 +935,8 @@ export function monsterCanTouchObject(monster: Monster, object: GameObject, stat
 }
 
 export function currentMonsterLoad(monster: Monster): number {
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     return (monster.minvent ?? []).reduce((total, object) => {
-        if (object.otyp === BOULDER && (flags & M2_ROCKTHROW)) return total;
+        if (object.otyp === BOULDER && monsterThrowsRocks(monster.mnum)) return total;
         return total + object.owt;
     }, 0);
 }
@@ -979,7 +944,7 @@ export function currentMonsterLoad(monster: Monster): number {
 export function maxMonsterLoad(monster: Monster): number {
     const bodyWeight = MONSTER_BODY_META[monster?.mnum]?.[0] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
-    const strong = !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_STRONG);
+    const strong = strongmonst(monster?.mnum);
     let capacity;
     if (!bodyWeight)
         capacity = Math.trunc(MAX_CARR_CAP * size / MZ_HUMAN);
@@ -995,9 +960,8 @@ export function monsterCarryAmount(
     state: GameState = game, random: typeof rn2 = rn2,
 ): number {
     if (!monster || !object) return 0;
-    const flags1 = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const flags2 = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    if ((flags1 & M1_NOTAKE) || !monsterCanTouchObject(monster, object, state)) return 0;
+
+    if (notake(monster.mnum) || !monsterCanTouchObject(monster, object, state)) return 0;
     const quantity = object.quan > LARGEST_INT
         ? 20000 + random(LARGEST_INT - 20000 + 1) : object.quan;
     if (quantity > 1) {
@@ -1005,12 +969,12 @@ export function monsterCarryAmount(
             && (object.oclass === COIN_CLASS || object.oclass === GEM_CLASS)
             || (MONSTER_ATTACKS[monster.mnum] || [])
                 .some(([attackType]) => attackType === AT_ENGL);
-        if ((flags1 & M1_NOHANDS) && !canTakeWholeStack) return 1;
+        if (monsterHasNoHands(monster.mnum) && !canTakeWholeStack) return 1;
     }
     if (monster === state.u.usteed) return 0;
     if (monster.isshk) return quantity;
     if (monster.mpeaceful && !monster.mtame) return 0;
-    if ((flags2 & M2_ROCKTHROW) && object.otyp === BOULDER) return quantity;
+    if (monsterThrowsRocks(monster.mnum) && object.otyp === BOULDER) return quantity;
     if (MONSTER_SYMBOL[monster.mnum] === S_NYMPH)
         return object.oclass === ROCK_CLASS ? 0 : quantity;
     return currentMonsterLoad(monster) + object.owt
@@ -1025,10 +989,9 @@ export function monsterCanCarryObject(
 }
 
 function monsterCannotSqueezeThrough(monster: Monster, state: PlayingGameState) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (monsterPassesWalls(monster.mnum)) return false;
     const flexible =
-        !!(flags & (M1_AMORPHOUS | M1_SLITHY)) ||
+        (monsterIsAmorphous({ mnum: monster?.mnum }) || monsterIsSlithy(monster?.mnum)) ||
         monsterIsWhirly(monster) ||
         monsterIsNoncorporeal(monster) ||
         monsterCanFog(monster, state);
@@ -1051,14 +1014,14 @@ export async function mfndpos(
         y = monster.my;
     const now = state.level.at(x, y);
     if (!now) throw new RangeError('Monster movement started outside the level');
-    const speciesFlags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+
     const symbol = MONSTER_SYMBOL[monster.mnum];
     const levelFlags = state.level.flags;
     const waterLevel = sameDungeonLevel(state.u.uz, state.water_level);
     const rogueLevel = sameDungeonLevel(state.u.uz, state.rogue_level);
     const inAir = monsterInAir(monster, state);
     let wantPool = symbol === S_EEL;
-    const poolOk = (!waterLevel && inAir) || (!!(speciesFlags & M1_SWIM) && !wantPool);
+    const poolOk = (!waterLevel && inAir) || (monsterIsSwimmer(monster.mnum) && !wantPool);
     const lavaOk =
         monster.mnum !== PM_FLOATING_EYE &&
         (inAir || monster.mnum === PM_FIRE_ELEMENTAL || monster.mnum === PM_SALAMANDER);
@@ -1086,7 +1049,7 @@ export async function mfndpos(
                 if (
                     IS_OBSTRUCTED(loc.typ) &&
                     rockOk &&
-                    !(speciesFlags & M1_MINDLESS) &&
+                    !monsterIsMindless(monster.mnum) &&
                     (monster.mpeaceful || monster.mtame) &&
                     (roomsAt(state.level, nx, ny, TEMPLE).length ||
                         roomsAt(state.level, nx, ny, SHOPBASE).length) &&
@@ -1096,7 +1059,7 @@ export async function mfndpos(
                     )
                 )
                     continue;
-                if (loc.typ === WATER && !(speciesFlags & M1_SWIM)) continue;
+                if (loc.typ === WATER && !monsterIsSwimmer(monster.mnum)) continue;
                 if (
                     loc.typ === IRONBARS &&
                     (!(flags & ALLOW_BARS) ||
@@ -1106,7 +1069,7 @@ export async function mfndpos(
                 const engulfingHero = state.u.uswallow && state.u.ustuck === monster;
                 const slipsUnderDoor =
                     !engulfingHero &&
-                    (speciesFlags & M1_AMORPHOUS || monsterCanFog(monster, state));
+                    (monsterIsAmorphous({ mnum: monster.mnum }) || monsterCanFog(monster, state));
                 if (
                     IS_DOOR(loc.typ) &&
                     !slipsUnderDoor &&
@@ -1139,7 +1102,7 @@ export async function mfndpos(
                     continue;
 
                 const seesHero =
-                    monster.mcansee && (!heroIsInvisible(state) || speciesFlags & M1_SEE_INVIS);
+                    monster.mcansee && (!heroIsInvisible(state) || monsterPerceives(monster.mnum));
                 const displacedScare =
                     heroIsDisplaced(state) && seesHero && nx === monster.mux && ny === monster.muy;
                 let info = 0;
@@ -1239,9 +1202,8 @@ export async function mfndpos(
 
 // Shared hiding decisions. C refs: mon.c restrap(), hideunder(), and
 // maybe_unhide_at(); monmove.c can_hide_under_obj() lives in monmove.ts.
-const M1_FLY = 0x1;
-const M1_CONCEAL = 0x80, M1_HIDE = 0x100, M1_NOLIMBS = 0x6000;
-const S_EYE = 5, S_MIMIC = 13, S_LIGHT = 25;
+
+const S_MIMIC = 13, S_LIGHT = 25;
 
 export interface MonsterHideUnder {
     undetected: boolean;
@@ -1269,8 +1231,7 @@ export async function attemptMonsterRestrap(
     { random = rn2, calls }: { random?: RandomBelow; calls?: MonsterCallLog } = {},
 ): Promise<boolean> {
     requireLiveGame(state);
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (!(flags & M1_HIDE) || monster.mcan || M_AP_TYPE(monster)
+    if (!monsterIsHider(monster.mnum) || monster.mcan || M_AP_TYPE(monster)
         || ((state.viz_array?.[monster.my]?.[monster.mx] ?? 0) & IN_SIGHT)) return false;
     calls?.push(3);
     if (random(3) !== 0 || state.u.ustuck === monster) return false;
@@ -1279,7 +1240,7 @@ export async function attemptMonsterRestrap(
     const trap = level.traps.find(candidate => candidate.tx === monster.mx && candidate.ty === monster.my);
     if (monster.mtrapped && trap && !is_pit(trap.ttyp)) return false;
     const mimic = MONSTER_SYMBOL[monster.mnum] === S_MIMIC;
-    const ceilingHider = !!((flags & M1_CLING) && !mimic) || !!(flags & M1_FLY);
+    const ceilingHider = (monsterIsClinger(monster.mnum) && !mimic) || monsterIsFlyer(monster.mnum);
     if (ceilingHider && !levelHasCeiling(state)) return false;
     // C dist2() as the m_next2u() adjacency test.
     const adjacent = Math.max(Math.abs(monster.mx - state.u.ux), Math.abs(monster.my - state.u.uy)) <= 1;
@@ -1549,7 +1510,7 @@ export function corpseKeepsMonsterTraits(
 // Monster anger, alarm sounds, and peaceful bystander reactions.
 // C refs: mon.c setmangry(), wakeup(), peacefuls_respond(), angry_guards(),
 // qst_guardians_respond(), and the quest-leader branch of mondied().
-const M1_HUMANOID = 0x00020000;
+
 const MS_CUSS = 34;
 const MS_HUMANOID = 25;
 const MS_GUARDIAN = 38;
@@ -1736,16 +1697,15 @@ async function reactPeacefulBystanders(attackedMonster: Monster) {
 
     const monsters = Array.from(game.level?.monsters || []).reverse();
     for (const observer of monsters) {
-        const flags = MONSTER_FLAGS1[observer?.mnum] ?? 0;
         if (!observer || observer === attackedMonster || observer.dead
             || (observer.mhp ?? 1) <= 0 || !observer.mpeaceful
             || observer.msleeping
             || observer.mcansee === 0 || observer.mcansee === false
-            || (flags & M1_MINDLESS)
+            || monsterIsMindless(observer?.mnum)
             || !couldsee(observer.mx, observer.my)) continue;
-        if (heroInvisible && !(flags & M1_SEE_INVIS)) continue;
+        if (heroInvisible && !monsterPerceives(observer?.mnum)) continue;
 
-        if ((flags & M1_HUMANOID) || observer.isshk || observer.ispriest) {
+        if (monsterIsHumanoid(observer?.mnum) || observer.isshk || observer.ispriest) {
             await reactHumanoidBystander(observer, attackedSpecies);
             continue;
         }
@@ -1822,7 +1782,7 @@ export async function angerMonster(monster: Monster | null, { attacked = false }
     adjustHeroAlignment(monster.ispriest
         ? (priestIsCoaligned(monster, game) ? -5 : 2)
         : -1);
-    const humanoid = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HUMANOID)
+    const humanoid = monsterIsHumanoid(monster.mnum)
         || monster.isshk || monster.isgd;
     if (humanoid) {
         if (couldsee(monster.mx, monster.my)) {
@@ -2084,7 +2044,7 @@ export async function consumeMonsterFloorObjects(
     const context = { state, level: requireGameLevel(state), random, rollOne, rollDice, publish };
     let status: 0 | 1 = 0;
     if (!monster.mtame && !mealInterrupted(monster, context)) {
-        if ((MONSTER_FLAGS1[originalSpecies] ?? 0) & M1_METALLIVORE)
+        if (metallivorous(originalSpecies))
             status = await eatMetal(monster, context);
         if (!mealInterrupted(monster, context) && originalSpecies === PM_GELATINOUS_CUBE)
             status = await eatOrEngulfPile(monster, context) || status;
@@ -2328,7 +2288,7 @@ function monsterIntrinsic(property: PropertyName | 'strength' | null) {
 // ── C mon.c:mpickstuff(). Selection, visible naming, and transfer are one
 // action.
 const S_NYMPH = 14;
-const M1_ACID = 0x08000000;
+
 const PM_LIZARD = MONSTER_NAME.indexOf('lizard');
 
 export async function pickUpMonsterFloorObject(
@@ -2369,7 +2329,7 @@ function rejectsOrdinaryCorpse(monster: Monster, object: GameObject): boolean {
     if (object.otyp !== CORPSE || MONSTER_SYMBOL[monster.mnum] === S_NYMPH) return false;
     const species = object.corpsenm ?? -1;
     return !touchPetrifies(species) && species !== PM_LIZARD
-        && !((MONSTER_FLAGS1[species] ?? 0) & M1_ACID);
+        && !acidic(species);
 }
 
 // ── C mon.c:mm_displacement().
@@ -2699,8 +2659,6 @@ const PM_FAMINE = 313;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const S_LICH = 38;
-const M2_UNDEAD = 0x00000002;
-const M2_NEUTER = 0x00040000;
 
 const SPECIAL_GOLEM_REMAINS = new Set([
     PM_PAPER_GOLEM, PM_ROPE_GOLEM, PM_GOLD_GOLEM, PM_LEATHER_GOLEM,
@@ -2713,7 +2671,7 @@ export function levelAllowsMonsterDeathDrops(
 ): boolean {
     if (Is_rogue_level(state.u?.uz)
         || state.level?.flags?.deathdrops === false) return false;
-    const undead = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_UNDEAD);
+    const undead = monsterIsUndead(monster.mnum);
     return !(state.level?.flags?.graveyard && undead && random(3));
 }
 
@@ -2790,7 +2748,7 @@ export async function resolveMonsterCorpseChance(monster: Monster, {
 function corpseFlags(monster: Monster, initialize = true): number {
     let flags = initialize ? CORPSTAT_INIT : 0;
     if (monster.female) flags |= CORPSTAT_FEMALE;
-    else if (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER))
+    else if (!is_neuter(monster.mnum))
         flags |= CORPSTAT_MALE;
     return flags;
 }
@@ -3851,7 +3809,7 @@ async function dropBesideStatue(object: GameObject, x: number, y: number, publis
 function statueFlags(monster: Monster): number {
     let flags = 0;
     if (monster.female) flags |= CORPSTAT_FEMALE;
-    else if (!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER)) flags |= CORPSTAT_MALE;
+    else if (!is_neuter(monster.mnum)) flags |= CORPSTAT_MALE;
     if ((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ) flags |= CORPSTAT_HISTORIC;
     return flags;
 }
@@ -4178,11 +4136,6 @@ export type MonsterFormChange = MonsterFormChangeIdentity & (
     | ({ heroDied: false } & MonsterFormChangeEffects)
 );
 
-const M1_ANIMAL = 0x00040000;
-const M1_NOTAKE = 0x00000800;
-const M2_NOPOLY = 0x00000001;
-const M2_MALE = 0x00010000;
-const M2_FEMALE = 0x00020000;
 const S_VAMPIRE = 48;
 const S_DOG = 4;
 const S_BAT = 28;
@@ -4218,7 +4171,7 @@ function acceptsShapechangerForm(baseMnum: number, targetMnum: number): boolean 
         || speciesWasGenocided(targetMnum, game) || PLACEHOLDER_MONSTERS.has(targetMnum)) return false;
     if (monsterIsPlayerMonster(targetMnum) || targetMnum === baseMnum)
         return true;
-    return !((MONSTER_FLAGS2[targetMnum] ?? 0) & M2_NOPOLY);
+    return polyok(targetMnum);
 }
 
 // C select_newcham_form()'s fifty-attempt fallback draws with validspecmon():
@@ -4280,8 +4233,8 @@ async function pickDoppelgangerChamForm(monster: Monster): Promise<number> {
         let triesLeft = 5;
         do {
             targetMnum = rn2(SPECIAL_PM);
-            if ((MONSTER_FLAGS1[targetMnum] ?? 0) & M1_HUMANOID
-                && !((MONSTER_FLAGS2[targetMnum] ?? 0) & M2_NOPOLY)) {
+            if (monsterIsHumanoid(targetMnum)
+                && polyok(targetMnum)) {
                 break;
             }
             targetMnum = -1;
@@ -4324,7 +4277,7 @@ function selectChameleonForm(monster: Monster): number | null {
 // rebuilt per call instead of cached in ga.animal_list.
 function chameleonAnimals(): number[] {
     return Array.from({ length: SPECIAL_PM }, (_, mnum) => mnum)
-        .filter(mnum => (MONSTER_FLAGS1[mnum] ?? 0) & M1_ANIMAL);
+        .filter(mnum => monsterIsAnimal({ mnum }));
 }
 
 // C pick_animal() gives the Rogue level one extra animal draw. newcham()
@@ -4352,10 +4305,9 @@ function selectSandestinForm(monster: Monster): number | null {
 }
 
 export function shapechangerGender(baseMnum: number, targetMnum: number, female: boolean): boolean {
-    const flags = MONSTER_FLAGS2[targetMnum] ?? 0;
-    if (flags & M2_MALE) return false;
-    if (flags & M2_FEMALE) return true;
-    if (flags & M2_NEUTER) return female;
+    if (is_male(targetMnum)) return false;
+    if (monsterIsFemale(targetMnum)) return true;
+    if (is_neuter(targetMnum)) return female;
 
     const toggle = !rn2(10);
     const vampireShape = targetMnum === PM_VAMPIRE
@@ -4403,7 +4355,7 @@ function shapechangerProtectionActive() {
 }
 
 function naturalShapechanger(mnum: number): boolean {
-    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER);
+    return is_shapeshifter(mnum);
 }
 
 // C mon.c:isspecmon(): shopkeepers, priests, vault guards and the quest
@@ -4420,7 +4372,7 @@ function validSpecMon(monster: Monster, mnum: number, baseMnum: number,
     if (mnum < 0) return true;
     if (!acceptsShapechangerForm(baseMnum, mnum)) return false;
     if (isSpeciallyHandledMonster(monster, state)
-        && (((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOTAKE) !== 0
+        && (notake(mnum)
             || !monsterHasHead({ mnum }))) return false;
     return true;
 }
@@ -4991,8 +4943,7 @@ export async function decideMonsterShapeChange(
     );
     if (change?.heroDied) return change;
     if (change && vampireShifter) {
-        const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-        if (!(flags & (M2_MALE | M2_FEMALE | M2_NEUTER)))
+        if (!(is_male(monster.mnum) || monsterIsFemale(monster.mnum) || is_neuter(monster.mnum)))
             monster.female = wasFemale;
     }
     return change;
@@ -5007,7 +4958,6 @@ const S_FUNGUS = 32;
 const S_UNICORN = 21;
 const S_ZOMBIE = 52;
 const S_ORC = 15;
-const M2_ORC = 0x00000080;
 
 const PM_PONY = 100;
 
@@ -5050,7 +5000,7 @@ const UNSCENTED_SPECIES = new Set([
 // hero smells like the current form, an unpolymorphed one like the race.
 function heroSmellsAttractiveToOrcs(state: GameState): boolean {
     const form = heroMonsterForm(state);
-    if (form !== null) return !!((MONSTER_FLAGS2[form] ?? 0) & M2_ORC);
+    if (form !== null) return is_orc(form);
     return state.urace?.name === 'orc';
 }
 
@@ -5223,7 +5173,6 @@ const PM_SCORPION = MONSTER_NAME.indexOf('scorpion');
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_GARGOYLE = MONSTER_NAME.indexOf('gargoyle');
 const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
-const M1_OVIPAROUS = 0x00400000;
 
 // C mon.c:can_be_hatched().
 export function hatchableEggSpecies(species: number | null | undefined): number {
@@ -5231,7 +5180,7 @@ export function hatchableEggSpecies(species: number | null | undefined): number 
     if (species === PM_SCORPIUS) species = PM_SCORPION;
     species = monsterOlderForm(species);
     if (species === PM_KILLER_BEE || species === PM_GARGOYLE) return species;
-    if (((MONSTER_FLAGS1[species] ?? 0) & M1_OVIPAROUS)
+    if (lays_eggs(species)
         && (!rn2(77) || (species !== PM_QUEEN_BEE && species !== PM_WINGED_GARGOYLE)))
         return species;
     return -1;
@@ -5267,4 +5216,12 @@ export function eggTypeFromParent(parent: number): number {
     if (parent === PM_QUEEN_BEE) return 1;
     if (parent === PM_WINGED_GARGOYLE) return PM_GARGOYLE;
     return parent;
+}
+
+// C ref: mon.c:valid_vampshiftform().
+export function validVampireShiftForm(base: number, form: number) {
+    return monsterIsVampire(base)
+        && (form === PM_VAMPIRE_BAT
+            || form === PM_FOG_CLOUD
+            || (form === PM_WOLF && base !== PM_VAMPIRE));
 }

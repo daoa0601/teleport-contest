@@ -5,13 +5,13 @@ import { G_GENOD, MAX_EGG_HATCH_TIME } from './const.js';
 import { veganCorpse } from './food_traits.js';
 import { requireGameLevel } from './gstate.js';
 import { AD_POLY } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter, } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { AMULET_OF_STRANGULATION, APPLE, BANANA, CARROT, CLOVE_OF_GARLIC, CORPSE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LUMP_OF_ROYAL_JELLY, MEATBALL, MEAT_RING, MEAT_STICK, RIN_SLOW_DIGESTION, SLIME_MOLD, TIN, TRIPE_RATION, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
 import { fleshPetrifies } from './stoning.js';
-import { sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
+import { sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, carnivorous, herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter, monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter, } from './mondata.js';
 export const DOGFOOD = 0;
 export const CADAVER = 1;
 export const ACCFOOD = 2;
@@ -21,9 +21,6 @@ export const POISON = 5;
 export const UNDEF = 6;
 export const TABU = 7;
 const SILVER = 14;
-const M1_NOEYES = 0x1000, M1_ACID = 0x08000000, M1_POIS = 0x10000000;
-const M1_CARNIVORE = 0x20000000, M1_HERBIVORE = 0x40000000, M1_METALLIVORE = 0x80000000;
-const M2_ELF = 0x10, M2_SHAPESHIFTER = 0x4000;
 const S_KOBOLD = 11, S_ORC = 15, S_FUNGUS = 32, S_OGRE = 41, S_YETI = 51;
 const PM_GHOUL = MONSTER_NAME.indexOf('ghoul');
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
@@ -52,13 +49,12 @@ export function dogFood(monster, object, random, calls, state) {
         return object.cursed ? TABU : APPORT;
     if (object.oclass === ROCK_CLASS)
         return UNDEF;
-    const diet = MONSTER_FLAGS1[monster.mnum] ?? 0;
     if (object.oclass === FOOD_CLASS)
-        return foodQuality(monster, object, diet, state);
-    return nonfoodQuality(monster, object, diet, state);
+        return foodQuality(monster, object, state);
+    return nonfoodQuality(monster, object, state);
 }
-function foodQuality(monster, object, diet, state) {
-    const carni = !!(diet & M1_CARNIVORE), herbi = !!(diet & M1_HERBIVORE);
+function foodQuality(monster, object, state) {
+    const carni = carnivorous(monster.mnum), herbi = herbivorous(monster.mnum);
     const flesh = [CORPSE, TIN, EGG].includes(object.otyp) ? object.corpsenm : undefined;
     if (object.otyp === CORPSE && flesh !== undefined && monsterIsRider({ mnum: flesh }))
         return TABU;
@@ -73,7 +69,7 @@ function foodQuality(monster, object, diet, state) {
     if (!carni && !herbi)
         return object.cursed ? UNDEF : APPORT;
     const starving = !!(monster.mtame && !monster.isminion && monster.edog?.mhpmax_penalty);
-    const blindWithEyes = !monster.mcansee && !(diet & M1_NOEYES);
+    const blindWithEyes = !monster.mcansee && monsterHasEyes(monster.mnum);
     if (monster.mnum === PM_GHOUL)
         return ghoulFood(object, flesh, starving, state);
     switch (object.otyp) {
@@ -98,7 +94,7 @@ function foodQuality(monster, object, diet, state) {
                 return TABU;
             return herbi || starving ? ACCFOOD : MANFOOD;
         case TIN:
-            return diet & M1_METALLIVORE ? ACCFOOD : MANFOOD;
+            return metallivorous(monster.mnum) ? ACCFOOD : MANFOOD;
         case APPLE:
             return herbi ? DOGFOOD : starving ? ACCFOOD : MANFOOD;
         case CARROT:
@@ -129,13 +125,12 @@ function ghoulFood(object, flesh, starving, state) {
     return TABU;
 }
 function corpseQuality(monster, object, flesh, starving, carni, herbi, state) {
-    const corpseFlags = flesh === undefined ? 0 : MONSTER_FLAGS1[flesh] ?? 0;
     if ((oldCorpse(object, state) && MONSTER_SYMBOL[monster.mnum] !== S_FUNGUS)
-        || ((corpseFlags & M1_ACID) && !monsterHasAcidResistance(monster))
-        || ((corpseFlags & M1_POIS) && !monsterHasPoisonResistance(monster)))
+        || (acidic(flesh ?? -1) && !monsterHasAcidResistance(monster))
+        || (poisonous(flesh ?? -1) && !monsterHasPoisonResistance(monster)))
         return POISON;
     if (flesh !== undefined && (monster.mtame ?? 0) > 1 && !starving
-        && (((MONSTER_FLAGS2[flesh] ?? 0) & M2_SHAPESHIFTER)
+        && (is_shapeshifter(flesh)
             || MONSTER_ATTACKS[flesh]?.some(([, damage]) => damage === AD_POLY)))
         return MANFOOD;
     if (veganCorpse(flesh))
@@ -144,7 +139,7 @@ function corpseQuality(monster, object, flesh, starving, carni, herbi, state) {
         && monsterIsHumanoid(monster.mnum) && sameMonsterRace(monster.mnum, flesh)
         && !monsterIsUndead(monster.mnum)
         && ![S_KOBOLD, S_ORC, S_OGRE].includes(MONSTER_SYMBOL[flesh] ?? 0)) {
-        const elf = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ELF);
+        const elf = is_elf(monster.mnum);
         return starving && carni && !elf ? ACCFOOD : TABU;
     }
     return carni ? CADAVER : MANFOOD;
@@ -156,7 +151,7 @@ function oldCorpse(object, state) {
     return age + 50 <= state.moves
         && object.corpsenm !== PM_LIZARD && object.corpsenm !== PM_LICHEN;
 }
-function nonfoodQuality(monster, object, diet, state) {
+function nonfoodQuality(monster, object, state) {
     if (object.otyp === AMULET_OF_STRANGULATION || object.otyp === RIN_SLOW_DIGESTION)
         return TABU;
     const material = objectMaterial(object, state);
@@ -164,7 +159,7 @@ function nonfoodQuality(monster, object, diet, state) {
         return TABU;
     if (monster.mnum === PM_GELATINOUS_CUBE && objectIsOrganic(object, state))
         return ACCFOOD;
-    if ((diet & M1_METALLIVORE) && objectIsMetallic(object, state)
+    if (metallivorous(monster.mnum) && objectIsMetallic(object, state)
         && (objectIsRustprone(object, state) || monster.mnum !== PM_RUST_MONSTER)) {
         return objectIsRustprone(object, state) && !object.oerodeproof ? DOGFOOD : ACCFOOD;
     }

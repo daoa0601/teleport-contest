@@ -9,10 +9,9 @@ import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import { experienceRankIndex } from './exper.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterHasProperName } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
-
 import { heroIsBlind } from './senses.js';
 import type { AlignmentName } from './roles.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -22,8 +21,7 @@ import { LuaTable } from './lua/runtime.js';
 import { flushPendingTopline, putMessageHistory } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
-
-const M2_PNAME = 0x00080000;
+import { monsterHasProperName } from './mondata.js';
 
 export interface QuestText {
     lines: readonly string[];
@@ -183,7 +181,6 @@ function godNameOf(alignment: AlignmentName, g: GameState): string {
 function godTitleOf(alignment: AlignmentName, g: GameState): string {
     return g.urole?.goddessAlignments?.includes(alignment) ? 'goddess' : 'god';
 }
-
 
 // C hacklib.c:s_suffix(); %S/%s name formatting uses the shared port in
 // monster_name.ts.

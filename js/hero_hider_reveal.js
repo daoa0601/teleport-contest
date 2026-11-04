@@ -15,12 +15,11 @@ import { dist2, possessiveName } from './hacklib.js';
 import { setHeroGrip } from './mon.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterIsEel, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { observeObjectForNaming } from './objnam.js';
-import { objectDescription } from './objnam.js';
+import { observeObjectForNaming, objectDescription } from './objnam.js';
 import { EGG } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { isPoolAt } from './dbridge.js';
@@ -29,7 +28,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { moveHeroByTeleport } from './teleport.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
-const M1_HIDE = 0x00000100;
+import { monsterIsEel, monsterIsHider } from './mondata.js';
 const S_EEL = 57;
 const S_MIMIC = 13;
 const S_PIERCER = 16;
@@ -45,7 +44,6 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
     if (hero.uswallow || !attackerLooksAdjacent || !foundYou)
         return false;
     const species = heroSpecies(state);
-    const flags1 = MONSTER_FLAGS1[species] ?? 0;
     const symbol = MONSTER_SYMBOL[species];
     const attacker = () => monsterName(monster, { state, article: 'none', exact: true });
     const seenByHero = canSeeMonster(monster);
@@ -54,7 +52,7 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
         if (!canSpotMonster(monster))
             await map_invisible(monster.mx, monster.my);
         hero.uundetected = 0;
-        if ((flags1 & M1_HIDE) && species !== PM_TRAPPER) {
+        if (monsterIsHider(species) && species !== PM_TRAPPER) {
             // ceiling hider drops onto the attacker's square
             await publish(`You fall from the ${ceilingName(hero.ux, hero.uy, state)}!`);
             const oldx = monster.mx;

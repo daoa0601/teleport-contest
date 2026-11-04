@@ -8,7 +8,7 @@ import {
     AD_ACID, AD_COLD, AD_DISE, AD_DREN, AD_ELEC, AD_FAMN, AD_FIRE, AD_PEST,
     AD_PHYS, AD_POLY, AD_STCK, AD_STUN, AT_CLAW, AT_ENGL, AT_HUGS, AT_TUCH, AT_WEAP,
 } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterIsShade } from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { CORPSE } from './object_data.js';
 import { touchPetrifies } from './stoning.js';
@@ -17,7 +17,7 @@ import type { Hero } from './hero_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import { isHomeElemental } from './makemon.js';
-import { monsterHasColdResistance } from './mondata.js';
+import { monsterHasColdResistance, monsterIsShade } from './mondata.js';
 
 type CombatActor = Hero | Monster;
 

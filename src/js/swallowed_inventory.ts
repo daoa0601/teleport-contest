@@ -9,25 +9,21 @@ import {
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { feelPetrifyingCorpse } from './stoning.js';
-import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
-import { withIndefiniteArticle } from './objnam.js';
-
-import { inventoryItemDescription } from './invent.js';
-import { observeObjectForNaming, simpleObjectName } from './objnam.js';
+import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, inventoryItemDescription } from './invent.js';
+import { withIndefiniteArticle, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { monsterDigests, monsterTypeName } from './monster_data.js';
+import { monsterTypeName } from './monster_data.js';
 import { GOLD_PIECE } from './object_data.js';
-import { heroIsPolymorphed } from './polyself.js';
-import { heroSpecies } from './polyself.js';
+import { heroIsPolymorphed, heroSpecies } from './polyself.js';
 import { heroIsPunished } from './ball.js';
 import { propertyIsActive } from './properties.js';
 import { visibleRegionAt } from './regions.js';
-
 import { showInventoryWindow } from './windows.js';
 import type { InventorySection } from './windows.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
+import { monsterDigests } from './mondata.js';
 
 export async function lookInsideSwallower(monster: Monster): Promise<void> {
     const blind = heroIsBlind();

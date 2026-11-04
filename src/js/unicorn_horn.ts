@@ -4,8 +4,8 @@
 // is outside this move.
 import { game } from './gstate.js';
 import { heroMonsterForm } from './polyself.js';
-import { monsterIsUnicorn } from './monster_data.js';
 import type { GameState } from './game_state.js';
+import { monsterIsUnicorn } from './mondata.js';
 
 export function heroCanUseUnicornHorn(state: GameState = game) {
     const form = heroMonsterForm(state);

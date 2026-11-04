@@ -1,7 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
-import { objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
+import { objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
@@ -17,13 +17,14 @@ import { equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
 import { surfaceName } from './terrain_name.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monsterObjectPronoun, monsterPossessive } from './mondata.js';
+import { monsterObjectPronoun, monsterPossessive, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed } from './mondata.js';
+import { monsterCanBeSaddled } from './steed.js';
 import { possessiveName } from './hacklib.js';
 import { dismountHero, heroCanRideSteed } from './steed.js';
 import { touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
 import { game, requireLiveGame } from './gstate.js';
-import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
+import { MONSTER_EXPERIENCE_META, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { isBimanualObject } from './object_properties.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP } from './const.js';
 import { objectNoLongerHeld } from './do.js';
@@ -32,9 +33,6 @@ import { unlinkMonsterObject, placeObject } from './mkobj.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { resolveImmediatePetrification } from './trap.js';
-const M1_NOHEAD = 0x00008000;
-const M1_MINDLESS = 0x00010000;
-const M1_ANIMAL = 0x00040000;
 const MZ_SMALL = 1;
 const LEATHER = 7;
 const SPEED_BOOTS = 166;
@@ -117,14 +115,13 @@ export async function updateMonsterEquipment(monster, object, on, state = game, 
         await newsym(monster.mx, monster.my);
 }
 function monsterCanDress(monster, creation) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     const size = MONSTER_SIZE[monster?.mnum] ?? 0;
     if (size < MZ_SMALL || monsterHasNoHands(monster.mnum)
-        || (flags & M1_ANIMAL))
+        || monsterIsAnimal({ mnum: monster?.mnum }))
         return false;
     // Creation is the source exception for skeletons and mummies. Other
     // mindless monsters cannot dress themselves later.
-    if ((flags & M1_MINDLESS) && (!creation
+    if (monsterIsMindless(monster?.mnum) && (!creation
         || (MONSTER_SYMBOL[monster.mnum] !== S_MUMMY
             && MONSTER_NAME[monster.mnum] !== 'skeleton')))
         return false;
@@ -153,7 +150,6 @@ function monsterWearSlots(monster) {
     return slots;
 }
 function slotAllowed(monster, slot) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (slot === 'uamul')
         return true;
     if (slot === 'uarm')
@@ -163,7 +159,7 @@ function slotAllowed(monster, slot) {
     if (slot === 'uarmc')
         return monsterCanWearSuit(monster) || monsterWrappingAllowed(monster.mnum);
     if (slot === 'uarmh')
-        return !(flags & M1_NOHEAD);
+        return monsterHasHead({ mnum: monster?.mnum });
     if (slot === 'uarmf')
         return !monsterIsSlithy(monster.mnum)
             && !monsterIsCentaur(monster.mnum);
@@ -180,7 +176,6 @@ export function wornInSlot(monster, mask) {
 }
 // trap.c wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
-const IRON = 11;
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects
 // whose worn bit is present in misc_worn_check contribute protection.
 export function findMonsterArmorClass(monster) {

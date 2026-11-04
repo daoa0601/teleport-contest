@@ -11,11 +11,10 @@ import { game, requireGameLevel } from './gstate.js';
 import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { newuhs } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
-import { delobjCore } from './invent.js';
-import { useUpInventoryStack } from './invent.js';
+import { delobjCore, useUpInventoryStack } from './invent.js';
 import { findMonsterNearPosition, makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, monsterIsDisplacer, monsterIsEel } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
 import { revealMonsterAppearance, changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { upstart } from './hacklib.js';
@@ -33,8 +32,10 @@ import type { GameState } from './game_state.js';
 import type { GameObject, ObjectTimerKind, ObjectWhere } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position, Trap } from './map_types.js';
-import { restoreMonsterTraits } from './zap.js';
+import { restoreMonsterTraits, zombieCanDig } from './zap.js';
 import { maketrap } from './trap.js';
+import { monsterIsDisplacer, monsterIsEel } from './mondata.js';
+
 // Corpse revival timers.
 // C refs: do.c revive_corpse()/revive_mon()/zombify_mon() and zap.c revive().
 
@@ -107,7 +108,6 @@ function isContainerLocation(location: CorpseRevivalLocation): location is Conta
     return 'directContainer' in location;
 }
 
-const S_EEL = 57;
 const S_ZOMBIE = 52;
 const G_UNIQ = 0x1000;
 const PM_GHOST = 287;
@@ -547,4 +547,3 @@ export async function runClaimedCorpseRevivalTimer(
     const retry = await retryRevival(corpse, state, currentTurn);
     return { kind: 'failed', corpse, ...event, messages: [], retry };
 }
-import { zombieCanDig } from './zap.js';

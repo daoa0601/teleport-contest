@@ -4,20 +4,18 @@
 import { W_ARMH } from './const.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './polyself.js';
-import { heroIsUnaware } from './senses.js';
+import { heroIsUnaware, blindfolded, heroIsBlind } from './senses.js';
 import { AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { game } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_NAME, monsterHasEyes } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHasEyes, monsterFaceName } from './body_parts.js';
-import { makePlural, verbForSubject } from './objnam.js';
-import { objectName, pluralizeObjectNoun } from './objnam.js';
+import { makePlural, verbForSubject, objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
-import { blindfolded, heroIsBlind } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { plineWithContinuation } from './pline.js';
 import { monsterName } from './do_name.js';
-const M1_NOEYES = 0x00001000;
+import { monsterHasEyes } from './mondata.js';
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 export function heroResistsBlindingLight(state = game) {

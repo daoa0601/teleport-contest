@@ -11,24 +11,18 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
-
 import { heroHatesSilver, heroSpecies } from './polyself.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { captureHeroProjectileName } from './uhitm.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
 import { ACID_VENOM } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { verbForSubject, withIndefiniteArticle, objectDescription } from './objnam.js';
-
-
-import { definiteName, objectHasPersonalName, killerObjectName, observeObjectForNaming } from './objnam.js';
+import { verbForSubject, withIndefiniteArticle, objectDescription, definiteName, killerObjectName, objectHasPersonalName, observeObjectForNaming } from './objnam.js';
 import { AD_ACID } from './monster_attack_types.js';
 import {
-    monstersForgetHeroResistance,
-    monstersObserveHeroResistance,
-    seenResistanceForDamage,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
+    passes_rocks,
 } from './mondata.js';
 import { loseHeroHp } from './hack.js';
 
@@ -53,8 +47,6 @@ export interface HeroObjectHitResult {
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
-const M1_WALLWALK = 0x00000008;
-const M1_UNSOLID = 0x00100000;
 
 export async function hitHeroWithObject(object: GameObject, damage: number, accuracy: number, {
     state = game,
@@ -100,8 +92,8 @@ export async function hitHeroWithObject(object: GameObject, damage: number, accu
     await publish(terse ? `You are hit${punctuation}`
         : `You are hit by ${description}${punctuation}`);
     const material = objectMaterial(object.otyp);
-    const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
-    const passesRocks = (flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
+
+    const passesRocks = passes_rocks(heroSpecies(state));
     if (object.otyp === ACID_VENOM
         && state.u.acidResistance) {
         await publish("It doesn't seem to hurt you.");

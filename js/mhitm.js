@@ -7,14 +7,14 @@
 import { setHeroGrip } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym, } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { artifactById } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless } from './mondata.js';
+import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
@@ -55,13 +55,8 @@ import { seductionCompatibility } from './seduction_compatibility.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport_rules.js';
-const M2_ELF = 0x00000010;
-const M2_ORC = 0x00000080;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const G_UNIQ = 0x1000;
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
-const M1_WALLWALK = 0x08;
 const MZ_HUGE = 4;
 const S_MIMIC = 13;
 const S_TROLL = 46;
@@ -193,8 +188,8 @@ export async function attackMonsterWithMonster(aggressor, defender, { state, ran
         defender.msleeping = 0;
     }
     await revealMonsterCombatDefender(defender, state);
-    if (((MONSTER_FLAGS2[aggressor.mnum] ?? 0) & M2_ELF)
-        && ((MONSTER_FLAGS2[defender.mnum] ?? 0) & M2_ORC))
+    if (is_elf(aggressor.mnum)
+        && is_orc(defender.mnum))
         threshold++;
     const visible = canSeeMonsterCombat(aggressor, defender);
     // An out-of-sequence attack counts as this monster's action, but the
@@ -1132,9 +1127,8 @@ async function paralyzeAttacker(attacker, defender, duration, { state, random, p
     if (defender.mnum === PM_FLOATING_EYE) {
         if (random(4) === 0)
             duration = 127;
-        const flags = MONSTER_FLAGS1[attacker.mnum] ?? 0;
-        if (!attacker.mcansee || (flags & M1_NOEYES) || !defender.mcansee
-            || (defender.minvis && !(flags & M1_SEE_INVIS))) {
+        if (!attacker.mcansee || !monsterHasEyes(attacker.mnum) || !defender.mcansee
+            || (defender.minvis && !monsterPerceives(attacker.mnum))) {
             // passivemm returns M_ATTK_HIT here even after a missed attack.
             return { stopped: false, hit: true };
         }

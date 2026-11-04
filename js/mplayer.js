@@ -4,11 +4,10 @@ import { objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP
 import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
-import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject } from './makemon.js';
-import { mkobj, mksobj, blessObjectState, curseObject } from './mkobj.js';
+import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject, setMonsterMalign } from './makemon.js';
+import { mkobj, mksobj, blessObjectState, curseObject, objectWeight } from './mkobj.js';
 import { rndClass } from './objnam.js';
-import { setMonsterMalign } from './makemon.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsFemale, monsterIsPlayerMonster } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { monsterRank } from './botl.js';
@@ -19,7 +18,7 @@ import { rnd_offensive_item, rnd_defensive_item, rnd_misc_item } from './muse.js
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
-import { objectWeight } from './mkobj.js';
+import { monsterIsFemale, monsterIsPlayerMonster } from './mondata.js';
 const STRANGE_OBJECT = 0;
 const ATHAME = OBJECT_NAMES.indexOf('athame');
 const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');

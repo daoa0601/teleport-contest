@@ -8,27 +8,21 @@ import { artifactToHitBonus } from './artifacts.js';
 import { A_DEX, A_STR, Luck, P_BOW, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { applyCaitiffPenalty } from './uhitm.js';
-import { hitMonsterWithHeroObject } from './uhitm.js';
-import { reportHeroThrownMiss } from './dothrow.js';
-import { MONSTER_FLAGS2, MONSTER_LEVEL } from './monster_data.js';
-import { applyMonsterPassiveToObject } from './uhitm.js';
+import { applyCaitiffPenalty, applyMonsterPassiveToObject, hitMonsterWithHeroObject } from './uhitm.js';
+import { reportHeroThrownMiss, destroyMulchedProjectile, rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
+import { MONSTER_LEVEL } from './monster_data.js';
 import { cutWorm } from './worm.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
-import { destroyMulchedProjectile, shouldMulchMissile } from './dothrow.js';
+import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, isAxe } from './object_properties.js';
 import { rnd, rn2 } from './rng.js';
 import { chargeUnpaidObjectAsDebt } from './shk.js';
 import { weaponSkillHitBonus } from './skills.js';
 import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
-import { rangedTargetHitBonus } from './dothrow.js';
-import { isAxe } from './object_properties.js';
 import { catchQuestObject } from './quest_leader_catch.js';
 import { offerUnicornGem } from './unicorn_gift.js';
 import { wakeAttackedMonster } from './mon.js';
-const M2_ELF = 0x00000010;
-const M2_ORC = 0x00000080;
+import { your_race, is_elf, is_orc } from './mondata.js';
 function heroIsPolymorphed(state) {
     return Upolyd(state.u);
 }
@@ -37,7 +31,7 @@ function heroStillHasTheirRace(state) {
         return true;
     const raceFlag = state.urace?.selfmask;
     return !!raceFlag
-        && !!((MONSTER_FLAGS2[state.u?.umonnum] ?? 0) & raceFlag);
+        && !!(your_race(state.u.umonnum, state));
 }
 function bowGlovePenalty(state) {
     if (!state.uwep || objectSkill(state.uwep.otyp) !== P_BOW)
@@ -78,7 +72,6 @@ function baseRangedHitThreshold(monster, weapon, state) {
         ? MONSTER_LEVEL[state.u?.umonnum]
             ?? state.u?.ulevel ?? 1
         : state.u?.ulevel ?? 1;
-    const targetFlags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     const threshold = -1
         + Luck(state.u)
         + findMonsterArmorClass(monster)
@@ -88,9 +81,9 @@ function baseRangedHitThreshold(monster, weapon, state) {
         + Math.max(-4, 3 - distance)
         + bowGlovePenalty(state)
         + rangedTargetHitBonus(weapon, monster, { state, defenderNotices: true });
-    const targetIsOrc = !!(targetFlags & M2_ORC);
+    const targetIsOrc = is_orc(monster.mnum);
     const heroIsElf = polymorphed
-        ? !!((MONSTER_FLAGS2[state.u?.umonnum] ?? 0) & M2_ELF)
+        ? is_elf(state.u?.umonnum)
         : state.urace.name === 'elf';
     return threshold + (targetIsOrc && heroIsElf ? 1 : 0);
 }

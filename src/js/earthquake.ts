@@ -20,21 +20,16 @@ import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } 
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import {remove_object, updateIceObjectTimersAt} from './mkobj.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { MONSTER_FLAGS1, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterSpeciesHidesOnCeiling } from './monster_data.js';
 import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
 import { monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { refreshMovementProperties } from './properties.js';
 import { monsterName } from './do_name.js';
 import { convertSecretDoor } from './detect.js';
 import { addShopDamage } from './shk.js';
-
-const M1_FLY = 0x00000001;
-const M1_CLING = 0x00000010;
-const M1_SLITHY = 0x00080000;
+import { monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterSpeciesHidesOnCeiling } from './mondata.js';
 
 function monsterAt(x: number, y: number) {
     return game.level ? monsterAtPosition(game.level, x, y) : null;
@@ -177,7 +172,7 @@ async function dropHeroIntoChasm(hadPitBeforeEarthquake: boolean): Promise<void>
     if (keepsFooting) await exerciseAttribute(A_DEX, true);
     else {
         const slithering = heroIsPolymorphed(game)
-            && !!((MONSTER_FLAGS1[game.u.umonnum ?? -1] ?? 0) & M1_SLITHY);
+            && monsterIsSlithy(game.u.umonnum ?? -1);
         await selfTouchPetrifyingWeapons({
             messageStart: slithering || heroHasNoLimbs(game)
                 ? 'Shaken, you' : 'Falling down, you',
@@ -200,8 +195,7 @@ function earthquakeMonsterName(monster: Monster): string {
 }
 
 async function dropMonsterIntoChasm(monster: Monster, x: number, y: number): Promise<void> {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (flags & (M1_FLY | M1_CLING)) return;
+    if ((monsterIsFlyer(monster.mnum) || monsterIsClinger(monster.mnum))) return;
     const wasTrapped = !!monster.mtrapped;
     monster.mtrapped = 1;
     if (!wasTrapped) {
@@ -273,7 +267,7 @@ async function wakeMonsterForEarthquake(monster: Monster | null): Promise<boolea
                 await plineWithContinuation(
                     `${monsterName(monster, { article: 'a', capitalized: true })} is shaken loose from the ceiling!`,
                 );
-            } else if (!(monsterIsFlyer(monster.mnum))) {
+            } else if (!monsterIsFlyer(monster.mnum)) {
                 await publishHeardMessage('a thump.', plineWithContinuation);
             }
         }

@@ -2,28 +2,21 @@
 // C refs: mhitu.c expels(), mon.c unstuck(), mnexto().
 
 import type { ReleaseHeroOptions } from './mon.js';
-import { releaseHeroFromMonster, redrawAfterRelease } from './mon.js';
-import { moveMonsterNextToHero } from './mon.js';
-
+import { releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
-
 import { impossible } from './diagnostics.js';
 import { monsterName } from './do_name.js';
-
 import { heroFormSticks } from './polyself.js';
-
 import { RLOC_NOMSG } from './const.js';
-import {
-    MONSTER_ATTACKS, monsterDigests, monsterEnfolds, monsterIsWhirly,
-} from './monster_data.js';
+import { MONSTER_ATTACKS } from './monster_data.js';
 import { AD_COLD, AD_ELEC, AT_ENGL } from './monster_attack_types.js';
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-
 import { applyHeroLocationEffects } from './hack.js';
 import { rnd, rn2 } from './rng.js';
+import { monsterDigests, monsterEnfolds, monsterIsWhirly } from './mondata.js';
 
 export interface ExpelHeroOptions extends ReleaseHeroOptions {
     message?: boolean;
