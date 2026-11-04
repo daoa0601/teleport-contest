@@ -4,12 +4,15 @@ import { game } from '../js/gstate.js';
 import { CRYSTAL_BALL } from '../js/object_data.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 import { addInventoryObject } from './support/game-objects.js';
+import { queueCannedKeys, queueCannedUserInput } from './support/canned-input.js';
 void test('a user-input entry at a direction prompt reports the malformed queue and cancels', async () => {
     const engine = await startMenuGame();
     try {
         const moves = game.moves;
         await type(engine, '#therecmdmenu');
-        engine.inputGate.queueCommandResponses(['user-input', 'y'.charCodeAt(0)]);
+        queueCannedUserInput();
+        queueCannedKeys('y');
+        ;
         await type(engine, '\n');
         assert.match(screen(), /getdir: command queue had no dir\?/);
         assert.match(screen(), /--More--/);

@@ -10,7 +10,7 @@ import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
-import { dojump, dorub } from '../js/apply.js';
+import { dojump } from '../js/apply.js';
 import { dungeonOverviewDisclosure } from '../js/dungeon.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { runExtendedCommand } from './support/commands.js';
@@ -38,11 +38,13 @@ void test('dorub: a wielded brass lantern only disappoints', async () => {
     await freshObjectRoom({ role: 'valkyrie' });
     requirePlayingGame(game);
     const lantern = await addInventoryObject(BRASS_LANTERN);
-    resetInputState().display = { async readKey() { return 32; } };
+    const input = resetInputState();
+    input.feed(`rub\n${lantern.invlet}`);
+    input.display = { async readKey() { return 32; } };
     game.uwep = lantern;
     initRng(12n);
 
-    await dorub(lantern.invlet);
+    await rhack('#'.charCodeAt(0));
 
     assert.match(messageLog(), /Rubbing the electric lamp is not particularly rewarding\./);
     assert.match(messageLog(), /Anyway, nothing exciting happens\./);
