@@ -156,6 +156,10 @@ export function explosionToGlyph(expltyp: number, idx: number): number {
 
 // C display.c:zapdir_to_glyph(): the direction collapses to one of the four
 // beam symbols and the beam type keeps its own glyph even for equal colors.
+// display.c:2463-2466 reports impossible("zapdir_to_glyph:  illegal beam
+// type") before resetting an out-of-range beam type to 0; this sync encoder
+// clamps without the report, which no caller reaches (display.c:1132 and
+// spell.c:997/1017 pass sgn() deltas and zap-colors enum values).
 export function zapdirToGlyph(dx: number, dy: number, beamType: number): number {
     const type = beamType >= NUM_ZAP ? 0 : beamType;
     const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;

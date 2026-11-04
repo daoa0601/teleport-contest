@@ -2424,7 +2424,10 @@ let lastSwallowedY = 0;
 // C display.c:swallow_to_glyph(): each border cell is monster<<3 | position,
 // with display.h:what_mon resolving a hallucinated species through the
 // display RNG.  The stomach color reads the same resolved species back out
-// of the glyph number's top bits.
+// of the glyph number's top bits.  display.c:2441-2444 reports
+// impossible("swallow_to_glyph: bad swallow location") before clamping an
+// out-of-range location to S_sw_br; this sync encoder clamps without the
+// report, which no caller reaches (swallowed() passes S_sw_tl..S_sw_br).
 export function swallowToGlyph(mnum: number, loc: number): number {
     const shown = heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : mnum;
     const position = loc < CmapSymbol.swallowTopLeft || CmapSymbol.swallowBottomRight < loc

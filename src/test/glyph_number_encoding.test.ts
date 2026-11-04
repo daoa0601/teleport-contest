@@ -89,9 +89,13 @@ void test('zap directions and beam types pack into the zap range', () => {
     assert.equal(zapdirToGlyph(1, 1, 0), GlyphOffset.zap + 2);
     assert.equal(zapdirToGlyph(1, -1, 0), GlyphOffset.zap + 3);
     assert.equal(zapdirToGlyph(-1, -1, 7), GlyphOffset.zap + 7 * 4 + 2);
-    // An illegal beam type clamps to the first, exactly as after C's
-    // impossible(); a negative one keeps its own bits.
+    // display.c:2463-2466 reports impossible("zapdir_to_glyph:  illegal
+    // beam type") before resetting beam_type to 0; the port clamps the same
+    // way without the report, which no caller can reach (every C caller
+    // passes a zap-colors enum value below NUM_ZAP).  A negative beam type
+    // keeps its own bits, passing the >= NUM_ZAP guard on both sides.
     assert.equal(zapdirToGlyph(0, 1, 8), GlyphOffset.zap);
+    assert.equal(zapdirToGlyph(0, 1, -1), GlyphOffset.zap - 4);
     assert.ok(glyphIsCmapZap(zapdirToGlyph(1, 0, 5)));
     assert.ok(!glyphIsCmapZap(GlyphOffset.cmapC));
 });
@@ -117,7 +121,9 @@ void test('a swallow border cell packs its species and position', async () => {
         assert.equal(glyph, GlyphOffset.swallow + 12 * 8 + (loc - 88));
         assert.equal(glyphToSwallow(glyph), loc - 88);
     }
-    // A location outside the eight positions clamps to the bottom right.
+    // display.c:2441-2444 reports impossible("swallow_to_glyph: bad swallow
+    // location") before clamping to S_sw_br; the port clamps without the
+    // report — swallowed() only ever passes S_sw_tl..S_sw_br.
     assert.equal(swallowToGlyph(3, 87), GlyphOffset.swallow + 3 * 8 + 7);
     assert.equal(glyphToSwallow(GlyphOffset.explodeDark), 0);
 });
