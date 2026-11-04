@@ -537,6 +537,10 @@ export function objectMaterial(
 
 export function objectClassForType(otyp: number | null | undefined): number {
     if (typeof otyp !== 'number' || !Number.isInteger(otyp) || otyp < 1) return 0;
+    // objects.h slots [1]..[MAXOCLASSES-1] hold the GENERIC entries indexed
+    // by class (GENERIC("potion", POTION_CLASS, GENERIC_POTION)), so
+    // objects[otyp].oc_class == otyp below FIRST_OBJECT.
+    if (otyp < FIRST_OBJECT) return otyp;
     for (let oclass = OBJECT_BASES.length - 1; oclass >= 2; oclass--) {
         const first = OBJECT_BASES[oclass];
         if (first && otyp >= first) return oclass;
