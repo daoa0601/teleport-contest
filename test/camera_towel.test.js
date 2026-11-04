@@ -441,7 +441,7 @@ void test('a photograph from inside a monster records the stomach instead of fla
     await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('purple worm', 11, 10, NO_MINVENT);
-    resetInputState().feed(' '); // Native engulf announcement precedes the swallowed screen.
+    resetInputState().feed(' '.repeat(6)); // The engulf announcement and the gulpmu digestion line follow.
     game.u.ustuck = holder; // Native attack admission establishes the holder before gulpmu.
     const engulf = MONSTER_ATTACKS[holder.mnum]?.find((attack) => attack[0] === AT_ENGL);
     assert.ok(engulf);
@@ -626,7 +626,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
     await freshObjectRoom();
     requirePlayingGame(game);
     const holder = await createMonsterAt('dust vortex', 11, 10, NO_MINVENT);
-    resetInputState().feed(' ');
+    resetInputState().feed(' '.repeat(6));
     game.u.ustuck = holder; // Native attack admission establishes the holder before gulpmu.
     const engulf = MONSTER_ATTACKS[holder.mnum]?.find((attack) => attack[0] === AT_ENGL);
     assert.ok(engulf);
@@ -645,7 +645,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
     game.u.ucreamed = 6;
     setHeroBlindnessTurns(6);
     const timer = game.u.uswldtim;
-    resetInputState().feed(' '); // Glop removal precedes fresh engulf blindness.
+    resetInputState().feed(' '.repeat(6)); // Glop removal and the fresh engulf blindness line follow.
     await useTowel(await towel());
     assert.equal(game.u.ucreamed, 0);
     assert.equal(heroIsBlind(), true);

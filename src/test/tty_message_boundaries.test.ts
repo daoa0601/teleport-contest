@@ -11,6 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { AT_ENGL } from '../js/monster_attack_types.js';
 import { MONSTER_ATTACKS } from '../js/monster_data.js';
 import { placeMonsterAt } from '../js/steed.js';
+import { installPagerInput } from './support/pager-input.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -67,13 +68,15 @@ void test('engulf entry clears the acknowledged announcement before drawing the 
         assert.equal(!!game.u.uswallow, false, 'Capture waits for the announcement acknowledgment');
     } finally {
         input.feed(' ');
+        // The shared gulpmu() body continues with the digestion line; the
+        // pager support acknowledges any page it produces.
+        installPagerInput(input, { expected: /digests you/i, limit: 4 });
         assert.equal((await capture).hit, true);
     }
 
-    // The shared gulpmu() body continues with the first digestion line.
     await flushPendingTopline();
     await flush_screen(1);
-    assert.equal(messageRow(), '');
+    assert.doesNotMatch(messageRow(), /swallows you whole/);
     assert.equal(game.u.uswallow, 1);
     assert.equal(requireGameDisplay().getChar(game.u.ux - 1, game.u.uy + 1), '/');
 });
