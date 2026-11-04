@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { CQ_CANNED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { moveloop_core } from '../js/allmain.js';
 import { tryCallObjectType } from '../js/do.js';
@@ -74,7 +75,7 @@ void test("wield's object query eats the queued fire and cancels without prompti
 
     assert.equal(outcome, 'finished',
         'the wield query was answered by the queued fire instead of prompting');
-    assert.equal(game._cannedCommands?.length ?? 0, 0,
+    assert.equal(game.command_queue[CQ_CANNED].length, 0,
         'cmdq_clear(CQ_CANNED) discarded the remaining queue');
     assert.equal(game.uwep?.otyp, CLUB, 'the cancelled wield chose nothing');
     assert.equal(game.uquiver?.quan, 3, 'the fire never resumed');
@@ -91,7 +92,7 @@ void test("drop's object query eats the queued fire and cancels without promptin
 
     assert.equal(outcome, 'finished',
         'the drop query was answered by the queued fire instead of prompting');
-    assert.equal(game._cannedCommands?.length ?? 0, 0,
+    assert.equal(game.command_queue[CQ_CANNED].length, 0,
         'cmdq_clear(CQ_CANNED) discarded the remaining queue');
     assert.equal(game.inventory.length, carried, 'nothing was dropped');
     assert.equal(game.uquiver?.quan, 3, 'the fire never resumed');

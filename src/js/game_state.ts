@@ -16,7 +16,7 @@ import type { GameDisplay } from './game_display.js';
 import type { StorageBackend } from './storage.js';
 import type { Isaac64Context } from './isaac64.js';
 import type { RngSeed } from './rng.js';
-import type { AfterMove, CannedCommand, MovementAttempt, RepeatCommandEntry, RunState } from './cmd.js';
+import type { AfterMove, CmdQueueEntry, MovementAttempt, RunState } from './cmd.js';
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './do_wear.js';
 
@@ -345,13 +345,13 @@ export interface GameState {
     // C stealoid/stealmid survive replacement of afternmv.
     _armorTheft?: { object: GameObject; thief: Monster | null } | null;
     _runState?: RunState | null;
-    _cannedCommands?: CannedCommand[];
     _commandCount?: number;
     _commandKey?: number;
     // ECMD_* bits (const.js) the running command reported to the rhack seam.
     _commandResult?: number;
-    _repeatCommands?: RepeatCommandEntry[];
     _inDoAgain?: boolean;
+    // C decl.h gc.command_queue[NUM_CQS]: CQ_CANNED first, CQ_REPEAT second.
+    command_queue: [CmdQueueEntry[], CmdQueueEntry[]];
     _ynNumber?: bigint;
     _movementAttempt?: MovementAttempt | null;
     _whatdoesShown?: boolean;
@@ -529,6 +529,7 @@ export function createGameState(): GameState {
         _monsterSwallower: null, _monsterEngulf: null, warn_obj_cnt: 0, _magicKeyTrapWarningCount: 0,
         bhitpos: { x: 0, y: 0 }, notonhead: false,
         _pending_message: '', _retained_message: '', _last_message: '',
+        command_queue: [[], []],
         _toplines: '', _messageHistory: [], _messageHistoryWriteIndex: 0,
         _messageHistoryCursor: null, _promptOwnsTopline: false,
         _toplineGlyphPainted: false,

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { W_WEP } from '../js/const.js';
+import { CQ_CANNED, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -63,7 +63,7 @@ void test('a welded primary weapon prevents wielding a lamp to rub it', async ()
     await rhack('#'.charCodeAt(0));
     assert.equal(game.uwep, club);
     assert.equal(club.bknown, true);
-    assert.equal(game._cannedCommands?.length ?? 0, 0);
+    assert.equal(game.command_queue[CQ_CANNED].length, 0);
     assert.equal(game.context.move, 0);
     assert.match(game._pending_message, /welded to your hand/);
 });

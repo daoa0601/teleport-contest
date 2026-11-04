@@ -19,7 +19,7 @@ import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttr
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, setMulti, travelStairs } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
-import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
+import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
 import { impossible } from './diagnostics.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
@@ -51,7 +51,7 @@ import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIs
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsStrangled } from './do_wear.js';
 import { heroCanBeSlimed, updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
-import { peekCommandResponse } from './input.js';
+import { cmdq_peek } from './cmd.js';
 import { doEnlightenmentEffect } from './zap.js';
 import { showEnlightenment } from './insight.js';
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
@@ -2587,7 +2587,7 @@ export async function dodip() {
         commandResultCancelled();
 }
 export async function dipInto() {
-    if (peekCommandResponse() === undefined && !game._cannedCommands?.length) {
+    if (!cmdq_peek(CQ_CANNED)) {
         // C potion.c:2384 dip_into() refuses to run when cmdq_peek(
         // CQ_CANNED) finds nothing: the item-action potion letter is
         // queued there. A ^A do-again replay pops dip_into from CQ_REPEAT

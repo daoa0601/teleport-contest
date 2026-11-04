@@ -218,6 +218,6 @@ void test('digging progress persists through the save schema', async () => {
     assert.equal(digging.down, false);
     // C restores the digging context but never the occupation itself.
     assert.equal('_occupation' in snapshot, false);
-    assert.equal('_cannedCommands' in snapshot, false);
+    assert.equal('command_queue' in snapshot, false);
 });
 //# sourceMappingURL=hero_digging.test.js.map

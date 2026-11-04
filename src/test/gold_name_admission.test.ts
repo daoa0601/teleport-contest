@@ -3,7 +3,8 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { heroGoldObject, setHeroGoldAmount } from '../js/hero_gold.js';
-import { queueCommandKeys, resetInputState } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -14,7 +15,7 @@ void test('a queued inventory naming choice rejects gold without asking for a na
     setHeroGoldAmount(game, 37);
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('#i$');
+    queueCannedKeys('#i$');
     planInput(input, t, []);
 
     await rhack('#'.charCodeAt(0));
