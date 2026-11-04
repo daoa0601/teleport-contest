@@ -675,6 +675,8 @@ async function finishInitialTurnMaintenanceAfterAutomaticSearch({ sourceTurn, })
         return { kind: 'complete' };
     return finishInitialTurnMaintenanceAfterAmbient({ sourceTurn });
 }
+// Also C allmain.c:regen_pw(): inlined here (the power-recovery block
+// before teleportitis and shape changes).
 async function finishInitialTurnMaintenanceAfterRegions({ sourceTurn, capacity, }) {
     const game = requireInitializedGame();
     if (game.u.ublesscnt > 0)

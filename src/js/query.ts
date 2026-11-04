@@ -246,6 +246,9 @@ export async function promptChoice<Choice extends string>(
 export interface TtyPromptAnswer { answer: string; count: bigint }
 
 // C getline.c:ext_cmd_getlin_hook().
+// Also C cmd.c:extcmds_match(): inlined here (the case-insensitive prefix
+// match over autocomplete-eligible commands; the eligibility filter half
+// is availableExtendedCommands()).
 export function completeExtendedCommand(prefix: string): string | null {
     const matches = availableExtendedCommands().filter(command =>
         commandAutocompletes(command)

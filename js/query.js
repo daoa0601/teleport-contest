@@ -234,6 +234,9 @@ export async function promptChoice(query, choices, defaultAnswer, { visibleChoic
     return choices.find(choice => choice === result.answer) ?? defaultAnswer;
 }
 // C getline.c:ext_cmd_getlin_hook().
+// Also C cmd.c:extcmds_match(): inlined here (the case-insensitive prefix
+// match over autocomplete-eligible commands; the eligibility filter half
+// is availableExtendedCommands()).
 export function completeExtendedCommand(prefix) {
     const matches = availableExtendedCommands().filter(command => commandAutocompletes(command)
         && command.name?.toLowerCase().startsWith(prefix.toLowerCase()));

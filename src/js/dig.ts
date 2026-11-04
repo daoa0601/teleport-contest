@@ -2061,6 +2061,8 @@ function impaired(state: GameState) {
     );
 }
 
+// Also C cmd.c:dxdy_moveok(): inlined here (a grid bug's diagonal is
+// filtered from the direction hints).
 function prepareDiggingDirections(tool: GameObject, state: GameState) {
     const hero = state.u;
     const downOK = heroCanReachFloor(state);

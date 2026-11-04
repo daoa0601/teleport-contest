@@ -430,6 +430,8 @@ function trapPredicament(final, wizard) {
     return wizard ? `${predicament} {${u.utrap}}` : predicament;
 }
 // C getpos.c:dxdy_to_dist_descr(dx, dy, TRUE).
+// Also C cmd.c:directionname(): inlined here (DIRECTION_NAMES holds the
+// eight directionname() strings).
 function distanceDescription(dx, dy) {
     if (!dx && !dy)
         return 'here';

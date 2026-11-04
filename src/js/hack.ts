@@ -3453,6 +3453,8 @@ export async function domove(dx: number, dy: number, explicitAttempt = true): Pr
 
 // C hack.c:move_out_of_bounds(). A failed step takes no time; a forced
 // attack still spends the action against an unknown obstacle.
+// Also C cmd.c:directionname(): inlined here (the west/east/north/south
+// names of directionname(xytodir(dx, dy))).
 async function moveOutOfBounds(x: number, y: number): Promise<boolean> {
     if (game.context.forcefight) return fightEmptyDestination(x, y);
     if (game.flags.mention_walls) {

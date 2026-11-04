@@ -71,6 +71,8 @@ export class CommandBindings {
     private readonly mouseButtons = new Map<number, NativeCommand | null>();
     private savedMouseButtons: readonly [NativeCommand | null, NativeCommand | null] = [null, null];
 
+    // Also C cmd.c:commands_init(): inlined here (mouse buttons, the
+    // command table's default keys, and INITIAL_COMMAND_BINDINGS).
     constructor() {
         this.bindings = [];
         this.specialKeys = new Map<string, number>();
@@ -130,6 +132,7 @@ export class CommandBindings {
         return true;
     }
 
+    // C cmd.c:bind_specialkey().
     bindSpecialKey(key: number, name: string): boolean {
         if (!name || !this.specialKeys.has(name)) return false;
         this.specialKeys.set(name, key);
@@ -188,6 +191,8 @@ export class CommandBindings {
         return { accepted: true, error };
     }
 
+// Also C cmd.c:reset_commands(): the number_pad rebind half — swap_yz,
+// pcHack, phone_layout key swaps over the saved movement bindings.
     setNumberPad(value: number): boolean {
         if (!Number.isInteger(value) || value < -1 || value > 4) return false;
         for (const { key, command } of this.savedMovement) this.add(key, command);
@@ -233,6 +238,8 @@ export class CommandBindings {
             : this.swapYZ ? 'hzkulnjb><' : 'hykulnjb><';
     }
 
+    // C cmd.c:movecmd(): resolve a key to its bound direction function and
+    // vector (mode null scans walk, rush, then run like MV_ANY).
     movementForKey(key: number, mode: number | null = null): MovementBinding | null {
         const handler = this.lookup(key)?.command?.handler;
         if (!handler) return null;
@@ -306,6 +313,12 @@ export class CommandBindings {
         secondBinding.key = first;
     }
 
+// C cmd.c:reset_commands(). The rebind tail: back up the commands the
+// movement keys replace, bind DIRECTION_HANDLERS to the layout's keys,
+// then update_rest_on_space(). The number_pad rebind half of the same C
+// function is setNumberPad(); the initial-commands half is the constructor.
+// Also C cmd.c:bind_key_fn(): inlined here (extFuncTabFromFunc() finds the
+// command whose handler is this direction function, then add()).
     installMovement() {
         this.savedMovement = [];
         for (let direction = 0; direction < NATIVE_COMMAND_CONSTANTS.N_DIRS; direction++) {
