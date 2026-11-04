@@ -7,7 +7,6 @@ import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 import { applyNethackrc, parseNethackrc } from '../js/options.js';
 import { makedog } from '../js/u_init.js';
 import { initRng } from '../js/rng.js';
@@ -51,8 +50,8 @@ for (const [target, message] of [
         });
         setMonsterGivenName(monster, 'Sirius');
         const messages = [];
-        const event = await beginMonsterRustTrap(monster, trap, game);
-        await finishMonsterRustTrap(monster, event, game, {
+        requirePlayingGame(game);
+        await mintrap(monster, game, {
             random: () => target,
             publish: text => { messages.push(text); },
         });

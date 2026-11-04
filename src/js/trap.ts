@@ -714,17 +714,94 @@ export function burnHeroArmorByFire(
     return burnArmorByFire(state.u, state, emitMessage, calls, random);
 }
 
-// C trap.c:trapeffect_rust_trap(), monster branch.
-export async function applyMonsterRustTrap(
-    monster: Monster,
-    state: GameState,
+// C trap.c:trapeffect_rust_trap(): the hero branch — the rust or water jet
+// over worn armor, the gremlin split, and the iron-golem hero's rust; the
+// monster branch — the same gush over the monster's gear, with the
+// iron-golem collapse and the gremlin split.
+async function trapeffectRustTrap(
+    mtmp: Hero | Monster,
+    trap: Trap,
     {
-        roll = rn2,
-        luckRoll = rnl,
-        publish = plineWithContinuation,
-    }: { roll?: RandomBelow; luckRoll?: RandomBelow; publish?: MessagePublisher } = {},
-): Promise<MonsterDeathResult | null> {
-    const { inSight } = monsterTrapVisibility(monster, state);
+        state = game, movement,
+        roll = rn2, luckRoll = rnl, publish = plineWithContinuation,
+    }: {
+        state?: GameState; movement?: MonsterMovement;
+        roll?: RandomBelow; luckRoll?: RandomBelow; publish?: MessagePublisher;
+    } = {},
+): Promise<MonsterRustTrapEvent | null> {
+    if (isHeroDefender(mtmp, state)) {
+        const hero = game.u;
+        await seeTrap(trap);
+        const target = rn2(5);
+
+        if (target === 0) {
+            await plineWithContinuation(
+                `A gush of water hits you on the ${heroHeadName(game)}!`,
+            );
+            const helmet = heroObject('uarmh');
+            await wetHeroObject(
+                helmet, helmet ? armorSimpleName(helmet, game) : 'helmet',
+            );
+        } else if (target === 1) {
+            await plineWithContinuation(
+                `A gush of water hits your left ${heroArmName(game)}!`,
+            );
+            const shield = heroObject('uarms');
+            const shieldResult = await wetHeroObject(shield, 'shield');
+            if (shieldResult === 'nothing') {
+                const primary = heroObject('uwep');
+                const secondary = heroObject('uswapwep');
+                let weapon = null;
+                if (hero.twoweap) weapon = secondary;
+                else if (isBimanualObject(primary))
+                    weapon = primary;
+                await wetHeroObject(weapon);
+                const gloves = heroObject('uarmg');
+                await wetHeroObject(
+                    gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
+                );
+            }
+        } else if (target === 2) {
+            await plineWithContinuation(
+                `A gush of water hits your right ${heroArmName(game)}!`,
+            );
+            const weapon = heroObject('uwep');
+            await wetHeroObject(weapon);
+            const gloves = heroObject('uarmg');
+            await wetHeroObject(
+                gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
+            );
+        } else {
+            await plineWithContinuation('A gush of water hits you!');
+            for (const object of game.inventory || []) {
+                if (!object.lamplit || object === heroObject('uwep')) continue;
+                if (hero.twoweap && object === heroObject('uswapwep')) continue;
+                await splashLitObject(object, plineWithContinuation, game);
+            }
+            const cloak = heroObject('uarmc');
+            const suit = heroObject('uarm');
+            const shirt = heroObject('uarmu');
+            if (cloak) await wetHeroObject(cloak, armorSimpleName(cloak, game));
+            else if (suit) await wetHeroObject(suit, armorSimpleName(suit, game));
+            else await wetHeroObject(shirt, 'shirt');
+        }
+
+        if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {
+            await rustIronGolemHero();
+        } else if (heroIsPolymorphed(game) && hero.umonnum === PM_GREMLIN
+            && rn2(3) !== 0) {
+            const clone = await splitHeroMonsterForm(game);
+            if (clone) await plineWithContinuation('You multiply!');
+        }
+        return null;
+    }
+    const monster = mtmp;
+    const visibility = monsterTrapVisibility(monster, state);
+    if (visibility.inSight) await seeTrap(trap, state);
+    const event: MonsterRustTrapEvent = {
+        kind: 'rust-trap', trap, ...visibility, finished: false, killed: false,
+    };
+    const { inSight } = visibility;
     const targetRoll = roll(5);
     if (inSight) {
         const name = monsterName(monster, { state });
@@ -772,15 +849,20 @@ export async function applyMonsterRustTrap(
             await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
         }
         monster.mhp = 0;
-        return finishMonsterKilled(monster, state, {
+        const death = await finishMonsterKilled(monster, state, {
             damageType: AD_RUST, cause: null, random: roll, publish,
         });
+        event.death = death;
+        event.killed = !death.survived;
+        event.finished = true;
+        return event;
     }
     // C trap.c:trapeffect_rust_trap(): "else if (mptr == &mons[PM_GREMLIN] && rn2(3))"
     // follows all water_damage() calls and their messages.
     if (monster.mnum === PM_GREMLIN && roll(3) !== 0)
         await splitMonster(monster, state, { monsterMoving: true, publish });
-    return null;
+    event.finished = true;
+    return event;
 }
 
 // ---------------------------------------------------------------------------
@@ -1006,7 +1088,10 @@ async function monsterTrapEffect(
         return event;
     }
     if (trap.ttyp === RUST_TRAP) {
-        const event = await beginMonsterRustTrap(monster, trap, state);
+        const event = await trapeffectRustTrap(monster, trap, {
+            state, movement, publish,
+            roll: (range: number) => recordRandom(random, calls, range),
+        });
         movement.trap = event;
         movement.deferredAfterMonsterTrap = true;
         return event;
@@ -1301,10 +1386,8 @@ export async function finishDeferredMonsterTrap(
             });
             break;
         case 'rust-trap':
-            await finishMonsterRustTrap(monster, event, state, {
-                publish,
-                random: recordedRandom,
-            });
+            // The effect completed inside trapeffectRustTrap; only the
+            // appears-reveal and death fields remain.
             break;
         case 'projectile-trap':
         case 'spent-projectile-trap':
@@ -3724,41 +3807,6 @@ export interface MonsterRustTrapEvent {
     death?: MonsterDeathResult;
 }
 
-interface RustTrapOptions {
-    publish?: MessagePublisher;
-    random?: (limit: number) => number;
-}
-
-export async function beginMonsterRustTrap(
-    monster: Monster,
-    trap: Trap,
-    state: GameState = game,
-): Promise<MonsterRustTrapEvent> {
-    const visibility = monsterTrapVisibility(monster, state);
-    if (visibility.inSight) await seeTrap(trap, state);
-    return {
-        kind: 'rust-trap', trap, ...visibility, finished: false, killed: false,
-    };
-}
-
-export async function finishMonsterRustTrap(
-    monster: Monster,
-    event: MonsterRustTrapEvent | null,
-    state: GameState = game,
-    {
-        publish = plineWithContinuation,
-        random = rn2,
-    }: RustTrapOptions = {},
-) {
-    if (!event || event.finished) return event;
-    const death = await applyMonsterRustTrap(monster, state, { roll: random, publish });
-    if (death) {
-        event.death = death;
-        event.killed = !death.survived;
-    }
-    event.finished = true;
-    return event;
-}
 
 
 // ── moved from src/js/anti_magic_trap.ts ──
@@ -6654,73 +6702,6 @@ async function rustIronGolemHero() {
     await finishHeroDeath({ killer: 'rusting away' });
 }
 
-// C trap.c:trapeffect_rust_trap(): the hero branch — the rust or water jet
-// over worn armor, the gremlin split, and the iron-golem hero's rust.
-async function triggerRustTrap(trap: Trap) {
-    const hero = game.u;
-    await seeTrap(trap);
-    const target = rn2(5);
-
-    if (target === 0) {
-        await plineWithContinuation(
-            `A gush of water hits you on the ${heroHeadName(game)}!`,
-        );
-        const helmet = heroObject('uarmh');
-        await wetHeroObject(
-            helmet, helmet ? armorSimpleName(helmet, game) : 'helmet',
-        );
-    } else if (target === 1) {
-        await plineWithContinuation(
-            `A gush of water hits your left ${heroArmName(game)}!`,
-        );
-        const shield = heroObject('uarms');
-        const shieldResult = await wetHeroObject(shield, 'shield');
-        if (shieldResult === 'nothing') {
-            const primary = heroObject('uwep');
-            const secondary = heroObject('uswapwep');
-            let weapon = null;
-            if (hero.twoweap) weapon = secondary;
-            else if (isBimanualObject(primary))
-                weapon = primary;
-            await wetHeroObject(weapon);
-            const gloves = heroObject('uarmg');
-            await wetHeroObject(
-                gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
-            );
-        }
-    } else if (target === 2) {
-        await plineWithContinuation(
-            `A gush of water hits your right ${heroArmName(game)}!`,
-        );
-        const weapon = heroObject('uwep');
-        await wetHeroObject(weapon);
-        const gloves = heroObject('uarmg');
-        await wetHeroObject(
-            gloves, gloves ? armorSimpleName(gloves, game) : 'gloves',
-        );
-    } else {
-        await plineWithContinuation('A gush of water hits you!');
-        for (const object of game.inventory || []) {
-            if (!object.lamplit || object === heroObject('uwep')) continue;
-            if (hero.twoweap && object === heroObject('uswapwep')) continue;
-            await splashLitObject(object, plineWithContinuation, game);
-        }
-        const cloak = heroObject('uarmc');
-        const suit = heroObject('uarm');
-        const shirt = heroObject('uarmu');
-        if (cloak) await wetHeroObject(cloak, armorSimpleName(cloak, game));
-        else if (suit) await wetHeroObject(suit, armorSimpleName(suit, game));
-        else await wetHeroObject(shirt, 'shirt');
-    }
-
-    if (heroIsPolymorphed(game) && hero.umonnum === PM_IRON_GOLEM) {
-        await rustIronGolemHero();
-    } else if (heroIsPolymorphed(game) && hero.umonnum === PM_GREMLIN
-        && rn2(3) !== 0) {
-        const clone = await splitHeroMonsterForm(game);
-        if (clone) await plineWithContinuation('You multiply!');
-    }
-}
 
 // C trap.c:trapeffect_hole(): the hero branch — the fall refusal on levels
 // without a bottom, the trap-door or hole message, and the destination
@@ -6908,7 +6889,7 @@ async function trapeffectSelector(
         await trapeffectSlpGasTrap(game.u, trap, { publish: plineWithContinuation });
         break;
     case RUST_TRAP:
-        await triggerRustTrap(trap);
+        await trapeffectRustTrap(game.u, trap, { publish: plineWithContinuation });
         break;
     case ANTI_MAGIC:
         await triggerHeroAntiMagicTrap(trap);

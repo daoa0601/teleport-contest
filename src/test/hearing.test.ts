@@ -13,7 +13,6 @@ import { changeMonsterForm, decideMonsterShapeChange } from '../js/mon.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { launchRollingBoulder } from '../js/trap.js';
-import { beginMonsterRustTrap, finishMonsterRustTrap } from '../js/trap.js';
 
 import { vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
@@ -63,8 +62,7 @@ void test('a rust trap announces water hitting a monster seen through infravisio
     const trap = addTrap(level, RUST_TRAP, 15, 10);
     const messages: string[] = [];
 
-    const event = await beginMonsterRustTrap(monster, trap, game);
-    await finishMonsterRustTrap(monster, event, game, {
+    await mintrap(monster, game, {
         random: () => 0,
         publish: async message => { messages.push(message); },
     });
