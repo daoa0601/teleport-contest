@@ -18,7 +18,7 @@ import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
-import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
+import { diseasemu, mdamageu } from './mhitu.js';
 import { resetOccupations } from './cmd.js';
 import { endObjectBurn } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
@@ -234,7 +234,7 @@ export async function resolveHeroEngulf(monster, damageType, damage, { state = g
             }
             break;
         case AD_DISE:
-            if (!await infectHeroWithMonsterDisease(monster, state, publish, random))
+            if (!await diseasemu(monster, state, publish, random))
                 damage = 0;
             break;
         case AD_DREN:
@@ -262,7 +262,7 @@ export async function resolveHeroEngulf(monster, damageType, damage, { state = g
     state._monsterSwallower = monster;
     let died;
     try {
-        died = await damageHeroFromMonster(monster, damage, {
+        died = await mdamageu(monster, damage, {
             state, publish, ...(die ? { die } : {}),
         });
     }

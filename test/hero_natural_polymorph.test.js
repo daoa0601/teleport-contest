@@ -5,7 +5,7 @@ import { M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, NO_MINVENT, W_AMUL, W_ARMC } 
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { applyHeroNaturalPolymorph } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
-import { magicNegation } from '../js/mhitu.js';
+import { magic_negation } from '../js/mhitu.js';
 import { AD_POLY, AT_CLAW } from '../js/monster_attack_types.js';
 import { monsterHasMagicResistance } from '../js/trap.js';
 import { AMULET_OF_LIFE_SAVING, CLOAK_OF_PROTECTION, CORPSE, DAGGER } from '../js/object_data.js';
@@ -63,7 +63,7 @@ void test('worn magic negation blocks transformation while preserving the ordina
     const orc = await createMonsterAt('orc', 11, 10, NO_MINVENT);
     orc.mhp = orc.mhpmax = 20;
     await equipMonsterObject(orc, await knownObject(CLOAK_OF_PROTECTION), W_ARMC);
-    assert.equal(magicNegation(orc), 3);
+    assert.equal(magic_negation(orc), 3);
     const species = orc.mnum;
     initRng(1n);
     const result = await applyHeroNaturalPolymorph(orc, effectContext(orc));

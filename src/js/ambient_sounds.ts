@@ -42,7 +42,7 @@ import { questMonsterSound } from './role_monsters.js';
 import { consultOracle } from './rumor.js';
 import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
-import { resolveHeroSeduction } from './mhitu.js';
+import { doseduce } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';
 import { seductionCompatibility } from './seduction_compatibility.js';
 import { talkToPriest } from './priest_talk.js';
@@ -776,7 +776,7 @@ export async function publishMonsterConversation(
     case MS_SEDUCE:
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
             && seductionCompatibility(monster, 'hero', null, state) === 1) {
-            await resolveHeroSeduction(monster, {
+            await doseduce(monster, {
                 kind: 'hero-attack', attackType: AT_TUCH, damageType: AD_SSEX, hit: true,
             }, state, pline, rn2, rnd, { allowCancelledSeducer: true });
         } else {

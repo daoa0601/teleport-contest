@@ -51,7 +51,7 @@ import { snuffMonsterInventoryLights } from './light.js';
 import { adjustedMonsterLevel, cloneMonster } from './makemon.js';
 import { touchHeroWithDeath } from './mcastu.js';
 import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit } from './mhitm.js';
-import { damageHeroFromMonster, heroHasRemovableSpeed, u_slip_free, infectHeroWithMonsterDisease, magicNegation, poisonAttackNoun, presentMonsterAttackEffects, resolveHeroSeduction, slowHero } from './mhitu.js';
+import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
@@ -1614,7 +1614,7 @@ export async function mhitmAdFire(call) {
         if (hitMessage)
             await publish(hitMessage);
         const cancelled = !!attacker.mcan;
-        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magicNegation(state.u, state);
+        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magic_negation(state.u, state);
         let damage = call.context.damage;
         if (cancelled) {
             // no message if attacker has been cancelled
@@ -1739,7 +1739,7 @@ export async function mhitmAdCold(call) {
         if (hitMessage)
             await publish(hitMessage);
         const cancelled = !!attacker.mcan;
-        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magicNegation(state.u, state);
+        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magic_negation(state.u, state);
         let damage = call.context.damage;
         if (cancelled) {
             // no message if attacker has been cancelled
@@ -1837,7 +1837,7 @@ export async function mhitmAdElec(call) {
         if (hitMessage)
             await publish(hitMessage);
         const cancelled = !!attacker.mcan;
-        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magicNegation(state.u, state);
+        const negated = cancelled || recordRandom(random, calls, 10) < 3 * magic_negation(state.u, state);
         let damage = call.context.damage;
         if (cancelled) {
             // no message if attacker has been cancelled
@@ -2102,7 +2102,7 @@ export async function mhitmAdEnch(call) {
         // mhitm_mgc_atk_negated(magr, mdef, FALSE) precedes hitmsg(); a
         // cancelled attacker returns without rolling.
         const negated = !!attacker.mcan
-            || recordRandom(random, calls, 10) < 3 * magicNegation(state.u, state);
+            || recordRandom(random, calls, 10) < 3 * magic_negation(state.u, state);
         // hitmsg(magr, mattk)
         if (hitMessage)
             await publish(hitMessage);
@@ -2574,7 +2574,7 @@ export async function mhitm_knockback(attacker, defender, attack, { state = game
 export async function mhitm_mgc_atk_negated(attacker, defender, { state = game, random = rn2, verbose = false, visible = true, publish = plineWithContinuation, } = {}) {
     if (attacker !== state.u && attacker.mcan)
         return true;
-    const armpro = magicNegation(defender, state);
+    const armpro = magic_negation(defender, state);
     const negated = random(10) < 3 * armpro;
     if (negated && verbose) {
         if (defender === state.u)
@@ -2954,7 +2954,7 @@ export async function poisonHeroFromMonster(monster, attackType, { attribute = A
         ? possessiveName(monsterName(monster, { state, capitalized: true })) : 'Its';
     return poisonHero({
         ...options, state, random, publish, attribute, fatal,
-        reason: `${subject} ${poisonAttackNoun(monster, attackType)}`,
+        reason: `${subject} ${mpoisons_subj(monster, attackType)}`,
         killer: monsterTypeName(monster.mnum, !!monster.female),
     });
 }
@@ -2964,7 +2964,7 @@ export async function poisonMonsterFromAttack(attacker, defender, attackType, da
     const attackerSpotted = canSpotMonster(attacker);
     const defenderSpotted = canSpotMonster(defender);
     if (visible && attackerSpotted) {
-        await publish(`${possessiveName(monsterName(attacker, { state, capitalized: true }))} ${poisonAttackNoun(attacker, attackType)} was poisoned!`);
+        await publish(`${possessiveName(monsterName(attacker, { state, capitalized: true }))} ${mpoisons_subj(attacker, attackType)} was poisoned!`);
     }
     if (monsterHasPoisonResistance(defender)) {
         if (visible && attackerSpotted && defenderSpotted) {
@@ -3045,7 +3045,7 @@ export async function mhitm_ad_drin(call) {
         const damage = propertyIsActive('halfPhysicalDamage', state) || hero.halfPhysicalDamage
             ? Math.trunc((baseDamage + 1) / 2) : baseDamage;
         attack.damage = 0;
-        if (await damageHeroFromMonster(monster, damage, { state, publish })) {
+        if (await mdamageu(monster, damage, { state, publish })) {
             attack.heroDied = true;
             return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
                 skipBrainDrain: !!attack.skipBrainDrain };
@@ -4923,7 +4923,7 @@ async function performHeroEngulf(sequence, attack, index) {
         && [S_ZOMBIE, S_MUMMY].includes(MONSTER_SYMBOL[monster.mnum] ?? -1)
         && rn2(5) !== 0 && !state.u.sicknessResistance) {
         await plineWithContinuation(formatFeltMessage(`${state.u.sick ? 'very ' : ''}sick.`, state));
-        effect.heroDied = await damageHeroFromMonster(monster, rnd(8), { state });
+        effect.heroDied = await mdamageu(monster, rnd(8), { state });
     }
     return { kind: 'processed', result: effect.nativeResult, weapon: null, heroDied: effect.heroDied };
 }
@@ -5230,8 +5230,8 @@ async function applyElectricPassive({ monster, damage, state, publish, die }) {
 }
 async function damageHero(monster, amount, { state, publish, die }) {
     if (!die)
-        return damageHeroFromMonster(monster, amount, { state, publish });
-    return damageHeroFromMonster(monster, amount, {
+        return mdamageu(monster, amount, { state, publish });
+    return mdamageu(monster, amount, {
         state, publish, die: async (victim) => die({ killer: passiveMonsterName(victim) }),
     });
 }
@@ -5391,18 +5391,18 @@ export async function resolveMonsterContactEffect(monster, attack, { state, publ
         await splashHeroWithAcid(monster, attack, state, publish, random);
     else if (attack.damageType === AD_SLOW) {
         if (!attack.negated && heroHasRemovableSpeed(state) && random(4) === 0)
-            await slowHero(state, publish);
+            await u_slow_down(state, publish);
     }
     else if (attack.damageType === AD_SGLD)
         await stealHeroGold(monster, state, publish, random, rollOne);
     else if (attack.damageType === AD_SSEX)
-        await resolveHeroSeduction(monster, attack, state, publish, random, rollOne);
+        await doseduce(monster, attack, state, publish, random, rollOne);
     else if (attack.damageType === AD_DISE) {
-        if (!await infectHeroWithMonsterDisease(monster, state, publish, random))
+        if (!await diseasemu(monster, state, publish, random))
             attack.damage = 0;
     }
     else if (attack.damageType === AD_PEST)
-        await infectHeroWithMonsterDisease(monster, state, publish, random);
+        await diseasemu(monster, state, publish, random);
     else if (attack.damageType === AD_DETH)
         await resolveDeathTouchContact(monster, attack, state, publish, random, rollDice);
     else if (attack.damageType === AD_SAMU) {

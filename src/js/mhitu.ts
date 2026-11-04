@@ -109,7 +109,13 @@ const PM_LEATHER_GOLEM = 253;
 const PM_WOOD_GOLEM = 254;
 const PM_IRON_GOLEM = 259;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
-async function monsterAttackMessage(
+const M1_NOEYES = 0x00001000;
+
+// C mhitu.c:hitmsg(): the attacker's hit line, including the again-verb for
+// consecutive identical attack slots. A missed slot is dispatched to
+// missmu() below, as mattacku()'s switch chooses between them; effect
+// branches that project their own prose return null here.
+async function hitmsg(
     monster: Monster, attack: HeroContactAttack & HeroAttackSlot,
     previousAttack: (HeroAttack & HeroAttackSlot) | null = null,
     random: RandomBelow = rn2,
@@ -129,7 +135,7 @@ async function monsterAttackMessage(
             : attack.damageType === AD_STCK ? 'adhere' : 'grab';
         return `${possessiveName(subject).slice(0, 99)} ${verb} attempt passes right through you!`;
     }
-    if (!attack.hit) return monsterMissMessage(monster, attack, game, random);
+    if (!attack.hit) return missmu(monster, attack, game, random);
     const subject = monsterName(monster, { capitalized: true });
     if (attack.effect === 'pestilence-contact')
         return `${subject} reaches out, and you feel fever and chills.`;
@@ -271,7 +277,8 @@ export async function presentMonsterAttackEffects(
                         continue;
                     }
                     if (heroAttack.kind === 'hero-breath') {
-                        // C mhitu.c:875 — breamu() already ran its whole
+                        // C mhitu.c mattacku()'s AT_BREA case (875-877) —
+                        // breamu() already ran its whole
                         // transaction in the begin phase, like AT_SPIT; the
                         // breath neither stops the hero's occupation nor
                         // spends the hero's next movement ration.
@@ -466,7 +473,7 @@ export async function presentMonsterAttackEffects(
                     const physical = await mhitm_ad_phys({ mdef: 'youmonst', context: {
                         state: game, attacker: monster, attack: heroAttack, calls: action.calls,
                         publish: publishEquipmentMessage, random, rollOne, rollDice,
-                        hitMessage: () => monsterAttackMessage(monster, physicalAttack, previousHeroAttack, random),
+                        hitMessage: () => hitmsg(monster, physicalAttack, previousHeroAttack, random),
                         die: finishHeroDeathAfterMonsterMessage,
                     } });
                     heroAttack.damage = physical.damage;
@@ -486,7 +493,7 @@ export async function presentMonsterAttackEffects(
                     || heroAttack.effect === 'leg-natural'
                     || heroAttack.effect === 'item-theft'
                     ? null
-                    : await monsterAttackMessage(
+                    : await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                 const contactDismissal = message
@@ -524,7 +531,7 @@ export async function presentMonsterAttackEffects(
                     // transaction here. hitmu() reaches knockback after
                     // every steal() result, including refusal and armor
                     // removal still in progress (mhitu.c:1196-1199).
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const theft = await mhitm_ad_sedu({
@@ -606,7 +613,7 @@ export async function presentMonsterAttackEffects(
                     // C uhitm.c:mhitm_ad_cold() mhitu branch: hitmsg(),
                     // magic cancellation, the frost lines and the gated
                     // inventory destruction run here with direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const cold = await mhitmAdCold({
@@ -633,7 +640,7 @@ export async function presentMonsterAttackEffects(
                     // magic cancellation, the fire lines, witness updates,
                     // inventory destruction, ignition and the slime cure all
                     // run here with direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const fire = await mhitmAdFire({
@@ -660,7 +667,7 @@ export async function presentMonsterAttackEffects(
                     // C uhitm.c:mhitm_ad_elec() mhitu branch: hitmsg(),
                     // magic cancellation, the zap lines and the gated
                     // inventory destruction run here with direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const electric = await mhitmAdElec({
@@ -686,7 +693,7 @@ export async function presentMonsterAttackEffects(
                     // C uhitm.c:mhitm_ad_drli() mhitu branch: hitmsg(), the
                     // selection gate, magic cancellation and losexp() run
                     // here with direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const drain = await mhitmAdDrli({
@@ -725,7 +732,7 @@ export async function presentMonsterAttackEffects(
                     // C uhitm.c:mhitm_ad_ench() mhitu branch: the negation
                     // probe precedes hitmsg(); the armor selection, drain and
                     // "less effective" line follow it with direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const ench = await mhitmAdEnch({
@@ -745,7 +752,7 @@ export async function presentMonsterAttackEffects(
                     // C uhitm.c:mhitm_ad_stun() mhitu branch: hitmsg(), the
                     // one-in-four gate and make_stunned() run here with
                     // direct awaits.
-                    const hitMessage = await monsterAttackMessage(
+                    const hitMessage = await hitmsg(
                         monster, heroAttack, previousHeroAttack, random,
                     );
                     const stun = await mhitmAdStun({
@@ -1387,7 +1394,8 @@ export async function beginMonsterHeroAttack(
     })) return {};
     if (await disturbMealMimicry(monster, { state })) return {};
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
-    // C mhitu.c:721-724 — make eels visible the moment they hit or miss us.
+    // C mhitu.c mattacku() (721-724) — make eels visible the moment they
+    // hit or miss us.
     if (monsterIsEel(monster.mnum) && monster.minvis
         && cansee(monster.mx, monster.my)) {
         monster.minvis = 0;
@@ -1552,7 +1560,8 @@ async function beginHeroAttackSlot(
         (MONSTER_NAME[monster.mnum] === 'grid bug' && dx !== 0 && dy !== 0);
     if (attackType === AT_BREA) {
         if (!distant) return null;
-        // C mhitu.c:875-877: sum[i] = breamu(mtmp, mattk) runs the whole
+        // C mhitu.c mattacku()'s AT_BREA case (875-877): sum[i] =
+        // breamu(mtmp, mattk) runs the whole
         // breath transaction, exactly like the AT_SPIT case above.
         const publish = monsterAttackMessagePublisher(sequence.paging);
         const breath = await resolveMonsterBreathAtHero(monster, effectiveAttack, {
@@ -1989,7 +1998,7 @@ async function beginHeroAttackSlot(
         // magic cancellation, optionally checks inventory destruction, then
         // the shared post-hit knockback path consumes its distance/chance
         // draws even though an electric bite cannot knock the hero back.
-        const armorProtection = magicNegation(state.u, state);
+        const armorProtection = magic_negation(state.u, state);
         const negated = recordRandom(random, calls, 10) < 3 * armorProtection;
         if (!negated) {
             recordRandom(random, calls, 20);
@@ -2121,7 +2130,7 @@ async function beginHeroAttackSlot(
             ...(damageType === AD_DETH ? { effect: 'death-contact' } : {}),
         };
     } else if (hit && damageType === AD_STCK) {
-        const armorProtection = magicNegation(state.u, state);
+        const armorProtection = magic_negation(state.u, state);
         const negated = !!monster.mcan || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
             kind: 'hero-attack',
@@ -2251,7 +2260,7 @@ async function beginHeroAttackSlot(
             oldFormMnum,
         };
     } else if (hit && damageType === AD_SLIM) {
-        const armorProtection = magicNegation(state.u, state);
+        const armorProtection = magic_negation(state.u, state);
         const cancelled = !!monster.mcan;
         const negated = cancelled || recordRandom(random, calls, 10) < 3 * armorProtection;
         return {
@@ -2591,7 +2600,7 @@ export async function completeHeroAttackSlot(
 
 // C mhitu.c:mpoisons_subj(). The noun for a poisoning monster's attack
 // method; uhitm.c's effect branches compose it into their reasons.
-export function poisonAttackNoun(monster: Monster, attackType: AttackMethod): string {
+export function mpoisons_subj(monster: Monster, attackType: AttackMethod): string {
     if (attackType === AT_WEAP)
         return monsterWieldedWeapon(monster)?.opoisoned ? 'weapon' : 'attack';
     if (attackType === AT_TUCH) return 'contact';
@@ -2648,7 +2657,7 @@ interface SeductionContext {
 
 // C mhitu.c:doseduce(). The leap-day gloves joke inlines invent.c
 // u_carried_gloves(): worn gloves, else the first carried pair.
-export async function resolveHeroSeduction(
+export async function doseduce(
     monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
     publish: MessagePublisher, random: typeof rn2, rollOne: typeof rnd,
     { allowCancelledSeducer = false }: { allowCancelledSeducer?: boolean } = {},
@@ -2739,7 +2748,7 @@ async function exchangeAdornmentRings(context: SeductionContext): Promise<boolea
         if (state.uarmg && (!female || ring.owornmask)) {
             if (!triedGloves) {
                 triedGloves = true;
-                await maybeRemoveArmor(context, state.uarmg, 'gloves');
+                await mayberem(context, state.uarmg, 'gloves');
             }
             if (state.uarmg) {
                 if (!female) break;
@@ -2824,17 +2833,17 @@ async function undressHero(context: SeductionContext, triedGloves: boolean): Pro
     const naked = !state.uarmc && !state.uarmf && !state.uarmg && !state.uarms && !state.uarmh && !state.uarmu;
     await publish(`${who} ${heroIsDeaf(state) ? 'seems to murmur into your ear'
         : naked ? 'murmurs sweet nothings into your ear' : 'murmurs in your ear'}${naked ? '' : ', while helping you undress'}.`, { urgent: true });
-    if (state.uarmc) await maybeRemoveArmor(context, state.uarmc, armorSimpleName(state.uarmc, state));
-    if (!state.uarmc && state.uarm) await maybeRemoveArmor(context, state.uarm, armorSimpleName(state.uarm, state));
-    await maybeRemoveArmor(context, state.uarmf, 'boots');
-    if (!triedGloves) await maybeRemoveArmor(context, state.uarmg, 'gloves');
-    await maybeRemoveArmor(context, state.uarms, 'shield');
-    if (state.uarmh) await maybeRemoveArmor(context, state.uarmh, armorSimpleName(state.uarmh, state));
-    if (!state.uarmc && !state.uarm) await maybeRemoveArmor(context, state.uarmu, 'shirt');
+    if (state.uarmc) await mayberem(context, state.uarmc, armorSimpleName(state.uarmc, state));
+    if (!state.uarmc && state.uarm) await mayberem(context, state.uarm, armorSimpleName(state.uarm, state));
+    await mayberem(context, state.uarmf, 'boots');
+    if (!triedGloves) await mayberem(context, state.uarmg, 'gloves');
+    await mayberem(context, state.uarms, 'shield');
+    if (state.uarmh) await mayberem(context, state.uarmh, armorSimpleName(state.uarmh, state));
+    if (!state.uarmc && !state.uarm) await mayberem(context, state.uarmu, 'shirt');
 }
 
 // C mhitu.c:mayberem().
-async function maybeRemoveArmor(context: SeductionContext, armor: GameObject | null | undefined, name: string): Promise<void> {
+async function mayberem(context: SeductionContext, armor: GameObject | null | undefined, name: string): Promise<void> {
     if (!armor?.owornmask || !stillTogether(context)) return;
     const { state, who, publish, random } = context;
     if (heroIsDeaf(state)) {
@@ -2963,11 +2972,13 @@ async function leaveSeduction({ monster, state, publish, random, rollOne }: Sedu
 // ---------------------------------------------------------------------------
 // Native mhitu.c:missmu(), wildmiss(), and the unfound-target engulf branch.
 // ---------------------------------------------------------------------------
-
-export async function monsterMissMessage(
+// C mhitu.c:missmu(): the attacker's miss line; wildmiss() and the
+// unfound-target engulf branch of mattacku()'s AT_ENGL case dispatch here
+// from the presenter.
+export async function missmu(
     monster: Monster, attack: HeroContactAttack, state: PlayingGameState, random: RandomBelow,
 ): Promise<string | null> {
-    if (attack.effect === 'wild-miss') return wildMissMessage(monster, attack, state, random);
+    if (attack.effect === 'wild-miss') return wildmiss(monster, attack, state, random);
     if (attack.effect === 'engulf-unfound') return engulfMissMessage(monster, state);
 
     // Native missmu() publishes both miss lines through pline_mon(), which
@@ -2979,8 +2990,9 @@ export async function monsterMissMessage(
     if (friendly) return `${subject} pretends to be friendly.`;
     return `${subject} ${attack.nearMiss && state.flags.verbose !== false ? 'just ' : ''}misses!`;
 }
-
-async function wildMissMessage(
+// C mhitu.c:wildmiss(): the attacker struck the wrong location through
+// blindness, hero invisibility, displacement, or water.
+async function wildmiss(
     monster: Monster, attack: HeroContactAttack, state: PlayingGameState, random: RandomBelow,
 ): Promise<string | null> {
     const invisible = heroIsInvisible(state);
@@ -3046,7 +3058,7 @@ function engulfMissMessage(monster: Monster, state: PlayingGameState): string | 
 // C mhitu.c:diseasemu(). Disease bypasses cancellation and magic negation.
 // ---------------------------------------------------------------------------
 
-export async function infectHeroWithMonsterDisease(
+export async function diseasemu(
     monster: Monster, state: PlayingGameState, publish: MessagePublisher, random: typeof rn2,
 ): Promise<boolean> {
     if (state.u.sicknessResistance) {
@@ -3199,7 +3211,7 @@ export async function swingMonsterWeapon(
         && artifactById(weapon.oartifact, state)?.name !== 'Snickersnee'
         && (monster.mx - x) ** 2 + (monster.my - y) ** 2 <= 2;
     const subject = monsterName(monster, { state, capitalized: true });
-    const verb = monsterWeaponSwingVerb(weapon, bash, random);
+    const verb = mswings_verb(weapon, bash, random);
     const quantity = weapon.quan > 1 ? 'one of ' : '';
     const possessive = perceivedPossessivePronoun(monster, { state, random });
     const name = objectCombatName(weapon, { state, includeCorpseSpecies: false });
@@ -3367,7 +3379,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
                     return { mask: M_ATTK_MISS, heroDied: true };
                 await igniteItems(state.inventory, { state, publish, random });
             }
-            if (damage) await damageHeroFromMonster(monster, damage, { state, publish, ...(die ? { die } : {}) });
+            if (damage) await mdamageu(monster, damage, { state, publish, ...(die ? { die } : {}) });
         }
         break;
     }
@@ -3380,7 +3392,7 @@ export async function resolveMonsterGaze(monster: Monster, attack: MonsterAttack
 }
 
 // C mhitu.c:mswings_verb(). The mixed-strike roll occurs even when bashing.
-export function monsterWeaponSwingVerb(object: WeaponView, bash = false, random = rn2): 'bashes with' | 'lashes' | 'thrusts' | 'swings' {
+export function mswings_verb(object: WeaponView, bash = false, random = rn2): 'bashes with' | 'lashes' | 'thrusts' | 'swings' {
     const direction = objectBaseDirection(object.otyp);
     const thrust = (direction & 1) && (!(direction & ~1) || random(2) === 0);
     const lash = objectSkill(object.otyp) === P_WHIP
@@ -3392,7 +3404,7 @@ export function monsterWeaponSwingVerb(object: WeaponView, bash = false, random 
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
 
-export function magicNegation(defender: Hero | Monster, state: GameState = game) {
+export function magic_negation(defender: Hero | Monster, state: GameState = game) {
     const hero = defender === state.u;
     const species = 'mnum' in defender ? defender.mnum : defender.umonnum ?? -1;
     const inventory = 'mnum' in defender ? defender.minvent : state.inventory;
@@ -3457,7 +3469,7 @@ export async function disturbMealMimicry(monster: Monster, { state = game }: { s
 }
 // C mhitu.c:mdamageu(). Unlike losehp(), this clamps current HP down to
 // the existing maximum and does not stop running on zero-damage effects.
-export async function damageHeroFromMonster(monster: Monster, amount: number, {
+export async function mdamageu(monster: Monster, amount: number, {
     state = game, publish = plineWithContinuation, die = finishMonsterAttackDeath,
 }: {
     state?: GameState;
@@ -3491,7 +3503,7 @@ export function heroHasRemovableSpeed(state = game) {
 }
 
 // C mhitu.c:u_slow_down().
-export async function slowHero(state = game, publish: MessagePublisher = plineWithContinuation) {
+export async function u_slow_down(state = game, publish: MessagePublisher = plineWithContinuation) {
     requireLiveGame(state);
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);

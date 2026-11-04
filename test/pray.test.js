@@ -9,7 +9,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
 import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
 import { grantPrayerFavor } from '../js/pray.js';
-import { magicNegation } from '../js/mhitu.js';
+import { magic_negation } from '../js/mhitu.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GAUNTLETS_OF_FUMBLING, LEATHER_GLOVES, LOADSTONE, LONG_SWORD, LUCKSTONE, OBJECT_NAMES } from '../js/object_data.js';
@@ -442,7 +442,7 @@ void test('divine protection improves armor class and protection from special at
     assert.equal(findArmorClass(), armorClass - game.u.ublessed);
     assert.ok(game.u.ublessed != null);
     assert.ok(game.u.ublessed >= 2 && game.u.ublessed <= 4);
-    assert.equal(magicNegation(game.u), 1);
+    assert.equal(magic_negation(game.u), 1);
 });
 void test('prayer grants breathing when a permanent poison cloud has no safe exit', async () => {
     await prayerRoom();

@@ -27,7 +27,7 @@ import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { damageHeroFromMonster } from '../js/mhitu.js';
+import { mdamageu } from '../js/mhitu.js';
 import { loseHeroHp } from '../js/hack.js';
 
 function answerRecoveryMessages(messages: string[]) {
@@ -103,7 +103,7 @@ for (const cause of ['monster', 'other damage']) {
             messages.length = 0;
 
             const died = cause === 'monster'
-                ? await damageHeroFromMonster(vortex, 6)
+                ? await mdamageu(vortex, 6)
                 : await loseHeroHp(6, 'acid');
             await flushPendingTopline();
 
@@ -141,7 +141,7 @@ for (const cause of ['monster', 'other damage']) {
         initRng(3n);
 
         const died = cause === 'monster'
-            ? await damageHeroFromMonster(vortex, 6)
+            ? await mdamageu(vortex, 6)
             : await loseHeroHp(6, 'acid');
 
         assert.equal(died, true, messages.join(' | '));
@@ -173,7 +173,7 @@ for (const recovery of ['amulet', 'refused death']) {
         const { mx, my } = mimic;
         game.u.uhp = 1;
 
-        assert.equal(await damageHeroFromMonster(mimic, 6), false);
+        assert.equal(await mdamageu(mimic, 6), false);
         await flushPendingTopline();
 
         assert.equal(game.u.ustuck, null);

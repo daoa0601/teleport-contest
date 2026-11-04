@@ -1474,7 +1474,7 @@ src/js/muse.ts	use_defensive	random	"[""4""]"	constant
 src/js/muse.ts	use_defensive	random	"[""73""]"	constant
 src/js/muse.ts	use_defensive	rollDice	"[""6 + 2 * sign"", ""choice.kind === 'healing' ? 4 : 8""]"	constant
 src/js/muse.ts	use_defensive	rollOne	"[""4""]"	constant
-src/js/mhitu.ts	infectHeroWithMonsterDisease	random	"[""currentAttribute(A_CON, state)""]"	invariant
+src/js/mhitu.ts	diseasemu	random	"[""currentAttribute(A_CON, state)""]"	invariant
 src/js/mhitm.ts	displaceMonster	random	"[""7""]"	constant
 src/js/monmove.ts	resolveMonsterDoorPassage	random	"[""2""]"	constant
 src/js/monmove.ts	triggerMonsterDoorTrap	rollOne	"[""15""]"	constant
@@ -1626,7 +1626,7 @@ src/js/mhitu.ts	maybeRemoveArmor	random	"[""2""]"	constant
 src/js/mhitu.ts	maybeRemoveArmor	random	"[""20""]"	constant
 src/js/mhitu.ts	paySeducer	random	"[""20""]"	constant
 src/js/mhitu.ts	paySeducer	rollOne	"[""money > LARGEST_INT - 10 ? LARGEST_INT : money + 10""]"	guarded
-src/js/mhitu.ts	resolveHeroSeduction	random	"[""25""]"	constant
+src/js/mhitu.ts	doseduce	random	"[""25""]"	constant
 src/js/mhitu.ts	seductionOutcome	random	"[""10""]"	constant
 src/js/mhitu.ts	seductionOutcome	random	"[""35""]"	constant
 src/js/mhitu.ts	seductionOutcome	random	"[""5""]"	constant
@@ -2418,7 +2418,7 @@ src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""6""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""profile.range""]"	guarded
-src/js/mhitu.ts	monsterWeaponSwingVerb	random	"[""2""]"	constant
+src/js/mhitu.ts	mswings_verb	random	"[""2""]"	constant
 src/js/were.ts	revertHeroWereForm	rn2	"[""200""]"	constant
 src/js/mhitu.ts	summonmu	random	"[""10""]"	constant
 src/js/mhitu.ts	summonmu	random	"[""30""]"	constant

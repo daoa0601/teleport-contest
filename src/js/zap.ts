@@ -160,7 +160,7 @@ import { mergeObjectStacks } from './invent.js';
 import type { MapLocation, Position } from './map_types.js';
 import { monsterSpellDeathReason } from './mcastu.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
+import { heroHasRemovableSpeed, u_slow_down } from './mhitu.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
 import type { MonsterLiquidDeathResult } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
@@ -3240,7 +3240,7 @@ export async function zapHeroWithObject(object: GameObject, { ordinary = true, s
     case WAN_SLOW_MONSTER:
     case SPE_SLOW_MONSTER:
         if (heroHasRemovableSpeed(state)) {
-            await slowHero(state);
+            await u_slow_down(state);
             learn = true;
         }
         break;

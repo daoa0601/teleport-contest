@@ -98,7 +98,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
 import { applyWaterFriction } from './mkmaze.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { damageHeroFromMonster } from './mhitu.js';
+import { mdamageu } from './mhitu.js';
 import { currentStrength, currentAttribute, exerciseAttribute } from './attrib.js';
 import { freeInventoryObject } from './invent.js';
 import { delobj } from './invent.js';
@@ -2637,7 +2637,7 @@ export async function finishCeilingMonsterArrival(state, publish) {
                 let damage = d(4, 6);
                 if (hero.halfPhysicalDamage || heroHasCarriedArtifactFlag('SPFX_HPHDAM', state))
                     damage = Math.trunc((damage + 1) / 2);
-                if (await damageHeroFromMonster(monster, damage, { state, publish }))
+                if (await mdamageu(monster, damage, { state, publish }))
                     return true;
             }
         }

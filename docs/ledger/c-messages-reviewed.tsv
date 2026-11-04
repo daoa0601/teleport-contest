@@ -204,8 +204,8 @@ mhitu.c	passiveum	is mildly warm.	composed	src/js/mhitu.ts:passiveum; Selects al
 mhitu.c	passiveum	is slightly tingled.	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	passiveum	is suddenly very cold!	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
 mhitu.c	passiveum	is suddenly very hot!	composed	src/js/mhitu.ts:passiveum; Selects all six cold, fire and electric resistance or damage phrases around the attacker name.
-mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
-mhitu.c	wildmiss	displaced image...	composed	src/js/mhitu.ts:wildMissMessage; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image and misses you!	composed	src/js/mhitu.ts:wildmiss; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
+mhitu.c	wildmiss	displaced image...	composed	src/js/mhitu.ts:wildmiss; Selects engagingly or seductively and invisible or visible displaced images, including the nonseducing miss.
 mklev.c	generate_stairs	generate_stairs: failed to find a room! (	diagnostic	panic() when stair placement finds no room; developer diagnostic.
 mklev.c	mkinvk_check_wall	x > 0 && x < COLNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 mklev.c	mkinvk_check_wall	y >= 0 && y < ROWNO	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
