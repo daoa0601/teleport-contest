@@ -28,6 +28,7 @@ getbones	sfi_char	n/a	binary save reader; decodeBonesPayload replaces it
 dog_goal	cursed_object_at	inlined	cursedAtLocation (dogmove.ts)
 hitmu	midnight	inlined	recorderLocalHour(...) === 0 (mhitu.ts)
 hitmu	minuhpmax	inlined	Math.max(ulevel, 1) clamp (mhitu.ts)
+hitmu	map_invisible	inlined	the unseen-attacker map_invisible runs in the begin-phase slot dispatcher (mhitu.ts beginHeroAttackSlot) and in the presenter before hitmu()'s deferred tail; the split is the presenter protocol
 mattackm	is_fainted	inlined	heroIsUnaware tests uhs === FAINTED (senses.ts)
 gulpmu	sobj_at	inlined	boulder-in-pit test in engulf_target (mhitu.ts)
 gulpmu	number_leashed	inlined	inventory leash count (mhitu.ts:gulpmu)
