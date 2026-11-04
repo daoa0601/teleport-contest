@@ -75,4 +75,56 @@ async function roleMonster(code, state) {
     await impossible(`What weird role is this? (${code})`, { state });
     return MONSTER_NAME.indexOf('human mummy');
 }
+// C topten.c:killed_by_prefix[]: the done() reason's prefix, expanded by
+// formatkiller() under the KILLED_BY formats. The port composes the prefix
+// where C assigns svk.killer (end.ts:killerDeathCause()), so the table
+// serves that composition.
+export const KILLED_BY_PREFIXES = [
+    /* DIED, CHOKING, POISONING, STARVING, */
+    'killed by ', 'choked on ', 'poisoned by ', 'died of ',
+    /* DROWNING, BURNING, DISSOLVED, CRUSHING, */
+    'drowned in ', 'burned by ', 'dissolved in ', 'crushed to death by ',
+    /* STONING, TURNED_SLIME, GENOCIDED, */
+    'petrified by ', 'turned to slime by ', 'killed by ',
+    /* PANICKED, TRICKED, QUIT, ESCAPED, ASCENDED */
+    '', '', '', '', '',
+];
+// C include/rm.h: cemetery.how[] and topten.c:toptenentry.death[] both
+// hold DTHSZ characters plus the terminator.
+export const DTHSZ = 100;
+// C topten.c:formatkiller(): the one owner of the formatted death cause.
+// The port threads each fatal caller's composed cause text (prefix and
+// article included) in place of C's svk.killer pair; this function owns
+// the half every C call site runs: the sanitization (topten.c:133-149 —
+// ',' becomes ';', '=' becomes '_', tab becomes space), the caller's
+// buffer bound, and the incl_helpless rule (topten.c:152-161): while
+// gm.multi is still negative, append ", while <multi_reason>" if it
+// fits, else ", while helpless", else nothing. Call sites and bounds:
+// rip.c:113 (the tombstone, BUFSZ, FALSE), dungeon.c:3709 (the final
+// disclosure's "you, ..." resting-place line, BUFSZ, TRUE), end.c:1317
+// (the grave engraving, BUFSZ minus the name, TRUE), topten.c:694 (the
+// score entry, DTHSZ + 1, TRUE) and bones.c:585 (the cemetery entry,
+// DTHSZ + 1, TRUE).
+export function formatKiller(cause, size, inclHelpless) {
+    // topten.c:133-150: the copy loop's `--siz` runs before each character
+    // test, so the cause holds at most size - 1 characters and reading the
+    // terminator consumes one further byte of the suffix budget.
+    const clean = cause.replaceAll(',', ';').replaceAll('=', '_')
+        .replaceAll('\t', ' ').slice(0, size - 1);
+    if (!inclHelpless)
+        return clean;
+    // C keeps one multi counter; the port splits it into the voluntary
+    // repeat count and the involuntary-delay mirror (cmd.ts:currentMulti),
+    // so negative helplessness is either field.
+    if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0)
+        return clean;
+    const remaining = size - 1 - clean.length;
+    const reason = game._helplessReason;
+    const text = typeof reason === 'string' ? reason : reason?.text;
+    if (text && text.length + ', while '.length + 1 <= remaining)
+        return `${clean}, while ${text}`;
+    if (', while helpless'.length + 1 <= remaining)
+        return `${clean}, while helpless`;
+    return clean;
+}
 //# sourceMappingURL=topten.js.map

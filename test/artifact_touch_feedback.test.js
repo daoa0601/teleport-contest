@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { touchArtifactByHero } from '../js/artifacts.js';
 import { DIED } from '../js/const.js';
-import { formatKillerCause } from '../js/end.js';
+import { killerDeathCause } from '../js/end.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('an artifact blast names and observes the unidentified base object', async () => {
@@ -23,7 +23,7 @@ void test('a fatal artifact blast is recorded as killed by touching the artifact
     const touch = await touchArtifactByHero(sword, undefined, {
         publish: async () => { },
         die: ({ killer, killerFormat }) => {
-            cause = formatKillerCause(killer, DIED, killerFormat);
+            cause = killerDeathCause(killer, 'died', DIED, killerFormat);
             return true;
         },
     });

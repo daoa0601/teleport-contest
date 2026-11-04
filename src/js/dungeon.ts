@@ -5,7 +5,7 @@
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { ALTAR, AM_MASK, Amask2align, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
@@ -27,6 +27,7 @@ import type { GameState } from './game_state.js';
 import { heroFootName } from './body_parts.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
+import { formatKiller } from './topten.js';
 import type { BranchDefinition, BranchDefinitionType, Dungeon, DungeonAlignment, DungeonBranch, DungeonBranchType, DungeonDefinition, DungeonFlag, DungeonLocation, LevelRangeDefinition, SpecialLevelDefinition, SpecialLevelDescriptor, OverviewFlags, OverviewRecord } from './dungeon_types.js';
 import { roomForIndex } from './hack.js';
 interface PlacedLevel {
@@ -967,7 +968,12 @@ function overviewRestingPlaceLines(
     const entries = (record?.finalRestingPlaces ?? [])
         .filter(entry => final || game.flags.debug || entry.bonesknown)
         .map(entry => `${entry.who}, ${entry.how}`);
-    if (currentDeath !== null) entries.unshift(`you, ${overviewYouCause(currentDeath)}`);
+    if (currentDeath !== null) {
+        // C dungeon.c:3709-3716 formats the hero's own reason with
+        // formatkiller(tmpbuf, BUFSZ, how, TRUE) before the strsubst()
+        // rephrasing, so the helplessness suffix lands on this line too.
+        entries.unshift(`you, ${overviewYouCause(formatKiller(currentDeath, BUFSZ, true))}`);
+    }
     if (!entries.length) return [];
     return ['      Final resting place for', ...entries.map((entry, index) =>
         `         ${entry}${index === entries.length - 1 ? '.' : ','}`)];

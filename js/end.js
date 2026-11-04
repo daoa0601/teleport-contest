@@ -7,7 +7,7 @@ import { reportHeroEncumbrance } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
-import { MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd } from './const.js';
+import { BUFSZ, MGIVENNAME, M_AP_MONSTER, M_AP_TYPE, PARANOID_DIE, PARANOID_QUIT, PLNMSG_OK_DONT_DIE, ismnum, A_CON, A_WIS, ACH_BLND, ACH_NUDE, ACH_UWIN, ASCENDED, BURNING, CHOKING, DIED, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, ESCAPED, GENOCIDED, PANICKED, QUIT, STARVING, STONING, TRICKED, In_endgame, In_quest, Is_astralevel, Is_knox_level, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX, TT_LAVA, Upolyd } from './const.js';
 import { isok } from './cmd.js';
 import { PanicTermination } from './panic_termination.js';
 import { setMulti } from './cmd.js';
@@ -58,6 +58,7 @@ import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
 import { isAccessibleAt } from './monmove.js';
 import { resetHeroTrap } from './trap.js';
+import { DTHSZ, KILLED_BY_PREFIXES, formatKiller } from './topten.js';
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 const AMULET_CLASS = 5;
 const GEM_CLASS = 13;
@@ -235,7 +236,7 @@ export function recordHeroKillConduct(state = game) {
 // every visited level in every dungeon with the full mapseen projection;
 // only real deaths (final == 2) list the hero's own resting place.
 function overviewLines(killer, deathVerb = 'killed', deathCause = null, ending = null) {
-    const cause = deathCause || deathCauseRecord(killer, deathVerb);
+    const cause = deathCause || killerDeathCause(killer, deathVerb);
     return dungeonOverviewDisclosure(ending, cause);
 }
 function gameSummaryValues(outcome, deathType = DIED) {
@@ -339,7 +340,10 @@ function deathSummaryLines(killer, { gold, score, moves }, endtime, { deathVerb 
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
     const goodbye = game.urole?.goodbye || 'Goodbye';
     const stoneGold = Math.min(999_999_999, Math.max(0, gold));
-    const causeRows = tombstoneDeathRows(sanitizeDeathCause(deathCause || deathCauseRecord(killer, deathVerb)));
+    const causeRows = tombstoneDeathRows(
+    // C rip.c:113 formats the stone with formatkiller(buf, BUFSZ, how,
+    // FALSE): sanitized and bounded, never the helplessness suffix.
+    formatKiller(deathCause || killerDeathCause(killer, deathVerb), BUFSZ, false));
     const stone = [
         [23, '----------'],
         [22, '/          \\'],
@@ -404,21 +408,16 @@ function scoreIdentity() {
         align,
     };
 }
-// topten.c:formatkiller() selects the cause prefix from the death type.
-// The final summary's verb describes the hero and is a separate choice.
-const DEATH_CAUSE_PREFIXES = [
-    'killed by ', 'choked on ', 'poisoned by ', 'died of ',
-    'drowned in ', 'burned by ', 'dissolved in ', 'crushed to death by ',
-    'petrified by ', 'turned to slime by ', 'killed by ',
-    '', '', '', '', '',
-];
-// C topten.c:formatkiller() for a done() reason and killer.format.
-export function formatKillerCause(killer, deathType, killerFormat = KILLED_BY_AN) {
-    return deathCauseRecord(killer, 'died', deathType, killerFormat);
-}
-function deathCauseRecord(killer, deathVerb = 'died', deathType = null, killerFormat = KILLED_BY_AN) {
+// C svk.killer.name/format (decl.c) are assigned by each fatal caller and
+// expanded by topten.c:formatkiller() with killed_by_prefix[how] and an()
+// for the KILLED_BY formats. The port composes that expansion once where
+// the killer is assigned and threads the resulting cause string through
+// the ending; topten.ts:formatKiller() owns the shared tail every C call
+// site adds: sanitization, the caller's buffer bound and the
+// incl_helpless suffix.
+export function killerDeathCause(killer, deathVerb = 'died', deathType = null, killerFormat = KILLED_BY_AN) {
     const raw = String(killer || 'unknown cause');
-    const prefix = deathType === null ? undefined : DEATH_CAUSE_PREFIXES[deathType];
+    const prefix = deathType === null ? undefined : KILLED_BY_PREFIXES[deathType];
     if (killerFormat === NO_KILLER_PREFIX || prefix === '')
         return raw;
     if (prefix === undefined && deathVerb !== 'died')
@@ -426,34 +425,9 @@ function deathCauseRecord(killer, deathVerb = 'died', deathType = null, killerFo
     const name = killerFormat === KILLED_BY ? raw : withIndefiniteArticle(raw);
     return `${prefix ?? 'killed by '}${name}`;
 }
-// C topten.c:formatkiller() sanitizes killer names for every caller, including rip.c.
-function sanitizeDeathCause(cause) {
-    return cause.replaceAll(',', ';').replaceAll('=', '_').replaceAll('\t', ' ');
-}
-// C topten.c:formatkiller(..., DTHSZ + 1, TRUE). Scores and bones use this
-// bounded, sanitized cause, including involuntary delay when it fits.
-export function scoreDeathCause(cause, deathType) {
-    const scoreDeathSize = 100; // C topten.c:DTHSZ, excluding the terminator.
-    const cleanCause = sanitizeDeathCause(cause).slice(0, scoreDeathSize);
-    if ((game._helplessTurns ?? 0) <= 0 && game.multi >= 0)
-        return cleanCause;
-    const helplessness = game._helplessReason;
-    let reason = (typeof helplessness === 'string' ? helplessness : helplessness?.text) || 'helpless';
-    if (deathType === STONING && reason === 'getting stoned')
-        return cleanCause;
-    if (deathType === STARVING && reason === 'fainted from lack of food')
-        reason = 'fainted';
-    // formatkiller() consumes a byte while reading the cause terminator,
-    // then requires room for the suffix's own terminator too.
-    const remaining = scoreDeathSize - cleanCause.length;
-    const suffix = `, while ${reason}`;
-    return suffix.length + 1 <= remaining ? cleanCause + suffix
-        : ', while helpless'.length + 1 <= remaining
-            ? `${cleanCause}, while helpless` : cleanCause;
-}
 function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb = 'died', deathCause = null, deathType = null, } = {}) {
     let cause = deathCause || (outcome === 'quit' ? 'quit'
-        : deathCauseRecord(killer, deathVerb));
+        : killerDeathCause(killer, deathVerb));
     if (game.u.uhave?.amulet) {
         cause += ' (with the Amulet)';
     }
@@ -473,7 +447,9 @@ function currentScoreRecord(summary, { outcome = 'died', killer = '', deathVerb 
         ...scoreIdentity(),
         dungeon: currentDungeonName(),
         outcome,
-        death: scoreDeathCause(cause, deathType),
+        // C topten.c:694 formats the record's death field with
+        // formatkiller(..., sizeof t0->death == DTHSZ + 1, TRUE).
+        death: formatKiller(cause, DTHSZ + 1, true),
     };
 }
 function updateScoreRecord(current) {
@@ -959,7 +935,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         killer = DEATH_NAMES[how] ?? 'died';
     if (how >= PANICKED)
         deathCause = killer;
-    deathCause ||= deathCauseRecord(killer, deathVerb, deathType, killerFormat);
+    deathCause ||= killerDeathCause(killer, deathVerb, deathType, killerFormat);
     if (deathType !== null)
         deathVerb = ENDINGS[deathType] ?? deathVerb;
     game._deathKiller = killer;
@@ -986,7 +962,7 @@ async function completeOrdinaryDeath({ killer, possessionAnswer = null, deathVer
         await plineWithContinuation(`Your ${revenant} as ${withIndefiniteArticle(monsterTypeName(arise, !!game.flags.female))}...`);
         await displayMessageWindow();
     }
-    await createBonesFromDeath(deathCause || deathCauseRecord(killer, deathVerb), promptYesNo, endtime);
+    await createBonesFromDeath(deathCause || killerDeathCause(killer, deathVerb), promptYesNo, endtime);
     if (showSummary) {
         game._preserveLeadingStyledBlanks = false;
         await showTextWindow(deathSummaryLines(killer, summary, endtime, { deathVerb, deathCause, deathType }));
@@ -1281,7 +1257,7 @@ export async function finishMonsterAttackDeath(monster, { pagerOwned = false, at
         await plineWithContinuation(fatalLine);
     const fatalKiller = customCause ? attribution.killer : fatalMonsterDescription(monster);
     const fatalDeathCause = customCause
-        ? attribution.deathCause ?? formatKillerCause(fatalKiller, deathType, attribution.killerFormat ?? KILLED_BY)
+        ? attribution.deathCause ?? killerDeathCause(fatalKiller, 'died', deathType, attribution.killerFormat ?? KILLED_BY)
         : `${deathType === STONING ? 'petrified' : 'killed'} by ${fatalKiller}`;
     if (!customCause) {
         // done_in_by() removes redundant attribution only for the causing monster.
