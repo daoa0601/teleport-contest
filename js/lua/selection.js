@@ -2,7 +2,7 @@ import { SpecialSelection, specialSelectionFloodFill, specialSelectionMatch, spe
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { LuaArgumentError, NethackLuaError } from './errors.js';
-import { ANY_LOC, getLocationCoord } from '../special_location.js';
+import { ANY_LOC, get_location_coord } from '../special_location.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
 function coordxy(value) {
@@ -106,7 +106,7 @@ export function createSelectionApi(context, invoke = null) {
         const coordinate = args.length === 0 ? null
             : { x: luaCoordinate(args[0]), y: luaCoordinate(args[1]) };
         const value = luaInt(args[2] ?? 1);
-        const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
+        const point = await get_location_coord(currentContext(), coordinate, ANY_LOC);
         selection_setpoint(point.x, point.y, selection.selection, value);
         return self ?? wrap(selection);
     };
@@ -134,7 +134,7 @@ export function createSelectionApi(context, invoke = null) {
         else {
             throw new NethackLuaError('l_selection_getpoint: Incorrect params');
         }
-        const point = await getLocationCoord(currentContext(), coordinate, ANY_LOC);
+        const point = await get_location_coord(currentContext(), coordinate, ANY_LOC);
         return selection_getpoint(point.x, point.y, selection.selection);
     };
     // C nhlsel.c:l_selection_clone(): a copy of the selection, or the reverse

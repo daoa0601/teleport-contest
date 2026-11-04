@@ -1,4 +1,4 @@
-// C sp_lev.c:map_cleanup(), after Lua construction and before wallification.
+// Special-level construction cleanup, before wallification.
 import {
     COLNO, ROWNO, CROSSWALL, ROOM, IS_LAVA, IS_POOL, MAGIC_PORTAL, VIBRATING_SQUARE,
 } from './const.js';
@@ -12,7 +12,7 @@ import type { SpecialSelection } from './selvar.js';
 
 // C sp_lev.c:remove_boundary_syms(). Mapped crosswalls delimit rooms during
 // construction, then become floor before ordinary wall shaping can alter them.
-export function removeSpecialLevelBoundaries(mappedCells: SpecialSelection, state: GameState = game): void {
+export function remove_boundary_syms(mappedCells: SpecialSelection, state: GameState = game): void {
     const level = requireGameLevel(state);
     const mazeXMax = (COLNO - 1) & ~1;
     const mazeYMax = (ROWNO - 1) & ~1;
@@ -26,7 +26,7 @@ export function removeSpecialLevelBoundaries(mappedCells: SpecialSelection, stat
 
 // C sp_lev.c:map_cleanup(): boulders, most traps and engravings on liquid
 // are removed without settling, messages or destruction rolls.
-export async function cleanupSpecialLevelMap(state: GameState = game): Promise<void> {
+export async function map_cleanup(state: GameState = game): Promise<void> {
     const level = requireGameLevel(state);
     for (let x = 0; x < COLNO; x++) {
         for (let y = 0; y < ROWNO; y++) {

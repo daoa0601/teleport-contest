@@ -7,7 +7,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { fillSpecialRoom } from '../js/sp_lev.js';
+import { fill_special_room } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import type { AlignmentValue } from '../js/roles.js';
@@ -90,7 +90,7 @@ async function stockCourt(alignment: AlignmentValue, seed: bigint) {
         for (let y = room.ly; y <= room.hy; y++)
             level.requireAt(x, y).roomno = ROOMOFFSET;
     }
-    await fillSpecialRoom(room);
+    await fill_special_room(room);
     game.in_mklev = false;
     return level;
 }

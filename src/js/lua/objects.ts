@@ -26,7 +26,7 @@ import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../invent.js';
 
-import { objectTypeForName } from './des.js';
+import { find_objtype } from './des.js';
 import { luaInteger } from './arguments.js';
 import { LuaTable, LuaUserdata, luaTableToObject, objectToLuaTable } from './runtime.js';
 import type { LuaHostObject, LuaMetatable, LuaNativeFunction, LuaValue } from './runtime.js';
@@ -173,7 +173,7 @@ export function createObjectApi(state: GameState = game): ObjectApi {
         } else if (value instanceof LuaTable) {
             const options = luaTableToObject(value);
             const type = options.id == null ? 0
-                : objectTypeForName(options.id, options.class, state);
+                : find_objtype(options.id, options.class, state);
             const oclass = typeof options.class === 'string'
                 ? OBJECT_CLASS_SYMBOLS.indexOf(options.class) : -1;
             // ARROW is FIRST_OBJECT; earlier entries represent class glyphs.

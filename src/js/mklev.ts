@@ -72,9 +72,9 @@ import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition } from './teleport_rules.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { addToContainer, check_room, create_room, dig_corridor, fillSpecialRoom, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
+import { addToContainer, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import type { MutableNumber, SpecialTrapOptions } from './sp_lev.js';
-import { beginLuaThemerooms, callLuaThemerooms, generateLuaSpecialLevel, themerooms_generate } from './sp_lev_lua.js';
+import { beginLuaThemerooms, callLuaThemerooms, load_special, themerooms_generate } from './sp_lev_lua.js';
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
 // mklev.js — regular level generation.
@@ -892,10 +892,10 @@ async function makelevel(): Promise<void> {
         g._specialLevelPrototype = null;
 
         if (prototype === 'castle') {
-            await generateSpecialAndFixup(generateLuaSpecialLevel,
+            await generateSpecialAndFixup(load_special,
                 g._activeSpecialLevel);
             for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fillSpecialRoom(room);
+                if (isRoom(room)) await fill_special_room(room);
             return;
         }
         if (prototype === 'knox') {
@@ -904,31 +904,31 @@ async function makelevel(): Promise<void> {
         }
         if (prototype === 'asmodeus') {
             await generateSpecialAndFixup(
-                generateLuaSpecialLevel, g._activeSpecialLevel,
+                load_special, g._activeSpecialLevel,
             );
             return;
         }
         if (prototype === 'juiblex') {
             await generateSpecialAndFixup(
-                generateLuaSpecialLevel, g._activeSpecialLevel,
+                load_special, g._activeSpecialLevel,
             );
             for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fillSpecialRoom(room);
+                if (isRoom(room)) await fill_special_room(room);
             return;
         }
         if (prototype === 'baalz') {
             g._activeSpecialLevel.baalzFixup = true;
             await generateSpecialAndFixup(
-                generateLuaSpecialLevel, g._activeSpecialLevel,
+                load_special, g._activeSpecialLevel,
             );
             return;
         }
         if (prototype === 'orcus') {
             await generateSpecialAndFixup(
-                generateLuaSpecialLevel, g._activeSpecialLevel,
+                load_special, g._activeSpecialLevel,
             );
             for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fillSpecialRoom(room);
+                if (isRoom(room)) await fill_special_room(room);
             return;
         }
         if (['wizard1', 'wizard2', 'wizard3'].includes(prototype)) {
@@ -948,17 +948,17 @@ async function makelevel(): Promise<void> {
             return;
         }
         if (prototype === 'valley') {
-            await generateSpecialAndFixup(generateLuaSpecialLevel,
+            await generateSpecialAndFixup(load_special,
                 g._activeSpecialLevel);
             for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fillSpecialRoom(room);
+                if (isRoom(room)) await fill_special_room(room);
             return;
         }
         if (prototype === 'sanctum') {
-            await generateSpecialAndFixup(generateLuaSpecialLevel,
+            await generateSpecialAndFixup(load_special,
                 g._activeSpecialLevel);
             for (const room of level.rooms.slice(0, level.nroom))
-                if (isRoom(room)) await fillSpecialRoom(room);
+                if (isRoom(room)) await fill_special_room(room);
             return;
         }
         if (['earth', 'air', 'fire', 'water'].includes(prototype)) {
@@ -974,7 +974,7 @@ async function makelevel(): Promise<void> {
             return;
         }
         if (/^tut-[12]$/.test(prototype)) {
-            await generateSpecialAndFixup(generateLuaSpecialLevel,
+            await generateSpecialAndFixup(load_special,
                 g._activeSpecialLevel);
             return;
         }
@@ -1055,7 +1055,7 @@ async function makelevel(): Promise<void> {
         for (const croom of level.rooms.slice(0, level.nroom))
             if (isRoom(croom)) await fill_ordinary_room(croom, false);
         for (const croom of level.rooms.slice(0, level.nroom))
-            if (isRoom(croom)) await fillSpecialRoom(croom);
+            if (isRoom(croom)) await fill_special_room(croom);
         return;
     }
 
@@ -1141,7 +1141,7 @@ async function makelevel(): Promise<void> {
     // Room order matters: this level's shop is stocked before the vault's
     // second fill pass, and both precede mineralization.
     for (const croom of level.rooms.slice(0, level.nroom))
-        if (isRoom(croom)) await fillSpecialRoom(croom);
+        if (isRoom(croom)) await fill_special_room(croom);
 
     if (themedRooms) {
         await callLuaThemerooms('post_level_generate');

@@ -13,7 +13,7 @@ import { MONSTER_NAME, MONSTER_SYMBOL } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { ROCK, STATUE } from '../js/object_data.js';
-import { DRY, getLocationCoord } from '../js/special_location.js';
+import { DRY, get_location_coord } from '../js/special_location.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { createDungeon } from './support/topology.js';
@@ -334,9 +334,9 @@ void test('an unavailable monster class uses dry placement without species retri
         assert.equal(species, null, 'the centaur class is unavailable');
         // With no species, create_monster() uses the same DRY lookup as
         // other dry contents, even when the map has no suitable square.
-        await getLocationCoord(area, null, DRY);
+        await get_location_coord(area, null, DRY);
         await lua.executeAsync(dryMap);
-        const expected = await getLocationCoord(area, null, DRY);
+        const expected = await get_location_coord(area, null, DRY);
         await lua.executeAsync(solidMap);
         level.traps = [];
         resetInputState().feed(' '.repeat(20));

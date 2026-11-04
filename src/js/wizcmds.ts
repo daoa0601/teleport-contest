@@ -54,7 +54,7 @@ import { reassignInventoryLetters } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
 import { objectTypeKnown, setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
-import { flipSpecialLevel, flipSpecialLevelRandom } from './sp_lev.js';
+import { flip_level, flip_level_rnd } from './sp_lev.js';
 import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands } from './potion.js';
 import { startHeroVomiting } from './potion.js';
 import { propertyIsActive, propertyTimeout, refreshMovementProperties, setPropertyTimeout } from './properties.js';
@@ -908,8 +908,8 @@ export async function wizFlipLevel(): Promise<void> {
         const { answer } = await yn_function(
             'Flip 0=randomly, 1=vertically, 2=horizontally, 3=both:', '0123');
         if (answer && '0123'.includes(answer)) {
-            if (answer === '0') await flipSpecialLevelRandom(3, true);
-            else await flipSpecialLevel(Number(answer), true);
+            if (answer === '0') await flip_level_rnd(3, true);
+            else await flip_level(Number(answer), true);
             await docrt();
         } else await plineWithContinuation('Never mind.');
     }

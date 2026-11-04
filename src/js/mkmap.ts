@@ -6,7 +6,7 @@ import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { game, requireGameLevel } from './gstate.js';
 import { depth } from './hacklib.js';
-import { dig_corridor, wallifyMap } from './sp_lev.js';
+import { dig_corridor, wallify_map } from './sp_lev.js';
 import { somexy } from './mkroom.js';
 import { rn2, rnd } from './rng.js';
 import { isRoom } from './map_types.js';
@@ -178,7 +178,7 @@ export async function mkmap({
         level.nsubroom = 0;
     }
 
-    if (walled) wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
+    if (walled) wallify_map(1, 0, COLNO - 1, ROWNO - 1);
     if (lit) {
         for (let x = 1; x < COLNO; x++) {
             for (let y = 0; y < ROWNO; y++) {

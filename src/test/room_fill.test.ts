@@ -8,7 +8,7 @@ import {
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { fill_ordinary_room } from '../js/mklev.js';
-import { fillSpecialRoom } from '../js/sp_lev.js';
+import { fill_special_room } from '../js/sp_lev.js';
 import { mksobj } from '../js/mkobj.js';
 import { level_difficulty } from '../js/dungeon.js';
 import {
@@ -91,7 +91,7 @@ void test('an irregular beehive stocks its own floor and keeps the queen inside 
     boundary.roomno = ROOMOFFSET;
     boundary.edge = true;
 
-    await fillSpecialRoom(room);
+    await fill_special_room(room);
 
     assert.equal(level.monsters.length, floor.length);
     assert.ok(level.monsters.every(monster => floor.some(point =>
@@ -142,7 +142,7 @@ void test('a beehive subroom stocks around its nested child and relocates the qu
         }
     }
 
-    await fillSpecialRoom(parent);
+    await fill_special_room(parent);
 
     assert.equal(level.monsters.length, 55, 'each hive square outside the child receives a bee');
     for (const bee of level.monsters) {

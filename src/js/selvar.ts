@@ -755,15 +755,24 @@ export function specialSelectionOfTerrain(context: SelectionArea, typ: number) {
     return new SpecialSelection(selection);
 }
 
-// C sp_lev.c:set_floodfillchk_match_under() with floodfillchk_match_under():
-// the flood matches the starting square's own terrain.
+// C sp_lev.c:floodfillchk_match_under(). The terrain travels with the predicate instead of global state.
+function floodfillchk_match_under(x: number, y: number, terrain: number | undefined): boolean {
+    return game.level?.at?.(x, y)?.typ === terrain;
+}
+
+// C sp_lev.c:set_floodfillchk_match_under().
+function set_floodfillchk_match_under(terrain: number | undefined): (x: number, y: number) => boolean {
+    return (x, y) => floodfillchk_match_under(x, y, terrain);
+}
+
+// The Lua flood operation matches the starting square's terrain.
 export function specialSelectionFloodFill(context: SelectionArea, x: number, y: number, diagonals = false) {
     const start = absolute(context, x, y);
     if (!isok(start.x, start.y)) return new SpecialSelection();
     const terrain = game.level?.at?.(start.x, start.y)?.typ;
     return new SpecialSelection().floodFill(
         start.x, start.y, diagonals,
-        (nextX, nextY) => game.level?.at?.(nextX, nextY)?.typ === terrain,
+        set_floodfillchk_match_under(terrain),
     );
 }
 

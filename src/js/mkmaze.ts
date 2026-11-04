@@ -22,8 +22,8 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { deleteTrap, maketrap } from './trap.js';
 import { canOverwriteTerrain } from './display.js';
 import { stopLevelTimer } from './timeout.js';
-import { fillSpecialRoom, medusaPetrifiable } from './sp_lev.js';
-import { generateLuaSpecialLevel } from './sp_lev_lua.js';
+import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
+import { load_special } from './sp_lev_lua.js';
 import { goodPosition } from './teleport_rules.js';
 import {createCorpstatAt, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
 import { makemon } from './makemon.js';
@@ -273,14 +273,14 @@ export async function mkportal(x: number, y: number, dnum: number, dlevel: numbe
 
 async function generateMineFiller(active: ActiveSpecialLevel): Promise<void> {
     active.file = 'minefill.lua';
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateVladsTowerLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!/^tower[1-3]$/.test(active?.prototype))
         throw new RangeError(`unknown Vlad tower level ${active?.prototype}`);
     active.file = `${active.prototype}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateMinesEnd(active: ActiveSpecialLevel): Promise<void> {
@@ -288,7 +288,7 @@ export async function generateMinesEnd(active: ActiveSpecialLevel): Promise<void
         throw new RangeError(`unknown Mines' End layout ${active?.variant}`);
     }
     active.file = `minend-${active.variant}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateMinetown(active: ActiveSpecialLevel): Promise<void> {
@@ -297,9 +297,9 @@ export async function generateMinetown(active: ActiveSpecialLevel): Promise<void
         throw new RangeError(`unknown Minetown layout ${active?.variant}`);
     }
     active.file = `minetn-${active.variant}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 export function isLuaQuestPrototype(prototype: string): boolean {
@@ -309,23 +309,23 @@ export function isLuaQuestPrototype(prototype: string): boolean {
 export async function generateLuaQuestLevel(active: ActiveSpecialLevel): Promise<void> {
     if (!isLuaQuestPrototype(active?.prototype))
         throw new RangeError(`unknown quest level ${active?.prototype}`);
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     const level = requireGameLevel();
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 export async function generateOracleLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'oracle')
         throw new RangeError(`unknown Oracle level ${active?.prototype}`);
     active.file = 'oracle.lua';
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateBigRoom(active: ActiveSpecialLevel): Promise<void> {
     if (active.variant === undefined || active.variant < 1 || active.variant > 13)
         throw new RangeError(`unknown Big Room variant ${active?.variant}`);
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateElementalPlane(active: ActiveSpecialLevel): Promise<void> {
@@ -333,7 +333,7 @@ export async function generateElementalPlane(active: ActiveSpecialLevel): Promis
     if (active.prototype === 'air' || active.prototype === 'water')
         active.elementalBubbles = true;
     if (active.prototype === 'water') requireGameLevel().flags.waterlevel = true;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateEarthLevel(active: ActiveSpecialLevel): Promise<void> {
@@ -352,15 +352,15 @@ export async function generateAstralLevel(active: ActiveSpecialLevel): Promise<v
     if (active?.prototype !== 'astral')
         throw new RangeError(`unknown Astral level ${active?.prototype}`);
     active.file = 'astral.lua';
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateWizardLevel(active: ActiveSpecialLevel): Promise<void> {
     const level = requireGameLevel();
     active.file = `${active.prototype}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 export async function generateWizard3Level(active: ActiveSpecialLevel): Promise<void> {
@@ -374,7 +374,7 @@ export async function generateFakeWizardLevel(active: ActiveSpecialLevel): Promi
         throw new RangeError(`unknown false Wizard level ${active?.prototype}`);
     }
     active.file = `${active.prototype}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 export async function generateHellFillerLevel(active: ActiveSpecialLevel): Promise<void> {
@@ -382,16 +382,16 @@ export async function generateHellFillerLevel(active: ActiveSpecialLevel): Promi
     if (active?.prototype !== 'hellfill')
         throw new RangeError(`unknown Hell filler ${active?.prototype}`);
     active.file = 'hellfill.lua';
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 export async function generateMedusaLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active.variant === undefined || active.variant < 1 || active.variant > 4) {
         throw new RangeError(`unknown Medusa variant ${active?.variant}`);
     }
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
 }
 
 function medusaRoomPoint(room: Room): Position {
@@ -602,10 +602,10 @@ export async function generateSokobanLevel(active: ActiveSpecialLevel): Promise<
         );
     }
     active.file = `${active.prototype}-${active.variant}.lua`;
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     const level = requireGameLevel();
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 export async function generateSokobanLevel2(active: ActiveSpecialLevel): Promise<void> {
@@ -615,34 +615,16 @@ export async function generateSokobanLevel2(active: ActiveSpecialLevel): Promise
     await generateSokobanLevel(active);
 }
 
-// Fill the maze rectangle with the wall-and-pillar lattice level_init uses.
-// C sp_lev.c:lvlfill_maze_grid(): stone everywhere in corridor mazes, and
-// a (y < 2 || odd x, odd y) lattice otherwise.
-export function fillSpecialMazeGrid(filling = HWALL): void {
-    const level = requireGameLevel();
-    const mazeXMax = (COLNO - 1) & ~1;
-    const mazeYMax = (ROWNO - 1) & ~1;
-    for (let x = 2; x <= mazeXMax; x++) {
-        for (let y = 0; y <= mazeYMax; y++) {
-            const loc = level.at(x, y);
-            if (loc) {
-                loc.typ = level.flags.corrmaze
-                    ? STONE
-                    : (y < 2 || ((x % 2) && (y % 2)))
-                        ? STONE : filling;
-            }
-        }
-    }
-}
+
 
 export async function generateKnoxLevel(active: ActiveSpecialLevel): Promise<void> {
     if (active?.prototype !== 'knox')
         throw new RangeError(`unknown Knox level ${active?.prototype}`);
     active.file = 'knox.lua';
-    await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+    await generateSpecialAndFixup(load_special, active);
     const level = requireGameLevel();
     for (const room of level.rooms.slice(0, level.nroom))
-        if (isRoom(room)) await fillSpecialRoom(room);
+        if (isRoom(room)) await fill_special_room(room);
 }
 
 // C mkmaze.c:makemaz("") with no dungeon prototype or fill script.
@@ -751,10 +733,10 @@ export async function generateDungeonMazeFile(prototype: string): Promise<void> 
     else if (prototype === 'hellfill') await generateHellFillerLevel(active);
     else if (isLuaQuestPrototype(prototype)) await generateLuaQuestLevel(active);
     else {
-        await generateSpecialAndFixup(generateLuaSpecialLevel, active);
+        await generateSpecialAndFixup(load_special, active);
         const level = requireGameLevel();
         for (const room of level.rooms.slice(0, level.nroom))
-            if (isRoom(room)) await fillSpecialRoom(room);
+            if (isRoom(room)) await fill_special_room(room);
     }
 }
 
