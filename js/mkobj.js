@@ -30,7 +30,7 @@ import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { nameObjectFromTopten } from './topten.js';
 import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
-import { attachEggHatchTimer } from './egg.js';
+import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
 import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';

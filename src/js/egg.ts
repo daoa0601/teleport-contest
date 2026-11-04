@@ -1,5 +1,6 @@
 // Egg hatch timers.
-// C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
+// C refs: timeout.c hatch_egg(), claimed and finished around the port's
+// async continuation split; attach_egg_hatch_timeout() lives in timeout.ts.
 
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
@@ -61,7 +62,7 @@ import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMB
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
-import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
+import { scheduleObjectTimer } from './timeout.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 
@@ -339,33 +340,3 @@ export async function finishEggHatchTimer(
     return event;
 }
 
-// C timeout.c:attach_egg_hatch_timeout().
-export function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    if (remaining > 0) {
-        scheduleObjectTimer(
-            egg, OBJECT_TIMER_KIND.HATCH_EGG,
-            (game.moves ?? 0) + remaining, game,
-        );
-        return;
-    }
-    // timeout.c attach_egg_hatch_timeout(): reproduce the legacy per-turn
-    // hatch trial beginning at age 151.
-    for (let age = 151; age <= 200; age++) {
-        if (rnd(age) <= 150) continue;
-        scheduleObjectTimer(
-            egg, OBJECT_TIMER_KIND.HATCH_EGG,
-            (game.moves ?? 0) + age, game,
-        );
-        return;
-    }
-}
-
-// C timeout.c:attach_egg_hatch_timeout(), restarting a typed egg.
-export function restartEggHatchTimer(egg: GameObject | null | undefined) {
-    if (!egg || egg.otyp !== EGG) return null;
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    attachEggHatchTimer(egg);
-    return objectTimers(egg).find(timer =>
-        timer.kind === OBJECT_TIMER_KIND.HATCH_EGG) || null;
-}

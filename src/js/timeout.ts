@@ -1199,12 +1199,40 @@ export async function putHeroToSleep(turns: number, {
     return state._helplessTurns;
 }
 
+// C timeout.c:learn_egg_type().
 export function learnEggType(mnum: number, state: GameState) {
     const adult = monsterOlderForm(mnum);
     if (!Array.isArray(state.mvitals)) state.mvitals = [];
     const vital = state.mvitals[adult]
         || (state.mvitals[adult] = { mvflags: 0, born: 0, died: 0 });
     vital.mvflags = (vital.mvflags ?? 0) | MV_KNOWS_EGG;
+}
+
+// C timeout.c:attach_egg_hatch_timeout().
+export function attachEggHatchTimer(egg: GameObject, remaining = 0): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
+    if (remaining > 0) {
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + remaining, game,
+        );
+        return;
+    }
+    // The legacy per-turn hatch trial: age 151 through 200, hatching when
+    // a roll of the age itself beats 150.
+    for (let age = 151; age <= 200; age++) {
+        if (rnd(age) <= 150) continue;
+        scheduleObjectTimer(
+            egg, OBJECT_TIMER_KIND.HATCH_EGG,
+            (game.moves ?? 0) + age, game,
+        );
+        return;
+    }
+}
+
+// C timeout.c:kill_egg(): prevent an egg from ever hatching.
+export function killEgg(egg: GameObject | null | undefined): void {
+    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
 }
 
 // Saveable object and level-position timer ordering (folded from

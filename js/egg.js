@@ -1,5 +1,6 @@
 // Egg hatch timers.
-// C refs: timeout.c attach_egg_hatch_timeout()/hatch_egg().
+// C refs: timeout.c hatch_egg(), claimed and finished around the port's
+// async continuation split; attach_egg_hatch_timeout() lives in timeout.ts.
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { ingSuffix } from './hacklib.js';
 import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KIND } from './const.js';
@@ -14,7 +15,7 @@ import { makemonNear } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterOlderForm, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { objectTimers, scheduleObjectTimer, stopObjectTimer } from './timeout.js';
+import { scheduleObjectTimer } from './timeout.js';
 import { rn2, rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { tameMonster } from './dog.js';
@@ -283,29 +284,5 @@ export async function finishEggHatchTimer(event, state = game, currentTurn = sta
     event.finishPending = false;
     event.finished = true;
     return event;
-}
-// C timeout.c:attach_egg_hatch_timeout().
-export function attachEggHatchTimer(egg, remaining = 0) {
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    if (remaining > 0) {
-        scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + remaining, game);
-        return;
-    }
-    // timeout.c attach_egg_hatch_timeout(): reproduce the legacy per-turn
-    // hatch trial beginning at age 151.
-    for (let age = 151; age <= 200; age++) {
-        if (rnd(age) <= 150)
-            continue;
-        scheduleObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG, (game.moves ?? 0) + age, game);
-        return;
-    }
-}
-// C timeout.c:attach_egg_hatch_timeout(), restarting a typed egg.
-export function restartEggHatchTimer(egg) {
-    if (!egg || egg.otyp !== EGG)
-        return null;
-    stopObjectTimer(egg, OBJECT_TIMER_KIND.HATCH_EGG);
-    attachEggHatchTimer(egg);
-    return objectTimers(egg).find(timer => timer.kind === OBJECT_TIMER_KIND.HATCH_EGG) || null;
 }
 //# sourceMappingURL=egg.js.map

@@ -17,7 +17,7 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, 
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
 import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap } from './mondata.js';
-import { objectsInTimerGraph, stopObjectTimer } from './timeout.js';
+import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { reportMonsterTeleportRestriction, monsterTeleportRestricted, findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
@@ -227,7 +227,7 @@ export async function killGenocidedMonsters(state = game) {
         // was genocided.
         if (object.otyp !== EGG || !eggSpeciesWasGenocided(object, state))
             continue;
-        stopObjectTimer(object, OBJECT_TIMER_KIND.HATCH_EGG);
+        killEgg(object);
         sterileEggs.push(object);
     }
     return { killed, reshaped, sterileEggs };
