@@ -3411,7 +3411,9 @@ export async function applyTool(item, underlay) {
                 if (!monster.mtame)
                     game.context.forcefight = true;
                 try {
-                    return await do_attack(monster, x, y, { safeMonster });
+                    // force_attack() answers C's boolean: a declined
+                    // attack stopped the monster, so the whip does not snap.
+                    return (await do_attack(monster, x, y, { safeMonster })) !== false;
                 }
                 finally {
                     game.context.forcefight = savedForcefight;

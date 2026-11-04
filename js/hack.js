@@ -3873,10 +3873,19 @@ async function domoveCore(dx, dy) {
                 return true;
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
-        // The attempted move takes time unless attack_checks() cancels it.
-        game.context.move = 1;
-        if (await do_attack(monster, newx, newy, { safeMonster }))
-            return game.context.move !== 0;
+        // C hack.c:domove_attackmon_at(): do_attack() returns FALSE only
+        // when the target yields, and the step then continues through the
+        // ordinary move checks below.  Every stopped attack spends the
+        // action — dopay() bumps, displacement refusals, deaths and life
+        // saving alike — except attack_checks()'s free "Really attack?"
+        // refusal, which arrives as 'declined'.  The turn cost is read from
+        // that outcome, not from context.move: savelife() zeroes it
+        // mid-attack (C end.c) and the cmd seam overwrites it afterwards.
+        const attacked = await do_attack(monster, newx, newy, { safeMonster });
+        if (attacked === 'declined')
+            return false;
+        if (attacked)
+            return true;
     }
     // domove_core() snapshots the origin before test_move().  This includes
     // the terminal blocked step of a Shift-run, which is why later monster

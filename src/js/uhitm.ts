@@ -556,10 +556,15 @@ interface HeroAttackOptions {
     permission?: AppliedWeaponAttackPermission;
 }
 
-// C uhitm.c:do_attack().
+// C uhitm.c:do_attack().  Returns 'declined' for the one stop that spends
+// no time — attack_checks()'s paranoid "Really attack?" refusal, its own
+// context.move = 0 — so domove_core() can keep the turn unspent.  Every
+// other stop, and any completed attack (death and life saving included),
+// returns C's TRUE and spends the action; FALSE means the target yielded
+// and the step continues through the move checks.
 export async function do_attack(monster: Monster, x: number, y: number, {
     safeMonster = false, permission,
-}: HeroAttackOptions = {}): Promise<boolean> {
+}: HeroAttackOptions = {}): Promise<boolean | 'declined'> {
     requirePlayingGame(game);
     if (safeMonster && !game.context.forcefight
         && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
@@ -576,9 +581,9 @@ export async function do_attack(monster: Monster, x: number, y: number, {
             .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
         if ((blocked || inShop) && monster.isshk
             && !game.context.travel && !game.context.run) {
+            // C returns ECMD_TIME | dopay(): the bump spends the action
+            // even when dopay() buys nothing.
             await dopay();
-            // C forces ECMD_TIME even when dopay() buys nothing.
-            game.context.move = 1;
             return true;
         }
         if ((blocked || inShop) && tame) {
@@ -606,7 +611,7 @@ export async function do_attack(monster: Monster, x: number, y: number, {
     }
     const verdict = permission ?? await prepareAppliedWeaponAttack(monster, game.uwep ?? null,
         { state: game, struckAt: { x, y } });
-    if (!verdict.proceed) return true;
+    if (!verdict.proceed) return verdict.spentTime ? true : 'declined';
     const confirmationOverridden = verdict.confirmationOverridden ?? false;
     atk_done: {
         game._heroMeleeThisCommand = true;
