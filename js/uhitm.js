@@ -47,7 +47,7 @@ import { isZombieMaker } from './corpse_species.js';
 import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterLeashName, monsterName, monsterName as displayedMonsterName, namelessMonsterName, randomDisplayMonsterSubject } from './do_name.js';
-import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet, selectHeroDisenchantmentTarget } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroHasFreeAction, objectIsHardHelmet } from './do_wear.js';
 import { abusePetAfterHeroHit, tameMonster } from './dog.js';
 import { hurtleHero, hurtleMonster, objectBreaksOnImpact, releaseCameraDemon, staggerVerb, tryUnarmedStagger, willMonsterHurtle } from './dothrow.js';
 import { levelIsWaterLevel } from './dungeon.js';
@@ -2115,6 +2115,28 @@ export async function mhitmAdBlnd(call) {
         await applyMonsterCombatBlindness(attacker, defender, context.attack, context);
         return statusContinueResult(0);
     }
+}
+// C uhitm.c:mhitm_ad_ench() (mhitu branch): some_armor() picks a worn
+// piece — the torso layers in cloak/suit/shirt order, then each occupied
+// slot with an independent 1-in-4 replacement chance; with nothing worn,
+// the ring/amulet/blindfold rn2(5) fallback runs.
+function selectHeroDisenchantmentTarget(state, random, calls) {
+    let object = state?.uarmc || state?.uarm || state?.uarmu || null;
+    for (const candidate of [state?.uarmh, state?.uarmg, state?.uarmf, state?.uarms]) {
+        if (candidate && (!object || recordRandom(random, calls, 4) === 0)) {
+            object = candidate;
+        }
+    }
+    if (object)
+        return object;
+    const fallback = recordRandom(random, calls, 5);
+    return ([
+        null,
+        state?.uright || state?.u?.uright,
+        state?.uleft || state?.u?.uleft,
+        state?.uamul || state?.u?.uamul,
+        state?.ublindf || state?.u?.ublindf,
+    ][fallback] || null);
 }
 // C uhitm.c:mhitm_ad_ench().
 export async function mhitmAdEnch(call) {

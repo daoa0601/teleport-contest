@@ -33,9 +33,7 @@ import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, mons
 import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import { isBimanualObject, isSword, isFlimsyObject, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
-import type { PlayingGameState, GameState } from './game_state.js';
-import { recordRandom } from './monster_action_types.js';
-import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
+import type { GameState } from './game_state.js';
 import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging, heroMonsterForm } from './polyself.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { learnObjectType, observeObject } from './o_init.js';
@@ -528,34 +526,6 @@ export async function dowear(): Promise<void> {
     else await putOnAccessoryObject(object);
 }
 
-// C do_wear.c:some_armor(). Torso priority is deterministic; each later
-// occupied slot gets an independent one-in-four replacement opportunity.
-// mhitu.c's disenchantment attack and steal.c's gold-less theft both pick
-// their target through this pass.
-export function selectHeroDisenchantmentTarget(
-    state: PlayingGameState,
-    random: RandomBelow,
-    calls: MonsterCallLog,
-) {
-    let object = state?.uarmc || state?.uarm || state?.uarmu || null;
-    for (const candidate of [state?.uarmh, state?.uarmg, state?.uarmf, state?.uarms]) {
-        if (candidate && (!object || recordRandom(random, calls, 4) === 0)) {
-            object = candidate;
-        }
-    }
-    if (object) return object;
-    const fallback = recordRandom(random, calls, 5);
-    return (
-        [
-            null,
-            state?.uright || state?.u?.uright,
-            state?.uleft || state?.u?.uleft,
-            state?.uamul || state?.u?.uamul,
-            state?.ublindf || state?.u?.ublindf,
-        ][fallback] || null
-    );
-}
-
 // C donning()/doffing() inspect afternmv, not a separate armor timer.
 export function pendingArmorAction(state: GameState = game): ArmorCompletion | null {
     const after = state._afterMove;
@@ -728,11 +698,10 @@ async function offMessage(object: GameObject, state: GameState): Promise<void> {
     if (message) await plineWithContinuation(message);
 }
 
-// C do_wear.c:select_off(); invent.c:carrying_stoning_corpse() is the
-// petrifying-corpse check that guards taking gloves off.
-// C do_wear.c:better_not_take_that_off(): the paranoid confirmation before
-// taking off gloves while carrying a corpse that could turn the bearer to
-// stone.
+// C do_wear.c:select_off(); invent.c:carrying_stoning_corpse() feeds the
+// paranoid confirmation in betterNotTakeThatOff() below, which guards
+// taking gloves off while carrying a corpse that could turn the bearer
+// to stone.
 export async function canSelectOff(object: GameObject, slot: TakeoffSlot): Promise<boolean> {
     const weapon = takeoffSlotObject('uwep');
     const gloves = takeoffSlotObject('uarmg');
@@ -1074,7 +1043,7 @@ function restoreMap(underlay: MenuUnderlay | null): void {
     restoreMenuUnderlay(underlay);
 }
 
-// C do_wear.c:equip_ok(), inaccessible_equipment(), count_worn_stuff().
+// The four getobj equip verbs equipmentClassification() classifies.
 type EquipmentAction = 'wear' | 'put on' | 'take off' | 'remove';
 
 // C do_wear.c:equip_ok().
@@ -1747,11 +1716,17 @@ function grantArmorProperty(object: GameObject, state: GameState, property: Prop
     }
 }
 
-// C do_wear.c:Helmet_on(): the helm switch — fedora luck (applied by the
-// dispatcher for archeologists), caution's monster refresh, the
-// cornuthaum charisma swing, and the curse of dunce caps and opposite
-// alignment helms.
+// C do_wear.c:Helmet_on(): the helm switch — fedora luck for
+// archeologists, caution's monster refresh, the cornuthaum charisma
+// swing, and the curse of dunce caps and opposite alignment helms.
 async function applyHelmetOnEffects(object: GameObject, state: GameState): Promise<void> {
+    if (object.otyp === FEDORA) {
+        if (state.urole?.key === 'archeologist') {
+            // Helmet_on()/Helmet_off() use change_luck(), including its bounds.
+            state.u.uluck = Math.min(LUCKMAX, (state.u.uluck ?? 0) + 1);
+        }
+        return;
+    }
     if (object.otyp === CORNUTHAUM) {
         state.u.abon ??= { a: [0, 0, 0, 0, 0, 0] };
         state.u.abon.a[A_CHA] += state.urole?.key === 'wizard' ? 1 : -1;
@@ -1835,11 +1810,21 @@ function canObserveDisplacement(state: GameState): boolean {
         || heroDetectsMonsters(state);
 }
 
-// C do_wear.c:Cloak_on(): the cloak switch — protection is identified,
-// invisibility is announced, oilskin fits tightly, and the smock's acid
-// resistance is installed.  The elven-cloak stealth and displacement
-// branches live with the armor-on dispatcher below.
-async function applyCloakOnEffects(object: GameObject, state: GameState): Promise<void> {
+// C do_wear.c:Cloak_on(): the cloak switch — elven-cloak stealth, the
+// displacement notice, protection is identified, invisibility is
+// announced, oilskin fits tightly, and the smock's acid resistance is
+// installed.
+async function applyCloakOnEffects(
+    object: GameObject, state: GameState, initialDon: boolean,
+): Promise<string[]> {
+    if (object.otyp === ELVEN_CLOAK) {
+        if (!initialDon) await toggleArmorStealth(object, true, state);
+        return [];
+    }
+    if (object.otyp === CLOAK_OF_DISPLACEMENT) {
+        return !initialDon && !object._displacementWasActive && canObserveDisplacement(state)
+            ? [formatFeltMessage('that monsters have difficulty pinpointing your location.', state)] : [];
+    }
     switch (object.otyp) {
     case CLOAK_OF_PROTECTION: learnObjectType(object.otyp, state); break;
     case MUMMY_WRAPPING:
@@ -1862,6 +1847,7 @@ async function applyCloakOnEffects(object: GameObject, state: GameState): Promis
     case ALCHEMY_SMOCK: grantWornProperty('acidResistance', object, 'uarmc', state); break;
     default: break;
     }
+    return [];
 }
 
 async function applyCloakOffEffects(object: GameObject, state: GameState): Promise<void> {
@@ -1877,20 +1863,16 @@ async function applyCloakOffEffects(object: GameObject, state: GameState): Promi
 }
 
 // C do_wear.c:Armor_on() -> dragon_armor_handling().  Dragon armor's AC is
-// C do_wear.c:Helmet_on(): the archeologist's fedora luck credit runs at
-// this dispatcher so immediate and delayed wears share it.
-// The displacement cloak's toggle_displacement() message is composed
-// inline below instead of calling the shared helper.
 // active as soon as setworn() installs the slot, but these extrinsics and
-// their feedback are afternmv effects: they begin only when dressing reaches
-// multi == 0.  Return messages so allmain can preserve nomovemsg ordering.
+// their feedback are afternmv effects: they begin only when dressing
+// reaches multi == 0.  Return messages so allmain can preserve nomovemsg
+// ordering.
 // C do_wear.c:Boots_on(): the boot switch — water walking, levitation,
 // speed, fumbling, and elven stealth, with the AC-evident known flag.
 // C do_wear.c:Gloves_on(): gauntlets of power are identified and gauntlets
 // of fumbling start their rnd(20) timer; dexterity runs through the shared
-// adj_abon() credit below.
-// C do_wear.c:Cloak_on(): the elven-cloak and displacement branches that
-// share the dispatcher's property bookkeeping.
+// adj_abon() credit above.  Helmet_on() and Cloak_on() run whole in
+// applyHelmetOnEffects() and applyCloakOnEffects() above.
 export async function applyArmorOnEffects(object: GameObject, state: GameState = game, { initialDon = false }: ArmorOnOptions = {}): Promise<string[]> {
     if (object.otyp === LEVITATION_BOOTS || object.otyp === WATER_WALKING_BOOTS) requireLiveGame(state);
     const previousLevitation = object?._levitationBeforeWear
@@ -1915,11 +1897,7 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         delete object._waterWalkingWasInWater;
         return [];
     }
-    if (object?.otyp === FEDORA && state.urole?.key === 'archeologist') {
-        // Helmet_on()/Helmet_off() use change_luck(), including its bounds.
-        state.u.uluck = Math.min(LUCKMAX, (state.u.uluck ?? 0) + 1);
-        return [];
-    }
+
     if (armorSlotFor(object.otyp) === 'uarmh') {
         await applyHelmetOnEffects(object, state);
         return [];
@@ -1939,17 +1917,12 @@ export async function applyArmorOnEffects(object: GameObject, state: GameState =
         return [];
     }
 
-    if (object.otyp === ELVEN_CLOAK || object.otyp === ELVEN_BOOTS) {
+    if (object.otyp === ELVEN_BOOTS) {
         if (!initialDon) await toggleArmorStealth(object, true, state);
         return [];
     }
-    if (object.otyp === CLOAK_OF_DISPLACEMENT) {
-        return !initialDon && !object._displacementWasActive && canObserveDisplacement(state)
-            ? [formatFeltMessage('that monsters have difficulty pinpointing your location.', state)] : [];
-    }
     if (armorSlotFor(object.otyp) === 'uarmc') {
-        await applyCloakOnEffects(object, state);
-        return [];
+        return applyCloakOnEffects(object, state, initialDon);
     }
 
     if (object.otyp === SPEED_BOOTS) {
@@ -2194,8 +2167,9 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
     return true;
 }
 
-// C do_wear.c:Amulet_on()/Amulet_off(): the amulet of strangulation's
-// timed grip on the hero, and the Strangled predicate that reads it.
+// The amulet of strangulation's timed grip on the hero: the predicate
+// Amulet_on()/Amulet_off() and timeout's countdown share; the timed
+// value lives in strangledTurns.
 export function heroIsStrangled(state = game) {
     return !!state.u.strangled || (state.u.strangledTurns ?? 0) > 0;
 }
@@ -2578,18 +2552,6 @@ function simpleEyewearName(object: GameObject): string {
     return 'a blindfold';
 }
 
-// C do_wear.c:Blindf_on() installs eyewear with setworn(otmp, W_TOOL) after
-// releasing a wielded or quivered item through remove_worn_item(otmp, FALSE).
-async function equipEyewear(object: GameObject): Promise<void> {
-    await removeWornHeroItem(object, game, { unchainBall: false });
-    await setworn(object, W_TOOL, game);
-}
-
-// C do_wear.c:Blindf_off() clears the slot with setworn(0, otmp->owornmask).
-export async function unequipEyewear(object: GameObject, state: GameState = game): Promise<void> {
-    await setworn(null, W_TOOL, state);
-}
-
 async function announceWorn(object: GameObject): Promise<void> {
     const message = await objectWearMessage(object);
     if (message) await pline(message);
@@ -2620,9 +2582,10 @@ export function isEyewear(object: Pick<GameObject, 'otyp'> | null | undefined): 
     return !!object && [BLINDFOLD, LENSES, TOWEL].includes(object.otyp);
 }
 
-// C do_wear.c:Blindf_on(): setworn() runs here, not in the caller — the
-// on_msg(), the blindness transition, and the punished ball-and-chain
-// notice all follow the slot change.
+// C do_wear.c:Blindf_on(): setworn(otmp, W_TOOL) runs here, after
+// remove_worn_item(otmp, FALSE) releases a wielded or quivered copy, not
+// in the caller — the on_msg(), the blindness transition, and the punished
+// ball-and-chain notice all follow the slot change.
 export async function wearEyewear(object: GameObject | null | undefined, { checkHead = true }: { checkHead?: boolean } = {}): Promise<boolean> {
     if (!object || !isEyewear(object)) return false;
     if (checkHead && heroHasNoHead(game)) {
@@ -2638,7 +2601,8 @@ export async function wearEyewear(object: GameObject | null | undefined, { check
     }
 
     const wasBlind = heroIsBlind(game);
-    await equipEyewear(object);
+    await removeWornHeroItem(object, game, { unchainBall: false });
+    await setworn(object, W_TOOL, game);
     const blind = syncBlindness(game);
     await announceWorn(object);
     if (!wasBlind && blind) {
@@ -2660,10 +2624,10 @@ export async function wearEyewear(object: GameObject | null | undefined, { check
     return true;
 }
 
-// C do_wear.c:Blindf_off(): clear the eyewear slot, then report the
-// blindness transition — "still cannot see", the gulp check for regaining
-// sight, and the ball-and-chain notice when newly blinded.
-// setworn(0) is unequipEyewear() below.
+// C do_wear.c:Blindf_off(): clear the eyewear slot with
+// setworn(0, otmp->owornmask), then report the blindness transition —
+// "still cannot see", the gulp check for regaining sight, and the
+// ball-and-chain notice when newly blinded.
 export async function removeEyewear(object: GameObject | null = null, {
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<boolean> {
@@ -2672,7 +2636,7 @@ export async function removeEyewear(object: GameObject | null = null, {
     object ||= worn ?? null;
     if (!object || worn !== object) return false;
     const wasBlind = heroIsBlind(state);
-    await unequipEyewear(object, state);
+    await setworn(null, W_TOOL, state);
     const blind = syncBlindness(state);
     if (!noOffMessage && state.flags?.verbose !== false)
         await publish(await armorOffMessage(object, state));
