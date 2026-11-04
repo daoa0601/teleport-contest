@@ -10,7 +10,7 @@ import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
 import { getAdjacentLocation } from './cmd.js';
-import { CQ_CANNED, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL } from './const.js';
+import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL } from './const.js';
 import { isok } from './cmd.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
@@ -223,7 +223,7 @@ async function pickUpTraditionally(source, count) {
     let selection = null;
     if (objects.length >= 2) {
         await plineWithContinuation(`There are ${objects.length <= 10 ? 'several' : 'many'} objects here.`);
-        selection = await queryObjectClasses('pick up', source.objects);
+        selection = await query_classes('pick up', source.objects);
         if (!selection)
             return 'canceled';
         if (selection.menu !== 'none') {
@@ -898,31 +898,49 @@ export function pickupObjectClass(object) {
 }
 // C pickup.c:doloot().
 export async function doloot() {
-    await lootCommand({ unlockContainer: lootLockedContainer, chooseDirection: getAdjacentLocation });
+    await doloot_core();
 }
-// C pickup.c:do_loot_cont(): untrapping or applying a key takes precedence
-// over queuing #force, even when the player declines those earlier offers.
-async function lootLockedContainer(container, containerCount) {
-    if (!container.olocked)
-        return;
-    const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
-    await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
+// C pickup.c:do_loot_cont().
+async function do_loot_cont(container, containerIndex, containerCount, resetJustPicked) {
+    if (container.olocked) {
+        const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+        await pline(container.lknown ? `${name.charAt(0).toUpperCase()}${name.slice(1)} is locked.` : `Hmmm, ${name} turns out to be locked.`);
+        container.lknown = true;
+        const flags = autoUnlockFlags(game);
+        game.context.move = 0;
+        if (!flags)
+            return { spentTime: false, container };
+        game.u.dz = 0;
+        const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
+        if (tool || flags & AUTOUNLOCK_UNTRAP) {
+            game.context.move = Number(await pickLock(tool, { target: { x: game.u.ux, y: game.u.uy }, container }));
+            return { spentTime: !!game.context.move, container };
+        }
+        if (flags & AUTOUNLOCK_FORCE && containerCount === 1 && isForceableWeapon(game.uwep)) {
+            // The queued command owns its confirmation and any time spent
+            // (pickup.c:2141-2143).
+            cmdq_add_ec(CQ_CANNED, 'doforce');
+        }
+        return { spentTime: false, container };
+    }
     container.lknown = true;
-    const flags = autoUnlockFlags(game);
-    game.context.move = 0;
-    if (!flags)
-        return;
-    game.u.dz = 0;
-    const tool = flags & AUTOUNLOCK_APPLY_KEY ? autokey(true) : null;
-    if (tool || flags & AUTOUNLOCK_UNTRAP) {
-        game.context.move = Number(await pickLock(tool, { target: { x: game.u.ux, y: game.u.uy }, container }));
-        return;
+    if (container.otyp === BAG_OF_TRICKS) {
+        await plineWithContinuation(`You carefully open the ${objectCombatName(container)}...`);
+        await plineWithContinuation('It develops a huge set of teeth and bites you!');
+        const damage = rnd(10);
+        await loseHeroHp(propertyIsActive('halfPhysicalDamage') ? Math.ceil(damage / 2) : damage, 'carnivorous bag');
+        learnObjectType(BAG_OF_TRICKS);
+        return { spentTime: true, stopLooting: true, container };
     }
-    if (flags & AUTOUNLOCK_FORCE && containerCount === 1 && isForceableWeapon(game.uwep)) {
-        // The queued command owns its confirmation and any time spent
-        // (pickup.c:2141-2143).
-        cmdq_add_ec(CQ_CANNED, 'doforce');
-    }
+    // C wintty.c tty_display_nhwindow(NHW_MENU) pages a NEED_MORE
+    // topline before the menu is drawn, so do_loot_cont()'s pending
+    // "turns out to be locked" line is acknowledged with --More--
+    // ahead of use_container()'s prompt; nothing here discards it.
+    await flush_screen(1);
+    return await use_container(container, {
+        moreContainers: containerIndex < containerCount, underlay: snapshotMenuUnderlay(),
+        resetJustPicked,
+    });
 }
 // C pickup.c:able_to_loot(): floor-container admission for loot and tip.
 export async function ableToLoot(x, y, looting) {
@@ -954,9 +972,8 @@ export async function ableToLoot(x, y, looting) {
     }
     return true;
 }
-// C pickup.c:doloot_core()'s dispatch: container_at() tests the square for
-// lootable containers, and u_handsy() is the no-hands refusal above.
-export async function lootCommand(input) {
+// C pickup.c:doloot_core().
+export async function doloot_core() {
     game.context.move = 0;
     if (exceedsActionCapacity(game)) {
         await plineWithContinuation("You can't do that while carrying so much stuff.");
@@ -978,134 +995,113 @@ export async function lootCommand(input) {
         }
     }
     const { ux: x, uy: y } = game.u;
-    if (!game.iflags.menu_requested && await lootFloorContainers(x, y, input.unlockContainer))
-        return;
-    // C mon_beside(): MON_AT() over the 3x3 around the hero, so a long
-    // worm's tail segments count even when its head is farther away.
-    const beside = monBeside(x, y);
-    if (!beside && !game.iflags.menu_requested) {
-        await plineWithContinuation("You don't find anything here to loot.");
-        return;
-    }
-    const target = await input.chooseDirection('Loot in what direction?', 'Invalid loot location', x, y);
-    if (!target)
-        return;
-    const underfoot = target.x === x && target.y === y;
-    // C pickup.c:container_at(): any container at the spot admits looting.
-    const containers = (requireGameLevel().objects[target.x]?.[target.y] ?? []).some(isContainer);
-    if (underfoot && containers) {
-        await lootFloorContainers(x, y, input.unlockContainer);
-        return;
-    }
-    if (target.dz < 0) {
-        await plineWithContinuation(`You don't find anything to loot on the ${ceilingName(target.x, target.y, game)}.`);
-        game.context.move = 1;
-        return;
-    }
-    const monster = requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
-        && monster.mx === target.x && monster.my === target.y);
-    const result = monster ? await lootMonster(monster) : { asked: false, spentTime: false };
-    if (game.u.confused || (game.u.confusionTurns ?? 0) > 0
-        || game.u.stunned || (game.u.stunnedTurns ?? 0) > 0)
-        game.context.move = 1;
-    if (result.spentTime)
-        return;
-    if (!underfoot && containers) {
-        await plineWithContinuation(monster ? `You can't loot anything ${result.asked ? 'else ' : ''}there with ${monsterName(monster)} in the way.` : 'You have to be at a container to loot it.');
-    }
-    else
-        await plineWithContinuation(`You don't find anything ${result.asked ? 'else ' : ''}${underfoot ? 'here' : 'there'} to loot.`);
-}
-// C pickup.c:do_loot_cont(): the unlocked-container loot loop, including
-// the carnivorous bag of tricks bite.
-async function lootFloorContainers(x, y, unlock) {
-    const pile = requireGameLevel().objects[x]?.[y] ?? [];
-    const containers = pile.filter(isContainer);
-    if (!containers.length) {
-        if (requireGameLevel().requireAt(x, y).typ === GRAVE)
-            await plineWithContinuation('You need to dig up the grave to effectively loot it...');
-        return false;
-    }
-    if (!await ableToLoot(x, y, true))
-        return true;
-    for (const object of pile) {
-        if (willFeelPetrifyingCorpse(object)) {
-            await feelPetrifyingCorpse(object);
-            game.context.move = 1;
-            return true;
+    let checkFloor = !game.iflags.menu_requested;
+    let directionChosen = false;
+    for (;;) {
+        // The loop is C's lootcont label, revisited for an underfoot direction.
+        if (checkFloor) {
+            const pile = requireGameLevel().objects[x]?.[y] ?? [];
+            const containers = pile.filter(isContainer);
+            if (containers.length) {
+                if (!await ableToLoot(x, y, true))
+                    return;
+                for (const object of pile) {
+                    if (willFeelPetrifyingCorpse(object)) {
+                        await feelPetrifyingCorpse(object);
+                        game.context.move = 1;
+                        return;
+                    }
+                }
+                const items = [];
+                if (containers.length > 1) {
+                    for (const object of containers) {
+                        observeObjectForNaming(object);
+                        items.push({ text: await inventoryItemDescription(object), value: object });
+                    }
+                }
+                const selected = containers.length === 1 ? containers
+                    : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
+                        pageLocalKeys: true,
+                        sections: [{ items }], signalEscape: true });
+                if (selected === null)
+                    return;
+                if (selected.length) {
+                    let spentTime = false;
+                    let resetJustPicked = true;
+                    for (const [index, container] of selected.entries()) {
+                        const result = await do_loot_cont(container, index + 1, selected.length, resetJustPicked);
+                        if (result.tookOut)
+                            resetJustPicked = false;
+                        spentTime ||= result.spentTime;
+                        if (result.heroDied || result.stopLooting || !result.container)
+                            break;
+                    }
+                    game.context.move = spentTime ? 1 : 0;
+                    return;
+                }
+                if (directionChosen)
+                    return;
+            }
+            else if (requireGameLevel().requireAt(x, y).typ === GRAVE) {
+                await plineWithContinuation('You need to dig up the grave to effectively loot it...');
+            }
         }
-    }
-    const items = [];
-    if (containers.length > 1) {
-        for (const object of containers) {
-            observeObjectForNaming(object);
-            items.push({ text: await inventoryItemDescription(object), value: object });
+        if (!monBeside(x, y) && !game.iflags.menu_requested) {
+            await plineWithContinuation("You don't find anything here to loot.");
+            return;
         }
-    }
-    const selected = containers.length === 1 ? containers
-        : await showMultiSelectWindow({ title: 'Loot which containers?', omitHeadings: true,
-            pageLocalKeys: true,
-            sections: [{ items }], signalEscape: true });
-    if (selected === null)
-        return true;
-    if (!selected.length)
-        return false;
-    let spentTime = false;
-    let resetJustPicked = true;
-    for (const [index, container] of selected.entries()) {
-        if (container.olocked) {
-            await unlock(container, selected.length);
-            spentTime ||= !!game.context.move;
+        const target = await getAdjacentLocation('Loot in what direction?', 'Invalid loot location', x, y);
+        if (!target)
+            return;
+        const underfoot = target.x === x && target.y === y;
+        const containers = (requireGameLevel().objects[target.x]?.[target.y] ?? []).some(isContainer);
+        if (underfoot && containers) {
+            checkFloor = true;
+            directionChosen = true;
             continue;
         }
-        container.lknown = true;
-        if (container.otyp === BAG_OF_TRICKS) {
-            await plineWithContinuation(`You carefully open the ${objectCombatName(container)}...`);
-            await plineWithContinuation('It develops a huge set of teeth and bites you!');
-            const damage = rnd(10);
-            await loseHeroHp(propertyIsActive('halfPhysicalDamage') ? Math.ceil(damage / 2) : damage, 'carnivorous bag');
-            learnObjectType(BAG_OF_TRICKS);
-            spentTime = true;
-            break;
+        if (target.dz < 0) {
+            await plineWithContinuation(`You don't find anything to loot on the ${ceilingName(target.x, target.y, game)}.`);
+            game.context.move = 1;
+            return;
         }
-        // C wintty.c tty_display_nhwindow(NHW_MENU) pages a NEED_MORE
-        // topline before the menu is drawn, so do_loot_cont()'s pending
-        // "turns out to be locked" line is acknowledged with --More--
-        // ahead of use_container()'s prompt; nothing here discards it.
-        await flush_screen(1);
-        const result = await useContainer(container, {
-            moreContainers: index + 1 < selected.length, underlay: snapshotMenuUnderlay(),
-            resetJustPicked,
-        });
-        if (result.tookOut)
-            resetJustPicked = false;
-        spentTime ||= result.spentTime;
-        if (result.heroDied || result.stopLooting || !result.container)
-            break;
+        const monster = requireGameLevel().monsters.find(monster => monsterHasMapPosition(monster, game) && monster.mhp > 0
+            && monster.mx === target.x && monster.my === target.y);
+        const prevInquiry = !!monster && monster !== game.u.usteed && !!monsterSaddle(monster);
+        const timepassed = monster ? await loot_mon(monster) : 0;
+        if (game.u.confused || (game.u.confusionTurns ?? 0) > 0
+            || game.u.stunned || (game.u.stunnedTurns ?? 0) > 0)
+            game.context.move = 1;
+        if (timepassed)
+            return;
+        if (!underfoot && containers) {
+            await plineWithContinuation(monster ? `You can't loot anything ${prevInquiry ? 'else ' : ''}there with ${monsterName(monster)} in the way.` : 'You have to be at a container to loot it.');
+        }
+        else
+            await plineWithContinuation(`You don't find anything ${prevInquiry ? 'else ' : ''}${underfoot ? 'here' : 'there'} to loot.`);
+        return;
     }
-    game.context.move = spentTime ? 1 : 0;
-    return true;
 }
 // C pickup.c:loot_mon().
-async function lootMonster(monster) {
+async function loot_mon(monster) {
     let asked = false;
-    let spentTime = false;
+    let timepassed = 0;
     const saddle = monster !== game.u.usteed ? monsterSaddle(monster) : null;
     if (saddle) {
         asked = true;
         const name = monsterName(monster, { suppressSaddle: true });
         const answer = await promptYesNoQuit(`Do you want to remove the saddle from ${name}?`, 'n');
         if (answer === 'q')
-            return { asked, spentTime };
+            return timepassed;
         if (answer === 'y') {
             if (heroHasNoLimbs(game)) {
                 await plineWithContinuation("You can't do that without limbs.");
-                return { asked, spentTime };
+                return timepassed;
             }
             if (saddle.cursed) {
                 await plineWithContinuation(`You can't.  The saddle seems to be stuck to ${monsterName(monster, { suppressSaddle: true })}.`);
                 game.context.move = 1;
-                return { asked, spentTime: true };
+                return 1;
             }
             await removeObjectFromMonsterInventory(monster, saddle);
             if (game.flags.verbose !== false)
@@ -1114,9 +1110,8 @@ async function lootMonster(monster) {
             clearJustPicked(game);
             const held = await holdAnotherObject(saddle, { dropMessage: `You drop ${await inventoryItemDescription(saddle)}!` });
             markJustPicked(held.object);
-            rnd(3);
+            timepassed = rnd(3);
             game.context.move = 1;
-            spentTime = true;
         }
     }
     if (game.u.uswallow) {
@@ -1124,9 +1119,9 @@ async function lootMonster(monster) {
         // pickup.c:loot_mon() calls pickup() directly; only dopickup()
         // runs pickup_checks(), so an empty stomach costs no turn here.
         await pickupAtHero(asked ? 1 : 0, { runLocationChecks: false });
-        spentTime = !!game.context.move;
+        timepassed = Number(!!game.context.move);
     }
-    return { asked, spentTime };
+    return timepassed;
 }
 // C pickup.c:mon_beside(): any monster occupying one of the 3x3 squares
 // around (x, y), with MON_AT() counting worm tail segments.
@@ -1149,13 +1144,44 @@ async function containerDescription(object) {
     observeObjectForNaming(object);
     return await inventoryItemDescription(object);
 }
-// C pickup.c:dotip(). Floor containers first (menu when there are several,
-// choose_tip_container_menu() below), then the carried-object prompt, then
-// the spillage cases in tipOrdinaryObject().
-// C pickup.c:tip_ok(): containers and a known horn of plenty are
-// suggested; gold excluded; anything else merely selectable. The floor
-// count is container_at(x, y, TRUE).
-export async function tipCommand() {
+// C pickup.c:choose_tip_container_menu().
+async function choose_tip_container_menu(containers) {
+    const items = [];
+    for (const object of containers)
+        items.push({
+            text: await containerDescription(object), value: object,
+        });
+    if (game.inventory.length)
+        items.push({ selectable: false, text: '' }, {
+            ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
+            text: 'tip something being carried', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
+        });
+    const picked = await showMultiSelectWindow({ title: 'Tip which container?',
+        sections: [{ items }], pageLocalKeys: true,
+        omitHeadings: true, pickOne: true, signalEscape: true });
+    // pickup.c:choose_tip_container_menu() returns ECMD_CANCEL
+    // when the container menu is dismissed with Escape.
+    if (picked === null) {
+        commandResultCancelled();
+        return ECMD_CANCEL;
+    }
+    const source = picked.find(object => object !== null);
+    if (source) {
+        await tipContainer(source);
+        game.context.move = 1;
+        return ECMD_TIME;
+    }
+    return ECMD_OK;
+}
+// C pickup.c:tip_ok().
+function tip_ok(object) {
+    if (object.oclass === 12)
+        return GETOBJ_EXCLUDE;
+    return isContainer(object) || object.otyp === HORN_OF_PLENTY
+        && object.dknown && objectTypeKnown(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
+}
+// C pickup.c:dotip().
+export async function dotip() {
     game.context.move = 0;
     const { ux: x, uy: y } = game.u;
     // C pickup.c:container_at(x, y, TRUE): the count decides the tip menu.
@@ -1171,31 +1197,8 @@ export async function tipCommand() {
             canTip = await ableToLoot(x, y, false);
         if (canTip) {
             if (containers.length > 1) {
-                const items = [];
-                for (const object of containers)
-                    items.push({
-                        text: await containerDescription(object), value: object,
-                    });
-                if (game.inventory.length)
-                    items.push({ selectable: false, text: '' }, {
-                        ...(containers.length <= 8 && !game.flags.lootabc ? { key: 'i' } : {}),
-                        text: 'tip something being carried', value: null, itemFlags: MENU_ITEMFLAGS_SELECTED,
-                    });
-                const picked = await showMultiSelectWindow({ title: 'Tip which container?',
-                    sections: [{ items }], pageLocalKeys: true,
-                    omitHeadings: true, pickOne: true, signalEscape: true });
-                // pickup.c:choose_tip_container_menu() returns ECMD_CANCEL
-                // when the container menu is dismissed with Escape.
-                if (picked === null) {
-                    commandResultCancelled();
+                if (await choose_tip_container_menu(containers) !== ECMD_OK)
                     return;
-                }
-                const source = picked.find(object => object !== null);
-                if (source) {
-                    await tipContainer(source);
-                    game.context.move = 1;
-                    return;
-                }
             }
             else {
                 const source = containers[0];
@@ -1212,14 +1215,7 @@ export async function tipCommand() {
             }
         }
     }
-    // C pickup.c:tip_ok(): containers and a known horn of plenty are
-    // suggested; gold excluded; anything else merely selectable.
-    const object = await chooseInventoryObject('tip', object => {
-        if (object.oclass === 12)
-            return GETOBJ_EXCLUDE;
-        return isContainer(object) || object.otyp === HORN_OF_PLENTY
-            && object.dknown && objectTypeKnown(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
-    }, { forcePrompt: true });
+    const object = await chooseInventoryObject('tip', tip_ok, { forcePrompt: true });
     if (!object) {
         commandResultCancelled(); // pickup.c:dotip() getobj ECMD_CANCEL.
         return;
@@ -1229,10 +1225,6 @@ export async function tipCommand() {
         game.context.move = 1;
         return;
     }
-    await tipOrdinaryObject(object);
-}
-// C pickup.c:dotip(), spillage and ordinary-object cases.
-async function tipOrdinaryObject(object) {
     let spill = null;
     if ([TALLOW_CANDLE, WAX_CANDLE].includes(object.otyp) && object.lamplit)
         spill = 'wax';
@@ -1291,7 +1283,7 @@ async function tipDestination(source) {
     return { cancelled: picked === null, target: picked?.find(object => object !== null) ?? null };
 }
 // C pickup.c:tipcontainer_checks().
-async function tipChecks(source, target, allowEmpty) {
+async function tipcontainer_checks(source, target, allowEmpty) {
     if (target?.otyp === BAG_OF_TRICKS) {
         await useBagOfTricks(target);
         return false;
@@ -1311,9 +1303,33 @@ async function tipChecks(source, target, allowEmpty) {
         return false;
     }
     if (source.otyp === BAG_OF_TRICKS || source.otyp === HORN_OF_PLENTY) {
-        if (target && !await tipChecks(target, null, true))
+        if (target && !await tipcontainer_checks(target, null, true))
             return false;
-        await emptyChargedContainer(source, target);
+        const shopGoods = source.where !== 'inventory' && !!costlySpot(source.ox, source.oy) && !source.no_charge;
+        if (shopGoods)
+            await addShopObjectToBill(source, game, { ininv: false, silent: true });
+        const oldCharges = source.spe;
+        let seen = 0;
+        do {
+            if (source.otyp === BAG_OF_TRICKS) {
+                const result = await useBagOfTricks(source, { tipping: true });
+                if (!result.created)
+                    break;
+                seen += result.seen;
+            }
+            else if (!await useHornOfPlenty(source, { tipping: true, target }))
+                break;
+        } while (source.spe > 0 && !game.program_state.gameover);
+        if (source.spe < oldCharges) {
+            if (source.otyp === BAG_OF_TRICKS && !seen)
+                await plineWithContinuation('Nothing seems to happen.');
+            source.spe = oldCharges;
+            await chargeUnpaidUsage(source, { alternate: true });
+            source.spe = 0;
+            source.cknown = true;
+        }
+        if (shopGoods)
+            removeObjectAndContentsFromBill(source);
         return false;
     }
     if (isQuantumBox(source)) {
@@ -1331,43 +1347,15 @@ async function tipChecks(source, target, allowEmpty) {
     }
     return true;
 }
-// C pickup.c:tipcontainer_checks(), bag of tricks / horn of plenty branch.
-async function emptyChargedContainer(source, target) {
-    const shopGoods = source.where !== 'inventory' && !!costlySpot(source.ox, source.oy) && !source.no_charge;
-    if (shopGoods)
-        await addShopObjectToBill(source, game, { ininv: false, silent: true });
-    const oldCharges = source.spe;
-    let seen = 0;
-    do {
-        if (source.otyp === BAG_OF_TRICKS) {
-            const result = await useBagOfTricks(source, { tipping: true });
-            if (!result.created)
-                break;
-            seen += result.seen;
-        }
-        else if (!await useHornOfPlenty(source, { tipping: true, target }))
-            break;
-    } while (source.spe > 0 && !game.program_state.gameover);
-    if (source.spe < oldCharges) {
-        if (source.otyp === BAG_OF_TRICKS && !seen)
-            await plineWithContinuation('Nothing seems to happen.');
-        source.spe = oldCharges;
-        await chargeUnpaidUsage(source, { alternate: true });
-        source.spe = 0;
-        source.cknown = true;
-    }
-    if (shopGoods)
-        removeObjectAndContentsFromBill(source);
-}
 // C pickup.c:tipcontainer().
 async function tipContainer(source) {
     source.ox = game.u.ux;
     source.oy = game.u.uy;
     const destination = await tipDestination(source);
-    if (destination.cancelled || !await tipChecks(source, destination.target, false))
+    if (destination.cancelled || !await tipcontainer_checks(source, destination.target, false))
         return;
     const target = destination.target;
-    if (target && !await tipChecks(target, null, true))
+    if (target && !await tipcontainer_checks(target, null, true))
         return;
     const { ux: x, uy: y } = game.u;
     const held = source.where === 'inventory';
@@ -1443,12 +1431,12 @@ async function tipContainer(source) {
     if (target && target.where !== 'gone')
         target.owt = objectWeight(target);
     if (held || targetHeld)
-        await reportHeroEncumbrance();
+        await encumber_msg();
 }
 // C pickup.c:query_classes().
-// C pickup.c:count_categories() is the distinct-class count; invent.c
-// count_buc() (with the priest's free identification) is the statuses set.
-export async function queryObjectClasses(action, objects) {
+// collect_obj_classes() supplies the classes; tally_BUCX() supplies BUC
+// categories, including a priest's free identification.
+export async function query_classes(action, objects) {
     const classes = [...new Set(objects.map(object => object.oclass))];
     if (!classes.length)
         return null;
@@ -1500,7 +1488,8 @@ export async function queryObjectClasses(action, objects) {
             }
             else if (character === 'm')
                 menuSeen = true;
-            else if (isSpecialCategory(character)) {
+            else if (character === 'u' || character === 'P' || character === 'B'
+                || character === 'U' || character === 'C' || character === 'X') {
                 if (!categories.includes(character))
                     categories.push(character);
                 filtered = true;
@@ -1549,10 +1538,6 @@ export function matchesObjectCategories(object, selection) {
 export function hasBucCategory(selection) {
     return selection.categories.some(category => typeof category === 'string' && 'BUCX'.includes(category));
 }
-function isSpecialCategory(character) {
-    return character === 'u' || character === 'P' || character === 'B'
-        || character === 'U' || character === 'C' || character === 'X';
-}
 function bucCategory(object) {
     if (object.oclass === 12)
         return game.flags.goldX ? 'X' : 'U';
@@ -1578,41 +1563,49 @@ async function lookAtObjects(objects) {
 function hasUnpaidContents(object) {
     return !!object.unpaid || !!object.contents?.some(hasUnpaidContents);
 }
-// C pickup.c:encumber_msg(). The strained verb follows the hero's body.
-export function encumbranceMessage(previous, current, state) {
-    const stagger = monsterStagger(heroSpecies(state), 'stagger');
-    if (previous < current) {
-        return [
-            '',
-            'Your movements are slowed slightly because of your load.',
-            'You rebalance your load.  Movement is difficult.',
-            `You ${stagger} under your heavy load.  Movement is very hard.`,
-            'You can barely move a handspan with this load!',
-            "You can't even move a handspan with this load!",
-        ][current] || '';
-    }
-    if (previous > current) {
-        return [
-            'Your movements are now unencumbered.',
-            'Your movements are only slowed slightly by your load.',
-            'You rebalance your load.  Movement is still difficult.',
-            `You ${stagger} under your load.  Movement is still very hard.`,
-            '',
-            '',
-        ][current] || '';
-    }
-    return '';
-}
-// C pickup.c:encumber_msg(). Status reads nearCapacity() live; oldcap
-// records only the last completed encumbrance check.
-export async function reportHeroEncumbrance(state = game, publish = plineWithContinuation) {
+// C pickup.c:encumber_msg().
+export async function encumber_msg(state = game, publish = plineWithContinuation) {
     const previous = state._encumbranceLevel ?? 0;
     const capacity = nearCapacity(state);
-    const message = encumbranceMessage(previous, capacity, state);
+    let message = '';
+    if (previous < capacity) {
+        switch (capacity) {
+            case 1:
+                message = 'Your movements are slowed slightly because of your load.';
+                break;
+            case 2:
+                message = 'You rebalance your load.  Movement is difficult.';
+                break;
+            case 3:
+                message = `You ${monsterStagger(heroSpecies(state), 'stagger')} under your heavy load.  Movement is very hard.`;
+                break;
+            case 4:
+                message = 'You can barely move a handspan with this load!';
+                break;
+            case 5:
+                message = "You can't even move a handspan with this load!";
+                break;
+        }
+    }
+    else if (previous > capacity) {
+        switch (capacity) {
+            case 0:
+                message = 'Your movements are now unencumbered.';
+                break;
+            case 1:
+                message = 'Your movements are only slowed slightly by your load.';
+                break;
+            case 2:
+                message = 'You rebalance your load.  Movement is still difficult.';
+                break;
+            case 3:
+                message = `You ${monsterStagger(heroSpecies(state), 'stagger')} under your load.  Movement is still very hard.`;
+                break;
+        }
+    }
     if (message)
         await publish(message);
-    // pline() may wait for a pager. C requests the next status redraw and
-    // commits oldcap only after that message has returned.
+    // pline() can wait for a pager; C commits oldcap after it returns.
     if (previous !== capacity)
         state.context.botl = true;
     state._encumbranceLevel = capacity;
@@ -1853,11 +1846,6 @@ export async function chooseObjectCategories(title, objects) {
         }
     }
     return { matchers, autoSelect, ...(picked ? { justPickedCount: Math.max(0, picked.count) } : {}) };
-}
-function matchingObjects(objects, matchers) {
-    if (!matchers.length)
-        return [];
-    return objects.filter(object => matchers.some(matches => matches(object)));
 }
 async function selectionSections(objects, useInventoryLetters) {
     const ordered = sortObjects(objects, {
@@ -2235,17 +2223,17 @@ export async function takeFromContainer(container, object, state = game, count =
         message: pickupInventoryMessage(description, 'removing', state),
     };
 }
-// C traditional_loot()/askchain(): unlike pickup's floor loop, 'a' accepts
+// C pickup.c:traditional_loot(): unlike pickup's floor loop, 'a' accepts
 // every remaining eligible class, and a completed traversal prints a tail.
-async function lootTraditionally(container, putIn, resetPicked) {
+async function traditional_loot(container, putIn, resetPicked) {
+    if (!putIn)
+        game._pickupEncumbrance = 0;
     const objects = putIn ? game.inventory : container.contents ?? [];
-    const selection = await queryObjectClasses(putIn ? 'put in' : 'take out', objects);
+    const selection = await query_classes(putIn ? 'put in' : 'take out', objects);
     if (!selection)
         return { results: [], spentTime: false };
     if (selection.menu !== 'none')
-        return putIn
-            ? await putSelectedObjects(container, false, selection)
-            : await takeOutSelectedObjects(container, resetPicked, selection);
+        return await menu_loot(container, putIn, resetPicked, selection);
     const order = sortObjects(objects, { mode: SORTLOOT_INVLET });
     const passes = !selection.oneAtATime && selection.classes.length ? selection.classes : [null];
     const byCategory = selection.categories.some(category => typeof category === 'string');
@@ -2318,107 +2306,59 @@ async function lootTraditionally(container, putIn, resetPicked) {
         clearBypasses();
     }
 }
-// C pickup.c:menu_loot() with put_in=FALSE: category menu, then object
-// menu, then one transfer per selected stack.
-async function takeOutSelectedObjects(container, resetPicked, retry = null) {
+// C pickup.c:menu_loot().
+async function menu_loot(container, putIn, resetPicked = false, retry = null) {
     game._pickupEncumbrance = 0;
-    if (!container.contents?.length)
+    const candidates = putIn ? game.inventory : container.contents ?? [];
+    if (putIn ? !candidates.some(object => object !== container) : !candidates.length)
         return { results: [], spentTime: false };
-    if (game.flags.menu_style === MENU_TRADITIONAL && !retry)
-        return await lootTraditionally(container, false, resetPicked);
+    const action = putIn ? 'Put in' : 'Take out';
     const categories = retry ? { autoSelect: false, matchers: [
             (object) => retry.menu === 'all' || matchesObjectCategories(object, retry),
-        ] } : await chooseObjectCategories('Take out what type of objects?', container.contents);
-    const eligible = matchingObjects(container.contents, categories.matchers);
-    if (categories.matchers.length)
+        ] } : await chooseObjectCategories(`${action} what type of objects?`, candidates);
+    const eligible = candidates.filter(object => categories.matchers.some(matches => matches(object)));
+    if (!putIn && categories.matchers.length)
         container.cknown = true;
+    const onePicked = putIn && categories.justPickedCount !== undefined
+        && candidates.filter(object => object.pickup_prev).length === 1
+        ? candidates.find(object => object.pickup_prev) : null;
+    if (!categories.autoSelect && onePicked) {
+        // C's just-picked shortcut keeps a rejected split and uses a turn.
+        const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
+        const result = await putIntoContainer(container, transfer.object);
+        if (!result.moved && result.message)
+            await plineWithContinuation(result.message, { noRepeat: result.noRepeat ?? false });
+        return { results: [result], spentTime: true };
+    }
     const selected = categories.autoSelect
         ? eligible.map(value => ({ value, count: -1 }))
-        : await chooseObjects('Take out what?', eligible, false);
+        : await chooseObjects(`${action} what?`, eligible, putIn);
     const results = [];
     let resetJustPicked = resetPicked;
     for (const selection of selected) {
-        const transfer = splitForTransfer(selection.value, selection.count, game);
-        const result = await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked });
-        if (!result.moved)
-            await restoreRejectedSplit(transfer, game);
+        let result;
+        if (putIn) {
+            result = await putIntoContainer(container, selection.value, game, selection.count);
+        }
+        else {
+            const transfer = splitForTransfer(selection.value, selection.count, game);
+            result = await takeFromContainer(container, transfer.object, game, -1, { resetJustPicked });
+            if (!result.moved)
+                await restoreRejectedSplit(transfer, game);
+        }
         results.push(result);
-        if (result.message)
+        if (result.message && (!putIn || !result.moved))
             await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
-        if (result.moved) {
+        if (!putIn && result.moved) {
             resetJustPicked = false;
             if (selection.value.oclass === 12)
                 await bot();
         }
-        if (result.stop)
+        if (result.stop || putIn && result.destroyedContainer)
             break;
     }
     return { results, spentTime: categories.autoSelect
             ? results.some(result => result.moved) : selected.length > 0 };
-}
-// C pickup.c:menu_loot() with put_in=TRUE (and the stash-one path, whose
-// getobj filter is pickup.c:stash_ok() inlined below).
-async function putSelectedObjects(container, stashOne = false, retry = null) {
-    const menuStyle = game.flags.menu_style ?? MENU_FULL;
-    if (!stashOne && menuStyle === MENU_TRADITIONAL && !retry)
-        return await lootTraditionally(container, true, false);
-    if (!stashOne && (menuStyle !== MENU_TRADITIONAL || retry !== null))
-        game._pickupEncumbrance = 0;
-    // menu_loot queries the whole inventory; only stash-one uses ck_bag.
-    const candidates = stashOne
-        ? game.inventory.filter(object => object !== container) : game.inventory;
-    if (!candidates.some(object => object !== container))
-        return { results: [], spentTime: false };
-    let selected;
-    let spentTime = false;
-    if (stashOne) {
-        // C pickup.c:stash_ok(): ck_bag() leaves the container selectable.
-        const choice = await getobj('stash', object => object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
-        const object = choice.object;
-        if (!object)
-            return { results: [], spentTime: false };
-        // getobj() leaves unsplittable objects whole for in_container's refusal.
-        const unsplittable = (object.otyp === LOADSTONE && object.cursed) || weldedPrimary(object, game);
-        const count = unsplittable ? -1 : choice.count ?? -1;
-        selected = [{ value: object, count }];
-    }
-    else {
-        const categories = retry ? { autoSelect: false, matchers: [
-                (object) => retry.menu === 'all' || matchesObjectCategories(object, retry),
-            ] } : await chooseObjectCategories('Put in what type of objects?', candidates);
-        const eligible = matchingObjects(candidates, categories.matchers);
-        const onePicked = categories.justPickedCount !== undefined
-            && candidates.filter(object => object.pickup_prev).length === 1
-            ? candidates.find(object => object.pickup_prev) : null;
-        if (!categories.autoSelect && onePicked) {
-            // menu_loot's single just-picked path keeps a rejected split
-            // and charges a turn regardless of in_container's result.
-            const transfer = splitForTransfer(onePicked, categories.justPickedCount ?? -1, game);
-            const result = await putIntoContainer(container, transfer.object);
-            if (!result.moved && result.message)
-                await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
-            return { results: [result], spentTime: true };
-        }
-        selected = categories.autoSelect
-            ? eligible.map(value => ({ value, count: -1 }))
-            : await chooseObjects('Put in what?', eligible, true);
-        // The ordinary menu path also charges a turn for a selected item,
-        // including a rejection; auto-selection counts successful transfers.
-        spentTime = !categories.autoSelect && selected.length > 0;
-    }
-    const results = [];
-    for (const selection of selected) {
-        const result = await putIntoContainer(container, selection.value, game, selection.count);
-        results.push(result);
-        if (!result.moved && result.message)
-            await plineWithContinuation(result.message, { noRepeat: !result.moved && (result.noRepeat ?? false) });
-        // Stashing one item costs a turn even when it destroys the bag.
-        if (stashOne && (result.destroyedContainer || result.stop))
-            spentTime = true;
-        if (result.destroyedContainer || result.stop)
-            break;
-    }
-    return { results, spentTime: spentTime || results.some(result => result.moved) };
 }
 function actionKeys() {
     const menuStyle = game.flags.menu_style ?? MENU_FULL;
@@ -2477,146 +2417,166 @@ async function chooseAction(container, usedTime, moreContainers) {
         return moreContainers ? 'n' : 'q';
     return chosen === 27 ? 'q' : String.fromCharCode(chosen);
 }
-export async function useContainer(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
+// C pickup.c:stash_ok().
+function stash_ok(object, container) {
+    return object === container ? GETOBJ_EXCLUDE_SELECTABLE : GETOBJ_SUGGEST;
+}
+// C pickup.c:use_container().
+export async function use_container(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
     setSellDisposition(container.no_charge ? SELL_DONTSELL : SELL_DELIBERATE);
     try {
-        return await useContainerActions(container, { held, moreContainers, underlay, resetJustPicked });
+        if (heroHasNoHands(game)) {
+            await pline('You have no hands!');
+            return { spentTime: false, container };
+        }
+        if (!heroHasFreeHand(game)) {
+            await pline(`You have no free ${heroHandName()}.`);
+            return { spentTime: false, container };
+        }
+        container.contents ||= [];
+        container.lknown = true;
+        if (container.olocked) {
+            await plineWithContinuation(`${definiteObjectAction(container, 'are')} locked.`);
+            if (held)
+                await pline('You must put it down to unlock.');
+            return { spentTime: false, container };
+        }
+        if (container.otrapped) {
+            if (held) {
+                const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
+                await plineWithContinuation(`You open ${name}...`);
+            }
+            const trap = await triggerChestTrap(container);
+            if (!trap?.died && (game.multi ?? 0) >= 0) {
+                nomul(-1);
+                game._helplessReason = 'opening a container';
+                game._helplessDoneMessage = '';
+            }
+            return {
+                spentTime: true,
+                stopLooting: true,
+                heroDied: !!trap && 'died' in trap && trap.died,
+                container: trap?.destroyed ? null : container,
+            };
+        }
+        const quantumCat = isQuantumBox(container);
+        let spentTime = await observeQuantumCat(container);
+        let tookOut = false;
+        const cursedBag = container.otyp === BAG_OF_HOLDING && container.cursed && container.contents.length > 0;
+        const loss = await loseCursedBagContents(container, game);
+        if (loss) {
+            spentTime = true;
+            await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
+            updateContainerWeights(container);
+        }
+        const emptyMessage = container.contents.length ? ''
+            : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
+        const keys = actionKeys();
+        let action;
+        for (;;) {
+            action = await chooseAction(container, spentTime, moreContainers);
+            if (action === '?') {
+                const help = ['Container actions:', '',
+                    ' : -- Look: examine contents', ' o -- Out: take things out', ' i -- In: put things in',
+                    ' b -- Both: first take things out, then put things in',
+                    ' r -- Reversed: put things in, then take things out',
+                    ' s -- Stash: put one item in', '',
+                    ...(moreContainers ? [' n -- Next: loot next selected container'] : []),
+                    ' q -- Quit: finished', ' ? -- Help: display this text.', ''];
+                await showTextWindow(help);
+                continue;
+            }
+            if (action !== ':')
+                break;
+            if (!container.cknown)
+                spentTime = true;
+            await containerContents([container], false, false, true);
+            if (underlay)
+                restoreMenuUnderlay(underlay);
+        }
+        const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
+        const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
+        const putInFirst = action === keys.reverse;
+        if (takeOut && !putInFirst) {
+            if (!container.contents.length) {
+                if (!container.cknown)
+                    spentTime = true;
+                container.cknown = true;
+                await pline(emptyMessage);
+            }
+            else {
+                const transfer = game.flags.menu_style === MENU_TRADITIONAL
+                    ? await traditional_loot(container, false, resetJustPicked)
+                    : await menu_loot(container, false, resetJustPicked);
+                if (transfer.spentTime)
+                    spentTime = true;
+                tookOut = transfer.results.some(result => result.moved);
+            }
+        }
+        if (!game.program_state.gameover && (putIn || action === keys.stash)) {
+            const hasOtherInventory = (game.inventory || [])
+                .some(object => object !== container);
+            if (!hasOtherInventory) {
+                await pline(`You don't have anything${game.inventory.length ? ' else' : ''} to ${action === keys.stash ? 'stash' : 'put in'}.`);
+            }
+            else if (action === keys.stash) {
+                const choice = await getobj('stash', object => stash_ok(object, container), { forcePrompt: true, allowCount: true });
+                const object = choice.object;
+                if (object) {
+                    // getobj() leaves unsplittable objects whole for in_container's refusal.
+                    const unsplittable = object.otyp === LOADSTONE && object.cursed || weldedPrimary(object, game);
+                    const count = unsplittable ? -1 : choice.count ?? -1;
+                    const result = await putIntoContainer(container, object, game, count);
+                    if (!result.moved && result.message)
+                        await plineWithContinuation(result.message, { noRepeat: result.noRepeat ?? false });
+                    if (result.moved || result.destroyedContainer || result.stop)
+                        spentTime = true;
+                    if (result.destroyedContainer)
+                        return { spentTime, container: null };
+                }
+            }
+            else {
+                const transfer = game.flags.menu_style === MENU_TRADITIONAL
+                    ? await traditional_loot(container, true, false)
+                    : await menu_loot(container, true);
+                if (transfer.spentTime)
+                    spentTime = true;
+                if (transfer.results.some(result => result.destroyedContainer))
+                    return { spentTime, container: null };
+            }
+        }
+        if (!game.program_state.gameover && takeOut && putInFirst) {
+            if (!container.contents.length) {
+                if (!container.cknown)
+                    spentTime = true;
+                container.cknown = true;
+                await pline(emptyMessage);
+            }
+            else {
+                const transfer = game.flags.menu_style === MENU_TRADITIONAL
+                    ? await traditional_loot(container, false, resetJustPicked)
+                    : await menu_loot(container, false, resetJustPicked);
+                if (transfer.spentTime)
+                    spentTime = true;
+                tookOut = transfer.results.some(result => result.moved);
+            }
+        }
+        if (game.program_state.gameover)
+            return { spentTime: true, container, heroDied: true };
+        if (spentTime)
+            container.cknown = true;
+        if (underlay)
+            restoreMenuUnderlay(underlay);
+        // C pickup.c use_container() ends with no redraw of its own: the tty
+        // menu dismissal already restored the covered screen from the glyph
+        // buffer, and a map recomputation here would replace remembered glyphs
+        // (such as a just-wiped engraving) that the buffer still holds. The
+        // flush only repaints the current buffer, like native flush_screen().
+        await flush_screen(1);
+        return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
     }
     finally {
         setSellDisposition(SELL_NORMAL);
     }
-}
-// C pickup.c:loot_mon()/loot_cont() driver; the '?' help text is
-// pickup.c:explain_container_prompt() inlined below.
-async function useContainerActions(container, { held = false, moreContainers = false, underlay = null, resetJustPicked = false, } = {}) {
-    if (heroHasNoHands(game)) {
-        await pline('You have no hands!');
-        return { spentTime: false, container };
-    }
-    if (!heroHasFreeHand(game)) {
-        await pline(`You have no free ${heroHandName()}.`);
-        return { spentTime: false, container };
-    }
-    container.contents ||= [];
-    container.lknown = true;
-    if (container.olocked) {
-        await plineWithContinuation(`${definiteObjectAction(container, 'are')} locked.`);
-        if (held)
-            await pline('You must put it down to unlock.');
-        return { spentTime: false, container };
-    }
-    if (container.otrapped) {
-        if (held) {
-            const name = definiteName(objectCombatName(container, { includeCorpseSpecies: false }));
-            await plineWithContinuation(`You open ${name}...`);
-        }
-        const trap = await triggerChestTrap(container);
-        if (!trap?.died && (game.multi ?? 0) >= 0) {
-            nomul(-1);
-            game._helplessReason = 'opening a container';
-            game._helplessDoneMessage = '';
-        }
-        return {
-            spentTime: true,
-            stopLooting: true,
-            heroDied: !!trap && 'died' in trap && trap.died,
-            container: trap?.destroyed ? null : container,
-        };
-    }
-    const quantumCat = isQuantumBox(container);
-    let spentTime = await observeQuantumCat(container);
-    let tookOut = false;
-    const cursedBag = container.otyp === BAG_OF_HOLDING && container.cursed && container.contents.length > 0;
-    const loss = await loseCursedBagContents(container, game);
-    if (loss) {
-        spentTime = true;
-        await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
-        updateContainerWeights(container);
-    }
-    const emptyMessage = container.contents.length ? ''
-        : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
-    const keys = actionKeys();
-    let action;
-    for (;;) {
-        action = await chooseAction(container, spentTime, moreContainers);
-        if (action === '?') {
-            const help = ['Container actions:', '',
-                ' : -- Look: examine contents', ' o -- Out: take things out', ' i -- In: put things in',
-                ' b -- Both: first take things out, then put things in',
-                ' r -- Reversed: put things in, then take things out',
-                ' s -- Stash: put one item in', '',
-                ...(moreContainers ? [' n -- Next: loot next selected container'] : []),
-                ' q -- Quit: finished', ' ? -- Help: display this text.', ''];
-            await showTextWindow(help);
-            continue;
-        }
-        if (action !== ':')
-            break;
-        if (!container.cknown)
-            spentTime = true;
-        await containerContents([container], false, false, true);
-        if (underlay)
-            restoreMenuUnderlay(underlay);
-    }
-    const takeOut = [keys.takeOut, keys.both, keys.reverse].includes(action);
-    const putIn = [keys.putIn, keys.both, keys.reverse].includes(action);
-    const putInFirst = action === keys.reverse;
-    if (takeOut && !putInFirst) {
-        if (!container.contents.length) {
-            if (!container.cknown)
-                spentTime = true;
-            container.cknown = true;
-            await pline(emptyMessage);
-        }
-        else {
-            const transfer = await takeOutSelectedObjects(container, resetJustPicked);
-            if (transfer.spentTime)
-                spentTime = true;
-            tookOut = transfer.results.some(result => result.moved);
-        }
-    }
-    if (!game.program_state.gameover && (putIn || action === keys.stash)) {
-        const hasOtherInventory = (game.inventory || [])
-            .some(object => object !== container);
-        if (!hasOtherInventory) {
-            await pline(`You don't have anything${game.inventory.length ? ' else' : ''} to ${action === keys.stash ? 'stash' : 'put in'}.`);
-        }
-        else {
-            const transfer = await putSelectedObjects(container, action === keys.stash);
-            const results = transfer.results;
-            if (transfer.spentTime)
-                spentTime = true;
-            if (results.some(result => result.destroyedContainer)) {
-                return { spentTime, container: null };
-            }
-        }
-    }
-    if (!game.program_state.gameover && takeOut && putInFirst) {
-        if (!container.contents.length) {
-            if (!container.cknown)
-                spentTime = true;
-            container.cknown = true;
-            await pline(emptyMessage);
-        }
-        else {
-            const transfer = await takeOutSelectedObjects(container, resetJustPicked);
-            if (transfer.spentTime)
-                spentTime = true;
-            tookOut = transfer.results.some(result => result.moved);
-        }
-    }
-    if (game.program_state.gameover)
-        return { spentTime: true, container, heroDied: true };
-    if (spentTime)
-        container.cknown = true;
-    if (underlay)
-        restoreMenuUnderlay(underlay);
-    // C pickup.c use_container() ends with no redraw of its own: the tty
-    // menu dismissal already restored the covered screen from the glyph
-    // buffer, and a map recomputation here would replace remembered glyphs
-    // (such as a just-wiped engraving) that the buffer still holds. The
-    // flush only repaints the current buffer, like native flush_screen().
-    await flush_screen(1);
-    return { spentTime, container, tookOut, stopLooting: action === 'q' || action === '\x1b' };
 }
 //# sourceMappingURL=pickup.js.map

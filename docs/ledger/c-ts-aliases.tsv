@@ -79,7 +79,6 @@ tele	teleportHero
 u_wipe_engr	wipeHeroEngraving
 warnreveal	revealWarnedMonsters
 you_were	applyHeroWereChange
-encumber_msg	reportHeroEncumbrance
 hitum	attackWithHumanForm
 hitum_cleave	cleaveAroundTarget
 known_hitum	resolveHeroWeaponHit
@@ -228,7 +227,6 @@ spelleffects	castSpell
 dofindgem	applyFountainGemDiscovery
 jump	jumpHero
 kick_nondoor	kickNonDoorTerrain
-doloot_core	lootCommand
 domindblast	useHeroMindBlast
 dopoly	useHeroVampireShift
 doremove	useHeroNymphAbility

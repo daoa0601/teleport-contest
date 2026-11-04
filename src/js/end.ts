@@ -9,7 +9,7 @@ import {
 import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { cureHeroSickness } from './potion.js';
 import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { stopRemainingVolleyShots } from './hero_multishot.js';
@@ -179,7 +179,7 @@ export async function completeHeroLifeSaving(
 
     const change = adjustAttribute(A_CON, -1);
     if (change.changed && game.program_state.in_moveloop)
-        await reportHeroEncumbrance();
+        await encumber_msg();
 
     await restoreHeroAfterDeath({ deathType });
     if (game.program_state.gameover) return false;

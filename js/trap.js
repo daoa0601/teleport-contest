@@ -85,7 +85,7 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { setHeroGrip } from './mon.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
@@ -6130,7 +6130,7 @@ export async function floatHeroUp(state = game, previous = null) {
         await plineWithContinuation('You are no longer able to control your flight.');
     refreshMovementProperties(state);
     state.context.botl = true;
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
 }
 // C trap.c:float_down(hmask, emask).  The raw C bitmask arguments are kept:
 // hmask clears intrinsic levitation (TIMEOUT zeroes the timeout, I_SPECIAL
@@ -6167,7 +6167,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
             await plineWithContinuation(`You are no longer trying to float up from the ${hold}.`);
         }
         refreshMovementProperties(state);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         return 0;
     }
     state.context.botl = true;
@@ -6178,14 +6178,14 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
         if (propertyIsActive('flying', state)) {
             await plineWithContinuation('You have stopped levitating and are now flying.');
             refreshMovementProperties(state);
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
             return 1;
         }
     }
     if (hero.uswallow) {
         await plineWithContinuation(`You float down, but you are still ${monsterDigests(hero.ustuck) ? 'swallowed' : 'engulfed'}.`);
         refreshMovementProperties(state);
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
         return 1;
     }
     let ballTrap = null;
@@ -6298,7 +6298,7 @@ export async function floatHeroDown(hmask = 0, emask = 0, state = game, previous
     // Levitation gives maximum carrying capacity, so having it end can raise
     // encumbrance: after the landing messages, before traps and autopickup.
     refreshMovementProperties(state);
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
     // Falling through a trap door changes the level before this returns.
     const levelBefore = { dnum: hero.uz?.dnum, dlevel: hero.uz?.dlevel };
     if (trap && trap.ttyp !== STATUE_TRAP) {

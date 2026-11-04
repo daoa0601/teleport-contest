@@ -65,7 +65,7 @@ import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCannotVomit, nameToMonster } from './mondata.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 function petrificationMessage(turns, state) {
     if (turns === 5)
         return 'You are slowing down.';
@@ -646,7 +646,7 @@ export async function advanceHeroSickness({ state = game, publish = pline, die =
         await exerciseAttribute(A_CON, false, state);
         const change = adjustAttribute(A_CON, -1, state);
         if (change.changed && state._moveloopStarted)
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
         return { active: false, died: false, recovered: true, turns: 0 };
     }
     await publish('You die from your illness.', { urgent: true });

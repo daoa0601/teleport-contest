@@ -184,10 +184,10 @@ src/js/pickup.ts	loseCursedBagContents	rn2	"[""13""]"	constant
 src/js/pickup.ts	magicBagExplodes	rn2	"[""1 << Math.min(depth, 7)""]"	unproved
 src/js/pickup.ts	scatterBagContents	rn2	"[""13""]"	constant
 src/js/dokick.ts	containerImpactDamage	random	"[""3""]"	constant
-src/js/pickup.ts	lootCommand	rn2	"[""2""]"	constant
-src/js/pickup.ts	lootCommand	rn2	"[""6""]"	constant
-src/js/pickup.ts	lootFloorContainers	rnd	"[""10""]"	constant
-src/js/pickup.ts	lootMonster	rnd	"[""3""]"	constant
+src/js/pickup.ts	doloot_core	rn2	"[""2""]"	constant
+src/js/pickup.ts	doloot_core	rn2	"[""6""]"	constant
+src/js/pickup.ts	do_loot_cont	rnd	"[""10""]"	constant
+src/js/pickup.ts	loot_mon	rnd	"[""3""]"	constant
 src/js/pickup.ts	tipContainer	rn2	"[""13""]"	constant
 src/js/eat.ts	cpostfx	rn2	"[""2""]"	constant
 src/js/eat.ts	cpostfx	rn1	"[""100"", ""50""]"	constant

@@ -47,7 +47,7 @@ import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 
 const WEAPON_CLASS = 2;
 const SCROLL_CLASS = 9;
@@ -918,7 +918,7 @@ async function sharpenWormTeeth(uwep: GameObject, scrollType: number | null, sta
     /* update shop bill to reflect the new higher value */
     if (uwep.unpaid) updateUnpaidObjectPrice(uwep, state);
     if (scrollType !== null) learnObjectType(scrollType, state);
-    if (multiple) await reportHeroEncumbrance(state, pline);
+    if (multiple) await encumber_msg(state, pline);
 }
 
 // C chwepon() crysknife branch: degradation back into one worm tooth.
@@ -937,7 +937,7 @@ async function dullCrysknife(uwep: GameObject, scrollBknown: boolean | undefined
         uwep.owt = objectWeight(uwep);
     }
     if (scrollType !== null && scrollBknown) learnObjectType(scrollType, state);
-    if (multiple) await reportHeroEncumbrance(state, pline);
+    if (multiple) await encumber_msg(state, pline);
 }
 
 // C chwepon() bare-hands branch, including the cursed welded tin opener.

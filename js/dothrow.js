@@ -33,7 +33,7 @@ import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName } from './body_parts.js';
 import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley, endHeroVolley } from './hero_multishot.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile } from './potion.js';
 import { dist2, possessiveName } from './hacklib.js';
@@ -413,7 +413,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
             const stopVolley = await throwSelectedUnit(item, dx, dy, volley);
             if (game.program_state.gameover)
                 return;
-            await reportHeroEncumbrance(game);
+            await encumber_msg(game);
             if (game.program_state.gameover || stopVolley)
                 break;
         }

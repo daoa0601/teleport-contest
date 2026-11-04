@@ -1,7 +1,7 @@
 import { MONSTER_NAME } from '../js/monster_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { rhack } from '../js/cmd.js';
 import { flipCoin } from '../js/apply.js';
 import { AIR, DOOR, D_BROKEN, HUNGRY, NOT_HUNGRY, WATER, WEAK } from '../js/const.js';
@@ -98,14 +98,14 @@ void test('restore repeats the load warning for an already burdened hero', async
     await freshObjectRoom();
     dismissMessages();
     await addInventoryObject(BOULDER);
-    await reportHeroEncumbrance();
+    await encumber_msg();
     const warning = game._pending_message;
     assert.match(warning, /load/);
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);
     assert.equal(await restoreGame(game.plname, storage), true);
     clearMessageWindow();
-    await reportHeroEncumbrance();
+    await encumber_msg();
     assert.equal(game._pending_message, warning);
 });
 void test('restore recalculates the action sequence before a stethoscope is reused', async () => {

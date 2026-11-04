@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { bot, timebot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { GameDisplay } from '../js/game_display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -31,7 +31,7 @@ for (const load of [
     void test(`a step blocked by ${load.description} refreshes pending status`, async () => {
         await freshObjectRoom({ flags: { time: true }, hero: { uhp: 5, uen: 1, uenmax: 1 } });
         await addInventoryObject(ROCK, { quan: load.rocks });
-        await reportHeroEncumbrance(game);
+        await encumber_msg(game);
         clearMessageWindow();
         await bot();
         const { ux, uy } = game.u;

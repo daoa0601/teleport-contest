@@ -666,7 +666,7 @@ pickup	describe_decor	inlined	describeDecor on the no-pickup and unreachable bra
 pickup	menu_class_present	inlined	matchesObjectCategories tests B,U,C,X category picks (pickup.ts)
 pickup	newsym_force	inlined	newsym_force after a pick under an invisible hero (pickup.ts)
 pickup	nomul	inlined	endVoluntaryMultiTurn stops a real run over items (pickup.ts)
-pickup	query_classes	inlined	queryObjectClasses in the traditional path (pickup.ts)
+pickup	query_classes	inlined	query_classes in the traditional path (pickup.ts)
 pickup	read_engr_at	inlined	readFloorEngraving (pickup.ts)
 pickup	reset_justpicked	inlined	just-picked marks keyed on pickup_prev/justPickedCount (pickup.ts)
 pickup	t_at	inlined	level.traps.find for the pit check (pickup.ts)
@@ -1334,7 +1334,7 @@ weight_cap	acurr	inlined	currentAttribute(A_STR) in the capacity formula (weight
 weight_cap	acurrstr	inlined	currentStrength for exceptional strength (weight.ts)
 youhiding	enlght_line	inlined	hiding rows push contracted lines (insight.ts)
 youhiding	t_at	inlined	traps.find for the pit description (insight.ts)
-adjattrib	encumber_msg	inlined	reportHeroEncumbrance after STR changes; CON cannot change the band (attrib.ts)
+adjattrib	encumber_msg	inlined	encumber_msg after STR changes; CON cannot change the band (attrib.ts)
 adjust_split	digit	inlined	digit keys parsed in readInventorySplitCount (cmd.ts)
 Armor_off	dragon_armor_handling	inlined	removeArmorProperties drops color-specific extras (armor.ts)
 Armor_on	update_inventory	n/a	no persistent inventory window; perm_invent parsed only
@@ -1739,10 +1739,10 @@ prayer_done	change_luck	inlined	finishPrayerOccupation adjusts and clamps hero l
 prayer_done	wake_nearby	inlined	finishPrayerOccupation wakes monsters with wakeMonstersNearWithMessages at ulevel times twenty squared-distance units (pray.ts)
 precheck	dist2	inlined	checkMonsterWandBackfire computes squared coordinate offsets for nearby explosion feedback (muse.ts)
 precheck	mquaffmsg	inlined	prepareMonsterItemUse calls presentMonsterQuaff, retaining the visible and caller-level not-deaf branches (muse.ts)
-query_classes	add_valid_menu_class	inlined	queryObjectClasses keeps unique selected classes and special categories in its categories array (pickup.ts)
-query_classes	count_unpaid	inlined	queryObjectClasses recursively checks unpaid contents before offering the unpaid category (pickup.ts)
-query_classes	def_char_to_objclass	inlined	queryObjectClasses finds the selected class in OBJECT_CLASS_SYMBOLS (pickup.ts)
-query_classes	tally_BUCX	inlined	queryObjectClasses gathers BUC categories, priest knowledge, goldX, and pickup_prev before building the prompt (pickup.ts)
+query_classes	add_valid_menu_class	inlined	query_classes keeps unique selected classes and special categories in its categories array (pickup.ts)
+query_classes	count_unpaid	inlined	query_classes recursively checks unpaid contents before offering the unpaid category (pickup.ts)
+query_classes	def_char_to_objclass	inlined	query_classes finds the selected class in OBJECT_CLASS_SYMBOLS (pickup.ts)
+query_classes	tally_BUCX	inlined	query_classes gathers BUC categories, priest knowledge, goldX, and pickup_prev before building the prompt (pickup.ts)
 revive_egg	dead_species	inlined	eggSpeciesIsDead checks genocide of both the egg species and its younger form; extinction does not sterilize it (mon.ts)
 seffect_food_detection	food_detect	inlined	detectionEffect selects detectFood as the callback for the food-detection scroll (read.ts)
 seffect_gold_detection	trap_detect	inlined	detectionEffect selects detectTraps for a cursed gold-detection scroll (read.ts)
@@ -1941,7 +1941,7 @@ discover_object	update_inventory	n/a	update_inventory() refreshes the permanent-
 display_binventory	is_pool_or_lava	inlined	isPoolAt(x,y) || isLavaAt(x,y) inline (invent.ts displayBuriedInventory); dbridge.ts isPoolOrLavaAt is the same predicate
 display_binventory	undiscovered_artifact	inlined	the buried-list names come through the shared object naming layer, which applies the undiscovered-artifact suppression (objnam.c:1804); displayBuriedInventory itself only collects the piles
 zhitu	inventory_resistance_check	inlined	hasWornProperty('disintegrationResistance') && random(100) < 99 (hero_breath.ts hitWithDisintegration); the dwarvish-cloak 90% branch of u_adtyp_resistance_obj() only applies to cold and fire
-dotip	container_at	inlined	floor container scan with isContainer (pickup.ts tipCommand)
+dotip	container_at	inlined	floor container scan with isContainer (pickup.ts dotip)
 tipcontainer_checks	update_inventory	n/a	no perm_invent window on an 80x24 tty
 tipcontainer_gettarget	u_handsy	inlined	heroHasNoHands/heroHasFreeHand test prints the hands messages (pickup.ts tipDestination)
 cmdq_add_ec	alloc	n/a	memory allocation for the queue node

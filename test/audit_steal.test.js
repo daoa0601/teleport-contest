@@ -4,7 +4,7 @@ import { performMonsterHeroAttack } from '../js/mhitu.js';
 import { eatfood, doeat } from '../js/eat.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
-import { reportHeroEncumbrance } from '../js/pickup.js';
+import { encumber_msg } from '../js/pickup.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -124,7 +124,7 @@ void test('item theft announces the lighter load before the nymph tries to telep
     const thief = await nearbyThief();
     await addInventoryObject(LOADSTONE, { quan: 3 });
     theftMessages();
-    await reportHeroEncumbrance(game);
+    await encumber_msg(game);
     assert.ok((game._encumbranceLevel ?? 0) > 0);
     const messages = theftMessages();
     await performMonsterHeroAttack(thief, game, { random: () => 0, rollOne: () => 1 });

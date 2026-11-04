@@ -12,7 +12,7 @@ import {
     ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DBWALL, DB_MOAT, DB_NORTH, DRAWBRIDGE_UP, MSLOW, PIT, ROCKTRAP, SLP_GAS_TRAP,
     VIBRATING_SQUARE, WEB,
 } from '../js/const.js';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { reviveCorpseImmediately } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { fireDamageObject } from '../js/trap.js';
@@ -329,7 +329,7 @@ void test('a locked container keeps its personal name when opened', async () => 
     await freshObjectRoom();
     const chest = await floorObject(CHEST, 10, 10, { olocked: true, oextra: { oname: 'Cache' } });
 
-    await useContainer(chest);
+    await use_container(chest);
 
     assert.equal(game._pending_message, 'The chest named Cache is locked.');
 });

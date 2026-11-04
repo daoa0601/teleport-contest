@@ -95,7 +95,7 @@ import { seductionCompatibility } from './seduction_compatibility.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { objectTypeKnown } from './shk.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { finishHeroHelplessness } from './allmain.js';
 
@@ -2761,7 +2761,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
             const attribute = outcome === 1 ? A_CON : A_WIS;
             const change = adjustAttribute(attribute, -1, state);
             if (change.changed && attribute === A_CON && state._moveloopStarted)
-                await reportHeroEncumbrance(state);
+                await encumber_msg(state);
             await exerciseAttribute(attribute, false, state);
             state.context.botl = true;
         } else if (outcome === 3) {
@@ -2796,7 +2796,7 @@ async function seductionOutcome(context: SeductionContext): Promise<void> {
         const attribute = outcome === 1 ? A_CON : A_WIS;
         const change = adjustAttribute(attribute, 1, state);
         if (change.changed && attribute === A_CON && state._moveloopStarted)
-            await reportHeroEncumbrance(state);
+            await encumber_msg(state);
         await exerciseAttribute(attribute, true, state);
         state.context.botl = true;
     } else if (outcome === 3) {

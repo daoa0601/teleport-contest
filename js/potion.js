@@ -27,7 +27,7 @@ import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
 import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
 import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToErosion, captureLevitationState, floatHeroUp } from './trap.js';
@@ -894,7 +894,7 @@ async function drinkSickness(source, state) {
                 const change = adjustAttribute(attribute, resisted ? -1 : -rn1(4, 3), state);
                 if (change.changed && state._moveloopStarted
                     && (attribute === A_STR || attribute === A_CON))
-                    await reportHeroEncumbrance(state);
+                    await encumber_msg(state);
             }
             const damage = resisted ? 1 + rn2(2) : rnd(10) + 5 * Number(!!source.cursed);
             if (await loseHeroHp(damage, contaminant, {
@@ -922,7 +922,7 @@ async function increaseAttribute(attribute, reportFailure, state) {
     }
     if (change.changed && state._moveloopStarted
         && (attribute === A_STR || attribute === A_CON)) {
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
     }
     return change;
 }

@@ -30,7 +30,7 @@ import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { addInventoryItem } from './invent.js';
 
 import { pickupBurden } from './pickup.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { CORPSE, CRYSKNIFE, GOLD_PIECE, LOADSTONE } from './object_data.js';
 import { nearCapacity } from './hack.js';
 
@@ -109,7 +109,7 @@ export async function holdAnotherObject(object: GameObject, {
         if (state.flags.fixinv === false) reassignInventoryLetters();
         await publish(await heldInventoryMessage(object, count, holdMessage, state));
     }
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
     return { object, heroDied: !!state.program_state?.gameover };
 }
 

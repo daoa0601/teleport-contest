@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
 import { CHEST } from '../js/object_data.js';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { resetInputState } from '../js/input.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -42,7 +42,7 @@ for (const moreContainers of [false, true]) {
         });
         assert.equal(game.commandBindings.bindMenuKey(';'.charCodeAt(0), 'menu_search'), true);
         const input = resetInputState();
-        const result = await answerPrompts(useContainer(chest, { held: true, moreContainers }), input, [
+        const result = await answerPrompts(use_container(chest, { held: true, moreContainers }), input, [
             { prompt: /Do what with/, keys: moreContainers ? ';loot next container\n' : ';do nothing\n' },
         ]);
         assert.equal(result.spentTime, false, 'declining a container action costs no turn');

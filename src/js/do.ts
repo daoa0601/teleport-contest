@@ -68,7 +68,7 @@ import { landObjectOnAltar } from './altar_object.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { growMonster, setMonsterMalign } from './makemon.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { propertyIsActive } from './properties.js';
 import { dropBall } from './ball.js';
 import { requireHeroAttributes } from './hero_types.js';
@@ -757,7 +757,7 @@ export async function dropObjectAtHero(
             await map_object(stacked ?? object, false);
         await newsym(hero.ux, hero.uy); // remap location under self
     }
-    await reportHeroEncumbrance(state, publish);
+    await encumber_msg(state, publish);
     return object;
 }
 
@@ -1348,7 +1348,7 @@ export async function woundHeroLegs(side: 'left' | 'right' | 'both', turns: numb
     hero._woundedLegTurns = Math.max(hero._woundedLegTurns || 0, turns);
     if (!hero._woundedLegSide) hero._woundedLegSide = side;
     else if (hero._woundedLegSide !== side) hero._woundedLegSide = 'both';
-    await reportHeroEncumbrance(state, publish);
+    await encumber_msg(state, publish);
 }
 
 export async function healHeroLegs(state = game, {
@@ -1368,7 +1368,7 @@ export async function healHeroLegs(state = game, {
     hero._woundedLegTurns = 0;
     hero._woundedLegSide = null;
     if (cause === 'healing')
-        await reportHeroEncumbrance(state, publish);
+        await encumber_msg(state, publish);
     return true;
 }
 

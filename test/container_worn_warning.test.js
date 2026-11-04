@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { MENU_FULL, W_ARM, W_ARMF } from '../js/const.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -21,7 +21,7 @@ void test('putting everything in a bag warns once for consecutive worn items', a
             pagedMessages.push(top);
     };
     input.feed(`iaA\n${' '.repeat(20)}`);
-    await useContainer(sack, { held: true });
+    await use_container(sack, { held: true });
     assert.equal(pagedMessages.filter(line => /You cannot stash something you are wearing/.test(line)).length, 1);
     assert.ok(pagedMessages.some(line => /You put 4 .*food rations into the sack/.test(line)));
     assert.ok(sack.contents?.includes(food));

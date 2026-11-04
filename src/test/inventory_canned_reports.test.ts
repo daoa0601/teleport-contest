@@ -5,7 +5,7 @@ import { cmdq_peek } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryReport } from '../js/invent.js';
-import { queryObjectClasses } from '../js/pickup.js';
+import { query_classes } from '../js/pickup.js';
 
 import { DAGGER, POT_HEALING, RIN_PROTECTION } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -34,7 +34,7 @@ void test('looking at inventory during a class query consumes its queued invento
     queueCannedKeys(`i\n${dagger.invlet}\n`);
     input.feed(' \x1b');
 
-    const selection = await queryObjectClasses('put in', game.inventory);
+    const selection = await query_classes('put in', game.inventory);
 
     assert.equal(selection?.everything, false);
     assert.equal(selection?.oneAtATime, true);

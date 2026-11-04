@@ -8,7 +8,7 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import { A_CON, A_MAX, A_STR, Luck, ROOM, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, } from './attrib.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import { map_background, newsym, newsym_force, see_monsters, shieldeff, } from './display.js';
@@ -94,7 +94,7 @@ async function announceAttributeChange(attribute, amount, conditional) {
         await plineWithContinuation(message);
     if (result.changed && game._moveloopStarted
         && (attribute === A_STR || attribute === A_CON))
-        await reportHeroEncumbrance(game);
+        await encumber_msg(game);
     return result;
 }
 async function healHeroCompletely() {

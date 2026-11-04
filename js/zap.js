@@ -101,7 +101,7 @@ import { namelessMonsterName } from './do_name.js';
 import { disintegrateWornArmor, findArmorClass, heroHasDrainResistance, simpleArmorName } from './do_wear.js';
 import { finishMonsterEating } from './dogmove.js';
 import { restartEggHatchTimer } from './egg.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
 import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
@@ -2793,7 +2793,7 @@ export async function turnCarriedObjects(inventory, state = game) {
         }
     }
     if (heroInventory && revived)
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
     return revived;
 }
 export async function turnMonsterWithUndeadMagic(monster, source, state, options) {

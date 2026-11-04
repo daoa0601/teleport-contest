@@ -52,7 +52,7 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { pendingArmorAction } from './do_wear.js';
 import { nomul } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
-import { reportHeroEncumbrance } from './pickup.js';
+import { encumber_msg } from './pickup.js';
 import { touchPetrifies } from './stoning.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -345,7 +345,7 @@ export async function stealFromHero(monster, random, calls) {
     // It can first suspend while clearing the older worn-removal line; after
     // that acknowledgement, rloc() may append its own message to this one.
     await plineWithContinuation(`${thief} stole ${stolenObjectDescription}.`, { urgent: true });
-    await reportHeroEncumbrance(game);
+    await encumber_msg(game);
     const couldPetrify = object.otyp === CORPSE && touchPetrifies(object.corpsenm);
     object.how_lost = LOST_STOLEN;
     await addObjectToMonsterInventory(monster, object, game);
@@ -523,7 +523,7 @@ export async function stealHeroQuestObject(monster, state, publish, random, roll
     if ((monsterCanTeleport(monster.mnum))
         && !await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
-    await reportHeroEncumbrance(state);
+    await encumber_msg(state);
 }
 function chooseQuestTheftTarget(monster, state, rollOne) {
     let candidates = state.inventory.filter(object => artifactById(object.oartifact, state)?.questArtifact);
@@ -580,7 +580,7 @@ export async function maybeAbsorbItem(monster, object, state = game, ordinaryCha
         await freeInventoryObject(object, state);
         if (state.program_state.gameover)
             return;
-        await reportHeroEncumbrance(state);
+        await encumber_msg(state);
     }
     else if (canSpotMonster(monster)) {
         observeObjectForNaming(object, { state });

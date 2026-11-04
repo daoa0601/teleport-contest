@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MENU_COMBINATION, MENU_TRADITIONAL, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { useContainer } from '../js/pickup.js';
+import { use_container } from '../js/pickup.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -43,7 +43,7 @@ for (const { artifact, sight, detail } of [
             game.u.hallucinationTurns = 20;
         const input = resetInputState();
         input.feed('i)\n');
-        const action = useContainer(sack, { held: true });
+        const action = use_container(sack, { held: true });
         try {
             await input.waitUntilBlocked();
             const expectedName = new RegExp(`^Put in: .*${artifact}.*\\(weapon in right hand${detail}\\)\\?`);
@@ -65,7 +65,7 @@ void test('traditional take-out asks for classes and counts even for one contain
     const arrows = await knownObject(ARROW, { where: 'contained', container: sack, quantity: 5 });
     sack.contents = [arrows];
     const input = resetInputState();
-    const action = useContainer(sack, { held: true });
+    const action = use_container(sack, { held: true });
     try {
         await input.waitUntilBlocked();
         input.feed('o');
@@ -90,7 +90,7 @@ void test('traditional take-out cancellation preserves unknown contents and spen
     const arrow = await knownObject(ARROW, { where: 'contained', container: sack });
     sack.contents = [arrow];
     pushKeys('o\x1b');
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(sack.cknown, false);
     assert.equal(arrow.where, 'contained');
     assert.equal(result.spentTime, false);
@@ -109,7 +109,7 @@ for (const putIn of [false, true]) {
         recordObjectCall(POT_HEALING, callName);
         const input = resetInputState();
         input.feed(`${putIn ? 'i' : 'o'}!\n`);
-        const action = useContainer(sack, { held: true });
+        const action = use_container(sack, { held: true });
         try {
             await input.waitUntilBlocked();
             const prefix = putIn ? 'Put in: b - ' : 'Take out: ';
@@ -132,7 +132,7 @@ void test('traditional take-out leaves a cursed loadstone stack whole after a nu
     const stones = await knownObject(LOADSTONE, { where: 'contained', container: sack, quantity: 5, cursed: true });
     sack.contents = [stones];
     pushKeys('o*\n2\n' + ' '.repeat(12));
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(stones.quan, 5);
     assert.equal(stones.where, 'inventory');
     assert.equal(sack.contents.length, 0);
@@ -144,7 +144,7 @@ void test('traditional put-in a accepts remaining classes and excludes the conta
     const club = await addInventoryObject(CLUB, { invlet: 'b' });
     const food = await addInventoryObject(FOOD_RATION, { invlet: 'c' });
     pushKeys('iA\na' + ' '.repeat(20));
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(sack.where, 'inventory');
     assert.equal(sack.contents?.includes(club), true);
     assert.equal(sack.contents?.includes(food), true);
@@ -155,7 +155,7 @@ void test('traditional put-in reports no applicable objects when only its own cl
     const sack = await addInventoryObject(SACK, { invlet: 'a', cknown: true });
     const club = await addInventoryObject(CLUB, { invlet: 'b' });
     pushKeys('i(a\n' + ' '.repeat(12));
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(club.where, 'inventory');
     assert.equal(result.spentTime, false);
     assert.match(topline(), /No applicable objects\./);
@@ -170,7 +170,7 @@ void test('traditional take-out supports an item-menu fallback with an unpaid fi
             { bo_id: arrow.o_id, bquan: 1, price: 1, useup: false },
         ] });
     pushKeys('oum\na\n' + ' '.repeat(12));
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(arrow.where, 'inventory');
     assert.equal(food.where, 'contained');
     assert.equal(sack.cknown, true);
@@ -182,7 +182,7 @@ void test('combination container transfers use the item menu after the action pr
     const arrow = await knownObject(ARROW, { where: 'contained', container: sack });
     sack.contents = [arrow];
     const input = resetInputState();
-    const action = useContainer(sack, { held: true });
+    const action = use_container(sack, { held: true });
     try {
         await input.waitUntilBlocked();
         input.feed('o');
@@ -202,7 +202,7 @@ void test('looking through a traditional class query learns the contents without
     const food = await knownObject(FOOD_RATION, { where: 'contained', container: sack });
     sack.contents = [arrow, food];
     pushKeys('o:\n \x1b');
-    const result = await useContainer(sack, { held: true });
+    const result = await use_container(sack, { held: true });
     assert.equal(sack.cknown, true);
     assert.equal(arrow.where, 'contained');
     assert.equal(food.where, 'contained');
@@ -215,7 +215,7 @@ void test('looking at a lone contained item uses a top-line message before the n
     sack.contents = [arrow];
     const input = resetInputState();
     input.feed('o:\n');
-    const action = useContainer(sack, { held: true });
+    const action = use_container(sack, { held: true });
     try {
         await input.waitUntilBlocked();
         assert.match(topline(), /arrow.*--More--/);

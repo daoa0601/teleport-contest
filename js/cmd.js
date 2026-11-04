@@ -3,7 +3,7 @@ import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapS
 import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, recordMappedOverviewState } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
-import { doloot, pickupAtHero, tipCommand, autopickupAtHero } from './pickup.js';
+import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
@@ -1757,7 +1757,7 @@ const EXTENDED_COMMAND_HANDLERS = new Map([
     ['rub', dorub],
     ['lookaround', dolookaround],
     ['loot', doloot],
-    ['tip', tipCommand],
+    ['tip', dotip],
     ['force', doforce],
     ['exploremode', enterExploreMode],
     ['jump', dojump],
