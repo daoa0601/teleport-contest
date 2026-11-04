@@ -9,8 +9,7 @@ import type { GameObject } from './object_types.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { splitObjectStack } from './mkobj.js';
 
-import { unlinkObject, createObjectBase } from './mkobj.js';
-import { nextIdent } from './ident.js';
+import {unlinkObject, createObjectBase, nextIdent} from './mkobj.js';
 import { delobj } from './invent.js';
 import { markJustPicked } from './pickup.js';
 import { GOLD_PIECE } from './object_data.js';

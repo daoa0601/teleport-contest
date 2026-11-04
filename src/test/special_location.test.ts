@@ -3,9 +3,8 @@ import assert from 'node:assert/strict';
 
 import { DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, ROOM, STONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { mksobj } from '../js/mkobj.js';
+import {mksobj, placeCreatedObject} from '../js/mkobj.js';
 import { flush_screen } from '../js/display.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, SPACELOC, WET, getLocation, getLocationCoord } from '../js/special_location.js';

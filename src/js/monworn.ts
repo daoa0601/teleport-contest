@@ -31,10 +31,9 @@ import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MO
 import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_DELAY, OBJECT_PROPERTY, SADDLE, requireObjectData } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP } from './const.js';
-import { placeObject } from './floor_object.js';
 import { objectNoLongerHeld } from './do.js';
 import { deleteObject } from './shk.js';
-import { unlinkMonsterObject } from './mkobj.js';
+import {unlinkMonsterObject, placeObject} from './mkobj.js';
 import type { PropertyName } from './property_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';

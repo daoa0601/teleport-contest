@@ -4,8 +4,7 @@ import { DBWALL, DB_MOAT, DB_NORTH, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP } from 
 import { closeDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { placeCreatedObject } from '../js/floor_object.js';
-import { addCreatedObjectToContainer } from '../js/mkobj.js';
+import { addCreatedObjectToContainer, placeCreatedObject } from '../js/mkobj.js';
 import { BELL_OF_OPENING, ROCK, SACK } from '../js/object_data.js';
 import { punishHero } from '../js/read.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

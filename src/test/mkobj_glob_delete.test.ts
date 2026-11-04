@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { pushKeys } from '../js/input.js';
 import { GLOB_OF_GRAY_OOZE } from '../js/object_data.js';
 import { scheduleObjectTimer, stopObjectTimer } from '../js/timeout.js';

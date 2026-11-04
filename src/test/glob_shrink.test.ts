@@ -8,10 +8,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { A_CON, A_STR, ICE, W_WEP, OBJECT_TIMER_KIND } from '../js/const.js';
-import {
-    finishGlobTimer, runClaimedGlobTimer,
-} from '../js/glob.js';
-import { placeCreatedObject, stack_object } from '../js/floor_object.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
@@ -29,7 +25,7 @@ import { addInventoryItem } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { nearCapacity } from '../js/hack.js';
-import { objectWeight } from '../js/mkobj.js';
+import { objectWeight, finishGlobTimer, runClaimedGlobTimer, placeCreatedObject, stack_object } from '../js/mkobj.js';
 
 
 async function freshGlobState(seed = 1) {

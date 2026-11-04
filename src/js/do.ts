@@ -50,7 +50,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories } from './pickup.js';
 import { selectInventoryObject, inventoryClassOrder, lootSortMode, objectClassHeading, inventoryItemDescription, consumeInventoryItem, delobj, sortObjects } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import { objectQuantity, rejoinObjectStack, splitObjectStack } from './mkobj.js';
+import {objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, stack_object} from './mkobj.js';
 import { getLine, tty_yn_function } from './query.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -64,7 +64,6 @@ import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './lev
 import { hitFloorWithObject } from './dothrow.js';
 import { shipObject, containerImpactDamage } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { placeObject, stack_object } from './floor_object.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { growMonster, setMonsterMalign } from './makemon.js';

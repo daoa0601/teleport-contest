@@ -3,7 +3,7 @@
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS } from './const.js';
 import { applyHeroEggLuckPenalty, eggHasMonsterSpecies, eggIsStale, explodePyroliskEggAt, isPyroliskEgg, turnEggIntoRock, } from './egg_impact.js';
-import { placeObject } from './floor_object.js';
+import { placeObject } from './mkobj.js';
 import { game } from './gstate.js';
 import { useUpInventoryStack } from './hero_inventory.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';

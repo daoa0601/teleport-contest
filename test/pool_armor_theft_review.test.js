@@ -8,7 +8,7 @@ import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { LOST_NONE, LOST_STOLEN, MENU_PARTIAL, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { placeObject } from '../js/floor_object.js';
+import { placeObject } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState, pushKey, pushKeys } from '../js/input.js';

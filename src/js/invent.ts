@@ -45,7 +45,6 @@ import { heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
 
 import { discoverArtifact } from './artifacts.js';
-import { isContainer } from './container.js';
 import { isEdibleFood } from './food_selection.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -66,7 +65,6 @@ import { impossible } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 
 import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, settleGlobAbsorptionBilling, visitBilledShopkeepers } from './shk.js';
-import { announceGlobMerge } from './glob.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { assertCreatedObject } from './do.js';
@@ -77,7 +75,7 @@ import type { GameState } from './game_state.js';
 import { maybeUnhideAt } from './mon.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction } from './zap.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, isContainer, announceGlobMerge} from './mkobj.js';
 // invent.js — Inventory display and look-here commands.
 // C ref: invent.c — ddoinv(), display_inventory(), dolook().
 

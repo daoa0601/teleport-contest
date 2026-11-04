@@ -6,7 +6,6 @@ import { MFAST, MM_NOTAIL, NO_MINVENT, ROOM, OBJECT_TIMER_KIND } from '../js/con
 import { pline } from '../js/pline.js';
 import { doeat } from '../js/eat.js';
 import { initializePet } from '../js/dog.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { GameObject } from '../js/object_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -25,7 +24,7 @@ import { setPrimaryWeapon } from '../js/wield.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { objectWeight } from '../js/mkobj.js';
+import {objectWeight, placeCreatedObject} from '../js/mkobj.js';
 
 function terrainAt(x: number, y: number) {
     const location = requireGameLevel().at(x, y);

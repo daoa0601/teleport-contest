@@ -39,13 +39,8 @@ import { restoreLevelRegions } from './regions.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap.js';
-import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
-import {
-    addObjectToContainer, createCorpstatAt, curseObjectState,
-    linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight,
-    restoreMonsterInventoryOwnership,
-} from './mkobj.js';
+import {addObjectToContainer, createCorpstatAt, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, restoreMonsterInventoryOwnership, nextIdent, placeObjectSynchronously} from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
 import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
@@ -58,7 +53,6 @@ import { isok, paranoidQuery } from './cmd.js';
 import { dismountHero, monsterHasMapPosition } from './steed.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { setTwoWeaponCombat } from './wield.js';
-import { placeObjectSynchronously } from './floor_object.js';
 import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './apply.js';

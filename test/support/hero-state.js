@@ -8,7 +8,7 @@ import { swallowed } from '../../js/display.js';
 import { monsterEmitsLight, vision_recalc } from '../../js/vision.js';
 import { refreshMovementProperties } from '../../js/properties.js';
 import { A_INT, A_WIS, P_EXPERT, P_NUM_SKILLS, TT_BURIEDBALL, W_BALL, W_CHAIN, } from '../../js/const.js';
-import { placeCreatedObject } from '../../js/floor_object.js';
+import { placeCreatedObject } from '../../js/mkobj.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { HEAVY_IRON_BALL, IRON_CHAIN, RIN_POLYMORPH_CONTROL, } from '../../js/object_data.js';
 import { addInventoryObject, knownObject } from './game-objects.js';

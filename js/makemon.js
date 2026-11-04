@@ -18,7 +18,6 @@ import { level_difficulty, specialLevelAt } from './dungeon.js';
 import { hatchableEggSpecies } from './egg_species.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { depth as depth_of_level } from './hacklib.js';
-import { nextIdent } from './ident.js';
 import { beginObjectBurn } from './timeout.js';
 import { mkobj, mkobj_at, mksobj, rndmonnum, set_corpsenm, linkCreatedObjectToMonsterInventory, restoreMonsterInventoryOwnership, addCreatedObjectToContainer } from './mkobj.js';
 import { occupied } from './mkroom.js';
@@ -51,7 +50,7 @@ import { getShopItem } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import { shopkeeperName } from './shknam.js';
 import { inTown, roomForIndex } from './hack.js';
-import { objectWeight } from './mkobj.js';
+import { objectWeight, nextIdent } from './mkobj.js';
 // Object/class constants (normally from objects.js, not in contest template)
 const RANDOM_CLASS = 0;
 const WEAPON_CLASS = 2;

@@ -29,7 +29,6 @@ import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOn
 import type { ShopExitOutcome } from './shk.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects } from './invent.js';
-import { isContainer } from './container.js';
 import { finalConductLines, showFinalAttributes } from './insight.js';
 import { listGenocided, setVanqOrder, vanquishedLines, vanquishedTypeCount } from './insight.js';
 
@@ -39,7 +38,7 @@ import { artifactById } from './artifacts.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterHasProperName, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
-import { mksobj } from './mkobj.js';
+import {mksobj, isContainer, placeObjectSynchronously, stack_object} from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
@@ -66,7 +65,6 @@ import type { GameObject } from './object_types.js';
 import { collectLevelFollowers } from './dog.js';
 import { adjustedMonsterLevel } from './makemon.js';
 import { restoreBallAndChainPlacement } from './ball.js';
-import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { isAccessibleAt } from './monmove.js';
 import { resetHeroTrap } from './trap.js';
 

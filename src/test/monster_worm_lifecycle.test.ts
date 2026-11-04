@@ -11,13 +11,12 @@ import {
 import { reviveCorpseByMagic } from '../js/corpse_revival.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { initializePet, migrateMonsterOffLevel } from '../js/dog.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { gotoLevel } from '../js/level_change.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import {createCorpstatAt, placeCreatedObject} from '../js/mkobj.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

@@ -21,7 +21,7 @@ import { corpseName, killerObjectName, objectCombatName, objectName, observeObje
 import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './inventory_prompt.js';
 import { objectClassForType, objectMaterial } from './o_init.js';
-import { rejoinObjectStack, linkObjectToMonsterInventory } from './mkobj.js';
+import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
 import { promptDirection } from './cmd.js';
@@ -81,7 +81,6 @@ import { hiddenGold } from './vault.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { hasShopkeeperData, requireShopGame } from './shop_types.js';
-import { placeObjectSynchronously, stack_object } from './floor_object.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { finishMonsterEating } from './dogmove.js';
 const M2_ROCKTHROW = 0x08000000;

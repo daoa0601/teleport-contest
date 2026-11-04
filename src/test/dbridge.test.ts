@@ -17,8 +17,7 @@ import { destroyDrawbridge, openDrawbridge } from '../js/dbridge.js';
 import {
     AMULET_OF_LIFE_SAVING, BOULDER, ROCK, WOODEN_HARP,
 } from '../js/object_data.js';
-import { placeCreatedObject } from '../js/floor_object.js';
-import { mksobj } from '../js/mkobj.js';
+import {mksobj, placeCreatedObject} from '../js/mkobj.js';
 import { knownObject } from './support/game-objects.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';
 import {

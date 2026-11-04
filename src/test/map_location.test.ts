@@ -6,11 +6,10 @@ import {
     ROOM, STONE, VWALL,
 } from '../js/const.js';
 import { canSeeMonster, canSpotMonster, map_location, map_object } from '../js/display.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { GameMap } from '../js/game.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { mksobj } from '../js/mkobj.js';
+import {mksobj, placeCreatedObject} from '../js/mkobj.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { createHarmlessGasCloudSelection } from '../js/regions.js';

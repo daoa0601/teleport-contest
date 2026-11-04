@@ -18,7 +18,7 @@ import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_mons
 import type { HeroLiquidMonsterDeathOutcome, HeroMonsterKillOptions } from './hero_monster_death.js';
 import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } from './hack.js';
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
-import { remove_object, updateIceObjectTimersAt } from './floor_object.js';
+import {remove_object, updateIceObjectTimersAt} from './mkobj.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { MONSTER_FLAGS1, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterSpeciesHidesOnCeiling } from './monster_data.js';
 import { BOULDER } from './object_data.js';

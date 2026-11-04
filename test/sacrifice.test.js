@@ -13,7 +13,6 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
 import { terrain_glyph } from '../js/display.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { rhack } from '../js/cmd.js';
@@ -34,7 +33,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { saveMonsterTraits } from '../js/mkobj.js';
+import { saveMonsterTraits, placeCreatedObject } from '../js/mkobj.js';
 async function freshAltar({ alignment = 0, high = false, hero = {}, ...room } = {}) {
     await freshObjectRoom({
         ...room,

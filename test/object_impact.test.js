@@ -6,7 +6,7 @@ import { objectTimers, scheduleObjectTimer, stopObjectTimer } from '../js/timeou
 import { OBJECT_TIMER_KIND } from '../js/const.js';
 import { disturbBuriedZombies, impactDisturbsZombies } from '../js/hack.js';
 import { addBuriedObject } from '../js/dig.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function buriedZombieAt(x, y, deadline, state = game) {

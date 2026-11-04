@@ -7,7 +7,6 @@ import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBAS
 import { isok } from './cmd.js';
 import { canSpotMonster, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { unlinkObject } from './mkobj.js';
 import { petrifyMonsterFromContact } from './trap.js';
@@ -31,7 +30,7 @@ import { addShopObjectToBill, costlySpot } from './shk.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
-import { splitObjectStack } from './mkobj.js';
+import { splitObjectStack, placeObject, stack_object } from './mkobj.js';
 import { observeObject } from './o_init.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';

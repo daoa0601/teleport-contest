@@ -33,8 +33,7 @@ import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from '.
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
 import { disturbGrave } from './engrave.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
-import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';
+import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, stack_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, OBJECT_BIMANUAL, BAG_OF_HOLDING, BAG_OF_TRICKS, OBJECT_COST, APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR } from './object_data.js';
 import { convertSecretDoor, findTrap } from './detect.js';
@@ -74,7 +73,6 @@ import { hasShopkeeperData } from './shop_types.js';
 import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { isContainer } from './container.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { currency } from './currency.js';

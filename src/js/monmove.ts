@@ -40,7 +40,7 @@ import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.j
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { splitObjectStack, mksobj } from './mkobj.js';
+import {splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer} from './mkobj.js';
 import { tryCallObjectType } from './do.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
@@ -84,7 +84,6 @@ import { applyMonsterPolymorphTrap, finishMonsterPolymorphTrap } from './trap.js
 import { beginMonsterRustTrap, finishMonsterRustTrap } from './trap.js';
 import { heroGoldObject } from './hero_gold.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
-import { placeCreatedObject, placeObjectSynchronously, stack_object } from './floor_object.js';
 import { canLetGo } from './hero_inventory.js';
 import { canFallThrough } from './mklev.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
@@ -101,7 +100,6 @@ import { monsterReflectsRay } from './muse.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { rndmonstAdj, growMonster } from './makemon.js';
-import { isContainer } from './container.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { ceilingName } from './terrain_name.js';
 import { inventoryItemDescription, delobj } from './invent.js';

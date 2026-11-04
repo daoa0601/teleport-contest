@@ -6,7 +6,7 @@ import { game } from '../js/gstate.js';
 import { placeHeroOnLevel } from '../js/hero_location.js';
 import { selectInventoryObject } from '../js/invent.js';
 import { DART, FOOD_RATION, GOLD_PIECE, HELMET, LEATHER_ARMOR } from '../js/object_data.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

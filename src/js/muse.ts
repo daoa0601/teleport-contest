@@ -38,7 +38,6 @@ import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { monsterIsScaredAt, makeMonsterFlee, monsterWantsFloorObject, isAccessibleAt } from './monmove.js';
-import { isContainer } from './container.js';
 import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { canLetGo, finishInventoryRemoval } from './hero_inventory.js';
@@ -49,10 +48,9 @@ import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 
 import { tryCallObjectType, dropObjectAtHero } from './do.js';
-import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight } from './mkobj.js';
+import {splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
-import { placeObjectSynchronously, sweepFloorPile } from './floor_object.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';

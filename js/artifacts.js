@@ -11,7 +11,7 @@ import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt, objectTypeKnown } from './shk.js';
-import { mksobj, objectWeight, objectQuantity } from './mkobj.js';
+import { mksobj, objectWeight, objectQuantity, isContainer } from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races, roles } from './roles.js';
 import { objectClassForType, recordObjectEncounter, objectMaterial } from './o_init.js';
@@ -26,7 +26,6 @@ import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResi
 import { see_monsters, glyphAt, canSeeMonster, newsym } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty } from './properties.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { isContainer } from './container.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
 import { getRumor } from './mklev.js';
 import { exerciseAttribute } from './attrib.js';

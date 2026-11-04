@@ -1,6 +1,6 @@
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rotCorpse } from './corpse_rot.js';
-import { mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, curseObjectState, deallocateObject, objectWeight } from './mkobj.js';
+import {mksobj, mksobj_at, mkobj, mkobj_at, mkgold, createCorpstatAt, set_corpsenm, rndmonnum, rndmonnumAdj, discardMonsterInventory, linkObjectToMonsterInventory, restoreMonsterInventoryOwnership, curseObjectState, deallocateObject, objectWeight, nextIdent, placeCreatedObject, stack_object, updateIceObjectTimersAt} from './mkobj.js';
 import { oinit, objectMaterial } from './o_init.js';
 import type { GameObject, ObjectWhere } from './object_types.js';
 import type { Monster, MonsterBirthState, PetData } from './monster_types.js';
@@ -31,8 +31,6 @@ import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath, scoreDeathCause } from './end.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { nextIdent } from './ident.js';
-import { placeCreatedObject, stack_object, updateIceObjectTimersAt } from './floor_object.js';
 import { addBuriedObject, buryObject, unearthFloorObjectsAt } from './dig.js';
 import { GameMap } from './game.js';
 import { ageStoresFuel } from './pickup.js';

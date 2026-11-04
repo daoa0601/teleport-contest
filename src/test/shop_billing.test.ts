@@ -23,7 +23,7 @@ import {
     splitObjectBill
 } from '../js/shk.js';
 import { settleThrownShopObject } from '../js/dothrow.js';
-import { splitObjectStack } from '../js/mkobj.js';
+import {splitObjectStack, placeCreatedObject, placeObject} from '../js/mkobj.js';
 import { mergeObjectStacks } from '../js/invent.js';
 
 
@@ -31,9 +31,6 @@ import { pickupAtHero } from '../js/pickup.js';
 import {
     floorObject, knownObject, uninitializedObject,
 } from './support/game-objects.js';
-import {
-    placeCreatedObject, placeObject,
-} from '../js/floor_object.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { checkSpecialRoom } from '../js/hack.js';

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT, ROOM, STONE } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt, monsterAtPosition } from '../js/steed.js';

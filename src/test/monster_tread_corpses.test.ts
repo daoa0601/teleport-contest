@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buryObject } from '../js/dig.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

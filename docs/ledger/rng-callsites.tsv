@@ -422,8 +422,8 @@ src/js/timeout.ts	slipOrTrip	rn2	"[""3""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""4""]"	constant
 src/js/timeout.ts	slipOrTrip	rn2	"[""directions.length""]"	constant
 src/js/read.ts	sendInMonsters	rn1	"[""3"", ""4""]"	constant
-src/js/glob.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
-src/js/glob.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
+src/js/mkobj.ts	meldNearbyFloorGlobs	random	"[""2""]"	constant
+src/js/mkobj.ts	scheduleNextGlobAttempt	rn2	"[""5""]"	constant
 src/js/dokick.ts	finishMercenaryCatch	rn2	"[""3""]"	constant
 src/js/dokick.ts	finishMercenaryCatch	rn2	"[""5""]"	constant
 src/js/dokick.ts	resolveGoldMonsterContact	rn2	"[""4""]"	constant
@@ -646,15 +646,15 @@ src/js/hack.ts	fightSeenWebWithForce	rn2	"[""weapon ? 20 : 45 - 5 * skillMinus2"
 src/js/dig.ts	liquidForHole	random	"[""lava + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""moats + 1""]"	guarded
 src/js/dig.ts	liquidForHole	random	"[""pools + 1""]"	guarded
-src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""13""]"	constant
-src/js/horn_of_plenty.ts	useHornOfPlenty	rn2	"[""7""]"	constant
+src/js/mkobj.ts	useHornOfPlenty	rn2	"[""13""]"	constant
+src/js/mkobj.ts	useHornOfPlenty	rn2	"[""7""]"	constant
 src/js/eat.ts	chokeHeroOnFood	rn2	"[""20""]"	constant
 src/js/eat.ts	getHungry	rn2	"[""10""]"	constant
 src/js/eat.ts	getHungry	rn2	"[""20""]"	constant
 src/js/eat.ts	regainHearingAfterHelplessness	rn2	"[""2""]"	constant
 src/js/eat.ts	updateHeroHunger	rn2	"[""20 - rounded""]"	unproved
-src/js/ident.ts	nextIdent	rnd	"[""2""]"	constant
-src/js/ident.ts	nextIdent	rnd	"[""2""]"	constant
+src/js/mkobj.ts	nextIdent	rnd	"[""2""]"	constant
+src/js/mkobj.ts	nextIdent	rnd	"[""2""]"	constant
 src/js/immediate_monster_magic.ts	healMonsterWithMagic	d	"[""6"", ""extra ? 8 : 4""]"	constant
 src/js/immediate_monster_magic.ts	hitMonsterWithWand	d	"[""1 + wand.spe"", ""12""]"	unproved
 src/js/immediate_monster_magic.ts	hitMonsterWithWand	rnd	"[""2""]"	constant

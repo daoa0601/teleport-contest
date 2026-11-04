@@ -5,7 +5,6 @@ import assert from 'node:assert/strict';
 
 import { P_EXPERT } from '../js/const.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { removeMonsterFromGame } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -17,7 +16,7 @@ import { chargedWand, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshCasterRoom } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { saveMonsterTraits } from '../js/mkobj.js';
+import {saveMonsterTraits, placeCreatedObject} from '../js/mkobj.js';
 
 const PM_TROLL = 220;
 

@@ -13,7 +13,6 @@ import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_
 import { isok } from './cmd.js';
 import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 
-import { updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject } from './floor_object.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
@@ -45,7 +44,7 @@ import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
-import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight } from './mkobj.js';
+import {objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile} from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsWhirly, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
@@ -62,7 +61,6 @@ import { hasWornProperty } from './properties.js';
 
 
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { isContainer } from './container.js';
 import { AD_MAGM, AD_FIRE, AD_COLD, AD_SLEE, AD_DISN, AD_ELEC, AD_DRST, AD_ACID, AD_SPC1, AD_SPC2 } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
 import { showInventoryWindow } from './windows.js';
@@ -127,7 +125,6 @@ import { finishMonsterEating } from './dogmove.js';
 import { restartEggHatchTimer } from './egg.js';
 import { reportHeroEncumbrance } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
-import { remove_object, sweepFloorPile } from './floor_object.js';
 import { hitFloorObjectWithForce } from './force_bolt.js';
 import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
 import { requireGameLevel } from './gstate.js';

@@ -19,7 +19,6 @@ import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } f
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
 import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, clearHeroTrap, setHeroTrap, triggerHeroTrap, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
-import { placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously } from './floor_object.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
 import type { DiggingContext, GameState, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -38,7 +37,7 @@ import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
-import { createToptenObject, mksobj, placeTreeFruit, unlinkObject } from './mkobj.js';
+import {createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls, monsterTypeName, requireMonsterData } from './monster_data.js';

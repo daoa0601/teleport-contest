@@ -10,7 +10,6 @@ import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import { placeObject, placeObjectSynchronously, remove_object } from './floor_object.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { changeHeroLuck } from './attrib.js';
 import { costlySpot, shopClaimsObject } from './shk.js';
@@ -21,7 +20,7 @@ import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, placeObject, placeObjectSynchronously, remove_object} from './mkobj.js';
 import { sokobanGuilt } from './trap.js';
 
 interface FractureOptions {

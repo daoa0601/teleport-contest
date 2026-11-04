@@ -3,7 +3,7 @@ import test from 'node:test';
 import { A_STR, PIT, STONE, STR19, TT_INFLOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { remove_object } from '../js/floor_object.js';
+import { remove_object } from '../js/mkobj.js';
 import { addInventoryItem } from '../js/u_init.js';
 import { BOULDER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { punishHero } from '../js/read.js';

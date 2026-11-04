@@ -38,7 +38,6 @@ import {
 } from './display.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
-import { placeObject, stack_object } from './floor_object.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject } from './hero_hold_object.js';
@@ -120,7 +119,7 @@ import type {
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { requirePerceivedHero } from './monmove.js';
 import { angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, placeObject, stack_object} from './mkobj.js';
 import { calcCapacity } from './hack.js';
 
 function isFiniteNumber(value: unknown): value is number {

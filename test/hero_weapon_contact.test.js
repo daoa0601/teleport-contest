@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { P_AXE, P_LONG_SWORD, P_SKILLED, P_TWO_HANDED_SWORD, W_WEP, NO_MINVENT, MM_NOGRP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { remove_object } from '../js/floor_object.js';
+import { remove_object } from '../js/mkobj.js';
 import { prepareHeroWeaponContact } from '../js/uhitm.js';
 import { ARROW, BATTLE_AXE, BOOMERANG, BOW, DAGGER, FOOD_RATION, KATANA, OBJECT_NAMES, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { ownedObjectAction, ownedObjectName } from '../js/objnam.js';

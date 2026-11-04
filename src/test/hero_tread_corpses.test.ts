@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { buryObject } from '../js/dig.js';
 import { rhack } from '../js/cmd.js';
 import { BEAR_TRAP, TT_BEARTRAP, OBJECT_TIMER_KIND } from '../js/const.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

@@ -5,7 +5,7 @@
 // dig_corridor, wallify_map, and themed-room map placement.  The des.*
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight } from './mkobj.js';
+import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object, stack_object } from './mkobj.js';
 import { isRoom } from './map_types.js';
 import { deleteTrap, maketrap } from './trap.js';
 import { lookupNovelTitle, setMonsterGivenName } from './do_name.js';
@@ -22,7 +22,6 @@ import { impossible } from './diagnostics.js';
 import { tablePoint } from './lua/des.js';
 import { objectToLuaTable } from './lua/runtime.js';
 import { luaString } from './lua/arguments.js';
-import { remove_object, stack_object } from './floor_object.js';
 import { buryObject } from './dig.js';
 import { rn2, rnd, rn1 } from './rng.js';
 import { rnd_rect, get_rect, split_rects } from './rect.js';

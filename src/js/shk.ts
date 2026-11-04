@@ -59,7 +59,6 @@ import { mergable } from './invent.js';
 import { splitObjectStack } from './mkobj.js';
 import { ACH_SHOP } from './const.js';
 import { recordAchievement } from './insight.js';
-import { nextIdent, nextObjectId } from './ident.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
 import { closedDoor, performMonsterTurn } from './monmove.js';
@@ -93,7 +92,6 @@ import { publishMonsterYelp, publishMonsterGrowl } from './ambient_sounds.js';
 import { heroIsPunished, unplaceBallAndChain, placeBallAndChain } from './ball.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
-import { remove_object, placeObject } from './floor_object.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
 import { finishInventoryRemoval } from './hero_inventory.js';
 import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
@@ -120,7 +118,7 @@ import {
     showGetposTip
 } from './hack.js';
 import { insideRoom } from './mkroom.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, nextIdent, nextObjectId, remove_object, placeObject} from './mkobj.js';
 
 const COIN_CLASS = 12;
 const GEM_CLASS = 13;

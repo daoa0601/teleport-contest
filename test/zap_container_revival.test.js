@@ -1,10 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { reviveCorpseByMagic } from '../js/corpse_revival.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { addCreatedObjectToContainer } from '../js/mkobj.js';
+import { addCreatedObjectToContainer, placeCreatedObject } from '../js/mkobj.js';
 import { SACK } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

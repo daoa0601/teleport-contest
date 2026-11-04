@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 // Native ESM imports of both sides of the floor_object <-> monmove cycle.
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { maybeUnhideAt } from '../js/mon.js';
 import { CHEST } from '../js/object_data.js';
 import { MM_IGNOREWATER, MM_NOGRP, NO_MINVENT } from '../js/const.js';

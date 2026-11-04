@@ -15,7 +15,7 @@ import { rn2 } from './rng.js';
 import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
 import { cmapSymbolAppearance, newsym } from './display.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { placeObject, remove_object, stack_object } from './floor_object.js';
+import {placeObject, remove_object, stack_object} from './mkobj.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { clearMonsterWormFromMap } from './worm.js';
 import { mnearto } from './mon.js';

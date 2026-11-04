@@ -1,4 +1,4 @@
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

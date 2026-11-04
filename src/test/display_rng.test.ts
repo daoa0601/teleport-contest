@@ -15,7 +15,7 @@ import { displaceMonster } from '../js/mhitm.js';
 import { changeMonsterForm, initialShapechangedBirth } from '../js/mon.js';
 import { monsterName, randomDisplayMonsterName } from '../js/do_name.js';
 import { landFloorObject } from '../js/floor_effects.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { CHEST, POT_WATER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { finishHeroThrownObjectLanding } from '../js/thrown_object.js';

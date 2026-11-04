@@ -4,7 +4,6 @@
 import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 
-import { placeObject, stack_object } from './floor_object.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -12,7 +11,6 @@ import type { Trap } from './map_types.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { map_background, newsym } from './display.js';
-import { meldLandingGlob } from './glob.js';
 import { breakObjectAtLocation } from './dothrow.js';
 import { deleteObject } from './shk.js';
 import { BOULDER, POT_OIL } from './object_data.js';
@@ -25,7 +23,7 @@ import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { objectWeight } from './mkobj.js';
+import {objectWeight, placeObject, stack_object, meldLandingGlob} from './mkobj.js';
 import { applyBoulderPitEffects, dropBoulderIntoLiquid } from './do.js';
 
 export interface FloorEffectOptions {

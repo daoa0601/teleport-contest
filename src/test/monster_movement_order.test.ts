@@ -9,7 +9,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterWieldedWeapon } from '../js/weapon.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { BOULDER, LONG_SWORD, PICK_AXE, ROCK } from '../js/object_data.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';

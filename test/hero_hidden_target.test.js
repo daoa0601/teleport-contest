@@ -6,7 +6,7 @@ import { M_AP_MONSTER, MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { game } from '../js/gstate.js';
 import { LARGE_BOX } from '../js/object_data.js';
-import { placeObject } from '../js/floor_object.js';
+import { placeObject } from '../js/mkobj.js';
 import { pushKey, resetInputState } from '../js/input.js';
 import { installPagerInput } from './support/pager-input.js';
 import { knownObject } from './support/game-objects.js';

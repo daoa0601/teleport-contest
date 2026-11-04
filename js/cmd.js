@@ -31,7 +31,7 @@ import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquid
 import { propertyIsActive } from './properties.js';
 import { gotoLevel } from './level_change.js';
 import { inventoryReport } from './inventory_reports.js';
-import { isContainer } from './container.js';
+import { isContainer } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';

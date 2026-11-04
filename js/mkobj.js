@@ -1,43 +1,53 @@
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION } from './object_data.js';
+import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOOZE, POT_SICKNESS, POT_WATER } from './object_data.js';
 import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
-import { game, requireLiveGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
-import { setTinVariety } from './eat.js';
+import { activelyEatingGlob, setTinVariety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
-import { nextIdent, nextObjectId } from './ident.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
 import { eggSpeciesIsDead, hatchableEggSpecies } from './egg_species.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
-import { placeCreatedObject, remove_object } from './floor_object.js';
+import { isIceAt } from './dbridge.js';
+import { block_point, cansee, vision_note_blocker_change } from './vision.js';
+import { newsym } from './display.js';
+import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
-import { In_quest, Is_rogue_level, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND } from './const.js';
+import { ALTAR, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { forgetTempleEntry } from './priest.js';
-import { copyPetData, copyShopkeeperData, undeadToCorpse } from './mon.js';
+import { copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
 import { OBJECT_WEIGHT, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { LARGEST_INT } from './const.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
-import { objectMaterial, objectProb } from './o_init.js';
+import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
 import { OBJECT_PROPERTY, WAN_FIRE } from './object_data.js';
 import { nameObjectFromTopten } from './topten.js';
-import { rndClass } from './objnam.js';
+import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
 import { assignCandyWrapper } from './read.js';
-import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
-import { assertCreatedObject, createdObjectNoLongerHeld, objectNoLongerHeld } from './do.js';
-import { deleteObject, splitObjectBill, settleGlobAbsorptionBilling } from './shk.js';
-import { startGlobTimeout } from './glob.js';
+import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
+import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
+import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, settleGlobAbsorptionBilling, splitObjectBill } from './shk.js';
+import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
+import { nearCapacity } from './hack.js';
+import { reportHeroEncumbrance } from './pickup.js';
+import { holdAnotherObject } from './hero_hold_object.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { landObjectOnAltar } from './altar_object.js';
+import { surfaceName } from './terrain_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation as pline } from './pline.js';
 import { updateCarriedLuck } from './hero_inventory.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 import { bookCursed } from './spell.js';
@@ -896,6 +906,156 @@ export function forgetObjectKnowledge(object) {
     object.tknown = false;
     object.known = !OBJECT_USES_KNOWN[object.otyp];
 }
+// ---------------------------------------------------------------------------
+// Floor-object ownership and pile order.
+// C refs: mkobj.c place_object(), remove_object(), splitobj(),
+// obj_timer_checks(), and invent.c stackobj(), obj_extract_self().
+// ---------------------------------------------------------------------------
+// C mkobj.c:obj_timer_checks(): a corpse placed on (or removed from) ice
+// has its rot/revive timer doubled or halved and its age adjusted.
+export function updateCorpseIceTimer(body, x, y, isOnIce, state = game) {
+    if (!body || body.otyp !== CORPSE)
+        return false;
+    const timer = objectTimers(body).find(candidate => candidate.kind === OBJECT_TIMER_KIND.ROT_CORPSE)
+        || objectTimers(body).find(candidate => candidate.kind === OBJECT_TIMER_KIND.REVIVE_MON);
+    if (!timer)
+        return false;
+    const currentMove = state.moves ?? 0;
+    if (isOnIce && !body.on_ice) {
+        const remaining = Math.max(0, timer.deadline - currentMove);
+        stopObjectTimer(body, timer.kind);
+        body.on_ice = true;
+        const age = currentMove - (body.age ?? currentMove);
+        body.age = currentMove - age * 2;
+        scheduleObjectTimer(body, timer.kind, currentMove + remaining * 2, state);
+        return true;
+    }
+    if (!isOnIce && body.on_ice) {
+        const remaining = Math.max(0, timer.deadline - currentMove);
+        stopObjectTimer(body, timer.kind);
+        body.on_ice = false;
+        const age = currentMove - (body.age ?? currentMove);
+        body.age += Math.trunc(age / 2);
+        scheduleObjectTimer(body, timer.kind, currentMove + Math.trunc(remaining / 2), state);
+        return true;
+    }
+    return false;
+}
+// C mkobj.c:obj_ice_effects(). Freezing also reaches corpses already buried.
+export function updateIceObjectTimersAt(x, y, state = game, { includeBuried = false } = {}) {
+    const level = requireGameLevel(state);
+    const onIce = isIceAt(x, y, state);
+    for (const object of level.objects[x]?.[y] || [])
+        updateCorpseIceTimer(object, x, y, onIce, state);
+    if (includeBuried) {
+        for (const object of level.buriedObjects || []) {
+            if (object.ox === x && object.oy === y)
+                updateCorpseIceTimer(object, x, y, onIce, state);
+        }
+    }
+}
+function assertFreeFloorObject(object) {
+    if (object.where !== 'free')
+        throw new Error(`floor placement requires a free object, got ${object.where}`);
+}
+export function placeCreatedObject(object, x, y, state = game) {
+    createdObjectNoLongerHeld(object, state);
+    return linkFloorObject(object, x, y, state);
+}
+export function placeObjectSynchronously(object, x, y, state = game) {
+    assertFreeFloorObject(object);
+    objectNoLongerHeldSynchronously(object, state);
+    return linkFloorObject(object, x, y, state);
+}
+export async function placeObject(object, x, y, state = game) {
+    requireLiveGame(state);
+    assertFreeFloorObject(object);
+    await objectNoLongerHeld(object, state);
+    return linkFloorObject(object, x, y, state);
+}
+function linkFloorObject(object, x, y, state) {
+    const level = requireGameLevel(state);
+    object.ox = x;
+    object.oy = y;
+    object.where = 'floor';
+    state._fobjSerial = (state._fobjSerial || 0) + 1;
+    object._fobjOrder = state._fobjSerial;
+    const column = level.objects[x] ||= [];
+    const pile = column[y] ||= [];
+    // C mkobj.c:place_object() reads the pile top before linking, and a
+    // boulder only joins the vision blocker table when that top is not
+    // already a boulder: stacking a second boulder changes nothing for
+    // sight, so the deferred vision recalc must not be requested either.
+    const pileTopWasBoulder = pile[0]?.otyp === BOULDER;
+    let index = 0;
+    if (object.otyp !== BOULDER)
+        while (pile[index]?.otyp === BOULDER)
+            index++;
+    pile.splice(index, 0, object);
+    if (object.otyp === BOULDER && !pileTopWasBoulder && state === game)
+        block_point(x, y);
+    if (object.no_charge && !costlySpot(x, y, state)
+        && !costlyAdjacent(findObjectOwner(object, x, y, state), x, y, state))
+        object.no_charge = false;
+    updateCorpseIceTimer(object, x, y, isIceAt(x, y, state), state);
+    return object;
+}
+// C zap.c:bhitpile() and muse.c:fhito_loc() save each successor before
+// applying the effect. Fracturing can reinsert rocks below another boulder,
+// so the same ray may reach those rocks again. Returning false stops the sweep.
+export async function sweepFloorPile(x, y, state, visit) {
+    const level = requireGameLevel(state);
+    let current = level.objects[x]?.[y]?.[0];
+    while (current) {
+        const pile = level.objects[x]?.[y] ?? [];
+        const index = pile.indexOf(current);
+        // Extraction clears C's nexthere link, ending this traversal if
+        // an earlier effect also removed the saved successor.
+        if (index < 0)
+            return;
+        const next = pile[index + 1];
+        if (current.where === 'floor' && current.ox === x && current.oy === y) {
+            if (!await visit(current))
+                return;
+        }
+        current = next;
+    }
+}
+export async function stack_object(object, state = game) {
+    if (!object)
+        return object;
+    const pile = state.level?.objects?.[object.ox]?.[object.oy];
+    if (!pile)
+        return object;
+    const existing = pile.find(candidate => candidate !== object && mergable(object, candidate, state));
+    if (!existing)
+        return object;
+    return await mergeObjectStacks(object, existing, state) || object;
+}
+export function remove_object(object, state = game) {
+    if (!object || !state.level)
+        return object;
+    const pile = state.level.objects?.[object.ox]?.[object.oy];
+    const index = pile?.indexOf(object) ?? -1;
+    if (pile && index >= 0)
+        pile.splice(index, 1);
+    if (object.otyp === BOULDER && state === game)
+        vision_note_blocker_change(object.ox, object.oy);
+    object.where = 'free';
+    updateCorpseIceTimer(object, object.ox, object.oy, false, state);
+    return object;
+}
+export function detachFloorObjectUnit(object, state) {
+    const quantity = objectQuantity(object);
+    if (quantity <= 1) {
+        remove_object(object, state);
+        return object;
+    }
+    const detached = splitObjectStack(object, 1, state);
+    if (!detached)
+        throw new Error(`Object ${object.o_id} cannot split into floor units`);
+    return remove_object(detached, state);
+}
 // C mkobj.c:add_to_minv(). Acquisition effects belong to mpickobj, not raw
 // linkage.
 function linkMonsterObject(monster, object, inventory, atFront) {
@@ -1238,6 +1398,106 @@ export async function addCreatedObjectToContainer(container, object, state = gam
     return existing ? await mergeCreatedObjectStacks(existing, object, state)
         : linkContainerObject(container, object);
 }
+export const CONTAINER_TYPES = new Set([
+    LARGE_BOX, CHEST, ICE_BOX, SACK, BAG_OF_HOLDING, OILSKIN_SACK, BAG_OF_TRICKS,
+]);
+export function isContainer(object) {
+    return !!object && CONTAINER_TYPES.has(object.otyp);
+}
+// C mkobj.c:container_weight().
+export function updateContainerWeights(container) {
+    let current = container;
+    const visited = new Set();
+    while (current && !visited.has(current)) {
+        visited.add(current);
+        current.owt = objectWeight(current);
+        current = current.where === 'contained' ? current.container : null;
+    }
+}
+// C unsplitobj(): a failed merge leaves the split piece beside its parent.
+export async function restoreRejectedSplit(transfer, state) {
+    if (transfer.parent)
+        await rejoinObjectStack(transfer.parent, transfer.object, state);
+}
+// C mkobj.c:hornoplenty(), for doapply's one-charge use.
+export async function useHornOfPlenty(horn, { tipping = false, target = null, } = {}) {
+    requirePlayingGame(game);
+    if (horn.spe < 1) {
+        await pline('Nothing happens.');
+        horn.cknown = true;
+        return 0;
+    }
+    await consumeObjectCharge(horn, { maybeUnpaid: !tipping });
+    let object;
+    let what;
+    if (!rn2(13)) {
+        object = await mkobj(8, false);
+        if (OBJECT_MAGIC[object.otyp]) {
+            do {
+                object.otyp = rndClass(POT_BOOZE, POT_WATER);
+            } while (object.otyp === POT_SICKNESS);
+            if (object.otyp === POT_OIL)
+                object.age = MAX_OIL_IN_FLASK;
+        }
+        what = object.quan > 1 ? 'Some potions spill' : 'A potion spills';
+    }
+    else {
+        object = await mkobj(7, false);
+        if (object.otyp === FOOD_RATION && !rn2(7))
+            object.otyp = LUMP_OF_ROYAL_JELLY;
+        what = 'Some food spills';
+    }
+    await pline(`${what} out.`);
+    object.blessed = horn.blessed;
+    object.cursed = horn.cursed;
+    object.owt = objectWeight(object);
+    if (horn.unpaid)
+        await addShopObjectToBill(object, game, { ininv: false, silent: tipping });
+    const previousPriceSuppression = game.iflags.suppress_price;
+    game.iflags.suppress_price = true;
+    try {
+        const terrain = game.level.requireAt(game.u.ux, game.u.uy).typ;
+        if (!tipping) {
+            observeObjectForNaming(object);
+            const name = object.quan > 1 ? `${object.quan} ${makePlural(objectName(object, game))}` : objectName(object, game);
+            const action = `The ${name} ${object.quan > 1 ? 'slip' : 'slips'}`;
+            let destination = 'to the floor';
+            if (game.u.uswallow)
+                destination = 'out of your reach';
+            else if (Is_airlevel(game.u.uz) || Is_waterlevel(game.u.uz) || terrain < IRONBARS || terrain >= ICE)
+                destination = 'away from you';
+            await holdAnotherObject(object, { dropMessage: `Oops!  ${action} ${destination}!` });
+        }
+        else if (target) {
+            await addObjectToContainer(target, object);
+            target.owt = objectWeight(target);
+            if (target.where === 'inventory')
+                await reportHeroEncumbrance();
+        }
+        else if (!heroCanReachFloor(game, { checkPit: true })) {
+            await hitFloorWithObject(object);
+        }
+        else {
+            if (terrain === ALTAR)
+                await landObjectOnAltar(object);
+            else {
+                observeObjectForNaming(object);
+                const description = await inventoryItemDescription(object);
+                await pline(`${description.charAt(0).toUpperCase()}${description.slice(1)} ${object.quan === 1 ? 'drops' : 'drop'} to the ${surfaceName(game.u.ux, game.u.uy)}.`);
+            }
+            await dropObjectAtHero(object);
+        }
+    }
+    finally {
+        if (previousPriceSuppression === undefined)
+            delete game.iflags.suppress_price;
+        else
+            game.iflags.suppress_price = previousPriceSuppression;
+    }
+    if (horn.dknown)
+        learnObjectType(HORN_OF_PLENTY, game);
+    return 1;
+}
 // ---------------------------------------------------------------------------
 // Splitting one quantity from an ordinary object stack.
 // C refs: mkobj.c splitobj()/unsplitobj().
@@ -1297,6 +1557,35 @@ export function splitObjectStack(object, count, state = game, objectId = null) {
     }
     return split;
 }
+// ---------------------------------------------------------------------------
+// Shared object and monster identity allocation.
+// C ref: mkobj.c next_ident().
+// ---------------------------------------------------------------------------
+// Object and monster identities share one counter.  Every source call must
+// pass through this boundary even when its caller only needs the RNG-visible
+// side effect and does not retain the returned id yet.
+export function nextIdent(state = game) {
+    const ident = (typeof state._nextIdent === 'number' && Number.isInteger(state._nextIdent) ? state._nextIdent : 2) >>> 0;
+    state._nextIdent = (ident + rnd(2)) >>> 0;
+    if (!state._nextIdent)
+        state._nextIdent = rnd(2) + 1;
+    return ident;
+}
+// C mkobj.c nextoid(): a split or bill copy keeps the old price adjustment.
+export function nextObjectId(oldObject, newObject, state = game) {
+    const oldAdjustment = objectPriceAdjustment(oldObject, oldObject.o_id, state);
+    let ident = (((state._nextIdent ?? 2) >>> 0) - 1) >>> 0;
+    let tries = 256;
+    do {
+        ident = (ident + 1) >>> 0;
+        if (!ident)
+            ident = 1;
+    } while (objectPriceAdjustment(newObject, ident, state) !== oldAdjustment
+        && --tries >= 0);
+    state._nextIdent = ident;
+    nextIdent(state);
+    return ident;
+}
 // C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
 export async function rejoinObjectStack(parent, split, state = game) {
     const latest = state.context.objsplit;
@@ -1347,6 +1636,343 @@ export async function absorbGlob(survivor, incoming, state = game, { publish = p
     unlinkObject(incoming, state);
     deallocateObject(incoming, state);
     return survivor;
+}
+function isGlobType(otyp) {
+    return otyp >= GLOB_OF_GRAY_OOZE && otyp <= GLOB_OF_BLACK_PUDDING;
+}
+// C mkobj.c:obj_nexto_xy(): the next mergable glob on this square or an
+// adjacent one (obj_nexto() is the same scan at the glob's own square).
+function nearbyMergableGlob(glob, x, y, state, random) {
+    // The same-type pile scan of C invent.c:sobj_at() inlined: the
+    // mergable() test itself finds the candidate.
+    const findAt = (nx, ny) => (state.level?.objects?.[nx]?.[ny] || [])
+        .find(object => object !== glob && mergable(object, glob, state));
+    const onSameSquare = findAt(x, y);
+    if (onSameSquare)
+        return onSameSquare;
+    const xStep = random(2) ? -1 : 1;
+    const yStep = random(2) ? -1 : 1;
+    for (let nx = x - xStep; Math.abs(nx - x) < 2; nx += xStep) {
+        for (let ny = y - yStep; Math.abs(ny - y) < 2; ny += yStep) {
+            if (!isok(nx, ny) || (nx === x && ny === y))
+                continue;
+            const nearby = findAt(nx, ny);
+            if (nearby)
+                return nearby;
+        }
+    }
+    return null;
+}
+// C pudding_merge_message(): inventory merging remains noticeable while
+// blind; visible monster/container merges can intentionally say nothing.
+export async function announceGlobMerge(first, second, state = game, publish = plineWithContinuation) {
+    const visible = cansee(first.ox, first.oy) || cansee(second.ox, second.oy);
+    const onFloor = first.where === 'floor' || second.where === 'floor';
+    const inPack = first.where === 'inventory' || second.where === 'inventory';
+    if ((!heroIsBlind(state) && visible) || inPack) {
+        if (heroIsHallucinating(state)) {
+            if (onFloor)
+                await publish(formatSeenMessage('parts of the floor melting!', state));
+            else if (inPack)
+                await publish('Your pack reaches out and grabs something!');
+        }
+        else if (onFloor || inPack) {
+            const adjacent = (first.ox !== state.u.ux || first.oy !== state.u.uy)
+                && (second.ox !== state.u.ux || second.oy !== state.u.uy);
+            await publish(`The ${onFloor && adjacent ? 'adjacent ' : ''}${makePlural(objectTypeName(first.otyp, state))} coalesce${inPack ? ' inside your pack' : ''}.`);
+        }
+    }
+    else {
+        const heard = formatHeardMessage('a faint sloshing sound.', state);
+        if (heard)
+            await publish(heard);
+    }
+}
+// C flooreffects()/obj_meld(): a free glob is always absorbed by a floor
+// glob, even when the landing glob is heavier. Otherwise it remains free.
+export async function meldLandingGlob(glob, x, y, { state = game, publish = plineWithContinuation, random = rn2, } = {}) {
+    requireLiveGame(state);
+    const nearby = nearbyMergableGlob(glob, x, y, state, random);
+    if (!nearby)
+        return null;
+    await announceGlobMerge(glob, nearby, state, publish);
+    return await absorbGlob(nearby, glob, state, { publish });
+}
+export async function meldNearbyFloorGlobs(glob, { state = game, publish = plineWithContinuation, random = rn2, } = {}) {
+    let combined = glob;
+    for (;;) {
+        const nearby = nearbyMergableGlob(combined, combined.ox, combined.oy, state, random);
+        if (!nearby)
+            return combined;
+        await announceGlobMerge(combined, nearby, state, publish);
+        const equalWeight = combined.owt === nearby.owt;
+        const combinedSurvives = combined.owt > nearby.owt
+            || (equalWeight && random(2) !== 0);
+        const survivor = combinedSurvives ? combined : nearby;
+        const absorbed = combinedSurvives ? nearby : combined;
+        const oldX = absorbed.ox;
+        const oldY = absorbed.oy;
+        combined = await absorbGlob(survivor, absorbed, state, { publish });
+        if (state === game && cansee(oldX, oldY))
+            await newsym(oldX, oldY);
+        await maybeUnhideAt(oldX, oldY, state);
+    }
+}
+function scheduleNextGlobAttempt(glob, state, currentTurn, delay = 0) {
+    stopObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB);
+    const turns = delay > 0 ? delay : 23 + rn2(5);
+    return scheduleObjectTimer(glob, OBJECT_TIMER_KIND.SHRINK_GLOB, currentTurn + turns, state);
+}
+export function startGlobTimeout(glob, state = game, currentTurn = state.moves ?? 0, delay = 0) {
+    return scheduleNextGlobAttempt(glob, state, currentTurn, delay);
+}
+function parentContainer(object, state) {
+    if (object.container)
+        return object.container;
+    return objectsInTimerGraph(state).find(candidate => candidate !== object && candidate.contents?.includes(object)) ?? null;
+}
+function carryingMonster(object, state) {
+    if (object.ocarry)
+        return object.ocarry;
+    return (state.level?.monsters || []).find(monster => monster.m_id === object.carrierMid
+        || (monster.minvent || monster.inventory || []).includes(object)) ?? null;
+}
+function outermostContainer(object, state) {
+    let outer = object;
+    const seen = new Set();
+    while (outer?.where === 'contained' && !seen.has(outer)) {
+        seen.add(outer);
+        const parent = parentContainer(outer, state);
+        if (!parent)
+            break;
+        outer = parent;
+    }
+    return outer;
+}
+function objectLocation(object, state) {
+    const outer = outermostContainer(object, state);
+    if (!outer)
+        return null;
+    if (outer.where === 'floor' || outer.where === 'buried')
+        return { x: outer.ox, y: outer.oy };
+    if (outer.where === 'inventory')
+        return { x: state.u?.ux, y: state.u?.uy };
+    if (outer.where === 'minvent') {
+        const monster = carryingMonster(outer, state);
+        if (monster)
+            return { x: monster.mx, y: monster.my };
+    }
+    return null;
+}
+// C mkobj.c:item_on_ice(): the outermost container decides whether a glob
+// sits on ice or is buried beneath it.
+function globIceState(glob, state) {
+    const outer = outermostContainer(glob, state);
+    if (!outer || !['floor', 'buried'].includes(outer.where))
+        return 'none';
+    // C mkobj.c get_obj_location(): the outermost container's own square.
+    if (!isIceAt(outer.ox, outer.oy, state))
+        return 'none';
+    return outer.where === 'buried' ? 'buried' : 'on-ice';
+}
+// C mkobj.c:container_weight().
+function updateGlobContainerWeights(container, state) {
+    let current = container;
+    const seen = new Set();
+    while (current && !seen.has(current)) {
+        seen.add(current);
+        current.owt = objectWeight(current);
+        current = current.where === 'contained'
+            ? parentContainer(current, state) : null;
+    }
+}
+function clearHeroEquipment(object, state) {
+    const slots = [
+        'uwep', 'uswapwep', 'uquiver',
+        'uarm', 'uarmc', 'uarmh', 'uarms', 'uarmg', 'uarmf', 'uarmu',
+        'uleft', 'uright', 'uamul', 'ublindf',
+    ];
+    let removed = !!(object.owornmask || object.worn || object.wielded
+        || object.alternate || object.ready);
+    for (const slot of slots) {
+        if (state[slot] === object) {
+            state[slot] = null;
+            removed = true;
+        }
+        if (state.u?.[slot] === object) {
+            state.u[slot] = null;
+            removed = true;
+        }
+    }
+    object.owornmask = 0;
+    object.worn = false;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+    // C stop_occupation(): a worn glob vanishing interrupts the occupation.
+    if (removed)
+        state._occupation = null;
+}
+// C mkobj.c:shrinking_glob_gone(): a glob that shrank away to nothing
+// unwields/unwears itself and is removed from wherever it lives.
+async function deleteGlob(glob, state) {
+    const where = glob.where;
+    const x = glob.ox, y = glob.oy;
+    if (where === 'inventory') {
+        clearHeroEquipment(glob, state);
+    }
+    else if (where === 'migrating') {
+        glob.owornmask = 0;
+    }
+    else if (where === 'minvent' && glob.ocarry?.mw === glob) {
+        glob.ocarry.mw = null;
+        glob.owornmask = 0;
+    }
+    unlinkObject(glob, state);
+    if (where === 'floor')
+        await maybeUnhideAt(x, y, state);
+    if (state.context.victual?.piece === glob)
+        state.context.victual = null;
+    // obfree() retains a consumed shop object for itemized billing.
+    if (reconcileObjectDeletionBill(glob, null, state) === 'retained')
+        return;
+    deallocateObject(glob, state);
+}
+// shrink_glob() asks xname to include partly eaten food before reducing its mass.
+function shrinkingGlobName(glob, state) {
+    const previous = state.iflags.partly_eaten_hack;
+    state.iflags.partly_eaten_hack = true;
+    try {
+        return ownedObjectName(glob, state);
+    }
+    finally {
+        if (previous === undefined)
+            delete state.iflags.partly_eaten_hack;
+        else
+            state.iflags.partly_eaten_hack = previous;
+    }
+}
+export async function runClaimedGlobTimer(claimed, state = game, currentTurn = state.moves ?? 0) {
+    if (!claimed || claimed.timer?.kind !== OBJECT_TIMER_KIND.SHRINK_GLOB)
+        return null;
+    const glob = claimed.object;
+    if (!glob?.globby || !isGlobType(glob.otyp)) {
+        throw new Error('SHRINK_GLOB requires a live glob');
+    }
+    if (!Number.isInteger(glob.owt) || glob.owt < 0)
+        throw new Error('SHRINK_GLOB requires a nonnegative weight');
+    const where = glob.where;
+    const inInventory = where === 'inventory';
+    const container = where === 'contained'
+        ? parentContainer(glob, state) : null;
+    const outer = container ? outermostContainer(glob, state) : glob;
+    const containerInInventory = !!container && outer?.where === 'inventory';
+    const updatesHeroInventory = inInventory || containerInInventory;
+    const carrier = where === 'minvent'
+        ? carryingMonster(glob, state) : null;
+    const location = objectLocation(glob, state);
+    const x = location?.x ?? 0;
+    const y = location?.y ?? 0;
+    const ice = globIceState(glob, state);
+    const oldCapacity = state._encumbranceLevel ?? 0;
+    const deadline = claimed.timer.deadline;
+    if (deadline < currentTurn && ice !== 'buried') {
+        const missedShrinks = Math.trunc((currentTurn - deadline + 24) / 25);
+        const delay = 25 - (missedShrinks % 25);
+        const delta = ice === 'on-ice'
+            ? Math.trunc((missedShrinks + 2) / 3)
+            : missedShrinks;
+        if (delta >= glob.owt) {
+            glob.owt = 0;
+            await deleteGlob(glob, state);
+            return {
+                glob, x, y, overdue: true, delta,
+                gone: true, message: null,
+            };
+        }
+        glob.owt -= delta;
+        if (container)
+            updateGlobContainerWeights(container, state);
+        scheduleNextGlobAttempt(glob, state, currentTurn, delay);
+        return {
+            glob, x, y, overdue: true, delta, delay,
+            gone: false, message: null,
+        };
+    }
+    const beingEaten = activelyEatingGlob(glob, state);
+    const waitsOnIce = ice === 'buried'
+        || (ice === 'on-ice' && currentTurn % 3 === 1);
+    if (beingEaten || waitsOnIce) {
+        scheduleNextGlobAttempt(glob, state, currentTurn);
+        return {
+            glob, x, y, overdue: false,
+            skippedEating: beingEaten,
+            skippedIce: waitsOnIce,
+            delta: 0, gone: false, message: null,
+        };
+    }
+    const name = shrinkingGlobName(glob, state);
+    const oldTopWeight = containerInInventory ? objectWeight(outer) : null;
+    const shrinkThreshold = glob.owt > 0 && glob.owt % 10 === 0;
+    if (glob.owt > 0) {
+        glob.owt--;
+        if ((glob.oeaten ?? 0) > 1)
+            glob.oeaten = (glob.oeaten ?? 0) - 1;
+    }
+    const gone = glob.owt === 0;
+    if (container)
+        updateGlobContainerWeights(container, state);
+    let message = null;
+    if (inInventory && (shrinkThreshold || gone)) {
+        message = `${name} ${gone ? 'dissolves completely' : 'shrinks'}.`;
+    }
+    else if (containerInInventory) {
+        const newTopWeight = outer.owt;
+        const newCapacity = nearCapacity(state);
+        if (gone
+            || (shrinkThreshold && newTopWeight !== oldTopWeight)
+            || newCapacity !== oldCapacity) {
+            const change = newTopWeight !== oldTopWeight
+                ? 'becomes' : 'seems';
+            message = `${ownedObjectName(outer, state)} ${change}${gone ? '' : ' slightly'} lighter.`;
+        }
+    }
+    if (updatesHeroInventory) {
+        return {
+            glob, x, y, carrier, overdue: false, delta: 1,
+            shrinkThreshold, gone, message,
+            finishPending: true,
+        };
+    }
+    if (gone) {
+        const visible = where === 'floor' && cansee(x, y);
+        await deleteGlob(glob, state);
+        if (visible) {
+            await newsym(x, y);
+            const subject = x !== state.u.ux || y !== state.u.uy
+                ? name.replace(/^The /u, 'A ') : name;
+            message = `${subject} fades away.`;
+        }
+    }
+    else {
+        scheduleNextGlobAttempt(glob, state, currentTurn);
+    }
+    return {
+        glob, x, y, carrier, overdue: false, delta: 1,
+        shrinkThreshold, gone, message,
+    };
+}
+export async function finishGlobTimer(event, state = game, currentTurn = state.moves ?? 0, publish = plineWithContinuation) {
+    if (!event?.finishPending || !event.glob)
+        return event;
+    if (event.gone)
+        await deleteGlob(event.glob, state);
+    else
+        scheduleNextGlobAttempt(event.glob, state, currentTurn);
+    event.finishPending = false;
+    event.finished = true;
+    await reportHeroEncumbrance(state, publish);
+    return event;
 }
 const TREE_FRUITS = [APPLE, ORANGE, PEAR, BANANA, EUCALYPTUS_LEAF];
 // C mkobj.c:rnd_treefruit_at(): mksobj_at(ROLL_FROM(treefruits), ...).

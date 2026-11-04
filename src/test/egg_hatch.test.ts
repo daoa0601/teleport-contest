@@ -9,7 +9,6 @@ import { G_GENOD, MV_KNOWS_EGG, OBJECT_TIMER_KIND } from '../js/const.js';
 import {
     finishEggHatchTimer, runClaimedEggHatchTimer,
 } from '../js/egg.js';
-import { placeCreatedObject } from '../js/floor_object.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -23,7 +22,7 @@ import { vision_recalc } from '../js/vision.js';
 
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { objectWeight } from '../js/mkobj.js';
+import {objectWeight, placeCreatedObject} from '../js/mkobj.js';
 
 void test('known egg contents name their species without acquired egg-type knowledge', async () => {
     await freshObjectRoom();

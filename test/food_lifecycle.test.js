@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { NOT_HUNGRY, OBJECT_TIMER_KIND } from '../js/const.js';
 import { reviveCorpseByMagic } from '../js/corpse_revival.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { requireGameLevel, requireGameDisplay, game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

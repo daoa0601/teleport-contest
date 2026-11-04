@@ -6,11 +6,10 @@ import { CORPSE, LARGE_BOX } from '../../js/object_data.js';
 import { MONSTER_NAME } from '../../js/monster_data.js';
 import { addCreatedObjectToContainer } from '../../js/mkobj.js';
 import { artifactByName } from '../../js/artifacts.js';
-import { placeCreatedObject } from '../../js/floor_object.js';
 import { mksobj, set_corpsenm } from '../../js/mkobj.js';
 import { stopAllObjectTimers } from '../../js/timeout.js';
 import { addInventoryItem } from '../../js/u_init.js';
-import { objectWeight } from '../../js/mkobj.js';
+import {objectWeight, placeCreatedObject} from '../../js/mkobj.js';
 
 
 export interface InventoryObject extends GameObject { invlet: string }

@@ -12,7 +12,7 @@ import { A_DEX, ALTAR, AM_SHRINE, Align2amask, M_SEEN_ELEC, M_SEEN_REFL, NO_MINV
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { throwInventoryObject, kickDirection } from './support/commands.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import { placeCreatedObject } from '../js/mkobj.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BLINDING_VENOM, CLUB, CREAM_PIE, EGG, FLINT, LEATHER_ARMOR, POT_CONFUSION, RIN_PROTECTION, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';

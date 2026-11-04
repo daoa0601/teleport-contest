@@ -10,7 +10,7 @@ import { placeMonsterAt } from '../js/steed.js';
 
 import { initializeMonsterWormBody, removeMonsterWormBody } from '../js/worm.js';
 import { createPoisonGasCloud, createSteamCloud } from '../js/regions.js';
-import { placeCreatedObject } from '../js/floor_object.js';
+import {placeCreatedObject} from '../js/mkobj.js';
 import { SCR_SCARE_MONSTER } from '../js/object_data.js';
 import { monsterLearnsTrap } from '../js/mondata.js';
 import { setTrack } from '../js/track.js';

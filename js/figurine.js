@@ -6,12 +6,11 @@ import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, OBJECT_TIMER_KIND } from './
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
-import { remove_object } from './floor_object.js';
 import { game } from './gstate.js';
 import { findMonsterNearPosition, } from './mklev.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, monsterHidesUnder, monsterIsEel } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
-import { unlinkMonsterObject } from './mkobj.js';
+import { unlinkMonsterObject, remove_object } from './mkobj.js';
 import { scheduleObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
 import { cansee } from './vision.js';
