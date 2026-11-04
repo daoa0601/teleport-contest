@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { applyHeroLocationEffects } from '../js/hack.js';
 import { LAVAPOOL, TT_LAVA } from '../js/const.js';
+import { displayLiquidName } from '../js/do_name.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -36,13 +37,28 @@ void test('a hero stuck in lava who becomes a floater strains upward but stays s
     assert.equal(game.u.utraptype, TT_LAVA);
 });
 
-for (const hallucinating of [false, true]) {
-    void test(`becoming a salamander releases the hero from ${hallucinating ? 'hallucinated liquid' : 'lava'}`, async () => {
-        const level = await freshObjectRoom({
-            gameplaySeed: 1n,
+for (const { hallucinating, seed } of [
+    { hallucinating: false, seed: 1n },
+    { hallucinating: true, seed: 1n },
+    { hallucinating: true, seed: 18n },
+]) {
+    void test(`becoming a salamander describes the released lava trap (hallucinating=${hallucinating}, seed=${seed})`, async () => {
+        const room = {
+            gameplaySeed: seed,
             hero: { hallucinationTurns: hallucinating ? 20 : 0 },
             flags: { verbose: false },
-        });
+        };
+        const salamander = MONSTER_NAME.indexOf('salamander');
+        const freeLevel = await freshObjectRoom(room);
+        freeLevel.requireAt(10, 10).typ = LAVAPOOL;
+        resetInputState().feed(' '.repeat(10));
+        await polymonHero(salamander);
+        // The trapped form change adds a liquid description to the same
+        // display choices made by a free form change. Lava remains a choice.
+        const liquid = displayLiquidName('lava');
+        const nextLiquid = displayLiquidName('lava');
+
+        const level = await freshObjectRoom(room);
         level.requireAt(10, 10).typ = LAVAPOOL;
         game.u.utrap = 1 << 8;
         game.u.utraptype = TT_LAVA;
@@ -53,13 +69,13 @@ for (const hallucinating of [false, true]) {
             input.feed(' ');
         };
 
-        await polymonHero(MONSTER_NAME.indexOf('salamander'));
+        await polymonHero(salamander);
 
         messages.push(game._pending_message);
         const soothing = messages.join(' | ').match(/The (.+?) now feels soothing\./);
         assert.ok(soothing, messages.join(' | '));
-        if (hallucinating) assert.notEqual(soothing[1], 'lava');
-        else assert.equal(soothing[1], 'lava');
+        assert.equal(soothing[1], liquid);
+        assert.equal(displayLiquidName('lava'), nextLiquid);
         assert.equal(game.u.utrap, 0);
     });
 }
