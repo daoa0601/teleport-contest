@@ -33,3 +33,24 @@ for (const quantity of [1, 2]) {
         assert.equal(game.context.move, 0);
     });
 }
+
+void test('a cursed corpse still smells tainted when its blessed flag is also set', async () => {
+    await freshObjectRoom({ hero: { uedibility: 1 } });
+    requirePlayingGame(game);
+    const corpse = await addInventoryObject(CORPSE, {
+        corpsenm: MONSTER_NAME.indexOf('newt'), age: game.moves - 40,
+        cursed: true, blessed: true,
+    });
+    const input = resetInputState();
+    input.feed(corpse.invlet);
+
+    await answerPrompts(doeat(), input, [{
+        prompt: /The corpse smells like it could be tainted!  Eat it anyway\?/,
+        keys: 'n',
+    }]);
+
+    assert.equal(corpse.where, 'inventory');
+    assert.equal(game.u.uedibility, 0);
+    assert.equal(game.u.uconduct.food ?? 0, 0);
+    assert.equal(game.context.move, 0);
+});

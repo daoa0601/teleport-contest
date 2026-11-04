@@ -2141,7 +2141,7 @@ export async function edibility_prompts(object: FoodSelection, { state = game }:
             ? object.age + Math.trunc((state.moves - object.age) / 2) : object.age;
         rotted = Math.trunc((state.moves - age) / 10);
         if (object.cursed) rotted += 2;
-        if (object.blessed) rotted -= 2;
+        else if (object.blessed) rotted -= 2;
     }
     let stoneOrSlime = false;
     if ([CORPSE, EGG, TIN, GLOB_OF_GREEN_SLIME].includes(object.otyp)) {

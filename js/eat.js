@@ -2071,7 +2071,7 @@ export async function edibility_prompts(object, { state = game } = {}) {
         rotted = Math.trunc((state.moves - age) / 10);
         if (object.cursed)
             rotted += 2;
-        if (object.blessed)
+        else if (object.blessed)
             rotted -= 2;
     }
     let stoneOrSlime = false;
