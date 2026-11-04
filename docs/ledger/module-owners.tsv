@@ -39,7 +39,6 @@ src/js/glyph_numbers.ts	display.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
 src/js/hero_expulsion.ts	monmove.c
-src/js/hero_form_passive.ts	mhitu.c
 src/js/hero_gold.ts	sit.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c

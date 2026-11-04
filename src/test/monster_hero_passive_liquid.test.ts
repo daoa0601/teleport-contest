@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { applyHeroFormPassive } from '../js/hero_form_passive.js';
+import { passiveum } from '../js/mhitu.js';
 import { AT_BITE } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
@@ -16,7 +16,7 @@ void test('an hallucinating acid-blob hero perceives changing liquids in its aci
         const dog = await createMonsterAt('little dog', 11, 10, NO_MINVENT);
         dog.mhp = dog.mhpmax = 100;
 
-        await applyHeroFormPassive(dog, game.u.umonnum, AT_BITE, {
+        await passiveum(dog, game.u.umonnum, AT_BITE, {
             state: game, random: range => range === 2 ? 0 : range - 1,
             rollDice: () => 1,
             publish: async message => {

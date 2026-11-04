@@ -6,29 +6,29 @@ import { objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, OBJECT_
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
-import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISE, AD_DGST, AD_DRIN, AD_DRLI, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
+import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff } from './display.js';
 import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
-import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
+import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives } from './mondata.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus } from './weapon.js';
 import { isPolearm, isPermanentlyPoisonedObject, isMissileObject, isWeaponTool } from './object_properties.js';
-import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
 import { createElementalMonsterExplosion } from './explosion.js';
-import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded } from './potion.js';
-import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath } from './mon.js';
+import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
+import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
 import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -45,29 +45,29 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
 import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
-import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems } from './trap.js';
+import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems, damageObjectWithAcid } from './trap.js';
 import { selectAttack } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
-import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.js';
+import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker } from './mhitm.js';
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { summonMonsterAttackHelp } from './minion.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { heroResistsStoning, touchPetrifies } from './stoning.js';
+import { heroResistsStoning, touchPetrifies, contactIsProtected } from './stoning.js';
 import { setHeroGrip } from './mon.js';
 import { beginHeroEngulf, monsterCanEngulfHero, resolveHeroEngulf } from './hero_engulf.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
-import { applyHeroFormPassive } from './hero_form_passive.js';
+import { staggerVerb } from './dothrow.js';
 import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects } from './muse.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { finishHeroMonsterKillOutcome, finishHeroMonsterKill } from './hero_monster_death.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { heroIsUnaware } from './senses.js';
@@ -86,6 +86,7 @@ const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_LEATHER_GOLEM = 253;
 const PM_WOOD_GOLEM = 254;
 const PM_IRON_GOLEM = 259;
+const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 async function monsterAttackMessage(monster, attack, previousAttack = null, random = rn2) {
     const game = requireInitializedGame();
     if (attack.specialMessage)
@@ -981,7 +982,198 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
     }
     if (damage <= 0)
         return { attackerStopped: false };
-    return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
+    return passiveum(monster, oldForm, attackType, { state, random, rollDice, publish });
+}
+// C mhitu.c:passiveum(): the old form's passive counterattack. assess_dmg()
+// applies the damage below; the AD_ENCH branch calls zap.c:drain_item() as
+// drainObjectEnchantment.
+export async function passiveum(monster, oldForm, attackType, { state = game, random = rn2, rollDice = d, publish = plineWithContinuation, } = {}) {
+    requirePlayingGame(state);
+    const passive = (MONSTER_ATTACKS[oldForm] || []).find(([method]) => method === AT_NONE || method === AT_BOOM);
+    if (!passive)
+        return { attackerStopped: false };
+    const type = passive[1];
+    let damage = passiveDamage(requireMonsterData(MONSTER_LEVEL, oldForm), passive, rollDice);
+    const weapon = monsterWieldedWeapon(monster);
+    if (type === AD_ACID) {
+        if (random(2) === 0) {
+            await publish(`${subject(monster)} is splashed by ${Upolyd(state.u) ? 'your ' : ''}${displayLiquidName('acid', state)}!`);
+            if (monsterHasAcidResistance(monster)) {
+                await publish(`${subject(monster)} is not affected.`);
+                damage = 0;
+            }
+        }
+        else
+            damage = 0;
+        if (random(30) === 0)
+            await erodeArmor(monster, 'corrosion', { state, random, publish });
+        if (random(6) === 0)
+            await damageObjectWithAcid(weapon, { state, random, publish });
+        return assess_dmg(monster, damage, publish);
+    }
+    if (type === AD_STON) {
+        if (monsterHasStoneResistance(monster)
+            || contactIsProtected(attackType, monster.misc_worn_check ?? 0, !!weapon))
+            return { attackerStopped: false };
+        const petrification = await petrifyMonsterAttacker(monster, {
+            publish, visible: true, creditHero: true,
+            finishDeath: (target, death = {}) => finishHeroMonsterKill(target, target.mx, target.my, {
+                ...death, showKillMessage: false, recordConduct: false,
+            }),
+        });
+        if (petrification.heroDied)
+            return { heroDied: true, attackerStopped: true };
+        const died = !!monster.dead || monster.mhp <= 0;
+        return { attackerDied: died, attackerStopped: died };
+    }
+    if (type === AD_ENCH) {
+        if (attackType === AT_WEAP && weapon)
+            await drainObjectEnchantment(weapon, { random, byHero: true, state });
+        return { attackerStopped: false };
+    }
+    if (!Upolyd(state.u) || random(3) === 0)
+        return { attackerStopped: false };
+    switch (type) {
+        case AD_PHYS:
+            if (passive[0] === AT_BOOM) {
+                await publish('You explode!');
+                const restored = await returnHeroToHumanForm(state, { publish });
+                if (restored.died)
+                    return { heroDied: true, attackerStopped: true };
+            }
+            break;
+        case AD_PLYS: {
+            // C passiveum() AD_PLYS: the floating eye freezes its attacker
+            // through the hero's gaze; every other paralyzing form (gelatinous
+            // cube) freezes it on contact.
+            const turns = Math.min(127, damage);
+            if (state.u.umonnum === PM_FLOATING_EYE) {
+                const effectiveTurns = random(4) === 0 ? 127 : turns;
+                if (!monster.mcansee || !monsterHasEyes(monster.mnum) || random(3) === 0
+                    || (heroIsInvisible(state) && !monsterPerceives(monster.mnum)))
+                    return { attackerStopped: false };
+                if (heroIsBlind(state)) {
+                    await publish('As a blind floating eye, you cannot defend yourself.');
+                    return { attackerStopped: false };
+                }
+                const reflection = mon_reflects(monster, state);
+                if (reflection) {
+                    await publish(`Your gaze is reflected by ${possessive(monster)} ${reflection.noun}.`);
+                    if (reflection.object && ['shield', 'amulet'].includes(reflection.noun))
+                        learnObjectType(reflection.object.otyp, state);
+                    return { attackerStopped: false };
+                }
+                await publish(`${subject(monster)} is frozen by your gaze!`);
+                paralyzeMonster(monster, effectiveTurns);
+                return { attackerStopped: true };
+            }
+            await publish(`${subject(monster)} is frozen by you.`);
+            paralyzeMonster(monster, turns);
+            return { attackerStopped: true };
+        }
+        case AD_COLD:
+        case AD_FIRE:
+        case AD_ELEC: {
+            const resists = type === AD_COLD ? monsterHasColdResistance
+                : type === AD_FIRE ? monsterHasFireResistance : monsterHasShockResistance;
+            if (resists(monster)) {
+                await shieldeff(monster.mx, monster.my, state);
+                const feeling = type === AD_COLD ? 'mildly chilly'
+                    : type === AD_FIRE ? 'mildly warm' : 'slightly tingled';
+                await publish(`${subject(monster)} is ${feeling}.`);
+                await applyMonsterGolemEffects(monster, type, damage, { state, publish });
+                damage = 0;
+            }
+            else {
+                const feeling = type === AD_COLD ? 'suddenly very cold'
+                    : type === AD_FIRE ? 'suddenly very hot' : 'jolted with your electricity';
+                await publish(`${subject(monster)} is ${feeling}!`);
+                if (type === AD_COLD) {
+                    state.u.mh += Math.trunc((damage + random(2)) / 2);
+                    state.u.mhmax = Math.max(state.u.mhmax, state.u.mh);
+                    const formLevel = MONSTER_LEVEL[state.u.umonnum];
+                    if (formLevel !== undefined && state.u.mhmax > (formLevel + 1) * 8) {
+                        const clone = await splitHeroMonsterForm(state);
+                        if (clone)
+                            await publish(`You multiply from ${possessive(monster)} heat!`);
+                    }
+                }
+            }
+            break;
+        }
+        case AD_STUN:
+            if (!monster.mstun) {
+                monster.mstun = 1;
+                await publish(`${subject(monster)} ${staggerVerb(monster.mnum)}.`);
+            }
+            damage = 0;
+            break;
+        // C passiveum() assigns zero damage to these types. Their ordinary
+        // attack effects do not apply to retaliation from the hero's body.
+        case AD_MAGM:
+        case AD_SLEE:
+        case AD_DISN:
+        case AD_DRST:
+        case AD_SPC1:
+        case AD_SPC2:
+        case AD_BLND:
+        case AD_SLOW:
+        case AD_DRLI:
+        case AD_DREN:
+        case AD_LEGS:
+        case AD_STCK:
+        case AD_SGLD:
+        case AD_SITM:
+        case AD_SEDU:
+        case AD_TLPT:
+        case AD_RUST:
+        case AD_CONF:
+        case AD_DGST:
+        case AD_HEAL:
+        case AD_WRAP:
+        case AD_WERE:
+        case AD_DRDX:
+        case AD_DRCO:
+        case AD_DRIN:
+        case AD_DISE:
+        case AD_DCAY:
+        case AD_SSEX:
+        case AD_HALU:
+        case AD_DETH:
+        case AD_PEST:
+        case AD_FAMN:
+        case AD_SLIM:
+        case AD_CORR:
+        case AD_POLY:
+        case AD_CLRC:
+        case AD_SPEL:
+        case AD_RBRE:
+        case AD_SAMU:
+        case AD_CURS:
+            damage = 0;
+            break;
+    }
+    return assess_dmg(monster, damage, publish);
+}
+// C mhitu.c:assess_dmg().
+async function assess_dmg(monster, damage, publish) {
+    monster.mhp -= damage;
+    if (monster.mhp > 0)
+        return { attackerStopped: false, damage };
+    await publish(`${subject(monster)} dies!`);
+    await finishHeroMonsterKill(monster, monster.mx, monster.my, { showKillMessage: false });
+    const died = !!monster.dead || monster.mhp <= 0;
+    return { attackerDied: died, attackerStopped: died, damage };
+}
+function subject(monster) {
+    if (!canSpotMonster(monster))
+        return 'It';
+    return heroIsHallucinating(game)
+        ? randomDisplayMonsterSubject() : monsterSentenceSubject(monster);
+}
+function possessive(monster) {
+    const name = subject(monster).replace(/^The /u, 'the ');
+    return name === 'It' ? 'its' : name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
 // Also C mhitu.c:calc_mattacku_vars(): initial targeting state is inlined here.
 export async function beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls) {

@@ -497,11 +497,11 @@ src/js/uhitm.ts	performHeroEngulf	rnd	"[""20 + index""]"	guarded
 src/js/uhitm.ts	performHeroEngulf	rnd	"[""8""]"	constant
 src/js/uhitm.ts	performNaturalContact	rnd	"[""20""]"	constant
 src/js/hero_form_kick.ts	kickWithMonsterForm	rnd	"[""20""]"	constant
-src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
-src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""2""]"	constant
-src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""3""]"	constant
-src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""30""]"	constant
-src/js/hero_form_passive.ts	applyHeroFormPassive	random	"[""6""]"	constant
+src/js/mhitu.ts	passiveum	random	"[""2""]"	constant
+src/js/mhitu.ts	passiveum	random	"[""2""]"	constant
+src/js/mhitu.ts	passiveum	random	"[""3""]"	constant
+src/js/mhitu.ts	passiveum	random	"[""30""]"	constant
+src/js/mhitu.ts	passiveum	random	"[""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
 src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
 src/js/uhitm.ts	finishHeroHitAftermath	random	"[""2""]"	constant
