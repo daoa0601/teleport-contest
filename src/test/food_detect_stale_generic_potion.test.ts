@@ -4,7 +4,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { POT_HEALING, SCR_FOOD_DETECTION } from '../js/object_data.js';
-import { remove_object } from '../js/floor_object.js';
+import { remove_object } from '../js/mkobj.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
