@@ -2342,7 +2342,7 @@ export async function completeMovedMonsterAction(
         movement.postMoveOldSquarePainted = true;
         await triggerMonsterTrap(monster, state, movement, random, rollDice, rollOne, calls);
         if (movement.deferredAfterMonsterTrap) {
-            // C trap.c:mintrap(): the trap's message, escape roll, and
+            // trap.c mintrap(): the trap's message, escape roll, and
             // effect completions run inline here, before postmov() continues
             // with the door, tunneling, and floor tails.
             const event = movement.trap;

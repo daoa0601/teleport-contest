@@ -12,7 +12,7 @@ import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
-import { clampHoleDestination, deleteTrap, seeTrap, tryMonsterTrapEscape, fillPitWithBoulderAt, clearHeroTrap, heroIsUnconscious } from './trap.js';
+import { clampHoleDestination, deleteTrap, seeTrap, tryMonsterTrapEscape, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
@@ -793,7 +793,7 @@ export async function moveHeroByTeleport(x, y, state = game, { allowDrag = false
         else if (!allowDrag)
             await unplaceBallAndChain(state);
     }
-    clearHeroTrap(state);
+    await resetUtrap(false, state);
     const wasSwallowed = u.uswallow;
     setHeroGrip(null, state);
     u.ux0 = oldx;

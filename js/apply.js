@@ -58,7 +58,7 @@ import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine } from './insight.js';
-import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetHeroTrap, maketrap } from './trap.js';
+import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
@@ -1650,7 +1650,7 @@ async function escapeJumpTrap(target, state) {
         default:
             await impossible(`Jumping out of strange trap (${hero.utraptype})?`, { state });
     }
-    await resetHeroTrap(true, state);
+    await resetUtrap(true, state);
     return true;
 }
 // C apply.c:jump(): the shared physical/spell jump owner, from the spell

@@ -11,7 +11,7 @@ import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { impossible, panic } from './diagnostics.js';
 import { mkstairs } from './mklev.js';
 import { monsterAtPosition } from './steed.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, resetHeroTrap, deleteTrap, maketrap } from './trap.js';
+import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, resetUtrap, deleteTrap, maketrap } from './trap.js';
 import { BOULDER } from './object_data.js';
 import { deleteObject } from './shk.js';
 import { fractureRock } from './rock_breakage.js';
@@ -51,7 +51,7 @@ export async function makeInvocationArea({ state = game } = {}) {
     if (state.u.utrap) {
         if (state.u.utraptype === TT_BURIEDBALL)
             await buriedBallToPunishment();
-        await resetHeroTrap(false, state);
+        await resetUtrap(false, state);
     }
     for (const [distance, ring] of rings.entries()) {
         for (const position of ring)

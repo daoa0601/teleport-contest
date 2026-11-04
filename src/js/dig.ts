@@ -19,7 +19,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
-import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, clearHeroTrap, setHeroTrap, triggerHeroTrap, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
+import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, setHeroTrap, triggerHeroTrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
 import type { DiggingContext, GameState, PlayingGameState } from './game_state.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -546,7 +546,7 @@ export async function continueHeroDigging(state = game): Promise<boolean> {
                 deleteTrap(trap, state);
                 // C reset_utrap(TRUE): falling out of the trap may settle
                 // flight/levitation state before the dig resumes.
-                await resetHeroTrap(true, state);
+                await resetUtrap(true, state);
             }
             digging.effort = 0;
             return false;
@@ -1030,7 +1030,7 @@ export async function digActualHole(
         if (hero.utraptype === TT_BURIEDBALL) {
             await buriedBallToPunishment(state);
         } else if (hero.utraptype === TT_INFLOOR) {
-            clearHeroTrap(state);
+            await resetUtrap(false, state);
         }
     }
 
@@ -1124,7 +1124,7 @@ export async function digActualHole(
                 state.vision_full_recalc = 1; /* vision limits change */
             } else {
                 // C reset_utrap(TRUE): a newly airborne hero floats back up.
-                await resetHeroTrap(true, state);
+                await resetUtrap(true, state);
             }
             if (objectsAppeared) await autopickupAtHero();
         } else if (victim) {
@@ -1510,7 +1510,7 @@ export async function zapDigWithObject(
             }
             await captureRayTraversalFrame(state);
 
-            // C trap.c:conjoined_pits() gate before digging a linked pit.
+            // trap.c conjoined_pits() gate before digging a linked pit.
             if (ownPit) {
                 let adjacentPit = trapAt(state, x, y);
                 if (direction >= 0 && !pitsAreConjoined(adjacentPit, ownPit)) {
@@ -1884,7 +1884,7 @@ export async function buriedBallToPunishment(state: GameState = game): Promise<b
     const { ox: x, oy: y } = ball;
     unlinkObject(ball, state);
     await punishHero(ball, state);
-    clearHeroTrap(state);
+    await resetUtrap(false, state);
     deleteEngravingAt(x, y, requireGameLevel(state));
     await newsym(x, y);
     return true;
@@ -2003,7 +2003,7 @@ export async function freeHeroFromBuriedBall(state: GameState = game) {
     unlinkObject(ball, state);
     placeObjectSynchronously(ball, x, y, state);
     await stack_object(ball, state);
-    await resetHeroTrap(true, state);
+    await resetUtrap(true, state);
     const level = requireGameLevel(state);
     level.engravings = (level.engravings || []).filter(
         engraving => engraving.x !== x || engraving.y !== y,

@@ -7,7 +7,7 @@ import { heroCanReachFloor } from './engrave.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroFormClings, heroIsFlying, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroIsStrangled } from './do_wear.js';
-import { clearHeroTrap, deleteTrap } from './trap.js';
+import { deleteTrap, resetUtrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
@@ -71,7 +71,7 @@ export async function selectFoodToEat({ state = game }: { state?: GameState } = 
                 if (answer === 'q') return null;
                 if (answer === 'y') {
                     deleteTrap(trap, state);
-                    if (held) clearHeroTrap(state);
+                    if (held) await resetUtrap(false, state);
                     const object = await mksobj(BEARTRAP, true, false);
                     object.ox = hero.ux;
                     object.oy = hero.uy;

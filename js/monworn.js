@@ -178,7 +178,7 @@ export function wornInSlot(monster, mask) {
     return (monster?.minvent || monster?.inventory || [])
         .find(object => ((object.owornmask ?? 0) & mask) !== 0) || null;
 }
-// C trap.c:wearing_iron_shoes() tests the boots' material, so iron kicking
+// trap.c wearing_iron_shoes() tests the boots' material, so iron kicking
 // boots protect as well as iron shoes do.
 const IRON = 11;
 // C ref: worn.c:find_mac().  Species AC is the base; only inventory objects

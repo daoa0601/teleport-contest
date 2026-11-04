@@ -76,7 +76,7 @@ import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
 import { customizedGlyphs } from './glyph_customizations.js';
 import { rumorCheck } from './rumor.js';
-import { clearHeroTrap } from './trap.js';
+import { resetUtrap } from './trap.js';
 import type { PropertyName } from './property_types.js';
 
 type SpecialLayoutEvent = SpecialLevelDescriptor & {
@@ -663,7 +663,7 @@ async function discardOldLevel(): Promise<void> {
     if (sameLevel(game.context.digging?.level, game.u.uz)) delete game.context.digging;
     game._travelTarget = null;
     if (game.context.polearm) game.context.polearm.hitmonId = null;
-    clearHeroTrap();
+    await resetUtrap(false);
     await checkSpecialRoom({ newLevel: true });
     game.u.ustuck = null;
     game.u.uswallow = game.uswallow = 0;

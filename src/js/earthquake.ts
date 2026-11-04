@@ -25,7 +25,7 @@ import { BOULDER } from './object_data.js';
 import { heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { rnl, rnd, rn2 } from './rng.js';
-import { monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetHeroTrap, maketrap, deleteFloorTrap } from './trap.js';
+import { monsterSelfTouch, trapAt, waterDamageChain, fireDamageChain, setHeroTrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { refreshMovementProperties } from './properties.js';
 import { monsterName } from './do_name.js';
@@ -140,7 +140,7 @@ function physicalDamage(amount: number): number {
 async function dropHeroIntoChasm(hadPitBeforeEarthquake: boolean): Promise<void> {
     if (game.u?.utrap && game.u.utraptype === TT_BURIEDBALL) {
         await plineWithContinuation('Your chain breaks!');
-        await resetHeroTrap(true);
+        await resetUtrap(true);
     }
     if (heroIsAirborne()) {
         if (!hadPitBeforeEarthquake) {

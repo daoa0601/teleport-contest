@@ -71,7 +71,7 @@ import { hurtleHero } from './dothrow.js';
 import {mksobj, placeCreatedObject, stack_object} from './mkobj.js';
 import { breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
 import { tossObjectUp } from './dothrow.js';
-import { deleteTrap, feelTrap, clearHeroTrap, triggerHeroTrap, igniteItems, resetHeroTrap, maketrap } from './trap.js';
+import { deleteTrap, feelTrap, triggerHeroTrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
@@ -985,10 +985,10 @@ async function escapeTrapsAfterFormChange() {
             await plineWithContinuation('The buried ball is no longer bound to you.');
             await freeHeroFromBuriedBall();
         }
-        clearHeroTrap();
+        await resetUtrap(false);
     } else if (heroLikesLava() && hero.utrap && hero.utraptype === TT_LAVA) {
         await plineWithContinuation(`The ${displayLiquidName('lava')} now feels soothing.`);
-        await resetHeroTrap(true);
+        await resetUtrap(true);
     }
 
     const body = { mnum: hero.umonnum };
@@ -1010,11 +1010,11 @@ async function escapeTrapsAfterFormChange() {
                 && hero.utraptype === TT_BEARTRAP))) {
         const trapName = hero.utraptype === TT_WEB ? 'web' : 'bear trap';
         await plineWithContinuation(`You are no longer stuck in the ${trapName}.`);
-        await resetHeroTrap(true);
+        await resetUtrap(true);
     }
     if (heroCanSpinWeb() && hero.utrap && hero.utraptype === TT_WEB) {
         await plineWithContinuation('You orient yourself on the web.');
-        await resetHeroTrap(true);
+        await resetUtrap(true);
     }
 }
 
