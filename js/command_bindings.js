@@ -7,8 +7,14 @@ const MOVEMENT_DELTAS = [
     [0, 0, 1], [0, 0, -1],
 ];
 const commandNamed = (name) => NATIVE_COMMANDS.find(command => command.name === name);
-// C cmd.c:ext_func_tab_from_func().
-const commandForHandler = (handler) => NATIVE_COMMANDS.find(command => command.handler === handler);
+// C cmd.c:ext_func_tab_from_func(): the first command table entry whose
+// handler is this C function. Aliases such as #name resolve to #call.
+export function extFuncTabFromFunc(handler) {
+    const command = NATIVE_COMMANDS.find(candidate => candidate.handler === handler);
+    if (!command)
+        throw new Error(`No command table entry for handler ${handler}`);
+    return command;
+}
 const control = (key) => key & 0x1f;
 const meta = (key) => key | 0x80;
 const uppercase = (key) => key >= 97 && key <= 122 ? key - 32 : key;
@@ -173,7 +179,7 @@ export class CommandBindings {
         if (pcHack !== this.pcHack) {
             this.pcHack = pcHack;
             if (pcHack)
-                this.add(meta(48), commandForHandler('dotypeinv'));
+                this.add(meta(48), extFuncTabFromFunc('dotypeinv'));
             else
                 this.remove(meta(48));
         }
@@ -297,10 +303,10 @@ export class CommandBindings {
             const handlers = DIRECTION_HANDLERS[direction];
             if (!handlers)
                 throw new RangeError(`Missing direction handlers for direction ${direction}`);
-            this.add(key, commandForHandler(handlers[0]));
-            this.add(this.numberPad ? meta(key) : uppercase(key), commandForHandler(handlers[1]));
+            this.add(key, extFuncTabFromFunc(handlers[0]));
+            this.add(this.numberPad ? meta(key) : uppercase(key), extFuncTabFromFunc(handlers[1]));
             if (!this.numberPad)
-                this.add(control(key), commandForHandler(handlers[2]));
+                this.add(control(key), extFuncTabFromFunc(handlers[2]));
         }
         this.updateRestOnSpace();
     }
