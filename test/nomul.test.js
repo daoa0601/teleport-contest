@@ -10,14 +10,12 @@ import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { cmdq_add_ec, cmdq_clear, startRun } from '../js/cmd.js';
-import { CQ_CANNED } from '../js/const.js';
+import { startRun } from '../js/cmd.js';
 void test('an involuntary delay ends running and queued commands', async () => {
     await freshObjectRoom();
     startRun(1, 0);
     game.context.travel = true;
-    cmdq_clear(CQ_CANNED);
-    cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+    game._cannedCommands = [{ kind: 'swap-weapon' }];
     game.u.invulnerable = true;
     game.context.botl = false;
     nomul(-3);
@@ -26,7 +24,7 @@ void test('an involuntary delay ends running and queued commands', async () => {
     assert.equal(game.context.run, 0);
     assert.equal(game.context.travel, false);
     assert.equal(game.context.mv, false);
-    assert.equal(game.command_queue[CQ_CANNED].length, 0);
+    assert.equal(game._cannedCommands.length, 0);
     assert.equal(game.u.invulnerable, false);
     assert.equal(game.context.botl, true);
 });
@@ -34,15 +32,14 @@ void test('a shorter delay preserves sleep, protection, and pending commands', a
     await freshObjectRoom();
     await putHeroToSleep(8);
     game.u.invulnerable = true;
-    cmdq_clear(CQ_CANNED);
-    cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+    game._cannedCommands = [{ kind: 'swap-weapon' }];
     game.context.botl = false;
     nomul(-2);
     assert.equal(game._helplessTurns, 8);
     assert.equal(game.multi, -8);
     assert.ok(game.u.usleep);
     assert.equal(game.u.invulnerable, true);
-    assert.equal(game.command_queue[CQ_CANNED].length, 1);
+    assert.equal(game._cannedCommands.length, 1);
     assert.equal(game.context.botl, false);
 });
 void test('an equal delay clears sleep and protection without requesting a status refresh', async () => {

@@ -5,8 +5,7 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { continueFoodMeal } from './eat.js';
 import { game } from './gstate.js';
-import { cmdq_clear } from './cmd.js';
-import { CQ_CANNED } from './const.js';
+import { clearCannedCommands } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import type { GameState } from './game_state.js';
 
@@ -28,5 +27,5 @@ export async function stopHeroOccupation(
     }
     if (occupation || (state.multi ?? 0) >= 0)
         endVoluntaryMultiTurn(state);
-    cmdq_clear(CQ_CANNED, state);
+    clearCannedCommands(state);
 }

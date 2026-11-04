@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import { TT_BEARTRAP, TT_PIT, TT_WEB, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
-import { pushKeys } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { pushKeys, queueCommandKeys } from '../js/input.js';
 import { BOULDER, CLUB } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroSpecies } from '../js/polyself.js';
@@ -84,7 +83,7 @@ for (const trapped of [false, true]) {
         requirePlayingGame(game);
         const westClub = await floorObject(CLUB, 9, 10, { initialize: false });
         const eastClub = await floorObject(CLUB, 11, 10, { initialize: false });
-        queueCannedKeys('\x04l');
+        queueCommandKeys('\x04l');
         pushKeys(' ');
 
         await rhack(4);

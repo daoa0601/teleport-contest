@@ -4,8 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { MM_EPRI } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { ELVEN_DAGGER, SCR_IDENTIFY } from '../js/object_data.js';
-import { resetInputState } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { createMonsterAt } from './support/monsters.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -14,7 +13,7 @@ import { createStaffedShop } from './support/shop.js';
 async function nameMonsterAt(t, proposed) {
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l' },
         { prompt: /./, keys: '.' }, // select the monster at the cursor
@@ -62,7 +61,7 @@ void test('naming at the hero square declines without a steed', async (t) => {
     });
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#m');
+    queueCommandKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);
@@ -75,7 +74,7 @@ void test('floor naming rejects an unnameable object type', async (t) => {
     await floorObject(ELVEN_DAGGER, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);
@@ -88,7 +87,7 @@ void test('floor naming refuses an unrecognized object', async (t) => {
     scroll.dknown = false;
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#f');
+    queueCommandKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);

@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
@@ -19,7 +18,7 @@ void test('discovery naming can replace a previously assigned type name', async 
     recordObjectCall(RIN_PROTECTION, 'Defense');
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#d');
+    queueCommandKeys('#d');
     planInput(input, t, [
         { prompt: /Pick an object type to name/, keys: 'a' },
         { prompt: /Call a ring called Defense:/, keys: 'Ward\r' },
@@ -38,7 +37,7 @@ for (const { outcome, blindTurns, discovery } of [
         recordObjectKnowledge(RIN_PROTECTION);
         const input = resetInputState();
         input.feed('name\r');
-        queueCannedKeys('#d');
+        queueCommandKeys('#d');
         planInput(input, t, [
             { prompt: /Pick an object type to name/, keys: 'a' },
             { prompt: /Call a ring of protection:/, keys: '\x1b' },

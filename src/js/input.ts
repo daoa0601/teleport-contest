@@ -15,6 +15,7 @@ export interface CommandDirection {
     readonly dy: number;
     readonly dz: number;
 }
+export type CommandResponse = number | 'user-input' | CommandDirection;
 export interface MapClick extends Position { button: 1 | 2 }
 export const MAP_CLICK_KEY = 256;
 
@@ -43,7 +44,7 @@ export class InputGate {
     beforeRead: (() => void | Promise<void>) | null;
     display: KeyReader | null;
     private readonly queue: (number | MapClick)[];
-
+    private readonly commandKeys: CommandResponse[];
     private pendingRead: ((input: number | MapClick) => void) | null;
     private mapClick: MapClick | null = null;
     private blockedWaiters: (() => void)[];
@@ -52,6 +53,7 @@ export class InputGate {
         this.beforeRead = beforeRead;
         this.display = display;
         this.queue = [];
+        this.commandKeys = [];
         this.pendingRead = null;
         this.blockedWaiters = [];
     }
@@ -90,6 +92,33 @@ export class InputGate {
         this.pendingRead = null;
         resolve(input);
     }
+
+    queueCommandKeys(keys: string): void {
+        this.commandKeys.push(...[...keys].map(keyCode));
+    }
+
+    queueCommandResponses(responses: readonly CommandResponse[]): void {
+        this.commandKeys.push(...responses);
+    }
+
+    clearCommandKeys(): void {
+        this.commandKeys.length = 0;
+    }
+
+    takeCommandResponse(): CommandResponse | undefined {
+        return this.commandKeys.shift();
+    }
+
+    // C cmd.c:cmdq_peek(CQ_CANNED) — inspect the next canned entry without
+    // consuming it. dip_into() refuses to run when nothing is queued.
+    peekCommandResponse(): CommandResponse | undefined {
+        return this.commandKeys[0];
+    }
+
+    // The queued-key pops for prompt owners moved to cmd.ts takeQueuedKey()
+    // and takeQueuedAdjacentPosition(): their reject branches clear the
+    // whole CQ_CANNED model, including the canned commands this gate does
+    // not own.
 
     async readKey(inputState: InputState = 'other'): Promise<number> {
         // tty input belongs to the player. Command owners consume canned
@@ -131,6 +160,7 @@ export class InputGate {
 
     clear() {
         this.queue.length = 0;
+        this.commandKeys.length = 0;
         this.mapClick = null;
     }
 
@@ -164,6 +194,27 @@ export function pushKey(key: KeyInput): void {
 
 export function pushKeys(keys: KeyInput | readonly KeyInput[]): void {
     activeInputGate.feed(keys);
+}
+
+export function queueCommandKeys(keys: string): void {
+    activeInputGate.queueCommandKeys(keys);
+}
+
+export function queueCommandResponses(responses: readonly CommandResponse[]): void {
+    activeInputGate.queueCommandResponses(responses);
+}
+
+
+export function takeCommandResponse(): CommandResponse | undefined {
+    return activeInputGate.takeCommandResponse();
+}
+
+export function peekCommandResponse(): CommandResponse | undefined {
+    return activeInputGate.peekCommandResponse();
+}
+
+export function clearCommandKeys(): void {
+    activeInputGate.clearCommandKeys();
 }
 
 

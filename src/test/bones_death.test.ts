@@ -3,8 +3,7 @@ import assert from 'node:assert/strict';
 import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones.js';
 import { resetInputState } from '../js/input.js';
 import { promptYesNo } from '../js/query.js';
-import { cmdq_add_ec, cmdq_add_key, cmdq_clear } from '../js/cmd.js';
-import { BURNING, CQ_CANNED, DIED, FOUNTAIN, G_GENOD, GRAVE, HEADSTONE, LEAVESTATUE, NON_PM, PIT, ROOM, W_ARM, W_ARMC } from '../js/const.js';
+import { BURNING, DIED, FOUNTAIN, G_GENOD, GRAVE, HEADSTONE, LEAVESTATUE, NON_PM, PIT, ROOM, W_ARM, W_ARMC } from '../js/const.js';
 import { setHeroRemainsFromDeath, setHeroRemainsFromMonster } from '../js/death_remains.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
@@ -331,9 +330,7 @@ void test('a wizard death asks Save bones? with a fresh key and keeps a canned c
     game._canMakeBones = true;
     game.plname = 'Canner';
     setHeroRemainsFromDeath(DIED);
-    cmdq_clear(CQ_CANNED);
-    cmdq_add_ec(CQ_CANNED, 'doapply');
-    cmdq_add_key(CQ_CANNED, 'e'.charCodeAt(0));
+    game._cannedCommands = [{ kind: 'apply', invlet: 'e' }];
 
     const input = resetInputState();
     const saved = await answerPrompts(
@@ -343,6 +340,6 @@ void test('a wizard death asks Save bones? with a fresh key and keeps a canned c
     );
 
     assert.equal(saved, false, 'answering n must skip the bones file');
-    assert.equal(game.command_queue[CQ_CANNED].length, 2,
-        'the queued command and its letter must survive the question');
+    assert.deepEqual(game._cannedCommands, [{ kind: 'apply', invlet: 'e' }],
+        'the canned command must survive the question');
 });

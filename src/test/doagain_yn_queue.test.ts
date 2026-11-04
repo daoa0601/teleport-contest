@@ -3,8 +3,6 @@ import test from 'node:test';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { cmdq_clear } from '../js/cmd.js';
-import { CQ_REPEAT } from '../js/const.js';
 import { promptChoice } from '../js/query.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -17,7 +15,7 @@ void test('a question answered during do-again feeds the next question', async (
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     game._inDoAgain = true;
-    cmdq_clear(CQ_REPEAT);
+    game._repeatCommands = [];
     try {
         const input = resetInputState();
         const first = promptChoice('First question?', ['y', 'n'] as const, 'n');
@@ -38,6 +36,6 @@ void test('a question answered during do-again feeds the next question', async (
         assert.equal(await second, 'n');
     } finally {
         game._inDoAgain = false;
-        cmdq_clear(CQ_REPEAT);
+        game._repeatCommands = [];
     }
 });

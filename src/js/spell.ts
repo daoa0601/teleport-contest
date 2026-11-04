@@ -10,8 +10,9 @@ export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 import { commandResultFailed } from './cmd.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
+import { promptKey } from './tty_prompts.js';
 import { promptDirection } from './cmd.js';
-import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
+import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroSpineName } from './body_parts.js';
@@ -27,7 +28,8 @@ import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
 import { findArmorClass } from './do_wear.js';
 
-import { cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
+import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
+import { restoreCannedCommandTail } from './cmd.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,
     map_invisible, zapdir_to_glyph,
@@ -41,6 +43,7 @@ import { makeBlinded, makeConfused, makeStunned } from './potion.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { spendHeroNutrition } from './eat.js';
+import { takeCommandResponse } from './input.js';
 import { wakeMonster, monstersInFmonOrder } from './mon.js';
 import { monsterHasShockResistance } from './mondata.js';
 import {
@@ -721,8 +724,9 @@ export async function docast() {
     }
     const index = (game.spells ?? []).indexOf(spell);
     const letter = index < 26 ? 97 + index : 65 + index - 26;
-    // C spell.c:824-825 appends the selected letter even during do_repeat().
-    cmdq_add_key(CQ_REPEAT, letter);
+    // C docast() appends the selected letter even during do_repeat().
+    game._repeatCommands ??= [];
+    game._repeatCommands.push({ kind: 'key', key: letter });
     await castSpell(spell.otyp);
 }
 
@@ -986,16 +990,21 @@ export async function selectSpellToCast(state: GameState = game): Promise<Memori
         return null;
     }
     if (await rejectCasting(state)) return null;
-    // C spell.c:getspell(): one cmdq_pop() (spell.c:729-743) must yield a
-    // CMDQ_KEY naming a known spell; every other popped entry returns
-    // FALSE, leaving the rest of the queue untouched.
-    const cmdq = cmdq_pop(state);
-    if (cmdq) {
-        if (cmdq.typ === CMDQ_KEY) {
-            const index = spellIndex(cmdq.key);
-            return index >= 0 ? spells[index] ?? null : null;
+    const queued = state._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
+    if (queued !== undefined) {
+        const key = typeof queued === 'number' ? queued
+            : typeof queued === 'object' && 'kind' in queued && queued.kind === 'key'
+                ? queued.key : null;
+        if (key === null) return null;
+        const index = spellIndex(key);
+        return index >= 0 ? spells[index] ?? null : null;
+    }
+    if (!state._inDoAgain) {
+        const command = state._cannedCommands?.shift();
+        if (command) {
+            restoreCannedCommandTail(command);
+            return null;
         }
-        return null;
     }
     if (state.flags.menu_style === MENU_TRADITIONAL) {
         const selection = await selectTraditionalSpell(spells);
@@ -1047,8 +1056,11 @@ async function selectTraditionalSpell(spells: readonly MemorizedSpell[]): Promis
     const letters = count === 1 ? 'a' : count < 27 ? `a-${spellLetter(count - 1)}`
         : count === 27 ? 'a-zA' : `a-zA-${spellLetter(count - 1)}`;
     for (let tries = 0; tries < 10; tries++) {
-        const { answer } = await yn_function(`Cast which spell? [${letters} *?]`, null, '', true);
-        const key = answer.charCodeAt(0);
+        // yn_function() acknowledges unread prose before replacing it with
+        // an unrestricted, case-sensitive single-key question.
+        await flushPendingTopline();
+        const key = await promptKey(`Cast which spell? [${letters} *?] `);
+        rememberCommandKey(key);
         if (key === 42 || key === 63) return 'menu';
         // C strchr(quitchars, ilet) also matches a literal fuzzer NUL.
         if ([0, 32, 10, 13, 27].includes(key)) {

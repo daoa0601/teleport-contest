@@ -4,8 +4,7 @@ import test from 'node:test';
 import { artifactByName, artifactInfoLines, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
-import { queueCannedKeys } from './support/canned-input.js';
+import { queueCommandKeys, resetInputState } from '../js/input.js';
 import { ARROW, ELVEN_DAGGER, LONG_SWORD, RIN_PROTECTION, SPE_FORCE_BOLT, SPE_NOVEL } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
 
@@ -21,7 +20,7 @@ void test('an individual naming prompt pluralizes a stack before its existing in
     });
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     planInput(input, t, [{
         prompt: /What do you want to name these arrows named First Flight\?/,
         keys: 'Fletching\r',
@@ -65,7 +64,7 @@ for (const { title, type, callName, description } of [
         recordObjectCall(type, callName);
         const input = resetInputState();
         input.feed('name\r');
-        queueCannedKeys('#ia');
+        queueCommandKeys('#ia');
         const previousDisplay = input.display;
         let prompted = false;
         input.display = {
@@ -92,7 +91,7 @@ void test('naming a wielded elven dagger Sting creates its artifact and warning'
     await setPrimaryWeapon(dagger);
     const input = resetInputState();
     input.feed('name\rs t-iNg\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
 
     await rhack('#'.charCodeAt(0));
 
@@ -115,7 +114,7 @@ void test('naming the alternate weapon Orcrist ends two-weapon combat', async ()
     game.u.uconduct = { literate: 1 };
     const input = resetInputState();
     input.feed('name\rorcrist\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
 
     await rhack('#'.charCodeAt(0));
 
@@ -130,7 +129,7 @@ void test('restricted artifact lettering slips instead of creating Excalibur', a
     const sword = await addInventoryObject(LONG_SWORD, { invlet: 'a' });
     const input = resetInputState();
     input.feed('name\rExcalibur\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     planInput(input, t, [{ prompt: /While engraving, your hand slips\.[\s\S]*--More--/, keys: ' ' }]);
 
     await rhack('#'.charCodeAt(0));
@@ -149,7 +148,7 @@ void test('an existing artifact resists a new individual name', async () => {
     nameArtifact(sword, artifact);
     const input = resetInputState();
     input.feed('name\rNew name\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
 
     await rhack('#'.charCodeAt(0));
 
@@ -162,7 +161,7 @@ void test('novels reject individual naming before asking for a name', async t =>
     const publishedTitle = novel.oextra?.oname;
     const input = resetInputState();
     input.feed('name\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     planInput(input, t, []);
 
     await rhack('#'.charCodeAt(0));
@@ -175,12 +174,12 @@ void test('empty naming input preserves a name and spaces remove it', async () =
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a', oname: 'Keepsake' });
     const input = resetInputState();
     input.feed('name\r\r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     await rhack('#'.charCodeAt(0));
     assert.equal(dagger.oextra?.oname ?? dagger.oname, 'Keepsake');
 
     input.feed('name\r   \r');
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
     await rhack('#'.charCodeAt(0));
     assert.equal(dagger.oextra?.oname ?? dagger.oname, undefined);
 });
@@ -193,7 +192,7 @@ for (const typedName of ['', 'Replacement']) {
         });
         const input = resetInputState();
         input.feed(`name\r${typedName}\xff\r`);
-        queueCannedKeys('#ia');
+        queueCommandKeys('#ia');
 
         await rhack('#'.charCodeAt(0));
 
@@ -207,7 +206,7 @@ void test('individual naming keeps printable high bytes and limits the normalize
     const dagger = await addInventoryObject(ELVEN_DAGGER, { invlet: 'a' });
     const input = resetInputState();
     input.feed(`name\r  \u00a0Café   ${'r'.repeat(68)}\r`);
-    queueCannedKeys('#ia');
+    queueCommandKeys('#ia');
 
     await rhack('#'.charCodeAt(0));
 
