@@ -25,7 +25,7 @@ import { requireInitializedHero } from './hero_types.js';
 import { surfaceName } from './terrain_name.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
 import { do_attack } from './uhitm.js';
-import { monsterAtPosition, doride, stuckSteed, monsterSaddle } from './steed.js';
+import { monsterAtPosition, doride, stuckSteed, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip, shouldShowGetposTip } from './hack.js';
@@ -66,7 +66,7 @@ import { continueWipingFace, donull, dowipe, dodrop, monsterPreventsStairTravel,
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
 import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
-import { MONSTER_MOVE, MONSTER_NAME, monsterSpeciesHidesOnCeiling, monsterCanBeSaddled } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -92,6 +92,7 @@ import { cansee, couldsee } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import { revealTerrain } from './terrain_view.js';
 import { truncateRawMessage } from './pline_text.js';
+import { monsterSpeciesHidesOnCeiling } from './mondata.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts.
 export { getLine, promptYesNo, promptYesNoQuit } from './query.js';

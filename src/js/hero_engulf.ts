@@ -16,7 +16,7 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { finishMonsterAttackDeath } from './end.js';
 import { heroIsBreathless, heroPassesWalls, heroSpecies, applyHeroGolemEffects } from './polyself.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_DGST, AD_DISE, AD_DREN, AD_ELEC, AD_FIRE, AD_PHYS } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsWhirly, monsterPassesWalls } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, LEASH, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
@@ -26,7 +26,6 @@ import { applyEngulfBlindness } from './engulf_blindness.js';
 import { burnAwayHeroSlime } from './hack.js';
 import { drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
 import { expelHero } from './hero_expulsion.js';
-
 import { infectHeroWithMonsterDisease, damageHeroFromMonster } from './mhitu.js';
 import { resetOccupations } from './cmd.js';
 import { endObjectBurn } from './timeout.js';
@@ -40,7 +39,10 @@ import { carriedObjectOwner } from './shk.js';
 import { dismountHero } from './steed.js';
 import { touchPetrifies } from './stoning.js';
 import { vision_recalc } from './vision.js';
-import { monsterHasStoneResistance } from './mondata.js';
+import {
+    monsterHasStoneResistance, monsterDigests, monsterEnfolds, monsterIsAmorphous, monsterIsAmphibious,
+    monsterIsAnimal, monsterIsUnsolid, monsterIsWhirly, monsterPassesWalls,
+} from './mondata.js';
 
 export interface HeroEngulfOptions {
     state?: GameState;
@@ -63,8 +65,6 @@ export interface HeroEngulfResult {
 }
 
 const MZ_HUGE = 4;
-const M1_WALLWALK = 0x08;
-const M1_UNSOLID = 0x00100000;
 
 export function monsterCanEngulfHero(monster: Monster, state: GameState = game): boolean {
     requireLiveGame(state);
@@ -115,7 +115,7 @@ export async function beginHeroEngulf(monster: Monster, attack: HeroContactAttac
         const subject = monsterName(monster, { state, capitalized: true, augmentIt: true });
         const verb = monsterIsAnimal(monster) ? 'lunges'
             : monsterIsWhirly(monster) ? 'whirls'
-            : (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_UNSOLID ? 'flows'
+            : monsterIsUnsolid({ mnum: monster.mnum }) ? 'flows'
             : monsterIsAmorphous(monster) ? 'oozes' : 'surges';
         await publish(`${subject} ${verb} forward and plucks you off ${steedName}!`,
             { urgent: true });

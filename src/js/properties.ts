@@ -3,10 +3,14 @@
 
 import { game } from './gstate.js';
 import { I_SPECIAL, TIMEOUT, TT_PIT, W_ART, W_ARTI } from './const.js';
-import { MONSTER_FLAGS1 } from './monster_data.js';
+
 import { MUMMY_WRAPPING } from './object_data.js';
 import { PROPERTY_TIMEOUT_FIELDS } from './property_types.js';
-import type { CarriedPropertySource, IntrinsicOrigin, LevitationState, PropertyHero, PropertyName, PropertyObject, PropertySources, PropertyState, StashedLevitationSources, WornPropertySlot } from './property_types.js';
+import type {
+    CarriedPropertySource, IntrinsicOrigin, PropertyHero, PropertyName, PropertyObject, PropertySources,
+    PropertyState, StashedLevitationSources, WornPropertySlot,
+} from './property_types.js';
+import { monsterIsFlyer, monsterIsSwimmer } from './mondata.js';
 
 const permanentOrigins: readonly IntrinsicOrigin[] = ['role', 'experience', 'race', 'outside'];
 const movementProperties: readonly PropertyName[] = ['levitation', 'flying', 'swimming', 'stealth'];
@@ -114,9 +118,9 @@ export function propertyIsActive(property: PropertyName, state: PropertyState = 
         const sources = existingPropertyRecord(property, state);
         return !!(sources?.worn.length || sources?.invoked || sources?.carried.length);
     }
-    const steedFlags = hero.usteed ? (MONSTER_FLAGS1[hero.usteed.mnum] ?? 0) : 0;
-    const fromSteed = property === 'flying' ? steedFlags & 0x01
-        : property === 'swimming' ? steedFlags & 0x02 : false;
+    const steed = hero.usteed;
+    const fromSteed = !!steed && (property === 'flying' ? monsterIsFlyer(steed.mnum)
+        : property === 'swimming' && monsterIsSwimmer(steed.mnum));
     if (!propertySourceIsActive(property, state) && !fromSteed) return false;
     if (property === 'levitation' || property === 'flying' || property === 'invisible' || property === 'clairvoyant')
         return !propertyIsBlocked(property, state);

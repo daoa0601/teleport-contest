@@ -1,54 +1,44 @@
 import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
-import { publishHeardMessage } from './hero_speech.js';
-import { currency } from './invent.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
-import { deleteTrap } from './trap.js';
+import { publishHeardMessage } from './hero_speech.js';
+import { currency, delobj } from './invent.js';
+import { deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';
 import { isok } from './cmd.js';
 import { canSpotMonster, newsym } from './display.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { unlinkObject } from './mkobj.js';
-import { petrifyMonsterFromContact } from './trap.js';
-import { revealMonsterAppearance } from './mon.js';
+import { unlinkObject, placeObject, splitObjectStack, stack_object } from './mkobj.js';
+import { revealMonsterAppearance, angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, wakeMonstersNearWithMessages, } from './mon.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, } from './mondata.js';
+import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, passes_rocks, } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { applyMonsterPassiveToObject } from './uhitm.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { heroSpecies } from './polyself.js';
-import { captureHeroProjectileName } from './uhitm.js';
-import { angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder, maybeUnhideAt, wakeAttackedMonster, } from './mon.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { endVoluntaryMultiTurn, roomsAt } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { unpunishHero } from './read.js';
 import { addShopObjectToBill, costlySpot } from './shk.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { ACID_VENOM, BOULDER, CREAM_PIE, EGG, GOLD_PIECE, STATUE } from './object_data.js';
-import { splitObjectStack, placeObject, stack_object } from './mkobj.js';
-import { observeObject } from './o_init.js';
-import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { observeObject, objectMaterial } from './o_init.js';
+import { verbForSubject, withIndefiniteArticle, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
-import { delobj } from './invent.js';
-import { objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
-import { shouldMulchMissile } from './dothrow.js';
+import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './dothrow.js';
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
-import { objectCombatName, objectNameIsPlural } from './objnam.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { rangedTargetHitBonus, breakFloorObject } from './dothrow.js';
-import { roomsAt } from './hack.js';
 const GLASS = 19;
 const DIRECTIONS = [
     { dx: -1, dy: 0 },
@@ -174,9 +164,8 @@ async function hitMonster(monster, node, state, options) {
         return true;
     }
     const material = objectMaterial(object, state);
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const harmless = object.oclass !== RING_CLASS && (material === 20 || material === 21)
-        && !!(flags & 0x8) && !(flags & 0x00100000);
+        && passes_rocks(monster.mnum);
     let damage = rollPhysicalWeaponDamage(object, monster, {
         state, rollOne: options.rollOne, rollDice: options.rollDice,
     });
@@ -478,7 +467,7 @@ export async function scatterFloorObjects(x, y, force, { state = game, onlyObjec
     }
     await newsym(x, y);
     if (state.u.ux === x && state.u.uy === y && state.u.uundetected
-        && (monsterHidesUnder(heroSpecies(state))))
+        && monsterHidesUnder(heroSpecies(state)))
         await hideHeroUnder(state);
     const originMonster = monsterAt(state, x, y);
     if (originMonster?.mtrapped)

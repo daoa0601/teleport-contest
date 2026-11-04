@@ -3,15 +3,14 @@ import { M_ATTK_DEF_DIED, M_ATTK_MISS, Upolyd, W_ARMF } from './const.js';
 import { specialContactDamage } from './contact_damage.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss } from './uhitm.js';
-import { resolveHeroNaturalDamage } from './uhitm.js';
+import { findHeroMeleeHitThreshold, maybeUnparalyzeMeleeDefender, showHeroMeleeMiss, applyHeroContactPassive, resolveHeroNaturalDamage } from './uhitm.js';
 import { heroSpecies } from './polyself.js';
 import { AT_KICK } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterIsShade, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, requireMonsterData } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { applyHeroContactPassive } from './uhitm.js';
 import { rnd } from './rng.js';
 import type { Monster } from './monster_types.js';
+import { monsterIsShade } from './mondata.js';
 
 export async function kickWithMonsterForm(monster: Monster, x: number, y: number): Promise<boolean> {
     requirePlayingGame(game);

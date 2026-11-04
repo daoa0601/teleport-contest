@@ -10,7 +10,8 @@ import unittest
 import z3
 
 from cfront import CFront
-from jssym import parse_module
+from csym import CPtr
+from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from specs import INT, LONG, Spec
 
@@ -52,6 +53,11 @@ class ExecutorTests(unittest.TestCase):
     def test_boolean_returns_correspond_to_native_zero_and_one(self):
         self.equivalent('int example(int x) { return x > 0; }',
                         'function example(x) { return x > 0; }', params=[('x', INT)])
+
+    def test_number_converts_booleans_to_zero_and_one(self):
+        self.equivalent('int example(int x) { return (x > 0) + (x == 1); }',
+                        'function example(x) { return Number(x > 0) + Number(x === 1); }',
+                        params=[('x', INT)])
 
     def test_boolean_returns_do_not_hide_a_different_native_integer(self):
         self.rejected('int example(int x) { return x ? 2 : 0; }',
@@ -1128,6 +1134,44 @@ class ExecutorTests(unittest.TestCase):
         self.equivalent(c, js, **domain)
         self.rejected(c, js.replace('classes = [1, 2, 2]', 'classes = [0, 2, 2]'),
                       **domain, reason='outputs differ')
+
+    def compare_flags(self, macro, owner, *, mutant=False):
+        source = (REPO / 'js/mondata.js').read_text()
+        if mutant:
+            source = source.replace('const M1_NOLIMBS = 0x00006000;',
+                                    'const M1_NOLIMBS = 0x00004000;')
+        modules = {'js/mondata.js': source,
+                   'js/monster_data.js': (REPO / 'js/monster_data.js').read_text()}
+
+        def configure(world, front, parsed):
+            world.c_globals['ptr'] = CPtr(True, 'body')
+            flags = world.c_state['body.mflags1'][0]
+            world.js_constants[('js/monster_data.js', 'MONSTER_FLAGS1')] = V(
+                'array', (V('num', flags),))
+
+        return self.compare(
+            '#include "hack.h"\nextern struct permonst *ptr;\n'
+            f'int example(void) {{ return {macro}(ptr); }}',
+            "import { " + owner + " } from './mondata.js';\n"
+            f'function example() {{ return {owner}(0); }}',
+            state=[('body.mflags1', (64, False), None)],
+            pre=lambda s: [s['body.mflags1'] <= 2 ** 32 - 1],
+            modules=modules, configure=configure,
+        )
+
+    def test_limbless_requires_the_whole_mask_for_every_flag_word(self):
+        proved, report = self.compare_flags('nolimbs', 'monsterHasNoLimbs')
+        self.assertTrue(proved, report)
+
+    def test_missing_arms_bit_is_detected_outside_the_initial_species_table(self):
+        proved, report = self.compare_flags('nolimbs', 'monsterHasNoLimbs', mutant=True)
+        self.assertFalse(proved, report)
+        self.assertIn('outputs differ', report)
+
+    def test_high_diet_bit_survives_javascript_signed_bitwise_coercion(self):
+        proved, report = self.compare_flags('metallivorous', 'metallivorous')
+        self.assertTrue(proved, report)
+
 
 if __name__ == '__main__':
     unittest.main()

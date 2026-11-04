@@ -1,3 +1,4 @@
+import { cant_drown } from './mondata.js';
 // Objects thrown by the hero.
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
@@ -13,7 +14,7 @@ import { monsterName } from './do_name.js';
 import { artifactById } from './artifacts.js';
 import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
 import { dropBall } from './ball.js';
-import { containerImpactDamage } from './dokick.js';
+import { containerImpactDamage, shipObject } from './dokick.js';
 import { currentAttribute } from './attrib.js';
 import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, transientObjectGlyph, unmapObject, } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -25,26 +26,22 @@ import { finishInventoryRemoval } from './invent.js';
 import { endObjectBurn } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
-import { isPick } from './object_properties.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
-import { breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
-import { splitObjectStack } from './mkobj.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { distantObjectName, objectName, ownedObjectName, withIndefiniteArticle } from './objnam.js';
+import { isPick, isLauncherAmmunition, launcherMatchesAmmo } from './object_properties.js';
+import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { breakObjectAtLocation, objectBreaksOnImpact, settleThrownShopObject } from './dothrow.js';
+import { splitObjectStack, objectWeight, placeObject, stack_object } from './mkobj.js';
 import { objectIsVulnerableToErosion } from './trap.js';
 import { closedDoor } from './monmove.js';
-import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
-import { shipObject } from './dokick.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { settleThrownShopObject } from './dothrow.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
-import { objectWeight, placeObject, stack_object } from './mkobj.js';
+import { rockSkipRange } from './zap.js';
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
 }
@@ -453,12 +450,8 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
     return { x, y, path, contact, stoppedBy, destroyed, migrated };
 }
 function rockSkipsOverMonster(monster) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const swimming = 0x00000002;
-    const amphibious = 0x00000200;
-    const breathless = 0x00000400;
     return MONSTER_SYMBOL[monster.mnum] === 57
-        || !!(flags & (swimming | amphibious | breathless));
+        || (cant_drown(monster.mnum));
 }
 export function flyHeroThrownObject(options) {
     const state = options.state ?? game;
@@ -530,5 +523,4 @@ export async function captureThrownObjectFlight(object, flightPath, state = game
             await newsym(transientCell.x, transientCell.y);
     }
 }
-import { rockSkipRange } from './zap.js';
 //# sourceMappingURL=thrown_object.js.map

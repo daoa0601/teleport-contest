@@ -1,40 +1,38 @@
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES, } from './object_data.js';
+import { objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, } from './object_data.js';
 import { formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
-import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, I_SPECIAL, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND } from './const.js';
-import { isok } from './cmd.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND, A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF, } from './const.js';
+import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet } from './do_wear.js';
-import { delobj, consumeObjectCharge } from './invent.js';
+import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
-import { endObjectBurn, beginObjectBurn } from './timeout.js';
+import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
 import { iceDescriptionAt } from './pager.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
-import { useUpInventoryStack } from './invent.js';
-import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterDigests, monsterIsAmorphous, monsterIsAnimal, monsterIsClinger, monsterIsHumanoid, monsterIsMindless, monsterIsUnsolid, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero } from './polyself.js';
+import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
-import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel } from './dungeon.js';
-import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
+import { levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth } from './dungeon.js';
+import { monsterFliesOrFloats, monsterInAir, angerMonster, finishEnvironmentalMonsterDeath, maybeUnhideAt, finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone, wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance, setHeroGrip, wornMonsterLifeSaver, } from './mon.js';
 import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, objectTypeKnown, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
-import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain } from './display.js';
-import { objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory } from './zap.js';
+import { canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor, show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph, } from './display.js';
+import { objectResistsDestruction, getObjectLocation, blankNovel, burnFloorObjectsAt, destroyFireInventory, destroyFireMonsterInventory, heroHasHalfSpellDamage, meltIce, monsterResistsEffect, poly_obj, } from './zap.js';
 import { impossible } from './diagnostics.js';
-import { stopLevelTimer } from './timeout.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import { plineWithContinuation, pline } from './pline.js';
+import { plineWithContinuation, pline, set_msg_xy } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
-import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST } from './monster_attack_types.js';
-import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless } from './mondata.js';
-import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap } from './teleport.js';
+import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
+import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties } from './monworn.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, } from './mondata.js';
+import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, moveHeroByTeleport, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, } from './teleport.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName } from './do_name.js';
 import { touchPetrifies, selfTouchPetrifyingWeapons, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM } from './stoning.js';
@@ -43,82 +41,49 @@ import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct, finishHeroDeath } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex, loseHeroExperience, addExperience, checkExperienceLevel } from './exper.js';
-import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable } from './mkobj.js';
+import { mksobj, objectWeight, unlinkObject, mkcorpstat, rndmonnumAdj, objectIsFlammable, objectIsRottable, placeCreatedObject, placeObject, placeObjectSynchronously, remove_object, splitObjectStack, stack_object, updateIceObjectTimersAt } from './mkobj.js';
 import { buryObject, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment, unearthFloorObjectsAt } from './dig.js';
 import { monsterAtPosition, monsterHasMapPosition, dismountHero, steedIsGrounded, monsterOccupiesPosition } from './steed.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
-import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill } from './properties.js';
-import { ordinalSuffix, possessiveName, dist2, dungeonDepth } from './hacklib.js';
+import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, } from './properties.js';
+import { ordinalSuffix, possessiveName, dist2, dungeonDepth, depth, distmin } from './hacklib.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { heroHasArtifactDefense, artifactById, heroHasMagicKey } from './artifacts.js';
+import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, finishLiquidDeath, pickEmergencyDrop, reviveHeroFromLiquid, teleportHeroOutOfLiquid, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER } from './hack.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { currentAttribute, exerciseAttribute, changeHeroLuck } from './attrib.js';
+import { currentAttribute, exerciseAttribute, changeHeroLuck, adjustAttribute, attributeChangeMessage } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
-import { heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName } from './body_parts.js';
+import { heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName, heroSpineName, monsterArmName, monsterHeadName, } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { abusePet } from './dog.js';
-import { heroCanReachFloor } from './engrave.js';
-import { promptDirection } from './cmd.js';
+import { abusePet, tameMonster } from './dog.js';
+import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
 import { beginBallAndChainMove, finishBallAndChainMove, fallWithIronBall, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { checkHeroLeashes, bringLeashedFollowers } from './apply.js';
-import { chooseInventoryObject } from './invent.js';
-import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic } from './uhitm.js';
-import { setMonsterMalign, makemon } from './makemon.js';
+import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
+import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
 import { isWeldedPrimary } from './wield.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
-import { splitHeroMonsterForm } from './potion.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
+import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster } from './potion.js';
+import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explodeLandMine } from './landmine_explosion.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
-import { impactDrop } from './dokick.js';
+import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { poisonHero } from './poison.js';
-import { putHeroToSleep } from './timeout.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
-import { heroHasInvoluntaryDelay } from './cmd.js';
 import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { encumber_msg } from './pickup.js';
-import { setHeroGrip } from './mon.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
-import { heroIsSliming } from './potion.js';
-import { meltIce } from './zap.js';
-import { A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF } from './const.js';
-import { AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
-import { changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance } from './mon.js';
-import { set_msg_xy } from './pline.js';
-import { applyMonsterEquipmentProperties } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterObjectPronoun } from './mondata.js';
-import { relocateObjectRandomly } from './teleport.js';
-import { splitObjectStack, placeObject, stack_object, placeCreatedObject, remove_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
-import { grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty } from './properties.js';
-import { depth, distmin } from './hacklib.js';
-import { heroHasCarriedArtifactFlag } from './artifacts.js';
-import { heroFormFlags as heroFormFlagsOfState, heroIsUnchanging, polymorphHero } from './polyself.js';
-import { adjustAttribute, attributeChangeMessage } from './attrib.js';
-import { heroSpineName, monsterArmName, monsterHeadName } from './body_parts.js';
-import { tameMonster } from './dog.js';
-import { deleteEngravingAt } from './engrave.js';
-import { makemonAt } from './makemon.js';
-import { makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster } from './potion.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { shipObject } from './dokick.js';
-import { setMulti } from './cmd.js';
-import { levelAtDepth } from './dungeon.js';
-import { inventoryItemDescription } from './invent.js';
-import { heroHasHalfSpellDamage, monsterResistsEffect, poly_obj } from './zap.js';
-import { monsterHasNoLimbs, monsterIsNonliving, monsterIsVampireShifter, monsterIsBreathless, monsterIsBig, monsterIsFloater, monsterIsFlyer } from './monster_data.js';
-import { transientObjectGlyph } from './display.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { hasInternalInvisibility, syncHeroInvisibility } from './hero_invisibility.js';
 import { onQuestStart } from './quest.js';
@@ -128,9 +93,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus } from './dothrow.js';
-import { wornMonsterLifeSaver } from './mon.js';
 import { fractureRock } from './rock_breakage.js';
-import { applyMonsterPassiveToObject } from './uhitm.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.
 export async function seeTrap(trap, state = game) {
     if (trap.tseen)
@@ -154,11 +117,6 @@ const FIRE_RESISTANT_OBJECTS = new Set([
     RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE,
 ]);
-const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
-const M1_CLING = 0x00000010;
-const M1_MINDLESS = 0x00010000;
-const M1_UNSOLID = 0x00100000;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_VORTEX = 22;
@@ -777,9 +735,8 @@ export function trapTriggeredByFloor(trap) {
 // C ref: trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
 // candidate info; dog_move() then applies its separate hero-seen 1/40 rule.
 export function monsterTrapIsHarmless(monster, trap, state) {
-    const speciesFlags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
-    const airborne = speciesFlags & M1_FLY || symbol === S_EYE || symbol === S_LIGHT;
+    const airborne = monsterIsFlyer(monster.mnum) || symbol === S_EYE || symbol === S_LIGHT;
     const sokoban = state.level.flags.sokoban_rules;
     const floorTriggered = trapTriggeredByFloor(trap);
     if (!sokoban && floorTriggered && airborne)
@@ -788,10 +745,10 @@ export function monsterTrapIsHarmless(monster, trap, state) {
     switch (trap.ttyp) {
         case BEAR_TRAP:
             return ((MONSTER_SIZE[monster.mnum] ?? 2) <= 1 ||
-                !!(speciesFlags & (M1_AMORPHOUS | M1_UNSOLID)) ||
+                (monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
                 whirly);
         case WEB:
-            return (!!(speciesFlags & (M1_AMORPHOUS | M1_UNSOLID)) ||
+            return ((monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
                 [94, 96].includes(monster.mnum) ||
                 whirly);
         case SLP_GAS_TRAP:
@@ -804,7 +761,7 @@ export function monsterTrapIsHarmless(monster, trap, state) {
         case SPIKED_PIT:
         case HOLE:
         case TRAPDOOR:
-            return !!(speciesFlags & M1_CLING) && !sokoban;
+            return monsterIsClinger(monster.mnum) && !sokoban;
         case ANTI_MAGIC:
             return monsterHasMagicResistance(monster);
         case STATUE_TRAP:
@@ -815,7 +772,6 @@ export function monsterTrapIsHarmless(monster, trap, state) {
             return false;
     }
 }
-const M1_METALLIVORE = 0x80000000;
 const MZ_HUGE = 4;
 // C trap.c:mintrap().  m_move()'s trapped actor takes its escape roll here,
 // and postmov() calls this after a monster steps onto a trap square; source
@@ -883,7 +839,7 @@ export async function mintrap(monster, state = requireInitializedGame(), { force
                 monster.mtrapped = 0;
             }
         }
-        else if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_METALLIVORE) {
+        else if (metallivorous(monster.mnum)) {
             if (trap.ttyp === BEAR_TRAP) {
                 if (inSight)
                     await publish(`${describe(monster)} eats a bear trap!`);
@@ -919,7 +875,7 @@ export async function mintrap(monster, state = requireInitializedGame(), { force
             return action;
         }
         const alreadyKnown = monsterKnowsTrap(monster, trap)
-            || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
+            || trap.ttyp === HOLE && !monsterIsMindless(monster.mnum);
         if (alreadyKnown && recordRandom(random, calls, 4) !== 0
             && !movement.forcedTrapBungle) {
             const event = { kind: 'known-trap-avoided', trap, damage: 0 };
@@ -1542,14 +1498,10 @@ export async function finishMonsterTrapDeath(monster, state, options) {
         await newsym(x, y);
     return death;
 }
-const M1_WALLWALK = 0x00000008;
 const PM_PIT_FIEND = 300;
 const PM_PIT_VIPER = 218;
 function monsterIsUngrounded(monster, state) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    const clingsToCeiling = !!(flags & M1_CLING) && levelHasCeiling(state);
-    return !!(flags & M1_FLY) || clingsToCeiling || symbol === S_EYE || symbol === S_LIGHT
+    return !grounded(monster.mnum, state)
         || !!monster.wormno && (monster.wormSegments?.length ?? 0) > 5;
 }
 // C trap.c:trapeffect_pit(): the hero branch — refusal while flying or
@@ -1563,7 +1515,7 @@ async function trapeffectPit(mtmp, trap, { state = game, movement, publish = pli
     if (isHeroDefender(mtmp, state)) {
         requirePlayingGame(game);
         const hero = game.u;
-        const formFlags = heroFormFlags();
+        const clingy = monsterIsClinger(heroMonsterForm() ?? -1);
         const sokoban = !!game.level.flags?.sokoban_rules;
         const previousPit = trapAt(game, hero.ux0, hero.uy0);
         const fromPit = !!hero.utrap && hero.utraptype === TT_PIT
@@ -1579,7 +1531,7 @@ async function trapeffectPit(mtmp, trap, { state = game, movement, publish = pli
             || (flying && !plunged && !viaSitting)))
             return null;
         await feelTrap(trap);
-        if (!sokoban && (formFlags & M1_CLING) && !plunged) {
+        if (!sokoban && clingy && !plunged) {
             if (alreadyKnown) {
                 await plineWithContinuation(formatSeenMessage(`${trap.madeby_u ? 'your' : 'a'} ${trap.ttyp === SPIKED_PIT ? 'spiked ' : ''}pit below you.`));
             }
@@ -1684,7 +1636,7 @@ async function trapeffectPit(mtmp, trap, { state = game, movement, publish = pli
                     return null;
             }
         }
-        else if (!conjoined && !deliberate && !(plunged && (flying || (formFlags & M1_CLING)))) {
+        else if (!conjoined && !deliberate && !(plunged && (flying || clingy))) {
             const killer = plunged ? 'deliberately plunged into a pit' : 'fell into a pit';
             if (await loseHeroHp(physicalDamage(rnd(adjacent ? 3 : 6)), killer, { deathCause: killer }))
                 return null;
@@ -2786,7 +2738,6 @@ export async function triggerHeroFireTrap(box = null, { publish = plineWithConti
     return { died: !!game.program_state.gameover };
 }
 // ── moved from src/js/hero_magic_trap.ts ──
-const M2_NEUTER = 0x00040000;
 // C trap.c:domagictrap(): the hero's magic-trap outcomes — the 1-in-2
 // monster-summoning flash and roar, or the fate table for blindness,
 // invisibility, paralysis, and the rest.
@@ -2836,7 +2787,7 @@ export async function triggerHeroMagicTrapEffect() {
         case 15:
             if (onQuestStart(game)) {
                 const neuter = Upolyd(game.u)
-                    && !!((MONSTER_FLAGS2[heroSpecies(game)] ?? 0) & M2_NEUTER);
+                    && is_neuter(heroSpecies(game));
                 await plineWithContinuation(formatFeltMessage(`${game.flags.female || neuter ? 'oddly ' : ''}like the prodigal son.`));
             }
             else {
@@ -3037,10 +2988,6 @@ export async function hitSteedWithTrapMissile(steed, trap, missile, state = game
     await finishMonsterProjectileTrap(steed, event, state, { publish });
     return event;
 }
-function monsterPassesRocks(monster) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
-}
 async function placeRock(rock, trap, state) {
     if (state === game)
         placeCreatedObject(rock, trap.tx, trap.ty);
@@ -3079,7 +3026,7 @@ async function trapeffectRocktrap(mtmp, trap, { state = game, movement, random =
         let harmless = false;
         const helmet = game.uarmh || hero.uarmh;
         if (helmet) {
-            if (heroPassesRocks()) {
+            if (passes_rocks(heroMonsterForm() ?? -1)) {
                 await plineWithContinuation(`Unfortunately, you are wearing ${simpleObjectNameWithArticle(helmet)}.`);
                 damage = 2;
             }
@@ -3091,7 +3038,7 @@ async function trapeffectRocktrap(mtmp, trap, { state = game, movement, random =
                 await plineWithContinuation(`${ownedObjectName(helmet)} does not protect you.`);
             }
         }
-        else if (heroPassesRocks()) {
+        else if (passes_rocks(heroMonsterForm() ?? -1)) {
             await plineWithContinuation('It passes harmlessly through you.');
             harmless = true;
         }
@@ -3129,7 +3076,7 @@ async function trapeffectRocktrap(mtmp, trap, { state = game, movement, random =
             trap,
             rock,
             damage: beginRollDice(2, 6),
-            harmless: monsterPassesRocks(monster),
+            harmless: passes_rocks(monster.mnum),
             killed: false,
             finished: false,
             ...visibility,
@@ -3319,7 +3266,7 @@ async function trapeffectSlpGasTrap(mtmp, trap, { state = game, movement, rollOn
         const hero = game.u;
         await seeTrap(trap);
         const breathless = !!hero.breathless
-            || !!(heroFormFlags() & M1_BREATHLESS);
+            || monsterIsBreathless(heroMonsterForm() ?? -1);
         if (hero.sleepResistance || breathless) {
             await plineWithContinuation('You are enveloped in a cloud of gas!');
             monstersObserveHeroResistance(M_SEEN_SLEEP, game);
@@ -3516,7 +3463,7 @@ export function monsterWornIronShoes(monster) {
     return monsterInventory(monster).find((object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
 }
 function heroPassesWallsForAntiMagic() {
-    return !!game.u?.passesWalls || !!(heroFormFlagsOfState(game) & M1_WALLWALK);
+    return !!game.u?.passesWalls || monsterPassesWalls(heroMonsterForm());
 }
 function heroWieldsMagicbane() {
     return artifactById(heroObject('uwep')?.oartifact)?.name === 'Magicbane';
@@ -3863,9 +3810,6 @@ const WEB_TEARERS = new Set([
     'Cyclops',
     'Lord Surtur',
 ].map((name) => MONSTER_NAME.indexOf(name)));
-const M1_ACID = 0x08000000;
-const M2_JEWELS = 0x20000000;
-const M2_NASTY = 0x02000000;
 const S_GIANT = 34, S_DRAGON = 30;
 // C trap.c:mu_maybe_destroy_web().
 export async function maybeDestroyWeb(target, trap, { state = game, message = true, publish = plineWithContinuation } = {}) {
@@ -3883,7 +3827,7 @@ export async function maybeDestroyWeb(target, trap, { state = game, message = tr
         !monsterIsUnsolid(body) &&
         MONSTER_NAME[body.mnum] !== 'gelatinous cube')
         return false;
-    const destroy = flaming || !!((MONSTER_FLAGS1[body.mnum] ?? 0) & M1_ACID);
+    const destroy = flaming || acidic(body.mnum);
     const owner = trap.madeby_u ? 'your' : 'a';
     if (message) {
         const action = destroy ? (flaming ? 'burn' : 'dissolve') : 'flow through';
@@ -3911,7 +3855,7 @@ export async function finishMonsterWebTrap(monster, trap, { state = game, publis
         (WEB_TEARERS.has(monster.mnum) ||
             MONSTER_SYMBOL[monster.mnum] === S_GIANT ||
             (MONSTER_SYMBOL[monster.mnum] === S_DRAGON &&
-                (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NASTY) ||
+                extra_nasty(monster.mnum)) ||
             (!!monster.wormno && (monster.wormSegments?.length || 0) > 5));
     const owner = trap.madeby_u ? 'your' : 'a';
     if (hiddenBear) {
@@ -3935,7 +3879,6 @@ export async function finishMonsterWebTrap(monster, trap, { state = game, publis
 }
 // ── moved from src/js/pit_fill.ts ──
 // C trap.c:fill_pit() and do.c:flooreffects()'s boulder/pit branch.
-const M2_ROCKTHROW = 0x08000000;
 export async function fillPitWithBoulderAt(x, y, state = game, { publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -3975,7 +3918,7 @@ function heroPassesWallsForUntrap(state) {
         return true;
     const form = (state.u.mtimedone ?? 0) > 0 ? state.u.umonnum : null;
     return form !== null && form !== undefined && Number.isInteger(form)
-        && !!monsterPassesWalls(form);
+        && monsterPassesWalls(form);
 }
 function monsterAt(state, x, y) {
     return state.level?.monsters?.find(monster => monsterHasMapPosition(monster, state) &&
@@ -4761,20 +4704,14 @@ export async function moveIntoFailedUntrap(trap) {
     await exerciseAttribute(A_WIS, false);
     return { entered: true, died: false };
 }
-const M1_HIDE = 0x00000100;
 const S_MIMIC = 13;
-const M1_BREATHLESS = 0x00000400;
 const PM_CAVE_SPIDER = 94;
 const PM_GIANT_SPIDER = 96;
 const PM_GREMLIN = 40;
 const IRON = 11;
-const M2_STRONG = 0x04000000;
 function heroMonsterForm() {
     requirePlayingGame(game);
     return game.u.umonnum;
-}
-function heroFormFlags() {
-    return MONSTER_FLAGS1[heroMonsterForm()] ?? 0;
 }
 function physicalDamage(amount) {
     if (game.u?.halfPhysicalDamage)
@@ -4845,7 +4782,7 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
             return;
         }
         steed.mtrapped = 0;
-        if ((MONSTER_FLAGS2[steed.mnum] ?? 0) & M2_STRONG)
+        if (strongmonst(steed.mnum))
             strength = 17;
         noWebMessage = true;
     }
@@ -5037,7 +4974,7 @@ export async function climbOutOfPit() {
         return;
     }
     const canLeaveByAir = hero.flying || game.flying
-        || !!(heroFormFlags() & M1_CLING);
+        || monsterIsClinger(heroMonsterForm() ?? -1);
     if (canLeaveByAir && !game.level?.flags?.sokoban_rules) {
         const locomotion = heroLocomotion('climb');
         await pline(`You ${locomotion} from the ${pit}.`);
@@ -5215,10 +5152,6 @@ async function triggerProjectileTrap(trap) {
         observeObject(missile, game);
     await stack_object(missile, game);
     await newsym(trap.tx, trap.ty);
-}
-function heroPassesRocks() {
-    const flags = heroFormFlags();
-    return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
 }
 // ── moved from src/js/hero_polymorph_trap.ts ──
 // trap.c trapeffect_poly_trap(): the hero branch — the trigger message
@@ -5510,8 +5443,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
             return false;
         }
         const damage = rollPhysicalWeaponDamage(object, monster, { state, rollOne, rollDice });
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        const harmless = !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
+        const harmless = passes_rocks(monster.mnum);
         if (mimic)
             await revealMonsterAppearance(monster);
         monster.msleeping = 0;
@@ -5687,8 +5619,8 @@ export async function prepareHoleFall(trap, { tookPlunge = false } = {}) {
             ? 'A trap door opens up under you!' : "There's a gaping hole under you!");
     const form = heroMonsterForm();
     const flying = !!(game.u.flying || game.flying);
-    const clinging = !!(heroFormFlags() & M1_CLING);
-    const hidingAbove = game.u.uundetected && (heroFormFlags() & M1_HIDE)
+    const clinging = monsterIsClinger(heroMonsterForm() ?? -1);
+    const hidingAbove = game.u.uundetected && monsterIsHider(heroMonsterForm() ?? -1)
         && MONSTER_SYMBOL[form] !== S_MIMIC;
     const tooLarge = Number.isInteger(form)
         && (MONSTER_SIZE[form] ?? 0) >= MZ_HUGE;
@@ -5772,7 +5704,7 @@ export async function dotrap(trap, { finishTeleport = null, gotoLevel = null, vi
         if (trap.tseen && !hero.fumbling && trap.ttyp !== MAGIC_PORTAL
             && trap.ttyp !== VIBRATING_SQUARE && trap.ttyp !== ANTI_MAGIC
             && !forceBungle && !tookPlunge && !conjoined && !adjacent
-            && (rn2(5) === 0 || (pit && (heroFormFlags() & M1_CLING)))) {
+            && (rn2(5) === 0 || (pit && monsterIsClinger(heroMonsterForm() ?? -1)))) {
             await plineWithContinuation(`You escape ${owner} ${trapName(trap.ttyp)}.`);
             return { died: false, shortCircuited: false };
         }
@@ -6498,7 +6430,7 @@ export async function maketrap(x, y, typ) {
             statueMonster = rndmonnumAdj(3, 6);
         } while (--tryCount > 0
             && MONSTER_SYMBOL[statueMonster] === 21
-            && ((MONSTER_FLAGS2[statueMonster] ?? 0) & M2_JEWELS)
+            && likes_gems(statueMonster)
             && Math.sign(game.u?.ualign?.type ?? 0)
                 === Math.sign(MONSTER_ALIGNMENT[statueMonster] ?? 0));
         const statue = await mkcorpstat(STATUE, null, statueMonster, x, y, 0);

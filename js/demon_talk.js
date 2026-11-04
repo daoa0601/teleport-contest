@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { endVoluntaryMultiTurn } from './hack.js';
+import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
 import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
 import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
@@ -13,7 +13,7 @@ import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { heroSpecies } from './polyself.js';
 import { reset_faint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterIsDemon } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_SYMBOL } from './monster_data.js';
 import { removeMonsterFromGame } from './mon.js';
 import { offerGoldToMonster } from './minion.js';
 import { monsterName } from './do_name.js';
@@ -24,9 +24,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { cansee } from './vision.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
-import { heroGoldAmount } from './hack.js';
-const M2_DEMON = 0x00000100;
-const M2_PRINCE = 0x00000800;
+import { is_dprince, monsterIsDemon } from './mondata.js';
 const S_DEMON = 56;
 function angerDemon(monster, state) {
     monster.mpeaceful = 0;
@@ -68,8 +66,7 @@ export async function demandDemonBribe(monster, state, random = rn2, rollOne = r
         if ((state.multi ?? 0) > 0)
             endVoluntaryMultiTurn(state);
     }
-    if ((monsterIsDemon(monster.mnum))
-        && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_PRINCE) && monster.minvis) {
+    if (is_dprince(monster.mnum) && monster.minvis) {
         const unseen = !canSpotMonster(monster);
         monster.minvis = monster.perminvis = false;
         if (unseen && canSpotMonster(monster)) {

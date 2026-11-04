@@ -3,8 +3,8 @@
 //     /kick_door()/kick_nondoor().
 import { COIN_CLASS, GEM_CLASS } from './objclass.js';
 import { objectBaseCost, objectBimanual, BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR, } from './object_data.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, D_CLOSED, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole } from './const.js';
-import { isok } from './cmd.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, } from './const.js';
+import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -17,23 +17,18 @@ import { finishTeleportArrival } from './location_effects.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
-import { applyHeroContactPassive } from './uhitm.js';
+import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
-import { prepareAppliedWeaponAttack } from './uhitm.js';
-import { deleteEngravingAt, wipeHeroEngraving } from './engrave.js';
+import { deleteEngravingAt, wipeHeroEngraving, disturbGrave } from './engrave.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { kickWithMonsterForm } from './hero_form_kick.js';
 import { heroHasMartialKick } from './kick_rules.js';
-import { applyCaitiffPenalty } from './uhitm.js';
 import { useHeroSkill } from './skills.js';
 import { admitHeroKick, kickCanReachTarget } from './kick_admission.js';
-import { promptDirection } from './cmd.js';
-import { commandResultCancelled } from './cmd.js';
 import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { disturbGrave } from './engrave.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, stack_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
@@ -47,11 +42,11 @@ import { bringLeashedFollowers } from './apply.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { canFallThrough, findMonsterNearPosition, stairwayAt } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterIsBig, monsterIsFlyer, monsterIsGiant, MONSTER_FLAGS2, MONSTER_BODY_META } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
-import { findNearbyMonsterPosition, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
 import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
 import { artifactById } from './artifacts.js';
@@ -62,7 +57,7 @@ import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeig
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject, hurtleHero } from './dothrow.js';
-import { inventoryItemDescription, delobj } from './invent.js';
+import { inventoryItemDescription, delobj, currency } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';
@@ -76,10 +71,10 @@ import { finishMonsterEating } from './dogmove.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { onQuestStart, okToQuest } from './quest.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
-import { currency } from './invent.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { objectResistsDestruction } from './zap.js';
+import { is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy, monsterIsThickSkinned, } from './mondata.js';
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');
@@ -307,8 +302,6 @@ async function kickLiveMonster(monster, x, y) {
 // ---------------------------------------------------------------------------
 // C dokick.c:ghitm(). A thrown or kicked purse a greedy monster catches.
 // ---------------------------------------------------------------------------
-const M2_MERC = 0x00000200;
-const M2_GREEDY = 0x10000000;
 const PM_SOLDIER = 277;
 const PM_SERGEANT = 278;
 const PM_LIEUTENANT = 280;
@@ -385,9 +378,8 @@ async function finishMercenaryCatch(monster, value, state) {
     }
 }
 export async function resolveGoldMonsterContact({ state, monster, gold, wakeMonster, angerMonster, }) {
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    const greedy = !!(flags & M2_GREEDY);
-    const mercenary = !!(flags & M2_MERC);
+    const greedy = likes_gold(monster?.mnum);
+    const mercenary = is_mercenary(monster?.mnum);
     const eligible = greedy || monster?.isshk || monster?.ispriest
         || monster?.isgd || mercenary;
     if (!eligible) {
@@ -765,9 +757,8 @@ async function fallThroughTerrain() {
         return;
     await plineWithContinuation(`The ${surfaceName(x, y)} opens up under you!`);
     const form = heroSpecies();
-    const flags = MONSTER_FLAGS1[form] ?? 0;
-    const clings = !!(flags & 0x10);
-    const ceilingHider = !!(flags & 0x100) && (clings && MONSTER_SYMBOL[form] !== 13 || !!(flags & 0x01));
+    const clings = monsterIsClinger(form);
+    const ceilingHider = monsterIsHider(form) && (clings && MONSTER_SYMBOL[form] !== 13 || monsterIsFlyer(form));
     let refusal = null;
     if (!(sokoban && canFallThrough(hero.uz))) {
         if (hero.levitating || hero.ustuck || (!canFallThrough(hero.uz) && !game.level.requireAt(x, y).candig)
@@ -906,28 +897,19 @@ async function kickSink(x, y, location, responses) {
     else
         await responses.ouch(x, y);
 }
-const M1_FLY = 0x00000001;
-const M1_NOEYES = 0x00001000;
-const M1_NOHANDS = 0x00002000;
-const M1_NOLIMBS = 0x00006000;
-const M1_SLITHY = 0x00080000;
-const M1_THICK_HIDE = 0x00200000;
-const M1_TPORT = 0x02000000;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_EEL = 57;
-const PM_GRID_BUG = 116;
 const PM_SHADE = 288;
 function evasionVerb(monster, state) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[monster.mnum];
-    if ((flags & M1_TPORT) && !monsterTeleportRestricted(monster, state))
+    if (monsterCanTeleport(monster.mnum) && !monsterTeleportRestricted(monster, state))
         return 'teleports';
     if (symbol === S_EYE || symbol === S_LIGHT)
         return 'floats';
-    if (flags & M1_FLY)
+    if (monsterIsFlyer(monster.mnum))
         return 'swoops';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS || (flags & M1_SLITHY))
+    if (monsterHasNoLimbs(monster.mnum) || monsterIsSlithy(monster.mnum))
         return 'slides';
     return 'jumps';
 }
@@ -982,24 +964,23 @@ export async function levitatingKickMisses(monster, state = game) {
     if (!levitating || rn2(3) !== 0)
         return false;
     if ((MONSTER_SIZE[monster.mnum] ?? 2) >= 1
-        || (monsterIsFlyer(monster.mnum)))
+        || monsterIsFlyer(monster.mnum))
         return false;
     return true;
 }
 export async function tryKickEvasion(monster, { clumsy = false, martial = false, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), } = {}) {
     if (rn2(clumsy ? 3 : 4) !== 0)
         return false;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const canEvade = (clumsy || (MONSTER_SIZE[monster.mnum] ?? 2) < 3)
         && monster.mcansee !== 0 && !monster.mtrapped
-        && !(flags & M1_THICK_HIDE)
+        && !monsterIsThickSkinned({ mnum: monster.mnum })
         && MONSTER_SYMBOL[monster.mnum] !== S_EEL
-        && !(flags & M1_NOEYES)
+        && monsterHasEyes(monster.mnum)
         && monster.mcanmove !== 0 && !monster.mstun && !monster.mconf
         && !monster.msleeping && (MONSTER_MOVE[monster.mnum] ?? 0) >= 12;
     if (!canEvade)
         return false;
-    if (!(flags & M1_NOHANDS) && rn2(martial ? 5 : 3) === 0) {
+    if (!monsterHasNoHands(monster.mnum) && rn2(martial ? 5 : 3) === 0) {
         await announce(`${nameMonster(monster)} blocks your ${clumsy ? 'clumsy ' : ''}kick.`);
         return true;
     }
@@ -1018,8 +999,7 @@ export function prepareKickDamage(monster, { clumsy = false, state = game, } = {
         damage += 5;
     if (clumsy)
         damage = Math.trunc(damage / 2);
-    const thickSkinned = !!((MONSTER_FLAGS1[monster.mnum] ?? 0)
-        & M1_THICK_HIDE);
+    const thickSkinned = monsterIsThickSkinned({ mnum: monster.mnum });
     if (thickSkinned || monster.mnum === PM_SHADE)
         damage = 0;
     const specialDamage = specialContactDamage(state.u, monster, W_ARMF, { state }).damage;

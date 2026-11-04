@@ -4,7 +4,6 @@ import { heroHasWaterWalking } from './do_wear.js';
 import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit } from './const.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { game } from './gstate.js';
-import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { possessiveName } from './hacklib.js';
@@ -14,6 +13,7 @@ import { surfaceName } from './terrain_name.js';
 import { riderCannotReachMessage } from './steed.js';
 import { floorReachProblem } from './engrave.js';
 import { heroTeetersAtPit } from './trap.js';
+import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './mondata.js';
 function heroStaysAboveLiquid(state) {
     const hero = state.u || {};
     const form = heroMonsterForm(state);

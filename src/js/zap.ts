@@ -46,7 +46,7 @@ import { formatDraftMessage } from './draft_message.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
+import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm } from './mondata.js';
 import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
@@ -67,7 +67,7 @@ import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import {objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile} from './mkobj.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsWhirly, requireMonsterData } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
@@ -167,7 +167,7 @@ import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegr
 import { wornMonsterLifeSaver } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
+import { MONSTER_ATTACKS, monsterTypeName } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
@@ -203,7 +203,7 @@ import { m_is_steadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './uhitm.js';
 import { respondToImmediateMagic, wakeAttackedMonster } from './mon.js';
-import { MONSTER_SIZE, monsterHasEyes, monsterIsMindless } from './monster_data.js';
+import { MONSTER_SIZE } from './monster_data.js';
 import { hurtleMonster } from './dothrow.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
@@ -2371,7 +2371,7 @@ const PAPER = 5;
 const LARGEST_INT = 32767;
 const PM_CROCODILE = MONSTER_NAME.indexOf('crocodile');
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
-const S_GOLEM = MONSTER_SYMBOL[PM_FLESH_GOLEM];
+
 const LOW_BOOTS = OBJECT_NAMES.indexOf('low boots');
 const isBox = (object: GameObject) => object.otyp === CHEST || object.otyp === LARGE_BOX;
 export async function polymorphFloorObject(
@@ -2735,7 +2735,7 @@ export async function stone_to_flesh_obj(
     }
     if (smell) {
         const vegetarian = state.urole.key === 'monk' || !state.u.uconduct?.unvegetarian
-            || !(requireMonsterData(MONSTER_FLAGS1, state.u.umonnum) & 0x20000000);
+            || !carnivorous(state.u.umonnum);
         await plineWithContinuation(vegetarian
             ? 'You smell the odor of meat.' : 'You smell a delicious smell.', { noRepeat: true });
     }

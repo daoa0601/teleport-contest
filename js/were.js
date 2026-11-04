@@ -2,30 +2,26 @@
 // C refs: were.c counter_were(), new_were(), you_unwere();
 // mondata.c set_mon_data().
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
-import { heroIsHallucinating } from './senses.js';
+import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { PARANOID_WERECHANGE } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { setHeroSpecies } from './polyself.js';
+import { setHeroSpecies, heroCanControlPolymorph, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero, returnHeroToHumanForm, } from './polyself.js';
 import { splitHeroMonsterForm } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './monworn.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterIsHuman, } from './monster_data.js';
-import { setMonsterSpecies } from './mondata.js';
-import { heroCanControlPolymorph, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, heroMonsterForm, polymonHero, returnHeroToHumanForm, } from './polyself.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { setMonsterSpecies, is_were, monsterIsHuman } from './mondata.js';
 import { paranoidQuery } from './cmd.js';
 import { rn2, rnd } from './rng.js';
-import { sessionIsNight } from './ambient_sounds.js';
-import { heroIsDeaf } from './senses.js';
+import { sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { withIndefiniteArticle, makePlural } from './objnam.js';
-import { monsterGrowlSound } from './ambient_sounds.js';
 import { tameMonster } from './dog.js';
 import { threateningMonsterNearby } from './hack.js';
-const M2_WERE = 0x00000004;
 const PM_GREMLIN = 40;
 const PM_SEWER_RAT = 88;
 const PM_GIANT_RAT = 89;
@@ -95,8 +91,7 @@ function lycanthropeBeastMnum(state) {
     const mnum = state.u?.ulycn;
     if (mnum === undefined || !Number.isInteger(mnum) || mnum < 0 || mnum >= MONSTER_NAME.length)
         return null;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    return (flags & M2_WERE) && !monsterIsHuman(mnum) ? mnum : null;
+    return is_were(mnum) && !monsterIsHuman(mnum) ? mnum : null;
 }
 function beastFormName(beast) {
     return (MONSTER_NAME[beast] || 'creature').replace(/^were/u, '');
@@ -180,14 +175,13 @@ export async function purifyHeroLycanthropy({ state = game, publish = plineWithC
 }
 export function isWereMonster(monster) {
     const mnum = monster?.mnum;
-    return mnum !== undefined && !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_WERE);
+    return mnum !== undefined && is_were(mnum);
 }
 export function isHumanWereMonster(monster) {
     const mnum = monster?.mnum;
     if (mnum === undefined)
         return false;
-    const flags = MONSTER_FLAGS2[mnum] ?? 0;
-    return !!(flags & M2_WERE) && monsterIsHuman(mnum);
+    return is_were(mnum) && monsterIsHuman(mnum);
 }
 // C mhitu.c:summonmu(): the attack has a separate transformation chance
 // from were_change(), then calls helpers using the resulting species.

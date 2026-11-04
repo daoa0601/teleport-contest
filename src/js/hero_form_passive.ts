@@ -22,7 +22,7 @@ import {
     AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE,
     AD_WRAP, AT_BOOM, AT_NONE, AT_WEAP,
 } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { staggerVerb } from './dothrow.js';
 import { passiveDamage } from './uhitm.js';
 import { petrifyMonsterAttacker } from './mhitm.js';
@@ -30,7 +30,6 @@ import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { damageObjectWithAcid, erodeArmor } from './trap.js';
 import { learnObjectType } from './o_init.js';
-
 import { drainObjectEnchantment } from './zap.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { mon_reflects } from './muse.js';
@@ -39,7 +38,7 @@ import { d, rn2 } from './rng.js';
 import { contactIsProtected } from './stoning.js';
 import {
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance,
-    monsterHasStoneResistance,
+    monsterHasStoneResistance, monsterHasEyes, monsterPerceives,
 } from './mondata.js';
 
 export interface HeroFormPassiveOptions {
@@ -61,8 +60,6 @@ export type HeroFormPassiveResult = {
     damage?: number;
 };
 
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 
 // C mhitu.c:passiveum(): the old form's passive counterattack. assess_dmg()
@@ -216,9 +213,9 @@ async function freezeAttacker(
     turns = Math.min(127, turns);
     if (state.u.umonnum === PM_FLOATING_EYE) {
         if (random(4) === 0) turns = 127;
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        if (!monster.mcansee || (flags & M1_NOEYES) || random(3) === 0
-            || (heroIsInvisible(state) && !(flags & M1_SEE_INVIS)))
+
+        if (!monster.mcansee || !monsterHasEyes(monster.mnum) || random(3) === 0
+            || (heroIsInvisible(state) && !monsterPerceives(monster.mnum)))
             return { attackerStopped: false };
         if (heroIsBlind(state)) {
             await publish('As a blind floating eye, you cannot defend yourself.');

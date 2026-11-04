@@ -15,20 +15,20 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, } from './objclass.js';
 import { objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN, } from './object_data.js';
 import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
-import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves } from './do_wear.js';
+import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, requireAttributeIndex } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
-import { commandResultCancelled, commandResultFailed, setMulti, travelStairs } from './cmd.js';
+import { commandResultCancelled, commandResultFailed, setMulti, travelStairs, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
-import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_NONVOMITABLE, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK } from './const.js';
+import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, } from './const.js';
 import { impossible } from './diagnostics.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
 import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
-import { encumber_msg } from './pickup.js';
+import { encumber_msg, pickupBurden } from './pickup.js';
 import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
 import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToErosion, captureLevitationState, floatHeroUp } from './trap.js';
@@ -38,42 +38,34 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { fruitName } from './fruit.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { depth, dist2, ledgerNo, possessiveName } from './hacklib.js';
-import { releaseHeroFromMonster } from './mon.js';
+import { depth, ledgerNo, possessiveName } from './hacklib.js';
+import { releaseHeroFromMonster, finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, } from './mon.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { hurtleHero } from './dothrow.js';
+import { staggerVerb } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
-import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './invent.js';
+import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack, chooseInventoryObject, consumeInventoryItem, getobj, inventoryItemDescription, } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { reportHeroThrownMiss } from './dothrow.js';
 import { grantHeroSeeInvisible } from './hero_seeing.js';
-import { heroIsUnaware } from './senses.js';
-import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';
+import { heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness, } from './senses.js';
+import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsStrangled } from './do_wear.js';
 import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js';
-import { cmdq_peek } from './cmd.js';
-import { doEnlightenmentEffect } from './zap.js';
+import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { showEnlightenment } from './insight.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject, getobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { floatingAbove } from './levitation_commands.js';
-import { pickupBurden } from './pickup.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
 import { cloneMonster, setMonsterMalign } from './makemon.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack } from './mkobj.js';
-import { finishMonsterKilled, removeMonsterFromGame, removeWishGrantingMonster, revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js';
-import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasEyes, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { tryCallObjectType, healHeroLegs } from './do.js';
-import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName } from './objnam.js';
-import { hitFloorWithObject, staggerVerb } from './dothrow.js';
+import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -81,26 +73,18 @@ import { poisonAttributeMessage } from './poison.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
-import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, objectOwnershipPrefix, objectTypeKnown, updateUnpaidObjectPrice, deleteObject } from './shk.js';
-import { heroIsFlaming } from './polyself.js';
+import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, objectTypeKnown, updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { isPoolAt } from './dbridge.js';
-import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
-import { offerThrownFood } from './thrown_food.js';
-import { detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget } from './thrown_object.js';
-import { tossObjectUp } from './dothrow.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './wield.js';
 import { cansee, vision_recalc } from './vision.js';
 import { applyHeroWaterVaporChange, applyHeroWereChange, purifyHeroLycanthropy, revertHeroWereForm, setHeroLycanthropy, transformWereMonster } from './were.js';
-import { makeWish } from './zap.js';
 import { aggravateMonsters } from './wizard.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
-import { polymorphMonsterFromMagic, obj_unpolyable, objectResistsDestruction, poly_obj } from './zap.js';
 // C potion.c:make_confused().
 export async function makeConfused(turns, { state = game, talk = true, publish = plineWithContinuation, } = {}) {
     const old = state.u.confusionTurns ?? 0;
@@ -1482,10 +1466,6 @@ export async function impactArtifactLight(object, worsen) {
 const PM_PESTILENCE = 312;
 const PM_GREMLIN = 40;
 const PM_IRON_GOLEM = 259;
-const M1_BREATHLESS = 0x00000400;
-const M1_NOEYES = 0x00001000;
-const M1_NOHEAD = 0x00008000;
-const M2_WERE = 0x00000004;
 const MR_SLEEP = 0x04;
 const S_MIMIC = 13;
 export const INERT_MONSTER_POTION_TYPES = new Set([
@@ -1625,7 +1605,7 @@ function monsterHasSleepDefense(monster) {
         || !!monster?.defendedSleep;
 }
 function monsterIsWere(monster) {
-    return !!((MONSTER_FLAGS2[monster?.mnum] ?? 0) & M2_WERE);
+    return is_were(monster?.mnum);
 }
 // potion.c:potionhit() shares this exact pain/wake transaction between holy
 // water and acid.  Silence selects writhing and suppresses wake_nearto(); an
@@ -2072,7 +2052,7 @@ export async function hitMonsterWithSupportedPotion({ state = game, monster, pot
         return null;
     const bottleName = randomBottleName(state);
     const saddle = potionHitsSaddle(monster, potion);
-    const hasHead = !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NOHEAD);
+    const hasHead = monsterHasHead({ mnum: monster.mnum });
     let crashMessage = 'Crash!';
     if (targetVisible) {
         const name = monsterName(monster, { state });
@@ -2183,9 +2163,8 @@ export function heroPotionVaporProfile(state) {
     const mnum = Number.isInteger(state.u?.umonnum)
         ? state.u.umonnum
         : Number.isInteger(state.u?.umonster) ? state.u.umonster : null;
-    const flags = typeof mnum === 'number' && Number.isInteger(mnum) ? MONSTER_FLAGS1[mnum] ?? 0 : 0;
-    const breathless = !!(flags & M1_BREATHLESS);
-    const hasEyes = !(flags & M1_NOEYES);
+    const breathless = monsterIsBreathless(mnum ?? -1);
+    const hasEyes = monsterHasEyes(mnum ?? -1);
     return { breathless, hasEyes, canReceive: !breathless || hasEyes };
 }
 function heroHasVaporShield(state) {

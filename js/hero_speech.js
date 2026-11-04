@@ -1,10 +1,9 @@
 // C mondata.c:can_chant(), shared by reading and calling on a deity.
 // C pline.c:You_feel(), You_hear(), and You_see() wording.
 import { game } from './gstate.js';
-import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { heroIsUnaware } from './senses.js';
-const M1_NOHEAD = 0x00008000;
+import { MONSTER_SOUND } from './monster_data.js';
+import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
+import { monsterHasHead } from './mondata.js';
 const MS_SILENT = 0;
 const MS_BUZZ = 10;
 const MS_BURBLE = 16;
@@ -53,6 +52,6 @@ export function heroCanChant(state = game) {
     return sound !== MS_SILENT
         && sound !== MS_BUZZ
         && sound !== MS_BURBLE
-        && !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOHEAD);
+        && monsterHasHead({ mnum });
 }
 //# sourceMappingURL=hero_speech.js.map

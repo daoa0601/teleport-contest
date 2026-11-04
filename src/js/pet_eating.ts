@@ -2,9 +2,7 @@ import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import {
     objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_NUTRITION,
 } from './object_data.js';
-import { currency } from './invent.js';
-// A pet's meal, from nutritional recovery through the observable eating
-// message to consumption. C refs: dogmove.c dog_nutrition() and dog_eat().
+import { currency, inventoryItemDescription } from './invent.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -14,21 +12,19 @@ import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { obj_nutrition } from './eat.js';
-import { inventoryItemDescription } from './invent.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { consumeMonsterObject } from './mon.js';
 import { feedBeeRoyalJelly } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { splitObjectStack } from './mkobj.js';
-
 import { DOGFOOD, dogFood } from './pet_food.js';
 import { rn2 } from './rng.js';
 import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
 import { G_GENOD } from './const.js';
 import { isPoolAt } from './dbridge.js';
-
 import { cansee } from './vision.js';
+import { tunnels } from './mondata.js';
 
 export interface PetMeal {
     object: GameObject;
@@ -37,7 +33,6 @@ export interface PetMeal {
     royalJelly: boolean;
 }
 
-const M1_TUNNEL = 0x00000020;
 
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');
@@ -139,7 +134,7 @@ async function describePetMeal(monster: Monster, meal: PetMeal, state: GameState
         const subject = monsterName(monster, {
             state, article: 'your', capitalized: true, suppressIt: true,
         });
-        if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_TUNNEL)
+        if (tunnels(monster.mnum))
             await plineWithContinuation(`${subject} digs in.`);
         else await plineWithContinuation(`${subject} ${meal.devour ? 'devours' : 'eats'} ${food}.`);
     } else await plineWithContinuation(`It ${meal.devour ? 'devours' : 'eats'} ${food}.`);

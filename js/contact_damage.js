@@ -2,9 +2,9 @@
 import { W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_RINGL, W_RINGR, } from './const.js';
 import { game } from './gstate.js';
 import { heroSpecies } from './polyself.js';
-import { monsterHatesBlessings, monsterHatesSilver } from './monster_data.js';
 import { objectMaterial } from './o_init.js';
 import { rnd } from './rng.js';
+import { monsterHatesBlessings, monsterHatesSilver } from './mondata.js';
 const SILVER = 14;
 const ARMOR_SLOTS = new Map([
     [W_ARM, 'uarm'], [W_ARMC, 'uarmc'], [W_ARMH, 'uarmh'],

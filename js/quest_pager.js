@@ -7,7 +7,7 @@ import { G_GENOD, MIN_QUEST_LEVEL } from './const.js';
 import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
 import { experienceRankIndex } from './exper.js';
-import { MONSTER_FLAGS2, MONSTER_NAME, monsterHasProperName } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 import { heroIsBlind } from './senses.js';
@@ -18,7 +18,7 @@ import { LuaTable } from './lua/runtime.js';
 import { flushPendingTopline, putMessageHistory } from './tty_topline.js';
 import { plineWithContinuation } from './pline.js';
 import { showTextWindow, showTextMenuOverlay } from './windows.js';
-const M2_PNAME = 0x00080000;
+import { monsterHasProperName } from './mondata.js';
 // C com_pager_core(): each attempted section opens its own Lua state,
 // including nhlib's alignment shuffle, before resolving a fallback or choice.
 async function prepareSection(section, messageId, state) {

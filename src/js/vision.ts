@@ -14,18 +14,18 @@ import {
 import { newsym } from './display.js';
 import { noticeAllMonsters } from './hack.js';
 import { BOULDER } from './object_data.js';
-import { MONSTER_FLAGS1, MONSTER_SYMBOL, monsterPerceives } from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { objectLightRadius } from './light.js';
 import { objectsInTimerGraph } from './timeout.js';
 import { isMoatAt, isPoolAt } from './dbridge.js';
-
 import type { GameMap } from './game.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { isRoom } from './map_types.js';
 import type { MapLocation, Position } from './map_types.js';
+import { monsterPerceives } from './mondata.js';
 
 export function mimicBlocksLight(monster: Pick<Monster, 'm_ap_type' | 'mappearance'>): boolean {
     if (monster.mappearance === undefined) return false;
@@ -1015,7 +1015,6 @@ export function couldsee(x: number, y: number): boolean {
 // C ref: vision.h m_canseeu(m). Assumes that if the hero has a clear line of
 // sight to the monster's location and the hero is visible, the monster could
 // see the hero; it deliberately does not test the monster's blindness.
-const M1_SEE_INVIS = 0x01000000;
 
 export function monsterHasLineOfSightToHero(monster: Monster, state: GameState = game): boolean {
     return (!heroIsInvisible(state) || monsterPerceives(monster.mnum))

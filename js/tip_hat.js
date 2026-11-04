@@ -1,26 +1,22 @@
 // C sounds.c:tiphat() and responsive_mon_at().
 import { BOLT_LIM, IRONBARS, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, STRAT_WAITMASK, W_ARMH } from './const.js';
-import { isok } from './cmd.js';
+import { isok, promptDirection, readDirectionKey } from './cmd.js';
 import { armorSimpleName } from './do_wear.js';
 import { canSeeMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { MONSTER_FLAGS1, MONSTER_SOUND, monsterIsHumanoid } from './monster_data.js';
+import { MONSTER_SOUND } from './monster_data.js';
 import { monsterName } from './do_name.js';
-import { monsterPossessive } from './mondata.js';
+import { monsterPossessive, monsterHasEyes, monsterIsHumanoid, monsterPerceives, monsterIsHelpless } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { monsterIsHelpless } from './mondata.js';
 import { publishMonsterNoise } from './ambient_sounds.js';
 import { STATUE } from './object_data.js';
 import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { isAccessibleAt } from './monmove.js';
-import { promptDirection, readDirectionKey } from './cmd.js';
 import { couldsee } from './vision.js';
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
 // C sounds.c:tiphat().
 // C sounds.c:responsive_mon_at().
 export async function tipWornHelmet(helmet) {
@@ -123,9 +119,8 @@ async function acknowledgeHelmetTip({ monster, visible, unseen, statue, x, y }) 
             : 'Nothing happens.');
 }
 function canAcknowledgeTip(monster, x, y) {
-    const traits = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return !monsterIsHelpless(monster) && !!monster.mcansee && !(traits & M1_NOEYES)
-        && (!heroIsInvisible(game) || !!(traits & M1_SEE_INVIS))
+    return !monsterIsHelpless(monster) && !!monster.mcansee && monsterHasEyes(monster.mnum)
+        && (!heroIsInvisible(game) || monsterPerceives(monster.mnum))
         && monster.mx === x && monster.my === y;
 }
 //# sourceMappingURL=tip_hat.js.map

@@ -25,16 +25,26 @@ import {
     SILVER_DRAGON_SCALE_MAIL,
 } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
+import { heroHasInvoluntaryDelay, setMulti, isok } from './cmd.js';
 import { endVoluntaryMultiTurn, loseHeroHp, roomsAt } from './hack.js';
-import { BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP, G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole, is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum, PLNMSG_UNKNOWN, POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE, WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS } from './const.js';
-import { isok } from './cmd.js';
-import { heroHasArtifactDefense } from './artifacts.js';
+import {
+    BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP,
+    G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole,
+    is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS,
+    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE,
+    M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum, PLNMSG_UNKNOWN,
+    POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE,
+    WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL, W_ARMS,
+} from './const.js';
+import { heroHasArtifactDefense, weaponReflects } from './artifacts.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { touchPetrifies } from './stoning.js';
 import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
-import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
+import {
+    MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE,
+    MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL,
+} from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
 import { objectIsHardHelmet } from './do_wear.js';
@@ -42,7 +52,16 @@ import { dragonFormForArmor, heroSpecies } from './polyself.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless, monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned, monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow } from './mondata.js';
+import {
+    monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless,
+    monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned,
+    monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow, is_mercenary,
+    monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterHatesLight, monsterHatesSilver,
+    monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless,
+    monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsSlithy, monsterIsUndead,
+    monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls,
+    monsterThrowsRocks, needspick, acidic as speciesIsAcidic,
+} from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -56,15 +75,13 @@ import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap,
 import { monsterIsScaredAt, makeMonsterFlee, monsterWantsFloorObject, isAccessibleAt } from './monmove.js';
 import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { canLetGo } from './do.js';
-import { finishInventoryRemoval } from './invent.js';
+import { canLetGo, tryCallObjectType, dropObjectAtHero } from './do.js';
+import { finishInventoryRemoval, inventoryItemDescription } from './invent.js';
 import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, paralyzeMonster, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth } from './mon.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
-
-import { tryCallObjectType, dropObjectAtHero } from './do.js';
 import {splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
@@ -75,29 +92,24 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';
-import { inventoryItemDescription } from './invent.js';
 import { beginObjectBurn } from './timeout.js';
 import { lightDamage } from './light.js';
 import { throwMonsterProjectile, blockingTerrain, monsterLinedUpWithHero, consumeMonsterItem } from './mthrowu.js';
-
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { destroyDrawbridge, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { changeDoorByMagic } from './lock.js';
-
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
-
 import { randomTeleportDepth } from './level_teleport.js';
 import { awakenSoldiers } from './music.js';
 import { canDigDown, canFallThrough, stairwayAt } from './mklev.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
-import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { explode } from './explosion.js';
@@ -112,9 +124,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterOffensiveChoice, MonsterOffensiveOptions, MonsterOffensiveResult } from './monster_offensive_types.js';
 import { migrateMonsterOffLevel } from './dog.js';
-import { weaponReflects } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
-import { W_AMUL, W_ARMS } from './const.js';
 import { recordObjectKnowledge } from './o_init.js';
 import { castNativeRay, hitMonsterWithRay } from './zap.js';
 import type { NativeRayOptions } from './zap.js';
@@ -126,24 +136,6 @@ import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
 // Shared muse.c constants.
 // ---------------------------------------------------------------------------
 
-const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_NEEDPICK = 0x00000040;
-const M1_NOEYES = 0x00001000;
-const M1_NOHANDS = 0x00002000;
-const M1_NOLIMBS = 0x00006000;
-const M1_MINDLESS = 0x00010000;
-const M1_ANIMAL = 0x00040000;
-const M1_SLITHY = 0x00080000;
-const M1_UNSOLID = 0x00100000;
-const M1_ACID = 0x08000000;
-const M2_MERC = 0x00000200;
-const M2_ROCKTHROW = 0x08000000;
-const M2_GREEDY = 0x10000000;
-const M2_JEWELS = 0x20000000;
-const M2_COLLECT = 0x40000000;
-const M2_MAGIC = 0x80000000;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_GHOST = 54;
@@ -152,8 +144,7 @@ const G_UNIQ = 0x1000;
 const PM_PESTILENCE = 312;
 const PM_GHOST = MONSTER_NAME.indexOf('ghost');
 const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');
-const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
-const PM_GREEN_SLIME = MONSTER_NAME.indexOf('green slime');
+
 const PM_LIZARD = MONSTER_NAME.indexOf('lizard');
 const PM_STALKER = MONSTER_NAME.indexOf('stalker');
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
@@ -417,7 +408,7 @@ function m_sees_sleepy_soldier(monster: Monster, state: PlayingGameState): boole
     return state.level.monsters.some(other => other !== monster
         && monsterHasMapPosition(other, state) && isok(other.mx, other.my)
         && Math.abs(other.mx - monster.mx) <= 3 && Math.abs(other.my - monster.my) <= 3
-        && (MONSTER_FLAGS2[other.mnum] ?? 0) & M2_MERC
+        && is_mercenary(other.mnum)
         && MONSTER_NAME[other.mnum] !== 'guard'
         && (other.msleeping || !other.mcanmove));
 }
@@ -426,10 +417,9 @@ function m_sees_sleepy_soldier(monster: Monster, state: PlayingGameState): boole
 export function find_defensive(monster: Monster, state: PlayingGameState, {
     tryEscape = false, random = rn2,
 }: { tryEscape?: boolean; random?: typeof rn2 } = {}): MonsterDefensiveChoice | null {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const noHands = !!(flags & M1_NOHANDS);
+    const noHands = monsterHasNoHands(monster.mnum);
     const stuck = state.u.ustuck === monster;
-    if (flags & (M1_ANIMAL | M1_MINDLESS)) return null;
+    if ((monsterIsAnimal({ mnum: monster.mnum }) || monsterIsMindless(monster.mnum))) return null;
     if (!tryEscape && dist2(monster.mx, monster.my, monster.mux ?? state.u.ux, monster.muy ?? state.u.uy) > 25) return null;
     if (state.u.uswallow && stuck) return null;
     if (tryEscape && state.knox_level?.dnum === state.u.uz.dnum
@@ -477,7 +467,7 @@ export function find_defensive(monster: Monster, state: PlayingGameState, {
             if (stair && (stair.up || !floats)) selected = { kind: 'stairs', stair };
         } else {
             const ignoreBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) === 0
-                || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
+                || monsterThrowsRocks(monster.mnum) || monsterPassesWalls(monster.mnum);
             const spots = [{ x: monster.mx, y: monster.my }];
             for (let x = monster.mx - 1; x <= monster.mx + 1; x++)
                 for (let y = monster.my - 1; y <= monster.my + 1; y++)
@@ -501,7 +491,7 @@ export function find_defensive(monster: Monster, state: PlayingGameState, {
     }
     if (noHands) return selected;
     const bugle = inventory.find(object => object.otyp === BUGLE);
-    if (bugle && (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MERC
+    if (bugle && is_mercenary(monster.mnum)
         && m_sees_sleepy_soldier(monster, state)) selected = { kind: 'bugle', object: bugle };
     if (selected) return selected;
 
@@ -523,7 +513,7 @@ export function find_defensive(monster: Monster, state: PlayingGameState, {
         if (object.otyp === WAN_TELEPORTATION && object.spe > 0 && teleportNotKnownBlocked(monster, state))
             selected = { kind: hasAmulet(monster) ? 'teleport-ray' : 'teleport-self', object };
         if (selected?.kind === 'teleport-scroll') continue;
-        if (object.otyp === SCR_TELEPORTATION && monster.mcansee && !(flags & M1_NOEYES)
+        if (object.otyp === SCR_TELEPORTATION && monster.mcansee && monsterHasEyes(monster.mnum)
             && (!object.cursed || !(monster.isshk && shopkeeperInOwnShop(monster, state)) && !monster.isgd && !monster.ispriest)
             && teleportNotKnownBlocked(monster, state)) selected = { kind: 'teleport-scroll', object };
         if (!pestilence) {
@@ -788,9 +778,9 @@ export async function use_defensive(monster: Monster, choice: MonsterDefensiveCh
 // Common creature exclusions in the three native rnd_*_item() functions.
 function rejectsRandomItem(monster: Monster): boolean {
     const mndx = monster.mnum;
-    const flags = MONSTER_FLAGS1[mndx] ?? 0;
+
     const symbol = MONSTER_SYMBOL[mndx];
-    return !!(flags & (M1_ANIMAL | M1_MINDLESS))
+    return (monsterIsAnimal({ mnum: mndx }) || monsterIsMindless(mndx))
         || (MONSTER_ATTACKS[mndx] || []).some(attack => attack[0] === AT_EXPL)
         || symbol === S_GHOST || monsterIsKop(mndx);
 }
@@ -995,7 +985,7 @@ export function find_offensive(
         if (choice?.object.otyp === SCR_EARTH) continue;
         if (object.otyp === SCR_EARTH
             && (objectIsHardHelmet(helmet) || monster.mconf || monsterIsAmorphous(monster)
-                || (monsterPassesWalls(monster.mnum))
+                || monsterPassesWalls(monster.mnum)
                 || monsterIsNoncorporeal(monster) || monsterIsUnsolid(monster) || !random(10))
             && distance <= 2 && monster.mcansee
             && monsterHasEyes(monster.mnum)
@@ -1332,9 +1322,8 @@ export function rnd_offensive_item(monster: Monster | null | undefined): number 
 
     switch (rn2(9 - Number(difficulty < 4) + 4 * Number(difficulty > 6))) {
     case 0: {
-        const flags = MONSTER_FLAGS1[mndx] ?? 0;
         if (objectIsHardHelmet(wornHelmet(monster))
-            || (flags & (M1_AMORPHOUS | M1_WALLWALK | M1_UNSOLID))
+            || (monsterIsAmorphous({ mnum: mndx }) || monsterPassesWalls(mndx) || monsterIsUnsolid({ mnum: mndx }))
             || MONSTER_SYMBOL[mndx] === S_GHOST) return SCR_EARTH;
         return WAN_STRIKING;
     }
@@ -1371,9 +1360,8 @@ export async function find_misc(
     random: RandomBelow,
     calls: MonsterCallLog,
 ): Promise<MonsterMiscChoice | null> {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (
-        flags & (M1_MINDLESS | M1_ANIMAL) ||
+        (monsterIsMindless(monster?.mnum) || monsterIsAnimal({ mnum: monster?.mnum })) ||
         dist2(
             monster.mx,
             monster.my,
@@ -1406,7 +1394,7 @@ export async function find_misc(
                     || MONSTER_NAME[monster.mnum] === 'grid bug' && x !== monster.mx && y !== monster.my
                     || monsterAt(state, x, y, monster)) continue;
                 const ignoresBoulders = monsterIsVerySmall(monster.mnum)
-                    || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
+                    || monsterThrowsRocks(monster.mnum) || monsterPassesWalls(monster?.mnum);
                 if (!ignoresBoulders && state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER)
                     || monsterIsScaredAt(monster, state, x, y)) continue;
                 const trap = trapAt(state, x, y);
@@ -1414,7 +1402,7 @@ export async function find_misc(
             }
         }
     }
-    if (flags & M1_NOHANDS) return null;
+    if (monsterHasNoHands(monster?.mnum)) return null;
     let selected: MonsterMiscChoice | null = null;
 
     for (let index = 0; index < inventory.length; index++) {
@@ -1809,7 +1797,7 @@ export function searches_for_item(
             return !monsterIsNonliving(monster.mnum) && !monsterIsVampireShifter(monster);
         return type === AMULET_OF_REFLECTION || type === AMULET_OF_GUARDING;
     case TOOL_CLASS:
-        if (type === PICK_AXE) return !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_NEEDPICK);
+        if (type === PICK_AXE) return needspick(monster.mnum);
         if (type === UNICORN_HORN)
             return !object.cursed && !monsterIsUnicorn(monster.mnum) && monster.mnum !== PM_KI_RIN;
         if (type === FROST_HORN || type === FIRE_HORN) return object.spe > 0 && speciesCanBlow(monster.mnum);
@@ -1868,7 +1856,7 @@ export function cures_stoning(monster: Monster, object: GameObject, tinCanBeOpen
     if (object.otyp === GLOB_OF_GREEN_SLIME) return monsterIsSlimeproof(monster);
     if (object.otyp !== CORPSE && (object.otyp !== TIN || !tinCanBeOpened)) return false;
     if (object.corpsenm === undefined || !Number.isInteger(object.corpsenm) || object.corpsenm < 0) return false;
-    return object.corpsenm === PM_LIZARD || !!((MONSTER_FLAGS1[object.corpsenm] ?? 0) & M1_ACID);
+    return object.corpsenm === PM_LIZARD || speciesIsAcidic(object.corpsenm);
 }
 
 // C muse.c:munstone().
@@ -1896,13 +1884,12 @@ export async function munstone(monster: Monster, {
 export async function mon_consume_unstone(monster: Monster, cure: GameObject, {
     byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, stoning,
 }: MonsterStoningCureOptions & { stoning: boolean }): Promise<MonsterStoningCureResult> {
-
     const visible = canSeeMonster(monster);
     const tinned = cure.otyp === TIN;
     const food = cure.otyp === CORPSE || tinned;
     const acidic = cure.otyp === POT_ACID
         || (food && cure.corpsenm !== undefined
-            && !!((MONSTER_FLAGS1[cure.corpsenm] ?? 0) & M1_ACID));
+            && speciesIsAcidic(cure.corpsenm));
     const lizard = food && cure.corpsenm === PM_LIZARD;
     const nutrition = food ? petFoodNutrition(monster, cure) : 0;
 
@@ -2060,15 +2047,14 @@ async function muse_unslime(monster: Monster, cure: SlimeCure, context: UnslimeC
             if (monster.wormno) await advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
             await newsym(monster.mx, monster.my);
             if (visible) {
-                const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
                 const floats = [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[monster.mnum] ?? -1);
                 let motion = 'moves';
                 if (floats) motion = 'floats';
-                else if (flags & M1_FLY) motion = 'flies';
-                else if (flags & M1_SLITHY) motion = 'slithers';
-                else if (flags & M1_AMORPHOUS) motion = 'oozes';
+                else if (monsterIsFlyer(monster.mnum)) motion = 'flies';
+                else if (monsterIsSlithy(monster.mnum)) motion = 'slithers';
+                else if (monsterIsAmorphous({ mnum: monster.mnum })) motion = 'oozes';
                 else if (!MONSTER_MOVE[monster.mnum]) motion = 'wiggles';
-                else if ((flags & M1_NOLIMBS) === M1_NOLIMBS) motion = 'crawls';
+                else if (monsterHasNoLimbs(monster.mnum)) motion = 'crawls';
                 await publish(`${name} ${motion} ${floats ? 'over' : 'onto'} ${trap.tseen ? 'the' : 'a'} fire trap!`);
             }
         }
@@ -2156,9 +2142,8 @@ async function muse_unslime(monster: Monster, cure: SlimeCure, context: UnslimeC
 
 // C muse.c:cures_sliming().
 function cures_sliming(monster: Monster, object: GameObject): boolean {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if (object.otyp === SCR_FIRE) return !(flags & (M1_NOEYES | M1_NOHANDS)) && !!monster.mcansee;
-    if (object.otyp === POT_OIL) return !(flags & M1_NOHANDS);
+    if (object.otyp === SCR_FIRE) return monsterHasEyes(monster.mnum) && !!monster.mcansee && !monsterHasNoHands(monster.mnum);
+    if (object.otyp === POT_OIL) return !monsterHasNoHands(monster.mnum);
     return object.spe > 0 && (object.otyp === WAN_FIRE
         || object.otyp === FIRE_HORN && speciesCanBlow(monster.mnum));
 }

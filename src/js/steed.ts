@@ -1,7 +1,7 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
 import { encumber_msg } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
-import { isok } from './cmd.js';
+import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import type { DirectionVector } from './const.js';
 import { impossible } from './diagnostics.js';
 import { depth, endgameLevelName } from './hacklib.js';
@@ -17,16 +17,21 @@ import { canSpotMonster, newsym } from './display.js';
 import { finishMonsterKilled } from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterCanBeSaddled, monsterIsSwimmer, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
 import { mksobj } from './mkobj.js';
-import { fullyIdentifyObject } from './invent.js';
+import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
-import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless } from './mondata.js';
+import {
+    monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger,
+    monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks,
+    needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid,
+} from './mondata.js';
+
 import { shopkeeperName } from './shknam.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
@@ -37,23 +42,21 @@ import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { freeInventoryObject } from './invent.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { promptDirection } from './cmd.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { commandResultCancelled } from './cmd.js';
 import { levelHasCeiling } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 import { surfaceName } from './terrain_name.js';
+
 // steed.js — Saddling, mounting, riding, and dismounting.
 // C ref: steed.c.
 
@@ -100,17 +103,6 @@ export type StrikeSteedResult = { struck: false } | {
     galloped?: true;
 };
 
-const M1_FLY = 0x00000001;
-const M1_CLING = 0x00000010;
-const M1_SWIM = 0x00000002;
-const M1_BREATHLESS = 0x00000400;
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_HUMANOID = 0x00020000;
-const M1_SLITHY = 0x00080000;
-const M1_TUNNEL = 0x00000020;
-const M1_NEEDPICK = 0x00000040;
-const M2_DOMESTIC = 0x00400000;
-const M2_ROCKTHROW = 0x08000000;
 const MZ_SMALL = 1;
 const MZ_LARGE = 3;
 const S_EYE = 5;
@@ -127,11 +119,10 @@ export function riderCannotReachMessage(state: GameState = game): string {
 }
 
 export function steedIsGrounded(steed: Monster, state: GameState = game): boolean {
-    const flags = MONSTER_FLAGS1[steed?.mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[steed?.mnum];
-    if ((flags & M1_FLY) || symbol === S_EYE || symbol === S_LIGHT)
+    if (monsterIsFlyer(steed?.mnum) || symbol === S_EYE || symbol === S_LIGHT)
         return false;
-    return !(flags & M1_CLING) || !levelHasCeiling(state);
+    return !monsterIsClinger(steed?.mnum) || !levelHasCeiling(state);
 }
 
 export function monsterSaddle(monster: Monster | null | undefined): GameObject | null {
@@ -173,7 +164,7 @@ export function heroCanRideSteed(steed: Monster, state: GameState = game): boole
     const mnum = state.u.umonnum;
     if (mnum === undefined) return false;
     const size = MONSTER_SIZE[mnum];
-    return !!steed.mtame && !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID)
+    return !!steed.mtame && monsterIsHumanoid(mnum)
         && size !== undefined && size >= MZ_SMALL && size < MZ_LARGE
         && (!state.u.uinwater || monsterIsSwimmer(steed.mnum));
 }
@@ -240,8 +231,8 @@ async function ridingStepIsClear(
     const location = state.level.at(x, y);
     if (!location) return false;
     const passesWalls = heroPassesWalls(state);
-    const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
-    const chews = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK);
+
+    const chews = tunnels(heroSpecies(state)) && !needspick(heroSpecies(state));
     const closedDoor = location.typ === DOOR
         && !!(location.doormask & (D_CLOSED | D_LOCKED));
     if (IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS) {
@@ -318,10 +309,10 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
             await healHeroLegs();
         } else return false;
     }
-    const bodyFlags = MONSTER_FLAGS1[hero.umonnum] ?? 0;
+
     const bodySize = MONSTER_SIZE[hero.umonnum];
-    if (Upolyd(hero) && (!(bodyFlags & M1_HUMANOID)
-        || bodySize === undefined || bodySize < MZ_SMALL || bodySize >= MZ_LARGE || (bodyFlags & M1_SLITHY))) {
+    if (Upolyd(hero) && (!monsterIsHumanoid(hero.umonnum)
+        || bodySize === undefined || bodySize < MZ_SMALL || bodySize >= MZ_LARGE || monsterIsSlithy(hero.umonnum))) {
         await pline("You won't fit on a saddle.");
         return false;
     }
@@ -385,7 +376,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     // C steed.c:mount_steed(): "under hliquid("water")".  This branch needs
     // !force, and a hallucinating hero already bounced off the designated-
     // driver check above, so the rename never fires here either.
-    if (!force && hero.uinwater && !(monsterIsSwimmer(steed.mnum))) {
+    if (!force && hero.uinwater && !monsterIsSwimmer(steed.mnum)) {
         await pline(`You can't ride that creature while under ${displayLiquidName('water')}.`);
         return false;
     }
@@ -393,10 +384,10 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
         await pline("You can't ride such a creature.");
         return false;
     }
-    const steedFlags = MONSTER_FLAGS1[steed.mnum] ?? 0;
+
     const symbol = MONSTER_SYMBOL[steed.mnum];
     const floats = symbol === S_EYE || symbol === S_LIGHT;
-    const flies = !!(steedFlags & M1_FLY);
+    const flies = monsterIsFlyer(steed.mnum);
     if (!force && !floats && !flies && hero.levitation && !levitationAtWill()) {
         await pline(`You cannot reach ${monsterName(steed)}.`);
         return false;
@@ -566,7 +557,7 @@ export async function putSaddleOnMonster(saddle: GameObject | null, monster: Mon
 
 // C makemon(): the roll precedes species and equipment eligibility checks.
 export async function maybeGiveDomesticSaddle(monster: Monster): Promise<GameObject | null> {
-    if (!rn2(100) && ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DOMESTIC))
+    if (!rn2(100) && is_domestic(monster.mnum))
         return await putSaddleOnMonster(null, monster);
     return null;
 }
@@ -631,7 +622,7 @@ async function landingSpot(
                     && state.level.traps.some(trap => trap.tseen && trap.ttyp !== VIBRATING_SQUARE
                         && trap.tx === x && trap.ty === y);
                 const boulder = pass <= 1
-                    && !(monsterThrowsRocks(state.u.umonnum))
+                    && !monsterThrowsRocks(state.u.umonnum)
                     && (state.level.objects[x]?.[y] || []).some(object => object.otyp === BOULDER);
                 if (knownTrap || boulder) continue;
                 selected = { x, y };
@@ -901,8 +892,8 @@ async function dropSteedIntoLiquid(
     if (isPoolAt(x, y, state)) {
         if (!state.u.uinwater)
             await announce(`${monsterName(steed, { capitalized: true })} falls into the ${surfaceName(x, y, state)}!`);
-        const flags = MONSTER_FLAGS1[steed.mnum] ?? 0;
-        fatal = !(flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS));
+
+        fatal = !(cant_drown(steed.mnum));
     } else if (isLavaAt(x, y, state)) {
         await announce(`${monsterName(steed, { capitalized: true })} is pulled into the ${displayLiquidName('lava', state)}!`);
         fatal = !['fire elemental', 'salamander'].includes(MONSTER_NAME[steed.mnum] ?? '');
@@ -1111,4 +1102,24 @@ export function monsterOccupiesPosition(
         || !!monster.wormSegments?.some(segment => segment.onMap !== false && segment.x !== 0 && segment.x === x && segment.y === y)
         || !!monster.wormDetachedSegments?.some(segment => segment.onMap !== false && segment.x !== 0 && segment.x === x && segment.y === y)
     );
+}
+
+const S_QUADRUPED = 17, S_UNICORN = 21, S_ANGEL = 27, S_CENTAUR = 29;
+const S_DRAGON = 30, S_ELEMENTAL = 31, S_JABBERWOCK = 36, S_GHOST = 54, S_VORTEX = 22;
+const PM_AIR_ELEMENTAL = 154, MZ_MEDIUM = 2;
+const SADDLE_CLASSES = new Set([S_QUADRUPED, S_UNICORN, S_ANGEL, S_CENTAUR, S_DRAGON, S_JABBERWOCK]);
+
+// C steed.c:can_saddle()
+export function monsterCanBeSaddled(monster: Pick<Monster, 'mnum'> | null | undefined) {
+    if (!monster || !Number.isInteger(monster.mnum)) return false;
+    const mnum = monster.mnum;
+    const symbol = MONSTER_SYMBOL[mnum];
+
+    return symbol !== undefined && SADDLE_CLASSES.has(symbol)
+        && (MONSTER_SIZE[mnum] ?? 0) >= MZ_MEDIUM
+        && (!monsterIsHumanoid(mnum) || symbol === S_CENTAUR)
+        && !(monsterIsAmorphous({ mnum }) || monsterIsUnsolid({ mnum }))
+        && symbol !== S_GHOST
+        && symbol !== S_VORTEX
+        && !(symbol === S_ELEMENTAL && mnum === PM_AIR_ELEMENTAL);
 }

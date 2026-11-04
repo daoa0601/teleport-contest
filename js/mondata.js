@@ -1,8 +1,9 @@
-// Monster-name and monster-class lookup.
-// C ref: mondata.c name_to_mon() and name_to_monclass().
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterIsAmorphous, monsterIsHumanoid, monsterIsMindFlayer, monsterIsRider, monsterIsSlithy, monsterIsUndead, monsterIsUnicorn, monsterIsVerySmall, monsterIsWhirly, monsterTypeName, monsterYoungerForm, requireMonsterData, MONSTER_RESISTS, monsterIsVampireShifter, MONSTER_COLOR, monsterClassSymbol, monsterIsBig, monsterHasEyes, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterOlderForm, } from './monster_data.js';
-import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, } from './monster_attack_types.js';
-import { dragonFormForArmor } from './polyself.js';
+// Species predicates and monster data queries.
+// C mondata.h and mondata.c.
+import { levelHasCeiling } from './dungeon.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
+import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
+import { dragonFormForArmor, heroMonsterForm, heroSpecies } from './polyself.js';
 import { artifactById } from './artifacts.js';
 import { M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -11,17 +12,14 @@ import { rn2 } from './rng.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { roles } from './roles.js';
 import { makeSingular } from './objnam.js';
-import { monsterHasLineOfSightToHero } from './vision.js';
+import { monsterHasLineOfSightToHero, clearPath } from './vision.js';
 import { canSpotMonster } from './display.js';
 import { heroIsHallucinating } from './senses.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES } from './object_data.js';
-import { heroSpecies } from './polyself.js';
-import { questMonsterFlags2 } from './role_monsters.js';
+import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { dist2 } from './hacklib.js';
-import { clearPath } from './vision.js';
-import { heroMonsterForm } from './polyself.js';
 export const MONSTER_CLASS_SYMBOLS = [
     '', ...'abcdefghijklmnopqrstuvwxyz', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     '@', ' ', "'", '&', ';', ':', '~', ']',
@@ -280,12 +278,13 @@ const M1_WALLWALK = 0x00000008;
 const M1_AMORPHOUS = 0x00000004;
 const M1_UNSOLID = 0x00100000;
 const M1_METALLIVORE = 0x80000000;
+// C mondata.c:passes_bars()
 export function monsterPassesBars(monster) {
-    const body = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    return !!(body & (M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))
-        || monsterIsWhirly(monster)
-        || monsterIsVerySmall(monster.mnum) || monsterCorrodesBars(monster)
-        || monsterIsSlithy(monster.mnum) && !monsterIsBig(monster.mnum);
+    const mnum = monster.mnum;
+    return monsterPassesWalls(mnum) || monsterIsAmorphous(monster)
+        || monsterIsUnsolid(monster) || monsterIsWhirly(monster)
+        || monsterIsVerySmall(mnum) || monsterCorrodesBars(monster)
+        || metallivorous(mnum) || (monsterIsSlithy(mnum) && !monsterIsBig(mnum));
 }
 export function monsterCorrodesBars(monster) {
     return (MONSTER_ATTACKS[monster.mnum] ?? []).some(([, damage]) => damage === AD_RUST || damage === AD_CORR);
@@ -297,7 +296,7 @@ export function speciesCanBlow(mnum) {
     const sound = requireMonsterData(MONSTER_SOUND, mnum);
     if (sound !== MS_SILENT && sound !== MS_BUZZ)
         return true;
-    return !(requireMonsterData(MONSTER_FLAGS1, mnum) & (M1_BREATHLESS | M1_NOHEAD))
+    return !(monsterIsBreathless(mnum) || !monsterHasHead({ mnum }))
         && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
         && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
 }
@@ -319,7 +318,6 @@ function symbol(name) {
 const GOLEM = symbol('stone golem');
 const KOBOLD = symbol('kobold');
 const IMP = symbol('imp');
-const raceFlags = [0x08, 0x10, 0x20, 0x40, 0x80, 0x2000];
 const classFamilies = [symbol('ogre'), symbol('water nymph'),
     symbol('plains centaur'), symbol('red dragon'), symbol('red naga')];
 const undeadFamilies = [symbol('human zombie'), symbol('human mummy'),
@@ -333,17 +331,20 @@ const TENGU = species('tengu');
 export function sameMonsterRace(left, right) {
     if (left === right)
         return true;
-    const leftFlags = requireMonsterData(MONSTER_FLAGS2, left);
-    const rightFlags = requireMonsterData(MONSTER_FLAGS2, right);
     const leftClass = requireMonsterData(MONSTER_SYMBOL, left);
     const rightClass = requireMonsterData(MONSTER_SYMBOL, right);
-    for (let i = 0; i < raceFlags.length; i++) {
-        const flag = raceFlags[i];
-        if (flag === undefined)
-            continue;
-        if (leftFlags & flag)
-            return !!(rightFlags & flag);
-    }
+    if (monsterIsHuman(left))
+        return monsterIsHuman(right);
+    if (is_elf(left))
+        return is_elf(right);
+    if (is_dwarf(left))
+        return is_dwarf(right);
+    if (is_gnome(left))
+        return is_gnome(right);
+    if (is_orc(left))
+        return is_orc(right);
+    if (monsterIsGiant(left))
+        return monsterIsGiant(right);
     if (leftClass === GOLEM)
         return rightClass === GOLEM;
     if (monsterIsMindFlayer(left))
@@ -356,16 +357,16 @@ export function sameMonsterRace(left, right) {
         return monsterIsUnicorn(right);
     if (monsterIsRider({ mnum: left }))
         return monsterIsRider({ mnum: right });
-    if (leftFlags & 0x1000)
-        return !!(rightFlags & 0x1000);
+    if (is_minion(left))
+        return is_minion(right);
     if (left === TENGU || right === TENGU)
         return false;
     if (leftClass === IMP)
         return rightClass === IMP;
     if (rightClass === IMP)
         return false;
-    if (leftFlags & 0x100)
-        return !!(rightFlags & 0x100);
+    if (monsterIsDemon(left))
+        return monsterIsDemon(right);
     if (monsterIsUndead(left)) {
         if (undeadFamilies.includes(leftClass))
             return leftClass === rightClass;
@@ -406,7 +407,6 @@ export function sameMonsterRace(left, right) {
 // when its name is hidden or hallucinated.
 const M1_NOLIMBS = 0x00006000;
 export function monsterLocomotion(mnum, fallback) {
-    const body = MONSTER_FLAGS1[mnum] ?? 0;
     let verb = fallback;
     if (monsterIsFloater(mnum))
         verb = 'float';
@@ -418,14 +418,13 @@ export function monsterLocomotion(mnum, fallback) {
         verb = 'ooze';
     else if (!MONSTER_MOVE[mnum])
         verb = 'wiggle';
-    else if ((body & M1_NOLIMBS) === M1_NOLIMBS)
+    else if (monsterHasNoLimbs(mnum))
         verb = 'crawl';
     return fallback.charAt(0) === fallback.charAt(0).toUpperCase()
         ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
 }
 // C mondata.c:stagger(): the faltering counterpart of locomotion().
 export function monsterStagger(mnum, fallback) {
-    const body = MONSTER_FLAGS1[mnum] ?? 0;
     let verb = fallback;
     if (monsterIsFloater(mnum))
         verb = 'wobble';
@@ -437,7 +436,7 @@ export function monsterStagger(mnum, fallback) {
         verb = 'tremble';
     else if (!MONSTER_MOVE[mnum])
         verb = 'pulsate';
-    else if ((body & M1_NOLIMBS) === M1_NOLIMBS)
+    else if (monsterHasNoLimbs(mnum))
         verb = 'falter';
     return fallback.charAt(0) === fallback.charAt(0).toUpperCase()
         ? verb.charAt(0).toUpperCase() + verb.slice(1) : verb;
@@ -588,8 +587,7 @@ export function monsterHasDisintegrationResistance(monster) {
 export function monsterHasDrainResistance(monster) {
     if (!monster)
         return false;
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-    return !!(flags & (M2_UNDEAD | M2_WERE | M2_DEMON))
+    return (monsterIsUndead(monster.mnum) || is_were(monster.mnum) || monsterIsDemon(monster.mnum))
         || monster?.mnum === PM_DEATH
         || monsterIsVampireShifter(monster)
         || artifactForObject(monsterWeapon(monster))?.defense === 'life-drain'
@@ -660,8 +658,6 @@ const POSSESSIVE_PRONOUNS = ['his', 'her', 'its', 'their'];
 const SUBJECT_PRONOUNS = ['he', 'she', 'it', 'they'];
 const OBJECT_PRONOUNS = ['him', 'her', 'it', 'them'];
 const PRONOUN_G_UNIQ = 0x1000;
-const PRONOUN_M2_NEUTER = 0x00040000;
-const PRONOUN_M2_PNAME = 0x00080000;
 // C mondata.c:pronoun_gender(), the mhis()/mhim() macros in include/you.h.
 // Hallucination precedes visibility and sex and uses the core RNG.
 export function monsterPossessive(monster, { state = game, random = rn2, noIt = false } = {}) {
@@ -682,11 +678,11 @@ export function monsterPronounGender(monster, { state = game, random = rn2, noIt
             return gender;
         throw new RangeError(`Invalid hallucinated pronoun gender: ${gender}`);
     }
-    if ((!noIt && !canSpotMonster(monster)) || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_NEUTER))
+    if ((!noIt && !canSpotMonster(monster)) || is_neuter(monster.mnum))
         return 2;
     return monsterIsHumanoid(monster.mnum)
         || ((MONSTER_GENO[monster.mnum] ?? 0) & PRONOUN_G_UNIQ)
-        || ((MONSTER_FLAGS2[monster.mnum] ?? 0) & PRONOUN_M2_PNAME)
+        || monsterHasProperName(monster.mnum)
         ? monster.female ? 1 : 0 : 2;
 }
 // C mondata.c:set_mon_data(). Change a monster's species without
@@ -737,8 +733,7 @@ export function monstersSeeTrap(state, trap) {
     for (const observer of state?.level?.monsters || []) {
         if (!observer || (observer.mhp ?? 1) <= 0)
             continue;
-        const flags = MONSTER_FLAGS1[observer.mnum] ?? 0;
-        if ((flags & (M1_ANIMAL | M1_MINDLESS | M1_NOEYES))
+        if ((monsterIsAnimal({ mnum: observer.mnum }) || monsterIsMindless(observer.mnum) || !monsterHasEyes(observer.mnum))
             || observer.mcansee === false || observer.mcansee === 0) {
             continue;
         }
@@ -838,5 +833,674 @@ export function maxPassiveMonsterDamage(defender, aggressor) {
         return count * sides * contactCount;
     }
     return 0;
+}
+const M1_HIDE = 0x00000100;
+const M1_FLY = 0x00000001;
+const M1_CLING = 0x00000010;
+const S_MIMIC = 13;
+const M2_HUMAN = 0x00000008;
+const M2_ALWAYS_HOSTILE = 0x00100000;
+const PM_ARCHEOLOGIST = MONSTER_NAME.indexOf('archeologist');
+const PM_WIZARD = MONSTER_NAME.indexOf('wizard');
+const PM_HUMAN = MONSTER_NAME.indexOf('human');
+const MS_NEMESIS = 37;
+const MS_GUARDIAN = 38;
+const M1_NOHANDS = 0x00002000;
+const MZ_MEDIUM = 2;
+const MZ_LARGE = 3;
+const S_EYE = 5;
+const S_LIGHT = 25;
+const M1_SWIM = 0x00000002;
+const M1_AMPHIBIOUS = 0x00000200;
+const M1_CONCEAL = 0x00000080;
+const M1_SEE_INVIS = 0x01000000;
+const M1_TPORT_CNTRL = 0x04000000;
+const M1_TPORT = 0x02000000;
+const S_GOLEM = 55;
+const M2_PNAME = 0x00080000;
+const M2_ROCKTHROW = 0x08000000;
+const M2_GIANT = 0x00002000;
+const M2_FEMALE = 0x00020000;
+const M1_SLITHY = 0x00080000;
+const S_CENTAUR = 29;
+const S_KOP = 37;
+const S_UNICORN = 21;
+const M1_HUMANOID = 0x00020000;
+const S_VORTEX = 22;
+const S_ELEMENTAL = 31;
+const PM_AIR_ELEMENTAL = 154;
+const PM_HORNED_DEVIL = MONSTER_NAME.indexOf('horned devil');
+const PM_MINOTAUR = MONSTER_NAME.indexOf('minotaur');
+const PM_ASMODEUS = MONSTER_NAME.indexOf('Asmodeus');
+const PM_BALROG = MONSTER_NAME.indexOf('balrog');
+const PM_WHITE_UNICORN = MONSTER_NAME.indexOf('white unicorn');
+const PM_GRAY_UNICORN = MONSTER_NAME.indexOf('gray unicorn');
+const PM_BLACK_UNICORN = MONSTER_NAME.indexOf('black unicorn');
+const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');
+const CORPSE_EATERS = new Set(['purple worm', 'baby purple worm', 'ghoul',
+    'piranha'].map(name => MONSTER_NAME.indexOf(name)));
+const PM_WINGED_GARGOYLE = MONSTER_NAME.indexOf('winged gargoyle');
+const PM_MARILITH = MONSTER_NAME.indexOf('marilith');
+const MZ_HUGE = 4;
+const M2_JEWELS = 0x20000000;
+const S_VAMPIRE = 48;
+const PM_MIND_FLAYER = 48;
+const PM_MASTER_MIND_FLAYER = 49;
+const PM_FLOATING_EYE = 28;
+const PM_SHADE = 288;
+const S_IMP = 9;
+const PM_TENGU = 55;
+const M1_THICK_HIDE = 0x00200000;
+const PM_GREMLIN = 40;
+const RIDER_SPECIES = new Set([MONSTER_NAME.indexOf('Death'),
+    MONSTER_NAME.indexOf('Famine'), MONSTER_NAME.indexOf('Pestilence')]);
+const PM_MANES = 50;
+// C mondata.h:ceiling_hider()
+export function monsterSpeciesHidesOnCeiling(mnum) {
+    return monsterIsHider(mnum)
+        && ((monsterIsClinger(mnum) && MONSTER_SYMBOL[mnum] !== S_MIMIC)
+            || monsterIsFlyer(mnum));
+}
+// C mondata.h:is_undead()
+export function monsterIsUndead(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_UNDEAD);
+}
+// C mondata.h:is_human()
+export function monsterIsHuman(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_HUMAN);
+}
+// C mondata.h:always_hostile()
+export function monsterIsAlwaysHostile(mnum, state = game) {
+    return !!(questMonsterFlags2(mnum, state) & M2_ALWAYS_HOSTILE);
+}
+// C mondata.h:is_mplayer()
+export function monsterIsPlayerMonster(mnum) {
+    return mnum >= PM_ARCHEOLOGIST && mnum <= PM_WIZARD;
+}
+// C mondata.h:is_covetous()
+export function monsterIsCovetous(monster, state = game) {
+    return !!(questMonsterFlags3(monster.mnum, state) & 0x001f);
+}
+export function monsterIsPlainHuman(mnum) {
+    return mnum === PM_HUMAN;
+}
+export function monsterIsQuestNemesis(mnum) {
+    return questMonsterSound(mnum) === MS_NEMESIS;
+}
+export function monsterIsQuestGuardian(mnum) {
+    return MONSTER_SOUND[mnum] === MS_GUARDIAN;
+}
+// C mondata.h:is_displacer()
+export function monsterIsDisplacer(mnum) {
+    return !!((MONSTER_FLAGS3[mnum] ?? 0) & 0x0400);
+}
+// C mondata.h:mindless()
+export function monsterIsMindless(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_MINDLESS);
+}
+// C mondata.h:nolimbs()
+export function monsterHasNoLimbs(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOLIMBS) === M1_NOLIMBS;
+}
+// C mondata.h:nohands()
+export function monsterHasNoHands(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOHANDS);
+}
+// C mondata.h:verysmall()
+export function monsterIsVerySmall(mnum) {
+    return (MONSTER_SIZE[mnum] ?? MZ_SMALL) < MZ_SMALL;
+}
+// C mondata.h:bigmonst()
+export function monsterIsBig(mnum) {
+    return (MONSTER_SIZE[mnum] ?? MZ_MEDIUM) >= MZ_LARGE;
+}
+// C mondata.h:is_flyer()
+export function monsterIsFlyer(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_FLY);
+}
+// C mondata.h:is_floater()
+export function monsterIsFloater(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_EYE || MONSTER_SYMBOL[mnum] === S_LIGHT;
+}
+// C mondata.h:is_clinger()
+export function monsterIsClinger(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CLING);
+}
+// C mondata.h:is_hider()
+export function monsterIsHider(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HIDE);
+}
+// C mondata.h:is_swimmer()
+export function monsterIsSwimmer(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SWIM);
+}
+// C mondata.h:breathless()
+export function monsterIsBreathless(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_BREATHLESS);
+}
+// C mondata.h:amphibious()
+export function monsterIsAmphibious(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_AMPHIBIOUS);
+}
+// C mondata.h:passes_walls()
+export function monsterPassesWalls(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_WALLWALK);
+}
+// C mondata.h:haseyes()
+export function monsterHasEyes(mnum) {
+    return !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOEYES);
+}
+// C mondata.h:hides_under()
+export function monsterHidesUnder(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_CONCEAL);
+}
+// C mondata.h:perceives()
+export function monsterPerceives(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SEE_INVIS);
+}
+// C mondata.h:control_teleport()
+export function monsterControlsTeleport(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT_CNTRL);
+}
+// C mondata.h:can_teleport()
+export function monsterCanTeleport(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_TPORT);
+}
+// C mondata.h:is_demon()
+export function monsterIsDemon(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_DEMON);
+}
+// C mondata.h:is_golem()
+export function monsterIsGolem(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_GOLEM;
+}
+// C mondata.h:is_silent()
+export function monsterIsSilent(mnum) {
+    return MONSTER_SOUND[mnum] === MS_SILENT;
+}
+// C mondata.h:type_is_pname()
+export function monsterHasProperName(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_PNAME);
+}
+// C mondata.h:throws_rocks()
+export function monsterThrowsRocks(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_ROCKTHROW);
+}
+// C mondata.h:is_giant()
+export function monsterIsGiant(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_GIANT);
+}
+// C mondata.h:is_female()
+export function monsterIsFemale(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_FEMALE);
+}
+// C mondata.h:slithy()
+export function monsterIsSlithy(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_SLITHY);
+}
+export function monsterIsCentaur(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_CENTAUR;
+}
+export function monsterIsKop(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_KOP;
+}
+export function monsterIsEel(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_EEL;
+}
+// C mondata.c:num_horns()
+export function monsterHornCount(mnum) {
+    switch (mnum) {
+        case PM_HORNED_DEVIL: /* ? "more than one" */
+        case PM_MINOTAUR:
+        case PM_ASMODEUS:
+        case PM_BALROG:
+            return 2;
+        case PM_WHITE_UNICORN:
+        case PM_GRAY_UNICORN:
+        case PM_BLACK_UNICORN:
+        case PM_KI_RIN:
+            return 1;
+        default:
+            break;
+    }
+    return 0;
+}
+// C mondata.h:is_animal()
+export function monsterIsAnimal(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum ?? -1] ?? 0) & M1_ANIMAL);
+}
+// C mondata.h:has_head()
+export function monsterHasHead(monster) {
+    return !((MONSTER_FLAGS1[monster?.mnum ?? -1] ?? 0) & M1_NOHEAD);
+}
+// C mondata.h:amorphous()
+export function monsterIsAmorphous(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum ?? -1] ?? 0) & M1_AMORPHOUS);
+}
+// C mondata.h:noncorporeal()
+export function monsterIsNoncorporeal(monster) {
+    return MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST;
+}
+// C mondata.h:slimeproof()
+export function monsterIsSlimeproof(monster) {
+    return monster?.mnum === PM_GREEN_SLIME
+        || (monster?.mnum !== undefined && FLAMING_SPECIES.has(monster.mnum))
+        || monsterIsNoncorporeal(monster);
+}
+// C mondata.h:corpse_eater()
+export function speciesEatsCorpses(species) {
+    return CORPSE_EATERS.has(species);
+}
+// C mondata.h:is_whirly()
+export function monsterIsWhirly(monster) {
+    return monster?.mnum === PM_AIR_ELEMENTAL
+        || MONSTER_SYMBOL[monster?.mnum ?? -1] === S_VORTEX;
+}
+// C mondata.h:unsolid()
+export function monsterIsUnsolid(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum ?? -1] ?? 0) & M1_UNSOLID);
+}
+// C mondata.c:sliparm()
+export function monsterSlipsArmor(mnum) {
+    const monster = { mnum };
+    return monsterIsWhirly(monster)
+        || monsterIsNoncorporeal(monster)
+        || (MONSTER_SIZE[mnum] ?? 0) <= MZ_SMALL;
+}
+// C mondata.c:breakarm()
+export function monsterBreaksArmor(mnum) {
+    if (monsterSlipsArmor(mnum))
+        return false;
+    const size = MONSTER_SIZE[mnum] ?? 0;
+    return size >= MZ_LARGE
+        || (size > MZ_SMALL && !monsterIsHumanoid(mnum))
+        || mnum === PM_WINGED_GARGOYLE
+        || mnum === PM_MARILITH;
+}
+// C mondata.h:humanoid()
+export function monsterIsHumanoid(mnum) {
+    return !!((MONSTER_FLAGS1[mnum] ?? 0) & M1_HUMANOID);
+}
+export function monsterWrappingAllowed(mnum) {
+    const size = MONSTER_SIZE[mnum] ?? 0;
+    return monsterIsHumanoid(mnum)
+        && size >= MZ_SMALL && size <= MZ_HUGE
+        && !monsterIsNoncorporeal({ mnum })
+        && !monsterIsCentaur(mnum)
+        && mnum !== PM_WINGED_GARGOYLE
+        && mnum !== PM_MARILITH;
+}
+// C mondata.h:is_unicorn()
+export function monsterIsUnicorn(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_UNICORN
+        && likes_gems(mnum);
+}
+// C mondata.h:is_bat()
+export function monsterIsBat(mnum) {
+    return ['bat', 'giant bat', 'vampire bat'].includes(MONSTER_NAME[mnum] ?? '');
+}
+// C mondata.h:is_vampire()
+export function monsterIsVampire(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_VAMPIRE;
+}
+// C mondata.h:is_mind_flayer()
+export function monsterIsMindFlayer(mnum) {
+    return mnum === PM_MIND_FLAYER || mnum === PM_MASTER_MIND_FLAYER;
+}
+// C mondata.h:telepathic()
+export function monsterIsTelepathic(mnum) {
+    return mnum === PM_FLOATING_EYE || monsterIsMindFlayer(mnum);
+}
+// C mondata.h:digests()
+export function monsterDigests(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(([attackType, damageType]) => attackType === AT_ENGL && damageType === AD_DGST);
+}
+// C mondata.h:enfolds()
+export function monsterEnfolds(monster) {
+    return (MONSTER_ATTACKS[monster.mnum] || []).some(([method, damage]) => method === AT_ENGL && damage === AD_WRAP);
+}
+// C mondata.c:sticks()
+export function monsterSpeciesSticks(mnum) {
+    const attacks = MONSTER_ATTACKS[mnum] || [];
+    const engulfs = attacks.some(([attackType]) => attackType === AT_ENGL);
+    return attacks.some(([, damageType]) => damageType === AD_STCK)
+        || (!engulfs && attacks.some(([, damageType]) => damageType === AD_WRAP))
+        || attacks.some(([attackType]) => attackType === AT_HUGS);
+}
+export function monsterCanEngulf(monster) {
+    return (MONSTER_ATTACKS[monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);
+}
+export function monsterIsVampireShifter(monster) {
+    return monsterIsVampire(monster?.cham ?? -1);
+}
+// C mondata.c:mon_hates_blessings()
+export function monsterHatesBlessings(monster) {
+    return monsterIsVampireShifter(monster)
+        || (monsterIsUndead(monster?.mnum ?? -1) || monsterIsDemon(monster?.mnum ?? -1));
+}
+// C mondata.c:hates_silver()
+export function monsterSpeciesHatesSilver(mnum) {
+    const symbol = MONSTER_SYMBOL[mnum];
+    return (is_were(mnum) || monsterIsDemon(mnum))
+        || symbol === S_VAMPIRE || mnum === PM_SHADE
+        || (symbol === S_IMP && mnum !== PM_TENGU);
+}
+// C mondata.c:mon_hates_silver()
+export function monsterHatesSilver(monster) {
+    return monsterIsVampireShifter(monster)
+        || monsterSpeciesHatesSilver(monster?.mnum ?? -1);
+}
+// C mondata.h:thick_skinned()
+export function monsterIsThickSkinned(monster) {
+    return !!((MONSTER_FLAGS1[monster?.mnum ?? -1] ?? 0) & M1_THICK_HIDE);
+}
+// C mondata.h:is_wooden()
+export function monsterIsWooden(monster) {
+    return monster?.mnum === PM_WOOD_GOLEM;
+}
+// C mondata.h:hates_light()
+export function monsterHatesLight(monster) {
+    return monster?.mnum === PM_GREMLIN;
+}
+// C mondata.h:is_rider()
+export function monsterIsRider(monster) {
+    return RIDER_SPECIES.has(monster.mnum);
+}
+export function monsterIsShade(monster) {
+    return monster?.mnum === PM_SHADE;
+}
+// C mondata.h:nonliving()
+export function monsterIsNonliving(mnum) {
+    return monsterIsUndead(mnum)
+        || mnum === PM_MANES
+        || monsterIsWeirdNonliving(mnum);
+}
+// C mondata.h:weirdnonliving()
+export function monsterIsWeirdNonliving(mnum) {
+    return MONSTER_SYMBOL[mnum] === S_VORTEX || monsterIsGolem(mnum);
+}
+// C mondata.c:little_to_big()
+export function monsterOlderForm(mnum) {
+    return MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+}
+// C mondata.c:big_to_little()
+export function monsterYoungerForm(mnum) {
+    if (!Number.isInteger(mnum) || mnum < 0
+        || mnum >= MONSTER_GROWTH_TARGET.length)
+        return mnum;
+    for (let candidate = 0; candidate < MONSTER_GROWTH_TARGET.length; candidate++) {
+        const grown = MONSTER_GROWTH_TARGET[candidate];
+        if (candidate !== mnum && grown === mnum)
+            return candidate;
+    }
+    return mnum;
+}
+// C mondata.c:big_little_match()
+export function monsterGrowthFamilyMatch(left, right) {
+    if (!Number.isInteger(left) || !Number.isInteger(right)
+        || left < 0 || right < 0
+        || left >= MONSTER_GROWTH_TARGET.length
+        || right >= MONSTER_GROWTH_TARGET.length)
+        return false;
+    if (left === right)
+        return true;
+    if (MONSTER_SYMBOL[left] !== MONSTER_SYMBOL[right])
+        return false;
+    let current = left;
+    for (;;) {
+        const grown = monsterOlderForm(current);
+        if (grown === current)
+            break;
+        if (grown === right)
+            return true;
+        current = grown;
+    }
+    current = right;
+    for (;;) {
+        const grown = monsterOlderForm(current);
+        if (grown === current)
+            break;
+        if (grown === left)
+            return true;
+        current = grown;
+    }
+    return false;
+}
+// C mondata.c:noattacks()
+export function monsterHasNoAttacks(mnum) {
+    return !requireMonsterData(MONSTER_ATTACKS, mnum)
+        .some(([type]) => type !== AT_NONE && type !== AT_BOOM);
+}
+const M1_TUNNEL = 0x00000020;
+// C mondata.h:tunnels()
+export function tunnels(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_TUNNEL) !== 0;
+}
+const M1_NEEDPICK = 0x00000040;
+// C mondata.h:needspick()
+export function needspick(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_NEEDPICK) !== 0;
+}
+const M1_NOTAKE = 0x00000800;
+// C mondata.h:notake()
+export function notake(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOTAKE) !== 0;
+}
+const M1_OVIPAROUS = 0x00400000;
+// C mondata.h:lays_eggs()
+export function lays_eggs(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_OVIPAROUS) !== 0;
+}
+const M1_REGEN = 0x00800000;
+// C mondata.h:regenerates()
+export function regenerates(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_REGEN) !== 0;
+}
+const M1_ACID = 0x08000000;
+// C mondata.h:acidic()
+export function acidic(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_ACID) !== 0;
+}
+const M1_POIS = 0x10000000;
+// C mondata.h:poisonous()
+export function poisonous(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_POIS) !== 0;
+}
+const M1_CARNIVORE = 0x20000000;
+// C mondata.h:carnivorous()
+export function carnivorous(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_CARNIVORE) !== 0;
+}
+const M1_HERBIVORE = 0x40000000;
+// C mondata.h:herbivorous()
+export function herbivorous(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_HERBIVORE) !== 0;
+}
+// C mondata.h:metallivorous()
+export function metallivorous(mnum) {
+    return ((MONSTER_FLAGS1[mnum] ?? 0) & M1_METALLIVORE) !== 0;
+}
+const M2_NOPOLY = 0x00000001;
+// C mondata.h:polyok()
+export function polyok(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_NOPOLY) === 0;
+}
+const M2_SHAPESHIFTER = 0x00004000;
+// C mondata.h:is_shapeshifter()
+export function is_shapeshifter(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_SHAPESHIFTER) !== 0;
+}
+// C mondata.h:is_were()
+export function is_were(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_WERE) !== 0;
+}
+const M2_ELF = 0x00000010;
+// C mondata.h:is_elf()
+export function is_elf(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_ELF) !== 0;
+}
+const M2_DWARF = 0x00000020;
+// C mondata.h:is_dwarf()
+export function is_dwarf(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_DWARF) !== 0;
+}
+const M2_GNOME = 0x00000040;
+// C mondata.h:is_gnome()
+export function is_gnome(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_GNOME) !== 0;
+}
+const M2_ORC = 0x00000080;
+// C mondata.h:is_orc()
+export function is_orc(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_ORC) !== 0;
+}
+const M2_DOMESTIC = 0x00400000;
+// C mondata.h:is_domestic()
+export function is_domestic(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_DOMESTIC) !== 0;
+}
+const M2_MERC = 0x00000200;
+// C mondata.h:is_mercenary()
+export function is_mercenary(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_MERC) !== 0;
+}
+const M2_MALE = 0x00010000;
+// C mondata.h:is_male()
+export function is_male(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_MALE) !== 0;
+}
+const M2_NEUTER = 0x00040000;
+// C mondata.h:is_neuter()
+export function is_neuter(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_NEUTER) !== 0;
+}
+const M2_WANDER = 0x00800000;
+// C mondata.h:is_wanderer()
+export function is_wanderer(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_WANDER) !== 0;
+}
+const M2_PEACEFUL = 0x00200000;
+// C mondata.h:always_peaceful()
+export function always_peaceful(mnum, state = game) {
+    return (questMonsterFlags2(mnum, state) & M2_PEACEFUL) !== 0;
+}
+const M2_NASTY = 0x02000000;
+// C mondata.h:extra_nasty()
+export function extra_nasty(mnum, state = game) {
+    return (questMonsterFlags2(mnum, state) & M2_NASTY) !== 0;
+}
+const M2_STRONG = 0x04000000;
+// C mondata.h:strongmonst()
+export function strongmonst(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG) !== 0;
+}
+const M2_LORD = 0x00000400;
+// C mondata.h:is_lord()
+export function is_lord(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_LORD) !== 0;
+}
+const M2_PRINCE = 0x00000800;
+// C mondata.h:is_prince()
+export function is_prince(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_PRINCE) !== 0;
+}
+const M2_MINION = 0x00001000;
+// C mondata.h:is_minion()
+export function is_minion(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_MINION) !== 0;
+}
+const M2_GREEDY = 0x10000000;
+// C mondata.h:likes_gold()
+export function likes_gold(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_GREEDY) !== 0;
+}
+// C mondata.h:likes_gems()
+export function likes_gems(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_JEWELS) !== 0;
+}
+const M2_MAGIC = 0x80000000;
+// C mondata.h:likes_magic()
+export function likes_magic(mnum) {
+    return ((MONSTER_FLAGS2[mnum] ?? 0) & M2_MAGIC) !== 0;
+}
+// C mondata.h:is_armed()
+export function speciesHasWeaponAttack(mnum) {
+    return (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === AT_WEAP);
+}
+// C mondata.h:likes_objs()
+export function likes_objs(mnum) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_COLLECT)
+        || speciesHasWeaponAttack(mnum);
+}
+// C mondata.h:is_ndemon()
+export function is_ndemon(mnum) {
+    return monsterIsDemon(mnum) && !is_lord(mnum) && !is_prince(mnum);
+}
+// C mondata.h:is_dlord()
+export function is_dlord(mnum) {
+    return monsterIsDemon(mnum) && is_lord(mnum);
+}
+// C mondata.h:is_dprince()
+export function is_dprince(mnum) {
+    return monsterIsDemon(mnum) && is_prince(mnum);
+}
+// C mondata.h:passes_rocks()
+export function passes_rocks(mnum) {
+    return monsterPassesWalls(mnum) && !monsterIsUnsolid({ mnum });
+}
+// C mondata.h:eyecount()
+export function eyecount(mnum) {
+    if (!monsterHasEyes(mnum))
+        return 0;
+    return mnum === MONSTER_NAME.indexOf('Cyclops') || mnum === PM_FLOATING_EYE ? 1 : 2;
+}
+// C mondata.h:infravision()
+export function infravision(mnum) {
+    return (MONSTER_FLAGS3[mnum] ?? 0) & 0x0100;
+}
+// C mondata.h:infravisible()
+export function infravisible(mnum) {
+    return (MONSTER_FLAGS3[mnum] ?? 0) & 0x0200;
+}
+const M2_COLLECT = 0x40000000;
+// C mondata.h:your_race()
+export function your_race(mnum, state = game) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & (state.urace?.selfmask ?? 0));
+}
+// C mondata.h:race_hostile()
+export function race_hostile(mnum, state = game) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & (state.urace?.hatemask ?? 0));
+}
+// C mondata.h:race_peaceful()
+export function race_peaceful(mnum, state = game) {
+    return !!((MONSTER_FLAGS2[mnum] ?? 0) & (state.urace?.lovemask ?? 0));
+}
+// C mondata.h:grounded()
+export function grounded(mnum, state = game) {
+    return !monsterIsFlyer(mnum) && !monsterIsFloater(mnum)
+        && (!monsterIsClinger(mnum) || !levelHasCeiling(state));
+}
+// C mondata.h:cant_drown()
+export function cant_drown(mnum) {
+    return monsterIsSwimmer(mnum) || monsterIsAmphibious(mnum) || monsterIsBreathless(mnum);
+}
+// C mondata.h:cantwield()
+export function cantwield(mnum) {
+    return monsterHasNoHands(mnum) || monsterIsVerySmall(mnum);
+}
+// C mondata.h:cantweararm()
+export function cantweararm(mnum) {
+    return monsterBreaksArmor(mnum) || monsterSlipsArmor(mnum);
+}
+// C mondata.h:could_twoweap()
+export function could_twoweap(mnum) {
+    const attacks = MONSTER_ATTACKS[mnum];
+    return Number(attacks?.[0]?.[0] === AT_WEAP)
+        + Number(attacks?.[1]?.[0] === AT_WEAP)
+        + Number(attacks?.[2]?.[0] === AT_WEAP) > 1;
+}
+// C mondata.h:eggs_in_water()
+export function eggs_in_water(mnum) {
+    return lays_eggs(mnum) && MONSTER_SYMBOL[mnum] === S_EEL && monsterIsSwimmer(mnum);
 }
 //# sourceMappingURL=mondata.js.map

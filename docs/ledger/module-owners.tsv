@@ -67,6 +67,7 @@ src/js/mkmaze.ts	mkmaze.c
 src/js/mkobj.ts	mkobj.c
 src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
+src/js/monster_data.ts	mon.c
 src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c

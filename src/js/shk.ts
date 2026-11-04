@@ -22,7 +22,7 @@ import {
     ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
 } from './object_data.js';
 import { impossible } from './diagnostics.js';
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -35,16 +35,22 @@ import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type { ShopGameState, ShopBillItem, BilledShopkeeper, CostlyShopSpot, Shopkeeper, ShopRoom, ShopTransaction } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
-import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
+import {
+    monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes,
+    monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire,
+    monsterPassesWalls,
+} from './mondata.js';
 import { hiddenGold } from './vault.js';
-
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency } from './invent.js';
-import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
+import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval } from './invent.js';
+import {
+    simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming,
+    simpleObjectNameWithArticle, objectDescription, paymentObjectDescription,
+} from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import type { MonsterCallLog, MonsterMovement, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
@@ -52,24 +58,21 @@ import { heroGoldObject, detachHeroGold } from './hero_gold.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
+import { angerWatchGuards, removeMonsterFromGame, mnearto, resistConflict, moveMonsterNextToHero } from './mon.js';
 import {
-    angerWatchGuards,
-    removeMonsterFromGame,
-    mnearto,
-    resistConflict
-} from './mon.js';
-import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER } from './const.js';
-import { isok } from './cmd.js';
-
-
+    A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd,
+    MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL,
+    MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG,
+    RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP,
+    W_QUIVER, ACH_SHOP,
+} from './const.js';
+import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
-
-import { learnObjectType, observeObject } from './o_init.js';
-import { paymentObjectDescription, objectDescription } from './objnam.js';
 import { dropObjectAtHero } from './do.js';
-import { mergable } from './invent.js';
-import { splitObjectStack } from './mkobj.js';
-import { ACH_SHOP } from './const.js';
+import {
+    splitObjectStack, deallocateObject, linkObjectToMonsterInventory, mksobj, unlinkObject, nextIdent,
+    nextObjectId, objectWeight, placeObject, remove_object,
+} from './mkobj.js';
 import { recordAchievement } from './insight.js';
 import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
@@ -77,7 +80,6 @@ import { closedDoor, performMonsterTurn } from './monmove.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { beginMonsterHeroAttack } from './mhitu.js';
 import { heroIsDisplaced } from './do_wear.js';
-
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -90,14 +92,10 @@ import { makemonAt } from './makemon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
-import { addInventoryItem } from './invent.js';
 import { intrinsic_possible } from './eat.js';
 import type { CorpseIntrinsic } from './eat.js';
-import { countContents } from './invent.js';
-
 import { artifactById } from './artifacts.js';
 import { bot } from './botl.js';
-import { commandResultCancelled, setMulti } from './cmd.js';
 import { showGetposInstructions, selectMapPosition } from './getpos.js';
 import { promptYesNo, promptChoice, promptYesNoAllQuit } from './query.js';
 import { publishMonsterYelp, publishMonsterGrowl } from './ambient_sounds.js';
@@ -105,19 +103,14 @@ import { heroIsPunished, unplaceBallAndChain, placeBallAndChain } from './ball.j
 import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
-import { finishInventoryRemoval } from './invent.js';
 import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
-import { pickingAt } from './lock.js';
-import { linkObjectToMonsterInventory, mksobj, unlinkObject, deallocateObject } from './mkobj.js';
+import { pickingAt, maybeResetPick } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
-import { moveMonsterNextToHero } from './mon.js';
 import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
-import { maybeResetPick } from './lock.js';
-
 import { bookDisappears } from './spell.js';
 import {
     checkSpecialRoom,
@@ -129,13 +122,10 @@ import {
     roomForIndex,
     showGetposTip
 } from './hack.js';
-import { insideRoom } from './mkroom.js';
-import {objectWeight, nextIdent, nextObjectId, remove_object, placeObject} from './mkobj.js';
 
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
-const M2_PNAME = 0x00080000;
 
 
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
@@ -1209,7 +1199,7 @@ function heroHonorific(state: GameState = game): string {
     if (!title) throw new Error('Shop honorific roll is out of range');
     const species = heroSpecies(state);
     const elven = Upolyd(state.u)
-        ? !!((MONSTER_FLAGS2[species] ?? 0) & 0x10) // M2_ELF
+        ? is_elf(species) // M2_ELF
         : state.urace?.name === 'elf';
     const female = !!state?.flags?.female;
     const suffix = monsterIsVampire(species) ? (female ? 'dark lady' : 'dark lord')
@@ -1392,14 +1382,7 @@ async function blockShopEntry(shopkeeper: Shopkeeper): Promise<void> {
     await performMonsterTurn(shopkeeper, game);
 }
 
-
 const MS_HUMANOID = 25;
-
-const M1_NOLIMBS = 0x00006000;
-
-const M1_WALLWALK = 0x00000008;
-
-const M2_DEMON = 0x00000100;
 
 // C include/mextra.h.
 export const REPAIR_DELAY = 5;
@@ -1410,7 +1393,6 @@ function monsterAt(state: ShopGameState, x: number, y: number): Monster | null {
     return monsterAtPosition(state.level, x, y);
 }
 
-
 function objectsAt(state: GameState, x: number, y: number): GameObject[] {
     return state.level?.objects?.[x]?.[y] || [];
 }
@@ -1419,7 +1401,6 @@ function objectsAt(state: GameState, x: number, y: number): GameObject[] {
 function distu(state: GameState, x: number, y: number): number {
     return dist2(x, y, state.u.ux, state.u.uy);
 }
-
 
 // C include/you.h m_next2u(): squared distance within 2, the 8 neighbors.
 function mNext2u(monster: Monster, state: GameState): boolean {
@@ -1432,8 +1413,7 @@ function monsterHelpless(monster: Monster): boolean {
 }
 
 function monsterNolimbs(monster: Monster): boolean {
-    return ((MONSTER_FLAGS1[monster?.mnum] ?? 0) & M1_NOLIMBS)
-        === M1_NOLIMBS;
+    return monsterHasNoLimbs(monster?.mnum);
 }
 
 function monsterSound(monster: Monster): number {
@@ -2178,7 +2158,6 @@ function removeTrap(trap: Trap, state: ShopGameState): void {
     if (caught?.mtrapped) caught.mtrapped = 0;
 }
 
-
 const LITTER_UPDATE = 0x01;
 
 const LITTER_OPEN = 0x02;
@@ -2922,7 +2901,6 @@ export async function quoteShopGoods(): Promise<boolean> {
     }
     return true;
 }
-
 
 // C shk.c:shk_embellish().
 function embellish(object: GameObject, cost: number): string {
@@ -4742,7 +4720,6 @@ function sameShopLevel(first: { dnum: number; dlevel: number } | null | undefine
 }
 
 // C shk.c:pick_pick(), called by pickup.c:out_container() before addinv().
-const M1_NOEYES = 0x00001000;
 
 export async function warnAboutRemovedPick(object: GameObject, state: GameState = game): Promise<void> {
     if (object.unpaid || !isPick(object)) return;

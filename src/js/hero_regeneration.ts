@@ -2,15 +2,11 @@
 import { currentAttribute } from './attrib.js';
 import { A_CON, Is_waterlevel, MOD_ENCUMBER, Upolyd } from './const.js';
 import { requireInitializedGame } from './gstate.js';
-import { heroIsBreathless, heroSpecies } from './polyself.js';
-import { MONSTER_SYMBOL, monsterIsEel } from './monster_data.js';
-import { returnHeroToHumanForm } from './polyself.js';
+import { heroIsBreathless, heroSpecies, returnHeroToHumanForm } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { isPoolAt } from './dbridge.js';
-
-
-const S_EEL = 57;
+import { monsterIsEel } from './mondata.js';
 
 // The caller owns interrupt_multi() when this recovery reaches full health.
 export async function regenerateHeroHp(capacity: number, turn: number): Promise<boolean> {

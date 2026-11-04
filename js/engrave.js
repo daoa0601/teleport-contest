@@ -7,64 +7,49 @@
 //         from doengrave().
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
-import { game } from './gstate.js';
-import { exerciseWisdom } from './attrib.js';
-import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm } from './polyself.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { exerciseWisdom, exerciseAttribute } from './attrib.js';
+import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, heroSpecies } from './polyself.js';
 import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
-import { MONSTER_ATTACKS, MONSTER_SIZE } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
-import { P_RIDING } from './const.js';
+import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, } from './const.js';
 import { rn2, rnd } from './rng.js';
-import { BUFSZ, COLNO, DUST, ENGRAVE, BURN, MARK, ENGR_BLOOD, HEADSTONE, N_ENGRAVE, ROWNO, } from './const.js';
 import { newsym } from './display.js';
-import { surfaceName } from './terrain_name.js';
-import { isIceAt } from './dbridge.js';
+import { surfaceName, ceilingName } from './terrain_name.js';
+import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
-import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
-import { artifactById } from './artifacts.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL } from './object_data.js';
-import { isBimanualObject, isMissileObject, isWeaponTool } from './object_properties.js';
-import { willWeld } from './wield.js';
+import { artifactByName } from './artifacts.js';
+import { TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
+import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
+import { willWeld, isWeldedPrimary } from './wield.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { plineWithContinuation as pline } from './pline.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation as pline, plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit } from './query.js';
-import { getobj } from './invent.js';
-import { requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { ACCESSIBLE, ALTAR, A_WIS, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, } from './const.js';
+import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { makeBlinded } from './potion.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
-import { heroSpecies } from './polyself.js';
-import { MONSTER_SYMBOL, monsterHasNoHands, monsterIsAnimal, monsterIsDemon, monsterIsVerySmall, monsterIsWhirly } from './monster_data.js';
-import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { ceilingName } from './terrain_name.js';
-import { isBlade, isWetTowel } from './object_properties.js';
-import { isWeldedPrimary } from './wield.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './read.js';
 import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
 import { dryTowel } from './weapon.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { inventoryItemDescription } from './invent.js';
 import { objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, } from './objnam.js';
-import { artifactByName } from './artifacts.js';
 import { addExperience } from './exper.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { altarWrath } from './pray.js';
 import { getRandomTextLine, getRumor } from './mklev.js';
 import { monsterName } from './do_name.js';
 import { makemonAt } from './makemon.js';
-import { exerciseAttribute } from './attrib.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
-import { useUpInventoryStack } from './invent.js';
 import { impossible } from './diagnostics.js';
-import { MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { exceedsActionCapacity } from './hack.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
+import { monsterIsAnimal, monsterIsDemon, monsterIsWhirly, cantwield, } from './mondata.js';
 const RUBOUTS = new Map([
     ['A', '^'],
     ['B', 'Pb['],
@@ -466,7 +451,6 @@ const ATHAME = 38;
 // ARM_BOOTS).
 const BOOT_TYPES_FIRST = 163;
 const BOOT_TYPES_LAST = 172;
-const M2_DEMON = 0x100;
 const S_VAMPIRE = 48;
 const DRAWBRIDGE_DOWN = 34;
 // C engrave.c cant_reach_floor().
@@ -516,7 +500,7 @@ async function heroCanEngrave(state) {
     }
     const species = heroSpecies(state);
     // C cantwield(): nohands() || verysmall().
-    if (monsterHasNoHands(species) || monsterIsVerySmall(species)) {
+    if (cantwield(species)) {
         await pline("You can't even hold anything!");
         return false;
     }

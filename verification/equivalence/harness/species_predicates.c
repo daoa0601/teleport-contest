@@ -141,3 +141,253 @@ int verification_is_silent(struct permonst *ptr)
 {
     return is_silent(ptr);
 }
+
+int verification_slithy(struct permonst *ptr)
+{
+    return slithy(ptr);
+}
+
+int verification_nolimbs(struct permonst *ptr)
+{
+    return nolimbs(ptr);
+}
+
+int verification_is_orc(struct permonst *ptr)
+{
+    return is_orc(ptr);
+}
+
+int verification_is_elf(struct permonst *ptr)
+{
+    return is_elf(ptr);
+}
+
+int verification_unsolid(struct permonst *ptr)
+{
+    return unsolid(ptr);
+}
+
+int verification_is_neuter(struct permonst *ptr)
+{
+    return is_neuter(ptr);
+}
+
+int verification_amorphous(struct permonst *ptr)
+{
+    return amorphous(ptr);
+}
+
+int verification_strongmonst(struct permonst *ptr)
+{
+    return strongmonst(ptr);
+}
+
+int verification_tunnels(struct permonst *ptr)
+{
+    return tunnels(ptr);
+}
+
+int verification_needspick(struct permonst *ptr)
+{
+    return needspick(ptr);
+}
+
+int verification_notake(struct permonst *ptr)
+{
+    return notake(ptr);
+}
+
+int verification_has_head(struct permonst *ptr)
+{
+    return has_head(ptr);
+}
+
+int verification_is_undead(struct permonst *ptr)
+{
+    return is_undead(ptr);
+}
+
+int verification_is_human(struct permonst *ptr)
+{
+    return is_human(ptr);
+}
+
+int verification_is_were(struct permonst *ptr)
+{
+    return is_were(ptr);
+}
+
+int verification_is_dwarf(struct permonst *ptr)
+{
+    return is_dwarf(ptr);
+}
+
+int verification_is_gnome(struct permonst *ptr)
+{
+    return is_gnome(ptr);
+}
+
+int verification_is_domestic(struct permonst *ptr)
+{
+    return is_domestic(ptr);
+}
+
+int verification_is_mercenary(struct permonst *ptr)
+{
+    return is_mercenary(ptr);
+}
+
+int verification_is_male(struct permonst *ptr)
+{
+    return is_male(ptr);
+}
+
+int verification_is_wanderer(struct permonst *ptr)
+{
+    return is_wanderer(ptr);
+}
+
+int verification_is_lord(struct permonst *ptr)
+{
+    return is_lord(ptr);
+}
+
+int verification_is_prince(struct permonst *ptr)
+{
+    return is_prince(ptr);
+}
+
+int verification_is_minion(struct permonst *ptr)
+{
+    return is_minion(ptr);
+}
+
+int verification_lays_eggs(struct permonst *ptr)
+{
+    return lays_eggs(ptr);
+}
+
+int verification_regenerates(struct permonst *ptr)
+{
+    return regenerates(ptr);
+}
+
+int verification_acidic(struct permonst *ptr)
+{
+    return acidic(ptr);
+}
+
+int verification_poisonous(struct permonst *ptr)
+{
+    return poisonous(ptr);
+}
+
+int verification_carnivorous(struct permonst *ptr)
+{
+    return carnivorous(ptr);
+}
+
+int verification_herbivorous(struct permonst *ptr)
+{
+    return herbivorous(ptr);
+}
+
+int verification_metallivorous(struct permonst *ptr)
+{
+    return metallivorous(ptr);
+}
+
+int verification_polyok(struct permonst *ptr)
+{
+    return polyok(ptr);
+}
+
+int verification_is_shapeshifter(struct permonst *ptr)
+{
+    return is_shapeshifter(ptr);
+}
+
+int verification_likes_gold(struct permonst *ptr)
+{
+    return likes_gold(ptr);
+}
+
+int verification_likes_gems(struct permonst *ptr)
+{
+    return likes_gems(ptr);
+}
+
+int verification_likes_magic(struct permonst *ptr)
+{
+    return likes_magic(ptr);
+}
+
+int verification_thick_skinned(struct permonst *ptr)
+{
+    return thick_skinned(ptr);
+}
+
+int verification_is_displacer(struct permonst *ptr)
+{
+    return is_displacer(ptr);
+}
+
+int verification_is_armed(struct permonst *ptr)
+{
+    return is_armed(ptr);
+}
+
+int verification_infravision(struct permonst *ptr)
+{
+    return infravision(ptr);
+}
+
+int verification_infravisible(struct permonst *ptr)
+{
+    return infravisible(ptr);
+}
+
+int verification_cant_drown(struct permonst *ptr)
+{
+    return cant_drown(ptr);
+}
+
+int verification_cantwield(struct permonst *ptr)
+{
+    return cantwield(ptr);
+}
+
+int verification_cantweararm(struct permonst *ptr)
+{
+    return cantweararm(ptr);
+}
+
+int verification_could_twoweap(struct permonst *ptr)
+{
+    return could_twoweap(ptr);
+}
+
+int verification_eggs_in_water(struct permonst *ptr)
+{
+    return eggs_in_water(ptr);
+}
+
+int verification_likes_objs(struct permonst *ptr)
+{
+    return likes_objs(ptr);
+}
+
+int verification_is_ndemon(struct permonst *ptr)
+{
+    return is_ndemon(ptr);
+}
+
+int verification_is_dlord(struct permonst *ptr)
+{
+    return is_dlord(ptr);
+}
+
+int verification_is_dprince(struct permonst *ptr)
+{
+    return is_dprince(ptr);
+}

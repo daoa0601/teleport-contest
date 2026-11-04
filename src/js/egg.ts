@@ -58,7 +58,7 @@ export interface HatchedEgg {
 export type EggHatchEvent = SterileEgg | MisplacedEgg | UnhatchedEgg | HatchedEgg;
 
 import { makemonNear } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsEel, monsterOlderForm, monsterTypeName, monsterYoungerForm } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_GENO, MONSTER_MOVE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { EGG } from './object_data.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 
@@ -68,16 +68,12 @@ import { cansee } from './vision.js';
 
 import { tameMonster } from './dog.js';
 import { objectWeight } from './mkobj.js';
+import { monsterHasNoLimbs, monsterIsAmorphous, monsterIsFlyer, monsterIsSlithy, monsterIsEel, monsterOlderForm, monsterYoungerForm } from './mondata.js';
 
 const G_UNIQ = 0x1000;
-const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
-const M1_NOLIMBS = 0x00006000;
-const M1_SLITHY = 0x00080000;
 const S_EYE = 5;
 const S_DRAGON = 30;
 const S_LIGHT = 25;
-const S_EEL = 57;
 
 function floorHatchMessage(mnum: number, count: number, state: GameState): string {
     const name = monsterTypeName(mnum);
@@ -85,14 +81,13 @@ function floorHatchMessage(mnum: number, count: number, state: GameState): strin
 }
 
 function hatchLocomotion(mnum: number): string {
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT) return 'float';
-    if (flags & M1_FLY) return 'fly';
-    if (flags & M1_SLITHY) return 'slither';
-    if (flags & M1_AMORPHOUS) return 'ooze';
+    if (monsterIsFlyer(mnum)) return 'fly';
+    if (monsterIsSlithy(mnum)) return 'slither';
+    if (monsterIsAmorphous({ mnum })) return 'ooze';
     if ((MONSTER_MOVE[mnum] ?? 0) === 0) return 'wiggle';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS) return 'crawl';
+    if (monsterHasNoLimbs(mnum)) return 'crawl';
     return 'drop';
 }
 
@@ -339,4 +334,3 @@ export async function finishEggHatchTimer(
     event.finished = true;
     return event;
 }
-

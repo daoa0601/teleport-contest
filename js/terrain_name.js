@@ -3,12 +3,11 @@ import { ALTAR, CLOUD, DOOR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, ICE, IS_AIR, IS_R
 import { isok } from './cmd.js';
 import { game, requireGameLevel } from './gstate.js';
 import { displayLiquidName } from './do_name.js';
-import { drawbridgeUnderlyingType } from './dbridge.js';
-import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+import { drawbridgeUnderlyingType, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
-import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 import { roomsAt } from './hack.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
 // changes terrain, even when that caller will not print it.
 export function waterbodyName(x, y, state = game) {

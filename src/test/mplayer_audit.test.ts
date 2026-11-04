@@ -3,13 +3,14 @@ import test from 'node:test';
 import { W_ARM, W_ARMC, W_ARMS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { createPlayerMonster, createPlayerMonsters } from '../js/mplayer.js';
-import { MONSTER_NAME, monsterIsPlayerMonster } from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { FAKE_AMULET_OF_YENDOR, ROBE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createSpecialLevel } from './support/topology.js';
+import { monsterIsPlayerMonster } from '../js/mondata.js';
 
 for (const { endgame, special, description } of [
     { endgame: false, special: true, description: 'a special-player request is ignored outside the endgame' },

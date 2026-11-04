@@ -3,11 +3,10 @@
 
 import type { MessagePublisher } from './pline.js';
 import { game } from './gstate.js';
-import { MONSTER_FLAGS1, MONSTER_SOUND } from './monster_data.js';
-import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { heroIsUnaware } from './senses.js';
+import { MONSTER_SOUND } from './monster_data.js';
+import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
+import { monsterHasHead } from './mondata.js';
 
-const M1_NOHEAD = 0x00008000;
 const MS_SILENT = 0;
 const MS_BUZZ = 10;
 const MS_BURBLE = 16;
@@ -58,6 +57,6 @@ export function heroCanChant(state = game) {
     return sound !== MS_SILENT
         && sound !== MS_BUZZ
         && sound !== MS_BURBLE
-        && !((MONSTER_FLAGS1[mnum] ?? 0) & M1_NOHEAD);
+        && monsterHasHead({ mnum });
 }
 

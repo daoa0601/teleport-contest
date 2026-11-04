@@ -27,38 +27,29 @@ import {
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { heroFootName, monsterFootName, heroHandName } from './body_parts.js';
 import { monsterName } from './do_name.js';
-import { possessiveName } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
-import { makePlural } from './objnam.js';
-
-import { AD_SITM } from './monster_attack_types.js';
-
+import { possessiveName, dist2 } from './hacklib.js';
+import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import {
-    definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
+    makePlural, definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
 } from './objnam.js';
+import { AD_SITM } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
-import { inventoryItemDescription } from './invent.js';
-import { heroIsBlind } from './senses.js';
+import { inventoryItemDescription, finishInventoryRemoval, freeInventoryObject, inventoryItem } from './invent.js';
+import { heroIsBlind, heroIsUnaware } from './senses.js';
 import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
-import { heroIsUnaware } from './senses.js';
 import { heroSpecies } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { dist2 } from './hacklib.js';
 import { randomMonsterRelocation, relocateObjectRandomly } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-
-import { openHoldingTrap } from './trap.js';
-import { armorSimpleName, stopDonning } from './do_wear.js';
-
-import { removeHeroEquipment } from './hero_equipment.js';
+import { openHoldingTrap, petrifyMonsterImmediately } from './trap.js';
+import { armorSimpleName, stopDonning, isBeingTakenOff, pendingArmorAction } from './do_wear.js';
+import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold } from './hero_gold.js';
 import { isWeldedPrimary } from './wield.js';
-import { isBeingTakenOff } from './do_wear.js';
-
 import { monsterCanCarryObject } from './mon.js';
 import { releaseObjectLeash } from './apply.js';
 import { assertCreatedObject } from './do.js';
@@ -68,24 +59,20 @@ import {
     removeObjectFromMonsterInventory, updateMonsterEquipment,
 } from './monworn.js';
 import { landFloorObject } from './floor_effects.js';
-import { inventoryItem } from './invent.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';
 import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifacts.js';
 import { objectResistsDestruction } from './zap.js';
-import { freeInventoryObject, finishInventoryRemoval } from './invent.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';
-import { removeWornHeroItem } from './hero_equipment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { pendingArmorAction } from './do_wear.js';
-import { nomul } from './hack.js';
+import { nomul, heroGoldAmount, roomsAt } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { encumber_msg } from './pickup.js';
 import { touchPetrifies } from './stoning.js';
-import { petrifyMonsterImmediately } from './trap.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { makeMonsterFlee } from './monmove.js';
-import { roomsAt, heroGoldAmount } from './hack.js';
+import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks } from './mondata.js';
+
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster: Monster, state: GameState): string {
     return monsterName(monster, { state, capitalized: true, augmentIt: true });
@@ -578,7 +565,7 @@ export async function stealHeroQuestObject(
     const name = await inventoryItemDescription(object);
     await addObjectToMonsterInventory(monster, object, state);
     await publish(`${monsterName(monster, { state, capitalized: true, augmentIt: true })} steals ${name}!`);
-    if ((monsterCanTeleport(monster.mnum))
+    if (monsterCanTeleport(monster.mnum)
         && !await reportMonsterTeleportRestriction(monster, { state, publish }))
         await randomMonsterRelocation(monster, { state, flags: RLOC_MSG, random, rollOne });
     await encumber_msg(state);

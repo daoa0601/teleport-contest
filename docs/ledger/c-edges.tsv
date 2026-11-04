@@ -49,6 +49,10 @@ able_to_loot	hliquid
 abon	acurr
 accessory_or_armor_on	setworn
 accessory_or_armor_on	yn_function
+act_on_act	cmdq_add_dir
+act_on_act	cmdq_add_ec
+act_on_act	cmdq_add_key
+act_on_act	cmdq_add_userinput
 acurrstr	acurr
 add_damage	shop_keeper
 add_menu	get_menu_coloring
@@ -119,6 +123,7 @@ attrcurse	set_mimic_blocking
 attributes_enlightenment	from_what
 attributes_enlightenment	piousness
 attributes_enlightenment	stone_luck
+attributes_enlightenment	temp_resist
 attributes_enlightenment	walking_on_water
 auto_describe	flush_screen
 avoid_running_into_trap_or_liquid	nomul
@@ -158,7 +163,11 @@ bestow_artifact	rn2
 bestow_artifact	rnz
 bestow_artifact	yn_function
 bill_box_content	add_one_tobill
+bite	adj_victual_nutrition
+bite	choke
 bite	do_reset_eat
+bite	lesshungry
+bite	recalc_wt
 blackout	isok
 blackout	unset_seenv
 blengr	rn2
@@ -266,6 +275,7 @@ choke	adjalign
 choke	done
 choke	exercise
 choke	foodword
+choke	morehungry
 choke	rn2
 choke	vomit
 choke_dialogue	exercise
@@ -292,6 +302,7 @@ cloneu	makemon
 clonewiz	newsym
 clonewiz	rn2
 close_drawbridge	newsym
+cmdq_add_ec	ext_func_tab_from_func
 com_pager_core	rn2
 confdir	rn2
 confused_book	rn2
@@ -301,6 +312,7 @@ consume_offering	rn2
 consume_tin	costly_tin
 consume_tin	cpostfx
 consume_tin	cprefx
+consume_tin	lesshungry
 consume_tin	rn2
 consume_tin	rnd
 consume_tin	rndmonnam
@@ -328,6 +340,10 @@ cpostfx	adjattrib
 cpostfx	attrcurse
 cpostfx	d
 cpostfx	dismount_steed
+cpostfx	eatmdone
+cpostfx	eye_of_newt_buzz
+cpostfx	givit
+cpostfx	lesshungry
 cpostfx	make_blinded
 cpostfx	make_confused
 cpostfx	make_hallucinated
@@ -340,6 +356,7 @@ cpostfx	rn2
 cpostfx	use_up_tin
 cprefx	done
 cprefx	exercise
+cprefx	fix_petrification
 cprefx	maybe_cannibal
 cprefx	use_up_tin
 crawl_destination	doorless_door
@@ -500,6 +517,7 @@ dighole	newsym
 dighole	rn2
 dighole	spot_checks
 dighole	surface
+dip_into	cmdq_peek
 dip_into	getobj
 dip_into	potion_dip
 dip_potion_explosion	exercise
@@ -598,6 +616,7 @@ do_genocide	rehumanize
 do_genocide	rn2
 do_genocide	rndmonst
 do_loot_cont	autokey
+do_loot_cont	cmdq_add_ec
 do_loot_cont	losehp
 do_loot_cont	pick_lock
 do_loot_cont	rnd
@@ -610,7 +629,11 @@ do_mgivenname	glyph_at
 do_mgivenname	isok
 do_mkroom	mkshop
 do_repeat	cmdq_clear
+do_repeat	cmdq_copy
+do_repeat	cmdq_peek
 do_repeat	rhack
+do_reset_eat	newuhs
+do_reset_eat	recalc_wt
 do_reset_eat	touchfood
 do_room_or_subroom	wallification
 do_statusline1	acurr
@@ -675,7 +698,9 @@ dobuzz	shieldeff
 dobuzz	unmap_invisible
 dobuzz	zapdir_to_glyph
 docallcmd	cmdq_clear
+docallcmd	cmdq_pop
 docallcmd	getobj
+docast	cmdq_add_key
 docast	spelleffects
 dochat	getdir
 dochat	isok
@@ -751,6 +776,8 @@ doeat	still_chewing
 doeat	surface
 doeat	touchfood
 doeat	violated_vegetarian
+doeat	weight
+doeat_nonfood	eatspecial
 doeat_nonfood	food_xname
 doeat_nonfood	foodword
 doeat_nonfood	poison_strdmg
@@ -773,6 +800,8 @@ dofindgem	newsym
 dofindgem	rnd_class
 dofire	acurr
 dofire	autoquiver
+dofire	cmdq_add_ec
+dofire	cmdq_add_key
 dofire	ok_to_throw
 dofire	throw_obj
 dofiretrap	burnarmor
@@ -855,6 +884,7 @@ domonability	dosummon
 domonability	dryup
 domonability	use_unicorn_horn
 domonability	yn_function
+domouseaction	cmdq_add_ec
 domouseaction	test_move
 domove	domove_core
 domove	maybe_adjust_hero_bubble
@@ -904,6 +934,8 @@ done2	paranoid_query
 done2	yn_function
 done_eating	cpostfx
 done_eating	food_xname
+done_eating	fpostfx
+done_eating	newuhs
 done_object_cleanup	accessible
 done_object_cleanup	isok
 done_object_cleanup	lift_covet_and_placebc
@@ -911,6 +943,8 @@ doopen_indir	acurr
 doopen_indir	acurrstr
 doopen_indir	autokey
 doopen_indir	closed_door
+doopen_indir	cmdq_add_dir
+doopen_indir	cmdq_add_ec
 doopen_indir	doloot
 doopen_indir	exercise
 doopen_indir	feel_newsym
@@ -958,6 +992,8 @@ doride	getdir
 doride	isok
 doride	mount_steed
 doride	yn_function
+dorub	cmdq_add_ec
+dorub	cmdq_add_key
 dorub	getobj
 dorub	rn2
 dorub	use_royal_jelly
@@ -1024,6 +1060,7 @@ dotele	acurr
 dotele	exercise
 dotele	isok
 dotele	known_spell
+dotele	morehungry
 dotele	newsym
 dotele	spelleffects
 dotele	tele
@@ -1068,6 +1105,7 @@ dowatersnakes	makemon
 dowatersnakes	rn2
 dowatersnakes	rndmonnam
 dowear	getobj
+dowhatdoes	yn_function
 dowield	clear_splitobjs
 dowield	doswapweapon
 dowield	getobj
@@ -1105,7 +1143,9 @@ drinkfountain	fruitname
 drinkfountain	hliquid
 drinkfountain	losehp
 drinkfountain	monster_detect
+drinkfountain	morehungry
 drinkfountain	newsym
+drinkfountain	newuhs
 drinkfountain	poison_strdmg
 drinkfountain	rn2
 drinkfountain	rnd
@@ -1119,6 +1159,7 @@ drinksink	makemon
 drinksink	mkobj_at
 drinksink	monstseesu
 drinksink	monstunseesu
+drinksink	morehungry
 drinksink	newsym
 drinksink	polyself
 drinksink	rn2
@@ -1168,6 +1209,7 @@ drown	is_pool
 drown	is_waterwall
 drown	losehp
 drown	placebc
+drown	reset_faint
 drown	rn2
 drown	unconscious
 drown	under_water
@@ -1187,8 +1229,10 @@ e_jumps	unconscious
 e_missed	automiss
 e_missed	rnd
 e_missed	unconscious
+eataccessory	accessory_has_effect
 eataccessory	adjattrib
 eataccessory	bounded_increase
+eataccessory	choke
 eataccessory	d
 eataccessory	float_up
 eataccessory	newsym
@@ -1207,10 +1251,14 @@ eatcorpse	rnd
 eatcorpse	rottenfood
 eatcorpse	touchfood
 eatcorpse	violated_vegetarian
+eatfood	bite
 eatfood	do_reset_eat
+eatfood	done_eating
 eatmdone	newsym
 eatmupdate	newsym
+eatspecial	eataccessory
 eatspecial	exercise
+eatspecial	lesshungry
 eatspecial	set_occupation
 eatspecial	uqwepgone
 eatspecial	uswapwepgone
@@ -1336,6 +1384,7 @@ fix_wall_spines	iswall
 fix_worst_trouble	d
 fix_worst_trouble	encumber_msg
 fix_worst_trouble	heal_legs
+fix_worst_trouble	init_uhunger
 fix_worst_trouble	make_blinded
 fix_worst_trouble	make_confused
 fix_worst_trouble	make_hallucinated
@@ -1408,6 +1457,7 @@ furniture_handled	breaksink
 furniture_handled	destroy_drawbridge
 furniture_handled	dryup
 furniture_handled	is_drawbridge_wall
+gain_guardian_angel	Hear_again
 gain_guardian_angel	d
 gain_guardian_angel	lose_guardian_angel
 gain_guardian_angel	newsym
@@ -1454,17 +1504,26 @@ getbones	rn2
 getbones	sanitize_engravings
 getcad	rn2
 getcad	um_dist
+getdir	cmdq_add_key
 getdir	cmdq_clear
+getdir	cmdq_pop
 getdir	readchar
 getdir	rn2
 gethungry	near_capacity
+gethungry	newuhs
 gethungry	rn2
 gethungry	unconscious
+getobj	cmdq_add_int
+getobj	cmdq_add_key
+getobj	cmdq_clear
+getobj	cmdq_pop
 getobj	readchar
 getobj	reassign
 getobj	yn_function
 getprice	corpsenm_price_adj
+getspell	cmdq_pop
 getspell	rejectcasting
+getspell	yn_function
 gettrack	distmin
 ghost_from_bottle	makemon
 ghost_from_bottle	nomul
@@ -1479,6 +1538,7 @@ give_to_nearby_mon	isok
 give_to_nearby_mon	rn2
 givit	d
 givit	see_monsters
+givit	temp_givit
 glibr	cmdq_clear
 glibr	setuswapwep
 glibr	setuwep
@@ -1649,6 +1709,7 @@ invault	makemon
 invault	map_invisible
 invault	newsym
 invault	nomul
+invault	reset_faint
 invault	rn2
 invoke_banish	isok
 invoke_banish	rn2
@@ -1686,6 +1747,8 @@ isaac64_update	upper_bits
 isclearpath	isok
 iswall_or_stone	isok
 iswall_or_stone	iswall
+itemactions_pushkeys	cmdq_add_ec
+itemactions_pushkeys	cmdq_add_key
 join	finddpos
 join	okdoor
 join_map	flood_fill_rm
@@ -1696,6 +1759,7 @@ jump	acurr
 jump	hliquid
 jump	known_spell
 jump	losehp
+jump	morehungry
 jump	near_capacity
 jump	nomul
 jump	reset_utrap
@@ -1829,6 +1893,7 @@ lava_effects	monstseesu
 lava_effects	rn2
 lava_effects	spoteffects
 lay_an_egg	egg_type_from_parent
+lay_an_egg	morehungry
 lay_an_egg	weight
 learn	confused_book
 learn	cursed_book
@@ -1837,6 +1902,8 @@ learn	nomul
 learn	rn2
 leppie_stash	in_rooms
 leppie_stash	rn2
+lesshungry	choke
+lesshungry	newuhs
 lesshungry	paranoid_query
 lev_by_name	find_branch
 level_finalize_topology	bound_digging
@@ -2007,6 +2074,7 @@ make_familiar	makemon
 make_familiar	newsym
 make_familiar	pick_familiar_pm
 make_familiar	rn2
+make_hallucinated	eatmupdate
 make_hallucinated	see_monsters
 make_hallucinated	see_objects
 make_hallucinated	see_traps
@@ -2356,6 +2424,7 @@ monster_detect	cls
 monster_detect	strange_feeling
 monster_detect	unconstrain_map
 monster_nearby	isok
+morehungry	newuhs
 morgue_mon_sound	mon_in_room
 morgue_mon_sound	rn2
 morguemon	level_difficulty
@@ -2527,6 +2596,7 @@ newhp	acurr
 newhp	rnd
 newman	done
 newman	encumber_msg
+newman	newuhs
 newman	polyman
 newman	retouch_equipment
 newman	rn2
@@ -2692,12 +2762,14 @@ peacefuls_respond	angry_guards
 peacefuls_respond	rn2
 peffect_acid	d
 peffect_acid	exercise
+peffect_acid	fix_petrification
 peffect_acid	losehp
 peffect_blindness	make_blinded
 peffect_blindness	rn2
 peffect_booze	d
 peffect_booze	exercise
 peffect_booze	make_confused
+peffect_booze	newuhs
 peffect_booze	rnd
 peffect_confusion	make_confused
 peffect_confusion	rn2
@@ -2750,6 +2822,7 @@ peffect_restore_ability	rn2
 peffect_see_invisible	fruitname
 peffect_see_invisible	make_blinded
 peffect_see_invisible	newsym
+peffect_see_invisible	newuhs
 peffect_see_invisible	rn2
 peffect_see_invisible	see_monsters
 peffect_sickness	adjattrib
@@ -2768,6 +2841,7 @@ peffect_water	d
 peffect_water	exercise
 peffect_water	hliquid
 peffect_water	losehp
+peffect_water	newuhs
 peffect_water	rnd
 peffect_water	you_unwere
 peffect_water	you_were
@@ -2831,6 +2905,7 @@ pleased	align_gname
 pleased	encumber_msg
 pleased	give_spell
 pleased	godvoice
+pleased	init_uhunger
 pleased	make_blinded
 pleased	record_achievement
 pleased	rn2
@@ -3005,6 +3080,7 @@ rehumanize	nomul
 rehumanize	polyman
 rehumanize	retouch_equipment
 rehumanize	surface
+remarm_swapwep	cmdq_pop
 remote_burglary	call_kops
 remote_burglary	in_rooms
 remote_burglary	rob_shop
@@ -3054,7 +3130,11 @@ reverse_loot	rnd
 reward_untrap	adjalign
 reward_untrap	rn2
 reward_untrap	rnl
+rhack	cmdq_add_ec
 rhack	cmdq_clear
+rhack	cmdq_peek
+rhack	cmdq_pop
+rhack	cmdq_shift
 rhack	domove
 rider_corpse_revival	exercise
 rloc_to_core	check_special_room
@@ -3133,6 +3213,7 @@ savebones	newsym
 savebones	resetobjs
 savebones	unleash_all
 savelife	acurr
+savelife	init_uhunger
 savelife	reset_utrap
 scatter	closed_door
 scatter	costly_spot
@@ -3340,6 +3421,7 @@ sink_into_lava	reset_utrap
 sink_into_lava	rnd
 skill_based_spellbook_id	spell_skilltype
 skiprange	rnd
+slime_dialogue	Popeye
 slime_dialogue	exercise
 slime_dialogue	nomul
 slime_dialogue	rndmonnam
@@ -3402,7 +3484,9 @@ spoteffects	rnd
 squadmon	level_difficulty
 squadmon	rn2
 squadmon	rnd
+start_eating	bite
 start_eating	cprefx
+start_eating	done_eating
 start_eating	food_xname
 start_engulf	map_location
 start_melt_ice_timeout	rn2
@@ -3426,6 +3510,7 @@ status_hilite_menu_add	status_hilite_menu_choose_field
 status_hilite_menu_add	status_hilite_menu_choose_updownboth
 status_hilite_menu_fld	status_hilite_menu_add
 status_hilite_menu_fld	status_hilite_remove
+steal_it	theft_petrifies
 stealarm	dist2
 steedintrap	dismount_steed
 steedintrap	rnd
@@ -3435,6 +3520,7 @@ still_chewing	dissolve_bars
 still_chewing	in_rooms
 still_chewing	in_town
 still_chewing	may_dig
+still_chewing	morehungry
 still_chewing	newsym
 still_chewing	nomul
 still_chewing	recalc_block_point
@@ -3446,6 +3532,7 @@ stone_to_flesh_obj	costly_spot
 stone_to_flesh_obj	in_rooms
 stone_to_flesh_obj	makemon
 stone_to_flesh_obj	newsym
+stoned_dialogue	Popeye
 stoned_dialogue	exercise
 stoned_dialogue	heal_legs
 stoned_dialogue	nomul
@@ -3464,6 +3551,7 @@ summonmu	msummon
 summonmu	night
 summonmu	rn2
 surface	hliquid
+swallowed	swallow_to_glyph
 switch_terrain	float_up
 t_missile	weight
 tele_jump_ok	isok
@@ -3738,6 +3826,7 @@ under_water	isok
 under_water	newsym
 unearth_objs	buried_ball_to_punishment
 unearth_objs	newsym
+unfaint	Hear_again
 unmap_invisible	newsym
 unmap_invisible	unmap_object
 unmap_object	map_background
@@ -3790,6 +3879,7 @@ use_cream_pie	setnotworn
 use_figurine	getdir
 use_figurine	make_familiar
 use_figurine	map_invisible
+use_grapple	cmdq_add_key
 use_grapple	dist2
 use_grapple	hurtle
 use_grapple	losehp
@@ -3868,10 +3958,12 @@ vision_recalc	view_from
 vomit	altar_wrath
 vomit	melt_ice
 vomit	nomul
+vomiting_dialogue	Popeye
 vomiting_dialogue	d
 vomiting_dialogue	exercise
 vomiting_dialogue	make_confused
 vomiting_dialogue	make_stunned
+vomiting_dialogue	morehungry
 vomiting_dialogue	nomul
 vomiting_dialogue	vomit
 vpline	flush_screen
@@ -3968,7 +4060,9 @@ worst_cursed_item	near_capacity
 worst_cursed_item	welded
 xname_flags	Japanese_item_name
 xprname	currency
+yn_function	cmdq_add_key
 yn_function	cmdq_clear
+yn_function	cmdq_pop
 you_aggravate	cls
 you_aggravate	docrt
 you_aggravate	map_invisible

@@ -5,7 +5,7 @@ import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTIO
 import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
-import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName } from './do_wear.js';
+import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
 import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
@@ -13,13 +13,13 @@ import { heroIsPunished } from './ball.js';
 import { isRider } from './corpse_species.js';
 import { reviveCorpseForHero, reviveCorpseImmediately } from './corpse_revival.js';
 import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
-import { isok } from './cmd.js';
+import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
-import { floorObjectDescription } from './invent.js';
-import { heroCanReachFloor } from './engrave.js';
+import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription } from './invent.js';
+import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './floor_consumption.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
@@ -27,23 +27,18 @@ import { nomul, loseHeroHp, nearCapacity } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { angerTemplePriest } from './priest.js';
-import { makeConfused, makeHallucinated, makeStunned, makeBlinded } from './potion.js';
+import { makeConfused, makeHallucinated, makeStunned, makeBlinded, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming } from './potion.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { cureHeroSickness, heroIsSick } from './potion.js';
 import { healHeroLegs } from './do.js';
-import { confersLuck } from './invent.js';
-import { clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { resetUtrap, announceTerrainRescue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject } from './invent.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject } from './mkobj.js';
-import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsDemon, monsterIsUnicorn, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance } from './mondata.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterThrowsRocks, } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { isBimanualObject } from './object_properties.js';
@@ -53,13 +48,11 @@ import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHero
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty, wornObjectGrantsProperty } from './properties.js';
 import { punishHero, unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
-import { paranoidQuery } from './cmd.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay } from './muse.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
-import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
 import { clearHeroPetrification, feelPetrifyingCorpse, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
 import { animateStatue } from './statue_trap.js';
@@ -68,8 +61,7 @@ import { attrcurse, rndcurse } from './throne.js';
 import { teleportHeroSafely } from './teleport.js';
 import { turnUndeadByCallingOnDeity } from './turn_undead.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { docrt, newsym, see_monsters, shieldeff } from './display.js';
-import { heroHasFreeHand } from './engrave.js';
+import { newsym, see_monsters, shieldeff } from './display.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { purifyHeroLycanthropy } from './were.js';
 import { isPoolOrLavaAt } from './dbridge.js';
@@ -79,8 +71,6 @@ import { freeHeroFromBuriedBall } from './dig.js';
 // Prayer decisions and the three-turn prayer occupation (pray)
 // ---------------------------------------------------------------------------
 const POT_WATER = OBJECT_NAMES.indexOf('water');
-const M2_DEMON = 0x00000100;
-const M2_UNDEAD = 0x00000002;
 const STRIDENT = 4;
 export async function altarWrath(x, y, state = game) {
     requirePlayingGame(state);
@@ -189,7 +179,7 @@ function prayerOutcome(alignment, trouble) {
         outcome = 'angry';
     else
         outcome = currentAltar() && hero.ualign.type !== alignment ? 'other-god' : 'pleased';
-    if (requireMonsterData(MONSTER_FLAGS2, hero.umonnum) & M2_UNDEAD && !inHell()
+    if (monsterIsUndead(hero.umonnum) && !inHell()
         && (alignment === 1 || alignment === 0 && !rn2(10)))
         outcome = 'undead';
     return outcome;
@@ -405,7 +395,6 @@ export const Trouble = {
 };
 const RIN_LEVITATION = OBJECT_NAMES.indexOf('levitation');
 const RIN_SUSTAIN_ABILITY = OBJECT_NAMES.indexOf('sustain ability');
-const M2_ROCKTHROW = 0x08000000;
 // C pray.c:in_trouble().
 export function worstPrayerTrouble(state = game) {
     requirePlayingGame(state);
@@ -532,7 +521,7 @@ export function heroIsSurroundedByRock(state = game) {
             if (IS_OBSTRUCTED(type) && type !== SDOOR && type !== SCORR)
                 continue;
             if (blockedByBoulders(dx, dy, state)
-                && !(monsterThrowsRocks(state.u.umonnum)))
+                && !monsterThrowsRocks(state.u.umonnum))
                 continue;
             return false;
         }
@@ -1107,7 +1096,7 @@ async function revealCastleTune(alignment) {
         return false;
     if (!event.uheard_tune) {
         await godVoice(alignment);
-        await pline(`"Hark, ${requireMonsterData(MONSTER_FLAGS2, game.u.umonnum) & 0x08 ? 'mortal' : 'creature'}!"`);
+        await pline(`"Hark, ${monsterIsHuman(game.u.umonnum) ? 'mortal' : 'creature'}!"`);
         await pline('"To enter the castle, thou must play the right tune!"');
     }
     else {
@@ -1445,7 +1434,7 @@ async function offerCorpse(corpse, highAltar, alignment) {
         await exerciseAttribute(A_WIS, false);
         return;
     }
-    if ((MONSTER_FLAGS2[corpse.corpsenm] ?? 0) & game.urace.selfmask) {
+    if (your_race(corpse.corpsenm)) {
         await offerOwnRace(corpse, highAltar, alignment);
         return;
     }
@@ -1493,7 +1482,7 @@ async function offeringValue(corpse, alignment) {
             ? Math.trunc(value * Math.min(corpse.oeaten, nutrition) / nutrition) : 0);
     }
     const hero = game.u;
-    if ((MONSTER_FLAGS2[corpse.corpsenm] ?? 0) & M2_UNDEAD) {
+    if (monsterIsUndead(corpse.corpsenm)) {
         if (hero.ualign.type !== -1 || corpse.corpsenm === PM_WRAITH && hero.uconduct?.unvegetarian)
             value++;
     }

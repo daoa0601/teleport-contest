@@ -1135,6 +1135,9 @@ class JSExec:
                 out.append((p, V('big', a.v)))
             elif name == 'Number':
                 [a] = args
+                if a.kind == 'bool':
+                    out.append((p, V('num', z3.If(a.v, z3.IntVal(1), z3.IntVal(0)))))
+                    continue
                 if a.kind not in ('num', 'big'):
                     raise Unsupported('Number conversion of a non-numeric value')
                 self.m.oblige(p, z3.And(a.v >= -SAFE, a.v <= SAFE),

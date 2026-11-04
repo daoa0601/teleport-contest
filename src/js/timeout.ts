@@ -73,7 +73,7 @@ import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, monsterHasProperName, monsterOlderForm, requireMonsterData } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, newsym, see_monsters } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -100,7 +100,7 @@ import { heroIsSurroundedByRock } from './pray.js';
 import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
-import { heroCannotVomit, nameToMonster } from './mondata.js';
+import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm } from './mondata.js';
 import { encumber_msg } from './pickup.js';
 
 interface PetrificationAdvanceResult {

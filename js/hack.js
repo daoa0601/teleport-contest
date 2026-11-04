@@ -13,7 +13,7 @@ import { docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_lo
 import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
-import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroFormFlags, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious } from './polyself.js';
+import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection } from './cmd.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -28,7 +28,7 @@ import { dropInventoryObjectAtHero, dropBoulderIntoLiquid } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm } from './potion.js';
-import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsFlyer, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
@@ -62,7 +62,7 @@ import { placeHeroOnLevel } from './hero_location.js';
 import { hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
-import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance } from './mondata.js';
+import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 import { confusePromptDirection } from './cmd.js';
 import { resolveHeroCombatExplosion } from './uhitm.js';
@@ -488,7 +488,6 @@ async function moveBoulder(boulder, sx, sy, rx, ry, costly) {
             await stolenValue(boulder, sx, sy, true, { silent: false });
     }
 }
-const M1_METALLIVORE = 0x80000000;
 export async function chewIronBars({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -518,7 +517,7 @@ export async function continueChewingTerrain(x, y, state) {
         endVoluntaryMultiTurn(state);
         return true;
     }
-    const eatsMetal = !!((MONSTER_FLAGS1[heroSpecies(state)] ?? 0) & M1_METALLIVORE);
+    const eatsMetal = metallivorous(heroSpecies(state));
     if (bars && eatsMetal && state.u.uhunger > 1500) {
         await pline('You are too full to eat the bars.');
         endVoluntaryMultiTurn(state);
@@ -692,17 +691,6 @@ export async function escapeFromStickyMonster(x, y) {
 }
 const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
 const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
-const M1_SWIM = 0x00000002;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_TUNNEL = 0x00000020;
-const M1_NEEDPICK = 0x00000040;
-const M1_CONCEAL = 0x80;
-const M1_SLITHY = 0x00080000;
-const M1_UNSOLID = 0x00100000;
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_BREATHLESS = 0x00000400;
-const S_EEL = 57;
 const S_EYE = 5;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
@@ -800,12 +788,11 @@ export function heroBadRock(state, x, y) {
         return false;
     // C bad_rock() tests the species, even when the hero has temporary
     // wall passing. test_move() applies that property after direction selection.
-    const flags = MONSTER_FLAGS1[heroSpecies(state)] ?? 0;
     const mayDig = !((IS_STWALL(location.typ) || location.typ === TREE)
         && ((location.wall_info ?? 0) & W_NONDIGGABLE));
-    const cannotTunnel = !(flags & M1_TUNNEL)
-        || !!(flags & M1_NEEDPICK) || !mayDig;
-    const canPass = !!(flags & M1_WALLWALK)
+    const cannotTunnel = !speciesTunnels(heroSpecies(state))
+        || needspick(heroSpecies(state)) || !mayDig;
+    const canPass = monsterPassesWalls(heroSpecies(state))
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return cannotTunnel && !canPass;
 }
@@ -821,18 +808,16 @@ export function badRockForMonster(monster, state, x, y) {
         return true;
     if (!IS_OBSTRUCTED(loc.typ))
         return false;
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const mayTunnel = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK) && mayDig(x, y, state);
-    const mayPassWall = !!(flags & M1_WALLWALK) && !(IS_STWALL(loc.typ) && (loc.wall_info ?? 0) & W_NONPASSWALL);
+    const mayTunnel = speciesTunnels(monster?.mnum) && !needspick(monster?.mnum) && mayDig(x, y, state);
+    const mayPassWall = monsterPassesWalls(monster?.mnum) && !(IS_STWALL(loc.typ) && (loc.wall_info ?? 0) & W_NONPASSWALL);
     return !mayTunnel && !mayPassWall;
 }
 export function heroTightDiagonalReason(state = game) {
     const u = state.u;
-    const flags = heroFormFlags(state);
     if (heroPassesWalls(state))
         return 0;
     const mnum = (u.mtimedone ?? 0) > 0 ? u.umonnum ?? null : null;
-    const flexible = !!(flags & (M1_AMORPHOUS | M1_SLITHY | M1_UNSOLID))
+    const flexible = (monsterIsAmorphous({ mnum: heroMonsterForm(state) ?? -1 }) || monsterIsSlithy(heroMonsterForm(state) ?? -1) || monsterIsUnsolid({ mnum: heroMonsterForm(state) ?? -1 }))
         || (mnum !== null && MONSTER_SYMBOL[mnum] === S_VORTEX)
         || mnum === PM_AIR_ELEMENTAL;
     if (mnum !== null && monsterIsBig(mnum) && !flexible)
@@ -898,9 +883,8 @@ function heroStaysAboveWater(state, location) {
 }
 function heroCanLiveUnderwater(state) {
     const u = state.u;
-    const flags = heroFormFlags(state);
     return !!(u.amphibious || u.swimming || u.breathless || u.magicalBreathing
-        || (flags & (M1_SWIM | M1_AMPHIBIOUS | M1_BREATHLESS)));
+        || cant_drown(heroMonsterForm(state) ?? -1));
 }
 export function heroResistsFire(state) {
     const hero = state.u;
@@ -1135,12 +1119,11 @@ async function finishLavaEffects({ state, location, publish, random, rollDice, r
 }
 function heroDoesNotNeedAir(state) {
     const u = state.u;
-    const flags = heroFormFlags(state);
     return !!(u.amphibious || u.breathless || u.magicalBreathing
-        || (flags & (M1_AMPHIBIOUS | M1_BREATHLESS)));
+        || (monsterIsAmphibious(heroMonsterForm(state) ?? -1) || monsterIsBreathless(heroMonsterForm(state) ?? -1)));
 }
 export function heroCanSwim(state) {
-    return !!(state.u?.swimming || (heroFormFlags(state) & M1_SWIM));
+    return !!(state.u?.swimming || monsterIsSwimmer(heroMonsterForm(state) ?? -1));
 }
 function equippedObject(state, slot) {
     return state[slot] || state.u?.[slot] || null;
@@ -1582,8 +1565,7 @@ function testHeroMove(fromX, fromY, x, y, mode, g) {
     if (!location)
         return { passes: false };
     const passesWalls = heroPassesWalls(g);
-    const formFlags = MONSTER_FLAGS1[heroSpecies(g)] ?? 0;
-    const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+    const tunnels = speciesTunnels(heroSpecies(g)) && !needspick(heroSpecies(g));
     const underwater = !!(hero.uinwater || g.underwater);
     let checkDoorEntry = location.typ === DOOR;
     if (IS_OBSTRUCTED(location.typ) || location.typ === IRONBARS) {
@@ -3184,13 +3166,12 @@ export function checkSlipperyIce() {
         const skater = hero.usteed ?? { mnum: heroSpecies(game) };
         const boots = game.uarmf ?? hero.uarmf;
         const appearance = boots && (game.objectDescriptions?.[boots.otyp] ?? OBJECT_DESCRIPTIONS[boots.otyp]);
-        const flags = MONSTER_FLAGS1[skater.mnum] ?? 0;
         const symbol = MONSTER_SYMBOL[skater.mnum];
         const coldSkater = hero.usteed ? monsterHasColdResistance(hero.usteed)
             : propertyIsActive('coldResistance', game) || heroHasArtifactDefense('cold', game);
         if (appearance === 'snow boots' || coldSkater
             || propertyIsActive('flying', game) || symbol === 5 || symbol === 25
-            || flags & 0x10 || monsterIsWhirly(skater)) {
+            || monsterIsClinger(skater.mnum) || monsterIsWhirly(skater)) {
             onIce = false;
         }
         else if (!rn2(propertyIsActive('coldResistance', game) ? 3 : 2)) {
@@ -3294,7 +3275,6 @@ function cancelStep(state) {
 function trapIsClearlyHarmless(type, state) {
     const species = heroSpecies(state);
     const body = { mnum: species };
-    const flags = MONSTER_FLAGS1[species] ?? 0;
     switch (type) {
         case BEAR_TRAP:
             if ((MONSTER_SIZE[species] ?? 2) <= 1 || monsterIsAmorphous(body)
@@ -3310,7 +3290,7 @@ function trapIsClearlyHarmless(type, state) {
         case SPIKED_PIT:
             return avoidsGroundTraps(type, state);
         case SLP_GAS_TRAP:
-            return !!(flags & 0x00000400); // breathless body
+            return monsterIsBreathless(species); // breathless body
         case LEVEL_TELEP:
         case TELEP_TRAP:
             // Native mon_has_amulet(&youmonst) checks its empty monster
@@ -3338,11 +3318,10 @@ function avoidsGroundTraps(type, state) {
     if (In_sokoban(state.u.uz) && type === ROLLING_BOULDER_TRAP)
         return true;
     const species = heroSpecies(state);
-    const flags = MONSTER_FLAGS1[species] ?? 0;
     const symbol = MONSTER_SYMBOL[species];
     const ceiling = !In_endgame(state.u.uz) || Is_earthlevel(state.u.uz);
-    return !!(state.u.levitating || state.u.flying || (flags & 1)
-        || symbol === 5 || symbol === 25 || ((flags & 0x10) && ceiling));
+    return !!(state.u.levitating || state.u.flying || monsterIsFlyer(species)
+        || symbol === 5 || symbol === 25 || (monsterIsClinger(species) && ceiling));
 }
 // C hack.c:domove().  Evaluates a successful step after all destination
 // effects: domove_succeeded survives for the caller's assessments, the
@@ -3625,11 +3604,10 @@ function petBadRock(monster, state, x, y) {
         return true;
     if (!IS_OBSTRUCTED(location.typ))
         return false;
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const mayDig = !((IS_STWALL(location.typ) || IS_TREE(location.typ))
         && (location.wall_info & W_NONDIGGABLE));
-    const tunnels = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK) && mayDig;
-    const passesWalls = !!(flags & M1_WALLWALK)
+    const tunnels = speciesTunnels(monster.mnum) && !needspick(monster.mnum) && mayDig;
+    const passesWalls = monsterPassesWalls(monster.mnum)
         && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL));
     return !tunnels && !passesWalls;
 }
@@ -3944,7 +3922,7 @@ async function domoveCore(dx, dy) {
                 return rejectHeroMove();
             }
             const body = { mnum: heroSpecies(game) };
-            const eatsMetal = !!((MONSTER_FLAGS1[body.mnum] ?? 0) & M1_METALLIVORE);
+            const eatsMetal = metallivorous(body.mnum);
             if ((eatsMetal || monsterCorrodesBars(body)) && await continueChewingTerrain(newx, newy, game))
                 return rejectHeroMove();
             if (!monsterPassesBars(body)) {
@@ -3954,8 +3932,7 @@ async function domoveCore(dx, dy) {
             }
         }
     }
-    const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
-    const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
+    const tunnels = speciesTunnels(heroSpecies(game)) && !needspick(heroSpecies(game));
     if (loc && (IS_OBSTRUCTED(loc.typ)
         || loc.typ === DOOR && !!(loc.doormask & (D_CLOSED | D_LOCKED)))
         && !heroCanPassWallAt(game, newx, newy) && !heroOozesUnderDoor(loc)) {
@@ -4228,8 +4205,6 @@ async function domoveCore(dx, dy) {
 // block both monster and glyph notices until their own messages finish.
 // ---------------------------------------------------------------------------
 // C include/monflag.h: M1_HIDE (is_hider) and M2_PNAME (type_is_pname).
-const NOTICE_M1_HIDE = 0x100;
-const M2_PNAME = 0x80000;
 // C flag.h:notice_mon_off()/notice_mon_on(). A nested landing must leave
 // its caller's notices blocked until that caller has finished its messages.
 export function blockMonsterNotices(state) {
@@ -4256,7 +4231,7 @@ function monsterIsSpottable(monster) {
         return false;
     // C: a hider that is still concealing itself never counts as spotted,
     // whether mundetected or mimicking furniture or an object.
-    if (((MONSTER_FLAGS1[monster.mnum] ?? 0) & NOTICE_M1_HIDE)
+    if (monsterIsHider(monster.mnum)
         && (monster.mundetected
             || M_AP_TYPE(monster) === M_AP_FURNITURE
             || M_AP_TYPE(monster) === M_AP_OBJECT)) {
@@ -4340,7 +4315,6 @@ export function nomul(value, state = game) {
 export function endVoluntaryMultiTurn(state = game) {
     nomul(0, state);
 }
-const M1_HIDE = 0x00000100;
 function monsterHasActiveAttack(monster) {
     return (MONSTER_ATTACKS[monster?.mnum] || [])
         .some(([attackType]) => attackType && attackType !== AT_BOOM);
@@ -4791,8 +4765,6 @@ export const MOD_ENCUMBER = 2;
 export const HVY_ENCUMBER = 3;
 export const EXT_ENCUMBER = 4;
 export const OVERLOADED = 5;
-const M2_ROCKTHROW = 0x08000000;
-const M2_STRONG = 0x04000000;
 const S_NYMPH = 14;
 const MZ_HUMAN = 2;
 const WT_HUMAN = 1450;
@@ -4849,7 +4821,7 @@ export function weightCapacity(state) {
         && mnum !== undefined && Number.isInteger(mnum)) {
         const bodyWeight = MONSTER_BODY_META[mnum]?.[0] ?? 0;
         const size = MONSTER_SIZE[mnum] ?? MZ_HUMAN;
-        const strong = !!((MONSTER_FLAGS2[mnum] ?? 0) & M2_STRONG);
+        const strong = strongmonst(mnum);
         if (MONSTER_SYMBOL[mnum] === S_NYMPH) {
             capacity = 1000;
         }
@@ -4862,7 +4834,7 @@ export function weightCapacity(state) {
     }
     const steedMnum = state.u?.usteed?.mnum;
     const strongSteed = steedMnum !== undefined && Number.isInteger(steedMnum)
-        && !!((MONSTER_FLAGS2[steedMnum] ?? 0) & M2_STRONG);
+        && strongmonst(steedMnum);
     const dressing = pendingArmorAction(state);
     const bootsPending = dressing?.kind === 'wear'
         && dressing.object === (state.uarmf ?? state.u.uarmf);

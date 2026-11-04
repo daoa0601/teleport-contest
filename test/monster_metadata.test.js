@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { MONSTER_NAME, monsterGrowthFamilyMatch, monsterIsNonliving, } from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { monsterGrowthFamilyMatch, monsterIsNonliving } from '../js/mondata.js';
 const monsterType = (name) => MONSTER_NAME.indexOf(name);
 void test('young and grown forms belong to the same monster family', () => {
     const puppy = monsterType('little dog');

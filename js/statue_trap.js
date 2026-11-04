@@ -13,12 +13,10 @@ import { delobj } from './invent.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenValue } from './shk.js';
 import { game, requireGameLevel } from './gstate.js';
-import { revealMonsterAppearance } from './mon.js';
+import { revealMonsterAppearance, changeMonsterForm, restoreMonsterShape } from './mon.js';
 import { makemonNear } from './mklev.js';
-import { makemonAt } from './makemon.js';
-import { setMonsterMalign } from './makemon.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsGolem, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
-import { changeMonsterForm, restoreMonsterShape } from './mon.js';
+import { makemonAt, setMonsterMalign } from './makemon.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -30,6 +28,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement } from './read.js';
 import { cansee } from './vision.js';
 import { restoreMonsterTraits } from './zap.js';
+import { monsterIsGolem, monsterIsNonliving, monsterIsVampireShifter } from './mondata.js';
 function requireStatueSpecies(statue) {
     if (statue.corpsenm === undefined)
         throw new Error(`Statue ${statue.o_id} has no monster species.`);
@@ -37,7 +36,6 @@ function requireStatueSpecies(statue) {
 const G_UNIQ = 0x1000;
 const MS_GUARDIAN = 38;
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
-const S_GOLEM = MONSTER_SYMBOL[PM_FLESH_GOLEM];
 function statueReplacement(statue, state) {
     const replacement = revivalReplacement(statue.corpsenm, statue, true);
     if (replacement != null)

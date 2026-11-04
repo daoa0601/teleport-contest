@@ -3,15 +3,15 @@ import { game } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroPolyGender, heroSpecies } from './polyself.js';
 import { AD_PHYS, AD_SEDU, AD_SITM, AD_SSEX } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterIsAnimal, monsterPerceives } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
+import { is_neuter, monsterIsAnimal, monsterPerceives } from './mondata.js';
 
 type Participant = Monster | 'hero';
-const M1_SEE_INVIS = 0x01000000;
-const M2_NEUTER = 0x00040000;
+
 const S_NYMPH = 14;
 const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
 
@@ -37,6 +37,6 @@ export function seductionCompatibility(
 
 function participantGender(participant: Participant, state: GameState): 0 | 1 | 2 {
     if (participant === 'hero') return heroPolyGender(state);
-    return (MONSTER_FLAGS2[participant.mnum] ?? 0) & M2_NEUTER
+    return is_neuter(participant.mnum)
         ? 2 : participant.female ? 1 : 0;
 }

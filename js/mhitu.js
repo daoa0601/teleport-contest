@@ -14,8 +14,8 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisi
 import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives } from './mondata.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
@@ -83,11 +83,6 @@ import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty
 import { finishHeroHelplessness } from './allmain.js';
 // Local copies of the C mondata.h flags and permonst indices the attack
 // sequence reads (mhitu.c:calc_mattacku_vars/hitmu/gulpmu use them too).
-const M1_SWIM = 0x00000002;
-const M1_CONCEAL = 0x00000080;
-const M1_SEE_INVIS = 0x01000000;
-const M2_ORC = 0x00000080;
-const S_EEL = 57;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const PM_LEATHER_GOLEM = 253;
 const PM_WOOD_GOLEM = 254;
@@ -1012,7 +1007,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         return {};
     if (!state.u.uswallow && state.u.usteed) {
         const steed = state.u.usteed;
-        const orc = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ORC);
+        const orc = is_orc(monster.mnum);
         // mattacku() chooses the steed before testing adjacency. Orcs
         // choose it half the time; other monsters choose it one in four.
         if (recordRandom(random, calls, orc ? 2 : 4) === 0
@@ -2944,7 +2939,6 @@ export function monsterWeaponSwingVerb(object, bash = false, random = rn2) {
     return bash ? 'bashes with' : lash ? 'lashes' : thrust ? 'thrusts' : 'swings';
 }
 // Protection against special attacks. C mhitu.c:magic_negation().
-const M2_MINION = 0x00001000;
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const PM_ALIGNED_CLERIC = MONSTER_NAME.indexOf('aligned cleric');
 export function magicNegation(defender, state = game) {
@@ -2978,7 +2972,7 @@ export function magicNegation(defender, state = game) {
     if (protection)
         return Math.min(3, cancellation + (guardingAmulet ? 2 : 1));
     const innateProtection = species === PM_ALIGNED_CLERIC
-        || !!((MONSTER_FLAGS2[species] ?? 0) & M2_MINION)
+        || is_minion(species)
         || (hero && ((hasIntrinsicProperty('protection', null, state) && (state.u.ublessed ?? 0) > 0)
             || (state.u.uspellprot ?? 0) > 0));
     return innateProtection ? Math.max(1, cancellation) : cancellation;
@@ -2994,7 +2988,7 @@ export async function disturbMealMimicry(monster, { state = game } = {}) {
     if (!canSpotMonster(monster))
         await map_invisible(monster.mx, monster.my);
     if (!canSeeMonster(monster)) {
-        const picksUpGold = requireMonsterData(MONSTER_FLAGS2, monster.mnum) & 0x10000000
+        const picksUpGold = likes_gold(monster.mnum)
             && hero.mappearance === GOLD_PIECE;
         await plineWithContinuation(`Something ${picksUpGold ? 'tries to pick you up' : 'disturbs you'}!`);
     }

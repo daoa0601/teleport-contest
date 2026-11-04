@@ -3,7 +3,6 @@ import { W_AMUL, W_RINGL, W_RINGR } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { AD_DGST, AD_STCK, AD_WRAP, AT_HUGS } from './monster_attack_types.js';
-import { MONSTER_FLAGS1, monsterHasHead, monsterIsBreathless, monsterIsMindless, monsterIsUnsolid } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
@@ -14,8 +13,8 @@ import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
+import { monsterHasHead, monsterIsBreathless, monsterIsMindless, monsterIsUnsolid } from './mondata.js';
 
-const M1_BREATHLESS = 0x00000400;
 const SILVER = 14;
 const STRANGE_OBJECT = 0;
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');

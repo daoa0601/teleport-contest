@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 173 scoped C/JavaScript
+`verification/equivalence/` now proves 223 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -57,7 +57,7 @@ ISAAC64 compares return values and all in-bounds array cells and context
 fields after each call. Generator claims read **`frozen/isaac64.js`**:
 `frozen/score.sh` installs it over `js/isaac64.js` before scoring. The emitted
 ISAAC64 copy is outside these claims. Wrapper seed packing reads emitted
-`js/rng.js`. Times below exclude probes and mutants. Path counts are C×JS for
+`js/rng.js`. Times exclude probes and mutants unless explicitly labeled total. Path counts are C×JS for
 each logging setting; ISAAC64 rows state their loop proof instead. Existing
 rows retain the earlier measurements; the eight geometry/species rows and the
 split `rnl` row use this batch's complete runs.
@@ -76,18 +76,18 @@ split `rnl` row use this batch's complete runs.
 | `dist2` | `hacklib.c:dist2` ↔ `hacklib.js:dist2` | Coordinates in [-16384, 16383] | 1×1 | 0.5 s |
 | `isok` | `cmd.c:isok` ↔ `hacklib.js:isok` | Both coordinates in [-32768, 32767] | 2×4 | 0.4 s |
 | `online2` | `hacklib.c:online2` ↔ `hacklib.js:pointsOnline` | All four coordinates in [-32768, 32767] | 2×4 | 0.1 s |
-| `mindless:tables` | `mondata.h:mindless` ↔ `monster_data.js:monsterIsMindless` | Valid species; non-null native species pointer; initial native/emitted flags | 1×1 | 1.2 s |
-| `nohands:tables` | `mondata.h:nohands` ↔ `monster_data.js:monsterHasNoHands` | Same initial-species domain | 1×1 | 1.3 s |
-| `humanoid:tables` | `mondata.h:humanoid` ↔ `monster_data.js:monsterIsHumanoid` | Same initial-species domain | 1×1 | 1.2 s |
-| `ceiling_hider:tables` | `mondata.h:ceiling_hider` ↔ `monster_data.js:monsterSpeciesHidesOnCeiling` | Same domain; initial flags and monster classes | 383×(1×1) | 3.3 s |
-| `sliparm:tables` | `mondata.c:sliparm` ↔ `monster_data.js:monsterSlipsArmor` | Same domain; initial sizes, classes and species identities | 383×(1×1) | 4.0 s |
-| `breakarm:tables` | `mondata.c:breakarm` ↔ `monster_data.js:monsterBreaksArmor` | Same domain; initial flags, sizes, classes and species identities | 383×(1×1) | 8.7 s |
-| `attacktype:engulfs` | `mondata.c:attacktype` ↔ `monster_data.js:monsterCanEngulf` | Six symbolic attack records; `AT_ENGL` query | 1×1 | 1.4 s |
-| `attacktype:armed` | `mondata.c:attacktype` ↔ `monmove.js:speciesHasWeaponAttack` | Same array domain; `AT_WEAP` query | 1×1 | <0.1 s |
-| `dmgtype_fromattack:digests` | `mondata.h:digests` via native scan ↔ `monster_data.js:monsterDigests` | Same array domain; `AD_DGST`, `AT_ENGL`; presence only | 1×1 | 4.3 s |
-| `dmgtype_fromattack:enfolds` | `mondata.h:enfolds` via native scan ↔ `monster_data.js:monsterEnfolds` | Same array domain; `AD_WRAP`, `AT_ENGL`; presence only | 1×1 | 3.6 s |
-| `attacktype_fordmg:digests` | `mondata.c:attacktype_fordmg` ↔ `monster_data.js:monsterDigests` | Same array domain; `AT_ENGL`, `AD_DGST`; presence only | 1×1 | 3.4 s |
-| `dmgtype:sticks` | `mondata.c:sticks`, including `dmgtype` ↔ `monster_data.js:monsterSpeciesSticks` | Same array domain; complete sticking predicate | 1×1 | 1.6 s |
+| `mindless:tables` | `mondata.h:mindless` ↔ `mondata.js:monsterIsMindless` | Valid species; non-null native species pointer; initial native/emitted flags | 1×1 | 1.2 s |
+| `nohands:tables` | `mondata.h:nohands` ↔ `mondata.js:monsterHasNoHands` | Same initial-species domain | 1×1 | 1.3 s |
+| `humanoid:tables` | `mondata.h:humanoid` ↔ `mondata.js:monsterIsHumanoid` | Same initial-species domain | 1×1 | 1.2 s |
+| `ceiling_hider:tables` | `mondata.h:ceiling_hider` ↔ `mondata.js:monsterSpeciesHidesOnCeiling` | Same domain; initial flags and monster classes | 383×(1×1) | 3.3 s |
+| `sliparm:tables` | `mondata.c:sliparm` ↔ `mondata.js:monsterSlipsArmor` | Same domain; initial sizes, classes and species identities | 383×(1×1) | 4.0 s |
+| `breakarm:tables` | `mondata.c:breakarm` ↔ `mondata.js:monsterBreaksArmor` | Same domain; initial flags, sizes, classes and species identities | 383×(1×1) | 8.7 s |
+| `attacktype:engulfs` | `mondata.c:attacktype` ↔ `mondata.js:monsterCanEngulf` | Six symbolic attack records; `AT_ENGL` query | 1×1 | 1.4 s |
+| `attacktype:armed` | `mondata.c:attacktype` ↔ `mondata.js:speciesHasWeaponAttack` | Same array domain; `AT_WEAP` query | 1×1 | <0.1 s |
+| `dmgtype_fromattack:digests` | `mondata.h:digests` via native scan ↔ `mondata.js:monsterDigests` | Same array domain; `AD_DGST`, `AT_ENGL`; presence only | 1×1 | 4.3 s |
+| `dmgtype_fromattack:enfolds` | `mondata.h:enfolds` via native scan ↔ `mondata.js:monsterEnfolds` | Same array domain; `AD_WRAP`, `AT_ENGL`; presence only | 1×1 | 3.6 s |
+| `attacktype_fordmg:digests` | `mondata.c:attacktype_fordmg` ↔ `mondata.js:monsterDigests` | Same array domain; `AT_ENGL`, `AD_DGST`; presence only | 1×1 | 3.4 s |
+| `dmgtype:sticks` | `mondata.c:sticks`, including `dmgtype` ↔ `mondata.js:monsterSpeciesSticks` | Same array domain; complete sticking predicate | 1×1 | 1.6 s |
 | `weight_cap:state` (slow) | `hack.c:weight_cap` ↔ `weight.js:weightCapacity` | Related hero state, representative property masks, initial species; restored properties | 1×1 | 27.8 s |
 | `inv_weight:chain4` (slow) | `hack.c:inv_weight` ↔ `weight.js:invWeight` | Related inventory length 0..4; four object types; fresh cache; weights/quantities 0..100000 | 5×(1×1) | 8.6 s |
 | `calc_capacity:chain4` (slow) | `hack.c:calc_capacity` ↔ `weight.js:calcCapacity` | Same chain domain; extra weight in [-1000000,1000000] | 5×(1×1) | 12.9 s |
@@ -111,41 +111,41 @@ split `rnl` row use this batch's complete runs.
 | `xytodir` | `cmd.c:xytodir` ↔ `cmd.js:xyToDirection` | Deltas inside C int; decl.c and const.js direction tables | 9×9 via `findIndex` | 0.8 s |
 | `weapon_hit_bonus:state` | `weapon.c:weapon_hit_bonus` ↔ `skills.js:weaponSkillHitBonus` | Weapon null/uwep/uswapwep/unrelated; corresponding skills, role, twoweap, steed; objects[] tables | 1×1 joined | 10.3 s |
 | `weapon_dam_bonus:state` (slow) | `weapon.c:weapon_dam_bonus` ↔ `skills.js:weaponSkillDamageBonus` | Same relation | 1×1 joined | 4.7 s |
-| `is_animal:tables` | `mondata.h:is_animal` ↔ `monster_data.js:monsterIsAnimal` | Same initial-species domain | 1×1 | 1.9 s |
-| `noncorporeal:tables` | `mondata.h:noncorporeal` ↔ `monster_data.js:monsterIsNoncorporeal` | Same domain; initial symbols | 1×1 | 3.6 s |
-| `breathless:tables` | `mondata.h:breathless` ↔ `monster_data.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
-| `passes_bars:tables` | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
+| `is_animal:tables` | `mondata.h:is_animal` ↔ `mondata.js:monsterIsAnimal` | Same initial-species domain | 1×1 | 1.9 s |
+| `noncorporeal:tables` | `mondata.h:noncorporeal` ↔ `mondata.js:monsterIsNoncorporeal` | Same domain; initial symbols | 1×1 | 3.6 s |
+| `breathless:tables` | `mondata.h:breathless` ↔ `mondata.js:monsterIsBreathless` | Same domain; initial flags | 1×1 | 1.2 s |
+| `passes_bars:tables` (slow) | `mondata.c:passes_bars` ↔ `mondata.js:monsterPassesBars` | Same domain; flags, sizes, symbols and attack table | 383×(1×1) | 15.1 s |
 | `armor_to_dragon` (slow) | `polyself.c:armor_to_dragon` ↔ `polyself.js:dragonFormForArmor` | The 20 dragon scale/scale-mail otyps (101..120) | 1×1 | 4.3 s |
 | `weight:stack` (slow) | `mkobj.c:weight` ↔ `mkobj.js:objectWeight` | Coins, dagger, food ration, globs and corpses (symbolic valid species); quan 1..100000, full unsigned owt, oeaten 0 | 12 partitions | 16.4 s |
-| `verysmall:tables` | `mondata.h:verysmall` ↔ `monster_data.js:monsterIsVerySmall` | Valid initial species; native/emitted size tables | 1×1 | 2.3 s |
-| `haseyes:tables` | `mondata.h:haseyes` ↔ `monster_data.js:monsterHasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
-| `hates_silver:tables` | `mondata.c:hates_silver` ↔ `monster_data.js:monsterSpeciesHatesSilver` | Valid initial species; pointer identity vs mons[PM_SHADE]/mons[PM_TENGU]; flags and symbols | 3×5 | 5.1 s |
-| `mon_hates_blessings:state` | `mondata.c:mon_hates_blessings` ↔ `monster_data.js:monsterHatesBlessings` | Valid species and shifter species cham 0..NUMMONS-1; mons[] pointer; native/emitted tables | 2×2 | 2.6 s |
+| `verysmall:tables` | `mondata.h:verysmall` ↔ `mondata.js:monsterIsVerySmall` | Valid initial species; native/emitted size tables | 1×1 | 2.3 s |
+| `haseyes:tables` | `mondata.h:haseyes` ↔ `mondata.js:monsterHasEyes` | Valid initial species; native/emitted flag tables | 1×1 | 1.5 s |
+| `hates_silver:tables` | `mondata.c:hates_silver` ↔ `mondata.js:monsterSpeciesHatesSilver` | Valid initial species; pointer identity vs mons[PM_SHADE]/mons[PM_TENGU]; flags and symbols | 3×5 | 5.1 s |
+| `mon_hates_blessings:state` | `mondata.c:mon_hates_blessings` ↔ `mondata.js:monsterHatesBlessings` | Valid species and shifter species cham 0..NUMMONS-1; mons[] pointer; native/emitted tables | 2×2 | 2.6 s |
 | `mon_resistancebits:state` | `monst.h:mon_resistancebits` ↔ `mondata.js:monsterResistanceBits` | Valid species; ushort extrinsic/intrinsic masks 0..65535; native/emitted resists table | 1×1 | 1.3 s |
 | `erosion_matters:tables` | `objnam.c:erosion_matters` ↔ `objnam.js:erosionMatters` | Every otyp 0..NUM_OBJECTS-1 and any oclass; native/emitted class and skill columns | 1×1 | 1.8 s |
 | `is_damageable:tables` | `objclass.h:is_damageable` ↔ `objnam.js:objectIsDamageable` | Every otyp with a real material (>= LIQUID); objects[]/OBJECT_MATERIAL initial values | 1×1 | 11.0 s |
 | `primary_erosion:tables` | `objnam.c:readobjnam` primary test ↔ `objnam.js:objectAcceptsPrimaryErosion` | Erosion-mattering objects with matching oclass; material >= LIQUID | 1×1 | 4.8 s |
 | `secondary_erosion:tables` | `objnam.c:readobjnam` secondary test ↔ `objnam.js:objectAcceptsSecondaryErosion` | Same guarded domain | 1×1 | 3.1 s |
 | `weapon_type:tables` | `weapon.c:weapon_type` ↔ `skills.js:weaponSkillType` | Null or held object; any oclass; every otyp 0..NUM_OBJECTS-1 | 1×1 | 0.2 s |
-| `bigmonst:tables` | `mondata.h:bigmonst` ↔ `monster_data.js:monsterIsBig` | Valid initial species; native/emitted size tables | 1×1 | 2.1 s |
-| `is_flyer:tables` | `mondata.h:is_flyer` ↔ `monster_data.js:monsterIsFlyer` | Valid initial species; native/emitted flag1 tables | 1×1 | 2.1 s |
-| `is_floater:tables` | `mondata.h:is_floater` ↔ `monster_data.js:monsterIsFloater` | Valid initial species; native/emitted symbol tables | 2×2 | 3.7 s |
-| `is_clinger:tables` | `mondata.h:is_clinger` ↔ `monster_data.js:monsterIsClinger` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `is_swimmer:tables` | `mondata.h:is_swimmer` ↔ `monster_data.js:monsterIsSwimmer` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
-| `amphibious:tables` | `mondata.h:amphibious` ↔ `monster_data.js:monsterIsAmphibious` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `passes_walls:tables` | `mondata.h:passes_walls` ↔ `monster_data.js:monsterPassesWalls` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `can_teleport:tables` | `mondata.h:can_teleport` ↔ `monster_data.js:monsterCanTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `control_teleport:tables` | `mondata.h:control_teleport` ↔ `monster_data.js:monsterControlsTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `perceives:tables` | `mondata.h:perceives` ↔ `monster_data.js:monsterPerceives` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
-| `hides_under:tables` | `mondata.h:hides_under` ↔ `monster_data.js:monsterHidesUnder` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `is_hider:tables` | `mondata.h:is_hider` ↔ `monster_data.js:monsterIsHider` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
-| `is_demon:tables` | `mondata.h:is_demon` ↔ `monster_data.js:monsterIsDemon` | Valid initial species; native/emitted flag2 tables | 1×1 | 2.1 s |
-| `is_golem:tables` | `mondata.h:is_golem` ↔ `monster_data.js:monsterIsGolem` | Valid initial species; native/emitted symbol tables | 1×1 | 3.6 s |
-| `is_giant:tables` | `mondata.h:is_giant` ↔ `monster_data.js:monsterIsGiant` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
-| `is_female:tables` | `mondata.h:is_female` ↔ `monster_data.js:monsterIsFemale` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
-| `throws_rocks:tables` | `mondata.h:throws_rocks` ↔ `monster_data.js:monsterThrowsRocks` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
-| `type_is_pname:tables` | `mondata.h:type_is_pname` ↔ `monster_data.js:monsterHasProperName` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
-| `is_silent:tables` | `mondata.h:is_silent` ↔ `monster_data.js:monsterIsSilent` | Valid initial species; native/emitted sound tables | 1×1 | 3.3 s |
+| `bigmonst:tables` | `mondata.h:bigmonst` ↔ `mondata.js:monsterIsBig` | Valid initial species; native/emitted size tables | 1×1 | 2.1 s |
+| `is_flyer:tables` | `mondata.h:is_flyer` ↔ `mondata.js:monsterIsFlyer` | Valid initial species; native/emitted flag1 tables | 1×1 | 2.1 s |
+| `is_floater:tables` | `mondata.h:is_floater` ↔ `mondata.js:monsterIsFloater` | Valid initial species; native/emitted symbol tables | 2×2 | 3.7 s |
+| `is_clinger:tables` | `mondata.h:is_clinger` ↔ `mondata.js:monsterIsClinger` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_swimmer:tables` | `mondata.h:is_swimmer` ↔ `mondata.js:monsterIsSwimmer` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
+| `amphibious:tables` | `mondata.h:amphibious` ↔ `mondata.js:monsterIsAmphibious` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `passes_walls:tables` | `mondata.h:passes_walls` ↔ `mondata.js:monsterPassesWalls` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `can_teleport:tables` | `mondata.h:can_teleport` ↔ `mondata.js:monsterCanTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `control_teleport:tables` | `mondata.h:control_teleport` ↔ `mondata.js:monsterControlsTeleport` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `perceives:tables` | `mondata.h:perceives` ↔ `mondata.js:monsterPerceives` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.3 s |
+| `hides_under:tables` | `mondata.h:hides_under` ↔ `mondata.js:monsterHidesUnder` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_hider:tables` | `mondata.h:is_hider` ↔ `mondata.js:monsterIsHider` | Valid initial species; native/emitted flag1 tables | 1×1 | 1.2 s |
+| `is_demon:tables` | `mondata.h:is_demon` ↔ `mondata.js:monsterIsDemon` | Valid initial species; native/emitted flag2 tables | 1×1 | 2.1 s |
+| `is_golem:tables` | `mondata.h:is_golem` ↔ `mondata.js:monsterIsGolem` | Valid initial species; native/emitted symbol tables | 1×1 | 3.6 s |
+| `is_giant:tables` | `mondata.h:is_giant` ↔ `mondata.js:monsterIsGiant` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `is_female:tables` | `mondata.h:is_female` ↔ `mondata.js:monsterIsFemale` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `throws_rocks:tables` | `mondata.h:throws_rocks` ↔ `mondata.js:monsterThrowsRocks` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `type_is_pname:tables` | `mondata.h:type_is_pname` ↔ `mondata.js:monsterHasProperName` | Valid initial species; native/emitted flag2 tables | 1×1 | 1.3 s |
+| `is_silent:tables` | `mondata.h:is_silent` ↔ `mondata.js:monsterIsSilent` | Valid initial species; native/emitted sound tables | 1×1 | 3.3 s |
 | `can_track:state` | `mondata.c:can_track` ↔ `mondata.js:canTrack` | Valid species; uwep null or one weapon with any signed-char oartifact; initial mons and artifact identity/name tables | 2×2 | 3.4 s |
 | `is_weptool:tables` | `obj.h:is_weptool` ↔ `object_properties.js:isWeaponTool` | Held object; otyp 0..NUM_OBJECTS-1; oclass equals the row's oc_class; initial skill column | 1×1 | 4.4 s |
 | `bimanual:tables` | `obj.h:bimanual` ↔ `object_properties.js:isBimanualObject` | Same relation; initial oc_big/oc_bimanual column | 1×1 | 1.8 s |
@@ -181,11 +181,11 @@ split `rnl` row use this batch's complete runs.
 | `isaac64_next_uint64` | `isaac64.c:isaac64_next_uint64` ↔ frozen same name | Corresponding initialized context, `0 <= n <= 256` | Refill and nonempty cases | 0.1 s |
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
 | `cantvomit:tables` | `mondata.c:cantvomit` ↔ `mondata.js:speciesCannotVomit` | Valid initial species; pointer identity tests (rock mole, woodchuck, horses) vs species indices | 2×4 | 4.9 s |
-| `noattacks:tables` | `mondata.c:noattacks` ↔ `monster_data.js:monsterHasNoAttacks` | Valid initial species; corresponding six-record attack rows; AT_BOOM skipped on both sides | 2×2 | 4.7 s |
-| `num_horns:tables` (slow) | `mondata.c:num_horns` ↔ `monster_data.js:monsterHornCount` | Valid initial species; `monsndx(ptr)` pmidx switch vs emitted PM_* case labels | 3×3 | 39.3 s |
-| `little_to_big:tables` (slow) | `mondata.c:little_to_big` ↔ `monster_data.js:monsterOlderForm` | `0 <= montype < NUMMONS`; grownups[] scan vs growth vector read | 1×1 | 17.4 s |
-| `big_to_little:tables` (slow) | `mondata.c:big_to_little` ↔ `monster_data.js:monsterYoungerForm` | Same domain; first reverse edge of the ordered grownups[] table | 1×1 | 15.8 s |
-| `big_little_match:tables` (slow) | `mondata.c:big_little_match` ↔ `monster_data.js:monsterGrowthFamilyMatch` | Both indices valid species; `mons[].mlet` letter test then both growth directions | 1×1 | 85.5 s |
+| `noattacks:tables` | `mondata.c:noattacks` ↔ `mondata.js:monsterHasNoAttacks` | Valid initial species; corresponding six-record attack rows; AT_BOOM skipped on both sides | 2×2 | 4.7 s |
+| `num_horns:tables` (slow) | `mondata.c:num_horns` ↔ `mondata.js:monsterHornCount` | Valid initial species; `monsndx(ptr)` pmidx switch vs emitted PM_* case labels | 3×3 | 39.3 s |
+| `little_to_big:tables` (slow) | `mondata.c:little_to_big` ↔ `mondata.js:monsterOlderForm` | `0 <= montype < NUMMONS`; grownups[] scan vs growth vector read | 1×1 | 17.4 s |
+| `big_to_little:tables` (slow) | `mondata.c:big_to_little` ↔ `mondata.js:monsterYoungerForm` | Same domain; first reverse edge of the ordered grownups[] table | 1×1 | 15.8 s |
+| `big_little_match:tables` (slow) | `mondata.c:big_little_match` ↔ `mondata.js:monsterGrowthFamilyMatch` | Both indices valid species; `mons[].mlet` letter test then both growth directions | 1×1 | 85.5 s |
 | `same_race:tables` (slow) | `mondata.c:same_race` ↔ `mondata.js:sameMonsterRace` | Both species valid; the is_* race macros and pointer identities vs flags/symbol reads and module constants | 1×1 | 243.5 s |
 | `can_blow:tables` | `mondata.c:can_blow` ↔ `mondata.js:speciesCanBlow` | Valid species; monster distinct from `&gy.youmonst`, so the hero Strangled re-check stays dead | 2×4 | 9.7 s |
 | `mbirth_limit:tables` | `makemon.c:mbirth_limit` ↔ `makemon.js:monsterBirthLimit` | Any C int species index; PM_NAZGUL/PM_ERINYS and MAXMONNO=120 agree | 3×3 | 1.1 s |
@@ -238,6 +238,112 @@ split `rnl` row use this batch's complete runs.
 | `object_magic:tables` (slow) | `objects.h:oc_magic` ↔ `object_data.js:objectMagic` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
 | `object_charged:tables` (slow) | `objects.h:oc_charged` ↔ `object_data.js:objectCharged` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
 | `object_class:outside` | Explicit port-only guarded C harness ↔ `object_data.js:objectClassForType` | Every int32 index outside 0..NUM_OBJECTS-1; result 0 | 1×1 | 1.4 s |
+| `slithy:tables` | `mondata.h:slithy` ↔ `mondata.js:monsterIsSlithy` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.30 s total |
+| `nolimbs:tables` | `mondata.h:nolimbs` ↔ `mondata.js:monsterHasNoLimbs` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.25 s total |
+| `is_orc:tables` | `mondata.h:is_orc` ↔ `mondata.js:is_orc` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.22 s total |
+| `is_elf:tables` | `mondata.h:is_elf` ↔ `mondata.js:is_elf` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.23 s total |
+| `unsolid:tables` (slow) | `mondata.h:unsolid` ↔ `mondata.js:monsterIsUnsolid` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.24 s total |
+| `is_neuter:tables` (slow) | `mondata.h:is_neuter` ↔ `mondata.js:is_neuter` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.19 s total |
+| `amorphous:tables` (slow) | `mondata.h:amorphous` ↔ `mondata.js:monsterIsAmorphous` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.20 s total |
+| `strongmonst:tables` (slow) | `mondata.h:strongmonst` ↔ `mondata.js:strongmonst` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.45 s total |
+| `tunnels:tables` (slow) | `mondata.h:tunnels` ↔ `mondata.js:tunnels` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.26 s total |
+| `needspick:tables` (slow) | `mondata.h:needspick` ↔ `mondata.js:needspick` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.26 s total |
+| `notake:tables` (slow) | `mondata.h:notake` ↔ `mondata.js:notake` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.23 s total |
+| `has_head:tables` (slow) | `mondata.h:has_head` ↔ `mondata.js:monsterHasHead` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.22 s total |
+| `is_undead:tables` (slow) | `mondata.h:is_undead` ↔ `mondata.js:monsterIsUndead` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.20 s total |
+| `is_human:tables` (slow) | `mondata.h:is_human` ↔ `mondata.js:monsterIsHuman` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.41 s total |
+| `is_were:tables` (slow) | `mondata.h:is_were` ↔ `mondata.js:is_were` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.27 s total |
+| `is_dwarf:tables` (slow) | `mondata.h:is_dwarf` ↔ `mondata.js:is_dwarf` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.20 s total |
+| `is_gnome:tables` (slow) | `mondata.h:is_gnome` ↔ `mondata.js:is_gnome` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.19 s total |
+| `is_domestic:tables` (slow) | `mondata.h:is_domestic` ↔ `mondata.js:is_domestic` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.16 s total |
+| `is_mercenary:tables` (slow) | `mondata.h:is_mercenary` ↔ `mondata.js:is_mercenary` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.23 s total |
+| `is_male:tables` (slow) | `mondata.h:is_male` ↔ `mondata.js:is_male` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.25 s total |
+| `is_wanderer:tables` (slow) | `mondata.h:is_wanderer` ↔ `mondata.js:is_wanderer` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.21 s total |
+| `is_lord:tables` (slow) | `mondata.h:is_lord` ↔ `mondata.js:is_lord` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.23 s total |
+| `is_prince:tables` (slow) | `mondata.h:is_prince` ↔ `mondata.js:is_prince` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.33 s total |
+| `is_minion:tables` (slow) | `mondata.h:is_minion` ↔ `mondata.js:is_minion` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.29 s total |
+| `lays_eggs:tables` (slow) | `mondata.h:lays_eggs` ↔ `mondata.js:lays_eggs` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.30 s total |
+| `regenerates:tables` (slow) | `mondata.h:regenerates` ↔ `mondata.js:regenerates` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.30 s total |
+| `acidic:tables` (slow) | `mondata.h:acidic` ↔ `mondata.js:acidic` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.32 s total |
+| `poisonous:tables` (slow) | `mondata.h:poisonous` ↔ `mondata.js:poisonous` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.61 s total |
+| `carnivorous:tables` (slow) | `mondata.h:carnivorous` ↔ `mondata.js:carnivorous` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.74 s total |
+| `herbivorous:tables` (slow) | `mondata.h:herbivorous` ↔ `mondata.js:herbivorous` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.56 s total |
+| `metallivorous:tables` (slow) | `mondata.h:metallivorous` ↔ `mondata.js:metallivorous` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.27 s total |
+| `polyok:tables` (slow) | `mondata.h:polyok` ↔ `mondata.js:polyok` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.32 s total |
+| `is_shapeshifter:tables` (slow) | `mondata.h:is_shapeshifter` ↔ `mondata.js:is_shapeshifter` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.29 s total |
+| `likes_gold:tables` (slow) | `mondata.h:likes_gold` ↔ `mondata.js:likes_gold` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.31 s total |
+| `likes_gems:tables` (slow) | `mondata.h:likes_gems` ↔ `mondata.js:likes_gems` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.32 s total |
+| `likes_magic:tables` (slow) | `mondata.h:likes_magic` ↔ `mondata.js:likes_magic` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.59 s total |
+| `thick_skinned:tables` (slow) | `mondata.h:thick_skinned` ↔ `mondata.js:monsterIsThickSkinned` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.35 s total |
+| `is_displacer:tables` (slow) | `mondata.h:is_displacer` ↔ `mondata.js:monsterIsDisplacer` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.08 s total |
+| `is_armed:tables` (slow) | `mondata.h:is_armed` ↔ `mondata.js:speciesHasWeaponAttack` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 4.32 s total |
+| `infravision:tables` (slow) | `mondata.h:infravision` ↔ `mondata.js:infravision` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.07 s total |
+| `infravisible:tables` (slow) | `mondata.h:infravisible` ↔ `mondata.js:infravisible` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 2.24 s total |
+| `cant_drown:tables` (slow) | `mondata.h:cant_drown` ↔ `mondata.js:cant_drown` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 3.23 s total |
+| `cantwield:tables` (slow) | `mondata.h:cantwield` ↔ `mondata.js:cantwield` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
+| `cantweararm:tables` (slow) | `mondata.h:cantweararm` ↔ `mondata.js:cantweararm` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 383×(1×1) | 10.38 s total |
+| `could_twoweap:tables` (slow) | `mondata.h:could_twoweap` ↔ `mondata.js:could_twoweap` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 1×1 | 3.97 s total |
+| `eggs_in_water:tables` (slow) | `mondata.h:eggs_in_water` ↔ `mondata.js:eggs_in_water` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 2.84 s total |
+| `likes_objs:tables` (slow) | `mondata.h:likes_objs` ↔ `mondata.js:likes_objs` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 5.75 s total |
+| `is_ndemon:tables` (slow) | `mondata.h:is_ndemon` ↔ `mondata.js:is_ndemon` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 2.60 s total |
+| `is_dlord:tables` (slow) | `mondata.h:is_dlord` ↔ `mondata.js:is_dlord` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
+| `is_dprince:tables` (slow) | `mondata.h:is_dprince` ↔ `mondata.js:is_dprince` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
+
+**Flag-owner batch.** The 50 added claims execute the real `mondata.h`
+macros and the canonical `mondata.js` owners over every species index
+`0 <= species < NUMMONS` (383). The native pointer is `&mons[species]`.
+Each side evaluates its own initial species and attack tables; table equality
+is not assumed. Runtime quest retargeting, Erinys changes and seduction attack
+replacement remain outside this initial-table relation. `cantweararm` splits
+all 383 species into exhaustive partitions; the other new claims keep the
+index symbolic. Both RNG logging modes are checked.
+
+Every new claim rejects a null native pointer at species 0 and kills one
+emitted-JavaScript mutant. Mutants pin species 0, except weapon attacks use
+hobbit (43) and the second two-weapon attack uses ettin (174). These negative
+checks stay on one concrete row. The `Number(boolean)` executor extension
+models exactly 0 or 1 and has a failing-before regression test.
+
+The new claims cost **132.28 s** locally including proofs, probes and
+mutants; the table above reports each full total. Only `slithy`, `nolimbs`,
+`is_orc` and `is_elf` are fast, totaling **9.00 s** locally. The other
+46 claims are slow, including every addition above 5 seconds.
+`passes_bars:tables` is now slow: its canonical helper calls cost
+**12.68 s** in this complete run. The complete
+ledger-writing run passed **223 claims, 231 domain probes and 242
+mutant checks**. Hosted CI times are not measured locally.
+
+The runtime migration keeps 56 existing macro-owner names and adds 48 owners
+named after C. All 104 have a first-line `mondata.h` citation in `mondata.ts`.
+The requested flag-token inventory falls from **1,195 to 235**; direct
+`MONSTER_FLAGS1/2/3[...]` reads fall from **312 to 75**, with only **10** outside
+`mondata.ts` and `monster_data.ts`. C's raw mask copies, warning intersections,
+food-collection bit, migration matching and wants/waiting masks remain cited.
+The copied armed-species set is gone; `is_armed` scans the real attack row.
+The corrected `nolimbs` owner requires all of `M1_NOLIMBS` (`0x6000`). Behavior
+regressions preserve jackals' walking and staggering verbs and jaguars'
+claw-swing miss messages without changing species data. Executor regressions
+cover every 32-bit flag word, rejection of the old mask, and the high
+metallivore bit.
+
+The serial base/branch session comparison has **0 changed outcomes or first
+differences** across 344 sessions: public **43/44**, first 300 holdout **300/300**.
+Seed2200 retains its pre-existing screen difference at global step 158 and has
+no RNG difference. No full game suite, pool, eval or fresh corpus was run.
+The branch's 3,000 fresh-session CI gate remains for the orchestrator.
+
+The serial CI-mode ledger checks passed: base **139 fast claims in 440.59 s**,
+branch **142 in 444.59 s**. The measured increase is **4.00 s** locally (28.00
+s at 7× that increase). The branch check validates all 223 ledger rows and
+explicitly skips 81 slow claims, which passed in the complete run.
+
+Direct claims now target 80 of the 104 macro owners. Direct claims remain
+deferred for `always_hostile`, `is_mplayer`, `is_covetous`, `slimeproof`,
+`corpse_eater`, `is_whirly`, `is_unicorn`, `is_bat`, `is_vampire`,
+`is_mind_flayer`, `telepathic`, `is_wooden`, `hates_light`, `is_rider`,
+`nonliving`, `weirdnonliving`, `always_peaceful`, `extra_nasty`,
+`passes_rocks`, `eyecount`, `your_race`, `race_hostile`, `race_peaceful`,
+`grounded`. These owners are included in the runtime migration.
 
 **Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
 including **56 domain probes** and **60 mutant checks**, and wrote the ledger
@@ -605,7 +711,7 @@ makemon.c's birth limit) exactly one exported port owner each and execute
 the real C bodies. cantvomit lives in `mondata.js:speciesCannotVomit`
 (the hero wrapper `heroCannotVomit` delegates to it), noattacks/num_horns/
 little_to_big/big_to_little/big_little_match live in
-`monster_data.js:monsterHasNoAttacks/monsterHornCount/monsterOlderForm/
+`mondata.js:monsterHasNoAttacks/monsterHornCount/monsterOlderForm/
 monsterYoungerForm/monsterGrowthFamilyMatch`, same_race and the
 can_blow table half live in `mondata.js:sameMonsterRace/speciesCanBlow`,
 and max_passive_dmg moved from dogmove.js to

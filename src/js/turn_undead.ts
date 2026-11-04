@@ -1,17 +1,10 @@
-import type { GameState, PlayingGameState } from './game_state.js';
-import type { Monster } from './monster_types.js';
-import type { HeroMonsterKillOptions } from './hero_monster_death.js';
-import { requirePlayingGame } from './gstate.js';
-
-type TurnOutcome = 'faltered' | 'resisted' | 'turned' | 'hero-died' | 'fled';
-export interface TurnUndeadOptions {
-    finishMonsterKill?: (monster: Monster, x: number, y: number, options?: HeroMonsterKillOptions) => unknown;
-    random?: typeof rn2;
-}
-
 // The priest and knight #turn command.
 // C ref: pray.c doturn() and maybe_turn_mon_iter().
 
+import type { GameState, PlayingGameState } from './game_state.js';
+import type { Monster } from './monster_types.js';
+import type { HeroMonsterKillOptions } from './hero_monster_death.js';
+import { requirePlayingGame, game } from './gstate.js';
 import { nomul } from './hack.js';
 import { exerciseAttribute } from './attrib.js';
 import { hallucinatedDeityName } from './alignment.js';
@@ -21,24 +14,23 @@ import {
 import { plineWithContinuation as pline } from './pline.js';
 import { shieldeff } from './display.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { game } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './do_name.js';
-import { cansee } from './vision.js';
+import { cansee, couldsee } from './vision.js';
 import { heroCanChant } from './hero_speech.js';
 import { setMonsterMalign } from './makemon.js';
 import { makeMonsterFlee } from './monmove.js';
-import {
-    MONSTER_FLAGS2, MONSTER_SYMBOL,
-    monsterIsUndead,
-    monsterIsVampireShifter,
-} from './monster_data.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { rn2 } from './rng.js';
-import { couldsee } from './vision.js';
 import { aggravateMonsters } from './wizard.js';
 import { monsterResistsEffect } from './zap.js';
+import { monsterIsDemon, monsterIsUndead, monsterIsVampireShifter } from './mondata.js';
 
-const M2_DEMON = 0x00000100;
+type TurnOutcome = 'faltered' | 'resisted' | 'turned' | 'hero-died' | 'fled';
+export interface TurnUndeadOptions {
+    finishMonsterKill?: (monster: Monster, x: number, y: number, options?: HeroMonsterKillOptions) => unknown;
+    random?: typeof rn2;
+}
 
 const TURN_LEVEL_BY_CLASS = new Map([
     [52, 6],  // zombie
@@ -51,8 +43,8 @@ const TURN_LEVEL_BY_CLASS = new Map([
 
 function heroIsDemonOrUndead(state: PlayingGameState) {
     const hero = state.u;
-    const flags = MONSTER_FLAGS2[hero.umonnum] ?? 0;
-    return !!(flags & M2_DEMON)
+
+    return monsterIsDemon(hero.umonnum)
         || monsterIsUndead(hero.umonnum)
         || monsterIsVampireShifter({ mnum: hero.umonnum, cham: hero.mcham ?? -1 });
 }
@@ -65,10 +57,10 @@ function inGehennom(state: GameState) {
 function eligibleTarget(monster: Monster, heroLevel: number) {
     if (!monster || monster.dead || (monster.mhp ?? 1) <= 0
         || monster.mpeaceful) return false;
-    const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
+
     return monsterIsUndead(monster.mnum)
         || monsterIsVampireShifter(monster)
-        || (heroLevel > MAXULEV / 2 && !!(flags & M2_DEMON));
+        || (heroLevel > MAXULEV / 2 && monsterIsDemon(monster.mnum));
 }
 
 async function turnOneMonster(monster: Monster, state: PlayingGameState, options: Required<TurnUndeadOptions>): Promise<TurnOutcome> {

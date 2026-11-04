@@ -6,15 +6,11 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { displayLiquidName } from './do_name.js';
-import { drawbridgeUnderlyingType } from './dbridge.js';
-
-import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-
+import { drawbridgeUnderlyingType, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { onQuestStart } from './quest.js';
 import { heroIsHallucinating } from './senses.js';
-
-import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './monster_data.js';
 import { roomsAt } from './hack.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 
 // C pager.c:waterbody_name(). The liquid name is chosen before a caller
 // changes terrain, even when that caller will not print it.
@@ -43,7 +39,6 @@ export function waterbodyName(x: number, y: number, state: GameState = game): st
     if (type === LAVAWALL) return `wall of ${displayLiquidName('lava', state)}`;
     return 'water';
 }
-
 
 export function surfaceName(x: number, y: number, state: GameState = game): string {
     const location = state.level?.at(x, y);

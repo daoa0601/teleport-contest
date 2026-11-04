@@ -8,7 +8,7 @@ import { canSpotMonster, newsym, canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
-import { withIndefiniteArticle } from './objnam.js';
+import { withIndefiniteArticle, corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { publishMonsterYelp, publishMonsterGrowl, sessionIsNight } from './ambient_sounds.js';
 import { releaseMonsterLeashWithFeedback, releaseMonsterLeash } from './apply.js';
@@ -16,26 +16,22 @@ import { finishMonsterEating } from './dogmove.js';
 import { monsterName } from './do_name.js';
 import { dismountHero, monsterHasMapPosition, placeMonsterOnMap } from './steed.js';
 import { cansee, monsterEmitsLight, vision_recalc } from './vision.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterIsHuman, monsterIsHumanoid, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, } from './monster_data.js';
 import { CORPSE, CREDIT_CARD, DWARVISH_MATTOCK, LOCK_PICK, PICK_AXE, RIN_AGGRAVATE_MONSTER, SKELETON_KEY, UNICORN_HORN, } from './object_data.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { initializeUnplacedMonsterWormBody, redrawMonsterWorm, removeMonsterWormBody } from './worm.js';
 import { makeMonsterFlee } from './monmove.js';
 import { setMonsterMalign } from './makemon.js';
-import { levelFollower } from './mondata.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { levelFollower, carnivorous, herbivorous, is_domestic, monsterHasEyes, monsterIsAnimal, monsterIsDemon, monsterIsCovetous, monsterIsHuman, monsterIsHumanoid, monsterIsMindless, needspick, regenerates, tunnels, cantwield, speciesHasWeaponAttack, } from './mondata.js';
+import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
-import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
-import { AT_WEAP } from './monster_attack_types.js';
 import { wieldMonsterWeapon } from './weapon.js';
-import { corpseName, objectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { ACCFOOD, DOGFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { depth, possessiveName } from './hacklib.js';
 import { dropSpecialMonsterObjects } from './steal.js';
 import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
@@ -48,17 +44,11 @@ import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.
 import { placeObject } from './mkobj.js';
 import { insideWizardTower } from './dungeon.js';
 import { roomForRoomno, roomsAt } from './hack.js';
-const M2_DOMESTIC = 0x00400000;
-const M1_ANIMAL = 0x00040000;
-const M1_MINDLESS = 0x00010000;
-const M1_TUNNEL = 0x20;
-const M1_NEEDPICK = 0x40;
 // C dogmove.c:droppables(). Pets keep equipment and usable tools.
 export function petDroppableObject(monster) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const animalOrMindless = !!(flags & (M1_ANIMAL | M1_MINDLESS));
-    const canDig = (flags & (M1_TUNNEL | M1_NEEDPICK)) === (M1_TUNNEL | M1_NEEDPICK);
-    const canUnlock = !monsterHasNoHands(monster.mnum) && !monsterIsVerySmall(monster.mnum);
+    const animalOrMindless = (monsterIsAnimal({ mnum: monster.mnum }) || monsterIsMindless(monster.mnum));
+    const canDig = (tunnels(monster.mnum) && needspick(monster.mnum));
+    const canUnlock = !cantwield(monster.mnum);
     const weapon = monster.mw;
     // Undefined means this body cannot use the tool; null means no tool has
     // been selected yet. C represents the first case with a dummy artifact.
@@ -167,7 +157,7 @@ export async function abusePetAfterHeroHit(monster, damage, state = game) {
 export function initializePet(monster, { state = game, everything = true } = {}) {
     if (!monster)
         return false;
-    const minimumTameness = ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DOMESTIC) ? 10 : 5;
+    const minimumTameness = is_domestic(monster.mnum) ? 10 : 5;
     monster.mtame = Math.max(minimumTameness, monster.mtame || 0);
     monster.mpeaceful = 1;
     monster.mavenge = 0;
@@ -277,9 +267,7 @@ function newPetData(monster) {
 // C dog.c:tamedog(). Food may be caught and consumed; magic has no object
 // transfer. A true result tells a projectile caller that the food was caught,
 // even when its meal kills the new pet.
-const M2_DEMON_TAMING = 0x00000100;
 const M3_WANTSARTI = 0x0010;
-const M3_COVETOUS = 0x001f;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const S_DOG = 4;
 export async function tameMonster(monster, source = null, { state = game, announce = false, } = {}) {
@@ -291,6 +279,7 @@ export async function tameMonster(monster, source = null, { state = game, announ
         monster.mfrozen = Math.trunc((monster.mfrozen + 1) / 2);
     if (monster.msleeping)
         await wakeMonstersNearWithMessages(monster.mx, monster.my, 1, state);
+    // C dog.c:tamedog() tests M3_WANTSARTI directly before pacifying the actor.
     const speciesFlags = questMonsterFlags3(monster.mnum, state);
     if (monster.iswiz || monster.mnum === PM_MEDUSA || (speciesFlags & M3_WANTSARTI))
         return false;
@@ -336,9 +325,9 @@ export async function tameMonster(monster, source = null, { state = game, announ
         return false;
     }
     if (!monster.mcanmove || monster.isgd || monster.ispriest || monster.isminion
-        || (speciesFlags & M3_COVETOUS) || monsterIsHuman(monster.mnum)
-        || (((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_DEMON_TAMING)
-            && !((MONSTER_FLAGS2[heroSpecies(state)] ?? 0) & M2_DEMON_TAMING))
+        || monsterIsCovetous(monster, state) || monsterIsHuman(monster.mnum)
+        || (monsterIsDemon(monster.mnum)
+            && !monsterIsDemon(heroSpecies(state)))
         || (food && dogFood(monster, food, rn2, [], state) >= MANFOOD))
         return false;
     if (monster.m_id === state.quest_status?.leader_m_id)
@@ -355,7 +344,7 @@ export async function tameMonster(monster, source = null, { state = game, announ
     await newsym(monster.mx, monster.my);
     if (monster.wormno)
         await redrawMonsterWorm(monster, state);
-    if ((MONSTER_ATTACKS[monster.mnum] || []).some(([type]) => type === AT_WEAP)) {
+    if (speciesHasWeaponAttack(monster.mnum)) {
         monster.weaponCheck = NEED_HTH_WEAPON;
         await wieldMonsterWeapon(monster, state);
     }
@@ -401,9 +390,6 @@ async function feedTamedMonster(monster, food, devour, state) {
     await finishPetEating(monster, meal, state);
 }
 // C include/monflag.h M1 flags used by mon_catchup_elapsed_time().
-const M1_CARNIVORE_MIGRATION = 0x20000000;
-const M1_HERBIVORE_MIGRATION = 0x40000000;
-const M1_REGEN = 0x00800000;
 // C dog.c mon_arrive()'s `when` argument.
 export const WIZ_ARRIVE = -1; // C dog.c mon_arrive(mtmp, -1) from resurrect()
 const PM_LONG_WORM_MIGRATION = 114;
@@ -565,8 +551,7 @@ export async function catchUpMonster(monster, moves, state) {
     }
     // A pet that would have starved goes wild instead of dying.
     if (monster.mtame && !monster.isminion) {
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-        if (flags & (M1_CARNIVORE_MIGRATION | M1_HERBIVORE_MIGRATION)) {
+        if ((carnivorous(monster.mnum) || herbivorous(monster.mnum))) {
             const pet = monster.edog ?? monster.mextra?.edog;
             if (!pet)
                 throw new Error(`Tame monster ${monster.m_id} has no feeding history.`);
@@ -579,7 +564,7 @@ export async function catchUpMonster(monster, moves, state) {
     monster.pet = (monster.mtame ?? 0) > 0;
     if (!monster.mtame && monster.mleashed)
         releaseMonsterLeash(monster, state);
-    const healing = (MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_REGEN
+    const healing = regenerates(monster.mnum)
         ? imv : Math.trunc(imv / 20);
     healMonster(monster, healing);
     monster.mlstmv = state.moves ?? 0;
@@ -808,7 +793,6 @@ export function discardMigrations(state = game) {
     state._migratingMonsters = queue.filter(monster => monster.iswiz || In_endgame(monster.migrationDestination));
 }
 // C dog.c:keepdogs(), keep_mon_accessible(), and mondata.c:levl_follower().
-const M2_STALK = 0x01000000;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 // The caller skips this entire transaction when iflags.nofollowers is set.
 // Returned monsters are detached from the old level in native mydogs order.

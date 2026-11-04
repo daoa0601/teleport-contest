@@ -2,14 +2,12 @@ import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, beginMonsterHeroAttack, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
-import { monsterFliesOrFloats } from './mon.js';
+import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
-import { observeDistantObjectForNaming } from './objnam.js';
-import { verbForSubject, withIndefiniteArticle } from './objnam.js';
+import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { splitObjectStack, remove_object } from './mkobj.js';
-import { monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon, speciesHasWeaponAttack, setMonsterApparentHeroPosition, } from './monmove.js';
-import { mfndpos, monAllowFlags, resistConflict } from './mon.js';
+import { monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon, setMonsterApparentHeroPosition, } from './monmove.js';
 import { mayDig } from './hack.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { couldSeeFromHero, cansee, clearPath, visibleCellsFrom } from './vision.js';
@@ -17,20 +15,19 @@ import { trapAt } from './trap.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, monsterAttackStopsAggressor } from './mhitm.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { dist2, distmin } from './hacklib.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPerceives, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ACCFOOD, CADAVER, DOGFOOD, MANFOOD, UNDEF, dogFood } from './pet_food.js';
 import { petDroppableObject } from './dog.js';
 import { applyPetHunger } from './pet_hunger.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
-import { monsterCanCarryObject, monsterCarryAmount } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, SCR_MAIL, TRIPE_RATION, requireObjectData, } from './object_data.js';
 import { loseGuardianAngel } from './guardian_angel.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './regions.js';
 import { goodPosition } from './teleport_rules.js';
-import { ALLOW_M, ALLOW_MDISP, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir } from './const.js';
+import { ALLOW_M, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, Is_rogue_level, MAGIC_PORTAL, MMOVE_DIED, MMOVE_DONE, MMOVE_MOVED, MMOVE_NOTHING, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, DISMOUNT_POLY, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, NEED_WEAPON, xdir, ydir, } from './const.js';
 import { isok } from './cmd.js';
 import { AT_BREA } from './monster_attack_types.js';
 import { canSeeMonster, canSpotMonster, glyphAt, newsym } from './display.js';
@@ -42,22 +39,17 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';
 import { touchPetrifies } from './stoning.js';
-import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, } from './mondata.js';
+import { maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes, monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels, speciesHasWeaponAttack, } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { getTrack } from './track.js';
 import { d, rn2, rnd } from './rng.js';
 import { requireInitializedGame, requireLiveGame, game } from './gstate.js';
 const DOG_HUNGRY = 300;
-const M1_SEE_INVIS = 0x01000000;
 const MS_LEADER = 36;
 const MS_GUARDIAN = 38;
 const S_VAMPIRE = 48;
 // include/monst.h flag bits used by the moved dogmove.c helpers.
-const M1_TUNNEL = 0x00000020;
-const M1_WALLWALK = 0x00000008;
-const M1_NOEYES = 0x00001000;
-const M2_NEUTER = 0x00040000;
 // include/objclass.h nofetch classes dog_invent() refuses to carry.
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
@@ -283,9 +275,8 @@ function petCanReachLocation(monster, mx, my, fx, fy, state) {
             const loc = state?.level?.at?.(x, y);
             if (!loc)
                 continue;
-            const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-            if (IS_OBSTRUCTED(loc.typ) && !(flags & M1_WALLWALK)
-                && (!mayDig(x, y, state) || !(flags & M1_TUNNEL)
+            if (IS_OBSTRUCTED(loc.typ) && !monsterPassesWalls(monster.mnum)
+                && (!mayDig(x, y, state) || !tunnels(monster.mnum)
                     || Is_rogue_level(state.u.uz, state)))
                 continue;
             if (IS_DOOR(loc.typ) && (loc.doormask ?? 0) & (D_CLOSED | D_LOCKED))
@@ -631,7 +622,7 @@ async function finishPetMovePlan(monster, state, plan, random, rollDice, rollOne
     let { nix, niy } = plan;
     if (selectedInfo & ALLOW_U) {
         if (monster.mleashed) {
-            const pronoun = (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER
+            const pronoun = is_neuter(monster.mnum)
                 ? 'its'
                 : monster.female
                     ? 'her'
@@ -1061,11 +1052,10 @@ async function reluctantPetMessage(monster, square) {
 }
 // C dogmove.c:could_reach_item(). Flying across a square does not make
 // the objects beneath its water or lava reachable.
-const M1_SWIM = 0x2, M2_ROCKTHROW = 0x08000000;
 const PM_FIRE_ELEMENTAL_REACH = MONSTER_NAME.indexOf('fire elemental');
 const PM_SALAMANDER = MONSTER_NAME.indexOf('salamander');
 export function monsterCouldReachItem(monster, x, y, state) {
-    if (isPoolAt(x, y, state) && !(monsterIsSwimmer(monster.mnum)))
+    if (isPoolAt(x, y, state) && !monsterIsSwimmer(monster.mnum))
         return false;
     if (isLavaAt(x, y, state)
         && monster.mnum !== PM_FIRE_ELEMENTAL_REACH && monster.mnum !== PM_SALAMANDER)

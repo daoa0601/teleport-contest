@@ -7,12 +7,9 @@ import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
 import { initializeArtifacts } from './artifacts.js';
 import { rn2, rnd } from './rng.js';
-import { MONSTER_FLAGS2 } from './monster_data.js';
 import { ensureQuestStatus } from './quest.js';
 import { initializeMonsterVitals } from './allmain.js';
-const M2_MALE = 0x00010000;
-const M2_FEMALE = 0x00020000;
-const M2_NEUTER = 0x00040000;
+import { is_male, is_neuter, monsterIsFemale } from './mondata.js';
 // C role.c:role_init() recomputes these genders on both newgame and restore.
 export function initializeRoleQuestGenders() {
     const role = game.urole;
@@ -29,12 +26,11 @@ export function rollQuestFigureGenders(role, quest) {
         quest.nemgend = questMonsterGender(role.neminum);
 }
 function questMonsterGender(species) {
-    const flags = MONSTER_FLAGS2[species] ?? 0;
-    if (flags & M2_NEUTER)
+    if (is_neuter(species))
         return 2;
-    if (flags & M2_FEMALE)
+    if (monsterIsFemale(species))
         return 1;
-    if (flags & M2_MALE)
+    if (is_male(species))
         return 0;
     return rn2(100) < 50 ? 1 : 0;
 }

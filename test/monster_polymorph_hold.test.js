@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { flush_screen, swallowed } from '../js/display.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { MONSTER_NAME, monsterCanEngulf } from '../js/monster_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
 import { NO_MINVENT, PIT } from '../js/const.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, EGG, POT_POLYMORPH } from '../js/object_data.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
@@ -20,7 +20,7 @@ import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { installPolymorphedHero, installSwallowedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { monsterHasStoneResistance } from '../js/mondata.js';
+import { monsterHasStoneResistance, monsterCanEngulf } from '../js/mondata.js';
 import { cancelMonster } from '../js/zap.js';
 async function messageLine() {
     await flush_screen();

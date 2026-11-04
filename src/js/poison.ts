@@ -14,12 +14,9 @@ import { game, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
-
-import { nameToMonster } from './mondata.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, monsterHasProperName } from './monster_data.js';
-import { definiteName } from './objnam.js';
-import { withIndefiniteArticle } from './objnam.js';
-
+import { nameToMonster, monsterHasProperName } from './mondata.js';
+import { MONSTER_GENO } from './monster_data.js';
+import { definiteName, withIndefiniteArticle } from './objnam.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { d, rn2, rnd } from './rng.js';
 import { encumber_msg } from './pickup.js';

@@ -3,12 +3,12 @@ import { game } from './gstate.js';
 import { FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, I_SPECIAL, INTRINSIC, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { artifactById } from './artifacts.js';
 import { heroFaceName } from './body_parts.js';
-import { MONSTER_FLAGS1, monsterHasEyes } from './monster_data.js';
 import { CORNUTHAUM, MUMMY_WRAPPING } from './object_data.js';
 import { ownedSimpleObjectName } from './objnam.js';
 import { propertyTimeout } from './properties.js';
 import { blindnessBlocked, blindfolded, isEyesOfTheOverworld } from './senses.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
+import { monsterHasEyes } from './mondata.js';
 const SLOT_MASKS = {
     uarm: W_ARM, uarmc: W_ARMC, uarmh: W_ARMH, uarms: W_ARMS,
     uarmg: W_ARMG, uarmf: W_ARMF, uarmu: W_ARMU,

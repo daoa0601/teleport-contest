@@ -8,40 +8,31 @@ import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
 import { game } from './gstate.js';
 import { findMonsterNearPosition, } from './mklev.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SYMBOL, monsterHidesUnder, monsterIsEel } from './monster_data.js';
+import { MONSTER_MOVE, MONSTER_SYMBOL } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject, remove_object } from './mkobj.js';
 import { scheduleObjectTimer } from './timeout.js';
 import { rnd } from './rng.js';
 import { cansee } from './vision.js';
 import { monsterName } from './do_name.js';
-import { objectCombatName } from './objnam.js';
-import { withIndefiniteArticle, objectDescription } from './objnam.js';
-const M1_FLY = 0x00000001;
-const M1_AMORPHOUS = 0x00000004;
-const M1_WALLWALK = 0x00000008;
-const M1_CONCEAL = 0x00000080;
-const M1_NOLIMBS = 0x00006000;
-const M1_SLITHY = 0x00080000;
-const M2_ROCKTHROW = 0x08000000;
+import { objectCombatName, objectDescription, withIndefiniteArticle } from './objnam.js';
+import { monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsEel, monsterIsFlyer, monsterIsSlithy, monsterPassesWalls, monsterThrowsRocks, } from './mondata.js';
 const S_EYE = 5;
 const S_MIMIC = 13;
 const S_LIGHT = 25;
-const S_EEL = 57;
 function figurineLocomotion(mnum, fallback = 'drop') {
-    const flags = MONSTER_FLAGS1[mnum] ?? 0;
     const symbol = MONSTER_SYMBOL[mnum];
     if (symbol === S_EYE || symbol === S_LIGHT)
         return 'float';
-    if (flags & M1_FLY)
+    if (monsterIsFlyer(mnum))
         return 'fly';
-    if (flags & M1_SLITHY)
+    if (monsterIsSlithy(mnum))
         return 'slither';
-    if (flags & M1_AMORPHOUS)
+    if (monsterIsAmorphous({ mnum }))
         return 'ooze';
     if ((MONSTER_MOVE[mnum] ?? 0) === 0)
         return 'wiggle';
-    if ((flags & M1_NOLIMBS) === M1_NOLIMBS)
+    if (monsterHasNoLimbs(mnum))
         return 'crawl';
     return fallback;
 }
@@ -61,9 +52,7 @@ export function figurinePlacementFailure(figurine, x, y, state) {
     const species = figurine.corpsenm;
     if (species === undefined)
         throw new TypeError('A figurine requires a monster species.');
-    const flags1 = MONSTER_FLAGS1[species] ?? 0;
-    const flags2 = MONSTER_FLAGS2[species] ?? 0;
-    const passesWalls = !!(flags1 & M1_WALLWALK);
+    const passesWalls = monsterPassesWalls(species);
     const mayPassWall = passesWalls
         && !(location.wall_info & W_NONPASSWALL);
     if (IS_OBSTRUCTED(location.typ) && !mayPassWall) {
@@ -71,7 +60,7 @@ export function figurinePlacementFailure(figurine, x, y, state) {
         return `You cannot place a figurine in ${tree ? 'a tree' : 'solid rock'}!`;
     }
     const boulder = state.level?.objects?.[x]?.[y]?.some(object => object !== figurine && object.otyp === BOULDER);
-    if (boulder && !passesWalls && !(flags2 & M2_ROCKTHROW))
+    if (boulder && !passesWalls && !monsterThrowsRocks(species))
         return 'You cannot fit the figurine on the boulder.';
     return null;
 }

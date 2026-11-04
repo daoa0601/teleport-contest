@@ -4,10 +4,9 @@
 
 import { COIN_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { makeConfused } from './potion.js';
-import { makeBlinded } from './potion.js';
+import { makeConfused, makeBlinded, cureHeroSickness, setSlipperyHands } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { heroHasHalfSpellDamage } from './zap.js';
+import { heroHasHalfSpellDamage, makeWish } from './zap.js';
 import {
     A_CON, A_MAX, A_STR, Luck, ROOM,
 } from './const.js';
@@ -25,19 +24,13 @@ import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './do_wear.js';
-
 import { game, requireInitializedGame } from './gstate.js';
 import type { HeroHurtleOptions } from './dothrow.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
-
-export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
 import { dropCursedSecondaryWeapon } from './wield.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
-import { makePlural, verbForSubject } from './objnam.js';
-
-
-import { cureHeroSickness } from './potion.js';
+import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './do.js';
 import { takeHeroGold } from './hero_gold.js';
@@ -46,8 +39,7 @@ import { identifyPack } from './invent.js';
 import { msummon } from './minion.js';
 import { makemonNear } from './mklev.js';
 import { courtMonsterType } from './mkroom.js';
-import { MONSTER_FLAGS2, MONSTER_SYMBOL } from './monster_data.js';
-import { definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
+import { MONSTER_SYMBOL } from './monster_data.js';
 import { curseObject, unblessObjectState } from './mkobj.js';
 import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty,
@@ -63,14 +55,13 @@ import { applyRemoveCurseSpell, doGenocide, GENOCIDE_ON_THRONE } from './read.js
 import { rnd, rn1, rn2 } from './rng.js';
 import { monsterSaddle } from './steed.js';
 import { teleportHero } from './teleport.js';
-import { setSlipperyHands } from './potion.js';
 import { cansee } from './vision.js';
-import { makeWish } from './zap.js';
-
 import { aggravateMonsters } from './wizard.js';
 import { loseHeroHp } from './hack.js';
+import { is_prince } from './mondata.js';
 
-const M2_PRINCE = 0x00000800;
+export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
+
 const S_VAMPIRE = 48;
 
 const CURSEABLE_INTRINSICS = Object.freeze([
@@ -409,7 +400,7 @@ export async function throneSitEffect({
         });
         if (game.program_state.gameover) return;
     } else {
-        const prince = !!((MONSTER_FLAGS2[currentForm() ?? -1] ?? 0) & M2_PRINCE);
+        const prince = is_prince(currentForm() ?? -1);
         const handOfElbereth = !!game.u?.uevent?.uhand_of_elbereth;
         await plineWithContinuation(formatFeltMessage(prince || handOfElbereth ? 'very comfortable here.' : 'somehow out of place...'));
     }

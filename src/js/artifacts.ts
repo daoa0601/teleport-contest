@@ -17,7 +17,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
-import { isok } from './cmd.js';
+import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js';
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -30,10 +30,14 @@ import { recordObjectEncounter, objectMaterial } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
-import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster } from './monster_data.js';
+import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
-import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance } from './mondata.js';
+import {
+    monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance,
+    is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon,
+    monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster,
+} from './mondata.js';
 import { see_monsters, glyphAt, canSeeMonster, newsym } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, refreshProperty, setInvokedProperty } from './properties.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -51,26 +55,21 @@ import { lightDamage, lightRoom } from './light.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel } from './mon.js';
 import { applyMagicbaneHit } from './magicbane.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE } from './zap.js';
+import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, flashBurn } from './zap.js';
 import { cansee, couldsee } from './vision.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
-import { commandResultCancelled } from './cmd.js';
 import { moveIntoFailedUntrap, untrap, igniteItems, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
 import type { UntrapOptions } from './trap.js';
 import { recalculateTelepathyRange } from './worn.js';
 import { hasNonArtifactConflict, syncHeroConflict } from './hero_conflict.js';
 import { hasNonArtifactInvisibility, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
-import { cureHeroSickness, heroIsSick } from './potion.js';
+import { cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, makeBlinded, makeHallucinated } from './potion.js';
 import { showEnlightenment } from './insight.js';
 import { chooseInventoryObject } from './invent.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { useCrystalBall } from './crystal_ball.js';
-import { clearHeroSliming, heroIsSliming } from './potion.js';
 import { chooseObjectToCharge, rechargeObject } from './read.js';
 import { doBlindingRay } from './flash.js';
-
-import { makeBlinded, makeHallucinated } from './potion.js';
-import { promptDirection } from './cmd.js';
 import { castSpell, spellSkillType } from './spell.js';
 import { depth } from './hacklib.js';
 import { gotoLevel } from './level_change.js';
@@ -82,8 +81,13 @@ import { throwOrdinaryObject } from './ordinary_throw.js';
 import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './hero_hold_object.js';
-import { flashBurn } from './zap.js';
 
+const M2_GIANT = 0x00002000;
+const M2_DEMON = 0x00000100;
+const M2_ORC = 0x00000080;
+const M2_ELF = 0x00000010;
+const M2_WERE = 0x00000004;
+const M2_UNDEAD = 0x00000002;
 
 export type Artifact = { -readonly [Key in keyof ArtifactDefinition]: ArtifactDefinition[Key] } & {
     baseName: string;
@@ -125,19 +129,6 @@ export interface ArtifactTouchResult {
     bane?: boolean;
 }
 
-
-
-
-
-
-
-
-const M2_UNDEAD = 0x00000002;
-const M2_WERE = 0x00000004;
-const M2_ELF = 0x00000010;
-const M2_ORC = 0x00000080;
-const M2_DEMON = 0x00000100;
-const M2_GIANT = 0x00002000;
 const S_DRAGON = 30;
 const S_OGRE = 41;
 const S_TROLL = 46;
@@ -649,6 +640,7 @@ function artifactAttackApplies(
         case 'flag2': {
             const flag = FLAG2_TARGETS[target.value] ?? 0;
             return (
+                // C artifact.c:spec_applies() intersects the artifact mtype mask with mflags2.
                 !!((MONSTER_FLAGS2[mnum] ?? 0) & flag) ||
                 (hero && !Upolyd(state.u) && !!((state.urace?.selfmask ?? 0) & flag)) ||
                 (hero &&
@@ -1506,8 +1498,6 @@ function healHeroFromDrain(state: GameState, amount: number) {
 type PropertyPowerName = 'conflict' | 'invisibility' | 'levitation';
 type PropertyArtifact = Artifact & { invokePower: PropertyPowerName };
 
-const M2_LORD = 0x400;
-const M2_PRINCE = 0x800;
 const S_IMP = 9;
 const MS_NEMESIS = 37;
 
@@ -1894,13 +1884,13 @@ async function invokeBanish(state: GameState, publish: MessagePublisher) {
     // fmon is newest first; removals and migration must preserve that order.
     for (const monster of [...state.level.monsters].reverse()) {
         if (monster.dead || monster.mhp <= 0 || !isok(monster.mx, monster.my)) continue;
-        const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
-        if (!(flags & M2_DEMON) && MONSTER_SYMBOL[monster.mnum] !== S_IMP) continue;
+
+        if (!monsterIsDemon(monster.mnum) && MONSTER_SYMBOL[monster.mnum] !== S_IMP) continue;
         if (!couldsee(monster.mx, monster.my) || MONSTER_SOUND[monster.mnum] === MS_NEMESIS) continue;
         let chance = 1;
         if (In_quest(state.u.uz) && !state.quest_status?.killed_nemesis) chance += 10;
-        if ((flags & (M2_DEMON | M2_PRINCE)) === (M2_DEMON | M2_PRINCE)) chance += 2;
-        if ((flags & (M2_DEMON | M2_LORD)) === (M2_DEMON | M2_LORD)) chance++;
+        if (is_dprince(monster.mnum)) chance += 2;
+        if (is_dlord(monster.mnum)) chance++;
         monster.msleeping = monster.mtame = monster.mpeaceful = 0;
         monster.pet = false;
         if (chance > 1 && rn2(chance)) {

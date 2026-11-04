@@ -15,7 +15,7 @@ import { deleteTrap, resetUtrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -26,8 +26,8 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { exceedsActionCapacity } from './hack.js';
+import { metallivorous } from './mondata.js';
 
-const METALLIVORE = 0x80000000;
 const RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 const FIRE_ELEMENTAL = MONSTER_NAME.indexOf('fire elemental');
 const GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
@@ -38,7 +38,7 @@ export const IRON_BARS_FOOD = Object.freeze({ kind: 'iron-bars' });
 export type FoodSelection = GameObject | typeof IRON_BARS_FOOD;
 
 export function heroEatsMetal(state: GameState = game): boolean {
-    return !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & METALLIVORE);
+    return metallivorous(heroSpecies(state));
 }
 
 export function isEdibleFood(object: GameObject | null | undefined, state: GameState = game): boolean {

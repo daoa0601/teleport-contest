@@ -6,12 +6,12 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { finishInventoryRemoval } from './invent.js';
 import { heroSpecies } from './polyself.js';
 import { monsterAtPosition } from './steed.js';
-import { MONSTER_FLAGS1, monsterHidesUnder } from './monster_data.js';
 import { hideHeroUnder } from './mon.js';
 import { unwieldMonsterWeapon } from './weapon.js';
 import { corpseName } from './objnam.js';
 import { deleteObject } from './shk.js';
 import { stopHeroOccupation } from './occupation.js';
+import { monsterHidesUnder } from './mondata.js';
 export async function rotCorpse(corpse, state = game) {
     requireLiveGame(state);
     const { where, ox: x, oy: y } = corpse;
@@ -40,11 +40,11 @@ export async function rotCorpse(corpse, state = game) {
         const level = requireGameLevel(state);
         const monster = monsterAtPosition(level, x, y);
         if (monster && !level.objects[x]?.[y]?.length && monster.mundetected
-            && (monsterHidesUnder(monster.mnum))) {
+            && monsterHidesUnder(monster.mnum)) {
             monster.mundetected = 0;
         }
         else if (state.u.ux === x && state.u.uy === y && state.u.uundetected
-            && (monsterHidesUnder(heroSpecies(state)))) {
+            && monsterHidesUnder(heroSpecies(state))) {
             await hideHeroUnder(state);
         }
         await newsym(x, y);

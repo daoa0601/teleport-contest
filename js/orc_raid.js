@@ -6,17 +6,16 @@ import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from 
 import { upstart } from './hacklib.js';
 import { addFruit } from './fruit.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { makemonAt } from './makemon.js';
-import { mkobj, mksobj, deallocateObject } from './mkobj.js';
+import { makemonAt, setMonsterMalign } from './makemon.js';
+import { mkobj, mksobj, deallocateObject, objectWeight } from './mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from './monster_data.js';
 import { randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { setMonsterMalign } from './makemon.js';
 import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, } from './object_data.js';
 import { rn2, rnd } from './rng.js';
 import { randomTypeByDescription } from './objnam.js';
 import { migrateMonsterOffLevel } from './dog.js';
-import { objectWeight } from './mkobj.js';
+import { is_orc } from './mondata.js';
 const C_RATION = OBJECT_NAMES.indexOf('C-ration');
 const K_RATION = OBJECT_NAMES.indexOf('K-ration');
 const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
@@ -54,7 +53,7 @@ export async function createOrcRaid() {
     for (const monster of [...state.level.monsters].reverse()) {
         if (monster.dead || monster.mhp <= 0)
             continue;
-        if ((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_ORC && !monster.name && rn2(10)) {
+        if (is_orc(monster.mnum) && !monster.name && rn2(10)) {
             if (monster.mnum !== PM_ORC_CAPTAIN)
                 nameOrc(monster, gang);
         }

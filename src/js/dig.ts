@@ -42,7 +42,7 @@ import { canDigDown, stairwayAt } from './mklev.js';
 import {createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE, monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
@@ -94,6 +94,7 @@ import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { confusePromptDirection } from './cmd.js';
 import type { Hero } from './hero_types.js';
+import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and
 // wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
 // digging_watch/buried_object/hole (pure move, no behavior change).
@@ -104,7 +105,7 @@ import type { Hero } from './hero_types.js';
 
 const PM_EARTH_ELEMENTAL = MONSTER_NAME.indexOf('earth elemental');
 const PM_XORN = MONSTER_NAME.indexOf('xorn');
-const M1_WALLWALK = 0x00000008; // monflag.h: passes_walls(ptr)
+ // monflag.h: passes_walls(ptr)
 
 // C dig.c d_action[] for "You start <action>." messages.
 const DIG_ACTIONS = [
@@ -735,8 +736,6 @@ interface DiggingOptions { state?: GameState }
 const S_ZOMBIE = 52;
 const S_MUMMY = 39;
 const MZ_HUGE = 4;
-const M1_FLY = 0x00000001;
-const M1_CLING = 0x00000010;
 
 function boulderAt(x: number, y: number, state: GameState): GameObject | null {
     return (state.level?.objects?.[x]?.[y] || []).find(

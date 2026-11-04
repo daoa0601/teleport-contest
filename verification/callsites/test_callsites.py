@@ -92,6 +92,21 @@ export function orderedReads() { let n = 1; return rn2(++n - n); }
 export function orderedUpdate() { let n = 1; n = ++n - n; return rn2(n); }
 export function zeroDice() { return d(0, 0); }
 export function negativeSides() { return d(0, -1); }
+function weightedCount(values: number[]) {
+    const MASK = 7;
+    let count = 0;
+    for (const value of values) {
+        const choices = value & MASK;
+        const positive = choices || 1;
+        count += positive;
+    }
+    return count || 1;
+}
+function countViaHelper(values: number[]) { return weightedCount(values); }
+function countViaTwoHelpers(values: number[]) { return countViaHelper(values); }
+export function nestedWeightedCount(values: number[]) { return rn2(countViaTwoHelpers(values)); }
+export function directWeightedCount(values: number[]) { return rn2(weightedCount(values)); }
+
 '''
 
 
@@ -153,6 +168,20 @@ for (const name of ['rng', 'sample', 'attrib']) {
 
     def assert_class(self, name, expected):
         self.assertEqual([kind for kind, _ in self.classes[name]], [expected], name)
+
+    def test_local_bound_survives_an_earlier_indirect_caller(self):
+        self.assert_class('directWeightedCount', 'guarded')
+
+    def test_negative_local_update_does_not_gain_a_positive_bound(self):
+        output = self.root / 'js/sample.js'
+        original = output.read_text()
+        try:
+            output.write_text(original.replace('const positive = choices || 1;',
+                                               'const positive = -1;'))
+            mutated = results(extract(self.root))
+            self.assertEqual(mutated['directWeightedCount'][0][0], 'unproved')
+        finally:
+            output.write_text(original)
 
     def test_inductive_counter_and_all_finite_assignments(self):
         self.assert_class('counter', 'guarded')

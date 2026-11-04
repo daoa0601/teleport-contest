@@ -4,8 +4,8 @@
 // (pure move, no behavior change).
 import { RING_CLASS, POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { distmin } from './hacklib.js';
-import { armorSimpleName, fingersOrGloves } from './do_wear.js';
-import { heroArmName, heroFaceName, heroFingerName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
+import { fingersOrGloves } from './do_wear.js';
+import { heroArmName, heroFaceName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING } from './const.js';
@@ -21,10 +21,10 @@ import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectStat
 import { definiteName, objectCombatName, rndClass, makePlural } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
-import { MONSTER_FLAGS1, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
-import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance } from './mondata.js';
+import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasNoLimbs } from './mondata.js';
 import { level_difficulty } from './dungeon.js';
 import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, OBJECT_DESCRIPTIONS, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, requireObjectData } from './object_data.js';
 import { promptYesNo } from './query.js';
@@ -51,8 +51,7 @@ import { observeObject } from './o_init.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { updateUnpaidObjectPrice, deleteObject } from './shk.js';
-import { setTwoWeaponCombat } from './wield.js';
-import { dropCursedSecondaryWeapon } from './wield.js';
+import { setTwoWeaponCombat, dropCursedSecondaryWeapon } from './wield.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 // ---------------------------------------------------------------------------
@@ -60,7 +59,6 @@ import { inTown, loseHeroHp, heroGoldAmount } from './hack.js';
 // ---------------------------------------------------------------------------
 const PM_WATCHMAN = 282;
 const PM_WATCH_CAPTAIN = 283;
-const M1_NOLIMBS = 0x00006000;
 export async function dryFountainAt(x, y, { causedByHero = true, random = rn2, state = game, publish = plineWithContinuation, } = {}) {
     requireLiveGame(state);
     const level = requireGameLevel(state);
@@ -106,7 +104,7 @@ async function warnAboutFountain(state, publish) {
     }
     const name = monsterName(watch, { article: 'a', capitalized: true, state });
     if (heroIsDeaf(state)) {
-        const limbless = ((MONSTER_FLAGS1[watch.mnum] ?? 0) & M1_NOLIMBS) === M1_NOLIMBS;
+        const limbless = monsterHasNoLimbs(watch.mnum);
         const part = limbless ? monsterHeadName(watch.mnum)
             : makePlural(monsterArmName(watch.mnum));
         await publish(`${name} earnestly ${limbless ? 'shakes' : 'waves'} ${monsterPossessive(watch, { state })} ${part}!`);

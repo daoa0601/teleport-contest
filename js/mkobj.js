@@ -7,7 +7,7 @@ import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
 import { relocateObjectRandomly } from './teleport.js';
 import { erosionMatters, objectIsVulnerableToErosion } from './trap.js';
-import { eggSpeciesIsDead, hatchableEggSpecies } from './mon.js';
+import { eggSpeciesIsDead, hatchableEggSpecies, copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse } from './mon.js';
 import { attachFigurineTimer, attachCursedFigurineTimer } from './figurine_timer.js';
 import { isIceAt } from './dbridge.js';
 import { block_point, cansee, vision_note_blocker_change } from './vision.js';
@@ -16,15 +16,13 @@ import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
 import { level_difficulty } from './dungeon.js';
-import { ALTAR, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND } from './const.js';
+import { ALTAR, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH, MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_INIT, CORPSTAT_SPE_VAL, OBJECT_TIMER_KIND, LARGEST_INT, } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { isReviver, isRider, zombieForm } from './corpse_species.js';
 import { forgetTempleEntry } from './priest.js';
-import { copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
-import { LARGEST_INT } from './const.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
@@ -32,7 +30,7 @@ import { nameObjectFromTopten } from './topten.js';
 import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
-import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
+import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, updateCarriedLuck } from './invent.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
 import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, settleGlobAbsorptionBilling, splitObjectBill } from './shk.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
@@ -44,13 +42,12 @@ import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { surfaceName } from './terrain_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
-import { plineWithContinuation } from './pline.js';
-import { plineWithContinuation as pline } from './pline.js';
-import { updateCarriedLuck } from './invent.js';
+import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
+import { is_male, is_neuter, monsterIsFemale, monsterIsHuman } from './mondata.js';
 const G_NOGEN = 0x0200;
 const LIQUID = 1;
 const WOOD = 8;
@@ -58,7 +55,6 @@ const DRAGON_HIDE = 10;
 const PLASTIC = 18;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
-const M2_HUMAN = 0x00000008;
 function updateBlessingEffects(object, state) {
     if (object && state.inventory.includes(object))
         updateCarriedLuck(object, state);
@@ -166,10 +162,9 @@ export async function mksobj(otyp, init, artif, { zombify = false } = {}) {
         const species = otmp.corpsenm;
         if (species === undefined)
             throw new Error('Body object requires a monster species');
-        const genderFlags = MONSTER_FLAGS2[species] || 0;
-        otmp.spe = genderFlags & 0x40000 ? CORPSTAT_NEUTER
-            : genderFlags & 0x20000 ? CORPSTAT_FEMALE
-                : genderFlags & 0x10000 ? CORPSTAT_MALE
+        otmp.spe = is_neuter(species) ? CORPSTAT_NEUTER
+            : monsterIsFemale(species) ? CORPSTAT_FEMALE
+                : is_male(species) ? CORPSTAT_MALE
                     : rn2(2) ? CORPSTAT_FEMALE : CORPSTAT_MALE;
         if (otyp === CORPSE)
             startCorpseTimeout(otmp, { zombify });
@@ -463,7 +458,7 @@ async function mksobj_init(otmp, artif, definition) {
                     let tryCount = 0;
                     do {
                         otmp.corpsenm = rndmonnumAdj(5, 10);
-                    } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
+                    } while (monsterIsHuman(otmp.corpsenm)
                         && tryCount++ < 30);
                     blessorcurse(otmp, 4);
                     break;

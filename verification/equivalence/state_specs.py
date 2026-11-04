@@ -117,7 +117,7 @@ PREDICATE_ASSUMPTIONS = (
     'species is an int in 0..NUMMONS-1; NUMMONS is read from the pinned C headers',
     'native permonst pointer is &mons[species]; emitted argument is the same species index',
 )
-MONSTER_DATA = 'js/monster_data.js'
+MONSTER_DATA = 'js/mondata.js'
 
 STATE_SPECS += [
     Spec(name, native, port, [('species', INT), ('native_pointer_present', INT)], js_file=MONSTER_DATA,
@@ -169,7 +169,7 @@ STATE_SPECS += [
          [CVal(z3.IntVal(AT_ENGL), INT)], True,
          'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_ENGL);',
          'monster?.mnum ?? -1] || []).some(([attackType]) => attackType === AT_WEAP);'),
-        ('attacktype:armed', 'attacktype', 'speciesHasWeaponAttack', 'js/monmove.js',
+        ('attacktype:armed', 'attacktype', 'speciesHasWeaponAttack', 'js/mondata.js',
          [CVal(z3.IntVal(AT_WEAP), INT)], False,
          'attackType === AT_WEAP);', 'attackType === AT_MAGC);'),
         ('dmgtype_fromattack:digests', 'verification_digests', 'monsterDigests', MONSTER_DATA,
@@ -438,7 +438,7 @@ def species_record_arguments(world, front):
 
 STATE_SPECS += [
     Spec(name, native, port, [('species', INT), ('native_pointer_present', INT)],
-         js_file=js_file,
+         slow=name == 'passes_bars:tables', js_file=js_file,
          assumptions=PREDICATE_ASSUMPTIONS, require_counterexamples=True,
          configure=species_predicate_state, arguments=species_record_arguments,
          pre=lambda s: [s['species'] >= 0, s['native_pointer_present'] == 1],
@@ -452,8 +452,8 @@ STATE_SPECS += [
          MONSTER_DATA, 'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST;',
          'MONSTER_SYMBOL[monster?.mnum ?? -1] === S_GHOST + 1;'),
         ('passes_bars:tables', 'passes_bars', 'monsterPassesBars',
-         'js/mondata.js', '(M1_WALLWALK | M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))',
-         '(M1_AMORPHOUS | M1_UNSOLID | M1_METALLIVORE))'),
+         'js/mondata.js', 'return monsterPassesWalls(mnum) || monsterIsAmorphous(monster)',
+         'return monsterIsAmorphous(monster)'),
     )
 ]
 
@@ -604,8 +604,8 @@ STATE_SPECS += [
                  ('shifter species correspondence omitted', UnrelatedState(
                      lambda s: [s['monster.cham'] >= 0, s['native_monster_present'] == 1],
                      ('monster.cham',)))],
-         mutants=[(MONSTER_DATA, '!!(flags & (M2_UNDEAD | M2_DEMON));',
-                   '!!(flags & M2_UNDEAD);')]),
+         mutants=[(MONSTER_DATA, '(monsterIsUndead(monster?.mnum ?? -1) || monsterIsDemon(monster?.mnum ?? -1));',
+                   'monsterIsUndead(monster?.mnum ?? -1);')]),
     Spec('mon_resistancebits:state', 'verification_mon_resistancebits', 'monsterResistanceBits',
          [('species', INT), ('native_monster_present', INT)], js_file='js/mondata.js',
          state=[('monster.mextrinsics', (16, False), 'monster.mextrinsics'),
@@ -1291,14 +1291,9 @@ STATE_SPECS += [
 
 # ---- fv-equivalence-batch-8: the pure mons[]-table functions of mondata.c ----
 
-# cantvomit, noattacks, num_horns, little_to_big, big_to_little,
-# big_little_match, same_race, can_blow and max_passive_dmg now each have one
-# exported port owner (mondata.js speciesCannotVomit / sameMonsterRace /
-# speciesCanBlow / maxPassiveMonsterDamage, monster_data.js
-# monsterHasNoAttacks / monsterHornCount / monsterOlderForm / (the existing
-# monsterYoungerForm and monsterGrowthFamilyMatch), makemon.js
-# monsterBirthLimit). These claims execute the real mondata.c and makemon.c
-# bodies over the initial species tables.
+# These claims execute the real mondata.c table functions through their
+# mondata.js owners; mbirth_limit belongs to makemon.js. Every species is
+# covered by the initial-table relation below.
 
 GROWNUPS_ASSUMPTIONS = PREDICATE_ASSUMPTIONS + (
     'mondata.c:little_to_big/big_to_little scan the static const grownups[][] table; the emitted MONSTER_GROWTH_TARGET vector stores the same 67 growth edges plus one identity entry per species',
@@ -1473,8 +1468,8 @@ STATE_SPECS += [
          pre=lambda s: [s['species'] >= 0, s['native_monster_present'] == 1],
          probes=[('null native monster pointer', lambda s: [s['species'] >= 0,
                                                            s['native_monster_present'] == 0])],
-         mutants=[('js/mondata.js', 'return !(requireMonsterData(MONSTER_FLAGS1, mnum) & (M1_BREATHLESS | M1_NOHEAD))',
-                   'return !(requireMonsterData(MONSTER_FLAGS1, mnum) & M1_BREATHLESS)'),
+         mutants=[('js/mondata.js', 'return !(monsterIsBreathless(mnum) || !monsterHasHead({ mnum }))',
+                   'return !monsterIsBreathless(mnum)'),
                   ('js/mondata.js', '&& requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL',
                    '&& requireMonsterData(MONSTER_SIZE, mnum) > MZ_SMALL')]),
 ]

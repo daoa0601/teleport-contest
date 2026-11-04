@@ -24,7 +24,7 @@ import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
 import { monsterName } from './do_name.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
-import { monsterIsNonliving, MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, killGenocidedMonsters, purgeDeadMonsters, removeMonsterFromGame, restoreNaturalMonsterShapes, smellUnseenMonster } from './mon.js';
 import { finishHeroDeath } from './end.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
@@ -69,6 +69,7 @@ import { symsetMenuValue } from './options.js';
 import { customizedGlyphs } from './glyph_customizations.js';
 import { rumorCheck } from './rumor.js';
 import { resetUtrap } from './trap.js';
+import { monsterIsNonliving } from './mondata.js';
 // C wizcmds.c:wiz_wish().
 export async function wizWish() {
     const verbose = game.flags.verbose;

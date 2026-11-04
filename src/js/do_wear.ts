@@ -33,12 +33,12 @@ import type { ArmorCompletion } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import type { GameObject } from './object_types.js';
-import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
 import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import { isBimanualObject, isSword, isFlimsyObject, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
 import type { GameState } from './game_state.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroFormFlags, heroIsUnchanging, heroMonsterForm } from './polyself.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm } from './polyself.js';
 import { retouchHeroObject } from './hero_retouch.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
@@ -78,7 +78,7 @@ import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain } from './mondata.js';
+import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious, monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './mondata.js';
 import { refreshInvisibleMonsters } from './hero_seeing.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
@@ -2216,8 +2216,6 @@ const RING_ATTRIBUTES = new Map<number, AttributeIndex>([
 const AMULET_OF_ESP = OBJECT_NAMES.indexOf('amulet of ESP');
 const AMULET_OF_FLYING = OBJECT_NAMES.indexOf('amulet of flying');
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
-const M1_AMPHIBIOUS = 0x00000200;
-const M1_BREATHLESS = 0x00000400;
 
 const RIN_INCREASE_ACCURACY = OBJECT_NAMES.indexOf('increase accuracy');
 const RIN_INCREASE_DAMAGE = OBJECT_NAMES.indexOf('increase damage');
@@ -2460,7 +2458,7 @@ async function removeAmulet(object: GameObject, state: GameState): Promise<Prope
     } else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
         // C cant_drown() tests the form, not remaining magical breathing.
         // drown() still runs for the warning and inventory water damage.
-        if (state.u.uinwater && !(heroFormFlags(state) & (M1_AMPHIBIOUS | M1_BREATHLESS))
+        if (state.u.uinwater && !(monsterIsAmphibious(heroMonsterForm(state) ?? -1) || monsterIsBreathless(heroMonsterForm(state) ?? -1))
             && !heroCanSwim(state)) {
             await plineWithContinuation(`You suddenly inhale an unhealthy amount of ${displayLiquidName('water')}!`);
             await applyHeroLiquidEffects(undefined, { entry: 'drown' });

@@ -8,7 +8,7 @@ import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
 import type { HeroSpellAttack, MonsterCallLog, MonsterSpell, MonsterSpellEffect, MonsterSpellName, MovementSpellCast, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterIsDemon, monsterIsNonliving, monsterPerceives, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, SPECIAL_PM, monsterTypeName } from './monster_data.js';
 import { erodeWornArmor, heroHasFreeAction, heroIsDisplaced } from './do_wear.js';
 import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from './objnam.js';
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
@@ -17,17 +17,14 @@ import { castMonsterSpellRay } from './breath_ray.js';
 import { displayRayName } from './ray_name.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
-import { clearHeroSliming } from './potion.js';
+import { clearHeroSliming, makeBlinded } from './potion.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
-import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
+import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage, flashBurn } from './zap.js';
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
 
-import { flashBurn } from './zap.js';
-
-import { makeBlinded } from './potion.js';
 import { rndcurse } from './throne.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { plineWithContinuation } from './pline.js';
@@ -42,8 +39,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './do_name.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';
-import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating } from './senses.js';
-import { heroIsUnaware } from './senses.js';
+import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -52,9 +48,11 @@ import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } fr
 import { msummon } from './minion.js';
 import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
 import { dist2 } from './hacklib.js';
-import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
+import {
+    monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
+    seenResistanceForDamage, monsterHasProperName, monsterIsDemon, monsterIsNonliving, monsterPerceives,
+} from './mondata.js';
 
-const M1_SEE_INVIS = 0x01000000;
 export const MCF_INDIRECT = 0x01;
 const MCF_SIGHT = 0x02;
 const MCF_HOSTILE = 0x04;
@@ -765,7 +763,7 @@ export function monsterCurseKind(monster: Monster, undirected: boolean, state: P
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
         if (undirected) return 'visible-undirected';
         const wrongTarget = monster.mux !== state.u.ux || monster.muy !== state.u.uy;
-        if (heroIsInvisible(state) && !(monsterPerceives(monster.mnum)) && wrongTarget
+        if (heroIsInvisible(state) && !monsterPerceives(monster.mnum) && wrongTarget
             || M_AP_TYPE(state.u) === M_AP_OBJECT && state.u.mappearance === 0 || state.u.uundetected)
             return 'visible-general';
         if (heroIsDisplaced(state) && wrongTarget) return 'visible-displaced';
@@ -859,7 +857,7 @@ async function monsterSummonSpellEffect(
             const heroX = state?.u?.ux ?? monster?.mux;
             const heroY = state?.u?.uy ?? monster?.muy;
             const wrongTarget = monster?.mux !== heroX || monster?.muy !== heroY;
-            const cannotSeeInvisible = !(monsterPerceives(monster?.mnum));
+            const cannotSeeInvisible = !monsterPerceives(monster?.mnum);
             if (heroIsInvisible(state) && cannotSeeInvisible && wrongTarget) {
                 effect.message = `${appearance} ${one ? 'at' : 'around'} a spot near you!`;
             } else if (heroIsDisplaced(state) && wrongTarget) {
@@ -910,7 +908,7 @@ export async function touchHeroWithDeath(
 // C mcastu.c:death_inflicted_by(). This names the real species, not a
 // perceived identity, priest title, shopkeeper name, or given name.
 const DEATH_G_UNIQ = 0x1000;
-const DEATH_M2_PNAME = 0x00080000;
+
 const DEATH_PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
 const DEATH_PM_WIZARD_OF_YENDOR = MONSTER_NAME.indexOf('Wizard of Yendor');
 
@@ -918,11 +916,11 @@ export function monsterSpellDeathReason(monster: Monster, reason: string): strin
     const current = monster.mnum;
     const base = ismnum(monster.cham) ? monster.cham : current;
     const unique = current === DEATH_PM_WIZARD_OF_YENDOR
-        || (!((MONSTER_FLAGS2[current] ?? 0) & DEATH_M2_PNAME)
+        || (!monsterHasProperName(current)
             && !!((MONSTER_GENO[current] ?? 0) & DEATH_G_UNIQ)
             && current !== DEATH_PM_HIGH_CLERIC && current !== SPECIAL_PM);
     let name = monsterTypeName(base, monster.female);
-    if (!((MONSTER_FLAGS2[base] ?? 0) & DEATH_M2_PNAME) && !unique)
+    if (!monsterHasProperName(base) && !unique)
         name = withIndefiniteArticle(name);
     let killer = `${reason} inflicted by ${unique ? 'the ' : ''}${name}`;
     if (base !== current) {
@@ -945,7 +943,7 @@ async function curseDirectedSpell(monster: Monster, state: GameState, publish: M
         const mimicking = state.u.m_ap_type === M_AP_OBJECT
             && state.u.mappearance === STRANGE_OBJECT;
         let pointing = 'at you, then curses';
-        if ((heroIsInvisible(state) && !(monsterPerceives(monster.mnum))
+        if ((heroIsInvisible(state) && !monsterPerceives(monster.mnum)
             && misplaced) || mimicking || state.u.uundetected) {
             pointing = 'and curses in your general direction';
         } else if (heroIsDisplaced(state) && misplaced) {
@@ -1048,7 +1046,7 @@ export async function summonMonsterInsects(caster: Monster, state: PlayingGameSt
         const wrongTarget = caster.mux !== state.u.ux || caster.muy !== state.u.uy;
         if (!created.length) message = `${subject} casts at a clump of sticks, but nothing happens.`;
         else if (monsterClass === S_SNAKE) message = `${subject} transforms a clump of sticks into ${what}!`;
-        else if (heroIsInvisible(state) && !(monsterPerceives(caster.mnum)) && wrongTarget)
+        else if (heroIsInvisible(state) && !monsterPerceives(caster.mnum) && wrongTarget)
             message = `${subject} summons ${what} around a spot near you!`;
         else if (heroIsDisplaced(state) && wrongTarget)
             message = `${subject} summons ${what} around your displaced image!`;

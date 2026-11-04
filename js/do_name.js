@@ -9,9 +9,8 @@
 // lookup_novel().  The category menu is naming_categories.ts.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, } from './const.js';
-import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
-import { CMDQ_KEY, CQ_CANNED } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, } from './const.js';
+import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
@@ -25,15 +24,14 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { glyphIsSwallow } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
 import { heroBeautyDescription } from './apply.js';
-import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterTypeName } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { cansee } from './vision.js';
-import { visibleCommandKey } from './cmd.js';
 import { priestName } from './priest.js';
 import { shopkeeperName } from './shknam.js';
 import { monsterRank } from './botl.js';
 import { possessiveName } from './hacklib.js';
-import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun } from './mondata.js';
+import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, } from './mondata.js';
 import { getLine } from './query.js';
 import { heroHandName } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
@@ -179,7 +177,7 @@ export function randomDisplayMonsterIdentity() {
     do {
         mnum = rn2Display(SPECIAL_PM + BOGUSMONSIZE);
     } while (mnum < SPECIAL_PM
-        && ((monsterHasProperName(mnum))
+        && (monsterHasProperName(mnum)
             || ((MONSTER_GENO[mnum] ?? 0) & G_NOGEN)));
     if (mnum >= SPECIAL_PM)
         return randomBogusMonsterIdentity();
@@ -439,7 +437,7 @@ async function rejectExistingName(monster, oldName, proposed) {
     const subject = oldName.charAt(0).toUpperCase() + oldName.slice(1);
     const rider = monsterIsRider(monster);
     if (!proposed) {
-        const personal = MGIVENNAME(monster) || (monsterHasProperName(monster.mnum)) || monster.isshk;
+        const personal = MGIVENNAME(monster) || monsterHasProperName(monster.mnum) || monster.isshk;
         await plineWithContinuation(`${subject} would rather keep ${rider ? 'its' : monsterPossessive(monster)} existing ${personal ? 'name' : 'title'}.`);
         return true;
     }
@@ -467,8 +465,6 @@ async function rejectExistingName(monster, oldName, proposed) {
     return false;
 }
 const G_UNIQ = 0x1000;
-const M2_NEUTER = 0x00040000;
-const M2_PNAME = 0x00080000;
 const PM_GHOST = MONSTER_NAME.indexOf('ghost');
 const PM_SHOPKEEPER = MONSTER_NAME.indexOf('shopkeeper');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');
@@ -553,7 +549,7 @@ export function formatMonsterName(monster, state, { adjective = '', article = 't
         return monster.mnum === PM_SHOPKEEPER && !invisible ? name
             : `${name} the ${invisible ? 'invisible ' : ''}${typeName}`;
     }
-    const givenName = !suppressName || (monsterHasProperName(monster.mnum))
+    const givenName = !suppressName || monsterHasProperName(monster.mnum)
         ? MGIVENNAME(monster) : null;
     let adjectives = adjective ? `${adjective} ` : '';
     if (invisible)

@@ -66,6 +66,7 @@ import { addToContainer, check_room, create_room, dig_corridor, fill_special_roo
 import { beginLuaThemerooms, callLuaThemerooms, load_special, themerooms_generate } from './sp_lev_lua.js';
 import { purgeDeadMonsters, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
 import { switchHeroTerrain, roomsAt } from './hack.js';
+import { is_domestic } from './mondata.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
@@ -74,13 +75,10 @@ import { switchHeroTerrain, roomsAt } from './hack.js';
 // room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
 // level (extralev.c) in extralev.ts. Level construction uses the game's
 // main random-number stream.
-const M2_DOMESTIC = 0x00400000;
 export const G_NOGEN = 0x0200;
 export const G_IGNORE = 0x8000;
 export const SCR_TELEPORTATION = 333;
 export const RIN_TELEPORTATION = 194;
-const SCR_LIGHT = 332;
-const SPE_LIGHT = 372;
 const BELL = 255;
 export const CANDELABRUM_OF_INVOCATION = 262;
 export const PM_VAMPIRE_BAT = 129;
@@ -89,7 +87,6 @@ const POT_HEALING = 307;
 const POT_EXTRA_HEALING = 308;
 const POT_SPEED = 302;
 const POT_GAIN_ENERGY = 313;
-const POT_FULL_HEALING = 315;
 const SCR_ENCHANT_WEAPON = 328;
 const SCR_ENCHANT_ARMOR = 323;
 const SCR_CONFUSE_MONSTER = 325;
@@ -100,16 +97,10 @@ const FOOD_RATION = 293;
 const CRAM_RATION = 292;
 const LEMBAS_WAFER = 291;
 export const WAN_TELEPORTATION = 424;
-const WAN_SLEEP = 432;
 export const PM_GIANT_SPIDER = 96;
 export const PM_MINOTAUR = 177;
-const PM_HUMAN_ZOMBIE = 244;
-const PM_WRAITH = 230;
-const PM_DWARF = 44;
-const PM_GNOME = 165;
 export const PM_FIRE_ELEMENTAL = 155;
 export const PM_VAMPIRE = 226;
-const PM_VAMPIRE_LEADER = 227;
 export const PM_VLAD_THE_IMPALER = 228;
 const PM_ARCHAEOLOGIST = 331;
 const PM_WIZARD = 343;
@@ -120,9 +111,6 @@ const S_DEMON = 56;
 const G_UNIQ_MASK = 0x1000;
 export const PM_BLACK_LIGHT = 119;
 export const PM_STALKER = 153;
-const PM_BLACK_PUDDING = 209;
-const PM_LEATHER_GOLEM = 253;
-const PM_FLESH_GOLEM = 255;
 export const XLIM = 4;
 export const YLIM = 3;
 // Direction deltas
@@ -278,15 +266,6 @@ export async function u_on_downstairs() {
     }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
-const M2_HUMAN = 0x00000008;
-const M2_ELF = 0x00000010;
-export const M2_DWARF = 0x00000020;
-export const M2_GNOME = 0x00000040;
-const M2_ORC = 0x00000080;
-const M2_JEWELS = 0x20000000;
-export const M2_SHAPESHIFTER = 0x00004000;
-export const M2_MALE = 0x00010000;
-export const M2_FEMALE = 0x00020000;
 // C teleport.c:collect_coords().  Each square ring is completely collected
 // and shuffled before the next ring begins.  A zero maximum means the whole
 // usable map, excluding the center and unused column zero.
@@ -395,7 +374,7 @@ export async function cloneHeroMonsterForm(state = game) {
     clone.mcloned = 1;
     setMonsterGivenName(clone, name);
     clone.m_lev = MONSTER_LEVEL[mnum] ?? clone.m_lev;
-    clone.mtame = Math.max((MONSTER_FLAGS2[mnum] ?? 0) & M2_DOMESTIC ? 10 : 5, clone.mtame ?? 0);
+    clone.mtame = Math.max(is_domestic(mnum) ? 10 : 5, clone.mtame ?? 0);
     clone.mpeaceful = 1;
     clone.mavenge = 0;
     clone.mleashed = 0;

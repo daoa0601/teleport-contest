@@ -25,7 +25,7 @@ import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones
 import { sanitizeBonesName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
-import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
+import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape, restoreMonsterInventoryOwnership } from './mon.js';
 import { restoreLevelChains } from './level_restore.js';
 import { hideMonsterOnRestore, restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
@@ -35,7 +35,6 @@ import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngraving
 import { deleteTrap } from './trap.js';
 import { addFruit } from './fruit.js';
 import { addObjectToContainer, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, nextIdent, placeObjectSynchronously } from './mkobj.js';
-import { restoreMonsterInventoryOwnership } from './mon.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
 import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
@@ -48,7 +47,7 @@ import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } fro
 import { initializeMonsterArmor } from './monworn.js';
 import { releaseAllMonsterLeashes } from './apply.js';
 import { setMonsterGivenName } from './do_name.js';
-import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterHidesUnder, } from './monster_data.js';
+import { MONSTER_ALIGNMENT, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM } from './monster_data.js';
 import { objectNoLongerHeldSynchronously } from './do.js';
 import { unpunishHero } from './read.js';
 import { depth, ledgerNo, maxLedgerNo } from './hacklib.js';
@@ -59,6 +58,7 @@ import { races, roles } from './roles.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { relocateMonsterTo } from './teleport.js';
 import { roomForRoomno } from './hack.js';
+import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead } from './mondata.js';
 // C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
 // levels can leave bones; the depth trial still runs in wizard and explore mode.
 export function canMakeBones(state = game, random = rn2) {
@@ -105,7 +105,6 @@ function isBranchLevel(location, state) {
 const PM_HUMAN = 260;
 const PM_GHOST = 287;
 const S_MUMMY = 39;
-const M2_UNDEAD = 0x00000002;
 function clearHeroCarriedState(object) {
     object.owornmask = 0;
     object.worn = false;
@@ -119,17 +118,12 @@ function monsterAt(x, y) {
         !monster.dead && (monster.mhp ?? 1) > 0
         && monster.mx === x && monster.my === y) || null;
 }
-const M2_GREEDY = 0x10000000;
-const M2_JEWELS = 0x20000000;
-const M2_COLLECT = 0x40000000;
-const M2_MAGIC = 0x80000000;
 // C bones.c:give_to_nearby_mon() takes from a monster with any of the
 // likes_gold()/likes_gems()/likes_objs()/likes_magic() appetites
 // (mondata.h macros), with no check that the object matches.
 export function monsterLikesObjects(monster) {
-    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
-    return !!(flags & (M2_GREEDY | M2_JEWELS | M2_COLLECT | M2_MAGIC))
-        || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
+    return likes_gold(monster.mnum) || likes_gems(monster.mnum)
+        || likes_objs(monster.mnum) || likes_magic(monster.mnum);
 }
 // C bones.c:give_to_nearby_mon(): reservoir sampling over the 3x3
 // neighborhood picks the taker.
@@ -165,7 +159,7 @@ export async function dropHeroInventoryForBones(x, y, { carrier = null, containe
         if (!object)
             break;
         object.where = 'free';
-        if (!carrier || ((MONSTER_FLAGS2[carrier.mnum] ?? 0) & M2_UNDEAD))
+        if (!carrier || monsterIsUndead(carrier.mnum))
             objectNoLongerHeldSynchronously(object, game);
         if ((container || artifactEmitsLight(object)) && object.lamplit)
             endObjectBurn(object, game, game.moves ?? 0);
@@ -313,7 +307,6 @@ const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
 const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
 const MS_LEADER = 36;
 const MS_NEMESIS = 37;
-const M1_CONCEAL = 0x80;
 export async function prepareBonesMonstersForSave() {
     const level = requireGameLevel();
     for (const monster of [...level.monsters].reverse()) {
@@ -443,7 +436,7 @@ export async function restoreBonesMonsters(level, state) {
     }
     for (const monster of monsters) {
         setShopResidency(monster, false, state);
-        if (monster.mundetected && (monsterHidesUnder(monster.mnum)))
+        if (monster.mundetected && monsterHidesUnder(monster.mnum))
             await hideMonsterUnder(monster, state);
         if (!monster.isshk) {
             const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;

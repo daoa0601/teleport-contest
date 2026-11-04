@@ -3,7 +3,7 @@
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, MAXOCLASSES, } from './objclass.js';
 import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { pline_xy } from './pline.js';
-import { engravingAt } from './engrave.js';
+import { engravingAt, heroCanReachFloor } from './engrave.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { updateStatusLines } from './botl.js';
 import { _buildScreenOutput, writeMapCell } from './wintty.js';
@@ -16,8 +16,7 @@ import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGly
 import { cmapToRogueColor } from './glyph_customizations.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { drawbridgeUnderlyingType } from './dbridge.js';
-import { isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
+import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroWarnsOfMonster } from './polyself.js';
 import { artifactWarningFeedback } from './artifacts.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
@@ -25,12 +24,12 @@ import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
 import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
-import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
 import { recordObjectEncounter } from './o_init.js';
-import { heroCanReachFloor } from './engrave.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
+import { infravisible, monsterIsMindless } from './mondata.js';
 // C drawing.c:def_r_oc_syms.  Rogue deliberately resembles the older game:
 // armor uses ']', amulets ',', food ':', and coins share gems' '*'.
 const ROGUE_OBJECT_SYMBOLS = ['', ']', ')', ']', '=', ',', '(', ':', '!', '?',
@@ -74,8 +73,6 @@ export function currentBoulderSymbol(state = game) {
     }
     return state.boulderSym || '`';
 }
-const M3_INFRAVISIBLE = 0x0200;
-const M1_MINDLESS = 0x00010000;
 const TELEPATHY_RANGE = 8 * 8; // BOLT_LIM squared
 const HELM_OF_TELEPATHY = 100;
 const AMULET_OF_ESP = 201;
@@ -90,7 +87,7 @@ export function unblindTelepathyRange() {
 }
 export function senseWithTelepathy(monster) {
     if (!monster
-        || ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS))
+        || monsterIsMindless(monster.mnum))
         return false;
     if (game.blind && game.u.telepathy)
         return true;
@@ -113,7 +110,7 @@ export function monsterVisible(monster, state = game) {
 }
 export function seeMonsterWithInfrared(monster) {
     return !game.blind && !!game.u?.infravision
-        && !!((MONSTER_FLAGS3[monster.mnum] ?? 0) & M3_INFRAVISIBLE)
+        && !!infravisible(monster.mnum)
         && couldsee(monster.mx, monster.my);
 }
 function canPhysicallyProjectMonster(monster, x, y) {
@@ -2314,6 +2311,7 @@ export async function see_monsters({ beforeGlow = null } = {}) {
         if (monster.wormno)
             await redrawMonsterWormSegments(monster);
         if (game.u.warnOfMonster
+            // C display.c:see_monsters() compares the raw object-warning mask and mflags2.
             && ((game.context.warntype?.obj ?? 0) & (MONSTER_FLAGS2[monster.mnum] ?? 0)))
             count++;
     }

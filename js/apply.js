@@ -77,10 +77,10 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { canDigDown, findMonsterNearPosition } from './mklev.js';
 import { mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty } from './mkobj.js';
 import { paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir } from './mon.js';
-import { monsterPossessive, monsterSubjectPronoun } from './mondata.js';
+import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks } from './mondata.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
 import { learnObjectType, objectMaterial } from './o_init.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel } from './object_properties.js';
@@ -431,20 +431,19 @@ async function diagnoseFloorObjects(x, y) {
     return { found: true, spentTime: false };
 }
 function corpsePronoun(corpse, species) {
-    const flags = MONSTER_FLAGS2[species] ?? 0;
     const saved = corpse.oextra?.omonst;
     if (saved) {
-        if (flags & 0x40000)
+        if (is_neuter(species))
             return 'It';
         const personal = monsterIsHumanoid(species)
-            || !!((MONSTER_GENO[species] ?? 0) & 0x1000) || !!(flags & 0x80000);
+            || !!((MONSTER_GENO[species] ?? 0) & 0x1000) || monsterHasProperName(species);
         if (!personal)
             return 'It';
         return saved.female ? 'She' : 'He';
     }
-    if (flags & 0x20000)
+    if (monsterIsFemale(species))
         return 'She';
-    return flags & 0x10000 ? 'He' : 'It';
+    return is_male(species) ? 'He' : 'It';
 }
 export async function useWhistle(object, { state = game } = {}) {
     requireLiveGame(state);
@@ -602,17 +601,13 @@ function summonMessage({ shift, appear, disappear }) {
 export function umDist(state, x, y, n) {
     return Math.abs(state.u.ux - x) > n || Math.abs(state.u.uy - y) > n;
 }
-const M1_NOLIMBS = 0x00006000;
-const M1_NOHEAD = 0x00008000;
-const M1_UNSOLID = 0x00100000;
 const LEASH_PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 // C apply.c:leashable().  A head is enough to leash a limbless monster.
 export function monsterCanBeLeashed(monster) {
-    const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const hasNoLimbs = (flags & M1_NOLIMBS) === M1_NOLIMBS;
+    const hasNoLimbs = monsterHasNoLimbs(monster?.mnum);
     return monster?.mnum !== LEASH_PM_LONG_WORM
-        && !(flags & M1_UNSOLID)
-        && (!hasNoLimbs || !(flags & M1_NOHEAD));
+        && !monsterIsUnsolid({ mnum: monster?.mnum })
+        && (!hasNoLimbs || monsterHasHead({ mnum: monster?.mnum }));
 }
 // C apply.c:get_mleash().
 export function leashAttachedToMonster(monster, state = game) {
@@ -712,12 +707,11 @@ async function useLeashOnMonster(leash, monster, x, y, spotted) {
         await pline(`${name()} ${leash.leashmon ? 'is not' : 'cannot be'} leashed!`);
     }
     else if (!leash.leashmon) {
-        const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
         if (monster.mleashed)
             await pline(`This ${spotted ? petName() : 'creature'} is already leashed.`);
-        else if (flags & 0x00100000)
+        else if (monsterIsUnsolid({ mnum: monster.mnum }))
             await pline('The leash would just fall off.');
-        else if ((flags & 0x6000) === 0x6000 && (flags & 0x8000))
+        else if (monsterHasNoLimbs(monster.mnum) && !monsterHasHead({ mnum: monster.mnum }))
             await pline(`${name()} has no extremities the leash would fit.`);
         else if (!monsterCanBeLeashed(monster)) {
             const target = x !== monster.mx || y !== monster.my ? `${possessiveName(petName())} tail` : petName();
@@ -844,9 +838,6 @@ const FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const UMBER_HULK = MONSTER_NAME.indexOf('umber hulk');
 const MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
-const M1_NOEYES = 0x00001000;
-const M1_SEE_INVIS = 0x01000000;
-const M2_DEMON = 0x00000100;
 const S_NYMPH = 14;
 const S_GHOST = 54;
 const DIRECT_SIGHT = MONSEEN_NORMAL | MONSEEN_SEEINVIS | MONSEEN_INFRAVIS;
@@ -1558,8 +1549,7 @@ function jumpRestriction(x, y, magic, state) {
 }
 async function jumpAdmission(magic, state) {
     const hero = state.u;
-    const flags = MONSTER_FLAGS1[heroSpecies(state)] || 0;
-    if (!magic && ((flags & 0x6000) === 0x6000 || (flags & 0x80000)))
+    if (!magic && (monsterHasNoLimbs(heroSpecies(state)) || monsterIsSlithy(heroSpecies(state))))
         return { message: "You can't jump; you have no legs!" };
     if (!magic && !propertyIsActive('jumping', state))
         return { message: "You can't jump very far." };
@@ -1803,9 +1793,8 @@ async function chooseTinningCorpse() {
     requirePlayingGame(game);
     const hero = game.u;
     let declinedFloorCorpse = false;
-    const flags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
     const aboveLiquid = (isPoolAt(hero.ux, hero.uy) || isLavaAt(hero.ux, hero.uy))
-        && (propertyIsActive('waterWalking', game) || (flags & 0x10)
+        && (propertyIsActive('waterWalking', game) || monsterIsClinger(heroSpecies(game))
             || propertyIsActive('flying', game) && !heroIsBreathless(game));
     if (!game.iflags.menu_requested && heroCanReachFloor(game, { checkPit: true }) && !aboveLiquid) {
         for (const corpse of game.level.objects[hero.ux]?.[hero.uy] ?? []) {
@@ -2802,7 +2791,6 @@ export async function useRoyalJelly(stack, chooseTarget) {
     await consumeJelly(use.jelly);
     return true;
 }
-const M2_STRONG = 0x04000000;
 function hookSkill(hook, state) {
     const skillType = state.u.twoweap
         ? P_TWO_WEAPON_COMBAT : Math.abs(objectSkill(hook.otyp));
@@ -2958,8 +2946,7 @@ export async function useGrapplingHook(hook, { state = game, ensureWielded, atta
                 }
             }
             const large = monsterIsBig(monster.mnum);
-            const strong = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
-                & M2_STRONG);
+            const strong = strongmonst(monster.mnum);
             if ((!large && !strong) || rn2(4) !== 0) {
                 await prepareHookAttack(monster, hook, target, state);
                 if (state.program_state.gameover)

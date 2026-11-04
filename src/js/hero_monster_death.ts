@@ -18,11 +18,7 @@ import { plineWithContinuation } from './pline.js';
 import { recordHeroKillConduct } from './end.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { LL_KILLEDPET, recordGameLogEvent } from './gamelog.js';
-import {
-    MONSTER_GENO, monsterTypeName, MONSTER_FLAGS2, MONSTER_SIZE, monsterIsAlwaysHostile, monsterIsHuman,
-    monsterIsKop, monsterIsNonliving, monsterIsPlainHuman, monsterIsPlayerMonster, monsterIsQuestGuardian,
-    monsterIsUnicorn,
-} from './monster_data.js';
+import { MONSTER_GENO, monsterTypeName, MONSTER_FLAGS2, MONSTER_SIZE } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { heroIsAmphibious } from './polyself.js';
 import { landFloorObject } from './floor_effects.js';
@@ -31,25 +27,27 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
-
 import { mkobj } from './mkobj.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './invent.js';
-import { preventMonsterDeath } from './mon.js';
-import { monsterDeathCount } from './mon.js';
+import {
+    preventMonsterDeath, angerQuestGuardiansAfterLeaderDeath, createMonsterRemains,
+    describeStoneEngulferEscape, detachDeadMonster, finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops,
+    monsterBodyCrumbles, monsterBodyCrumblesMessage, monsterDeathCount, monsterDeathSquareAllowsObjects,
+    monsterDeathSwallower, monsterLeavesCorpse, prepareMonsterPetrification, resolveMonsterDeathExplosion,
+    rollMonsterDeathExplosion,
+} from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
 import { cansee } from './vision.js';
-import {
-    angerQuestGuardiansAfterLeaderDeath, createMonsterRemains, describeStoneEngulferEscape, detachDeadMonster,
-    finishMonsterLiquidDeath, levelAllowsMonsterDeathDrops, monsterBodyCrumbles, monsterBodyCrumblesMessage,
-    monsterDeathSquareAllowsObjects, monsterDeathSwallower, monsterLeavesCorpse, prepareMonsterPetrification,
-    resolveMonsterDeathExplosion, rollMonsterDeathExplosion,
-} from './mon.js';
 import { finishDestinationSpotEffects } from './hack.js';
+import {
+    monsterIsAlwaysHostile, monsterIsHuman, monsterIsKop, monsterIsNonliving, monsterIsPlainHuman,
+    monsterIsPlayerMonster, monsterIsQuestGuardian, monsterIsUnicorn,
+} from './mondata.js';
 
 // include/mondata.h:unique_corpstat() — G_UNIQ species never leave a
 // pet-murder chronicle entry behind (mon.c:xkilled()).
@@ -296,6 +294,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
             && !monsterIsKop(monster.mnum)
             && !monster.mcloned) {
             const extra = await mkobj(RANDOM_CLASS, true);
+            // C mon.c:xkilled() reads M2_COLLECT directly; armed species alone do not collect food.
             const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_COLLECT);
             const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)

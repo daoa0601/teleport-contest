@@ -6,16 +6,16 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nomul } from './hack.js';
 import { Upolyd } from './const.js';
 import { makeConfused, makeStunned } from './potion.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
 import { requirePlayingGame } from './gstate.js';
 import { canSpotMonster, map_invisible, shieldeff } from './display.js';
 import { makeMonsterFlee } from './monmove.js';
-import { MONSTER_ATTACKS, MONSTER_NAME, monsterSpeciesSticks } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { AT_MAGC } from './monster_attack_types.js';
 import { cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
+import { monsterSpeciesSticks } from './mondata.js';
 const PM_CLAY_GOLEM = MONSTER_NAME.indexOf('clay golem');
 // C artifact.c:Mb_hit(): effect index, damage dice, and every defender case.
 export async function applyMagicbaneHit(object, defender, damage, bonusApplied, { state, attacker, visible, dieRoll, hitOnHead, targetName, describeTarget, publish, random, rollOne, }) {

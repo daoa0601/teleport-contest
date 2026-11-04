@@ -4,11 +4,11 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_
 import {
     objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP,
 } from './object_data.js';
-import { monsterHasMagicResistance } from './trap.js';
+import { monsterHasMagicResistance, burnArmorByFire, burnHeroArmorByFire, igniteItems } from './trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, newsym, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -24,7 +24,7 @@ import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wa
 import type { MonsterExplosionOptions } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsDemon, monsterIsNonliving, monsterIsVampireShifter, monsterTypeName } from './monster_data.js';
+import { MONSTER_ATTACKS, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
@@ -32,7 +32,6 @@ import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { payForShopDamage } from './shk.js';
-import { burnArmorByFire, burnHeroArmorByFire, igniteItems } from './trap.js';
 import { cansee } from './vision.js';
 import { applyRayFloorFeatures, destroyInventoryByElement, destroyMonsterInventoryByElement, monsterResistsEffect, rayDamageType } from './zap.js';
 import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './zap.js';
@@ -40,7 +39,12 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName } from './property_types.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
+    monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
+    monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterIsDemon,
+    monsterIsNonliving, monsterIsVampireShifter,
+} from './mondata.js';
 
 export interface ExplosionOptions {
     state?: GameState;
@@ -84,7 +88,6 @@ interface ExplosionMonsterDeathOptions {
 }
 
 const RAY = 3;
-const M2_DEMON = 0x100;
 const resistanceLevels = new Map([
     [WAND_CLASS, 12], [TOOL_CLASS, 10], [WEAPON_CLASS, 10],
     [SCROLL_CLASS, 9], [POTION_CLASS, 6], [RING_CLASS, 5],

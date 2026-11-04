@@ -16,33 +16,21 @@ import {
 import type { GameState, PlayingGameState, MemorizedSpell, SpellbookContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { requirePlayingGame } from './gstate.js';
-
-export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
-export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
-
-// Spell learning and the native spell.c:spelleffects() transaction.
-import { commandResultFailed } from './cmd.js';
-import { game, requireLiveGame } from './gstate.js';
-import { plineWithContinuation } from './pline.js';
-import { promptDirection } from './cmd.js';
+import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
+import { commandResultFailed, isok, promptDirection, cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
+import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
-import { isok } from './cmd.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroSpineName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
-
-import { zapHeroWithObject } from './zap.js';
-
+import { zapHeroWithObject, paintRayCell, turnCarriedObjects, adjustSpellDamage, applyWandEffect, hitMonsterWithRay } from './zap.js';
 import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
-import { mksobj } from './mkobj.js';
+import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
 import { findArmorClass } from './do_wear.js';
-
-import { cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,
     map_invisible, zapdir_to_glyph,
@@ -50,26 +38,17 @@ import {
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
-import { healHero } from './potion.js';
-import { heroIsSick } from './potion.js';
-import { makeBlinded, makeConfused, makeStunned } from './potion.js';
+import { healHero, heroIsSick, makeBlinded, makeConfused, makeStunned, applyPotionEffect, heroIsSliming, setHeroSlimingTimeout } from './potion.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { morehungry } from './eat.js';
 import { wakeMonster, monstersInFmonOrder } from './mon.js';
-import { monsterHasShockResistance } from './mondata.js';
-import {
-    MONSTER_ALIGNMENT, MONSTER_NAME, monsterEnfolds, monsterIsAnimal, monsterIsUndead,
-    monsterIsVampireShifter, monsterIsWhirly, requireMonsterData,
-} from './monster_data.js';
+import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly } from './mondata.js';
+import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
-
 import { objectIsMetallic } from './object_properties.js';
 import { walkPathCells } from './path_walk.js';
-import { applyPotionEffect } from './potion.js';
 import { propertyIsActive } from './properties.js';
-import { paintRayCell, turnCarriedObjects } from './zap.js';
-
 import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { takeHeroGold } from './hero_gold.js';
@@ -91,11 +70,8 @@ import { tameMonster } from './dog.js';
 import { readNovelTribute } from './novel_tribute.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
 import { makeUndeadNear } from './mkroom.js';
-import { plineWithContinuation as pline } from './pline.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { heroIsSliming } from './potion.js';
-import { setHeroSlimingTimeout } from './potion.js';
 import { roleInitClericLightSchool } from './startup.js';
 import { monsterAtPosition } from './steed.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
@@ -105,21 +81,20 @@ import {
 } from './tty_menu.js';
 import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { cansee } from './vision.js';
-
 import { showInventoryWindow } from './windows.js';
-import { hitMonsterWithRay, adjustSpellDamage } from './zap.js';
 import { heroHasFreeHand } from './engrave.js';
 import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';
-import { applyWandEffect } from './zap.js';
 import {
     loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition,
     shouldShowGetposTip,
     showGetposTip,
     exceedsActionCapacity,
 } from './hack.js';
-import { objectWeight } from './mkobj.js';
+
+export interface SpellCastOptions { atSelf?: boolean; force?: boolean; state?: GameState; }
+export interface SpellCastResult { spentTime: boolean; heroDied: boolean; }
 
 export function knownSpell(otyp: number, state: GameState = game): 'unknown' | 'fresh' | 'stale' | 'forgotten' {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
@@ -164,7 +139,6 @@ export async function learnInitialSpell(book: GameObject, state: GameState = gam
         await impossible(`Spell ${OBJECT_NAMES[book.otyp]} already known.`, { state });
     else spells.push(createMemorizedSpell(book.otyp, 20000, state));
 }
-
 
 // ── spell.c book reading: study_book(), learn(), cursed_book(),
 //    confused_book(), deadbook(), deadbook_pacify_undead(),
@@ -889,7 +863,6 @@ function innateCastingPenalty(type: number, state: PlayingGameState) {
 function wornObject(slot: CastingSlot, state: GameState) {
     return state[slot] || state.u[slot];
 }
-
 
 function castingNutritionCost(energy: number, state: PlayingGameState) {
     let cost = energy * 2;

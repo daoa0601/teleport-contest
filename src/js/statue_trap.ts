@@ -19,12 +19,10 @@ import { game, requireGameLevel } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { revealMonsterAppearance } from './mon.js';
+import { revealMonsterAppearance, changeMonsterForm, restoreMonsterShape } from './mon.js';
 import { makemonNear } from './mklev.js';
-import { makemonAt } from './makemon.js';
-import { setMonsterMalign } from './makemon.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterIsGolem, monsterIsNonliving, monsterIsVampireShifter } from './monster_data.js';
-import { changeMonsterForm, restoreMonsterShape } from './mon.js';
+import { makemonAt, setMonsterMalign } from './makemon.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition } from './steed.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -36,6 +34,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement } from './read.js';
 import { cansee } from './vision.js';
 import { restoreMonsterTraits } from './zap.js';
+import { monsterIsGolem, monsterIsNonliving, monsterIsVampireShifter } from './mondata.js';
 
 type StatueObject = GameObject & { corpsenm: number };
 
@@ -57,7 +56,6 @@ function requireStatueSpecies(statue: GameObject): asserts statue is StatueObjec
 const G_UNIQ = 0x1000;
 const MS_GUARDIAN = 38;
 const PM_FLESH_GOLEM = MONSTER_NAME.indexOf('flesh golem');
-const S_GOLEM = MONSTER_SYMBOL[PM_FLESH_GOLEM];
 
 function statueReplacement(statue: StatueObject, state: GameState): number | null {
     const replacement = revivalReplacement(statue.corpsenm, statue, true);
