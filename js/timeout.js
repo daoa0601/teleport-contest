@@ -66,32 +66,33 @@ import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './terrain_name.js';
 import { heroCannotVomit, nameToMonster } from './mondata.js';
 import { encumber_msg } from './pickup.js';
-function petrificationMessage(turns, state) {
-    if (turns === 5)
-        return 'You are slowing down.';
-    if (turns === 4) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities are stiffening.'
-            : 'Your limbs are stiffening.';
-    }
-    if (turns === 3) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities have turned to stone.'
-            : 'Your limbs have turned to stone.';
-    }
-    if (turns === 2)
-        return 'You have turned to stone.';
-    return turns === 1 ? 'You are a statue.' : null;
-}
 // C timeout.c:stoned_dialogue().
 export async function petrificationDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     const hero = state.u;
     const turns = hero.stonedTurns ?? 0;
     if (turns <= 0)
         return;
-    const message = petrificationMessage(turns, state);
-    if (message)
+    // stoned_texts[SIZE - i], with "limbs" replaced for a limbless body.
+    if (turns > 0 && turns <= 5) {
+        let message;
+        if (turns === 5)
+            message = 'You are slowing down.';
+        else if (turns === 4) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities are stiffening.'
+                : 'Your limbs are stiffening.';
+        }
+        else if (turns === 3) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities have turned to stone.'
+                : 'Your limbs have turned to stone.';
+        }
+        else if (turns === 2)
+            message = 'You have turned to stone.';
+        else
+            message = 'You are a statue.';
         await publish(message, { urgent: true });
+    }
     if (turns === 5) {
         removeHeroSpeed(state);
         if (state.multi > 0)
@@ -119,28 +120,6 @@ export async function petrificationDialogue({ state = game, publish = plineWithC
     }
     await exerciseAttribute(A_DEX, false, state);
 }
-function vomitingMessage(state, nextTurns) {
-    if (nextTurns === 14)
-        return 'You are feeling mildly nauseated.';
-    if (nextTurns === 11) {
-        return propertyIsActive('confusion', state)
-            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
-    }
-    if (nextTurns === 8) {
-        return propertyIsActive('stunned', state)
-            ? "You can't think straight."
-            : "You can't seem to think straight.";
-    }
-    if (nextTurns === 5)
-        return 'You feel incredibly sick.';
-    if (nextTurns === 2) {
-        if (heroCannotVomit(state))
-            return 'You gag uncontrollably.';
-        return heroIsHallucinating(state)
-            ? 'You are about to hurl!' : 'You are about to vomit.';
-    }
-    return null;
-}
 // C timeout.c:vomiting_dialogue().
 export async function vomitingDialogue({ state = game, publish = pline, rollDice = d, } = {}) {
     requirePlayingGame(state);
@@ -163,7 +142,29 @@ export async function vomitingDialogue({ state = game, publish = pline, rollDice
         if (state.multi > 0)
             endVoluntaryMultiTurn(state);
     }
-    const message = vomitingMessage(state, nextTurns);
+    // vomiting_texts[], with "confused"/"can't seem to" adjusted when the
+    // matching condition already holds.
+    let message = null;
+    if (nextTurns === 14)
+        message = 'You are feeling mildly nauseated.';
+    else if (nextTurns === 11) {
+        message = propertyIsActive('confusion', state)
+            ? 'You feel slightly more confused.' : 'You feel slightly confused.';
+    }
+    else if (nextTurns === 8) {
+        message = propertyIsActive('stunned', state)
+            ? "You can't think straight."
+            : "You can't seem to think straight.";
+    }
+    else if (nextTurns === 5)
+        message = 'You feel incredibly sick.';
+    else if (nextTurns === 2) {
+        if (heroCannotVomit(state))
+            message = 'You gag uncontrollably.';
+        else
+            message = heroIsHallucinating(state)
+                ? 'You are about to hurl!' : 'You are about to vomit.';
+    }
     if (message)
         await publish(message);
     let vomited = false;
@@ -225,24 +226,25 @@ export async function strangulationDialogue({ state = game, publish = plineWithC
     }
     await exerciseAttribute(A_STR, false, state);
 }
-function sicknessMessage(hero) {
-    const turns = hero.sickTurns ?? 0;
-    if (turns % 2 === 0)
-        return null;
-    const stage = Math.trunc(turns / 2);
-    const noun = ((hero.sickType ?? 0) & SICK_NONVOMITABLE)
-        ? 'illness' : 'sickness';
-    if (stage === 3)
-        return `Your ${noun} feels worse.`;
-    if (stage === 2)
-        return `Your ${noun} is severe.`;
-    return stage === 1 ? "You are at Death's door." : null;
-}
 // C timeout.c:sickness_dialogue().
 export async function sicknessDialogue({ state = game, publish = plineWithContinuation, } = {}) {
     if (!heroIsSick(state))
         return;
-    let message = sicknessMessage(state.u);
+    // sickness_texts[SIZE - i] on odd countdowns, with "illness" replaced
+    // by "sickness" for food poisoning.
+    const turns = state.u.sickTurns ?? 0;
+    let message = null;
+    if (turns % 2 !== 0) {
+        const stage = Math.trunc(turns / 2);
+        const noun = ((state.u.sickType ?? 0) & SICK_NONVOMITABLE)
+            ? 'illness' : 'sickness';
+        if (stage === 3)
+            message = `Your ${noun} feels worse.`;
+        else if (stage === 2)
+            message = `Your ${noun} is severe.`;
+        else if (stage === 1)
+            message = "You are at Death's door.";
+    }
     if (message === "You are at Death's door." && heroIsHallucinating(state)) {
         // C mhe() uses the core RNG for hallucinated pronouns.
         const invitation = ['He is', 'She is', 'It is', 'They are'][rn2(4)];
@@ -298,38 +300,9 @@ export async function levitationDialogue(state = game, { publish = plineWithCont
     }
     return null;
 }
-function slimeMessage(turns, state, randomMonsterName) {
-    if (turns === 9) {
-        return heroIsBlind(state)
-            ? null : `You are turning a little ${displayColorName('green', state)}.`;
-    }
-    if (turns === 7) {
-        return heroHasNoLimbs(state)
-            ? 'Your extremities are getting oozy.'
-            : 'Your limbs are getting oozy.';
-    }
-    if (turns === 5)
-        return 'Your skin begins to peel away.';
-    if (turns !== 3 && turns !== 1)
-        return null;
-    const hallucinating = heroIsHallucinating(state);
-    const form = hallucinating ? randomMonsterName() : 'green slime';
-    return turns === 3
-        ? `You are turning into ${withIndefiniteArticle(form)}.`
-        : `You have become ${withIndefiniteArticle(form)}.`;
-}
 function removeHeroSpeed(state) {
     setPropertyTimeout('fast', 0, state);
     removeIntrinsicProperty('fast', state);
-}
-function cancelHeroPetrification(state) {
-    const hero = state.u;
-    if (hero.stoned || (hero.stonedTurns ?? 0) > 0)
-        state.context.botl = true;
-    hero.stonedTurns = 0;
-    hero.stoned = false;
-    delete hero.stoneKiller;
-    delete hero.stoneKillerFormat;
 }
 // C timeout.c:slime_dialogue().
 export async function slimeDialogue({ state = game, publish = plineWithContinuation, repaint = () => { }, randomMonsterName = randomDisplayMonsterName, } = {}) {
@@ -342,10 +315,32 @@ export async function slimeDialogue({ state = game, publish = plineWithContinuat
         hero.mappearance = PM_GREEN_SLIME;
         await repaint(hero.ux, hero.uy);
     }
-    const message = slimeMessage(turns, state, randomMonsterName);
-    if (message)
-        await publish(message, { urgent: true });
+    // slime_texts[SIZE - i - 1] on odd countdowns; the green warning needs
+    // sight, and the transformed-into names honor hallucination.
     const stage = Math.trunc(turns / 2);
+    if (turns % 2 !== 0 && stage >= 0 && stage < 5) {
+        let message = null;
+        if (turns === 9) {
+            message = heroIsBlind(state)
+                ? null : `You are turning a little ${displayColorName('green', state)}.`;
+        }
+        else if (turns === 7) {
+            message = heroHasNoLimbs(state)
+                ? 'Your extremities are getting oozy.'
+                : 'Your limbs are getting oozy.';
+        }
+        else if (turns === 5)
+            message = 'Your skin begins to peel away.';
+        else {
+            const hallucinating = heroIsHallucinating(state);
+            const form = hallucinating ? randomMonsterName() : 'green slime';
+            message = turns === 3
+                ? `You are turning into ${withIndefiniteArticle(form)}.`
+                : `You have become ${withIndefiniteArticle(form)}.`;
+        }
+        if (message)
+            await publish(message, { urgent: true });
+    }
     if (stage === 3) {
         removeHeroSpeed(state);
         if (!Popeye('slimed', state))
@@ -359,7 +354,7 @@ export async function slimeDialogue({ state = game, publish = plineWithContinuat
         hero.deafTurns = 5;
     }
     else if (stage === 1) {
-        cancelHeroPetrification(state);
+        clearHeroPetrification(state);
     }
     await exerciseAttribute(A_DEX, false, state);
 }
@@ -1498,35 +1493,25 @@ export async function slipOrTrip(publish = plineWithContinuation) {
     if (steed)
         await dismountHero(DISMOUNT_FELL, { announce: publish });
 }
-// C timeout.c:see_lamp_flicker().
-// C timeout.c:lantern_message().
-async function announceLampBurn(object, threshold, visible, byTouch, state, owner) {
-    const floor = object.where === 'floor';
-    const lantern = object.otyp === BRASS_LANTERN;
-    if (threshold === 0) {
-        if (visible || byTouch)
-            await plineWithContinuation(lantern
-                ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
-                : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
-        return;
-    }
-    if (!visible || ![150, 100, 50, 25].includes(threshold))
-        return;
-    if (lantern) {
-        await plineWithContinuation(floor ? formatSeenMessage('a lantern getting dim.', state)
-            : object.where === 'inventory' ? 'Your lantern is getting dim.'
-                : `${burnOwner(object, state)} lantern is getting dim.`);
-        if (object.where === 'inventory' && heroIsHallucinating(state))
-            await plineWithContinuation('Batteries have not been invented yet.');
-    }
-    else if (threshold === 25)
-        await plineWithContinuation(floor
-            ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
-            : `${burnName(object, state)} seems about to go out.`);
+// C timeout.c:see_lamp_flicker().  Print a lamp flicker message with
+// tailer.  Only called if seen.
+async function seeLampFlicker(object, tailer, state) {
+    if (object.where === 'floor')
+        await plineWithContinuation(formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${tailer}.`, state));
     else
-        await plineWithContinuation(floor
-            ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} flicker${threshold === 50 ? ' considerably' : ''}.`, state)
-            : `${burnName(object, state)} flickers${threshold === 50 ? ' considerably' : ''}.`);
+        await plineWithContinuation(`${burnName(object, state)} flickers${tailer}.`);
+}
+// C timeout.c:lantern_message().  Print a dimming message for brass
+// lanterns.  Only called if seen.
+async function lanternMessage(object, state) {
+    if (object.where === 'floor') {
+        await plineWithContinuation(formatSeenMessage('a lantern getting dim.', state));
+        return;
+    }
+    await plineWithContinuation(object.where === 'inventory' ? 'Your lantern is getting dim.'
+        : `${burnOwner(object, state)} lantern is getting dim.`);
+    if (object.where === 'inventory' && heroIsHallucinating(state))
+        await plineWithContinuation('Batteries have not been invented yet.');
 }
 async function announceCandleBurn(object, threshold, visible, byTouch, state, ownership) {
     const menorah = object.otyp === CANDELABRUM_OF_INVOCATION;
@@ -1587,10 +1572,40 @@ export async function runClaimedObjectBurnTimer(claimed, state = game, currentTu
             await plineWithContinuation(object.where === 'floor'
                 ? formatSeenMessage('a burning potion of oil go out.', state) : `${owner} potion of oil has burnt away.`);
     }
-    else if (CANDLE_TYPES.has(object.otyp))
+    else if (CANDLE_TYPES.has(object.otyp)) {
+        // C timeout.c:1546-1670: candelabrum and candle countdowns.
         await announceCandleBurn(object, threshold, visible, byTouch, state, owner);
-    else
-        await announceLampBurn(object, threshold, visible, byTouch, state, owner);
+    }
+    else {
+        // C timeout.c:1474-1544: BRASS_LANTERN and OIL_LAMP.  The magic
+        // ages are 150, 100, 50, 25 and 0.
+        const lantern = object.otyp === BRASS_LANTERN;
+        const floor = object.where === 'floor';
+        if (threshold === 150 || threshold === 100 || threshold === 50) {
+            if (visible) {
+                if (lantern)
+                    await lanternMessage(object, state);
+                else
+                    await seeLampFlicker(object, threshold === 50 ? ' considerably' : '', state);
+            }
+        }
+        else if (threshold === 25) {
+            if (visible) {
+                if (lantern)
+                    await lanternMessage(object, state);
+                else
+                    await plineWithContinuation(floor
+                        ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} about to go out.`, state)
+                        : `${burnName(object, state)} seems about to go out.`);
+            }
+        }
+        else if (threshold === 0 && (visible || byTouch)) {
+            // Even if blind you'll know if holding it.
+            await plineWithContinuation(lantern
+                ? floor ? formatSeenMessage('a lantern run out of power.', state) : `${owner} lantern has run out of power.`
+                : floor ? formatSeenMessage(`${withIndefiniteArticle(objectName(object, state))} go out.`, state) : `${burnName(object, state)} has gone out.`);
+        }
+    }
     const destroyed = threshold === 0 || object.otyp === POT_OIL
         ? await finishBurnedObject(object, state) : false;
     if (!destroyed && threshold > 0)
@@ -1642,33 +1657,6 @@ function extinguishTimedLight(object, state) {
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }
-function lampBurnTurns(age) {
-    if (age > 150)
-        return age - 150;
-    if (age > 100)
-        return age - 100;
-    if (age > 50)
-        return age - 50;
-    if (age > 25)
-        return age - 25;
-    return age;
-}
-function candleBurnTurns(age) {
-    if (age > 75)
-        return age - 75;
-    if (age > 15)
-        return age - 15;
-    return age;
-}
-function objectBurnTurns(object) {
-    if (object.otyp === POT_OIL) {
-        const age = object.age ?? 0;
-        return object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
-    }
-    if (CANDLE_TYPES.has(object.otyp))
-        return candleBurnTurns(object.age ?? 0);
-    return lampBurnTurns(object.age ?? 0);
-}
 // C timeout.c:begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is
 // what lets save/restore and an overdue callback reconstruct source state.
@@ -1701,7 +1689,22 @@ export function beginObjectBurn(object, state = game, currentTurn = state.moves 
         return false;
     if ((object.age ?? 0) <= 0)
         return false;
-    const turns = objectBurnTurns(object);
+    // begin_burn()'s switch: magic times are 150/100/50/25/0 for lamps and
+    // 75/15/0 for candles; diluted oil burns three quarters as long.
+    const age = object.age ?? 0;
+    let turns;
+    if (object.otyp === POT_OIL) {
+        turns = object.odiluted ? Math.trunc((3 * age + 2) / 4) : age;
+    }
+    else if (CANDLE_TYPES.has(object.otyp)) {
+        turns = age > 75 ? age - 75 : age > 15 ? age - 15 : age;
+    }
+    else {
+        turns = age > 150 ? age - 150
+            : age > 100 ? age - 100
+                : age > 50 ? age - 50
+                    : age > 25 ? age - 25 : age;
+    }
     const timer = scheduleObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT, currentTurn + turns, state);
     object.lamplit = !!timer;
     if (!timer)
