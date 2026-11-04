@@ -3,6 +3,7 @@
 // and the use_*() tool functions this file owns. use_whip() stays in
 // bullwhip.ts; the candle snuff/splash/catch helpers stay in light.ts with
 // the burning-object owners.
+import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseCost, objectSkill, objectMagic, AMULET_OF_YENDOR, BAG_OF_TRICKS, BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE, TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE, } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
 import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear } from './do_wear.js';
@@ -125,14 +126,6 @@ import { monsterCarriesAmulet } from './wizard.js';
 import { adjustMonsterSpeed } from './worn.js';
 import { useMagicMarker } from './write.js';
 import { objectResistsDestruction, zappable } from './zap.js';
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const POTION_CLASS = 8;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const RING_CLASS = 4;
 export async function useCamera(object, { state = game } = {}) {
     requireLiveGame(state);
     const result = { spentTime: false, heroDied: false, object };
@@ -382,7 +375,7 @@ async function diagnoseMonster(monster, x, y) {
         if (type === M_AP_OBJECT) {
             const fruit = monster.mcorpsenm ?? monster.mextra?.mcorpsenm;
             what = appearance === SLIME_MOLD && fruit !== undefined
-                ? minimalObjectName({ otyp: appearance, oclass: 7, dknown: true, spe: fruit }, game)
+                ? minimalObjectName({ otyp: appearance, oclass: FOOD_CLASS, dknown: true, spe: fruit }, game)
                 : simpleObjectTypeName(appearance, game);
             const slot = armorSlotFor(appearance);
             plural = slot === 'uarmf' || slot === 'uarmg' || appearance === LENSES;
@@ -1834,7 +1827,7 @@ async function chooseTinningCorpse() {
         }
     }
     const corpse = await chooseInventoryObject('tin', object => {
-        if (!object || object.oclass !== 7)
+        if (!object || object.oclass !== FOOD_CLASS)
             return GETOBJ_EXCLUDE;
         return tinnable(object) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE_SELECTABLE;
     }, { hands: declinedFloorCorpse ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
@@ -2087,7 +2080,7 @@ export async function useGrease(can) {
     return true;
 }
 function greaseSuggestion(object) {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return GETOBJ_EXCLUDE;
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
@@ -3282,13 +3275,13 @@ export async function doapply() {
         game.context.move = 1;
         return;
     }
-    if (item.oclass === 11) {
+    if (item.oclass === WAND_CLASS) {
         const result = await breakWand(item);
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
-    if (item.oclass === 10 || item.oclass === 12) {
-        const result = item.oclass === 10
+    if (item.oclass === SPBOOK_CLASS || item.oclass === COIN_CLASS) {
+        const result = item.oclass === SPBOOK_CLASS
             ? await flipThroughBook(item) : await flipCoin(item);
         game.context.move = result.spentTime ? 1 : 0;
         return;

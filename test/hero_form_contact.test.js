@@ -1,3 +1,4 @@
+import { RING_CLASS } from '../js/objclass.js';
 import { objectBaseMaterial, getObjectClassBounds, } from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
@@ -28,7 +29,7 @@ async function messageLine() {
 void test('a known ring shuffled to silver sears with its current material name', async () => {
     await freshObjectRoom();
     installPolymorphedHero('minotaur');
-    const { first, last } = getObjectClassBounds(4);
+    const { first, last } = getObjectClassBounds(RING_CLASS);
     const ringType = Array.from({ length: last - first + 1 }, (_, index) => first + index)
         .find(type => objectMaterial(type, game) === SILVER && objectBaseMaterial(type) !== SILVER);
     assert.ok(ringType !== undefined, 'The initialized ring appearances must include a ring newly made of silver');

@@ -1,3 +1,4 @@
+import { ARMOR_CLASS, AMULET_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { A_CON, A_STR, POOL, ROOM } from '../js/const.js';
@@ -37,9 +38,9 @@ void test('a life-saved drowning hero still materializes audibly at the rescue s
     const level = poolAtHero();
     requireFixtureGame(game);
     level.requireAt(20, 5).typ = ROOM;
-    await addInventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    await addInventoryObject(LEATHER_ARMOR, { oclass: ARMOR_CLASS });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
-        oclass: 5, worn: true,
+        oclass: AMULET_CLASS, worn: true,
     });
     game.uamul = amulet;
     game.u.uamul = amulet;

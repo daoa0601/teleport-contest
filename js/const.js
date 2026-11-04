@@ -356,7 +356,6 @@ export const BLOOD = 15;
 export const LUNG = 16;
 export const NOSE = 17;
 export const STOMACH = 18;
-// RANDOM_CLASS is exported from objects.js (canonical home for _CLASS constants)
 // Room fill policy enum for mkroom/mklev generation (src/mkroom.c)
 // Runtime fields: room.needfill on room structs.
 export const FILL_NONE = 0;
@@ -1915,7 +1914,7 @@ export const WM_C_INNER = 2;
 export const MAXNROFROOMS = 40;
 export const MAXDUNGEON = 16;
 export const MAXLEVEL = 32;
-// MAXOCLASSES: canonical home is objects.js; MAXMCLASSES: canonical home is symbols.js
+// MAXMCLASSES: canonical home is symbols.js
 export const ROOMOFFSET = 3;
 // Check terrain type helpers (rm.h)
 export function IS_WALL(typ) {

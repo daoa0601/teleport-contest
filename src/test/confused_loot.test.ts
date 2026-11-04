@@ -1,3 +1,4 @@
+import { COIN_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
@@ -40,7 +41,7 @@ void test('confused looting can leave a contribution of carried gold on the floo
     await runExtendedCommand('loot', ' '.repeat(10));
 
     assert.equal(heroGoldAmount(game), 80);
-    assert.equal(floorObjectsAt(level, 10, 10).find(object => object.oclass === 12)?.quan, 20);
+    assert.equal(floorObjectsAt(level, 10, 10).find(object => object.oclass === COIN_CLASS)?.quan, 20);
     assert.equal(game.context.move, 1);
 });
 
@@ -57,7 +58,7 @@ void test('a confused throne contribution goes to the royal coffers and locks th
     await runExtendedCommand('loot', ' '.repeat(10));
 
     assert.equal(heroGoldAmount(game), 80);
-    assert.equal(coffers.contents?.find(object => object.oclass === 12)?.quan, 20);
+    assert.equal(coffers.contents?.find(object => object.oclass === COIN_CLASS)?.quan, 20);
     assert.equal(coffers.olocked, true);
     assert.equal(coffers.obroken, false);
     assert.equal(coffers.cknown, false);

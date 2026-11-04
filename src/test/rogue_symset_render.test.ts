@@ -1,3 +1,4 @@
+import { SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -215,7 +216,7 @@ void test('explosions keep their own colors under RogueEpyx', async () => {
         if (requireScreenCell(13, 10).color === CLR_ORANGE) coloredFrames++;
     };
 
-    await explode(14, 10, 11, 0, 9, EXPL_FIERY);
+    await explode(14, 10, 11, 0, SCROLL_CLASS, EXPL_FIERY);
 
     assert.ok(coloredFrames > 0, 'the fiery border stayed orange');
 });

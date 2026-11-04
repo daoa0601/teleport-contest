@@ -2,6 +2,11 @@
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
 
 import {
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS,
+    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
+    COIN_CLASS, GEM_CLASS,
+} from './objclass.js';
+import {
     objectSkill, objectUsesKnown, objectMagic, objectCharged, AKLYS, ARROW, CROSSBOW_BOLT, YA, DART,
     DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA,
     LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA,
@@ -82,19 +87,6 @@ interface InitialInventoryEntry {
 
 
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5] as const;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
@@ -138,7 +130,7 @@ const ARCHEOLOGIST_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: TINNING_KIT, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: TOUCHSTONE, spe: 0, cls: GEM_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const BARBARIAN_SWORD_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -146,7 +138,7 @@ const BARBARIAN_SWORD_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: AXE, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const BARBARIAN_AXE_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -154,7 +146,7 @@ const BARBARIAN_AXE_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: SHORT_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const RANGER_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -164,7 +156,7 @@ const RANGER_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: ARROW, spe: 0, cls: WEAPON_CLASS, min: 30, max: 39, bless: UNDEF_BLESS },
     { typ: CLOAK_OF_DISPLACEMENT, spe: 2, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: CRAM_RATION, spe: 0, cls: FOOD_CLASS, min: 4, max: 4, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const TOURIST_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -175,7 +167,7 @@ const TOURIST_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: HAWAIIAN_SHIRT, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: EXPENSIVE_CAMERA, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: CREDIT_CARD, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const CAVEMAN_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -184,7 +176,7 @@ const CAVEMAN_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: FLINT, spe: 0, cls: GEM_CLASS, min: 10, max: 20, bless: UNDEF_BLESS },
     { typ: ROCK, spe: 0, cls: GEM_CLASS, min: 3, max: 3, bless: 0 },
     { typ: LEATHER_ARMOR, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const ROGUE_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -194,7 +186,7 @@ const ROGUE_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: POT_SICKNESS, spe: 0, cls: POTION_CLASS, min: 1, max: 1, bless: 0 },
     { typ: LOCK_PICK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const SAMURAI_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -203,7 +195,7 @@ const SAMURAI_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: YUMI, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: YA, spe: 0, cls: WEAPON_CLASS, min: 26, max: 45, bless: UNDEF_BLESS },
     { typ: SPLINT_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const VALKYRIE_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -211,7 +203,7 @@ const VALKYRIE_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: DAGGER, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: SMALL_SHIELD, spe: 3, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const PRIEST_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -222,7 +214,7 @@ const PRIEST_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: CLOVE_OF_GARLIC, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SPRIG_OF_WOLFSBANE, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
     { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SPBOOK_CLASS, min: 2, max: 2, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const HEALER_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -236,7 +228,7 @@ const HEALER_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: SPE_EXTRA_HEALING, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
     { typ: SPE_STONE_TO_FLESH, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const KNIGHT_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -248,7 +240,7 @@ const KNIGHT_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: LEATHER_GLOVES, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 10, max: 10, bless: 0 },
     { typ: CARROT, spe: 0, cls: FOOD_CLASS, min: 10, max: 10, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const MONK_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -260,7 +252,7 @@ const MONK_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
     { typ: ORANGE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
     { typ: FORTUNE_COOKIE, spe: 0, cls: FOOD_CLASS, min: 3, max: 3, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const WIZARD_INVENTORY: readonly InitialInventoryEntry[] = [
@@ -281,13 +273,13 @@ const WIZARD_INVENTORY: readonly InitialInventoryEntry[] = [
         min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: MAGIC_MARKER, spe: 19, cls: TOOL_CLASS,
         min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 function oneItem(typ: number, spe = 0): InitialInventoryEntry[] {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-        { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+        { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
     ];
 }
 
@@ -912,18 +904,18 @@ const ORC_PREKNOWN_OBJECTS = [
 const XTRA_FOOD_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS,
         min: 2, max: 2, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const MONEY_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: GOLD_PIECE, spe: 0, cls: COIN_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 const WISHING_INVENTORY: readonly InitialInventoryEntry[] = [
     { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS,
         min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 
 async function uInitRaceInventoryAndKnowledge(role: RoleKey): Promise<void> {
@@ -1046,7 +1038,7 @@ export async function uInitInventoryAttrs(): Promise<boolean> {
         await iniInv([
             { typ: spell, spe: UNDEF_SPE, cls: SPBOOK_CLASS,
                 min: 1, max: 1, bless: 1 },
-            { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+            { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
         ], restrictions);
         if (!rn2(4)) await iniInv(oneItem(MAGIC_MARKER, 19), restrictions);
         else if (!rn2(10)) await iniInv(oneItem(OIL_LAMP, 1), restrictions);

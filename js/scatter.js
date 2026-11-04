@@ -1,3 +1,4 @@
+import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { currency } from './invent.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
@@ -49,7 +50,6 @@ import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from '.
 import { rangedTargetHitBonus, breakFloorObject } from './dothrow.js';
 import { roomsAt } from './hack.js';
 const GLASS = 19;
-const POTION_CLASS = 8;
 const DIRECTIONS = [
     { dx: -1, dy: 0 },
     { dx: -1, dy: -1 },
@@ -103,7 +103,7 @@ async function finishScatteredMonsterDeath(monster, x, y, death, state, options)
 // or expose it to the defender's passive effect before floor stacking.
 async function landAfterMonsterHit(object, node, state, options) {
     requirePlayingGame(state);
-    const broken = object.otyp === CREAM_PIE || object.oclass === 17 || object.otyp === EGG
+    const broken = object.otyp === CREAM_PIE || object.oclass === VENOM_CLASS || object.otyp === EGG
         || shouldMulchMissile(object, { monsterMoving: !!state.context.mon_moving });
     if (broken) {
         await delobj(object, state, options.random);
@@ -175,7 +175,7 @@ async function hitMonster(monster, node, state, options) {
     }
     const material = objectMaterial(object, state);
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const harmless = object.oclass !== 4 && (material === 20 || material === 21)
+    const harmless = object.oclass !== RING_CLASS && (material === 20 || material === 21)
         && !!(flags & 0x8) && !(flags & 0x00100000);
     let damage = rollPhysicalWeaponDamage(object, monster, {
         state, rollOne: options.rollOne, rollDice: options.rollDice,
@@ -251,7 +251,7 @@ async function hitMonster(monster, node, state, options) {
     }
     if (monster.mhp > 0 && monsterCanBeBlindedByObject(monster, object.otyp, { state })) {
         if (visible && monster.mcansee) {
-            const cause = object.oclass === 17 ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
+            const cause = object.oclass === VENOM_CLASS ? 'venom' : object.otyp === CREAM_PIE ? 'pie' : objectCombatName(object, { state });
             await options.publish(`${monsterName(monster, { state, capitalized: true })} is blinded by the ${cause}.`);
         }
         applyMonsterBlindness(monster, options.rollOne(25) + 20);

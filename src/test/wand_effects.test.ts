@@ -1,3 +1,4 @@
+import { SPBOOK_CLASS } from '../js/objclass.js';
 import { installPagerInput } from './support/pager-input.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import type { GameplayRoomOptions } from './support/playable-room.js';
@@ -139,7 +140,7 @@ void test('a healing spell pointed down heals the mounted steed', async () => {
     await answerPrompts(doride(), input, [{ prompt: /In what direction/, keys: 'l' }]);
     installPagerInput(input, { expected: /pony|mount|steed/i, limit: 4 });
     steed.mhp = 1;
-    const source = await knownObject(SPE_EXTRA_HEALING, { oclass: 10 });
+    const source = await knownObject(SPE_EXTRA_HEALING, { oclass: SPBOOK_CLASS });
     game.u.dx = 0;
     game.u.dy = 0;
     game.u.dz = 1;

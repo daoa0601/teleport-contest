@@ -1,3 +1,4 @@
+import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_PROPERTY, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, OBJECT_NAMES, } from './object_data.js';
 import { formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, I_SPECIAL, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND } from './const.js';
@@ -147,9 +148,6 @@ export async function feelTrap(trap, state = game) {
     }
 }
 const PM_IRON_GOLEM = 259;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
 const DRAGON_HIDE = 10;
 const FIRE_RESISTANT_OBJECTS = new Set([
     RED_DRAGON_SCALE_MAIL,
@@ -428,7 +426,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
     const luck = Luck(state.u);
     if (!force && luck + 5 > random(20))
         return 'nothing';
-    if (object.oclass === 9) {
+    if (object.oclass === SCROLL_CLASS) {
         if (object.otyp === SCR_BLANK_PAPER)
             return 'nothing';
         if (carried)
@@ -438,7 +436,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
         object.spe = 0;
         return 'damaged';
     }
-    if (object.oclass === 10) {
+    if (object.oclass === SPBOOK_CLASS) {
         if (object.otyp === SPE_BOOK_OF_THE_DEAD) {
             const position = getObjectLocation(object, state, { contained: true, buried: true });
             if (position) {
@@ -462,7 +460,7 @@ export async function waterDamageObject(object, messages = [], state = game, { f
             blankNovel(object);
         return 'damaged';
     }
-    if (object.oclass === 8) {
+    if (object.oclass === POTION_CLASS) {
         if (object.otyp === POT_ACID) {
             return await destroyWetAcidPotion(object, false, emit, state, acidContext);
         }
@@ -2060,11 +2058,6 @@ async function activateTrap(target, hero, trap, state, falling) {
 function isHeroDefender(defender, state) {
     return defender === state.u;
 }
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const TOOL_CLASS = 6;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
 const EROSION = {
     burn: { field: 'oeroded', verb: 'smoulder', past: 'burnt', cause: 'heat' },
@@ -5228,7 +5221,6 @@ function heroPassesRocks() {
     return !!(flags & M1_WALLWALK) && !(flags & M1_UNSOLID);
 }
 // ── moved from src/js/hero_polymorph_trap.ts ──
-const WAND_CLASS = 12;
 // trap.c trapeffect_poly_trap(): the hero branch — the trigger message
 // with the steed's lead-in, the form change or its reversal, the worn-gear
 // consequences, and the steed's own steedintrap() polymorph.
@@ -5265,7 +5257,8 @@ export async function triggerHeroPolymorphTrap(trap, viaSitting) {
     if (steed) {
         steed.mx = game.u.ux;
         steed.my = game.u.uy;
-        if (!monsterHasMagicResistance(steed) && !monsterResistsEffect(steed, WAND_CLASS, rn2))
+        // C zap.c:resist() maps WAND_CLASS to attack level 12.
+        if (!monsterHasMagicResistance(steed) && !monsterResistsEffect(steed, 12, rn2))
             await changeMonsterForm(steed, null, game, {
                 showMessage: true, publish: plineWithContinuation,
             });

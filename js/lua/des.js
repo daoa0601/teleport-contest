@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, } from '../objclass.js';
 import { objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
 import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
@@ -160,7 +161,7 @@ export function tablePoint(options) {
 }
 function objectClassForSymbol(symbol) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-    if (objectClass < 1)
+    if (objectClass < ILLOBJ_CLASS)
         throw new Error(`unknown Lua object class ${symbol}`);
     return objectClass;
 }
@@ -168,13 +169,13 @@ function objectClassForSymbol(symbol) {
 // symbol and the "ring of "-style prefixes, then by description.
 export function objectTypeForName(name, classSymbol = null, state = game) {
     const prefixes = [
-        ['ring of ', 4],
-        ['potion of ', 8],
-        ['scroll of ', 9],
-        ['spellbook of ', 10],
-        ['wand of ', 11],
+        ['ring of ', RING_CLASS],
+        ['potion of ', POTION_CLASS],
+        ['scroll of ', SCROLL_CLASS],
+        ['spellbook of ', SPBOOK_CLASS],
+        ['wand of ', WAND_CLASS],
     ];
-    let desiredClass = Math.max(0, OBJECT_CLASS_SYMBOLS.indexOf(typeof classSymbol === 'string' ? classSymbol : ''));
+    let desiredClass = Math.max(RANDOM_CLASS, OBJECT_CLASS_SYMBOLS.indexOf(typeof classSymbol === 'string' ? classSymbol : ''));
     let target = String(name).toLowerCase();
     if (!target)
         return 0; // STRANGE_OBJECT: request a random object.

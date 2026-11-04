@@ -9,6 +9,11 @@
 // lookup_novel().  The category menu is naming_categories.ts.
 
 import {
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
+    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
+    COIN_CLASS, GEM_CLASS, VENOM_CLASS,
+} from './objclass.js';
+import {
     objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR,
     FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, STATUE, TIN, TOWEL,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS,
@@ -112,7 +117,7 @@ export async function doname() {
         // GETOBJ_DOWNPLAY.  getobj() omits those letters from the suggested
         // prompt while still accepting a directly typed inventory letter.
         const object = await chooseInventoryObject('name', candidate =>
-            candidate.oclass === 12 ? GETOBJ_EXCLUDE
+            candidate.oclass === COIN_CLASS ? GETOBJ_EXCLUDE
                 : candidate.dknown === false || candidate.oartifact || candidate.otyp === SPE_NOVEL
                     ? GETOBJ_DOWNPLAY : GETOBJ_SUGGEST, { forcePrompt: true });
         if (object) {
@@ -808,20 +813,20 @@ function appearanceRange(object: GameObject): readonly [number, number] {
         [LEATHER_GLOVES, OBJECT_NAMES.indexOf('gauntlets of dexterity')],
         [CLOAK_OF_PROTECTION, CLOAK_OF_DISPLACEMENT], [SPEED_BOOTS, LEVITATION_BOOTS],
     ];
-    if (object.oclass === 3) {
+    if (object.oclass === ARMOR_CLASS) {
         for (const [low, high] of armorRanges)
             if (low !== undefined && high !== undefined && type >= low && type <= high)
                 return [low, high];
     }
     let low = OBJECT_BASES[object.oclass] ?? type;
     let high = (OBJECT_BASES[object.oclass + 1] ?? type + 1) - 1;
-    if (object.oclass === 8) high = POT_WATER - 1;
-    else if ([5, 9, 10].includes(object.oclass)) {
+    if (object.oclass === POTION_CLASS) high = POT_WATER - 1;
+    else if ([AMULET_CLASS, SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass)) {
         high = low;
         while (objectClassForType(high) === object.oclass
             && !objectUnique(high) && objectMagic(high)) high++;
         high--;
-    } else if (![4, 11, 17].includes(object.oclass)) {
+    } else if (![RING_CLASS, WAND_CLASS, VENOM_CLASS].includes(object.oclass)) {
         low = high = type;
     }
     return type >= low && type <= high ? [low, high] : [type, type];
@@ -837,7 +842,8 @@ export function objectTypeIsCallable(object: Pick<GameObject, 'otyp' | 'oclass'>
     state: GameState = game): boolean {
     if (state._objectCallNames?.[object.otyp]) return true;
     if (object.otyp === AMULET_OF_YENDOR || object.otyp === FAKE_AMULET_OF_YENDOR) return false;
-    return [3, 4, 5, 6, 8, 9, 10, 11, 13, 17].includes(object.oclass)
+    return [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS,
+        SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
         && !!OBJECT_DESCRIPTIONS[object.otyp];
 }
 
@@ -867,15 +873,15 @@ export async function callObjectType(object: GameObject, state: GameState = game
     delete sample.oextra;
     delete sample.oname;
     delete sample.buc;
-    if (sample.oclass === 2) sample.opoisoned = 0;
-    else if (sample.oclass === 8) sample.odiluted = false;
+    if (sample.oclass === WEAPON_CLASS) sample.opoisoned = 0;
+    else if (sample.oclass === POTION_CLASS) sample.odiluted = false;
     else if (sample.otyp === TOWEL || sample.otyp === STATUE) sample.spe = 0;
     else if (sample.otyp === TIN) sample.known = false;
     else if (sample.otyp === FIGURINE) sample.corpsenm = -1;
     else if (sample.otyp === HEAVY_IRON_BALL) sample.owt = objectBaseWeight(HEAVY_IRON_BALL) ?? sample.owt;
-    else if (sample.oclass === 7 && sample.globby) sample.owt = 120;
+    else if (sample.oclass === FOOD_CLASS && sample.globby) sample.owt = 120;
     let prompt: string;
-    if (object.oclass === 8 && object.fromsink) {
+    if (object.oclass === POTION_CLASS && object.fromsink) {
         const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
         prompt = `Call a stream of ${appearance} fluid:`;
     } else {
@@ -893,7 +899,7 @@ export async function callObjectType(object: GameObject, state: GameState = game
                 if (state._objectDiscoveryOrder?.includes(object.otyp))
                     state._objectDiscoveryOrder = state._objectDiscoveryOrder.filter(type => type !== object.otyp);
                 else await impossible('named object not in disco', { state });
-                if (object.oclass === 13) repriceDiscoveredGems(object.otyp, state);
+                if (object.oclass === GEM_CLASS) repriceDiscoveredGems(object.otyp, state);
             }
         }
         return { prompted: true, named: false, callName: null };

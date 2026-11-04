@@ -1,3 +1,4 @@
+import { FOOD_CLASS } from '../js/objclass.js';
 import {
     objectBaseMaterial, CORPSE, EGG, ENORMOUS_MEATBALL, MEATBALL, MEAT_RING, MEAT_STICK, TIN,
     TRIPE_RATION,
@@ -43,7 +44,7 @@ void test('Lua-generated health food shops stock actual vegetarian food', async 
 
     const shops = game.level.rooms.filter(isRoom).filter(room => room.rtype === SHOPBASE + 10);
     assert.ok(shops.length > 0, 'the Lua room generator must create a health food shop');
-    const stock = floorObjects(game.level).filter(object => object.oclass === 7
+    const stock = floorObjects(game.level).filter(object => object.oclass === FOOD_CLASS
         && shops.some(room => object.ox >= room.lx && object.ox <= room.hx
             && object.oy >= room.ly && object.oy <= room.hy));
     assert.ok(stock.length > 10, 'health food shelves must contain real food objects');

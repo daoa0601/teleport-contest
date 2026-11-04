@@ -1,6 +1,7 @@
 // Hero movement, travel, and terrain effects.
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 
+import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import {
     objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE,
     DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL,
@@ -132,7 +133,6 @@ import { weaponDescription } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';
 
-const COIN_CLASS = 12;
 
 // Door opening and teleport input live with their C owners.
 
@@ -336,7 +336,7 @@ async function cannotPushMessage(boulder: GameObject, x: number, y: number): Pro
 async function cannotPush(boulder: GameObject, x: number, y: number): Promise<boolean> {
     if (heroThrowsRocks()) {
         const canPickup = !game.level?.flags.sokoban_rules
-            && (game.inventory.filter(object => object.oclass !== 12).length < 52
+            && (game.inventory.filter(object => object.oclass !== COIN_CLASS).length < 52
                 || !game.inventory.some(object => object.otyp === BOULDER));
         const willPickup = canPickup && game.flags.pickup && !game.context.nopick && await autopickupAllows(boulder);
         const steed = game.u.usteed;
@@ -4786,8 +4786,8 @@ function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
 }
 
 function isWeaponOrWeaponTool(object: GameObject): boolean {
-    return object.oclass === 2
-        || (object.oclass === 6 && objectSkill(object.otyp) !== 0);
+    return object.oclass === WEAPON_CLASS
+        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
 }
 
 export async function fallIntoSink(
@@ -4992,12 +4992,12 @@ export function inventoryWeight(state: GameState): number {
     const objectWeightTotal = inventory.reduce((total, object) => {
         // NetHack's only coin denomination weighs one unit per 100 coins,
         // rounded after combining the entire inventory stack.
-        if (object.oclass === 12)
+        if (object.oclass === COIN_CLASS)
             return total + Math.trunc((quantity(object) + 50) / 100);
         if (object.otyp === BOULDER && throwsRocks) return total;
         // C inv_weight() reads owt.  A partly eaten meal's owt is refreshed
         // only at eat.c:recalc_wt() checkpoints, not after every bite.
-        if (object.oclass === 7 && (object.oeaten ?? 0) > 0 && object.owt !== undefined)
+        if (object.oclass === FOOD_CLASS && (object.oeaten ?? 0) > 0 && object.owt !== undefined)
             return total + object.owt;
         return total + objectWeight(object);
     }, 0);

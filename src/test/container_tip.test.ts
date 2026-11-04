@@ -1,3 +1,4 @@
+import { FOOD_CLASS, POTION_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
@@ -225,7 +226,7 @@ void test('tip drains every charge of a horn onto the floor', async () => {
     assert.equal(horn.cknown, true);
     const food = floorObjectsAt(level, 10, 10);
     assert.equal(food.reduce((sum, object) => sum + object.quan, 0), 3);
-    assert.ok(food.every(object => object.blessed && [7, 8].includes(object.oclass)));
+    assert.ok(food.every(object => object.blessed && [FOOD_CLASS, POTION_CLASS].includes(object.oclass)));
     assert.equal(game.inventory.length, 1);
     assert.equal(game.context.move, 1);
 });

@@ -4,6 +4,11 @@
 // test. Room and shop selection live in mkroom.ts (mkroom.c mkshop);
 // shopkeeper runtime behavior lives in shk.ts.
 
+import {
+    WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
+    FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
+    GEM_CLASS,
+} from './objclass.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import { rn2, rnd } from './rng.js';
 import {
@@ -807,19 +812,6 @@ export function shopkeeperName(
     return capitalized ? name.charAt(0).toUpperCase() + name.slice(1) : name;
 }
 
-// Object class codes of the stock table; C objclass.h. Local like the
-// other class-code owners: a top-level table must not read mklev.js
-// through the mklev <-> shknam import cycle.
-const FOOD_CLASS = 7;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const TOOL_CLASS = 6;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const GEM_CLASS = 13;
-
 // ---- saleable(): C shknam.c:805 over the shtypes stock table ------------
 
 const VEGETARIAN_PSEUDO = Symbol('vegetarian');
@@ -834,7 +826,7 @@ const SHOP_STOCK: ReadonlyArray<readonly StockEntry[] | null> = [
     [{ class: WEAPON_CLASS }, { class: ARMOR_CLASS }],
     [{ class: FOOD_CLASS }, { otyp: POT_FRUIT_JUICE }, { otyp: POT_BOOZE },
         { otyp: POT_WATER }, { otyp: ICE_BOX }],
-    [{ class: 4 }, { class: GEM_CLASS }, { class: 5 }],
+    [{ class: RING_CLASS }, { class: GEM_CLASS }, { class: AMULET_CLASS }],
     [{ class: WAND_CLASS }, { otyp: LEATHER_GLOVES },
         { otyp: ELVEN_CLOAK }],
     [{ class: TOOL_CLASS }],

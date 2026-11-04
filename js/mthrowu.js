@@ -3,6 +3,7 @@
 // monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
 // return_from_mtoss(), thrwmm(), spitmm()/spitmu(), breamm(), thrwmu(),
 // breamu(), blocking_terrain(), linedup() and m_lined_up().
+import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
@@ -82,7 +83,6 @@ import { calcCapacity } from './hack.js';
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
 }
-const WEAPON_CLASS = 2, GEM_CLASS = 13, VENOM_CLASS = 17, POTION_CLASS = 8;
 const M2_ELF = 0x10, M2_GNOME = 0x40, M2_ORC = 0x80, M2_LORD = 0x400, M2_PRINCE = 0x800;
 const M1_WALLWALK = 0x08, M1_UNSOLID = 0x00100000;
 const SILVER = 14, GEMSTONE = 20, MINERAL = 21;
@@ -355,7 +355,7 @@ async function hitMonsterWithProjectile(defender, shot, remaining, context) {
     }
     const material = objectMaterial(object, state);
     const defenderFlags = MONSTER_FLAGS1[defender.mnum] ?? 0;
-    const harmless = object.oclass !== 4 && (material === GEMSTONE || material === MINERAL)
+    const harmless = object.oclass !== RING_CLASS && (material === GEMSTONE || material === MINERAL)
         && !!(defenderFlags & M1_WALLWALK) && !(defenderFlags & M1_UNSOLID);
     let damage = rollPhysicalWeaponDamage(object, defender, { state, rollOne, rollDice });
     if (object.otyp === ACID_VENOM && monsterHasAcidResistance(defender))

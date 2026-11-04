@@ -1,6 +1,7 @@
 // What an altar reveals when an object lands on it.
 // C ref: do.c doaltarobj().
 
+import { COIN_CLASS } from './objclass.js';
 import { displayColorName } from './do_name.js';
 import { upstart } from './hacklib.js';
 import { plineWithContinuation } from './pline.js';
@@ -24,7 +25,6 @@ interface AltarLandingOptions {
     publish?: MessagePublisher;
 }
 
-const COIN_CLASS = 12;
 
 async function objectDescription(object: GameObject, state: GameState): Promise<string> {
     observeObjectForNaming(object, { state });

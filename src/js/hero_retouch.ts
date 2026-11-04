@@ -1,6 +1,7 @@
 // Check hero contact with an object, including equipment after a body or alignment change.
 // C artifact.c:retouch_object(), untouchable(), retouch_equipment().
 
+import { RING_CLASS, TOOL_CLASS, WAND_CLASS } from './objclass.js';
 import {
     artifactInvokeIsActive,
     deactivateArtifactProperty,
@@ -58,7 +59,6 @@ export interface HeroRetouchResult {
     rejected: boolean;
 }
 
-const TOOL_CLASS = 6;
 const SILVER = 14;
 // Losing a form while handling an item can enter this routine again.
 // Nested passes share C's bypass marks until the outer pass finishes.
@@ -190,8 +190,8 @@ export async function retouchHeroObject(object: GameObject, {
             if (state.u.halfPhysicalDamage)
                 damage = Math.trunc((damage + 1) / 2);
             if (bane) damage += rnd(10);
-            const cause = silver && !artifact && !bane && [4, 11].includes(object.oclass)
-                ? object.oclass === 4 ? 'a silver ring' : 'a silver wand'
+            const cause = silver && !artifact && !bane && [RING_CLASS, WAND_CLASS].includes(object.oclass)
+                ? object.oclass === RING_CLASS ? 'a silver ring' : 'a silver wand'
                 : killerObjectName(object, state);
             const died = await loseHeroHp(
                 damage, `handling ${cause}`,

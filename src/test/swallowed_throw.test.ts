@@ -1,3 +1,4 @@
+import { TOOL_CLASS } from '../js/objclass.js';
 import {
     objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW,
     CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LEATHER_GLOVES, LONG_SWORD, MAGIC_LAMP,
@@ -185,7 +186,7 @@ void test('swallowed timed lamp links before snuffing and restores unused fuel',
         initRng(2305n);
         const lamp = await addInventoryObject(OIL_LAMP, { age: 200 });
         assert.equal(lamp.invlet, 'a');
-        assert.equal(lamp.oclass, 6);
+        assert.equal(lamp.oclass, TOOL_CLASS);
         assert.equal(beginObjectBurn(lamp, game, game.moves), true);
         assert.equal(lamp.age, 150);
         assert.equal(objectTimers(lamp)[0]?.deadline, 90);
@@ -273,7 +274,7 @@ void test('blind swallowed contact silently snuffs an untimed magic lamp',
         initRng(2307n);
         const lamp = await addInventoryObject(MAGIC_LAMP, { age: 40 });
         assert.equal(lamp.invlet, 'a');
-        assert.equal(lamp.oclass, 6);
+        assert.equal(lamp.oclass, TOOL_CLASS);
         assert.equal(beginObjectBurn(lamp, game, game.moves), true);
         assert.equal(lamp.lamplit, true);
         assert.deepEqual(objectTimers(lamp), []);

@@ -1,3 +1,4 @@
+import { AMULET_CLASS } from '../js/objclass.js';
 import { createSpecialLevel } from './support/topology.js';
 import type { RngSeed } from '../js/rng.js';
 import { requirePlayingGame } from '../js/gstate.js';
@@ -76,6 +77,6 @@ void test('false Wizard 1 returns by portal while false Wizard 2 holds an amulet
         requirePlayingGame(game);
         assert.equal(portalCount(), 0);
         assert.equal(levelStairs(game).length, 2);
-        assert.ok(floorObjects(game.level).some(object => object.oclass === 5));
+        assert.ok(floorObjects(game.level).some(object => object.oclass === AMULET_CLASS));
         assert.ok(game.level.monsters.length >= 3);
     });

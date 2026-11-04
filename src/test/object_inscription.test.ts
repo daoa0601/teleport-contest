@@ -1,3 +1,4 @@
+import { ARMOR_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -70,8 +71,8 @@ void test('dummy and minimal naming views omit end-of-game inscriptions', async 
 
     assert.match(objectName(shirt), / with text /);
     assert.equal(minimalObjectName(shirt), 'T-shirt');
-    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, dknown: true }), 'T-shirt');
-    assert.equal(objectName({ otyp: T_SHIRT, oclass: 3, o_id: 0, dknown: true }), 'T-shirt');
+    assert.equal(objectName({ otyp: T_SHIRT, oclass: ARMOR_CLASS, dknown: true }), 'T-shirt');
+    assert.equal(objectName({ otyp: T_SHIRT, oclass: ARMOR_CLASS, o_id: 0, dknown: true }), 'T-shirt');
 });
 
 void test('candy stack disclosure pluralizes the bar before its wrapper and personal name', async () => {

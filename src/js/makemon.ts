@@ -3,6 +3,11 @@
 // m_initinv, set_mimic_sym, create_critters.
 
 import {
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS,
+    TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS,
+    WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, MAXOCLASSES,
+} from './objclass.js';
+import {
     objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP,
     CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART,
     DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT,
@@ -79,24 +84,9 @@ import { shopkeeperName } from './shknam.js';
 import { inTown, roomForIndex } from './hack.js';
 import {objectWeight, nextIdent} from './mkobj.js';
 
-// Object/class constants (normally from objects.js, not in contest template)
-const RANDOM_CLASS = 0;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
 const M1_MINDLESS = 0x00010000;
 const G_NOGEN = 0x0200;
 const G_IGNORE = 0x8000;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const PLACEHOLDER_MONSTERS = new Set([72, 169, 260, 264]);
 // Trap-type constants used by birth-time trap memory (trap.h).
 const PIT = 11;
@@ -637,32 +627,31 @@ async function chooseMimicAppearance(x: number, y: number): Promise<{ type: numb
 
     // C's first two syms entries choose furniture; the last two choose the
     // generic strange object. Shops exclude the furniture entries.
-    const furnitureClass = 18; // MAXOCLASSES
     const classes = [
-        furnitureClass, furnitureClass, RING_CLASS, WAND_CLASS, WEAPON_CLASS,
+        MAXOCLASSES, MAXOCLASSES, RING_CLASS, WAND_CLASS, WEAPON_CLASS,
         FOOD_CLASS, COIN_CLASS, SCROLL_CLASS, POTION_CLASS, ARMOR_CLASS,
-        AMULET_CLASS, TOOL_CLASS, ROCK_CLASS, GEM_CLASS, SPBOOK_CLASS, 0, 0,
+        AMULET_CLASS, TOOL_CLASS, ROCK_CLASS, GEM_CLASS, SPBOOK_CLASS, RANDOM_CLASS, RANDOM_CLASS,
     ];
     let objectClass;
     if (roomType >= SHOPBASE) {
         if (rn2(10) >= depth_of_level(game.u.uz)) return object(0);
         objectClass = getShopItem(roomType - SHOPBASE);
-        if (objectClass < 0) return object(-objectClass);
-        if (roomType - SHOPBASE === 10 && objectClass > furnitureClass)
+        if (objectClass < RANDOM_CLASS) return object(-objectClass);
+        if (roomType - SHOPBASE === 10 && objectClass > MAXOCLASSES)
             return object(rn2(2) ? LUMP_OF_ROYAL_JELLY : SLIME_MOLD);
-        if (objectClass === RANDOM_CLASS || objectClass >= furnitureClass)
+        if (objectClass === RANDOM_CLASS || objectClass >= MAXOCLASSES)
             objectClass = classes[rn2(classes.length - 2) + 2];
     } else objectClass = classes[rn2(classes.length)];
 
     if (objectClass === undefined)
         throw new RangeError('mimic object-class selection exceeded its table');
-    if (objectClass === furnitureClass) {
+    if (objectClass === MAXOCLASSES) {
         const appearance = [25, 25, 26, 26, 33, 34, 35, 36][rn2(8)];
         if (appearance === undefined)
             throw new RangeError('mimic furniture selection exceeded its table');
         return furniture(appearance);
     }
-    if (objectClass === 0) return object(0);
+    if (objectClass === RANDOM_CLASS) return object(0);
     if (objectClass === COIN_CLASS) return object(GOLD_PIECE);
     const temporary = await mkobj(objectClass, false);
     const appearance = temporary.otyp;
@@ -1902,7 +1891,7 @@ export async function giveMonsterStartingObject(monster: Monster, type: number):
         object.oerodeproof = true;
         object.oeroded = object.oeroded2 = 0;
         object.orotten = object.odiluted = object.norevive = false;
-    } else if (monsterIsPlayerMonster(monster.mnum) && object.oclass === 2
+    } else if (monsterIsPlayerMonster(monster.mnum) && object.oclass === WEAPON_CLASS
         && objectSkill(type) >= P_SHORT_SWORD
         && objectSkill(type) <= P_SABER) {
         object.spe = 3 + rn2(4);
@@ -1919,8 +1908,8 @@ export async function giveMonsterStartingObject(monster: Monster, type: number):
         object.cursed = true;
     }
     if (flags & 0x800) {
-        if (object.oclass === 2) object.spe = Math.max(1, object.spe);
-        else if (object.oclass === 3) object.spe = Math.max(0, object.spe);
+        if (object.oclass === WEAPON_CLASS) object.spe = Math.max(1, object.spe);
+        else if (object.oclass === ARMOR_CLASS) object.spe = Math.max(0, object.spe);
     }
     await addCreatedObjectToMonsterInventory(monster, object, game);
     return object.where === 'gone' ? null : object;

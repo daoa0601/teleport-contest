@@ -1,6 +1,7 @@
 // Hero-credited monster death.
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
+import { RANDOM_CLASS, FOOD_CLASS } from './objclass.js';
 import {
     objectBimanual, BOULDER, FIGURINE,
 } from './object_data.js';
@@ -99,7 +100,6 @@ export interface HeroLiquidMonsterDeathOutcome {
 }
 
 const M2_COLLECT = 0x40000000;
-const FOOD_CLASS = 7;
 const MZ_HUMAN = 2;
 
 function killingIsMurder(monster: Monster) {
@@ -295,7 +295,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
             && (x !== game.u?.ux || y !== game.u?.uy)
             && !monsterIsKop(monster.mnum)
             && !monster.mcloned) {
-            const extra = await mkobj(0, true);
+            const extra = await mkobj(RANDOM_CLASS, true);
             const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
                 & M2_COLLECT);
             const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)

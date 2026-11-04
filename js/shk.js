@@ -5,6 +5,7 @@
 // entry policy below. Lua/mklev owns room construction and initial stock
 // (shknam.ts); this module owns the live relationship among room, resident,
 // customer, and hero.
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
 import { impossible } from './diagnostics.js';
 import { objectMaterial } from './o_init.js';
@@ -53,7 +54,6 @@ import { dropHeroInventoryForBones } from './bones.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
-import { SPBOOK_CLASS } from './mklev.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
@@ -86,22 +86,10 @@ import { bookDisappears } from './spell.js';
 import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip } from './hack.js';
 import { insideRoom } from './mkroom.js';
 import { objectWeight, nextIdent, nextObjectId, remove_object, placeObject } from './mkobj.js';
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
 const M2_PNAME = 0x00080000;
-// Object class codes used by the sale and naming paths; C objclass.h.
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const SCROLL_CLASS = 9;
-// C objclass.h class codes used by the sell path.
-const TOOL_CLASS = 6;
-const POTION_CLASS = 8;
-const WAND_CLASS = 11;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 function sameLevel(a, b) {
     return (a?.dnum ?? 0) === (b?.dnum ?? 0)
@@ -242,7 +230,6 @@ export function objectPriceAdjustment(object, oid, state = game) {
         return ((oid % 4) === 0) ? 1 : 0;
     return 0;
 }
-const FOOD_CLASS = 7;
 async function clearEquipment(object, state) {
     await removeHeroEquipment(object, state);
     object.owornmask = 0;
@@ -368,9 +355,9 @@ function shopUsageCost(object, resident, alternate, state) {
         return alternate ? cost : Math.trunc(cost / 5);
     if ([CRYSTAL_BALL, OIL_LAMP, BRASS_LANTERN].includes(type)
         || type >= MAGIC_FLUTE && type <= DRUM_OF_EARTHQUAKE
-        || object.oclass === 11)
+        || object.oclass === WAND_CLASS)
         return object.spe > 1 ? Math.trunc(cost / 4) : cost;
-    if (object.oclass === 10)
+    if (object.oclass === SPBOOK_CLASS)
         return cost - Math.trunc(cost / 5);
     if ([CAN_OF_GREASE, TINNING_KIT, EXPENSIVE_CAMERA].includes(type))
         return Math.trunc(cost / 10);
@@ -392,7 +379,7 @@ export async function chargeUnpaidUsage(object, { state = game, alternate = fals
         return null;
     const money = () => `${amount} ${currency(amount, { state })}`;
     let text;
-    if (object.oclass === 10) {
+    if (object.oclass === SPBOOK_CLASS) {
         const insult = shopkeeperCustomerInsult(state);
         const prefix = rn2(2) ? `This is no free library, ${insult}!  ` : '';
         const extra = (resident.eshk.debit ?? 0) > 0 ? ' an additional' : '';
@@ -2744,7 +2731,7 @@ export async function quoteShopGoods() {
     const spot = costlySpot(game.u.ux, game.u.uy);
     if (!spot || !spot.resident.mpeaceful || shopkeeperIsMuted(spot.resident))
         return false;
-    const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== 12) ?? [];
+    const goods = game.level?.objects[game.u.ux]?.[game.u.uy]?.filter(object => object.oclass !== COIN_CLASS) ?? [];
     if (!goods.length)
         return false;
     const quotes = [];
@@ -2787,10 +2774,10 @@ function embellish(object, cost) {
             case 4:
                 if (cost < 10)
                     break;
-                if (object.oclass === 7)
+                if (object.oclass === FOOD_CLASS)
                     return ", gourmets' delight!";
                 if (objectTypeKnown(object) ? objectMagic(object.otyp)
-                    : [4, 5, 8, 9, 10, 11].includes(object.oclass))
+                    : [RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS].includes(object.oclass))
                     return ', painstakingly developed!';
                 return ', superb craftsmanship!';
             case 3: return ', finest quality.';
@@ -3050,7 +3037,7 @@ export function shopGetPrice(object, shkBuying, state = game) {
         if (shkBuying)
             tmp = Math.trunc(tmp / 4);
     }
-    if (object.oclass === 7 /* FOOD_CLASS */) {
+    if (object.oclass === FOOD_CLASS /* FOOD_CLASS */) {
         tmp += corpsenmPriceAdj(object);
         // Hungry buyers pay multiples of the food price; sellers never do.
         const hunger = state.u.uhs ?? 0;
@@ -3059,20 +3046,20 @@ export function shopGetPrice(object, shkBuying, state = game) {
         if (object.oeaten)
             tmp = 0;
     }
-    else if (object.oclass === 11 /* WAND_CLASS */) {
+    else if (object.oclass === WAND_CLASS /* WAND_CLASS */) {
         if (object.spe === -1)
             tmp = 0;
     }
-    else if (object.oclass === 8 /* POTION_CLASS */) {
+    else if (object.oclass === POTION_CLASS /* POTION_CLASS */) {
         if (object.otyp === POT_WATER && !object.blessed && !object.cursed)
             tmp = 0;
     }
-    else if (object.oclass === 3 /* ARMOR */
-        || object.oclass === 2 /* WEAPON_CLASS */) {
+    else if (object.oclass === ARMOR_CLASS /* ARMOR */
+        || object.oclass === WEAPON_CLASS /* WEAPON_CLASS */) {
         if ((object.spe ?? 0) > 0)
             tmp += 10 * object.spe;
     }
-    else if (object.oclass === 6 /* TOOL_CLASS */) {
+    else if (object.oclass === TOOL_CLASS /* TOOL_CLASS */) {
         if (objectIsCandle(object)
             && (object.age ?? 0) < 20 * objectBaseCost(object.otyp)) {
             tmp = Math.trunc(tmp / 2);
@@ -4641,7 +4628,7 @@ function quantity(object) {
 export function containedGold(container, evenIfUnknown = true) {
     let total = 0;
     for (const object of container?.contents || []) {
-        if (object.otyp === GOLD_PIECE || object.oclass === 12) {
+        if (object.otyp === GOLD_PIECE || object.oclass === COIN_CLASS) {
             total += quantity(object);
         }
         else if (Array.isArray(object.contents)

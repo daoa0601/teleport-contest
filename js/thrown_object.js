@@ -1,6 +1,7 @@
 // Objects thrown by the hero.
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
+import { COIN_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
 import { objectClassForType, objectSkill, BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, ROCK, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
@@ -44,9 +45,6 @@ import { objectNoLongerHeld } from './do.js';
 import { cansee } from './vision.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { objectWeight, placeObject, stack_object } from './mkobj.js';
-const VENOM_CLASS = 17;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
 }
@@ -364,7 +362,7 @@ async function flyPhysicalObject({ state = game, object, dx, dy, range, startX, 
                 stoppedBy = 'monster';
                 break;
             }
-            if (kicked && object.oclass === 12 && state.level?.objects[x]?.[y]?.length) {
+            if (kicked && object.oclass === COIN_CLASS && state.level?.objects[x]?.[y]?.length) {
                 stoppedBy = 'terrain';
                 break;
             }

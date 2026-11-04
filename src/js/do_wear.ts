@@ -12,6 +12,10 @@
 // allmain.c.
 
 import {
+    ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS,
+    TOOL_CLASS, COIN_CLASS,
+} from './objclass.js';
+import {
     objectDelay, objectSkill, objectCharged, GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES,
     MEAT_RING, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION,
     CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING,
@@ -103,7 +107,7 @@ export async function doputon(): Promise<void> {
         commandResultCancelled();
         return;
     }
-    if (object.oclass === 3) {
+    if (object.oclass === ARMOR_CLASS) {
         await putOnArmorObject(object);
         return;
     }
@@ -134,7 +138,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
         return;
     }
 
-    if (object.oclass === 5 || object.class === 'Amulets') {
+    if (object.oclass === AMULET_CLASS || object.class === 'Amulets') {
         if (game.uamul) {
             await pline('You are already wearing an amulet.');
             game.context.move = 0;
@@ -150,7 +154,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
         return;
     }
 
-    if ((object.oclass === 4 || object.class === 'Rings' || object.otyp === MEAT_RING)
+    if ((object.oclass === RING_CLASS || object.class === 'Rings' || object.otyp === MEAT_RING)
         && heroHasNoLimbs(game)) {
         await pline('You cannot make the ring stick to your body.');
         game.context.move = 0;
@@ -324,7 +328,7 @@ export async function removeWornItem(action: 'remove' | 'take off', itemAction =
     }
 
     const delay = objectDelay(object.otyp);
-    const isArmor = object.class === 'Armor' || object.oclass === 3;
+    const isArmor = object.class === 'Armor' || object.oclass === ARMOR_CLASS;
     if (isArmor && delay > 0) {
         nomul(-delay);
         game._helplessReason = 'disrobing';
@@ -493,7 +497,7 @@ function classifyWearChoice(object: GameObject, action: 'wear' | 'put on') {
     const classification = equipmentClassification(object, action);
     // Native canwearobj() checks welded() even during getobj's silent fit
     // check. Keep that knowledge change at the command boundary.
-    if (action === 'wear' && object.oclass === 3) {
+    if (action === 'wear' && object.oclass === ARMOR_CLASS) {
         const decision = armorWearDecision(object);
         if (decision.checkedWeldedWeapon) decision.checkedWeldedWeapon.bknown = true;
     }
@@ -524,7 +528,7 @@ export async function dowear(): Promise<void> {
         commandResultCancelled();
         return;
     }
-    if (object.oclass === 3) await putOnArmorObject(object);
+    if (object.oclass === ARMOR_CLASS) await putOnArmorObject(object);
     else await putOnAccessoryObject(object);
 }
 
@@ -847,7 +851,6 @@ type Category = number | 'all' | 'u' | 'B' | 'C' | 'U' | 'X' | 'P';
 type BucCategory = 'B' | 'C' | 'U' | 'X';
 type SelectOff = (object: GameObject) => Promise<void>;
 
-const WEAPON_CLASS = 2;
 
 // C do_wear.c:menu_remarm(): the category and object pick lists for 'A',
 // including the combination-style class prompt and the BUC category
@@ -901,14 +904,14 @@ function wornInventory(): GameObject[] {
 }
 
 function bucCategory(object: GameObject): BucCategory {
-    if (object.oclass === 12) return game.flags.goldX ? 'X' : 'U';
+    if (object.oclass === COIN_CLASS) return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
 
 function wornBucCategories(worn: readonly GameObject[]): Set<BucCategory> {
     // Native count_buc() grants priest knowledge before applying is_worn().
     if (game.urole?.key === 'priest')
-        for (const object of game.inventory) object.bknown = object.oclass !== 12;
+        for (const object of game.inventory) object.bknown = object.oclass !== COIN_CLASS;
     return new Set(worn.map(bucCategory));
 }
 
@@ -922,7 +925,7 @@ function matchesCategories(object: GameObject, categories: readonly Category[]):
     // C menu_remarm(): P alone does not disable the all-worn menu.
     const filters = categories.includes('u') || statuses.length > 0;
     if (categories.includes('all') && !filters) return true;
-    if (object.oclass === 12 && classes.length > 0) return classes.includes(12);
+    if (object.oclass === COIN_CLASS && classes.length > 0) return classes.includes(COIN_CLASS);
     return (!classes.length || classes.includes(object.oclass))
         && (!categories.includes('u') || hasUnpaid(object))
         && (!statuses.length || statuses.includes(bucCategory(object)))
@@ -1007,23 +1010,23 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
             continue;
         }
         const oclass = OBJECT_CLASS_SYMBOLS.indexOf(character);
-        if (oclass < 1) {
+        if (oclass < ILLOBJ_CLASS) {
             await plineWithContinuation(`You don't have any ${character}'s.`);
             continue;
         }
         const weaponSlots = (['uwep', 'uswapwep', 'uquiver'] as const).map(slot => takeoffSlotObject(slot));
         const slottedClass = weaponSlots.some(object => object?.oclass === oclass);
-        if (!slottedClass && ![2, 3, 4, 5, 6].includes(oclass)) {
+        if (!slottedClass && ![WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS].includes(oclass)) {
             await plineWithContinuation('Not applicable.');
             return null;
         }
         const hasCategory = oclass === WEAPON_CLASS
             ? weaponSlots.some(object => object !== null) : classes.includes(oclass);
         if (!slottedClass && !hasCategory) {
-            await plineWithContinuation(oclass === 2 ? 'You are not wielding anything.'
-                : oclass === 3 ? 'You are not wearing any armor.'
-                    : oclass === 4 ? 'You are not wearing rings.'
-                        : oclass === 5 ? 'You are not wearing an amulet.'
+            await plineWithContinuation(oclass === WEAPON_CLASS ? 'You are not wielding anything.'
+                : oclass === ARMOR_CLASS ? 'You are not wearing any armor.'
+                    : oclass === RING_CLASS ? 'You are not wearing rings.'
+                        : oclass === AMULET_CLASS ? 'You are not wearing an amulet.'
                             : 'You are not wearing a blindfold.');
             return null;
         }
@@ -1050,9 +1053,9 @@ async function traditionalCategories(combo: boolean, selectOff: SelectOff): Prom
                     || !matchesCategories(object, categories)) continue;
                 questioned = true;
                 observeObjectForNaming(object);
-                const position = index - (sorted[0]?.oclass === 12 ? 1 : 0);
+                const position = index - (sorted[0]?.oclass === COIN_CLASS ? 1 : 0);
                 const letter = game.flags.fixinv !== false ? object.invlet
-                    : object.oclass === 12 ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
+                    : object.oclass === COIN_CLASS ? '$' : 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.charAt(position) || '#';
                 const answer = acceptAll ? 'y' : await promptYesNoAllQuit(
                     `${letter} - ${await inventoryItemDescription(object)}?`, 'n');
                 if (answer === 'q') return null;
@@ -1090,12 +1093,12 @@ export function equipmentClassification(
     const accessory = action === 'put on' || action === 'remove';
     const worn = !!((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY));
     if (removing !== worn) return GETOBJ_EXCLUDE_INACCESS;
-    if (![3, 4, 5].includes(object.oclass) && !isEyewear(object) && object.otyp !== MEAT_RING)
+    if (![ARMOR_CLASS, RING_CLASS, AMULET_CLASS].includes(object.oclass) && !isEyewear(object) && object.otyp !== MEAT_RING)
         return GETOBJ_EXCLUDE;
-    if (accessory !== (object.oclass !== 3)) return GETOBJ_DOWNPLAY;
-    if (object.oclass === 3 && !removing && armorWearDecision(object, state).refusal)
+    if (accessory !== (object.oclass !== ARMOR_CLASS)) return GETOBJ_DOWNPLAY;
+    if (object.oclass === ARMOR_CLASS && !removing && armorWearDecision(object, state).refusal)
         return GETOBJ_DOWNPLAY;
-    if (removing && !itemAction && equipmentIsCovered(object, object.oclass === 4, state))
+    if (removing && !itemAction && equipmentIsCovered(object, object.oclass === RING_CLASS, state))
         return GETOBJ_EXCLUDE_INACCESS;
     return GETOBJ_SUGGEST;
 }

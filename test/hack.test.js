@@ -1,3 +1,4 @@
+import { ARMOR_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS } from '../js/objclass.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
@@ -158,7 +159,7 @@ void test('fireproof water-walking boots hold the hero above lava', async () => 
     liquidAtHero(LAVAPOOL);
     requireFixtureGame(game);
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, {
-        oclass: 3,
+        oclass: ARMOR_CLASS,
         worn: true,
         oerodeproof: true,
     });
@@ -254,9 +255,9 @@ void test('life saving pulls the hero out after flammable gear burns', async () 
     const level = liquidAtHero(LAVAPOOL);
     requireFixtureGame(game);
     level.requireAt(20, 5).typ = ROOM;
-    const armor = await addInventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    const armor = await addInventoryObject(LEATHER_ARMOR, { oclass: ARMOR_CLASS });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
-        oclass: 5,
+        oclass: AMULET_CLASS,
         worn: true,
     });
     game.uamul = amulet;
@@ -404,7 +405,7 @@ void test('known water-walking boots let the hero step onto a pool', async () =>
     level.requireAt(11, 10).typ = POOL;
     vision_reset();
     const boots = await addInventoryObject(WATER_WALKING_BOOTS, {
-        oclass: 3,
+        oclass: ARMOR_CLASS,
         worn: true,
         typeKnown: true,
     });
@@ -527,7 +528,7 @@ void test('life saving moves a drowned hero to dry land', async () => {
     level.requireAt(20, 5).typ = ROOM;
     const loadstone = await addInventoryObject(LOADSTONE, { cursed: true });
     const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING, {
-        oclass: 5,
+        oclass: AMULET_CLASS,
         worn: true,
     });
     game.uamul = amulet;
@@ -592,7 +593,7 @@ void test('swimming through the same pool usually leaves inventory dry', async (
     game.u.uinwater = 1;
     game.u.swimming = true;
     game.u.uluck = -5;
-    const acid = await addInventoryObject(POT_ACID, { oclass: 8 });
+    const acid = await addInventoryObject(POT_ACID, { oclass: POTION_CLASS });
     await heroLiquidEffects({
         ...noDisplay,
         publish: async () => { },
@@ -610,7 +611,7 @@ void test('entering a pool releases every leash', async () => {
     const pet = await createMonsterAt('little dog', 11, 10);
     pet.mleashed = 1;
     const leash = await addInventoryObject(LEASH, {
-        oclass: 6,
+        oclass: TOOL_CLASS,
         leashmon: pet.m_id,
     });
     const messages = [];
@@ -667,7 +668,7 @@ void test('a hallucinating hero falls into molten lava of an imagined liquid', a
 void test('dumping gear in a pool leaves the armor class for the turn loop', async () => {
     poolAtHero();
     requireFixtureGame(game);
-    const armor = await addInventoryObject(LEATHER_ARMOR, { oclass: 3 });
+    const armor = await addInventoryObject(LEATHER_ARMOR, { oclass: ARMOR_CLASS });
     await wearHeroArmor(armor);
     const wornClass = findArmorClass(game);
     armor.oeroded = 1;

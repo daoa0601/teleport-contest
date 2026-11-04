@@ -1,5 +1,6 @@
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
 import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_PROPERTY, WAN_FIRE, } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
@@ -50,26 +51,11 @@ import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } f
 import { bookCursed } from './spell.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { dropCursedAlternateWeapon } from './wield.js';
-const RANDOM_CLASS = 0;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
 const G_NOGEN = 0x0200;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const LIQUID = 1;
 const WOOD = 8;
 const DRAGON_HIDE = 10;
 const PLASTIC = 18;
-const SPBOOK_no_NOVEL = -SPBOOK_CLASS;
 const PM_DEATH = 311;
 const PM_FAMINE = 313;
 const M2_HUMAN = 0x00000008;
@@ -126,7 +112,7 @@ export async function curseObject(object, { state = game } = {}) {
     const changed = curseObjectState(object, state);
     if (object && object === (state.uswapwep || state.u.uswapwep) && state.u.twoweap)
         await dropCursedAlternateWeapon(object, state);
-    if (object && changed && !wasCursed && object.oclass === 10)
+    if (object && changed && !wasCursed && object.oclass === SPBOOK_CLASS)
         await bookCursed(object, { state });
     if (object?.lamplit)
         await adjustObjectLightAfterBlessing(object, oldLight, state);
@@ -872,15 +858,15 @@ export function saveMonsterTraits(monster) {
 }
 // C mkobj.c:clear_dknown().
 const DESCRIPTION_UNKNOWN_CLASSES = new Set([
-    2, // WEAPON_CLASS
-    4, // RING_CLASS
-    6, // TOOL_CLASS
-    8, // POTION_CLASS
-    9, // SCROLL_CLASS
-    10, // SPBOOK_CLASS
-    11, // WAND_CLASS
-    13, // GEM_CLASS
-    17, // VENOM_CLASS
+    WEAPON_CLASS,
+    RING_CLASS,
+    TOOL_CLASS,
+    POTION_CLASS,
+    SCROLL_CLASS,
+    SPBOOK_CLASS,
+    WAND_CLASS,
+    GEM_CLASS,
+    VENOM_CLASS,
 ]);
 // C mkobj.c:clear_dknown().
 export function clearDescriptionKnowledge(object) {
@@ -1419,7 +1405,7 @@ export async function useHornOfPlenty(horn, { tipping = false, target = null, } 
     let object;
     let what;
     if (!rn2(13)) {
-        object = await mkobj(8, false);
+        object = await mkobj(POTION_CLASS, false);
         if (objectMagic(object.otyp)) {
             do {
                 object.otyp = rndClass(POT_BOOZE, POT_WATER);
@@ -1430,7 +1416,7 @@ export async function useHornOfPlenty(horn, { tipping = false, target = null, } 
         what = object.quan > 1 ? 'Some potions spill' : 'A potion spills';
     }
     else {
-        object = await mkobj(7, false);
+        object = await mkobj(FOOD_CLASS, false);
         if (object.otyp === FOOD_RATION && !rn2(7))
             object.otyp = LUMP_OF_ROYAL_JELLY;
         what = 'Some food spills';
@@ -1993,7 +1979,7 @@ export function objectWeight(object) {
     // A top-level coin stack is treated specially by inv_weight(), but coin
     // inside a container reaches mkobj.c:weight() and therefore weighs at
     // least one unit even below 50 pieces.
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
     // C mkobj.c:weight(): globs keep quantity one while absorption and
     // SHRINK_GLOB mutate their complete weight directly in owt.  This check
@@ -2013,7 +1999,7 @@ export function objectWeight(object) {
     }
     // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition per item, including stacks of partly eaten wishes.
-    if (object.oclass === 7 && uneatenNutrition > 0 && base > 0) {
+    if (object.oclass === FOOD_CLASS && uneatenNutrition > 0 && base > 0) {
         const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
         if (fullNutrition > 0) {
             return Math.max(1, Math.trunc(base * count * Math.min(uneatenNutrition, fullNutrition) / fullNutrition));

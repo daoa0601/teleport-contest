@@ -1,3 +1,4 @@
+import { COIN_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -72,7 +73,7 @@ void test('traditional dropping restarts floating letters after gold leaves the 
         await action;
     }
     assert.equal(dagger.where, 'inventory');
-    assert.equal(game.inventory.some(object => object.oclass === 12), false);
+    assert.equal(game.inventory.some(object => object.oclass === COIN_CLASS), false);
 });
 for (const dualWielding of [false, true]) {
     void test(`traditional dropping shortens a long item name and keeps its question${dualWielding ? ' while dual-wielding' : ''}`, async () => {

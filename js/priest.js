@@ -4,6 +4,7 @@
 // this module owns their live relationship with the hero after movement or
 // a level transition, and the special mover both temple priests and
 // shopkeepers use to reach a goal square.
+import { SPBOOK_no_NOVEL } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordTempleOverview } from './dungeon.js';
@@ -40,7 +41,7 @@ import { mksobj, mkobj } from './mkobj.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
-import { SPBOOK_no_NOVEL, xdir, ydir } from './mklev.js';
+import { xdir, ydir } from './mklev.js';
 import { roomForRoomno, roomsAt, checkSpecialRoom } from './hack.js';
 const M2_MINION = 0x00001000;
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;

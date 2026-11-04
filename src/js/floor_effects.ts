@@ -1,6 +1,7 @@
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
 
+import { POTION_CLASS } from './objclass.js';
 import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
 
@@ -46,7 +47,6 @@ export type FloorEffectResult = {
     buriedFloorObjects?: GameObject[];
 };
 
-const POTION_CLASS = 8;
 
 function squareIsVisible(state: GameState, x: number, y: number): boolean {
     if (state === game) return cansee(x, y);

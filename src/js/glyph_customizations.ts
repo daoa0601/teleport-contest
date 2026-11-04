@@ -1,4 +1,5 @@
 // Pinned dat/symbols, expanded as glyphs.c:glyph_find_core()/apply_customizations().
+import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -187,7 +188,7 @@ function objectGlyphs(otyp: number): GlyphDefinition[] {
     if (!name) throw new Error(`Missing object glyph name ${otyp}`);
     const { oclass } = getObjectDefinition(otyp);
     const baseColor = game.objectColors?.[otyp] ?? requireObjectData(OBJECT_COLOR, otyp);
-    const rogueColor = oclass === 12 ? CLR_YELLOW : oclass === 7 ? CLR_RED : CLR_BRIGHT_BLUE;
+    const rogueColor = oclass === COIN_CLASS ? CLR_YELLOW : oclass === FOOD_CLASS ? CLR_RED : CLR_BRIGHT_BLUE;
     return [GlyphOffset.object, GlyphOffset.objectPiletop].map((offset, index) => ({
         glyph: offset + otyp, id: `G_${index ? 'piletop_' : ''}${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,
         symbol: { kind: 'object', oclass }, baseColor, rogueColor,

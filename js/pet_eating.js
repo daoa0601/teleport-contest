@@ -1,3 +1,4 @@
+import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_NUTRITION, } from './object_data.js';
 import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display.js';
@@ -17,8 +18,6 @@ import { chargeAlteredUnpaidObject, unpaidObjectCost } from './shk.js';
 import { G_GENOD } from './const.js';
 import { isPoolAt } from './dbridge.js';
 import { cansee } from './vision.js';
-const FOOD_CLASS = 7;
-const COIN_CLASS = 12;
 const M1_TUNNEL = 0x00000020;
 const PM_KILLER_BEE = MONSTER_NAME.indexOf('killer bee');
 const PM_QUEEN_BEE = MONSTER_NAME.indexOf('queen bee');

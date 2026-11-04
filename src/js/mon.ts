@@ -1,6 +1,7 @@
 // Monster body and terrain rules.
 // C ref: mon.c.
 
+import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
 import {
     objectBaseWeight, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK,
     EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION,
@@ -944,7 +945,6 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
 // C mon.c:can_touch_safely(), curr_mon_load(), max_mon_load() and can_carry().
 // ---------------------------------------------------------------------------
 
-const COIN_CLASS = 12, GEM_CLASS = 13;
 const M1_NOHANDS = 0x00002000;
 const M2_STRONG = 0x04000000;
 const M2_GREEDY = 0x10000000;
@@ -2046,7 +2046,6 @@ export function initializeMonsterMovement(monster: Monster): Monster {
 
 // ── C mon.c:meatmetal(), meatobj(), and meatcorpse(). Non-pet meals
 // during post-move item handling.
-const SCROLL_CLASS = 9, ROCK_CLASS = 14;
 const PM_RUST_MONSTER = MONSTER_NAME.indexOf('rust monster');
 
 export interface MonsterFloorConsumptionOptions {

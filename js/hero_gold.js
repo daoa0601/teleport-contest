@@ -1,5 +1,6 @@
 // The hero's carried gold is the COIN_CLASS object in inventory.
 // C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
+import { COIN_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
@@ -10,7 +11,6 @@ import { delobj } from './invent.js';
 import { markJustPicked } from './pickup.js';
 import { GOLD_PIECE } from './object_data.js';
 import { heroGoldAmount } from './hack.js';
-const COIN_CLASS = 12;
 // C sit.c:take_gold(). Contained coins are not exposed to the effect.
 export async function takeHeroGold(state = game) {
     let lostMoney = false;

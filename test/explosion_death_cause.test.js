@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_FIERY, EXPL_FROSTY } from '../js/const.js';
@@ -8,11 +9,10 @@ import { loadScoreRecords } from '../js/score_records.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
-const SCROLL_CLASS = 9;
 for (const { source, type, objectClass, style, cause } of [
     { source: 'a fire scroll', type: 11, objectClass: SCROLL_CLASS, style: EXPL_FIERY, cause: 'burned by a tower of flame' },
-    { source: 'a pyrolisk egg', type: -11, objectClass: 0, style: EXPL_FIERY, cause: 'burned by a fireball' },
-    { source: 'a cold explosion', type: -22, objectClass: 0, style: EXPL_FROSTY, cause: 'killed by ball of cold' },
+    { source: 'a pyrolisk egg', type: -11, objectClass: RANDOM_CLASS, style: EXPL_FIERY, cause: 'burned by a fireball' },
+    { source: 'a cold explosion', type: -22, objectClass: RANDOM_CLASS, style: EXPL_FROSTY, cause: 'killed by ball of cold' },
 ]) {
     void test(`death from ${source} uses the native death reason and killer article`, async () => {
         await freshObjectRoom({

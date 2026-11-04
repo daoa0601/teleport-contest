@@ -5,6 +5,7 @@
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
 
+import { WEAPON_CLASS, TOOL_CLASS, POTION_CLASS, WAND_CLASS, ROCK_CLASS } from './objclass.js';
 import {
     objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, CORPSE, ICE_BOX, CREDIT_CARD,
     LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK,
@@ -64,10 +65,6 @@ import { roomsAt } from './hack.js';
 // Lock forcing.
 // C ref: lock.c doforce(), forcelock(), and breakchestlock().
 
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const ROCK_CLASS = 14;
-const POTION_CLASS = 8;
 
 export async function doforce(state: GameState = game): Promise<void> {
     if (state.u?.uswallow) {
@@ -993,7 +990,6 @@ function lockPickChance(tool: GameObject | null, box: GameObject | undefined, st
 // C lock.c:doorlock()/obstructed(). Traversal owns wand discovery, billable
 // shop damage, drawbridge effects, and the decision to target a door.
 
-const WAND_CLASS = 11;
 
 export async function changeDoorByMagic(source: GameObject, x: number, y: number, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);

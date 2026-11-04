@@ -8,6 +8,10 @@
 // muse_unslime/cures_sliming).
 
 import {
+    WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
+    SCROLL_CLASS, WAND_CLASS, COIN_CLASS,
+} from './objclass.js';
+import {
     objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING,
     AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP,
     CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL,
@@ -143,9 +147,6 @@ const M2_MAGIC = 0x80000000;
 const S_EYE = 5;
 const S_LIGHT = 25;
 const S_GHOST = 54;
-const WEAPON_CLASS = 2, ARMOR_CLASS = 3, RING_CLASS = 4, AMULET_CLASS = 5;
-const TOOL_CLASS = 6, FOOD_CLASS = 7, POTION_CLASS = 8, SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10, WAND_CLASS = 11, GEM_CLASS = 13, ROCK_CLASS = 14, BALL_CLASS = 15;
 const GEMSTONE = 20, MINERAL = 21, RAY = 3, IRON = 11, SILVER = 14;
 const G_UNIQ = 0x1000;
 const PM_PESTILENCE = 312;
@@ -175,7 +176,7 @@ function itemUseIsNearby(monster: Monster, state: PlayingGameState): boolean {
 export async function precheck(monster: Monster, object: GameObject,
     options: MonsterOffensiveOptions): Promise<MonsterOffensiveResult | null> {
     const { state, random = rn2, rollDice = d, publish = plineWithContinuation } = options;
-    if (object.oclass === 8) {
+    if (object.oclass === POTION_CLASS) {
         const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
         const species = appearance === 'milky' ? 287 : appearance === 'smoky' ? 315 : null;
         if (species !== null && !((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
@@ -1195,7 +1196,7 @@ export async function use_offensive(
     requireLiveGame(state);
     const object = choice.object;
     const buzzfn = monster.mwandexp ? castNativeRay : buzz_force_miss;
-    if (object.oclass !== 8) {
+    if (object.oclass !== POTION_CLASS) {
         const result = await precheck(monster, object, options);
         if (result) return result;
     }
@@ -1855,7 +1856,7 @@ export function mcould_eat_tin(monster: Monster): boolean {
     const inventory = monster.minvent || monster.inventory || [];
     const wielded = monsterWieldedWeapon(monster);
     const opensTin = (object: GameObject) => object.otyp === TIN_OPENER
-        || (object.oclass === 2 && [P_DAGGER, P_KNIFE].includes(objectSkill(object.otyp)));
+        || (object.oclass === WEAPON_CLASS && [P_DAGGER, P_KNIFE].includes(objectSkill(object.otyp)));
     if (wielded && ((wielded.owornmask ?? 0) & W_WEP) && willWeld(wielded))
         return inventory.includes(wielded) && opensTin(wielded);
     return inventory.some(opensTin);

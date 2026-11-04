@@ -1,6 +1,7 @@
 // The hero's carried gold is the COIN_CLASS object in inventory.
 // C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
 
+import { COIN_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
@@ -23,7 +24,6 @@ interface GoldAddition {
     merged: boolean;
 }
 
-const COIN_CLASS = 12;
 
 // C sit.c:take_gold(). Contained coins are not exposed to the effect.
 export async function takeHeroGold(state: GameState = game): Promise<void> {

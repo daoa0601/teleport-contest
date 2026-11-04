@@ -1,3 +1,4 @@
+import { COIN_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -62,7 +63,7 @@ void test('#adjust repairs a second gold stack without requesting a destination'
     queueCannedKeys('#z');
     planInput(input, t, []);
     await withMessagePages(() => rhack('#'.charCodeAt(0)), input, GOLD_REPAIR_PROSE, 5);
-    assert.equal(game.inventory.filter(object => object.oclass === 12).length, 1);
+    assert.equal(game.inventory.filter(object => object.oclass === COIN_CLASS).length, 1);
     assert.equal(heroGoldObject(game)?.invlet, '$');
     assert.equal(heroGoldObject(game)?.quan, 49);
     assert.match(game._pending_message, /^Merging: \$ - 49 gold pieces\./);

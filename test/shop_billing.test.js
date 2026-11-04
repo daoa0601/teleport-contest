@@ -1,3 +1,4 @@
+import { BALL_CLASS } from '../js/objclass.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, {} from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -136,7 +137,7 @@ void test('the keeper home square is free, not non-shop, for display pricing', a
     await moveHeroTo(5, 5);
     assert.equal(getCostOfShopItem(dagger).noCharge, -1);
     await moveHeroTo(10, 10);
-    const ball = { ...dagger, o_id: 999999, oclass: 15 };
+    const ball = { ...dagger, o_id: 999999, oclass: BALL_CLASS };
     game.uball = ball;
     assert.equal(getCostOfShopItem(ball).noCharge, -1);
     game.uball = null;

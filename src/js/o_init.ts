@@ -5,6 +5,11 @@
 // Fisher-Yates description/color shuffles.  Other startup owners remain
 // partial; the implementation below is the source of truth.
 import {
+    RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS,
+    POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS,
+    VENOM_CLASS,
+} from './objclass.js';
+import {
     objectClassForType, objectBaseMaterial, objectUsesKnown, objectUnique, FLINT,
     getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD,
     CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR,
@@ -47,7 +52,6 @@ const DISCOVERY_ORDERS: Readonly<Record<DiscoverySortMode, string>> = {
     a: 'alphabetical across all classes',
 };
 
-const GEM_CLASS = 13;
 
 export function discoverySortDescription(): string {
     return DISCOVERY_ORDERS[game.flags.discosort ?? 'o'];
@@ -195,25 +199,25 @@ function discoveryBaseName(
     otyp: number, known: boolean, actualName: string, appearance: string | null | undefined,
 ): string {
     switch (objectClassForType(otyp)) {
-        case 3:
+        case ARMOR_CLASS:
             return armorPresentationName(
                 known ? actualName : appearance || actualName, OBJECT_NAMES[otyp],
             );
-        case 4:
+        case RING_CLASS:
             return known ? `ring of ${actualName}` : 'ring';
-        case 5:
+        case AMULET_CLASS:
             return known ? actualName : 'amulet';
-        case 8:
+        case POTION_CLASS:
             return known ? `potion of ${actualName}` : 'potion';
-        case 9:
+        case SCROLL_CLASS:
             return known ? `scroll of ${actualName}` : 'scroll';
-        case 10:
+        case SPBOOK_CLASS:
             if (otyp === SPE_NOVEL) return known ? 'novel' : 'book';
             if (known && objectUnique(otyp)) return actualName;
             return known ? `spellbook of ${actualName}` : 'spellbook';
-        case 11:
+        case WAND_CLASS:
             return known ? `wand of ${actualName}` : 'wand';
-        case 13:
+        case GEM_CLASS:
             return known ? gemStoneGrammar(otyp, actualName)
                 : `${appearance || actualName} ${objectBaseMaterial(otyp) === 21 ? 'stone' : 'gem'}`;
         default:
@@ -239,7 +243,7 @@ function formattedDiscovery(otyp: number): string | null {
     if (callName) name += ` called ${callName}`;
     // obj_typename() includes descriptions after class nouns and known
     // names; an unknown weapon, tool, or armor already uses its appearance.
-    if (appearance && (known || [4, 5, 8, 9, 10, 11].includes(objectClassForType(otyp))))
+    if (appearance && (known || [RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS].includes(objectClassForType(otyp))))
         name += ` (${appearance})`;
     const prefix = encountered ? '  ' : '* ';
     return `${prefix}${name}${priceQuoteSuffix(otyp)}`;
@@ -435,7 +439,7 @@ async function showDiscoveries(rows: Iterable<TextMenuEntry>): Promise<void> {
 
 function discoveryClassOrder(): number[] {
     const classes = inventoryClassOrder();
-    return classes.includes(17) ? classes : [...classes, 17];
+    return classes.includes(VENOM_CLASS) ? classes : [...classes, VENOM_CLASS];
 }
 
 function classDiscoveries(oclass: number, order: DiscoverySortMode): string[] {
@@ -574,7 +578,7 @@ function discoverKnownType(otyp: number, creditHero: boolean, state: GameState):
     state._knownObjectTypes.add(otyp);
     if (known) return;
     if (creditHero) exerciseWisdom(true, state);
-    if (objectClassForType(otyp) === 13 && state.program_state.in_moveloop
+    if (objectClassForType(otyp) === GEM_CLASS && state.program_state.in_moveloop
         && !state.program_state.gameover)
         repriceDiscoveredGems(otyp, state);
 }

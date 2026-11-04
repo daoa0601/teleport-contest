@@ -1,3 +1,4 @@
+import { SCROLL_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -7,7 +8,6 @@ import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 
-const SCROLL_CLASS = 9;
 
 void test('dipping into polymorph reports the new item appearance like prinv()', async () => {
     await freshObjectRoom();

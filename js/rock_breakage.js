@@ -1,5 +1,6 @@
 // Shared statue/boulder fracture owner.
 // C refs: zap.c fracture_rock() and break_statue(), trap.c sokoban_guilt().
+import { GEM_CLASS } from './objclass.js';
 import { objectUsesKnown, BOULDER, ROCK, STATUE, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { CORPSTAT_HISTORIC } from './const.js';
@@ -18,7 +19,6 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { objectWeight, placeObject, placeObjectSynchronously, remove_object } from './mkobj.js';
 import { sokobanGuilt } from './trap.js';
-const GEM_CLASS = 13;
 async function dropStatueContents(statue, x, y, state) {
     for (const object of statue.contents || []) {
         object.where = 'free';

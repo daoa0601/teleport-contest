@@ -1,3 +1,4 @@
+import { RING_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SINK, S_LRING, FOUNTAIN, F_LOOTED } from '../js/const.js';
@@ -9,7 +10,6 @@ import { setPropertyTimeout } from '../js/properties.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
-const RING_CLASS = 4;
 async function dipRoom() {
     const level = await freshObjectRoom();
     requirePlayingGame(game);

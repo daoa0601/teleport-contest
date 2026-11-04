@@ -1,4 +1,5 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
+import { RANDOM_CLASS, ROCK_CLASS } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { currentAttribute } from './attrib.js';
@@ -31,7 +32,6 @@ import { makeBlinded } from './potion.js';
 import { detectTraps } from './detect.js';
 import { ynSingleKey } from './cmd.js';
 import { loseHeroHp } from './hack.js';
-const ROCK_CLASS = 14;
 export async function useCrystalBall(object) {
     if (heroIsBlind()) {
         await pline(`Too bad you can't see ${definiteName(objectCombatName(object))}.`);
@@ -81,7 +81,7 @@ export async function useCrystalBall(object) {
     let missing = false;
     if (furniture)
         await detectFurniture();
-    else if (objectClass > 0)
+    else if (objectClass > RANDOM_CLASS)
         missing = (await detectObjects(null, { objectClass })).result !== 0;
     else if (monsterClass > 0)
         missing = (await detectMonsters(null, { monsterClass })).result !== 0;

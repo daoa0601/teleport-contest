@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame } from './gstate.js';
@@ -63,19 +64,6 @@ import { NO_COLOR } from './terminal.js';
 import { maybeUnhideAt } from './mon.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
-const COIN_CLASS = 12;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const WAND_CLASS = 11;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 // invent.c:loot_xname() ignores counts and individual user names. Its
 // temporary adjustments group water, towels, and globs without altering them.
@@ -1051,7 +1039,7 @@ async function mimeInventoryAction(verb) {
 // C invent.c:reassign(): give consecutive letters to every carried item
 // for !fixinv mode; gold is always forced to '$' at the head of the list.
 export function reassignInventoryLetters() {
-    const goldIndex = game.inventory.findIndex(object => object.oclass === 12);
+    const goldIndex = game.inventory.findIndex(object => object.oclass === COIN_CLASS);
     if (goldIndex >= 0) {
         const gold = game.inventory[goldIndex];
         if (!gold)
@@ -1062,7 +1050,7 @@ export function reassignInventoryLetters() {
     }
     let index = 0;
     for (const object of game.inventory) {
-        if (object.oclass === 12)
+        if (object.oclass === COIN_CLASS)
             continue;
         object.invlet = index < 26 ? String.fromCharCode(97 + index)
             : index < 52 ? String.fromCharCode(65 + index - 26) : '#';
@@ -1133,7 +1121,7 @@ export function objectNeedsFullIdentification(object) {
         return true;
     if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact))
         return true;
-    if (object.rknown || !([2, 3, 15].includes(object.oclass) || isWeaponTool(object)))
+    if (object.rknown || !([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS].includes(object.oclass) || isWeaponTool(object)))
         return false;
     return ['rust', 'burn', 'rot', 'corrosion', 'crack'].some(kind => objectIsVulnerableToErosion(object, kind));
 }
@@ -1219,7 +1207,7 @@ async function parseIdentificationCategories(answer) {
             beatitudes.add(symbol);
         else {
             const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-            if (objectClass <= 0)
+            if (objectClass <= RANDOM_CLASS)
                 await plineWithContinuation(`You don't have any ${symbol}'s.`);
             else if (!classes.includes(objectClass))
                 classes.push(objectClass);
@@ -1526,7 +1514,7 @@ function itemActionEntries(item, state, repairGold) {
         const quivered = item === state.uquiver;
         const verb = quivered ? 'Quiver' : 'Wield';
         const action = quivered ? 'un-ready' : 'un-wield';
-        const noun = item.oclass === 2 || isWeaponTool(item) ? 'weapon' : 'item';
+        const noun = item.oclass === WEAPON_CLASS || isWeaponTool(item) ? 'weapon' : 'item';
         entries.push({ key: '-', text: `${verb} '-' to ${action} ${plural ? `these ${noun}s` : `this ${noun}`}` });
     }
     const apply = itemApplyText(item, state);
@@ -1557,9 +1545,9 @@ function itemActionEntries(item, state, repairGold) {
     else if (item.otyp === MAGIC_MARKER) {
         entries.push({ key: 'E', text: 'Scribble graffiti on the floor' });
     }
-    else if ([2, 4, 11, 13].includes(item.oclass)) {
-        const engraves = isBlade(item) || item.oclass === 11
-            || (item.oclass === 4 || item.oclass === 13) && !!state.objectToughness?.[item.otyp];
+    else if ([WEAPON_CLASS, RING_CLASS, WAND_CLASS, GEM_CLASS].includes(item.oclass)) {
+        const engraves = isBlade(item) || item.oclass === WAND_CLASS
+            || (item.oclass === RING_CLASS || item.oclass === GEM_CLASS) && !!state.objectToughness?.[item.otyp];
         const verb = engraves ? 'Engrave' : 'Write';
         const surface = surfaceName(state.u.ux, state.u.uy, state);
         entries.push({ key: 'E', text: `${verb} on the ${surface} with ${stack ? 'one of these items' : 'this item'}` });
@@ -1587,9 +1575,9 @@ function itemActionEntries(item, state, repairGold) {
         if (wear)
             entries.push({ key: 'P', text: wear });
     }
-    if (item.oclass === 8)
+    if (item.oclass === POTION_CLASS)
         entries.push({ key: 'q', text: `Quaff (drink) ${stack ? 'one of these potions' : 'this potion'}` });
-    if ([2, 13].includes(item.oclass) && item !== state.uquiver)
+    if ([WEAPON_CLASS, GEM_CLASS].includes(item.oclass) && item !== state.uquiver)
         entries.push({ key: 'Q', text: `Quiver this ${stack ? 'stack' : 'item'} for easy ${shoot ? 'shooting' : 'throwing'} with 'f'ire` });
     const reading = itemReadingText(item, state);
     if (reading)
@@ -1602,7 +1590,7 @@ function itemActionEntries(item, state, repairGold) {
     }
     if ([OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN].includes(item.otyp))
         entries.push({ key: 'R', text: `Rub this ${itemName}` });
-    else if (item.oclass === 13 && isGrayStone(item))
+    else if (item.oclass === GEM_CLASS && isGrayStone(item))
         entries.push({ key: 'R', text: 'Rub something on this stone' });
     if (!alreadyWorn) {
         const goldStack = stack && item.otyp === GOLD_PIECE;
@@ -1619,7 +1607,7 @@ function itemActionEntries(item, state, repairGold) {
         || item.oartifact || objectUnique(item.otyp) || item.otyp === CRYSTAL_BALL)
         entries.push({ key: 'V', text: 'Try to invoke a unique power of this object' });
     if (item !== state.uwep && !heroHasNoHands(state) && !heroIsVerySmall(state)) {
-        const weapon = item.oclass === 2 || isWeaponTool(item)
+        const weapon = item.oclass === WEAPON_CLASS || isWeaponTool(item)
             || item.otyp === TOWEL && item.spe > 0 || item.otyp === HEAVY_IRON_BALL;
         if (weapon) {
             entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} as your weapon` });
@@ -1631,7 +1619,7 @@ function itemActionEntries(item, state, repairGold) {
             entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(heroHandName(state))}` });
         }
     }
-    if (!alreadyWorn && item.oclass === 3) {
+    if (!alreadyWorn && item.oclass === ARMOR_CLASS) {
         const slot = armorSlotFor(item.otyp);
         const worn = slot ? state[slot] : null;
         entries.push({ key: 'W', text: worn ? `[already wearing ${withIndefiniteArticle(armorSimpleName(worn, state))}]`
@@ -1647,7 +1635,7 @@ function itemActionEntries(item, state, repairGold) {
             && isTwoWeaponObject(state.uwep) && state.uwep && !isBimanualObject(state.uwep)
             && isTwoWeaponObject(state.uswapwep) && state.uswapwep && !isBimanualObject(state.uswapwep)))
         entries.push({ key: 'X', text: `Toggle two-weapon combat ${state.u.twoweap ? 'off' : 'on'}` });
-    if (item.oclass === 11)
+    if (item.oclass === WAND_CLASS)
         entries.push({ key: 'z', text: 'Zap this wand to release its magic' });
     if (encyclopediaEntries(singularObjectName(item, state), state).length)
         entries.push({ key: '/', text: `Look up information about ${stack ? 'these' : 'this'}` });
@@ -1708,24 +1696,24 @@ function itemApplyText(item, state) {
     }
     if (item.otyp === POT_OIL && objectTypeKnown(item, state))
         return `${light} this oil`;
-    if (item.oclass === 8)
+    if (item.oclass === POTION_CLASS)
         return `Dip something into ${item.quan > 1 ? 'one of these' : 'this'} potion${item.quan === 1 ? '' : 's'}`;
     if (item.otyp === HORN_OF_PLENTY && objectTypeKnown(item, state))
         return 'Blow into the horn of plenty';
     if (item.otyp >= WOODEN_FLUTE && item.otyp <= DRUM_OF_EARTHQUAKE)
         return 'Play this musical instrument';
-    return item.oclass === 11 ? 'Break this wand' : null;
+    return item.oclass === WAND_CLASS ? 'Break this wand' : null;
 }
 export function objectTypeCallable(object, state = game) {
     return !!state._objectCallNames?.[object.otyp]
         || ![AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp)
-            && [3, 4, 5, 6, 8, 9, 10, 11, 13, 17].includes(object.oclass)
+            && [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
             && !!(state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp]);
 }
 function accessoryActionText(item, state) {
-    if (item.oclass === 5)
+    if (item.oclass === AMULET_CLASS)
         return state.uamul ? '[already wearing an amulet]' : 'Put this amulet on';
-    if (item.oclass === 4 || item.otyp === MEAT_RING)
+    if (item.oclass === RING_CLASS || item.otyp === MEAT_RING)
         return state.uleft && state.uright ? `[both ring ${makePlural(heroFingerName(state))} in use]` : 'Put this ring on';
     if ([BLINDFOLD, TOWEL, LENSES].includes(item.otyp)) {
         if (state.ublindf)
@@ -1846,14 +1834,14 @@ export function identifyObjectForDisclosure(item, identifyTinContents = false) {
         item.cknown = item.lknown = true;
     else if (identifyTinContents && item.otyp === TIN)
         item.cknown = true;
-    const redundantNeutral = item.oclass === 2 || item.oclass === 11
-        || (item.oclass === 6 && objectUsesCharges(item));
+    const redundantNeutral = item.oclass === WEAPON_CLASS || item.oclass === WAND_CLASS
+        || (item.oclass === TOOL_CLASS && objectUsesCharges(item));
     item.buc = item.blessed ? 'blessed' : item.cursed ? 'cursed'
         : !redundantNeutral
-            && [3, 4, 5, 6, 7, 8, 9, 10, 13].includes(item.oclass)
+            && [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, GEM_CLASS].includes(item.oclass)
             ? 'uncursed' : '';
     const canonicalName = OBJECT_NAMES[item.otyp];
-    if (item.oclass === 13 && canonicalName)
+    if (item.oclass === GEM_CLASS && canonicalName)
         item.name = canonicalName;
 }
 // C invent.c:display_pickinv(): the getobj inventory menu, including the
@@ -2005,7 +1993,7 @@ export async function inventoryReport(report) {
         const rings = [game.uright, game.uleft].filter((object) => !!object);
         if (rings.length)
             return reportSubset(rings, rings.length > 1 || !!game.iflags.menu_requested
-                || rings.some(object => object.oclass !== 4), rings.length === 1 ? 'Ring' : 'Rings');
+                || rings.some(object => object.oclass !== RING_CLASS), rings.length === 1 ? 'Ring' : 'Rings');
         await pline('You are not wearing any rings.');
         return null;
     }
@@ -2045,7 +2033,7 @@ async function describeCarriedObject(object) {
 }
 function toolBeingUsed(object) {
     return !!((object.owornmask ?? 0) & (W_TOOL | W_SADDLE))
-        || object.oclass === 6 && (object === game.uwep || !!object.lamplit
+        || object.oclass === TOOL_CLASS && (object === game.uwep || !!object.lamplit
             || object.otyp === LEASH && !!object.leashmon);
 }
 function isInUse(object) {
@@ -2132,7 +2120,7 @@ function inUseHeading(object, accessoryLabel) {
     return 'Miscellaneous';
 }
 function beatitude(object) {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
     return !object.bknown ? 'X' : object.blessed ? 'B' : object.cursed ? 'C' : 'U';
 }
@@ -2155,7 +2143,7 @@ async function typeInventory() {
     }
     if (game.urole?.key === 'priest')
         for (const object of game.inventory)
-            object.bknown = object.oclass !== 12;
+            object.bknown = object.oclass !== COIN_CLASS;
     const level = requireGameLevel();
     const carried = unpaidObjects(game.inventory);
     const floor = unpaidObjects(level.objects.flatMap(column => (column ?? []).flatMap(pile => pile ?? [])));
@@ -2168,7 +2156,7 @@ async function typeInventory() {
     let choice;
     const style = game.flags.menu_style ?? MENU_FULL;
     if (style === MENU_FULL || style === MENU_PARTIAL) {
-        const menuClasses = [...inventoryClassOrder(), 17].filter(oclass => classes.includes(oclass));
+        const menuClasses = [...inventoryClassOrder(), VENOM_CLASS].filter(oclass => classes.includes(oclass));
         choice = await inventoryCategoryMenu(menuClasses, carried.length > 0, bill.length > 0, statuses, picked, prompt);
     }
     else {
@@ -2215,7 +2203,7 @@ async function typeInventory() {
         return null;
     }
     const sorted = sortObjects(candidates, { mode: lootSortMode({ inventoryLetters: game.flags.fixinv !== false }) });
-    const order = [...inventoryClassOrder(), 17];
+    const order = [...inventoryClassOrder(), VENOM_CLASS];
     const sections = [];
     for (const oclass of order) {
         const objects = sorted.filter(object => object.oclass === oclass);
@@ -2226,7 +2214,7 @@ async function typeInventory() {
             observeObjectForNaming(object);
             consumeHallucinatedMenuObjectGlyph(object);
             items.push({ ...(game.flags.fixinv !== false ? { key: object.invlet ?? '#' }
-                    : object === sorted[0] && object.oclass === 12 ? { key: '$' } : {}),
+                    : object === sorted[0] && object.oclass === COIN_CLASS ? { key: '$' } : {}),
                 groupAccelerator: OBJECT_CLASS_SYMBOLS[oclass] ?? '', value: object,
                 text: await inventoryItemDescription(object, { primaryHandDetail: inventoryPrimaryHandDetail(object) }) });
         }
@@ -2633,8 +2621,8 @@ export function inventoryCommandLetter(item) {
 // original until the destination is chosen; cancelling merges it back.
 export async function adjustSplit() {
     game.context.move = 0;
-    const object = await chooseInventoryObject('split', candidate => candidate.oclass === 12 ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
-    if (!object || object.quan < 2 || object.oclass === 12) {
+    const object = await chooseInventoryObject('split', candidate => candidate.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
+    if (!object || object.quan < 2 || object.oclass === COIN_CLASS) {
         commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
         return;
     }
@@ -2709,7 +2697,7 @@ export async function doadjust(selected = null, splitting = null) {
         game.context.move = 0;
         return;
     }
-    if (inventory.length === 1 && inventory[0]?.oclass === 12 && inventory[0].invlet === '$') {
+    if (inventory.length === 1 && inventory[0]?.oclass === COIN_CLASS && inventory[0].invlet === '$') {
         await pline("You aren't carrying anything adjustable.");
         game.context.move = 0;
         return;
@@ -2717,7 +2705,7 @@ export async function doadjust(selected = null, splitting = null) {
     if (!selected && game.flags.fixinv === false)
         reassignInventoryLetters();
     const repairGold = !selected && await checkInventoryGold('adjust');
-    let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === 12 && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
+    let object = selected || await chooseInventoryObject('adjust', candidate => candidate.oclass === COIN_CLASS && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST, { forcePrompt: true, allowCount: true });
     if (!object) {
         // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
         // dismissed; the rhack seam clears both command queues.
@@ -2735,7 +2723,7 @@ export async function doadjust(selected = null, splitting = null) {
         throw new Error('Adjusting inventory requires a lettered object.');
     // C doorganize_core() chooses '$' itself when repairing gold. A purse
     // already in '$' collects other stacks; one elsewhere merges into '$'.
-    if (object.oclass === 12) {
+    if (object.oclass === COIN_CLASS) {
         const collect = object.invlet === '$';
         let purse = object;
         let action = collect ? 'Collecting' : 'Moving';
@@ -2774,7 +2762,7 @@ export async function doadjust(selected = null, splitting = null) {
     const occupied = new Set(inventory.filter(candidate => candidate !== adjusting && !mergable(candidate, adjusting))
         .map(candidate => candidate.invlet));
     const slots = game.flags.fixinv === false
-        ? game.inventory.filter(item => item.oclass !== 12).length + (splitting ? 0 : 1) : 52;
+        ? game.inventory.filter(item => item.oclass !== COIN_CLASS).length + (splitting ? 0 : 1) : 52;
     const recommended = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'.slice(0, slots)
         .split('')
         .filter(letter => letter === adjusting.invlet || !occupied.has(letter))
@@ -2872,7 +2860,7 @@ export async function doadjust(selected = null, splitting = null) {
                         object.oextra.oname = name;
                     object.oname = name;
                 }
-                if (game.inventory.filter(item => item !== object && item.oclass !== 12).length >= 52) {
+                if (game.inventory.filter(item => item !== object && item.oclass !== COIN_CLASS).length >= 52) {
                     object.where = 'inventory';
                     game.inventory.unshift(object);
                     await rejoinObjectStack(splitting, object, game);
@@ -2942,8 +2930,16 @@ export async function delobjCore(object, force, state = game, random = rn2) {
     }
     await deleteObject(object, state);
 }
-const DEFAULT_PACK_ORDER = [12, 5, 2, 3, 7, 9, 10, 8, 4, 11, 6, 13, 14, 15, 16];
-const DEFAULT_LOOT_ORDER = [12, 5, 4, 11, 8, 9, 10, 13, 7, 6, 2, 3, 14, 15, 16];
+const DEFAULT_PACK_ORDER = [
+    COIN_CLASS, AMULET_CLASS, WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS,
+    SCROLL_CLASS, SPBOOK_CLASS, POTION_CLASS, RING_CLASS, WAND_CLASS,
+    TOOL_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
+];
+const DEFAULT_LOOT_ORDER = [
+    COIN_CLASS, AMULET_CLASS, RING_CLASS, WAND_CLASS, POTION_CLASS,
+    SCROLL_CLASS, SPBOOK_CLASS, GEM_CLASS, FOOD_CLASS, TOOL_CLASS,
+    WEAPON_CLASS, ARMOR_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS,
+];
 const INSTRUMENTS = new Set([WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN,
     FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM,
     DRUM_OF_EARTHQUAKE, HORN_OF_PLENTY]);
@@ -2958,22 +2954,22 @@ export function objectClassHeading(oclass) {
         'Coins', 'Gems/Stones', 'Boulders/Statues', 'Iron balls', 'Chains', 'Venoms'][oclass] || 'Other';
 }
 export const OBJECT_CLASS_LABELS = {
-    2: 'Weapons',
-    3: 'Armor',
-    4: 'Rings',
-    5: 'Amulets',
-    6: 'Tools',
-    7: 'Comestibles',
-    8: 'Potions',
-    9: 'Scrolls',
-    10: 'Spellbooks',
-    11: 'Wands',
-    12: 'Coins',
-    13: 'Gems/Stones',
-    14: 'Boulders/Statues',
-    15: 'Iron balls',
-    16: 'Chains',
-    17: 'Venoms',
+    [WEAPON_CLASS]: 'Weapons',
+    [ARMOR_CLASS]: 'Armor',
+    [RING_CLASS]: 'Rings',
+    [AMULET_CLASS]: 'Amulets',
+    [TOOL_CLASS]: 'Tools',
+    [FOOD_CLASS]: 'Comestibles',
+    [POTION_CLASS]: 'Potions',
+    [SCROLL_CLASS]: 'Scrolls',
+    [SPBOOK_CLASS]: 'Spellbooks',
+    [WAND_CLASS]: 'Wands',
+    [COIN_CLASS]: 'Coins',
+    [GEM_CLASS]: 'Gems/Stones',
+    [ROCK_CLASS]: 'Boulders/Statues',
+    [BALL_CLASS]: 'Iron balls',
+    [CHAIN_CLASS]: 'Chains',
+    [VENOM_CLASS]: 'Venoms',
 };
 export function inventoryOrderSymbols(state = game) {
     return inventoryClassOrder(state).map(oclass => OBJECT_CLASS_SYMBOLS[oclass]).join('');
@@ -3009,7 +3005,7 @@ export function classifyLoot(object, state = game) {
     const discovered = objectTypeKnown(object, state);
     const description = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
     return {
-        order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== 17),
+        order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== VENOM_CLASS),
         subclass: lootSubclass(object, oclass, seen, discovered),
         discovery: !seen ? 1 : discovered || !description ? 4
             : state._objectCallNames?.[object.otyp] ? 3 : 2,
@@ -3017,22 +3013,22 @@ export function classifyLoot(object, state = game) {
 }
 function lootSubclass(object, oclass, seen, discovered) {
     const skill = objectSkill(object.otyp);
-    if (oclass === 3)
+    if (oclass === ARMOR_CLASS)
         return [7, 4, 1, 2, 3, 5, 6][skill] ?? 8;
-    if (oclass === 2)
+    if (oclass === WEAPON_CLASS)
         return skill < 0
             ? skill >= -P_CROSSBOW && skill <= -P_BOW ? 1 : 3
             : skill >= P_BOW && skill <= P_CROSSBOW ? 2
                 : [P_SPEAR, P_DAGGER, P_KNIFE].includes(skill) ? 4
                     : isPolearm(object) ? 6 : 5;
-    if (oclass === 6) {
+    if (oclass === TOOL_CLASS) {
         if (seen && discovered && [BAG_OF_TRICKS, HORN_OF_PLENTY].includes(object.otyp))
             return 2;
         if (isContainer(object) || object.otyp === BAG_OF_TRICKS)
             return 1;
         return INSTRUMENTS.has(object.otyp) ? 3 : 4;
     }
-    if (oclass === 7) {
+    if (oclass === FOOD_CLASS) {
         if (object.otyp === SLIME_MOLD)
             return 1;
         if (object.otyp === TIN)
@@ -3043,7 +3039,7 @@ function lootSubclass(object, oclass, seen, discovered) {
             return 5;
         return object.globby ? 6 : 2;
     }
-    if (oclass === 13) {
+    if (oclass === GEM_CLASS) {
         const material = objectMaterial(object.otyp);
         if (material === 20 || material === 19)
             return !seen ? 1 : !discovered ? 2 : material === 20 ? 3 : 4;
@@ -3092,7 +3088,7 @@ function compareLoot(left, right, mode, state) {
         || Number(!!(b.rknown && b.oerodeproof)) - Number(!!(a.rknown && a.oerodeproof));
     if (condition)
         return condition;
-    if (objectUsesKnown(a.otyp) && a.oclass !== 7) {
+    if (objectUsesKnown(a.otyp) && a.oclass !== FOOD_CLASS) {
         const difference = (b.known ? b.spe ?? 0 : -1000) - (a.known ? a.spe ?? 0 : -1000);
         if (difference)
             return difference;
@@ -3133,7 +3129,7 @@ function inUseRating(object, state) {
     const mask = (object.owornmask ?? 0) & (W_ACCESSORY | W_WEAPONS | W_ARMOR);
     if (!mask && object.otyp === LEASH && object.leashmon)
         return 1;
-    if (!mask && object.oclass === 6 && object.lamplit)
+    if (!mask && object.oclass === TOOL_CLASS && object.lamplit)
         return 2;
     const mainHandRing = state.u.rightHanded === false ? W_RINGL : W_RINGR;
     const ratings = [W_ARMU, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMC, W_ARM,

@@ -1,6 +1,7 @@
 // Orc-town's stolen goods and raiding gang.
 // C mkmaze.c:stolen_booty(), migr_booty_item(), shiny_orc_stuff(), migrate_orc();
 // do_name.c:rndorcname()/christen_orc(), dokick.c:deliver_obj_to_mon().
+import { RING_CLASS, FOOD_CLASS, GEM_CLASS } from './objclass.js';
 import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from './const.js';
 import { upstart } from './hacklib.js';
 import { addFruit } from './fruit.js';
@@ -22,7 +23,6 @@ const GAUNTLETS_OF_DEXTERITY = OBJECT_NAMES.indexOf('gauntlets of dexterity');
 const SILVER_SABER = OBJECT_NAMES.indexOf('silver saber');
 const M2_ORC = 0x80;
 const DELIVER_SPECIES = 0x21fe; // undead, were, human, elf, dwarf, gnome, orc, demon, giant
-const FOOD_CLASS = 7, GEM_CLASS = 13, RING_CLASS = 4;
 const PM_ORC = MONSTER_NAME.indexOf('orc');
 const PM_ORC_SHAMAN = MONSTER_NAME.indexOf('orc shaman');
 const PM_ORC_CAPTAIN = MONSTER_NAME.indexOf('orc-captain');

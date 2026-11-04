@@ -1,3 +1,4 @@
+import { WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS } from '../js/objclass.js';
 import type { RoleKey, RaceName } from '../js/roles.js';
 import type { GameState } from '../js/game_state.js';
 import { createRoomLevel } from './support/playable-room.js';
@@ -119,9 +120,9 @@ void test('standalone nudist constructs no hero armor without becoming pauper', 
     });
 
     assert.ok(state.inventory.length > 0);
-    assert.equal(state.inventory.some(object => object.oclass === 3), false);
-    assert.ok(state.inventory.some(object => object.oclass === 2));
-    assert.ok(state.inventory.some(object => object.oclass === 7));
+    assert.equal(state.inventory.some(object => object.oclass === ARMOR_CLASS), false);
+    assert.ok(state.inventory.some(object => object.oclass === WEAPON_CLASS));
+    assert.ok(state.inventory.some(object => object.oclass === FOOD_CLASS));
     assert.ok(state.u.weaponSkills != null, 'Expected state.u.weaponSkills to be initialized');
     assert.ok(state.u.weaponSkills.some(skill => skill.skill > 1));
     assert.equal(state.u.weapon_slots, 0);

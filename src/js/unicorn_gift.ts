@@ -1,5 +1,6 @@
 // C dothrow.c:thitmonst()'s unicorn catch and gem_accept().
 
+import { GEM_CLASS } from './objclass.js';
 import {
     objectSkill,
 } from './object_data.js';
@@ -22,7 +23,6 @@ import type { PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 
-const GEM_CLASS = 13;
 const GEMSTONE = 20;
 const MINERAL = 21;
 

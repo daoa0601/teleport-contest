@@ -1,3 +1,4 @@
+import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { wakeNearby } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
@@ -1720,8 +1721,6 @@ export interface BurialResult {
     next: GameObject | null;
 }
 
-const POTION_CLASS = 8;
-const COIN_CLASS = 12;
 
 // ---------------------------------------------------------------------------
 

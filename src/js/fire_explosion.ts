@@ -1,3 +1,4 @@
+import { RANDOM_CLASS } from './objclass.js';
 import type { GameObject } from './object_types.js';
 import type { ExplosionOptions } from './explosion.js';
 import type { MagicDamageResult } from './zap.js';
@@ -40,5 +41,5 @@ export function createFireExplosion(x: number, y: number, damage: number, {
     state = game, heroCaused = !state.context.mon_moving, publish = plineWithContinuation, random = rn2,
 }: ExplosionOptions = {}): Promise<MagicDamageResult> {
     // Pyrolisk eggs use the native generic object class, with a fire spell type.
-    return explode(x, y, -11, damage, 0, EXPL_FIERY, { state, heroCaused, publish, random });
+    return explode(x, y, -11, damage, RANDOM_CLASS, EXPL_FIERY, { state, heroCaused, publish, random });
 }

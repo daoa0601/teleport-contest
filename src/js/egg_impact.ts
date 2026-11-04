@@ -1,3 +1,4 @@
+import { GEM_CLASS } from './objclass.js';
 import { changeHeroLuck } from './attrib.js';
 // Egg state changes shared by throwing and floor breakage.
 // C refs: obj.h stale_egg, uhitm.c hmon_hitmon_misc_obj(),
@@ -15,7 +16,6 @@ import { d } from './rng.js';
 import { objectWeight } from './mkobj.js';
 
 
-const GEM_CLASS = 13;
 const MAX_EGG_HATCH_TIME = 200;
 const PM_PYROLISK = MONSTER_NAME.indexOf('pyrolisk');
 

@@ -1,5 +1,6 @@
 // C worn.c:mon_set_minvis() and mon_adjust_speed(). Permanent monster
 // invisibility and speed changes.
+import { WEAPON_CLASS } from './objclass.js';
 import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
@@ -242,7 +243,7 @@ export async function setworn(
                 // Prevent getting/blocking intrinsics from wielding potions,
                 // through the quiver, etc.  Allow weapon-tools, too.
                 if ((slot.mask & ~(W_SWAPWEP | W_QUIVER)) !== 0) {
-                    if (object.oclass === 2 || isWeaponTool(object) || mask !== W_WEP) {
+                    if (object.oclass === WEAPON_CLASS || isWeaponTool(object) || mask !== W_WEP) {
                         const property = OBJECT_PROPERTY[object.otyp];
                         if (property && slot.propertySlot)
                             grantWornProperty(property, object, slot.propertySlot, state);

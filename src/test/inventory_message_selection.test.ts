@@ -1,3 +1,4 @@
+import { FOOD_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -23,7 +24,7 @@ void test('question-mark selection shows one suggested object on the message lin
     const input = resetInputState();
 
     const selected = await answerPrompts(chooseInventoryObject('eat', object =>
-        object.oclass === 7 ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE), input, [
+        object.oclass === FOOD_CLASS ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE), input, [
         { prompt: /What do you want to eat\?/, keys: '?' },
         { prompt: /b - a food ration\.--More--/, keys: food.invlet },
     ]);

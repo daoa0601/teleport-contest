@@ -3,6 +3,10 @@
 // sacrifice (pure move, no behavior change).
 
 import {
+    RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS,
+    POTION_CLASS, SPBOOK_CLASS, GEM_CLASS,
+} from './objclass.js';
+import {
     objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE,
     FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT,
     LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
@@ -330,7 +334,7 @@ async function changeAltarWater(bless: boolean) {
             else await curseObject(object);
             object.bknown = known;
             changed += object.quan;
-        } else if (object.oclass === 8) other = true;
+        } else if (object.oclass === POTION_CLASS) other = true;
     }
     if (!heroIsBlind(game) && changed) {
         const subject = other ? (changed > 1 ? 'Some of the' : 'One of the') : 'The';
@@ -955,9 +959,6 @@ async function strikeSwallower(disintegration: boolean, state: PlayingGameState)
 // Divine gifts and crowning (divine_gifts)
 // ---------------------------------------------------------------------------
 
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const SPBOOK_CLASS = 10;
 const RUNESWORD = OBJECT_NAMES.indexOf('runesword');
 const SPE_FINGER_OF_DEATH = OBJECT_NAMES.indexOf('finger of death');
 const SPE_RESTORE_ABILITY = OBJECT_NAMES.indexOf('restore ability');
@@ -1273,8 +1274,6 @@ function isWeapon(object: GameObject | null | undefined): object is GameObject {
 // Altar sacrifice (sacrifice)
 // ---------------------------------------------------------------------------
 
-const AMULET_CLASS = 5;
-const FOOD_CLASS = 7;
 const PM_ACID_BLOB = MONSTER_NAME.indexOf('acid blob');
 const PM_WRAITH = MONSTER_NAME.indexOf('wraith');
 const MAX_VALUE = 24;
@@ -1678,7 +1677,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
     hero.ublesscnt = rnz(300 + 50 * count);
     await exerciseAttribute(A_WIS, true);
     recordGameLogEvent(`was bestowed with ${artifact.name} by ${deityName(hero.ualign.type)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
-    const skillType = [2, 6, 13].includes(object.oclass ?? 0)
+    const skillType = [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass ?? RANDOM_CLASS)
         ? Math.abs(objectSkill(object.otyp)) : 0;
     unrestrictHeroSkill(skillType);
     if (!hallucinating && !blind) {

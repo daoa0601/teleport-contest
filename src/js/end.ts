@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
+import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING,
     CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD,
@@ -134,8 +135,6 @@ interface FinalPossessions {
 
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
 
-const AMULET_CLASS = 5;
-const GEM_CLASS = 13;
 
 // C end.c:done() records the fatal event before "But wait...". The caller
 // identifies the amulet after that message returns, then consumes it and

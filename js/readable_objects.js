@@ -1,5 +1,6 @@
 // Ordinary-object reading. C refs: read.c doread(), erode_obj_text(),
 // tshirt_text(), apron_text(), hawaiian_design(), and candy_wrapper_text().
+import { SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS } from './objclass.js';
 import { armorSimpleName } from './do_wear.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -15,7 +16,6 @@ import { readCookieFortune } from './rumor.js';
 import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { CARD_MESSAGES } from './readable_object_text.js';
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10, COIN_CLASS = 12;
 const T_SHIRT = OBJECT_NAMES.indexOf('T-shirt');
 const RED_MONSTERS = [
     'fire ant', 'pyrolisk', 'hell hound', 'imp', 'large mimic', 'leocrotta',

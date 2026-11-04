@@ -3,6 +3,7 @@
 // stealamulet(), maybe_absorb_item(), mdrop_obj(), mdrop_special_objs(),
 // relobj().
 
+import { COIN_CLASS, ROCK_CLASS } from './objclass.js';
 import {
     objectDelay, BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL,
     BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
@@ -112,7 +113,6 @@ function heroEquipmentSlots() {
     ] as const;
 }
 
-const COIN_CLASS = 12;
 
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons
@@ -247,7 +247,7 @@ export async function stealFromHero(
             await openHoldingTrap(game.u, { state: game });
         } else await plineWithContinuation(heroIsBlind(game)
             ? 'Somebody tries to rob you, but finds nothing to steal.'
-            : game.inventory.some(item => item.oclass === 12)
+            : game.inventory.some(item => item.oclass === COIN_CLASS)
                 ? `${subject} tries to rob you, but isn't interested in gold.`
                 : `${subject} tries to rob you, but there is nothing to steal!`);
         return { outcome: 'nothing-to-steal' };
@@ -276,7 +276,7 @@ export async function stealFromHero(
         await plineWithContinuation(`${subject} tries to ${verbs[draw(4)]} ${name} but gives up.`);
         return {
             outcome: 'refused',
-            fled: draw(Math.trunc(game.inventory.filter(item => item.oclass !== 12).length / 5) + 2) === 0,
+            fled: draw(Math.trunc(game.inventory.filter(item => item.oclass !== COIN_CLASS).length / 5) + 2) === 0,
         };
     };
     if (object.otyp === BOULDER && !throwsRocks) return refuse();
@@ -614,13 +614,12 @@ async function removeForQuestTheft(
 }
 
 // C steal.c:maybe_absorb_item(). A mimic can take a carried or flying item.
-const ABSORB_ROCK_CLASS = 14;
 
 export async function maybeAbsorbItem(
     monster: Monster, object: GameObject, state: GameState = game,
     ordinaryChance = 50, artifactChance = 10,
 ): Promise<void> {
-    if (object === state.uball || object === state.uchain || object.oclass === ABSORB_ROCK_CLASS
+    if (object === state.uball || object === state.uchain || object.oclass === ROCK_CLASS
         || objectResistsDestruction(object, 100 - ordinaryChance, 100 - artifactChance)
         || !monsterCanTouchArtifact(monster, object, state)) return;
 

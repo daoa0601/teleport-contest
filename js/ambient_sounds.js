@@ -1,6 +1,7 @@
 // Level ambience, its resident checks, the #chat command, and monster
 // noises and speech. C ref: sounds.c:dosounds(), dochat(), domonnoise(),
 // growl(), yelp(), whimper(), beg(), growl_sound().
+import { WEAPON_CLASS } from './objclass.js';
 import { hallucinatedDeityName } from './alignment.js';
 import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
 import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, SHOPBASE, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd } from './const.js';
@@ -876,7 +877,7 @@ function humanoidReply(monster, state) {
 }
 function nurseReply(state) {
     const weapon = state.uwep || state.u.uwep;
-    if (weapon && (weapon.oclass === 2 || isWeaponTool(weapon)))
+    if (weapon && (weapon.oclass === WEAPON_CLASS || isWeaponTool(weapon)))
         return 'Put that weapon away before you hurt someone!';
     const hero = state.u;
     if (state.uarmc || hero.uarmc || state.uarm || hero.uarm || state.uarmh || hero.uarmh

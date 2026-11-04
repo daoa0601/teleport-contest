@@ -1,3 +1,4 @@
+import { FOOD_CLASS, POTION_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Engine } from '../js/jsmain.js';
@@ -46,7 +47,7 @@ for (const name of names) {
             `${name}: ${evidence.checks.filter(check => !check.ok).map(check => check.check).join(', ')}\n${recent}`);
         if (name === 'plenty-horn-meals') {
             assert.equal(engine.state.inventory.find(object => object.otyp === HORN_OF_PLENTY)?.spe, 0);
-            assert.ok(engine.state.inventory.some(object => object.blessed && [7, 8].includes(object.oclass)));
+            assert.ok(engine.state.inventory.some(object => object.blessed && [FOOD_CLASS, POTION_CLASS].includes(object.oclass)));
         }
         if (name === 'buried-object-probing')
             assert.ok(engine.state.level?.buriedObjects?.some(object => object.oextra?.oname === 'buried cargo'));

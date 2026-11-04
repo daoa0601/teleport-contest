@@ -1,5 +1,6 @@
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
+import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, MAXOCLASSES, } from './objclass.js';
 import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt } from './engrave.js';
@@ -231,7 +232,7 @@ function warningProjection(monster) {
 export function objectUsesGenericGlyph(object) {
     if (!object || object.dknown)
         return false;
-    return object?.oclass === 8 // POTION_CLASS
+    return object?.oclass === POTION_CLASS
         || (object?.otyp >= 439 && object?.otyp <= 469) // real/glass gems
         || (object?.otyp >= 366 && object?.otyp <= 407); // ordinary spells
 }
@@ -243,7 +244,7 @@ function observeNearbyObject(object, x, y) {
     // examination, inventory, and pickup paths own those encounters.
     // STRANGE_OBJECT lies outside C's generic glyph range, so a mimic's
     // zero-class disguise cannot become a known object at close range.
-    if (!generic || object.oclass === 0)
+    if (!generic || object.oclass === RANDOM_CLASS)
         return false;
     const range = Math.max(game.u?.xray_range ?? -1, 2);
     const dx = x - game.u.ux, dy = y - game.u.uy;
@@ -262,10 +263,9 @@ function observeNearbyObject(object, x, y) {
 // repaint.
 // C display.h:glyph_is_generic_object(). Generic object numbers are the
 // class slots below MAXOCLASSES; zero is the strange object, not a class.
-const MAX_OBJECT_CLASSES = 18;
 function rememberedGenericObject(glyph) {
     return glyph?.kind === 'object' && !glyph.statueGlyph
-        && glyph.otyp > 0 && glyph.otyp < MAX_OBJECT_CLASSES;
+        && glyph.otyp > 0 && glyph.otyp < MAXOCLASSES;
 }
 export async function see_nearby_objects() {
     const r = Math.max(game.u?.xray_range ?? -1, 2);
@@ -1148,14 +1148,23 @@ export const ROGUE_SYMSETS = {
     rogueibm: {
         ibm: true,
         cmap: ROGUE_DOUBLE_WALLS,
-        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+        objectClasses: {
+            [WEAPON_CLASS]: ')', [AMULET_CLASS]: ',', [FOOD_CLASS]: ':',
+            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '?', [SPBOOK_CLASS]: '+',
+            [WAND_CLASS]: '\u00e7',
+        },
     },
     rogueepyx: {
         ibm: true,
         cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
-        objectClasses: { 2: '\x18', 3: '[', 4: '=', 5: '\x0c', 6: '(',
-            7: '\x05', 8: '\u00ad', 9: '\x0e', 10: '+', 11: '\u00e7',
-            12: '\x0f', 13: '\x0f', 14: '`', 15: '0', 16: '_', 17: '.' },
+        objectClasses: {
+            [WEAPON_CLASS]: '\x18', [ARMOR_CLASS]: '[', [RING_CLASS]: '=',
+            [AMULET_CLASS]: '\x0c', [TOOL_CLASS]: '(', [FOOD_CLASS]: '\x05',
+            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '\x0e', [SPBOOK_CLASS]: '+',
+            [WAND_CLASS]: '\u00e7', [COIN_CLASS]: '\x0f', [GEM_CLASS]: '\x0f',
+            [ROCK_CLASS]: '`', [BALL_CLASS]: '0', [CHAIN_CLASS]: '_',
+            [VENOM_CLASS]: '.',
+        },
         trapSymbol: '\x04',
         humanSymbol: '\x01',
         color: true,
@@ -1163,7 +1172,11 @@ export const ROGUE_SYMSETS = {
     roguewindows: {
         ibm: true,
         cmap: new Map([...ROGUE_DOUBLE_WALLS, [CmapSymbol.engroom, '\u00ee']]),
-        objectClasses: { 2: ')', 5: ',', 7: ':', 8: '\u00ad', 9: '?', 10: '+', 11: '\u00e7' },
+        objectClasses: {
+            [WEAPON_CLASS]: ')', [AMULET_CLASS]: ',', [FOOD_CLASS]: ':',
+            [POTION_CLASS]: '\u00ad', [SCROLL_CLASS]: '?', [SPBOOK_CLASS]: '+',
+            [WAND_CLASS]: '\u00e7',
+        },
     },
 };
 const BLANK_SYMBOL = '\x1a';
@@ -1314,7 +1327,7 @@ export function canSpotHeroSelf() {
 // display.h:random_obj_to_glyph().  Generic object slots 0..17 are excluded;
 // a randomly selected corpse consumes a second display draw for its color.
 function randomHallucinatedObjectGlyph() {
-    const firstObject = OBJECT_BASES[2];
+    const firstObject = OBJECT_BASES[WEAPON_CLASS];
     if (firstObject === undefined)
         throw new Error('Missing first real object class in object data');
     const otyp = rn2Display(OBJECT_COLOR.length - firstObject) + firstObject;
@@ -1823,8 +1836,8 @@ function rogueLevelGlyphColor(glyph, x, y) {
         // every other class bright blue.
         const oclass = objectClassForType(glyph.otyp);
         // objclass.h indices: coins 12, food 7.
-        return oclass === 12 ? CLR_YELLOW
-            : oclass === 7 ? CLR_RED : CLR_BRIGHT_BLUE;
+        return oclass === COIN_CLASS ? CLR_YELLOW
+            : oclass === FOOD_CLASS ? CLR_RED : CLR_BRIGHT_BLUE;
     }
     if (glyph.kind === 'monster' && typeof glyphNumber === 'number') {
         // map_glyphinfo() yellows the hero's own glyph whatever its sex,
@@ -2229,7 +2242,7 @@ async function displayMonsterAtCell(monster, x, y, projection) {
                 otyp: mimicAppearance(monster),
                 // Native uses zeroobj, whose class remains zero. A potion
                 // disguise therefore bypasses the generic-potion test.
-                oclass: 0,
+                oclass: RANDOM_CLASS,
                 corpsenm: monster.mcorpsenm ?? MONSTER_NAME.indexOf('tengu'),
                 dknown: false,
             }, !sensed);

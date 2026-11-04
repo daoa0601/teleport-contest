@@ -1,3 +1,4 @@
+import { COIN_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LOST_THROWN, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, NO_MINVENT, STRAT_WAITFORU, W_ARMG, W_WEP } from '../js/const.js';
@@ -110,7 +111,7 @@ void test('gold theft merges the entire purse and leaves other possessions', asy
     await resolveMonsterCombatDamage(attacker, defender, [AT_TUCH, AD_SGLD, 1, 3], options);
     assert.equal(purse.quan, 49);
     assert.ok(defender.minvent.includes(apple));
-    assert.equal(defender.minvent.some(object => object.oclass === 12), false);
+    assert.equal(defender.minvent.some(object => object.oclass === COIN_CLASS), false);
     assert.equal(defender.mhp, 20);
 });
 void test('glove theft petrifies a corpse-wielding victim and grows the thief without hero credit', async () => {

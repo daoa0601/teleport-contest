@@ -5,6 +5,7 @@
 // drop_boulder_on_monster(), do_class_genocide(), do_genocide(), punish(),
 // unpunish(), cant_revive(), create_particular() and its parse/creation
 // halves. Effects own their exceptions to scroll disposal.
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection, requireObjectData, } from './object_data.js';
 import { exerciseAttribute, exerciseWisdom, exerciseAttribute as exerciseAttributeNamed } from './attrib.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, someHeroArmor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
@@ -80,10 +81,6 @@ import { questMonsterSound } from './role_monsters.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { monsterCensus } from './minion.js';
-const WEAPON_CLASS = 2;
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10, ARMOR_CLASS = 3;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
 const S_HUMAN = 53;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 const SCR_CONFUSE_MONSTER = OBJECT_NAMES.indexOf('confuse monster');
@@ -195,9 +192,6 @@ export function learnScrollType(otyp, { state = game } = {}) {
 export function learnScroll(source, { state = game, } = {}) {
     return source.oclass === SPBOOK_CLASS ? false : learnScrollType(source.otyp, { state });
 }
-const RING_CLASS = 4;
-const TOOL_CLASS = 6;
-const WAND_CLASS = 11;
 const NODIR = 1;
 const WAN_NOTHING = OBJECT_NAMES.indexOf('nothing');
 // C read.c:charge_ok().
@@ -1205,7 +1199,7 @@ async function fireEffect(source, { state, finishHeroDeath }) {
             await burnAwayHeroSlime({ state });
         }
     }
-    const explosion = await explode(center.x, center.y, 11, damage, 9, EXPL_FIERY, {
+    const explosion = await explode(center.x, center.y, 11, damage, SCROLL_CLASS, EXPL_FIERY, {
         state, die: finishHeroDeath,
     });
     result.heroDied = explosion.heroDied;
@@ -1271,7 +1265,7 @@ async function cloudEffect(source, state) {
         await pline('Never mind.');
     else if (!canCenterCloud(center.x, center.y, state)) {
         await pline(heroIsHallucinating(state) ? 'Ugh... someone cut the cheese.'
-            : `${source.oclass === 9 ? 'The scroll crumbles with' : 'You smell'} a whiff of rotten eggs.`);
+            : `${source.oclass === SCROLL_CLASS ? 'The scroll crumbles with' : 'You smell'} a whiff of rotten eggs.`);
     }
     else {
         await createPoisonGasCloud(state, center.x, center.y, 15 + 10 * blessing(source), 8 + 4 * blessing(source));
@@ -1282,7 +1276,7 @@ function blessing(source) {
     return source.blessed ? 1 : source.cursed ? -1 : 0;
 }
 function sourceTypeKnown(source, state) {
-    return source.oclass === 10 || !!OBJECT_INITIAL_KNOWN[source.otyp]
+    return source.oclass === SPBOOK_CLASS || !!OBJECT_INITIAL_KNOWN[source.otyp]
         || !!state._knownObjectTypes?.has(source.otyp);
 }
 // C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
@@ -1984,8 +1978,6 @@ function canAnnounceImmuneSpecies(species) {
 // ---------------------------------------------------------------------------
 // Punishment. C refs: read.c punish(), unpunish().
 // ---------------------------------------------------------------------------
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 // C read.c:punish().
 export async function punishHero(source = null, state = game) {
     requirePlayingGame(state);

@@ -3,6 +3,7 @@
 // include/artilist.h.  Keep artifact identity separate from the base object:
 // readobjnam() first resolves the artifact to an object type, mksobj() builds
 // that ordinary object, and oname() then commits the named artifact.
+import { WEAPON_CLASS } from './objclass.js';
 import { objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
@@ -370,7 +371,7 @@ export async function createArtifactGift(alignment, maximumValue, state = game) 
             candidates.push(artifact);
             break;
         }
-        const weapon = objectClassForType(artifact.baseType) === 2;
+        const weapon = objectClassForType(artifact.baseType) === WEAPON_CLASS;
         const skill = Math.abs(objectSkill(artifact.baseType));
         const compatibility = weapon ? (skills?.[skill]?.maxSkill ?? 0) : P_SKILLED;
         if ((artifact.alignment !== null || (state.u.ugifts ?? 0) > 0 || !rn2(3)) &&

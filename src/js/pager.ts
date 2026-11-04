@@ -1,6 +1,7 @@
 // The what-is-it commands: farlook, encyclopedia lookup, and the help menu.
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 
+import { ROCK_CLASS } from './objclass.js';
 import {
     A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED,
     def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel,
@@ -729,7 +730,7 @@ export function screenDescription(x: number, y: number, description: string): Sc
         // is set for this level's symset (ov_rogue_syms on the Rogue level),
         // else the default rock symbol.
         const boulderSymbol = (Is_rogue_level(game.u.uz)
-            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[14] || '';
+            ? game.rogueBoulderSym : game.boulderSym) || OBJECT_CLASS_SYMBOLS[ROCK_CLASS] || '';
         for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
             const statue = index === 14 && glyph.kind === 'object' && glyph.statueGlyph;
             const boulder = index === 14 && sameSymbol({ ch: boulderSymbol });

@@ -1,3 +1,4 @@
+import { SPBOOK_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -105,7 +106,7 @@ void test('statues of tiny bodies still weigh a hundred units', async () => {
             'a generated statue contains at most one spellbook');
         for (const item of statue.contents ?? []) {
             books++;
-            assert.equal(item.oclass, 10);
+            assert.equal(item.oclass, SPBOOK_CLASS);
             assert.notEqual(item.otyp, SPE_NOVEL);
         }
     }

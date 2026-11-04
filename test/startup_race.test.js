@@ -1,3 +1,4 @@
+import { FOOD_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
@@ -6,7 +7,6 @@ import { races, roles } from '../js/roles.js';
 import { uInitInventoryAttrs } from '../js/u_init.js';
 import { completeHeroStartup } from './support/startup.js';
 import { heroGoldAmount } from '../js/hack.js';
-const FOOD_CLASS = 7;
 async function start(roleKey, raceName, { explore = false, seed = 123n } = {}) {
     return await completeHeroStartup({
         role: roleKey,

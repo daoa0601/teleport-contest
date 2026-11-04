@@ -1,6 +1,7 @@
 // options.js — Parse .nethackrc options.
 // C ref: options.c — handles OPTIONS=, BIND=, etc.
 
+import { ILLOBJ_CLASS, COIN_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import type { CharacterFacet } from './character_choices.js';
 import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
@@ -3474,11 +3475,11 @@ export function changeInventoryOrder(symbols: string, state: InventoryOrderState
 
 export function planInventoryOrder(symbols: string, state: InventoryOrderState = game): { order: number[]; errors: string[] } {
     const previous = inventoryClassOrder(state);
-    const order = symbols.includes('$') ? [] : [12];
+    const order = symbols.includes('$') ? [] : [COIN_CLASS];
     const errors: string[] = [];
     for (const [index, symbol] of [...symbols].entries()) {
         const oclass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-        if (oclass < 1) errors.push(`Not an object class '${symbol}'`);
+        if (oclass < ILLOBJ_CLASS) errors.push(`Not an object class '${symbol}'`);
         else if (!previous.includes(oclass)) errors.push(`Object class '${symbol}' not allowed`);
         else if (symbols.indexOf(symbol, index + 1) !== -1) errors.push(`Duplicate object class '${symbol}'`);
         else {

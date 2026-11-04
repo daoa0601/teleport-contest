@@ -2,6 +2,7 @@
 // C ref: sit.c throne_sit_effect(), special_throne_effect(), attrcurse(),
 // and rndcurse().
 
+import { COIN_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused } from './potion.js';
 import { makeBlinded } from './potion.js';
@@ -69,7 +70,6 @@ import { makeWish } from './zap.js';
 import { aggravateMonsters } from './wizard.js';
 import { loseHeroHp } from './hack.js';
 
-const COIN_CLASS = 12;
 const M2_PRINCE = 0x00000800;
 const S_VAMPIRE = 48;
 

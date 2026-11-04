@@ -3,6 +3,7 @@
 // in_fcorridor(), findgd(), uleftvault(), find_guard_dest(), gd_move(),
 // invault(), move_gold(), vault_summon_gd(), paygd(), hidden_gold().
 
+import { COIN_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireLiveGame, requireInitializedGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameMap } from './game.js';
@@ -937,7 +938,6 @@ export async function wallifyVault(guard: VaultGuard, state: GameState, random: 
 }
 
 // C vault.c:paygd(). Only openly carried coins can be reclaimed by a guard.
-const COIN_CLASS = 12;
 
 export async function payVaultGuardOnExit({
     silent = false, publish = plineWithContinuation, random = rn2,

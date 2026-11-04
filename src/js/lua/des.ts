@@ -1,4 +1,8 @@
 import {
+    RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS,
+    SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
+} from '../objclass.js';
+import {
     objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN,
 } from '../object_data.js';
 import {
@@ -364,7 +368,7 @@ export function tablePoint(options: DesOptions): LuaPoint | null {
 
 function objectClassForSymbol(symbol: string) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
-    if (objectClass < 1)
+    if (objectClass < ILLOBJ_CLASS)
         throw new Error(`unknown Lua object class ${symbol}`);
     return objectClass;
 }
@@ -373,13 +377,13 @@ function objectClassForSymbol(symbol: string) {
 // symbol and the "ring of "-style prefixes, then by description.
 export function objectTypeForName(name: unknown, classSymbol: unknown = null, state: GameState = game): number {
     const prefixes: [string, number][] = [
-        ['ring of ', 4],
-        ['potion of ', 8],
-        ['scroll of ', 9],
-        ['spellbook of ', 10],
-        ['wand of ', 11],
+        ['ring of ', RING_CLASS],
+        ['potion of ', POTION_CLASS],
+        ['scroll of ', SCROLL_CLASS],
+        ['spellbook of ', SPBOOK_CLASS],
+        ['wand of ', WAND_CLASS],
     ];
-    let desiredClass = Math.max(0, OBJECT_CLASS_SYMBOLS.indexOf(typeof classSymbol === 'string' ? classSymbol : ''));
+    let desiredClass = Math.max(RANDOM_CLASS, OBJECT_CLASS_SYMBOLS.indexOf(typeof classSymbol === 'string' ? classSymbol : ''));
     let target = String(name).toLowerCase();
     if (!target) return 0; // STRANGE_OBJECT: request a random object.
     for (const [prefix, prefixClass] of prefixes) {

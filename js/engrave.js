@@ -5,6 +5,7 @@
 //         hack.c maybe_smudge_engr() stays in hack.ts; hacklib.c xcrypt()
 //         feeds blengr(); invent.c getobj()'s "write with" flow is called
 //         from doengrave().
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import { game } from './gstate.js';
 import { exerciseWisdom } from './attrib.js';
@@ -459,18 +460,6 @@ function trapAtHeroInState(state) {
     const hero = state.u;
     return state.level?.traps?.find(trap => trap.tx === hero?.ux && trap.ty === hero?.uy) || null;
 }
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const FOOD_CLASS = 7;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
-const BALL_CLASS = 15;
-const VENOM_CLASS = 17;
-const TOOL_CLASS = 6;
 // object_data.js: an uncursed athame never dulls while carving.
 const ATHAME = 38;
 // armor.ts: armor types 163..172 are the boots subcategory (oc_armcat

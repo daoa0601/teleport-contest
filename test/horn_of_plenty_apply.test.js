@@ -1,3 +1,4 @@
+import { FOOD_CLASS, POTION_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
@@ -13,7 +14,7 @@ void test('apply produces blessed food or drink from a blessed horn of plenty', 
     await applyInventoryObject(horn, '    ');
     const food = game.inventory.find(object => object !== horn);
     assert.ok(food);
-    assert.ok(food.oclass === 7 || food.oclass === 8);
+    assert.ok(food.oclass === FOOD_CLASS || food.oclass === POTION_CLASS);
     assert.equal(food.blessed, true);
     assert.equal(food.cursed, false);
     assert.equal(horn.spe, 1);
@@ -34,7 +35,7 @@ void test('a sighted fumbling hero sees the produced potion appearance before it
     setPropertyTimeout('fumbling', 10);
     initRng(17n);
     await applyInventoryObject(horn, '    ');
-    const potion = level.objects[game.u.ux]?.[game.u.uy]?.find(object => object.oclass === 8);
+    const potion = level.objects[game.u.ux]?.[game.u.uy]?.find(object => object.oclass === POTION_CLASS);
     assert.ok(potion, 'the horn must produce a potion and drop it at the hero');
     assert.equal(potion.dknown, true);
     assert.match(game._pending_message, /Oops!  The .+ potion slips to the floor!/);

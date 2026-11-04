@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, SCROLL_CLASS, WAND_CLASS } from '../js/objclass.js';
 import { installPagerInput } from './support/pager-input.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
@@ -21,8 +22,6 @@ import { addInventoryObject, floorObject, knownObject } from './support/game-obj
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
-const WAND_CLASS = 11;
-const SCROLL_CLASS = 9;
 async function blastRoom(options = {}) {
     await freshObjectRoom({ left: 5, right: 21, hero: { uhp: 500, uhpmax: 500 },
         flags: { verbose: true }, gameplaySeed: 7n, ...options });
@@ -93,7 +92,7 @@ void test('disintegration protects the hero from breath explosions and destroys 
     const door = game.level.requireAt(10, 9);
     door.typ = DOOR;
     door.doormask = D_CLOSED;
-    await explode(10, 10, 24, 20, 0, EXPL_MAGICAL);
+    await explode(10, 10, 24, 20, RANDOM_CLASS, EXPL_MAGICAL);
     assert.equal(game.u.uhp, 500);
     assert.equal(game.level.requireAt(10, 9).doormask, D_NODOOR);
 });
@@ -116,7 +115,7 @@ for (const [type, style] of [[PHYS_EXPL_TYPE, EXPL_NOXIOUS], [27, EXPL_NOXIOUS]]
         requireFixtureGame(game);
         grantIntrinsicProperty('halfPhysicalDamage', 'outside');
         const jackal = await bystander('jackal', 11, 10);
-        await explode(10, 10, type, 15, 0, style);
+        await explode(10, 10, type, 15, RANDOM_CLASS, style);
         assert.equal(game.u.uhp, 492);
         assert.equal(jackal.mhp, 485);
     });
@@ -215,7 +214,7 @@ void test('poison explosions leave poisonous gas in every open blast square', as
     await blastRoom();
     requireFixtureGame(game);
     grantIntrinsicProperty('poisonResistance', 'outside');
-    await explode(10, 10, 26, 20, 0, EXPL_NOXIOUS);
+    await explode(10, 10, 26, 20, RANDOM_CLASS, EXPL_NOXIOUS);
     assert.equal(game.u.uhp, 500);
     const clouds = game.level.regions.filter(region => region.damage === 8);
     assert.ok(clouds.some(region => region.cells.some(cell => cell.x === 9 && cell.y === 9)));
@@ -227,7 +226,7 @@ void test('acid blasts dissolve bars at a room edge into an open doorway', async
     const bars = game.level.requireAt(11, 10);
     bars.typ = IRONBARS;
     bars.edge = true;
-    await explode(10, 10, 27, 20, 0, EXPL_NOXIOUS);
+    await explode(10, 10, 27, 20, RANDOM_CLASS, EXPL_NOXIOUS);
     assert.equal(bars.typ, DOOR);
     assert.equal(bars.doormask, D_NODOOR);
 });

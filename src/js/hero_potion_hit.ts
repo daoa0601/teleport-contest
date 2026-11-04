@@ -1,5 +1,6 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
 
+import { POTION_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
@@ -23,7 +24,6 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { loseHeroHp } from './hack.js';
 
-const POTION_CLASS = 8;
 
 interface HeroPotionImpactOptions {
     state?: GameState;

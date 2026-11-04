@@ -1,4 +1,5 @@
 // C dothrow.c:thitmonst()'s unicorn catch and gem_accept().
+import { GEM_CLASS } from './objclass.js';
 import { objectSkill, } from './object_data.js';
 import { P_SLING, RLOC_MSG } from './const.js';
 import { plineWithContinuation } from './pline.js';
@@ -14,7 +15,6 @@ import { settleThrownShopObject } from './dothrow.js';
 import { objectTypeKnown } from './shk.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { reportMonsterTeleportRestriction } from './teleport_rules.js';
-const GEM_CLASS = 13;
 const GEMSTONE = 20;
 const MINERAL = 21;
 // Null means ordinary combat; false means caught or missed but still free.

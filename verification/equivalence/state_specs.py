@@ -41,7 +41,7 @@ STATE_JS_FILES = (
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
     'js/cmd.js', 'js/skills.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
     'js/object_properties.js', 'js/glyph_numbers.js', 'js/getpos.js',
-    'js/display.js', 'js/senses.js',
+    'js/display.js', 'js/senses.js', 'js/objclass.js',
 )
 
 
@@ -748,8 +748,8 @@ STATE_SPECS += [
          probes=[('otyp correspondence omitted', UnrelatedState(
              lambda s: [s['weapon_present'] >= 0, s['weapon_present'] <= 1,
                         s['weapon_present'] == 1], ('weapon.otyp',)))],
-         mutants=[('js/skills.js', 'if (![2, 6, 13].includes(weapon.oclass))',
-                   'if (![2, 6].includes(weapon.oclass))'),
+         mutants=[('js/skills.js', 'if (![WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(weapon.oclass))',
+                   'if (![WEAPON_CLASS, TOOL_CLASS].includes(weapon.oclass))'),
                   ('js/skills.js', 'return Math.abs(skill);', 'return skill;')]),
 ]
 
@@ -904,7 +904,7 @@ STATE_SPECS += [
     Spec('is_ammo:tables', 'verification_is_ammo', 'isLauncherAmmunition', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
-            'obj.h:is_ammo is the one C macro behind both isLauncherAmmunition and isAmmunition; this claim proves isLauncherAmmunition, which the callers keep, and the unclaimed duplicate is listed in docs/formal-verification.md',),
+            'obj.h:is_ammo has one port function, isLauncherAmmunition; this claim proves that function',),
          require_counterexamples=True, configure=classed_object_state('obj'),
          arguments=object_predicate_arguments('obj'),
          probes=[('oclass correspondence omitted (pinned arrow)',
@@ -918,7 +918,7 @@ STATE_SPECS += [
                                   ('launcher.otyp', (16, True), 'launcher.otyp')],
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
             'obj.h:matching_launcher accepts a null launcher (the macro tests l first); the ammo object itself must be non-null because is_ammo dereferences it, and launcher otyp stays inside the emitted subtype table',
-            'obj.h:ammo_and_launcher is the one C macro behind both launcherMatchesAmmo and ammunitionMatchesLauncher; this claim proves launcherMatchesAmmo, which the callers keep'),
+            'obj.h:ammo_and_launcher has one port function, launcherMatchesAmmo; this claim proves that function'),
          require_counterexamples=True, configure=ammo_launcher_state,
          arguments=ammo_launcher_arguments,
          pre=lambda s: [s['launcher_present'] >= 0, s['launcher_present'] <= 1],

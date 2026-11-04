@@ -1,5 +1,6 @@
 // botl.c — bottom-line status evaluation and windowport notification.
 // The tty side that paints these lines (writeStatusLines) lives in wintty.ts.
+import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS } from './objclass.js';
 import { objectClassForType, objectSkill, AKLYS, AMULET_OF_GUARDING, CLOAK_OF_PROTECTION, CREAM_PIE, GOLD_PIECE, RIN_PROTECTION, } from './object_data.js';
 import { game } from './gstate.js';
 import { currentAttribute } from './attrib.js';
@@ -391,7 +392,7 @@ export function weaponStatus(state) {
         text = 'joust';
     else if (weapon.otyp === AKLYS)
         text = 'aklys';
-    else if (weapon.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER)
+    else if (weapon.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER)
         text = 'sword';
     else if (skill === P_QUARTERSTAFF)
         text = 'staff';
@@ -412,7 +413,7 @@ export function weaponStatus(state) {
     return `${twoHanded ? '2H-' : ''}${text.replace(/ /g, '-')}`;
 }
 function weaponSkill(object) {
-    return object && [2, 6, 13].includes(object.oclass)
+    return object && [WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(object.oclass)
         ? Math.abs(objectSkill(object.otyp)) : 0;
 }
 export function armorStatus(state) {

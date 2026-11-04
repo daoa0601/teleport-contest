@@ -1,3 +1,4 @@
+import { ILLOBJ_CLASS, WEAPON_CLASS } from './objclass.js';
 // object_data.js — mechanically transcribed NetHack 5.0 object metadata.
 // Source: nethack-c/upstream/include/objects.h.  Keep numeric IDs in sync.
 // BEGIN GENERATED OBJECT NAME DATA

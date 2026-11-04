@@ -1,6 +1,7 @@
 // skills.js - Hero weapon/fighting/spell skill state and commands.
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
 
+import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS } from './objclass.js';
 import {
     objectSkill, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
 } from './object_data.js';
@@ -215,7 +216,7 @@ export function weaponSkillDamageBonus(weapon: GameObject | null, state: GameSta
 // C weapon.c:weapon_type().
 export function weaponSkillType(weapon: GameObject | null): number {
     if (!weapon) return P_BARE_HANDED_COMBAT;
-    if (![2, 6, 13].includes(weapon.oclass)) return P_NONE;
+    if (![WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(weapon.oclass)) return P_NONE;
     const skill = objectSkill(weapon.otyp);
     return Math.abs(skill);
 }
@@ -299,7 +300,7 @@ export function ensureHeroSkills(game: GameState): HeroSkill[] | null {
     // (bow/sling/crossbow), not darts, shuriken, or boomerangs.
     for (const item of game.inventory || []) {
         if (!item._startingInventory) continue;
-        if (![2, 6, 13].includes(item.oclass)) continue;
+        if (![WEAPON_CLASS, TOOL_CLASS, GEM_CLASS].includes(item.oclass)) continue;
         const subtype = objectSkill(item.otyp);
         if (!Number.isInteger(subtype) || subtype === 0) continue;
         const skill = Math.abs(subtype);

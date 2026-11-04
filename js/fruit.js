@@ -1,5 +1,6 @@
 // Named fruit identities. C options.c:fruitadd()/optfn_fruit(),
 // objnam.c:fruit_from_name()/fruit_from_indx()/fruitname().
+import { FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import { nameToMonster } from './mondata.js';
 import { OBJECT_NAMES, getObjectClassBounds } from './object_data.js';
@@ -137,7 +138,7 @@ function sanitizeUserFruit(name, initial) {
     let value = (makeSingular(name).split(',', 1)[0] ?? '').slice(0, FRUIT_NAME_BYTES);
     const size = value.startsWith('small ') || value.startsWith('large ') ? 6
         : value.startsWith('medium ') ? 7 : value.startsWith('very large ') ? 11 : 0;
-    const { first, last } = getObjectClassBounds(7);
+    const { first, last } = getObjectClassBounds(FOOD_CLASS);
     const foodNames = OBJECT_NAMES.slice(first, last + 1);
     // initoptions_finish precedes init_objects: C's food-class bases are
     // still zero, so the food-name conflict check starts at runtime.

@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, COIN_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -26,7 +27,7 @@ void test('firing quivered gold at a wall publishes the purse during the command
     input.feed('fh');
     await rhack(0);
 
-    assert.equal(game.inventory.filter(item => (item.oclass ?? 0) === 12)[0]?.quan, 4,
+    assert.equal(game.inventory.filter(item => (item.oclass ?? RANDOM_CLASS) === COIN_CLASS)[0]?.quan, 4,
         'one coin left the purse stack');
     const status = game.nhDisplay?.statusLines?.[1] ?? '';
     assert.match(status, /\$:4/, 'the freed coin is already on the status line');

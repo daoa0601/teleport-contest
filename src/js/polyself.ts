@@ -5,6 +5,7 @@
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
 
+import { WEAPON_CLASS } from './objclass.js';
 import {
     objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING,
     ELVEN_MITHRIL_COAT, LEASH, LENSES, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
@@ -1192,7 +1193,7 @@ async function dropPolymorphWeapons(alone: boolean) {
 
 function droppedWeaponNoun(object: GameObject): string {
     const skill = objectSkill(object.otyp);
-    return object.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
+    return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER
         ? 'sword' : weaponDescription(object);
 }
 

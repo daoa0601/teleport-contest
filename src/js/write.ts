@@ -1,5 +1,6 @@
 // Applying a magic marker. C refs: write.c:cost(), write_ok(), dowrite(),
 // new_book_description(). Inventory, billing, and holding keep their owners.
+import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
 import { commandResultCancelled } from './cmd.js';
@@ -31,7 +32,6 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, chargeUnpaidUsage, objectTypeKnown, deleteObject } from './shk.js';
 import { knownSpell } from './spell.js';
 
-const SCROLL_CLASS = 9, SPBOOK_CLASS = 10;
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 
 // C write.c:new_book_description().

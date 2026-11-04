@@ -1,5 +1,6 @@
 // C invent.c:hold_another_object(). Admission uses the same inventory,
 // artifact-touch, encumbrance, and floor owners as ordinary hero actions.
+import { COIN_CLASS } from './objclass.js';
 import { game, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -80,7 +81,7 @@ export async function holdAnotherObject(object: GameObject, {
     const limit = Math.max(nearCapacity(state), pickupBurden(state));
     object = await addInventoryItem(object, null, false);
     if (state.program_state?.gameover) return { object, heroDied: true };
-    const slots = state.inventory.filter(item => item.otyp !== GOLD_PIECE && item.oclass !== 12).length;
+    const slots = state.inventory.filter(item => item.otyp !== GOLD_PIECE && item.oclass !== COIN_CLASS).length;
     const tooHeavy = !(object.otyp === LOADSTONE && object.cursed)
         && nearCapacity(state) > limit;
     if (forcedDrop || slots > 52 || tooHeavy) {

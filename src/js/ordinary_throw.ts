@@ -1,6 +1,7 @@
 // Hero throws which do not have a class-specific effect.
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 
+import { GEM_CLASS } from './objclass.js';
 import {
     objectSkill, AKLYS, BOOMERANG,
 } from './object_data.js';
@@ -126,7 +127,7 @@ export async function throwOrdinaryObject({
             });
         if (state.program_state.gameover) return { heroDied: true };
         const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
-        if (isLauncherAmmunition(thrown) && thrown.oclass !== 13
+        if (isLauncherAmmunition(thrown) && thrown.oclass !== GEM_CLASS
             && !launcherMatchesAmmo(thrown, state.uwep)) {
             const skill = Math.abs(objectSkill(thrown.otyp));
             await plineWithContinuation(`You aren't wielding ${

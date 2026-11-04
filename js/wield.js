@@ -1,6 +1,7 @@
 // wield.js — Wield, quiver, and weapon-swap commands.
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), and finish_splitting().
+import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
 import { objectClassForType, objectSkill, LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -40,8 +41,6 @@ import { shipObject } from './dokick.js';
 import { AT_WEAP } from './monster_attack_types.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
-const WEAPON_CLASS = 2;
-const SCROLL_CLASS = 9;
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover)
@@ -96,8 +95,8 @@ export async function dowield() {
     }
     clearSplitObjects();
     // C wield.c:wield_ok(): hands are a likely candidate; coins are excluded.
-    const selection = await getobj('wield', object => object.oclass === 12 ? GETOBJ_EXCLUDE
-        : object.oclass === 2 || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
+    const selection = await getobj('wield', object => object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE
+        : object.oclass === WEAPON_CLASS || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
         forcePrompt: true, allowCount: true, hands: GETOBJ_SUGGEST,
         handsText: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
     });
@@ -247,7 +246,7 @@ function splittableForQuiver(item) {
         && !isWeldedPrimary(item);
 }
 function hasFreeBasicInventoryLetter() {
-    return game.inventory.filter(item => item.oclass !== 12).length < 52;
+    return game.inventory.filter(item => item.oclass !== COIN_CLASS).length < 52;
 }
 export async function doquiverCore(verb) {
     setMulti(0);
@@ -433,7 +432,7 @@ export function weaponNeedsBashingMessage(object, state) {
 export function willWeld(object) {
     if (!object?.cursed)
         return false;
-    const weaponTool = object.oclass === 6 && objectSkill(object.otyp) !== 0;
+    const weaponTool = object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0;
     return object.oclass === WEAPON_CLASS || weaponTool
         || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
 }
@@ -513,7 +512,7 @@ async function readySelectedWeapon(weapon, state) {
     }
     if ((state.uarms || state.u.uarms) && isBimanualObject(weapon)) {
         const skill = objectSkill(weapon.otyp);
-        const kind = weapon.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
+        const kind = weapon.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER
             ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon';
         await plineWithContinuation(`You cannot wield a two-handed ${kind} while wearing a shield.`);
         return 'failed';
@@ -961,7 +960,7 @@ function quantityOf(object) {
     return object.quan ?? object.quantity ?? 1;
 }
 function isWeapon(object) {
-    return object.oclass === 2;
+    return object.oclass === WEAPON_CLASS;
 }
 function isTwoHanded(object) {
     // C wield.c:wield_tool() checks bimanual(obj) at both the welded message

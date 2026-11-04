@@ -1,3 +1,4 @@
+import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { doname, monsterName } from './do_name.js';
@@ -841,7 +842,7 @@ function enqueueInventoryAction(action) {
     switch (key) {
         case 'a':
             // IA_APPLY_OBJ, or IA_DIP_OBJ for a potion other than known oil.
-            handler = item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item))
+            handler = item.oclass === POTION_CLASS && !(item.otyp === POT_OIL && objectTypeKnown(item))
                 ? 'dip_into' : 'doapply';
             break;
         case 'c':
@@ -1370,7 +1371,6 @@ function contextMenuResponses(selection) {
         case 'wait': return;
     }
 }
-const FOOD_CLASS = 7;
 // C cmd.c:there_cmd_menu_common().
 // C cmd.c:there_cmd_menu_far().
 export async function selectContextMenu(x, y, click) {

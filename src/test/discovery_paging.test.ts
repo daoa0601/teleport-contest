@@ -1,3 +1,4 @@
+import { ARMOR_CLASS } from '../js/objclass.js';
 import {
     objectClassForType, OBJECT_DESCRIPTIONS, POT_HEALING, RIN_PROTECTION,
 } from '../js/object_data.js';
@@ -38,7 +39,7 @@ void test('sortloot discovers later classes only after the earlier text pages ar
     await freshObjectRoom();
     applyNethackrc('OPTIONS=sortdiscoveries:s');
     for (let type = 18; type < OBJECT_DESCRIPTIONS.length; type++)
-        if (objectClassForType(type) === 3 && OBJECT_DESCRIPTIONS[type]) recordObjectKnowledge(type);
+        if (objectClassForType(type) === ARMOR_CLASS && OBJECT_DESCRIPTIONS[type]) recordObjectKnowledge(type);
     recordObjectKnowledge(RIN_PROTECTION);
     const input = resetInputState();
     let pages = 0;

@@ -1,3 +1,4 @@
+import { WEAPON_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -29,7 +30,7 @@ void test('a monster that steps on a rock trap and dies paints its pile once', a
     monster.mhp = 1;
     monster.mhpmax = 1;
     addTrap(level, ROCKTRAP, 11, 10);
-    const firstObject = OBJECT_BASES[2] ?? -1;
+    const firstObject = OBJECT_BASES[WEAPON_CLASS] ?? -1;
 
     initRng(seed);
     // The turn's display-RNG draws, in C order: seetrap() repaints the

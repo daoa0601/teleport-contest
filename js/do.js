@@ -6,6 +6,7 @@
 //         menu_drop(), u_stuck_cannot_go(), final_level(), u_collide_m(),
 //         danger_uprops(), cmd_safety_prevention(), donull(), dowipe(),
 //         wipeoff(), set_wounded_legs(), heal_legs().
+import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -495,7 +496,6 @@ export async function dropRingIntoSink(object, { state = game, publish = plineWi
         await consumeInventoryItem(object, state);
     }
 }
-const RING_CLASS = 4;
 // C do.c:canletgo(). A silent check still discovers curses.
 export async function canLetGo(object, verb = '', state = game) {
     if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
@@ -946,7 +946,7 @@ async function chooseDroppedObjects(objects) {
     const sorted = sortObjects(objects, { mode: lootSortMode({ inventoryLetters: true }) });
     // menu_drop() passes INVORDER_SORT even when sortpack is disabled.
     const sections = [];
-    for (const oclass of [...inventoryClassOrder(), 17]) {
+    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS]) {
         const members = sorted.filter(object => object.oclass === oclass);
         if (!members.length)
             continue;
@@ -997,7 +997,7 @@ async function dropCount(object, count) {
     return await dropHeroObject(object);
 }
 function bucCategory(object) {
-    if (object.oclass === 12)
+    if (object.oclass === COIN_CLASS)
         return game.flags.goldX ? 'X' : 'U';
     if (game.urole?.key === 'priest')
         object.bknown = true;
@@ -1008,8 +1008,8 @@ function hasUnpaid(object) {
 }
 function matchesCategories(object, categories) {
     const classes = categories.filter((category) => typeof category === 'number');
-    if (object.oclass === 12 && classes.length)
-        return classes.includes(12);
+    if (object.oclass === COIN_CLASS && classes.length)
+        return classes.includes(COIN_CLASS);
     const statuses = categories.filter((category) => category === 'B' || category === 'U' || category === 'C' || category === 'X');
     return (!classes.length || classes.includes(object.oclass))
         && (!statuses.length || statuses.includes(bucCategory(object)))
@@ -1044,7 +1044,7 @@ async function traditionalDropCategories(combo) {
             continue;
         }
         const oclass = OBJECT_CLASS_SYMBOLS.indexOf(character);
-        if (oclass < 1)
+        if (oclass < ILLOBJ_CLASS)
             await pline(`You don't have any ${character}'s.`);
         else if (!categories.includes(oclass))
             categories.push(oclass);
@@ -1061,7 +1061,7 @@ async function dropTraditionally(selection) {
             bypassObjectList(game.inventory, false);
             let object;
             let letterCode = 'a'.charCodeAt(0) - 1;
-            if (game.inventory[0]?.oclass === 12)
+            if (game.inventory[0]?.oclass === COIN_CLASS)
                 letterCode--;
             while ((object = nextUnbypassedObject(game.inventory, game, sorted))) {
                 if (letterCode === 'z'.charCodeAt(0))

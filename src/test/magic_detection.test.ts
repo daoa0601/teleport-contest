@@ -1,3 +1,4 @@
+import { POTION_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -22,7 +23,6 @@ const FOOD_DETECTION = OBJECT_NAMES.indexOf('food detection');
 const OBJECT_DETECTION = OBJECT_NAMES.indexOf('object detection');
 const GOLD_DETECTION = OBJECT_NAMES.indexOf('gold detection');
 // objects.h generic slot shown for a potion whose appearance is unobserved.
-const POTION_CLASS = 8;
 
 async function detectionRoom(options = {}) {
     const level = await freshObjectRoom({ flags: { tips: false, verbose: true }, ...options });

@@ -1,4 +1,5 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
+import { POTION_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
@@ -14,7 +15,6 @@ import { heroIsHallucinating } from './senses.js';
 import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsFromBill, deleteObject } from './shk.js';
 import { cansee } from './vision.js';
 import { loseHeroHp } from './hack.js';
-const POTION_CLASS = 8;
 export async function hitHeroWithThrownPotion(potion, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, source = 'thrown', } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);

@@ -1,3 +1,4 @@
+import { WEAPON_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
@@ -298,7 +299,7 @@ void test('a pickup filter retains petrifying corpses when the caller requests t
     const corpse = await knownObject(CORPSE, { corpsenm: MONSTER_NAME.indexOf('cockatrice') });
     const weapon = await knownObject(DAGGER);
     const ordered = sortObjects([food, corpse, weapon], {
-        mode: SORTLOOT_LOOT | SORTLOOT_PETRIFY, filter: object => object.oclass === 2,
+        mode: SORTLOOT_LOOT | SORTLOOT_PETRIFY, filter: object => object.oclass === WEAPON_CLASS,
     });
     assert.equal(ordered.includes(food), false);
     assert.equal(ordered.includes(corpse), true);

@@ -1,3 +1,4 @@
+import { WAND_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
@@ -32,7 +33,7 @@ void test('a class-qualified unknown wish grants a random item of that class', a
     await freshObjectRoom();
     const result = await readObjectName('wand of nonexistent magic');
     assert.ok(result && !result.noWish, 'A specified class should fall back to a random object');
-    assert.equal(result.object.oclass, 11);
+    assert.equal(result.object.oclass, WAND_CLASS);
 });
 void test('a named subrange wish chooses an item in that range', async () => {
     await freshObjectRoom();

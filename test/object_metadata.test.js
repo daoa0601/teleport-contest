@@ -1,3 +1,4 @@
+import { POTION_CLASS } from '../js/objclass.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
@@ -10,7 +11,7 @@ import { OBJECT_COLOR } from '../js/object_data.js';
 import { objectColor, objectUsesGenericGlyph } from '../js/display.js';
 void test('unobserved appearance-sensitive objects use their generic class color', () => {
     game.objectColors = OBJECT_COLOR.slice();
-    const potion = { otyp: 300, oclass: 8, dknown: false };
+    const potion = { otyp: 300, oclass: POTION_CLASS, dknown: false };
     assert.equal(objectUsesGenericGlyph(potion), true);
     assert.equal(objectColor(potion), OBJECT_COLOR[8]);
     potion.dknown = true;

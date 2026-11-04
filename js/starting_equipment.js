@@ -1,12 +1,10 @@
 // C u_init.c:ini_inv_use_obj(), after starting-item discovery.
+import { WEAPON_CLASS, ARMOR_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { armorSlotFor, wearHeroArmor } from './do_wear.js';
 import { FLINT, ROCK, SPE_BLANK_PAPER, TIN_OPENER, } from './object_data.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isWeaponTool, } from './object_properties.js';
 import { learnInitialSpell } from './spell.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './wield.js';
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const SPBOOK_CLASS = 10;
 export async function useStartingItem(item, state) {
     const weapon = state.uwep || state.u.uwep;
     const shield = state.uarms || state.u.uarms;

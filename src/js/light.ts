@@ -1,5 +1,6 @@
 // Object light and burn timers.
 
+import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import { monsterHasMapPosition } from './steed.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled, maybeUnhideAt } from './mon.js';
@@ -67,8 +68,6 @@ export const TIMED_LIGHT_TYPES = new Set([
     BRASS_LANTERN, OIL_LAMP, POT_OIL, ...CANDLE_TYPES,
 ]);
 export const LIGHT_TYPES = new Set([...TIMED_LIGHT_TYPES, MAGIC_LAMP]);
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
 const PM_GREMLIN = 40;
 
 export function objectShedsLight(object: GameObject | null | undefined) {

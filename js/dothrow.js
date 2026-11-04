@@ -1,6 +1,7 @@
 // dothrow.js — Throw and fire command front ends.
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
+import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OBJECT_NAMES, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -86,9 +87,6 @@ import { applyFloorEffects } from './floor_effects.js';
 import { finishMonsterEating } from './dogmove.js';
 const M2_ROCKTHROW = 0x08000000;
 // C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
-const WEAPON_CLASS = 2;
-const GEM_CLASS = 13;
-const TOOL_CLASS = 6;
 // C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
 // a new object id, then obj_resists() is consulted when it lands.
 async function okToThrow() {
@@ -301,7 +299,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
             return GETOBJ_SUGGEST;
         if (item.quan === 1 && (item === game.uwep || item === game.uswapwep && game.u.twoweap))
             return GETOBJ_DOWNPLAY;
-        return objectClass === 12 || objectClass === (wieldingSling ? 13 : 2)
+        return objectClass === COIN_CLASS || objectClass === (wieldingSling ? GEM_CLASS : WEAPON_CLASS)
             || item.otyp === BOULDER && (monsterThrowsRocks(game.u.umonnum ?? -1))
             ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     };
@@ -316,7 +314,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     const previous = game.inventory[game.inventory.indexOf(item) - 1];
     const splitParent = previous && previous.invlet === item.invlet ? previous : null;
     const selectedObjectClass = item.oclass || objectClassForType(item.otyp);
-    const selectedIsGold = selectedObjectClass === 12;
+    const selectedIsGold = selectedObjectClass === COIN_CLASS;
     const directGoldThrow = selectedIsGold && item !== game.uquiver;
     const direction = await promptDirection();
     if (!direction) {
@@ -426,7 +424,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
 // throw_obj() hands off one missile at a time. An engulfer can die during a
 // volley, so every remaining missile must choose its current destination.
 async function throwSelectedUnit(item, dx, dy, volley) {
-    if (item.oclass === 12 && item === game.uquiver) {
+    if (item.oclass === COIN_CLASS && item === game.uquiver) {
         await resolveQuiveredGoldThrow({
             state: game,
             gold: item,
@@ -499,7 +497,7 @@ async function throwSelectedUnit(item, dx, dy, volley) {
         finishKill: finishOrdinaryMapPotionKill,
     }))
         return false;
-    if (!game.u?.uswallow && thrownObjectClass === 8)
+    if (!game.u?.uswallow && thrownObjectClass === POTION_CLASS)
         throw new Error('map potion impact is not implemented');
     const shotResult = await throwOrdinaryObject({
         state: game,
@@ -523,7 +521,6 @@ export async function reportHeroThrownMiss(monster, object, { state = game, publ
     else
         await publish(rayMissMessage(name, monster, { ...target, state }));
 }
-const POTION_CLASS = 8;
 function canResolveMapPotionThrow({ state, item, objectClass, selectedQuantity, dx, dy, }) {
     if (state.u?.uswallow || objectClass !== POTION_CLASS
         || !SUPPORTED_MONSTER_POTION_TYPES.has(item?.otyp)
@@ -914,8 +911,6 @@ export function rangedTargetHitBonus(object, defender, { state = game, defenderN
     }
     return bonus;
 }
-const ARMOR_CLASS = 3;
-const WAND_CLASS = 11;
 const GLASS = 19;
 const BREAKABLE_TYPES = new Set([
     EXPENSIVE_CAMERA,
@@ -1541,7 +1536,6 @@ const P_CROSSBOW = 22;
 const P_DART = 23;
 const P_BOOMERANG = 25;
 const RUBBER_HOSE = OBJECT_NAMES.indexOf('rubber hose');
-const SCROLL_CLASS = 9;
 const CLOTH = 6;
 // C dothrow.c:harmless_missile(). Contents make an otherwise soft bag hurt.
 export function harmlessMissile(object, state = game) {
@@ -1598,7 +1592,6 @@ export function shouldMulchMissile(object, { monsterMoving = false } = {}) {
         broken = false;
     return broken;
 }
-const RING_CLASS = 4;
 const SILVER = 14;
 const GEMSTONE = 20;
 const MINERAL = 21;
@@ -1788,7 +1781,7 @@ async function resolveQuiveredGoldMonsterContact({ state, monster, gold, swallow
     return false;
 }
 export async function resolveDirectGoldThrow({ state, gold, dx = 0, dy = 0, dz = 0, captureFlight = null, wakeMonster = null, angerMonster = null, }) {
-    if (!gold || gold.oclass !== 12 || !state.inventory.includes(gold))
+    if (!gold || gold.oclass !== COIN_CLASS || !state.inventory.includes(gold))
         return false;
     await freeInventoryObject(gold, state);
     if (state.u?.uswallow && state.u?.ustuck) {

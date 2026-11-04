@@ -1,3 +1,4 @@
+import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
 import { guardianGenus } from './mon.js';
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
@@ -48,21 +49,6 @@ import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import * as objects from './object_data.js';
 export { japaneseItemName } from './japanese_item_name.js';
 const STRANGE_OBJECT = 0;
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
-const BALL_CLASS = 15;
-const CHAIN_CLASS = 16;
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
 // C xname_flags() observation, kept separate from reusable name formatting.
 // distant_name() suppresses new appearance knowledge, not existing knowledge.
@@ -848,7 +834,7 @@ function objectAcceptsSecondaryErosion(object) {
 // C adds xtra_prob=1 for readobjnam() so 0%-generation objects remain
 // wishable.  The draw is over total probability, not candidate count.
 export function rndObjectTypeByName(name, xtraProb = 1) {
-    return randomTypeByDescription(name, 0, xtraProb);
+    return randomTypeByDescription(name, RANDOM_CLASS, xtraProb);
 }
 export async function readObjectName(text, { wizardWish = false } = {}) {
     const parsed = parseWishText(text);
@@ -1540,10 +1526,10 @@ function parseWishCharges(text, parsed) {
 // object-type lotteries. Lookup preserves the class before falling back to
 // random generation; a class-qualified failed description is still a wish.
 // ---------------------------------------------------------------------------
-const VENOM_CLASS = 17;
 const wrappers = [
-    ['wand', 11], ['ring', 4], ['potion', 8], ['scroll', 9], ['gem', GEM_CLASS],
-    ['amulet', AMULET_CLASS], ['spellbook', 10], ['spell book', 10],
+    ['wand', WAND_CLASS], ['ring', RING_CLASS], ['potion', POTION_CLASS],
+    ['scroll', SCROLL_CLASS], ['gem', GEM_CLASS],
+    ['amulet', AMULET_CLASS], ['spellbook', SPBOOK_CLASS], ['spell book', SPBOOK_CLASS],
     ['weapon', WEAPON_CLASS], ['armor', ARMOR_CLASS], ['tool', TOOL_CLASS],
     ['food', FOOD_CLASS], ['comestible', FOOD_CLASS],
 ];
@@ -1619,7 +1605,7 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
     if (noun === 'direct' && parsed.directType !== null)
         return foundWishType(parsed.directType);
     const search = {
-        name: parsed.name, originalName: parsed.originalName, oclass: 0,
+        name: parsed.name, originalName: parsed.originalName, oclass: RANDOM_CLASS,
         actual: null, description: parsed.description, descriptionUsesNoun: false,
     };
     if (noun === 'glob') {
@@ -1651,7 +1637,7 @@ export function lookupWishType(parsed, { wizardWish = false, state = game, } = {
     if (/gold piece$|zorkmid$|^(?:gold|money|coin)$|^\$/i.test(search.name))
         return { kind: 'gold' };
     const classSymbol = search.name.length === 1 ? OBJECT_CLASS_SYMBOLS.indexOf(search.name) : -1;
-    if (classSymbol > 1 && (classSymbol !== VENOM_CLASS || wizardWish))
+    if (classSymbol > ILLOBJ_CLASS && (classSymbol !== VENOM_CLASS || wizardWish))
         return { kind: 'random', oclass: classSymbol };
     const classResult = parseWishClass(search, state);
     if (classResult)
@@ -1815,7 +1801,7 @@ export function randomUnqualifiedWishType(name) {
     return null;
 }
 // C objnam.c:rnd_otyp_by_namedesc().
-export function randomTypeByDescription(name, oclass = 0, extraProbability = 1, state = game) {
+export function randomTypeByDescription(name, oclass = RANDOM_CLASS, extraProbability = 1, state = game) {
     if (!name)
         return null;
     const checkOf = !/ of /i.test(name);
@@ -1914,7 +1900,7 @@ export async function applyWishProperties(object, parsed, wizardWish, luck) {
     if (parsed.poisoned) {
         if (isPoisonableObject(object))
             object.opoisoned = luck >= 0;
-        else if (object.oclass === 7)
+        else if (object.oclass === FOOD_CLASS)
             object.age = 1;
     }
     if (parsed.trapped && (wizardWish || parsed.trapped === 'untrapped')
@@ -1938,11 +1924,11 @@ export async function applyWishProperties(object, parsed, wizardWish, luck) {
     }
     if (parsed.greased)
         object.greased = true;
-    if (parsed.diluted && object.oclass === 8)
+    if (parsed.diluted && object.oclass === POTION_CLASS)
         object.odiluted = object.otyp !== POT_WATER;
 }
 export async function finishWishWeight(object, parsed) {
-    if (parsed.partlyEaten && object.oclass === 7) {
+    if (parsed.partlyEaten && object.oclass === FOOD_CLASS) {
         const nutrition = obj_nutrition(object);
         if (nutrition > 1) {
             object.oeaten = nutrition;

@@ -1,3 +1,4 @@
+import { SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_FIERY, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
@@ -31,7 +32,7 @@ void test('hero credit for a self-burning gas spore does not extend to its death
     const victim = await createMonsterAt('jackal', 15, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
     victim.mhp = 1;
     installPagerInput(resetInputState(), { expected: /caught|killed|kill|Boom/, limit: 10 });
-    await explode(14, 10, -11, 8, 9, -EXPL_FIERY);
+    await explode(14, 10, -11, 8, SCROLL_CLASS, -EXPL_FIERY);
     assert.ok(victim.mhp <= 0, 'The gas spore death blast killed its neighbor.');
     assert.ok(game.u.uexp > 0, 'The hero receives credit for the self-burning spore.');
     assert.equal(game.u.uconduct.killer || 0, 0, 'Both deaths preserve pacifism during the monster turn.');

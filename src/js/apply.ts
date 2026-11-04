@@ -5,6 +5,10 @@
 // the burning-object owners.
 
 import {
+    WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS,
+    SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS,
+} from './objclass.js';
+import {
     objectClassForType, objectBaseCost, objectSkill, objectMagic, AMULET_OF_YENDOR, BAG_OF_TRICKS,
     BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP,
     CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG,
@@ -160,14 +164,6 @@ import { adjustMonsterSpeed } from './worn.js';
 import { useMagicMarker } from './write.js';
 import { objectResistsDestruction, zappable } from './zap.js';
 
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const POTION_CLASS = 8;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const RING_CLASS = 4;
 
 export async function useCamera(
     object: GameObject,
@@ -395,7 +391,7 @@ async function diagnoseMonster(monster: Monster, x: number, y: number) {
         if (type === M_AP_OBJECT) {
             const fruit = monster.mcorpsenm ?? monster.mextra?.mcorpsenm;
             what = appearance === SLIME_MOLD && fruit !== undefined
-                ? minimalObjectName({ otyp: appearance, oclass: 7, dknown: true, spe: fruit }, game)
+                ? minimalObjectName({ otyp: appearance, oclass: FOOD_CLASS, dknown: true, spe: fruit }, game)
                 : simpleObjectTypeName(appearance, game);
             const slot = armorSlotFor(appearance);
             plural = slot === 'uarmf' || slot === 'uarmg' || appearance === LENSES;
@@ -1796,7 +1792,7 @@ async function chooseTinningCorpse(): Promise<GameObject | null> {
         }
     }
     const corpse = await chooseInventoryObject('tin', object => {
-        if (!object || object.oclass !== 7) return GETOBJ_EXCLUDE;
+        if (!object || object.oclass !== FOOD_CLASS) return GETOBJ_EXCLUDE;
         return tinnable(object) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE_SELECTABLE;
     }, { hands: declinedFloorCorpse ? GETOBJ_EXCLUDE_NONINVENT : GETOBJ_EXCLUDE });
     if (corpse && !tinnable(corpse)) {
@@ -2077,7 +2073,7 @@ export async function useGrease(can: GameObject): Promise<boolean> {
 }
 
 function greaseSuggestion(object: GameObject): InventoryClassification {
-    if (object.oclass === 12) return GETOBJ_EXCLUDE;
+    if (object.oclass === COIN_CLASS) return GETOBJ_EXCLUDE;
     return coveringEquipment(object).length ? GETOBJ_EXCLUDE_INACCESS : GETOBJ_SUGGEST;
 }
 
@@ -3328,13 +3324,13 @@ export async function doapply(): Promise<void> {
         game.context.move = 1;
         return;
     }
-    if (item.oclass === 11) {
+    if (item.oclass === WAND_CLASS) {
         const result = await breakWand(item);
         game.context.move = result.spentTime ? 1 : 0;
         return;
     }
-    if (item.oclass === 10 || item.oclass === 12) {
-        const result = item.oclass === 10
+    if (item.oclass === SPBOOK_CLASS || item.oclass === COIN_CLASS) {
+        const result = item.oclass === SPBOOK_CLASS
             ? await flipThroughBook(item) : await flipCoin(item);
         game.context.move = result.spentTime ? 1 : 0;
         return;

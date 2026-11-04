@@ -1,3 +1,4 @@
+import { RING_CLASS } from '../js/objclass.js';
 import {
     objectClassForType, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, BAG_OF_HOLDING, BAG_OF_TRICKS,
     BOULDER, CORPSE, DAGGER, EGG, EXPENSIVE_CAMERA, FIRE_HORN, GOLD_PIECE, HEAVY_IRON_BALL,
@@ -320,9 +321,9 @@ void test('a partly eaten corpse uses its reduced stored weight for carrying adm
 void test('silver-averse monsters use the shuffled ring material when deciding whether to touch it', async () => {
     const { monster, state } = await interestRoom('werewolf');
     const becameSilver = OBJECT_MATERIAL.findIndex((material, type) =>
-        objectClassForType(type) === 4 && material !== 14 && objectMaterial(type, state) === 14);
+        objectClassForType(type) === RING_CLASS && material !== 14 && objectMaterial(type, state) === 14);
     const ceasedToBeSilver = OBJECT_MATERIAL.findIndex((material, type) =>
-        objectClassForType(type) === 4 && material === 14 && objectMaterial(type, state) !== 14);
+        objectClassForType(type) === RING_CLASS && material === 14 && objectMaterial(type, state) !== 14);
     assert.ok(becameSilver >= 0, 'The initialized ring appearances must include a newly silver ring');
     assert.ok(ceasedToBeSilver >= 0, 'The original silver ring type must have a different live material');
 

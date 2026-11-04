@@ -1,15 +1,12 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h and dothrow.c throwing_weapon().
+import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS } from './objclass.js';
 import { objectClassForType, objectBaseDirection, objectSkill, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, OBJECT_NAMES, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
 import { objectMaterial } from './o_init.js';
 import { AKLYS_LIM, P_AXE, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
 import { rn2 } from './rng.js';
-const WEAPON_CLASS = 2;
-const TOOL_CLASS = 6;
-const WAND_CLASS = 11;
-const GEM_CLASS = 13;
 const LEATHER = 7;
 const WOOD = 8;
 const IRON = 11;
@@ -17,7 +14,6 @@ const COPPER = 13;
 const MITHRIL = 17;
 const GLASS = 19;
 const WHACK = 4;
-const ARMOR_CLASS = 3;
 function objectClass(object) {
     return object?.oclass || objectClassForType(object?.otyp);
 }

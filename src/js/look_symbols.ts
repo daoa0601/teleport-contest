@@ -1,3 +1,4 @@
+import { ILLOBJ_CLASS, ROCK_CLASS } from './objclass.js';
 import { def_warnsyms } from './const.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -42,11 +43,11 @@ export function typedSymbolDescription(symbol: string, context: TypedLookContext
             append(withIndefiniteArticle(name), name);
     }
     if (symbol === '@' && context.includeHero) append('you', 'you');
-    for (let index = 1; index < OBJECT_CLASS_SYMBOLS.length; index++) {
-        const name = index === 14 ? 'boulder' : OBJECT_CLASS_EXPLAIN[index];
+    for (let index = ILLOBJ_CLASS; index < OBJECT_CLASS_SYMBOLS.length; index++) {
+        const name = index === ROCK_CLASS ? 'boulder' : OBJECT_CLASS_EXPLAIN[index];
         // The typed pass checks ROCK_CLASS against the boulder override
         // instead of the default rock symbol (pager.c do_screen_description).
-        const rockSymbol = index === 14 ? context.boulderSymbol : OBJECT_CLASS_SYMBOLS[index];
+        const rockSymbol = index === ROCK_CLASS ? context.boulderSymbol : OBJECT_CLASS_SYMBOLS[index];
         if (symbol === rockSymbol && name)
             append(withIndefiniteArticle(name), name);
     }

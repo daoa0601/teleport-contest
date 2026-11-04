@@ -1,5 +1,6 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
 
+import { RANDOM_CLASS, ROCK_CLASS } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -46,7 +47,6 @@ import { detectTraps } from './detect.js';
 import { ynSingleKey } from './cmd.js';
 import { loseHeroHp } from './hack.js';
 
-const ROCK_CLASS = 14;
 
 export async function useCrystalBall(object: GameObject): Promise<GameObject | null> {
     if (heroIsBlind()) {
@@ -95,7 +95,7 @@ export async function useCrystalBall(object: GameObject): Promise<GameObject | n
     const monsterClass = MONSTER_CLASS_SYMBOLS.indexOf(symbol);
     let missing = false;
     if (furniture) await detectFurniture();
-    else if (objectClass > 0) missing = (await detectObjects(null, { objectClass })).result !== 0;
+    else if (objectClass > RANDOM_CLASS) missing = (await detectObjects(null, { objectClass })).result !== 0;
     else if (monsterClass > 0) missing = (await detectMonsters(null, { monsterClass })).result !== 0;
     // detect.c also matches the search character against
     // showsyms[SYM_BOULDER + SYM_OFF_X], sending it to rock-class detection.

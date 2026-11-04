@@ -1,6 +1,7 @@
 // Tame monster state.
 // C refs: dog.c tamedog(), newedog(), initedog(), and abuse_dog().
 
+import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
 import {
     A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY,
@@ -299,8 +300,6 @@ const M3_WANTSARTI = 0x0010;
 const M3_COVETOUS = 0x001f;
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const S_DOG = 4;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
 
 export async function tameMonster(monster: Monster, source: GameObject | null = null, {
     state = game, announce = false,

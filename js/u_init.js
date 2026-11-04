@@ -1,5 +1,6 @@
 // u_init.js — Initial hero, pet, inventory, and attribute setup.
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, objectUsesKnown, objectMagic, objectCharged, AKLYS, ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE, STATUE, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, STETHOSCOPE, TIN_OPENER, MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT, WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM, CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD, CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER, POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_SICKNESS, POT_OIL, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, CHAIN_MAIL, RIN_LEVITATION, RIN_HUNGER, RIN_AGGRAVATE_MONSTER, RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON, } from './object_data.js';
 import { game } from './gstate.js';
 import { createHeroState } from './hero_types.js';
@@ -32,19 +33,6 @@ import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
 import { objectWeight, nextIdent } from './mkobj.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
-const WEAPON_CLASS = 2;
-const ARMOR_CLASS = 3;
-const RING_CLASS = 4;
-const AMULET_CLASS = 5;
-const TOOL_CLASS = 6;
-const FOOD_CLASS = 7;
-const POTION_CLASS = 8;
-const SCROLL_CLASS = 9;
-const SPBOOK_CLASS = 10;
-const WAND_CLASS = 11;
-const COIN_CLASS = 12;
-const GEM_CLASS = 13;
-const ROCK_CLASS = 14;
 const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
@@ -86,21 +74,21 @@ const ARCHEOLOGIST_INVENTORY = [
     { typ: TINNING_KIT, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: TOUCHSTONE, spe: 0, cls: GEM_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const BARBARIAN_SWORD_INVENTORY = [
     { typ: TWO_HANDED_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: AXE, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const BARBARIAN_AXE_INVENTORY = [
     { typ: BATTLE_AXE, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: SHORT_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: RING_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const RANGER_INVENTORY = [
     { typ: DAGGER, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -109,7 +97,7 @@ const RANGER_INVENTORY = [
     { typ: ARROW, spe: 0, cls: WEAPON_CLASS, min: 30, max: 39, bless: UNDEF_BLESS },
     { typ: CLOAK_OF_DISPLACEMENT, spe: 2, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: CRAM_RATION, spe: 0, cls: FOOD_CLASS, min: 4, max: 4, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const TOURIST_INVENTORY = [
     { typ: DART, spe: 2, cls: WEAPON_CLASS, min: 21, max: 40, bless: UNDEF_BLESS },
@@ -119,7 +107,7 @@ const TOURIST_INVENTORY = [
     { typ: HAWAIIAN_SHIRT, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: EXPENSIVE_CAMERA, spe: UNDEF_SPE, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: CREDIT_CARD, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const CAVEMAN_INVENTORY = [
     { typ: CLUB, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -127,7 +115,7 @@ const CAVEMAN_INVENTORY = [
     { typ: FLINT, spe: 0, cls: GEM_CLASS, min: 10, max: 20, bless: UNDEF_BLESS },
     { typ: ROCK, spe: 0, cls: GEM_CLASS, min: 3, max: 3, bless: 0 },
     { typ: LEATHER_ARMOR, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const ROGUE_INVENTORY = [
     { typ: SHORT_SWORD, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -136,7 +124,7 @@ const ROGUE_INVENTORY = [
     { typ: POT_SICKNESS, spe: 0, cls: POTION_CLASS, min: 1, max: 1, bless: 0 },
     { typ: LOCK_PICK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SACK, spe: 0, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const SAMURAI_INVENTORY = [
     { typ: KATANA, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -144,14 +132,14 @@ const SAMURAI_INVENTORY = [
     { typ: YUMI, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: YA, spe: 0, cls: WEAPON_CLASS, min: 26, max: 45, bless: UNDEF_BLESS },
     { typ: SPLINT_MAIL, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const VALKYRIE_INVENTORY = [
     { typ: SPEAR, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: DAGGER, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: SMALL_SHIELD, spe: 3, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: FOOD_RATION, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const PRIEST_INVENTORY = [
     { typ: MACE, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: 1 },
@@ -161,7 +149,7 @@ const PRIEST_INVENTORY = [
     { typ: CLOVE_OF_GARLIC, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
     { typ: SPRIG_OF_WOLFSBANE, spe: 0, cls: FOOD_CLASS, min: 1, max: 1, bless: 0 },
     { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: SPBOOK_CLASS, min: 2, max: 2, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const HEALER_INVENTORY = [
     { typ: SCALPEL, spe: 0, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -174,7 +162,7 @@ const HEALER_INVENTORY = [
     { typ: SPE_EXTRA_HEALING, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
     { typ: SPE_STONE_TO_FLESH, spe: 0, cls: SPBOOK_CLASS, min: 1, max: 1, bless: 1 },
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const KNIGHT_INVENTORY = [
     { typ: LONG_SWORD, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -185,7 +173,7 @@ const KNIGHT_INVENTORY = [
     { typ: LEATHER_GLOVES, spe: 0, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 10, max: 10, bless: 0 },
     { typ: CARROT, spe: 0, cls: FOOD_CLASS, min: 10, max: 10, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const MONK_INVENTORY = [
     { typ: LEATHER_GLOVES, spe: 2, cls: ARMOR_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -196,7 +184,7 @@ const MONK_INVENTORY = [
     { typ: APPLE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
     { typ: ORANGE, spe: 0, cls: FOOD_CLASS, min: 5, max: 5, bless: UNDEF_BLESS },
     { typ: FORTUNE_COOKIE, spe: 0, cls: FOOD_CLASS, min: 3, max: 3, bless: UNDEF_BLESS },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const WIZARD_INVENTORY = [
     { typ: QUARTERSTAFF, spe: 1, cls: WEAPON_CLASS, min: 1, max: 1, bless: 1 },
@@ -216,12 +204,12 @@ const WIZARD_INVENTORY = [
         min: 1, max: 1, bless: UNDEF_BLESS },
     { typ: MAGIC_MARKER, spe: 19, cls: TOOL_CLASS,
         min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 function oneItem(typ, spe = 0) {
     return [
         { typ, spe, cls: TOOL_CLASS, min: 1, max: 1, bless: 0 },
-        { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+        { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
     ];
 }
 function initialRoll(adv) {
@@ -829,16 +817,16 @@ const ORC_PREKNOWN_OBJECTS = [
 const XTRA_FOOD_INVENTORY = [
     { typ: UNDEF_TYP, spe: UNDEF_SPE, cls: FOOD_CLASS,
         min: 2, max: 2, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const MONEY_INVENTORY = [
     { typ: GOLD_PIECE, spe: 0, cls: COIN_CLASS, min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 const WISHING_INVENTORY = [
     { typ: WAN_WISHING, spe: 3, cls: WAND_CLASS,
         min: 1, max: 1, bless: 0 },
-    { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+    { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
 ];
 async function uInitRaceInventoryAndKnowledge(role) {
     const race = game.urace?.raceIndex;
@@ -990,7 +978,7 @@ export async function uInitInventoryAttrs() {
         await iniInv([
             { typ: spell, spe: UNDEF_SPE, cls: SPBOOK_CLASS,
                 min: 1, max: 1, bless: 1 },
-            { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
+            { typ: 0, spe: 0, cls: RANDOM_CLASS, min: 0, max: 0, bless: 0 },
         ], restrictions);
         if (!rn2(4))
             await iniInv(oneItem(MAGIC_MARKER, 19), restrictions);
