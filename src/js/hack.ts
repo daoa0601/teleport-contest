@@ -5023,16 +5023,21 @@ export function weightCapacity(state: GameState): number {
         }
     }
     // C hack.c:weight_cap() clears the pending Boots_on levitation bit
-    // (4303-4306) and the floor-trap hold on BLevitation (4309) for the
-    // capacity math, and restores whichever bit was actually cleared with
-    // float_vs_flight() (4339-4343).  float_vs_flight() always ends with
-    // disp.botl = TRUE (polyself.c:153), so every capacity recomputation
-    // for a levitating hero held by a floor trap -- encumber_msg() opens
-    // each world turn and gethungry() runs inside it -- requests a status
-    // repaint.  allmain.c:262 suppresses time_botl while context.run is
-    // set, so during travel that botl request is what repaints the turn
-    // counter at the next flush (allmain.c:473-479, display.c:2236-2239).
-    if (propertyIsBlocked('levitation', state)
+    // (4303-4306) and the floor-trap hold on BLevitation -- float_vs_flight()'s
+    // I_SPECIAL for a hero with levitation sources caught in a non-pit trap
+    // (polyself.c:133, 144-145) -- for the capacity math, and restores
+    // whichever bit was actually cleared with float_vs_flight()
+    // (4339-4343).  float_vs_flight() always ends with disp.botl = TRUE
+    // (polyself.c:153), so every capacity recomputation in that state --
+    // encumber_msg() opens each world turn and gethungry() runs inside it
+    // -- requests a status repaint.  allmain.c:262 suppresses time_botl
+    // while context.run is set, so during travel that botl request is what
+    // repaints the turn counter at the next flush (allmain.c:473-479,
+    // display.c:2236-2239).  BLevitation's FROMOUTSIDE bit (terrain that
+    // blocks levitation, hack.c:3190) is never cleared by weight_cap(), so
+    // it alone must not request the repaint.
+    const floorTrapHold = (state.u.utrap ?? 0) > 0 && state.u.utraptype !== TT_PIT;
+    if (floorTrapHold && propertySourceIsActive('levitation', state)
         || bootsPending
             && !!(existingPropertyRecord('levitation', state)?.worn.some(
                 source => source.slot === 'uarmf')))

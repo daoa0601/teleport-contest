@@ -21,6 +21,7 @@ import { rhack } from '../js/cmd.js';
 import { NOT_HUNGRY, SICK_VOMITABLE, TT_BEARTRAP } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
+import { setPropertyTerrainBlocked } from '../js/properties.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 function statusTurnText() {
@@ -68,5 +69,33 @@ void test('a trapped levitating traveler repaints the turn counter at the run\'s
     // botl request, not through time_botl; the status row at the pager
     // boundary must show the turn the sickness message was printed on.
     assert.match(statusTurnText(), /T:25/, 'the status line must show the charged turn counter during the run');
+});
+// C hack.c:3186-3190: switch_hero_terrain() sets BLevitation's FROMOUTSIDE
+// bit for any hero standing in obstructed terrain, with or without a
+// levitation source.  weight_cap() clears only I_SPECIAL (hack.c:4309),
+// so FROMOUTSIDE never makes hack.c:4339's restore run: a terrain-blocked
+// hero gets no float_vs_flight() and no disp.botl from a capacity check.
+// While travel keeps context.run at 8 and suppresses time_botl, the
+// status line therefore keeps its stale turn counter.
+void test('a terrain-blocked hero keeps the stale turn counter during travel', async () => {
+    const input = freshTurnRoom({ flags: { time: true, tips: false } });
+    // BLevitation FROMOUTSIDE without any levitation source.
+    setPropertyTerrainBlocked('levitation', true);
+    game.u.uhunger = 800;
+    game.u.uhs = NOT_HUNGRY;
+    game.moves = 24;
+    game.context.botl = true;
+    await flush_screen(1);
+    assert.match(statusTurnText(), /T:24/);
+    const startX = game.u.ux;
+    input.feed('_llll, ');
+    await rhack(0);
+    game.u.umovement = (game.u.umovement ?? 12) - 12;
+    game._heroTimePending = true;
+    await moveloop_core();
+    assert.equal(game.u.ux, startX + 2, 'the travel run took its steps');
+    assert.equal(game.moves, 25, 'one travel turn elapsed');
+    assert.equal(game.context.run, 8, 'travel still suppresses time_botl');
+    assert.match(statusTurnText(), /T:24/, 'a capacity check for a terrain-blocked hero must not request a repaint');
 });
 //# sourceMappingURL=trapped_travel_status_turn.test.js.map
