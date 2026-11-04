@@ -77,7 +77,7 @@ src/js/apply.ts	useLamp	rn2	"[""3""]"	constant
 src/js/do_wear.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
 src/js/do_wear.ts	erodeWornArmor	rn2	"[""4""]"	constant
 src/js/do_wear.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
-src/js/do_wear.ts	someHeroArmor	rn2	"[""4""]"	constant
+src/js/do_wear.ts	some_armor	rn2	"[""4""]"	constant
 src/js/artifacts.ts	applyArtifactHit	random	"[""inventoryDamageChance(damageType)""]"	guarded
 src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant
 src/js/artifacts.ts	applyBeheading	random	"[""2""]"	constant

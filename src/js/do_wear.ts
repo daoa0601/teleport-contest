@@ -1502,12 +1502,12 @@ export function wornArmorInDestroyOrder(state: GameState = game) {
 
 // C do_wear.c:some_armor(). Only the outer torso layer is exposed; each
 // other occupied slot has its own chance to replace the current choice.
-export function someHeroArmor(state: GameState = game) {
+export function some_armor(state: GameState = game, random: (range: number) => number = rn2) {
     let armor = equippedObject(state, 'uarmc')
         || equippedObject(state, 'uarm') || equippedObject(state, 'uarmu');
     for (const slot of ['uarmh', 'uarmg', 'uarmf', 'uarms'] as const) {
         const candidate = equippedObject(state, slot);
-        if (candidate && (!armor || rn2(4) === 0)) armor = candidate;
+        if (candidate && (!armor || random(4) === 0)) armor = candidate;
     }
     return armor;
 }

@@ -30,7 +30,7 @@ import {
     objectDirection, requireObjectData,
 } from './object_data.js';
 import { exerciseAttribute, exerciseWisdom } from './attrib.js';
-import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, someHeroArmor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
+import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
@@ -563,7 +563,7 @@ export async function applyArmorScrollEffect(
 
 // C read.c:seffect_enchant_armor().
 async function enchantArmor(source: GameObject, state: PlayingGameState): Promise<Partial<ScrollEffectResult>> {
-    const armor = someHeroArmor(state);
+    const armor = some_armor(state);
     if (!armor) {
         const result = await strangeFeeling(source, heroIsBlind(state)
             ? 'Your skin feels warm for a moment.' : 'Your skin glows then fades.', { state });
@@ -746,7 +746,7 @@ function capEnchantment(object: GameObject) {
 // C do_wear.c:count_worn_armor().
 // C do_wear.c:any_worn_armor_ok().
 async function destroyArmor(source: GameObject, state: PlayingGameState): Promise<Partial<ScrollEffectResult>> {
-    let armor = someHeroArmor(state);
+    let armor = some_armor(state);
     if (isConfused(state)) {
         if (!armor) return itchyFeeling(source, 'Your bones itch.', state);
         const oldProof = !!armor.oerodeproof;
