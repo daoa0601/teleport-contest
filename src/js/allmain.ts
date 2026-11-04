@@ -16,7 +16,7 @@ import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectric
 import { flashBurn } from './zap.js';
 
 import { makeBlinded, makeStunned } from './potion.js';
-import { finishMealMimicry, finishHeroDigestion, getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './eat.js';
+import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -680,7 +680,7 @@ async function finishInitialTurnMaintenanceAfterAmbient({
     sourceTurn,
 }: Pick<TurnMaintenance, 'sourceTurn'>): Promise<CompletedMaintenance> {
     const game = requireInitializedGame();
-    await getHungry({ invulnerable: game.u.invulnerable });
+    await gethungry({ invulnerable: game.u.invulnerable });
     if (game.program_state.gameover) return { kind: 'complete' };
     // JS has already advanced `game.moves` for the hero action which caused
     // this maintenance pass.  C increments svm.moves inside this pass, so
@@ -1045,16 +1045,16 @@ export async function finishHeroHelplessness(
         await finishDelayedArmorAction(after, state);
         break;
     case 'hear-again':
-        await regainHearingAfterHelplessness({ state });
+        await Hear_again({ state });
         break;
     case 'unfaint':
-        await recoverHeroFromFainting({ state });
+        await unfaint({ state });
         break;
     case 'end-mimic-meal':
-        await finishMealMimicry(state);
+        await eatmdone(state);
         break;
     case 'finish-digestion':
-        await finishHeroDigestion(state);
+        await Finish_digestion(state);
         break;
     case 'steal': {
         const theft = state._armorTheft;

@@ -1,3 +1,4 @@
+import { MONSTER_NAME } from '../js/monster_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { reportHeroEncumbrance } from '../js/pickup.js';
@@ -11,7 +12,7 @@ import { doextversion } from '../js/extversion.js';
 import { game, resetGame, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { updateHeroHunger, beginMealMimicry } from '../js/eat.js';
+import { newuhs, cpostfx } from '../js/eat.js';
 import { rndmonstAdj } from '../js/makemon.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { reportMonsterCombatNoise } from '../js/mhitm.js';
@@ -276,7 +277,7 @@ void test('restoring an interrupted meal forgets its earlier hunger-message stat
     assert.equal(await restoreGame(game.plname, storage), true);
     clearMessageWindow();
 
-    await updateHeroHunger(false);
+    await newuhs(false);
 
     assert.equal(game._pending_message, '');
     assert.equal(game.u.uhs, HUNGRY);
@@ -290,7 +291,7 @@ void test('restore ends the first-bite suppression of hunger warnings', async ()
     assert.equal(await restoreGame(game.plname, storage), true);
     clearMessageWindow();
 
-    await updateHeroHunger(true);
+    await newuhs(true);
 
     assert.match(game._pending_message, /You feel hungry\./);
 });
@@ -298,7 +299,7 @@ void test('restore ends the first-bite suppression of hunger warnings', async ()
 void test('restore redraws a mimicking hero in the saved species instead of the unsaved disguise', async () => {
     await freshObjectRoom();
     dismissMessages();
-    await beginMealMimicry(20);
+    await cpostfx(MONSTER_NAME.indexOf('small mimic'));
     assert.equal(requireScreenCell(9, 11).ch, '$');
     const storage = memoryStorage();
     assert.equal(await saveGame(storage), true);

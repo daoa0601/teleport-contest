@@ -13,7 +13,7 @@ import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './s
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
 import { makeBlinded, makeStunned } from './potion.js';
-import { finishMealMimicry, finishHeroDigestion, getHungry, recoverHeroFromFainting, regainHearingAfterHelplessness } from './eat.js';
+import { eatmdone, Finish_digestion, gethungry, unfaint, Hear_again } from './eat.js';
 import { game, requireGameLevel, requireInitializedGame, requireGameDisplay, requireLiveGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { recordRandom } from './monster_action_types.js';
@@ -646,7 +646,7 @@ async function periodicTurnExercise(sourceTurn) {
 }
 async function finishInitialTurnMaintenanceAfterAmbient({ sourceTurn, }) {
     const game = requireInitializedGame();
-    await getHungry({ invulnerable: game.u.invulnerable });
+    await gethungry({ invulnerable: game.u.invulnerable });
     if (game.program_state.gameover)
         return { kind: 'complete' };
     // JS has already advanced `game.moves` for the hero action which caused
@@ -996,16 +996,16 @@ export async function finishHeroHelplessness(messageOverride, state = game, publ
             await finishDelayedArmorAction(after, state);
             break;
         case 'hear-again':
-            await regainHearingAfterHelplessness({ state });
+            await Hear_again({ state });
             break;
         case 'unfaint':
-            await recoverHeroFromFainting({ state });
+            await unfaint({ state });
             break;
         case 'end-mimic-meal':
-            await finishMealMimicry(state);
+            await eatmdone(state);
             break;
         case 'finish-digestion':
-            await finishHeroDigestion(state);
+            await Finish_digestion(state);
             break;
         case 'steal': {
             const theft = state._armorTheft;

@@ -23,7 +23,7 @@ import { setWallStateAt } from './wall_topology.js';
 import { stopLevelTimer } from './timeout.js';
 import { containedGold } from './shk.js';
 
-import { resetHeroFaint } from './eat.js';
+import { reset_faint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
@@ -128,7 +128,7 @@ export async function invault(state: GameState = game) {
     };
     guard._egd = corridor;
     state.u.uinvault = (state.u.uinvault ?? 0) + 1;
-    await resetHeroFaint({ state });
+    await reset_faint({ state });
     const boulders = requireGameLevel(state).objects[entry.x]?.[entry.y]?.filter(object => object.otyp === BOULDER) ?? [];
     for (const boulder of boulders) await fractureRock(boulder, entry.x, entry.y, { state });
     if (boulders.length) {

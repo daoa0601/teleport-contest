@@ -1,3 +1,4 @@
+import { MONSTER_NAME } from '../js/monster_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { finishHeroHelplessness, moveloop_core } from '../js/allmain.js';
@@ -12,7 +13,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroLiquidEffects } from '../js/hack.js';
 import { resolveHeroCombatEngulf } from '../js/uhitm.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { beginMealMimicry } from '../js/eat.js';
+import { cpostfx } from '../js/eat.js';
 import { AD_DGST, AT_ENGL } from '../js/monster_attack_types.js';
 import { SPEED_BOOTS } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -59,7 +60,7 @@ void test('mimic recovery after a water wakeup cannot finish an old boots remova
     await flushPendingTopline();
     messages = [];
 
-    await beginMealMimicry(20);
+    await cpostfx(MONSTER_NAME.indexOf('small mimic'));
     await finishHeroHelplessness();
     input.feed('\x1b');
     await moveloop_core();
@@ -87,7 +88,7 @@ for (const command of ['W', 'T']) {
         if (command === 'W') input.feed(`${boots.invlet}`);
         await rhack(command.charCodeAt(0));
 
-        await beginMealMimicry(20);
+        await cpostfx(MONSTER_NAME.indexOf('small mimic'));
         input.feed('\x1b');
         for (let turn = 0; turn < 50 && game.u.m_ap_type !== M_AP_NOTHING; turn++)
             await moveloop_core();

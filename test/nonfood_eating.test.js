@@ -2,10 +2,10 @@ import { createRoom } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_STR, BEAR_TRAP, IRONBARS, GD_EATGOLD, ROOMOFFSET, VAULT, W_ARM } from '../js/const.js';
-import { digestAccessory, handleFoodAdmission } from '../js/eat.js';
+import { eataccessory, doeat } from '../js/eat.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { IRON_BARS_FOOD, isEdibleFood, selectFoodToEat } from '../js/food_selection.js';
+import { isEdibleFood, selectFoodToEat } from '../js/food_selection.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, APPLE, DAGGER, EGG, GOLD_PIECE, LARGE_BOX, LEATHER_ARMOR, OBJECT_NAMES, RIN_SLOW_DIGESTION, SCR_IDENTIFY, TALLOW_CANDLE, POT_HEALING, } from '../js/object_data.js';
@@ -24,7 +24,6 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { installPagerInput } from './support/pager-input.js';
-import { answerPrompts } from './support/input-boundaries.js';
 async function eatingRoom(form = undefined, options = {}) {
     const level = await freshObjectRoom({ flags: { verbose: true, tips: false }, ...options });
     requirePlayingGame(game);
@@ -103,14 +102,11 @@ void test('a metal-eater can select and consume the armed floor bear trap', asyn
     const level = await eatingRoom('rust monster');
     requirePlayingGame(game);
     const trap = addTrap(level, BEAR_TRAP, game.u.ux, game.u.uy, { tseen: true });
-    pushKeys('y');
-    const food = await selectFoodToEat();
-    assert.ok(food && 'otyp' in food);
-    assert.equal(level.traps.includes(trap), false);
     installPagerInput(resetInputState(), { expected: /This bear trap is delicious/, limit: 2 });
-    const result = await handleFoodAdmission(food);
-    assert.equal(result.spentTime, true);
-    assert.equal(food.where, 'gone');
+    pushKeys('y');
+    await doeat();
+    assert.equal(level.traps.includes(trap), false);
+    assert.equal(game.context.move, 1);
     assert.equal(game.u.uconduct?.food, 1);
 });
 void test('rustproof spitting affects one unit and drops it without gaining nutrition', async () => {
@@ -119,8 +115,10 @@ void test('rustproof spitting affects one unit and drops it without gaining nutr
     const stack = await addInventoryObject(DAGGER, { quantity: 3, oerodeproof: true });
     const hunger = game.u.uhunger;
     installPagerInput(resetInputState(), { expected: /Ulch - that .* was rustproofed|You spit the .* out onto the/, limit: 3 });
-    const result = await handleFoodAdmission(stack);
-    assert.equal(result.spentTime, true);
+    assert.ok(stack.invlet);
+    pushKeys(stack.invlet);
+    await doeat();
+    assert.equal(game.context.move, 1);
     assert.equal(objectQuantity(stack), 2);
     assert.equal(stack.oerodeproof, true);
     assert.equal(stack.rknown, true);
@@ -137,8 +135,10 @@ void test('non-food eating consumes one weapon from a stack and clears its tempo
     const stack = await addInventoryObject(DAGGER, { quantity: 2 });
     const hunger = game.u.uhunger;
     installPagerInput(resetInputState(), { expected: /This .*dagger is delicious/, limit: 2 });
-    const result = await handleFoodAdmission(stack);
-    assert.equal(result.spentTime, true);
+    assert.ok(stack.invlet);
+    pushKeys(stack.invlet);
+    await doeat();
+    assert.equal(game.context.move, 1);
     assert.equal(objectQuantity(stack), 1);
     assert.ok(game.u.uhunger > hunger);
     assert.equal(game.context.victual, null);
@@ -154,8 +154,10 @@ void test('eating a wielded shining Sunsword reports that its light stops', asyn
     await setPrimaryWeapon(sword);
     await beginObjectBurn(sword);
     installPagerInput(resetInputState(), { expected: /is delicious|stops shining/, limit: 3 });
-    const result = await handleFoodAdmission(sword);
-    assert.equal(result.spentTime, true);
+    assert.ok(sword.invlet);
+    pushKeys(sword.invlet);
+    await doeat();
+    assert.equal(game.context.move, 1);
     assert.equal(game.uwep, null);
     assert.equal(sword.where, 'gone');
     assert.match(game._lastPlineMessage ?? '', /Sunsword stops shining/);
@@ -165,8 +167,10 @@ void test('non-food eating rejects worn armor before consuming it', async () => 
     requirePlayingGame(game);
     const armor = await addInventoryObject(LEATHER_ARMOR, { owornmask: W_ARM });
     installPagerInput(resetInputState(), { expected: /You can't eat something you're wearing/, limit: 1 });
-    const result = await handleFoodAdmission(armor);
-    assert.equal(result.spentTime, false);
+    assert.ok(armor.invlet);
+    pushKeys(armor.invlet);
+    await doeat();
+    assert.equal(game.context.move, 0);
     assert.equal(armor.where, 'inventory');
     assert.match(game._lastPlineMessage, /wearing/);
 });
@@ -179,8 +183,10 @@ void test('an indigestible ring survives without granting nutrition', async () =
     game.objectMaterials[ring.otyp] = 11;
     const hunger = game.u.uhunger;
     installPagerInput(resetInputState(), { expected: /This ring is indigestible|Blecch!|You feel rather|Everything suddenly goes dark|The world spins/, limit: 4 });
-    const result = await handleFoodAdmission(ring);
-    assert.equal(result.spentTime, true);
+    assert.ok(ring.invlet);
+    pushKeys(ring.invlet);
+    await doeat();
+    assert.equal(game.context.move, 1);
     assert.equal(ring.where, 'inventory');
     assert.equal(game.u.uhunger, hunger);
     assert.equal(game.u.uconduct?.food || 0, 0);
@@ -192,7 +198,7 @@ void test('digesting a strength ring increases the base attribute and identifies
     const before = game.u.acurr.a[A_STR];
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body|You feel strong/, limit: 3 });
     initRng(1n);
-    await digestAccessory(ring);
+    await eataccessory(ring);
     assert.equal(game.u.acurr.a[A_STR], before + 2);
     assert.equal(ring.known, true);
     assert.equal(ring.dknown, true);
@@ -204,7 +210,7 @@ void test('free-action digestion grants sleep resistance rather than free action
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('free action'));
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body|You feel wide awake/, limit: 2 });
     initRng(1n);
-    await digestAccessory(ring);
+    await eataccessory(ring);
     assert.equal(hasIntrinsicProperty('sleepResistance', 'outside'), true);
     assert.equal(hasIntrinsicProperty('freeAction', 'outside'), false);
 });
@@ -214,7 +220,7 @@ void test('levitation-ring digestion grants a finite timeout without a permanent
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('levitation'));
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body|You start to float/, limit: 2 });
     initRng(1n);
-    await digestAccessory(ring);
+    await eataccessory(ring);
     assert.ok(game.u.levitationTurns !== undefined);
     assert.ok(game.u.levitationTurns >= 10 && game.u.levitationTurns <= 200);
     assert.equal(propertyIsActive('levitation'), true);
@@ -228,21 +234,12 @@ void test('eating iron bars resumes work and restores passable terrain on comple
     const hunger = game.u.uhunger;
     for (let attempt = 0; attempt < 3; attempt++) {
         const input = resetInputState();
-        const food = await answerPrompts(selectFoodToEat(), input, [
-            {
-                prompt: attempt === 0
-                    ? /There are iron bars here; eat them\?/
-                    : /There are iron bars here; resume eating them\?/,
-                keys: 'y',
-            },
-        ]);
-        assert.ok(food);
         installPagerInput(input, {
             expected: /You (start chewing|continue chewing|pause to swallow|devour the iron bars)/,
             limit: 3,
         });
-        assert.equal(food, IRON_BARS_FOOD);
-        await handleFoodAdmission(food);
+        pushKeys('y');
+        await doeat();
         await flushPendingTopline();
         if (attempt < 2)
             assert.equal(location.typ, IRONBARS);
@@ -271,7 +268,9 @@ void test('a guard who sees gold eaten becomes hostile on its next movement', as
     const gold = await addInventoryObject(GOLD_PIECE, { quantity: 300 });
     const hunger = game.u.uhunger;
     installPagerInput(resetInputState(), { expected: /This gold is delicious|How dare you consume that gold/, limit: 2 });
-    await handleFoodAdmission(gold);
+    assert.ok(gold.invlet);
+    pushKeys(gold.invlet);
+    await doeat();
     assert.equal(gold.where, 'gone');
     assert.equal(game.u.uhunger, hunger + 3);
     assert.ok(guard._egd);
@@ -289,7 +288,7 @@ void test('digesting a worn ring removes its equipment source before granting it
     await wearHeroAccessory(ring, 'uleft');
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body/, limit: 2 });
     initRng(1n);
-    await digestAccessory(ring);
+    await eataccessory(ring);
     assert.equal(game.uleft, null);
     assert.equal(ring.owornmask, 0);
     assert.equal(hasIntrinsicProperty('poisonResistance', 'outside'), true);
@@ -303,8 +302,10 @@ void test('digesting an organic potion applies healing and consumes exactly one 
     game.objectMaterials[potion.otyp] = 3;
     game.u.mh = 10;
     installPagerInput(resetInputState(), { expected: /This .*potion.* is delicious|You feel better/, limit: 3 });
-    const result = await handleFoodAdmission(potion);
-    assert.equal(result.spentTime, true);
+    assert.ok(potion.invlet);
+    pushKeys(potion.invlet);
+    await doeat();
+    assert.equal(game.context.move, 1);
     assert.equal(objectQuantity(potion), 1);
     assert.ok(game.u.mh > 10);
 });
@@ -317,7 +318,7 @@ void test('digested protection from shape changers restores an actor and reveals
     const ring = await uninitializedObject(OBJECT_NAMES.indexOf('protection from shape changers'));
     installPagerInput(resetInputState(), { expected: /Magic spreads through your body/, limit: 2 });
     initRng(1n);
-    await digestAccessory(ring);
+    await eataccessory(ring);
     assert.equal(changed.mnum, MONSTER_NAME.indexOf('chameleon'));
     assert.equal(changed.cham, -1);
     assert.equal((mimic.m_ap_type ?? 0) & 3, 0);

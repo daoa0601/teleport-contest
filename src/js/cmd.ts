@@ -70,7 +70,7 @@ import { heroCanSummonWerePack } from './were.js';
 import { heroHasHidingAbility, useHeroHide } from './polyself.js';
 import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
-import { continueFoodMeal, doeat, continueTinOpening } from './eat.js';
+import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
@@ -231,10 +231,10 @@ async function continueOccupation(g: GameState): Promise<boolean> {
     }
     if (occupation.key === 'pick-lock') return continuePicking(occupation, g);
     if (occupation.key === 'eat-food') {
-        return continueFoodMeal(occupation, g);
+        return eatfood(occupation, g);
     }
     if (occupation.key === 'open-tin') {
-        return continueTinOpening(occupation, g);
+        return opentin(occupation, g);
     }
     if (occupation.key === 'wipe-face') {
         return continueWipingFace(occupation, g);

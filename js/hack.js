@@ -20,7 +20,7 @@ import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyL
 import { heroCanReachFloor } from './engrave.js';
 import { heroIsUnaware } from './senses.js';
 import { putHeroToSleep } from './timeout.js';
-import { resetHeroFaint, getHungry, spendHeroNutrition } from './eat.js';
+import { reset_faint, gethungry, morehungry } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero, dropBoulderIntoLiquid } from './do.js';
 import { destroyFireInventory } from './zap.js';
@@ -602,7 +602,7 @@ export async function continueChewingTerrain(x, y, state) {
     }
     else if (bars) {
         if (eatsMetal)
-            await spendHeroNutrition(-requireObjectData(OBJECT_WEIGHT, HEAVY_IRON_BALL), { state });
+            await morehungry(-requireObjectData(OBJECT_WEIGHT, HEAVY_IRON_BALL), { state });
         await dissolveBars(x, y, state);
         message = state.u.ux === x && state.u.uy === y
             ? 'You devour the iron bars.' : 'You eat through the bars.';
@@ -1210,7 +1210,7 @@ async function wakeHeroForCrawl(state, publish) {
     if (state.u.usleep)
         await finishHeroHelplessness('Suddenly you wake up!', state, publish);
     if (state.u.uhs === FAINTED)
-        await resetHeroFaint({ state });
+        await reset_faint({ state });
 }
 async function applyHeroFormWaterEffect(state, publish, random, rollDice) {
     const u = state.u;
@@ -4503,7 +4503,7 @@ function activeHitPointField(hero) {
 // C hack.c:overexertion().
 export async function checkHeroAttackOverexertion(state = game) {
     requirePlayingGame(state);
-    await getHungry();
+    await gethungry();
     if (state.program_state.gameover)
         return true;
     if ((state.moves ?? 0) % 3 !== 0

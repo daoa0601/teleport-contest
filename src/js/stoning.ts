@@ -36,7 +36,7 @@ import { removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { clearHeroSliming } from './potion.js';
 import { stopHeroOccupation } from './occupation.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { openingTinMaySaveHero } from './eat.js';
+import { Popeye } from './eat.js';
 import { uswapwepgone, uwepgone } from './wield.js';
 import { rn2 } from './rng.js';
 import { resolveImmediatePetrification } from './trap.js';

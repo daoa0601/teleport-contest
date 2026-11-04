@@ -79,7 +79,7 @@ import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { addInventoryItem } from './invent.js';
-import { intrinsicPossible } from './eat.js';
+import { intrinsic_possible } from './eat.js';
 import type { CorpseIntrinsic } from './eat.js';
 import { countContents } from './invent.js';
 
@@ -3161,7 +3161,7 @@ function corpsenmPriceAdj(object: GameObject): number {
             ['teleportation', 2], ['teleportControl', 3], ['telepathy', 5],
         ];
         for (const [intrinsic, cost] of intrinsicCosts) {
-            if (intrinsicPossible(intrinsic, mnum)) multiplier += cost;
+            if (intrinsic_possible(intrinsic, mnum)) multiplier += cost;
         }
         // C mondata.h unique_corpstat(): geno & G_UNIQ.
         if ((MONSTER_GENO[mnum] ?? 0) & G_UNIQ) multiplier += 50;

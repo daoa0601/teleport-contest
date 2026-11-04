@@ -53,7 +53,7 @@ import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded, setSlipperyHands } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
-import { updateHeroHunger } from './eat.js';
+import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
@@ -1383,7 +1383,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
         else return unsuccessfulPolymorph();
     }
 
-    await updateHeroHunger(false);
+    await newuhs(false);
     if (game.program_state.gameover) return { transformed: false, died: true };
     const formName = newHumanFormName();
     const restored = await becomeHuman(`You feel like a new ${formName}!`, game);
@@ -1419,7 +1419,7 @@ async function unsuccessfulPolymorph() {
     await plineWithContinuation("Your new form doesn't seem healthy enough to survive.", { urgent: true });
     const died = await finishHeroDeath({ killer: 'unsuccessful polymorph', deathLineShown: true });
     if (!died) {
-        await updateHeroHunger(false);
+        await newuhs(false);
         await reportHeroEncumbrance(game);
     }
     return { transformed: false, died };

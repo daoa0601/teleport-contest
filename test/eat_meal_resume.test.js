@@ -1,0 +1,38 @@
+import assert from 'node:assert/strict';
+import test from 'node:test';
+import { NOT_HUNGRY, SATIATED } from '../js/const.js';
+import { doeat } from '../js/eat.js';
+import { game, requirePlayingGame } from '../js/gstate.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { flushPendingTopline } from '../js/tty_topline.js';
+import { FOOD_RATION } from '../js/object_data.js';
+import { stopHeroOccupation } from '../js/occupation.js';
+import { addInventoryObject } from './support/game-objects.js';
+import { freshObjectRoom } from './support/object-room.js';
+import { installPagerInput } from './support/pager-input.js';
+void test('resuming a meal after losing satiation clears choking risk without recounting food', async () => {
+    await freshObjectRoom({ hero: { uhunger: 1100, uhs: SATIATED } });
+    requirePlayingGame(game);
+    const input = resetInputState();
+    installPagerInput(input, { expected: /ration|meal/, limit: 8 });
+    const ration = await addInventoryObject(FOOD_RATION);
+    assert.ok(ration.invlet);
+    await flushPendingTopline();
+    pushKeys(ration.invlet);
+    await doeat();
+    assert.equal(game.context.victual?.canchoke, true);
+    await stopHeroOccupation();
+    game.u.uhunger = 500;
+    game.u.uhs = NOT_HUNGRY;
+    const usedTime = game.context.victual?.usedtime ?? 0;
+    await flushPendingTopline();
+    pushKeys(ration.invlet);
+    await doeat();
+    assert.equal(game.context.victual?.piece, ration);
+    assert.equal(game.context.victual?.usedtime, usedTime + 1);
+    assert.equal(game.context.victual?.canchoke, false);
+    assert.equal(game.u.uconduct.food, 1);
+    assert.equal(game._occupation?.key, 'eat-food');
+    assert.match(game._lastPlineMessage, /You resume your meal\./);
+});
+//# sourceMappingURL=eat_meal_resume.test.js.map

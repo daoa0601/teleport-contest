@@ -60,7 +60,7 @@ import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardM
 import { heroStatusLine } from './insight.js';
 import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetHeroTrap, maketrap } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
-import { spendHeroNutrition, vomitHero, setTinVariety, useTinOpener } from './eat.js';
+import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
 import { hitMonsterWithWand } from './immediate_monster_magic.js';
 import { monsterStatusLine } from './insight.js';
@@ -1716,7 +1716,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
         return jumpResult(true, state);
     if (target.x === hero.ux && target.y === hero.uy) {
         if (wasTrapped)
-            await spendHeroNutrition(rnd(10), { state });
+            await morehungry(rnd(10), { state });
         else {
             const trap = state.level.traps.find(trap => trap.tx === hero.ux && trap.ty === hero.uy);
             if (!trap) {
@@ -1744,7 +1744,7 @@ export async function jumpHero(magic = 0, { state = game } = {}) {
     nomul(-1, state);
     state._helplessReason = 'jumping around';
     state._helplessDoneMessage = '';
-    await spendHeroNutrition(rnd(25), { state });
+    await morehungry(rnd(25), { state });
     return jumpResult(true, state);
 }
 export async function useTinningKit(kit) {
@@ -1789,7 +1789,7 @@ export async function useTinningKit(kit) {
     tin.blessed = kit.blessed;
     tin.owt = objectWeight(tin);
     tin.known = true;
-    setTinVariety(tin, HOMEMADE_TIN);
+    set_tin_variety(tin, HOMEMADE_TIN);
     if (corpse.where === 'inventory') {
         if (corpse.unpaid)
             await pline('"You tin it, you bought it!"');
@@ -1944,7 +1944,7 @@ async function causeHornTrouble(object, state, publish, random, rollDice) {
     }
     if (trouble === 4) {
         if (heroIsVomiting(state)) {
-            await vomitHero({ state, publish, random, rollDice });
+            await vomit({ state, publish, random, rollDice });
         }
         else {
             startHeroVomiting({ state, turns: 14 });
@@ -3489,7 +3489,7 @@ export async function applyTool(item, underlay) {
         return item;
     }
     if (item.otyp === TIN_OPENER) {
-        const result = await useTinOpener(item, { state: game, swapWeapons: doswapweapon });
+        const result = await use_tin_opener(item, { state: game, swapWeapons: doswapweapon });
         if (!result.heroDied)
             game.context.move = Number(result.usedTime);
         return item;

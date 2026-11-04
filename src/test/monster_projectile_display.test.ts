@@ -4,7 +4,7 @@ import { A_STR, HUNGRY, MM_NOGRP, NO_MINVENT, STONE, WEAK, W_WEP } from '../js/c
 import { currentAttribute } from '../js/attrib.js';
 import { canSeeMonster, flush_screen, objectColor, redrawMap } from '../js/display.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { getHungry } from '../js/eat.js';
+import { gethungry } from '../js/eat.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { heroIsBlind } from '../js/senses.js';
@@ -311,7 +311,7 @@ void test('a blinding potion impact defers its status update to the hunger messa
     });
     assert.equal(heroIsBlind(game), true);
     awaitingHungerMessage = true;
-    await getHungry();
+    await gethungry();
     awaitingHungerMessage = false;
 
     const weakPager = hungerPagers[0];

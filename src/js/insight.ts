@@ -96,7 +96,7 @@ import { canPraySafely } from './pray.js';
 import { deityName } from './alignment.js';
 import { magicNegation } from './mhitu.js';
 import { confersLuck } from './invent.js';
-import { temporaryResistance } from './eat.js';
+import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
 import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, maximumAttribute } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
@@ -668,11 +668,11 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
     if (active('shockResistance')) are('shock resistant', 'shockResistance');
     lines.push(...itemResistanceLines('shockResistance', 'electric shocks', final));
     if (active('poisonResistance')) are('poison resistant', 'poisonResistance');
-    if (active('acidResistance')) are(`${temporaryResistance('acidResistance')}acid resistant`, 'acidResistance');
+    if (active('acidResistance')) are(`${temp_resist('acidResistance')}acid resistant`, 'acidResistance');
     lines.push(...itemResistanceLines('acidResistance', 'acid', final));
     if (active('drainResistance')) are('level-drain resistant', 'drainResistance');
     if (active('sicknessResistance')) are('immune to sickness', 'sicknessResistance');
-    if (active('stoneResistance')) are(`${temporaryResistance('stoneResistance')}petrification resistant`, 'stoneResistance');
+    if (active('stoneResistance')) are(`${temp_resist('stoneResistance')}petrification resistant`, 'stoneResistance');
     if (active('hallucinationResistance')) message('You ', 'resist', 'resisted', ' hallucinations', fromWhat('hallucinationResistance'));
     if (u.uedibility) can('recognize detrimental food');
 

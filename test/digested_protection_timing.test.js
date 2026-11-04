@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { findArmorClass } from '../js/do_wear.js';
-import { digestAccessory } from '../js/eat.js';
+import { eataccessory } from '../js/eat.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
@@ -24,7 +24,7 @@ for (const meal of meals) {
         const accessory = await uninitializedObject(OBJECT_NAMES.indexOf(meal.name), { spe: meal.enchantment });
         installPagerInput(resetInputState(), { expected: /Magic spreads through your body/, limit: 1 });
         initRng(1n);
-        await digestAccessory(accessory);
+        await eataccessory(accessory);
         assert.equal(hasIntrinsicProperty('protection', 'outside'), true);
         assert.equal(game.u.ublessed, meal.protection);
         assert.equal(game.u.uac, armorBeforeEating, 'the monster turn after eating must use the previous armor class');

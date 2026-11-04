@@ -77,7 +77,7 @@ import { heroStomachName } from './body_parts.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
-import { chooseCorpseIntrinsic, shouldGiveIntrinsic } from './eat.js';
+import { corpse_intrinsic, should_givit } from './eat.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { inventoryItemDescription, delobj } from './invent.js';
@@ -2029,7 +2029,7 @@ async function describeSound(sound, { state, publish }) {
 const STALKER = MONSTER_NAME.indexOf('stalker');
 export async function grantMonsterCorpseIntrinsic(monster, species, state = game) {
     requireLiveGame(state);
-    const property = chooseCorpseIntrinsic(species);
+    const property = corpse_intrinsic(species);
     const visible = canSeeMonster(monster);
     if (monster.mhp <= 0)
         return;
@@ -2053,7 +2053,7 @@ export async function grantMonsterCorpseIntrinsic(monster, species, state = game
     }
     // Native still makes the chance roll for properties that monsters cannot
     // retain, such as strength, telepathy, teleportation, acid, or petrification.
-    if (!property || !shouldGiveIntrinsic(property, species))
+    if (!property || !should_givit(property, species))
         return;
     await grantMonsterIntrinsic(monster, property, state);
 }

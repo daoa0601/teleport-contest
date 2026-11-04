@@ -40,7 +40,7 @@ import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
-import { restoreHeroNutrition } from './eat.js';
+import { init_uhunger } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE } from './object_data.js';
 import { canMakeBones, createBonesFromDeath } from './bones.js';
@@ -118,7 +118,7 @@ export async function restoreHeroAfterDeath({ deathType = null } = {}) {
     if (Upolyd(game.u))
         game.u.mh = Math.min(game.u.mhmax, giveHp);
     if ((game.u.uhunger ?? 900) < 500 || deathType === CHOKING)
-        await restoreHeroNutrition(game, plineWithContinuation);
+        await init_uhunger(game, plineWithContinuation);
     if (game.u.sickTurns === 1)
         cureHeroSickness();
     game.context.move = 0;

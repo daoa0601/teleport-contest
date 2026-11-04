@@ -22,7 +22,7 @@ import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterHasProperName, monsterIsVerySmall, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
-import { parseTinPreparation, setTinVariety, tinDetails, consumeRemainingFood, foodNutrition } from './eat.js';
+import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
@@ -330,7 +330,7 @@ export function corpseName(object: CorpseNameView, {
 function physicalObjectNoun(object: ObjectNameView, noun: string, state: GameState): string {
     const override = state.iflags.override_ID || object.overrideIdentified;
     if (object.otyp === TIN && (object.known || override)) {
-        return tinDetails({
+        return tin_details({
             o_id: object.o_id ?? 0, spe: object.spe ?? 0,
             corpsenm: object.corpsenm ?? -1,
             blessed: object.blessed ?? false, cursed: object.cursed ?? false,
@@ -1265,7 +1265,7 @@ export interface ParsedWish {
     gender: MonsterNameGender | null;
     monsterSpecies: number | null;
     directType: number | null;
-    tinVariety: number | null;
+    tin_variety: number | null;
     spinach: boolean;
     zombifying: boolean;
     looted: boolean;
@@ -1295,7 +1295,7 @@ export function parseWishText(text: string): ParsedWish {
         diluted: false, empty: false, heavy: false, fakeAmulet: false,
         personalName: null, callName: null, calledNoun: null, description: null,
         gender: null, monsterSpecies: null, directType: null,
-        tinVariety: null, spinach: false, zombifying: false,
+        tin_variety: null, spinach: false, zombifying: false,
         looted: false, door: null, undiggable: false, unphaseable: false,
     };
     let remaining = original;
@@ -1486,8 +1486,8 @@ function parseWishSpecies(text: string, parsed: ParsedWish): string {
     if (!/(?:wand |spellbook |gauntlets |gloves |finger )/i.test(text)) {
         const tin = /tin of (.+)/i.exec(text);
         if (tin?.[1]) {
-            const preparation = parseTinPreparation(tin[1]);
-            parsed.tinVariety = preparation.variety;
+            const preparation = tin_variety_txt(tin[1]);
+            parsed.tin_variety = preparation.variety;
             const match = resolveMonsterNamePrefix(preparation.remaining);
             if (match) recordWishSpecies(parsed, match);
             parsed.directType = TIN;
@@ -1971,10 +1971,10 @@ export async function applyWishProperties(object: GameObject, parsed: ParsedWish
 
 export async function finishWishWeight(object: GameObject, parsed: ParsedWish): Promise<void> {
     if (parsed.partlyEaten && object.oclass === 7) {
-        const nutrition = foodNutrition(object);
+        const nutrition = obj_nutrition(object);
         if (nutrition > 1) {
             object.oeaten = nutrition;
-            await consumeRemainingFood(object, 1);
+            await consume_oeaten(object, 1);
         }
     }
     object.owt = objectWeight(object);
@@ -2062,8 +2062,8 @@ export async function applyWishSpecies(object: GameObject, parsed: ParsedWish,
 }
 
 export function applyWishedTinVariety(object: GameObject, parsed: ParsedWish, wizardWish: boolean): void {
-    if (object.otyp === TIN && parsed.tinVariety !== null && (rn2(4) || wizardWish))
-        setTinVariety(object, parsed.tinVariety);
+    if (object.otyp === TIN && parsed.tin_variety !== null && (rn2(4) || wizardWish))
+        set_tin_variety(object, parsed.tin_variety);
 }
 
 function wishedGender(species: number | null, parsed: ParsedWish): number {

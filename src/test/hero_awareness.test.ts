@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { game } from '../js/gstate.js';
-import { getHungry } from '../js/eat.js';
+import { gethungry } from '../js/eat.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { POT_BLINDNESS, POT_BOOZE, POT_PARALYSIS } from '../js/object_data.js';
 import { applySupportedPotionVapor } from '../js/potion.js';
@@ -51,12 +51,12 @@ void test('sleep slows ordinary metabolism but being awake does not', async () =
     await freshObjectRoom();
     requireFixtureGame(game);
     const awakeHunger = game.u.uhunger;
-    for (let turn = 0; turn < 20; turn++) await getHungry();
+    for (let turn = 0; turn < 20; turn++) await gethungry();
     assert.equal(awakeHunger - game.u.uhunger, 20);
     await putHeroToSleep(40);
     const asleepHunger = game.u.uhunger;
 
-    for (let turn = 0; turn < 20; turn++) await getHungry();
+    for (let turn = 0; turn < 20; turn++) await gethungry();
 
     assert.ok(game.u.uhunger > asleepHunger - 20);
 });
@@ -71,7 +71,7 @@ for (const [species, foodCost] of [['rock mole', 1], ['yellow mold', 0]] as cons
         await polymonHero(MONSTER_NAME.indexOf(species));
         const nutrition = game.u.uhunger;
 
-        await getHungry();
+        await gethungry();
 
         assert.equal(nutrition - game.u.uhunger, foodCost);
     });

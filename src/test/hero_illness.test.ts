@@ -19,7 +19,7 @@ import { useUnicornHorn } from '../js/apply.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { startHeroSickness } from '../js/potion.js';
 import { startHeroVomiting } from '../js/potion.js';
-import { vomitHero } from '../js/eat.js';
+import { vomit } from '../js/eat.js';
 import { statusConditions } from '../js/botl.js';
 import { CHAIN_MAIL, LONG_SWORD, UNICORN_HORN } from '../js/object_data.js';
 import {
@@ -180,7 +180,7 @@ void test('a rat form cannot vomit away food poisoning', async () => {
     });
     const messages: string[] = [];
 
-    const result = await vomitHero({
+    const result = await vomit({
         state: game,
         publish: async (message: string) => messages.push(message),
     });
@@ -215,7 +215,7 @@ void test('a vomiting yellow dragon breathes acid on its weapon and armor',
         const rolls = [0, 0, 1];
         const messages: string[] = [];
 
-        await vomitHero({
+        await vomit({
             state: game,
             publish: async (message: string) => messages.push(message),
             random: range => {
@@ -249,7 +249,7 @@ void test('a hallucinating dragon breathing acid on itself names a strange liqui
             const rolls = [0, 0, 1];
             const messages: string[] = [];
 
-            await vomitHero({
+            await vomit({
                 state: game,
                 publish: async (message: string) => messages.push(message),
                 random: range => Math.min(rolls.shift() ?? 0, range - 1),

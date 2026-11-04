@@ -80,13 +80,13 @@ def main():
     label = 'js/eat.js'
     source = (REPO / label).read_bytes()
     modules[label] = (source, *parse_module(source))
-    function = modules[label][1]['prepareCorpseMeal']
+    function = modules[label][1]['eatcorpse']
     assignments = [node for node in _descendants(function)
                    if node.type == 'assignment_expression'
                    and node.child_by_field_name('left').text == b'meal.reqtime']
     rhs = one(assignments, 'emitted meal delay assignment').child_by_field_name('right')
     emitted = JSExec(Machine(world, 'js'), modules, {})
-    emitted.stack.append(('prepareCorpseMeal', label, {}))
+    emitted.stack.append(('eatcorpse', label, {}))
     emitted.local_names.append({'glob', 'food'})
     js_path = emitted.m.start_path()
     js_path.env.update({'glob': V('bool', z3.BoolVal(True)), 'food': V('obj', 'food')})
@@ -94,7 +94,7 @@ def main():
     if not (z3.is_true(z3.simplify(denominator < 0)) and z3.is_true(z3.simplify(delay != js_delay))):
         raise Unsupported('the reported negative-denominator/shift witness no longer holds')
     print(f'wizard count={count}, glob weight/nutrition={weight}')
-    print(f'eat.c:eatcorpse delay={delay}; {label}:prepareCorpseMeal delay={js_delay}')
+    print(f'eat.c:eatcorpse delay={delay}; {label}:eatcorpse delay={js_delay}')
     print(f'eat.c:doeat rounddiv numerator={numerator}, denominator={denominator}, result={z3.simplify(result.ret.v)}')
     print('Native obligations discharged; wish/meal reachability is a source audit, not a replay.')
 

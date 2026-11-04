@@ -80,7 +80,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
-import { eatingDangerousCorpse, openingTinMaySaveHero, spendHeroNutrition, vomitHero } from './eat.js';
+import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import {
     captureLevitationState, floatHeroDown, heroIsUnconscious, resolveImmediatePetrification,
@@ -142,7 +142,7 @@ export async function petrificationDialogue({
         removeHeroSpeed(state);
         if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (turns === 4) {
-        if (!openingTinMaySaveHero('stoned', state)) await stopHeroOccupation(state, publish);
+        if (!Popeye('stoned', state)) await stopHeroOccupation(state, publish);
         if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (turns === 3) {
         await stopHeroOccupation(state, publish);
@@ -196,7 +196,7 @@ export async function vomitingDialogue({
         await makeStunned((hero.stunnedTurns ?? 0) + rollDice(2, 4), { state, talk: false });
         // stop_occupation finishes an already swallowed last bite before
         // abandoning the meal, including that food's digestion effects.
-        if (!openingTinMaySaveHero('vomiting', state)) await stopHeroOccupation(state, publish);
+        if (!Popeye('vomiting', state)) await stopHeroOccupation(state, publish);
         if (state.program_state.gameover)
             return { active: false, vomited: false, turns: nextTurns, died: true };
     }
@@ -214,7 +214,7 @@ export async function vomitingDialogue({
         if (state.program_state.gameover)
             return { active: false, vomited: false, turns: nextTurns, died: true };
         if (!heroCannotVomit(state)) {
-            await spendHeroNutrition(20, { state });
+            await morehungry(20, { state });
             if (state.program_state.gameover)
                 return { active: false, vomited: false, turns: nextTurns, died: true };
             if (hero.uhs < FAINTING) {
@@ -222,7 +222,7 @@ export async function vomitingDialogue({
                     ? 'You hurl chunks!' : 'You vomit!');
             }
         }
-        await vomitHero({ state, publish });
+        await vomit({ state, publish });
         vomited = true;
     }
 
@@ -434,7 +434,7 @@ export async function slimeDialogue({
     const stage = Math.trunc(turns / 2);
     if (stage === 3) {
         removeHeroSpeed(state);
-        if (!openingTinMaySaveHero('slimed', state)) await stopHeroOccupation(state, publish);
+        if (!Popeye('slimed', state)) await stopHeroOccupation(state, publish);
         if (state.multi > 0) endVoluntaryMultiTurn(state);
     } else if (stage === 2
         && hero.deafTurns !== undefined && hero.deafTurns > 0
@@ -1527,7 +1527,7 @@ export async function advanceCorpseResistanceTimeouts(state: GameState = game) {
         if (state.u[timeout] > 0) continue;
         refreshProperty(property, state);
         if (state.u[property]) continue;
-        if (eatingDangerousCorpse(property, { state })) {
+        if (eating_dangerous_corpse(property, { state })) {
             state.u[timeout] = 1;
             refreshProperty(property, state);
             continue;

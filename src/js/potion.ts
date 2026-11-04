@@ -59,7 +59,7 @@ import { heroIsUnaware } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroIsStrangled } from './do_wear.js';
-import { heroCanBeSlimed, updateHeroHunger, updateMealMimicry, fixHeroPetrification } from './eat.js';
+import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js';
 import { cmdq_peek } from './cmd.js';
 import { doEnlightenmentEffect } from './zap.js';
 import { showEnlightenment } from './insight.js';
@@ -484,7 +484,7 @@ export async function makeHallucinated(turns: number, {
         }
     }
     if (changed) {
-        if (!heroIsHallucinating(state)) await updateMealMimicry(state);
+        if (!heroIsHallucinating(state)) await eatmupdate(state);
         if (hero.uswallow) await swallowed(false);
         else {
             await see_monsters();
@@ -733,7 +733,7 @@ async function drinkWater(source: GameObject, state: PlayingGameState) {
     if (!source.blessed && !source.cursed) {
         await plineWithContinuation(`This tastes like ${displayLiquidName('water', state)}.`);
         hero.uhunger += rnd(10);
-        await updateHeroHunger(false, { state });
+        await newuhs(false, { state });
         return !!state.program_state.gameover;
     }
     const hostileBody = monsterHatesBlessings({
@@ -799,7 +799,7 @@ async function boozeEffect(source: GameObject, state: PlayingGameState) {
     // peffect_booze adds nutrition directly; it does not call lesshungry's
     // fullness/choking checks, even when drunk on a full stomach.
     state.u.uhunger = (state.u.uhunger ?? 900) + 10 * (2 + blessing(source));
-    await updateHeroHunger(false, { state });
+    await newuhs(false, { state });
     await exerciseAttribute(A_WIS, false, state);
     if (source.cursed) {
         await pline('You pass out.');
@@ -824,7 +824,7 @@ async function seeInvisible(source: GameObject, state: PlayingGameState) {
         : `This tastes like ${diluted ? 'reconstituted ' : ''}${fruit}.`);
     if (source.otyp === POT_FRUIT_JUICE) {
         state.u.uhunger += (diluted ? 5 : 10) * (2 + (source.blessed ? 1 : source.cursed ? -1 : 0));
-        await updateHeroHunger(false, { state });
+        await newuhs(false, { state });
         return 1;
     }
     if (!source.cursed) await makeBlinded(0, { state });
@@ -1076,7 +1076,7 @@ async function drinkAcid(source: GameObject, state: PlayingGameState) {
         if (await loseHeroHp(damage, 'potion of acid', { state })) return true;
         await exerciseAttribute(A_CON, false, state);
     }
-    await fixHeroPetrification({ state });
+    await fix_petrification({ state });
     return !!state.program_state.gameover;
 }
 

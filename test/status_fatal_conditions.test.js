@@ -4,7 +4,7 @@ import { HUNGRY, SICK_NONVOMITABLE, SICK_VOMITABLE } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { doeat, vomitHero, fixHeroPetrification } from '../js/eat.js';
+import { doeat, vomit, fix_petrification } from '../js/eat.js';
 import { game } from '../js/gstate.js';
 import { cureHeroSickness } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
@@ -26,7 +26,7 @@ void test('curing petrification removes Stone when the cure feedback is displaye
     await setHeroPetrificationTimeout(5);
     await bot();
     assert.match(status(), /\bStone\b/);
-    await fixHeroPetrification();
+    await fix_petrification();
     await flush_screen(1);
     assert.match(requireScreenRow(0).map(cell => cell.ch).join(''), /You feel limber!/);
     assert.doesNotMatch(status(), /\bStone\b/);
@@ -76,7 +76,7 @@ void test('vomiting away food poisoning keeps FoodPois on the paged choke messag
         pages,
     });
     await plineWithContinuation('You stuff yourself and then vomit voluminously.');
-    await vomitHero({ state: game });
+    await vomit({ state: game });
     const pause = pages.find(page => page.split('\n')[0]?.includes('You stuff yourself and then vomit voluminously.'));
     assert.ok(pause, 'The cure line pages the pending choke message.');
     assert.match(pause, /--More--/);
