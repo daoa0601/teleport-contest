@@ -33,7 +33,7 @@ import { learnObjectType } from './o_init.js';
 
 import { drainObjectEnchantment } from './zap.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { monsterReflectionSource } from './muse.js';
+import { mon_reflects } from './muse.js';
 
 import { d, rn2 } from './rng.js';
 import { contactIsProtected } from './stoning.js';
@@ -224,7 +224,7 @@ async function freezeAttacker(
             await publish('As a blind floating eye, you cannot defend yourself.');
             return { attackerStopped: false };
         }
-        const reflection = monsterReflectionSource(monster, state);
+        const reflection = mon_reflects(monster, state);
         if (reflection) {
             await publish(`Your gaze is reflected by ${possessive(monster)} ${reflection.noun}.`);
             if (reflection.object && ['shield', 'amulet'].includes(reflection.noun))

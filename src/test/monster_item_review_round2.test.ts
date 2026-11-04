@@ -12,7 +12,7 @@ import {
     beginMonsterHeroAttack, completeHeroAttackSlot, presentMonsterAttackEffects,
 } from '../js/mhitu.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishDeferredMonsterMiscItem, prepareMonsterItemUse, useMonsterDefensiveItem } from '../js/muse.js';
+import { precheck, use_defensive, find_misc } from '../js/muse.js';
 import { summonMonsterInsects } from '../js/mcastu.js';
 import type { MonsterCallLog } from '../js/monster_action_types.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -39,9 +39,11 @@ for (const { boots, name, iron } of [
         await addObjectToMonsterInventory(monster, await knownObject(boots, { owornmask: W_ARMF }), game);
         addTrap(level, POLY_TRAP, 9, 10);
 
-        const turn = await takeMonsterTurn(monster, game, limit => limit - 1);
+        monster.mux = game.u.ux;
+        monster.muy = game.u.uy;
+        const choice = await find_misc(monster, game, limit => limit - 1, []);
 
-        assert.equal(turn.movement?.usedMisc?.kind === 'polymorph-trap', !iron);
+        assert.equal(choice?.kind === 'polymorph-trap', !iron);
     });
 }
 
@@ -58,7 +60,7 @@ void test('a ghost from a bottle ends the drinker meal and waiting, while preser
     assert.ok(game.objectDescriptions);
     game.objectDescriptions[POT_HEALING] = 'milky';
 
-    await prepareMonsterItemUse(monster, potion, { state: game, random: () => 0, publish: () => {} });
+    await precheck(monster, potion, { state: game, random: () => 0, publish: () => {} });
 
     assert.equal(monster.mcanmove, 0);
     assert.equal(monster.mfrozen, 3);
@@ -81,7 +83,7 @@ void test('a hallucinated djinni receives a fresh perceived name when vanishing'
         initRng(BigInt(seed));
         const messages: string[] = [];
 
-        await prepareMonsterItemUse(monster, potion, {
+        await precheck(monster, potion, {
             state: game, random: () => 0, publish: message => { messages.push(message); },
         });
 
@@ -99,14 +101,11 @@ void test('an unseen humanoid deliberately entering a visible polymorph trap is 
     const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
     monster.minvis = true;
     addTrap(level, POLY_TRAP, 9, 10);
-    const turn = await takeMonsterTurn(monster, game, limit => limit - 1);
-    assert.ok(turn.movement);
     const messages: string[] = [];
     const input = resetInputState();
     input.beforeRead = () => { messages.push(game._pending_message || ''); };
     installPagerInput(input, { expected: /deliberately|changes|armor|orc/, limit: 8 });
-
-    await finishDeferredMonsterMiscItem({ monster, ...turn, movement: turn.movement }, game);
+    await takeMonsterTurn(monster, game, limit => limit - 1);
     messages.push(game._pending_message || '');
 
     assert.match(messages.join('\n'), /Someone deliberately jumps onto a polymorph trap!/);
@@ -125,7 +124,7 @@ for (const destinationVisible of [true, false]) {
         const messages: string[] = [];
         installPagerInput(resetInputState(), { expected: /orc|disappears|disoriented/, limit: 8 });
 
-        await useMonsterDefensiveItem(monster, { kind: 'trap', trap }, {
+        await use_defensive(monster, { kind: 'trap', trap }, {
             state: game, publish: message => { messages.push(message); },
         });
 
@@ -145,7 +144,7 @@ for (const species of ['floating eye', 'vampire bat', 'naga hatchling']) {
         const messages: string[] = [];
         installPagerInput(resetInputState(), { expected: /eye|bat|naga|disoriented/, limit: 8 });
 
-        await useMonsterDefensiveItem(monster, { kind: 'trap', trap }, {
+        await use_defensive(monster, { kind: 'trap', trap }, {
             state: game, publish: message => { messages.push(message); },
         });
 
@@ -165,7 +164,7 @@ void test('a hallucinating hero sees random trap names when monsters jump onto e
         trap.teledest = { x: 12, y: 10 };
         const messages: string[] = [];
         installPagerInput(resetInputState(), { expected: /onto|disoriented/, limit: 8 });
-        await useMonsterDefensiveItem(fleeing, { kind: 'trap', trap }, {
+        await use_defensive(fleeing, { kind: 'trap', trap }, {
             state: game, publish: message => { messages.push(message); },
         });
         names.add((messages[0] ?? '').replace(/^.* onto a (.*)!$/, '$1'));
@@ -176,13 +175,11 @@ void test('a hallucinating hero sees random trap names when monsters jump onto e
         initRng(seed);
         const seeker = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         addTrap(level, POLY_TRAP, 9, 10);
-        const turn = await takeMonsterTurn(seeker, game, limit => limit - 1);
-        assert.ok(turn.movement);
         const messages: string[] = [];
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message || ''); };
         installPagerInput(input, { expected: /deliberately|changes|armor|turns/, limit: 8 });
-        await finishDeferredMonsterMiscItem({ monster: seeker, ...turn, movement: turn.movement }, game);
+        await takeMonsterTurn(seeker, game, limit => limit - 1);
         messages.push(game._pending_message || '');
         const jump = messages.join('\n').match(/deliberately \w+ onto a ([^!]*)!/);
         assert.ok(jump, messages.join('\n'));

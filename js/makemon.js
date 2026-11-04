@@ -36,7 +36,7 @@ import { setMonsterPermanentInvisibility } from './worn.js';
 import { monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition, placeMonsterOnMap, maybeGiveDomesticSaddle, } from './steed.js';
 import { initializeMonsterWormBody } from './worm.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { randomDefensiveMonsterItem, randomMiscMonsterItem, randomOffensiveMonsterItem } from './muse.js';
+import { rnd_defensive_item, rnd_misc_item, rnd_offensive_item } from './muse.js';
 import { deleteObject } from './shk.js';
 import { stopObjectTimer } from './timeout.js';
 import { rndClass } from './objnam.js';
@@ -968,7 +968,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const giveOffensiveMonsterItem = async () => {
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
+            const offensiveItem = rnd_offensive_item(pendingMonster);
             if (offensiveItem)
                 await mongets(offensiveItem);
         }
@@ -1190,7 +1190,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             await mongets(secondaryWeapon);
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
+            const offensiveItem = rnd_offensive_item(pendingMonster);
             if (offensiveItem)
                 await mongets(offensiveItem);
         }
@@ -1257,7 +1257,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         // the final offensive-item roll before receiving their fixed kit.
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
+            const offensiveItem = rnd_offensive_item(pendingMonster);
             if (offensiveItem)
                 await mongets(offensiveItem);
         }
@@ -1307,7 +1307,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         hasMonsterInventory = true;
         const offensiveRoll = rn2(75);
         if (baseLevel > offensiveRoll) {
-            const offensiveItem = randomOffensiveMonsterItem(pendingMonster);
+            const offensiveItem = rnd_offensive_item(pendingMonster);
             if (offensiveItem)
                 await mongets(offensiveItem);
         }
@@ -1647,13 +1647,13 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     if (initializeMonsterEquipment && !skipCommonMonsterInventory) {
         const defensiveRoll = rn2(50);
         if (baseLevel > defensiveRoll) {
-            const defensiveItem = randomDefensiveMonsterItem(pendingMonster);
+            const defensiveItem = rnd_defensive_item(pendingMonster);
             if (defensiveItem)
                 await mongets(defensiveItem);
         }
         const miscellaneousRoll = rn2(100);
         if (baseLevel > miscellaneousRoll) {
-            const miscellaneousItem = randomMiscMonsterItem(pendingMonster);
+            const miscellaneousItem = rnd_misc_item(pendingMonster);
             if (miscellaneousItem)
                 await mongets(miscellaneousItem);
         }

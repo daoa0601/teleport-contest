@@ -6,7 +6,7 @@ import { canSenseMonster } from '../js/display.js';
 import { setTopline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { useMonsterDefensiveItem } from '../js/muse.js';
+import { use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { BOULDER, SCR_TELEPORTATION, WAN_DIGGING } from '../js/object_data.js';
@@ -31,7 +31,7 @@ void test('a boulder fills a monster-dug pit before the digger can fall into it'
     const boulder = await floorObject(BOULDER, 10, 10);
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 6,
     });
 
@@ -53,7 +53,7 @@ void test('falling into a new monster-dug pit teaches the digger and sighted wit
     const wand = await addObjectToMonsterInventory(digger, await knownObject(WAN_DIGGING, { spe: 3 }), game);
     assert.ok(wand);
 
-    await useMonsterDefensiveItem(digger, { kind: 'digging', object: wand }, {
+    await use_defensive(digger, { kind: 'digging', object: wand }, {
         state: game, publish: () => {}, rollOne: () => 1,
     });
 
@@ -75,7 +75,7 @@ void test('a digger bungles a familiar pit and takes damage after its avoidance 
     assert.ok(wand);
     initRng(1n);
 
-    await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: () => {},
     });
 
@@ -103,7 +103,7 @@ for (const cursed of [true, false]) {
         input.display = { async readKey() { prompts++; return 27; } };
         const messages: string[] = [];
 
-        await useMonsterDefensiveItem(monster, { kind: 'teleport-scroll', object: scroll }, {
+        await use_defensive(monster, { kind: 'teleport-scroll', object: scroll }, {
             state: game, random: () => 0, publish: message => { messages.push(message); },
         });
 
@@ -128,7 +128,7 @@ void test('hearing an unseen monster read an unknown teleport scroll permits nam
     input.display = { async readKey() { prompts++; return 27; } };
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, { kind: 'teleport-scroll', object: scroll }, {
+    await use_defensive(monster, { kind: 'teleport-scroll', object: scroll }, {
         state: game, random: () => 0, publish: message => { messages.push(message); },
     });
 
@@ -190,7 +190,7 @@ void test('a deaf telepath can name a previously seen scroll after sensing the r
         },
     };
 
-    await useMonsterDefensiveItem(monster, { kind: 'teleport-scroll', object: scroll }, {
+    await use_defensive(monster, { kind: 'teleport-scroll', object: scroll }, {
         state: game, random: () => 0,
     });
 

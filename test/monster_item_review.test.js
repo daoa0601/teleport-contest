@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { mintrap } from '../js/trap.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
-import { findMonsterDefensiveItem, lootMonsterContainer, prepareMonsterItemUse, useMonsterDefensiveItem, } from '../js/muse.js';
+import { find_defensive, mloot_container, precheck, use_defensive, } from '../js/muse.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { addObjectToContainer } from '../js/mkobj.js';
@@ -34,9 +34,9 @@ for (const condition of ['sleeping', 'paralyzed']) {
         const soldier = await createMonsterAt('soldier', 12, 10, MM_ANGRY | NO_MINVENT);
         soldier.msleeping = condition === 'sleeping' ? 1 : 0;
         soldier.mcanmove = condition === 'paralyzed' ? 0 : 1;
-        assert.equal(findMonsterDefensiveItem(bugler, game)?.kind, 'bugle');
+        assert.equal(find_defensive(bugler, game)?.kind, 'bugle');
         await finishEnvironmentalMonsterDeath(soldier, game, { noCorpse: true });
-        assert.equal(findMonsterDefensiveItem(bugler, game)?.kind, undefined, 'A dead soldier must not make the bugler waste its action');
+        assert.equal(find_defensive(bugler, game)?.kind, undefined, 'A dead soldier must not make the bugler waste its action');
     });
 }
 for (const branch of [true, false]) {
@@ -58,11 +58,11 @@ for (const branch of [true, false]) {
         const destination = branch ? { dnum: 0, dlevel: 26 } : { dnum: 1, dlevel: 1 };
         game.stairs = { sx: 10, sy: 10, up: true, isladder: false,
             tolev: destination, u_traversed: false, next: null };
-        const choice = findMonsterDefensiveItem(monster, game);
+        const choice = find_defensive(monster, game);
         assert.equal(choice?.kind, 'stairs');
         assert.ok(choice);
         const messages = [];
-        await useMonsterDefensiveItem(monster, choice, { state: game,
+        await use_defensive(monster, choice, { state: game,
             random: () => branch ? 0 : 1, publish: message => { messages.push(message); } });
         assert.deepEqual(monster.migrationDestination, destination);
         assert.equal(monster.migrationArrival, branch ? MIGR_SSTAIRS : MIGR_STAIRS_DOWN);
@@ -84,7 +84,7 @@ for (const visible of [true, false]) {
             await vision_recalc(0);
         }
         const messages = [];
-        await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+        await use_defensive(monster, { kind: 'digging', object: wand }, {
             state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
         });
         const pit = level.traps.find(trap => trap.tx === 10 && trap.ty === 10);
@@ -126,7 +126,7 @@ for (const [distance, alreadyKnown] of [[1, false], [10, false], [10, true]]) {
         const item = await knownObject(DAGGER);
         await addObjectToContainer(bag, item, game);
         const messages = [];
-        const removed = await lootMonsterContainer(monster, bag, { state: game,
+        const removed = await mloot_container(monster, bag, { state: game,
             random: limit => limit - 1, publish: message => { messages.push(message); } });
         assert.equal(removed, true);
         assert.equal(item.ocarry, monster);
@@ -147,7 +147,7 @@ void test('hallucination changes the perceived bottle occupant while the actual 
         game.objectDescriptions[POT_HEALING] = 'milky';
         initRng(BigInt(seed));
         const messages = [];
-        const result = await prepareMonsterItemUse(monster, potion, {
+        const result = await precheck(monster, potion, {
             state: game, random: () => 0, publish: message => { messages.push(message); },
         });
         assert.equal(result?.nativeResult, 2);

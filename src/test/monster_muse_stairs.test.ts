@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LADDER, MIGR_SSTAIRS, MM_ANGRY, NO_MINVENT, STAIRS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/muse.js';
+import { find_defensive, use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
@@ -24,11 +24,11 @@ for (const carriesAmulet of [false, true]) {
         level.requireAt(10, 10).typ = STAIRS;
         game.stairs = { sx: 10, sy: 10, up: false, isladder: false,
             tolev: { dnum: 1, dlevel: 1 }, next: null, u_traversed: false };
-        const choice = findMonsterDefensiveItem(monster, game);
+        const choice = find_defensive(monster, game);
         assert.ok(choice?.kind === 'stairs');
         const messages: string[] = [];
 
-        const result = await useMonsterDefensiveItem(monster, choice, {
+        const result = await use_defensive(monster, choice, {
             state: game, publish: message => { messages.push(message); },
         });
 
@@ -51,11 +51,11 @@ void test('a ladder across a dungeon branch uses the special-stair escape and ar
     level.requireAt(10, 10).typ = LADDER;
     game.stairs = { sx: 10, sy: 10, up: true, isladder: true,
         tolev: { dnum: 1, dlevel: 1 }, next: null, u_traversed: false };
-    const choice = findMonsterDefensiveItem(monster, game);
+    const choice = find_defensive(monster, game);
     assert.ok(choice?.kind === 'stairs');
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, choice, { state: game, publish: message => { messages.push(message); } });
+    await use_defensive(monster, choice, { state: game, publish: message => { messages.push(message); } });
 
     assert.equal(messages[0], 'The orc escapes upstairs!');
     assert.equal(monster.migrationMode, MIGR_SSTAIRS);
@@ -81,7 +81,7 @@ for (const ladder of [false, true]) {
             },
         };
 
-        const choice = findMonsterDefensiveItem(monster, game);
+        const choice = find_defensive(monster, game);
 
         assert.equal(choice, null, 'the first staircase is downward and cannot help a floater flee');
     });

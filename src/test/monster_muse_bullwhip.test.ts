@@ -5,7 +5,6 @@ import { MM_ANGRY, MM_NOGRP, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishDeferredMonsterMiscItem } from '../js/muse.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BULLWHIP, CORPSE, DAGGER, HEAVY_IRON_BALL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -55,8 +54,6 @@ void test('a bullwhip can snatch a cursed secondary weapon because it is not wel
     installPagerInput(input, { expected: /soldier|whip|dagger/, limit: 6 });
     const turn = await takeMonsterTurn(monster, game, range => range === 4 ? 3 : range === 2 ? 1 : 0);
 
-    await finishDeferredMonsterMiscItem({ monster, ...turn }, game);
-
     assert.equal(secondary.ocarry, monster);
     assert.equal(game.uwep, primary);
     assert.equal(game.uswapwep, null);
@@ -81,8 +78,6 @@ void test('monster bullwhip messages omit the wielded corpse species', async () 
         input.beforeRead = () => { messages.push(game._pending_message); };
         installPagerInput(input, { expected: /soldier|whip|corpse/, limit: 6 });
         const turn = await takeMonsterTurn(monster, game, range => range === 4 ? destination : 0);
-
-        await finishDeferredMonsterMiscItem({ monster, ...turn }, game);
         messages.push(game._pending_message);
 
         assert.ok(messages.some(message => message.includes("The bullwhip wraps around the corpse you're wielding!")),

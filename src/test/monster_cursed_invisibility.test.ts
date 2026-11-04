@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { revealAggravatingMonster } from '../js/muse.js';
+import { you_aggravate } from '../js/muse.js';
 import { initializePet } from '../js/dog.js';
 import { POT_INVISIBILITY } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -31,7 +31,7 @@ void test('an aggravating potion revelation names a tame drinker as your monster
         },
     };
 
-    await revealAggravatingMonster(drinker, game);
+    await you_aggravate(drinker, game);
 
     assert.ok(messages.includes("For some reason, your goblin's presence is known to you."),
         `Expected the pet's presence message; received: ${messages.join(' | ')}`);
@@ -107,7 +107,7 @@ void test('an aggravating potion revelation wakes a sleeping hero after its ackn
         },
     };
 
-    await revealAggravatingMonster(drinker, game);
+    await you_aggravate(drinker, game);
 
     assert.equal(acknowledgedRevelation, true);
     assert.equal(game._helplessTurns, 1);

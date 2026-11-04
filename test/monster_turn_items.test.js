@@ -11,7 +11,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { pline } from '../js/pline.js';
-import { findMonsterDefensiveItem, lootMonsterContainer, useMonsterDefensiveItem, } from '../js/muse.js';
+import { find_defensive, mloot_container, use_defensive, } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { teleportMonsterToRandomLevel } from '../js/teleport.js';
 import { addTrap } from './support/level-state.js';
@@ -91,10 +91,10 @@ void test('a blind peaceful monster uses cursed extra healing to restore its sig
     monster.mhp = monster.mhpmax = 40;
     const potion = await addObjectToMonsterInventory(monster, await knownObject(POT_EXTRA_HEALING, { cursed: true }), game);
     assert.ok(potion);
-    const choice = findMonsterDefensiveItem(monster, game);
+    const choice = find_defensive(monster, game);
     assert.ok(choice);
     const messages = [];
-    await useMonsterDefensiveItem(monster, choice, { state: game, rollDice: () => 16,
+    await use_defensive(monster, choice, { state: game, rollDice: () => 16,
         random: limit => limit - 1, publish: message => { messages.push(message); } });
     assert.equal(monster.mcansee, 1);
     assert.equal(monster.mblinded, 0);
@@ -109,9 +109,9 @@ void test('a confused ki-rin uses its own horn without a carried tool', async ()
     monster.mconf = 1;
     monster.mux = game.u.ux;
     monster.muy = game.u.uy;
-    const choice = findMonsterDefensiveItem(monster, game);
+    const choice = find_defensive(monster, game);
     assert.ok(choice);
-    await useMonsterDefensiveItem(monster, choice, { state: game, publish: () => { } });
+    await use_defensive(monster, choice, { state: game, publish: () => { } });
     assert.equal(monster.mconf, 0);
     assert.equal(monster.mstun, 0);
     assert.equal(monster.minvent?.length ?? 0, 0);
@@ -125,7 +125,7 @@ void test('a monster takes an item out of its carried bag and forgets its conten
     const item = await knownObject(DAGGER);
     await addObjectToContainer(bag, item, game);
     const messages = [];
-    const removed = await lootMonsterContainer(monster, bag, { state: game,
+    const removed = await mloot_container(monster, bag, { state: game,
         random: limit => limit - 1, publish: message => { messages.push(message); } });
     assert.equal(removed, true);
     assert.equal(item.where, 'minvent');
@@ -142,7 +142,7 @@ void test('a cursed bag of holding keeps its contents when a monster tries to lo
     assert.ok(bag);
     const item = await knownObject(DAGGER);
     await addObjectToContainer(bag, item, game);
-    const removed = await lootMonsterContainer(monster, bag, { state: game, publish: () => { } });
+    const removed = await mloot_container(monster, bag, { state: game, publish: () => { } });
     assert.equal(removed, false);
     assert.equal(item.where, 'contained');
     assert.equal(item.container, bag);

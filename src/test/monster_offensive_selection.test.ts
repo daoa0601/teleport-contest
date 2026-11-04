@@ -13,7 +13,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
-import { selectMonsterOffensiveItem } from '../js/muse.js';
+import { find_offensive } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import {
     CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID,
@@ -50,7 +50,7 @@ async function offensiveRoom({ species = 'orc', x = 14, y = 10 } = {}) {
         return object;
     };
     const select = (random = (_limit: number) => 1) =>
-        selectMonsterOffensiveItem(monster, state, { random });
+        find_offensive(monster, state, { random });
     return { monster, state, level, give, select };
 }
 

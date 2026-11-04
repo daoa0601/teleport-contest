@@ -4,7 +4,7 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { prepareMonsterItemUse, presentMonsterQuaff, useMonsterDefensiveItem } from '../js/muse.js';
+import { precheck, mquaffmsg, use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { BUGLE, POT_HEALING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
@@ -30,7 +30,7 @@ for (const { condition, expected } of [
         if (condition.includes('deaf')) game.u.deafTurns = 10;
         const messages: string[] = [];
 
-        const seen = await presentMonsterQuaff(drinker, potion, {
+        const seen = await mquaffmsg(drinker, potion, {
             state: game, publish: message => { messages.push(message); },
         });
 
@@ -51,7 +51,7 @@ for (const freed of [true, false]) {
         game.objectDescriptions[POT_HEALING] = 'smoky';
         const messages: string[] = [];
 
-        await prepareMonsterItemUse(drinker, potion, {
+        await precheck(drinker, potion, {
             state: game, random: limit => limit === 2 && freed ? 1 : 0,
             publish: message => { messages.push(message); },
         });
@@ -94,7 +94,7 @@ for (const { condition, expected } of [
         assert.equal(canSeeMonster(bugler), false);
         const messages: string[] = [];
 
-        await useMonsterDefensiveItem(bugler, { kind: 'bugle', object: bugle }, {
+        await use_defensive(bugler, { kind: 'bugle', object: bugle }, {
             state: game, publish: message => { messages.push(message); },
         });
 

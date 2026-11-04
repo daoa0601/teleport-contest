@@ -21,7 +21,7 @@ import { ARROW, BAG_OF_HOLDING, BOULDER, CLUB, CORPSE, DART,
     GRAPPLING_HOOK, SCR_FIRE, WAN_STRIKING } from '../js/object_data.js';
 import { killerObjectName } from '../js/objnam.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { resolveMonsterImmediateWand } from '../js/muse.js';
+import { mbhit } from '../js/muse.js';
 import { initRng } from '../js/rng.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { loadScoreRecords } from '../js/score_records.js';
@@ -66,7 +66,7 @@ void test('a fatal monster striking ray identifies the killer as a wand', async 
     monster.mwandexp = true;
     const wand = await knownObject(WAN_STRIKING);
 
-    await dieWith(() => resolveMonsterImmediateWand(monster, wand, {
+    await dieWith(() => mbhit(monster, wand, {
         state, rollOne: () => 1, rollDice: () => 8,
     }), 'killed by a wand');
 });

@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { MFAST, MM_ANGRY, MM_NOWAIT, NO_MINVENT, W_ARMF } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { lootMonsterContainer } from '../js/muse.js';
+import { mloot_container } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterName } from '../js/do_name.js';
 import { beginMonsterHeroAttack } from '../js/mhitu.js';
@@ -113,7 +113,7 @@ void test('additional adjacent container removals keep their pronoun without cha
         initRng(7n);
         const messages: string[] = [];
 
-        const removed = await lootMonsterContainer(monster, bag, { state: game,
+        const removed = await mloot_container(monster, bag, { state: game,
             random: limit => limit - 1, publish: message => { messages.push(message); } });
 
         assert.equal(removed, true);

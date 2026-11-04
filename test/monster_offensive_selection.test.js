@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { placeMonsterAt } from '../js/steed.js';
-import { selectMonsterOffensiveItem } from '../js/muse.js';
+import { find_offensive } from '../js/muse.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CORPSE, DUNCE_CAP, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HELMET, LARGE_BOX, LEATHER_ARMOR, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_PARALYSIS, POT_SLEEPING, ROCK, SCR_EARTH, SCR_FIRE, SCR_SCARE_MONSTER, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_MAGIC_MISSILE, WAN_SLEEP, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { applyPotionEffect } from '../js/potion.js';
@@ -35,7 +35,7 @@ async function offensiveRoom({ species = 'orc', x = 14, y = 10 } = {}) {
         assert.ok(object);
         return object;
     };
-    const select = (random = (_limit) => 1) => selectMonsterOffensiveItem(monster, state, { random });
+    const select = (random = (_limit) => 1) => find_offensive(monster, state, { random });
     return { monster, state, level, give, select };
 }
 void test('offensive selection returns the actual carried wand without spending its charge', async () => {

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { useMonsterOffensiveItem } from '../js/muse.js';
+import { use_offensive } from '../js/muse.js';
 import { WAN_MAGIC_MISSILE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -23,7 +23,7 @@ for (const experienced of [false, true]) {
         goblin.muy = 10;
         const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 3 });
         await addObjectToMonsterInventory(goblin, wand, game);
-        const result = await useMonsterOffensiveItem(goblin, { kind: 'ray-wand', object: wand }, {
+        const result = await use_offensive(goblin, { kind: 'ray-wand', object: wand }, {
             state: game, random: bound => bound - 1, rollDice: () => 4,
             publish: () => { },
         });

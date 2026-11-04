@@ -5,7 +5,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { petrifyMonsterFromContact } from '../js/trap.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { useMonsterStoningCure } from '../js/muse.js';
+import { munstone } from '../js/muse.js';
 import { CORPSE, DAGGER, POT_ACID } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { knownObject } from './support/game-objects.js';
@@ -41,7 +41,7 @@ void test('a fatal acid cure without hero credit leaves the inventory but no cor
     const experience = game.u.uexp ?? 0;
     const dagger = await addObjectToMonsterInventory(giant, await knownObject(DAGGER), game);
     assert.ok(dagger);
-    const result = await useMonsterStoningCure(giant, { state: game, rollOne: () => 15, publish: () => { } });
+    const result = await munstone(giant, { state: game, rollOne: () => 15, publish: () => { } });
     assert.equal(result.died, true);
     assert.notEqual(monsterAtPosition(game.level, giant.mx, giant.my), giant);
     assert.equal(game.u.uexp ?? 0, experience);

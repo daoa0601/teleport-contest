@@ -76,7 +76,7 @@ import {
     petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack,
     resolveMonsterPhysicalDamage, tryKnockback, applyMonsterCombatEffect, physicalEffect, effectResult,
 } from './uhitm.js';
-import { monsterReflectionSource } from './muse.js';
+import { mon_reflects } from './muse.js';
 
 import { contactIsProtected, touchPetrifies } from './stoning.js';
 import { finishMonsterEating } from './dogmove.js';
@@ -663,9 +663,9 @@ export async function resolveMonsterCombatGaze(
         return gazeResult(M_ATTK_MISS);
     }
 
-    if (attacker.mnum === PM_MEDUSA && monsterReflectionSource(defender, state)) {
+    if (attacker.mnum === PM_MEDUSA && mon_reflects(defender, state)) {
         await showGazeReflection(defender, state, publish);
-        if (monsterReflectionSource(attacker, state)) {
+        if (mon_reflects(attacker, state)) {
             await showGazeReflection(attacker, state, publish);
             return gazeResult(M_ATTK_MISS);
         }
@@ -708,7 +708,7 @@ function perceivesInvisible(monster: Monster): boolean {
 // reflection is optically visible. Detection alone does not reveal the item.
 async function showGazeReflection(monster: Monster, state: PlayingGameState, publish: MessagePublisher): Promise<void> {
     if (!canSeeMonster(monster)) return;
-    const source = monsterReflectionSource(monster, state);
+    const source = mon_reflects(monster, state);
     if (!source) return;
     const owner = possessiveName(monsterName(monster, { state }));
     await publish(`The gaze is reflected away by ${owner} ${source.noun}.`);
@@ -1361,7 +1361,7 @@ async function paralyzeAttacker(attacker: Monster, defender: Monster, duration: 
         }
         // Native constructs this name even when there is no reflection.
         const gazeOwner = possessiveName(monsterName(defender, { state, capitalized: true }));
-        const reflection = monsterReflectionSource(attacker, state);
+        const reflection = mon_reflects(attacker, state);
         if (reflection) {
             if (visible) {
                 await publish(`${gazeOwner} gaze is reflected by ${possessiveName(monsterName(attacker, { state }))} ${reflection.noun}.`);

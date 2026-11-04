@@ -12,7 +12,6 @@ import { giveSpecialMonsterObject } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { mksobj } from '../js/mkobj.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { finishDeferredMonsterMiscItem } from '../js/muse.js';
 import { commitPetPickup } from '../js/dogmove.js';
 import { linkObjectToMonsterInventory, runClaimedGlobTimer, placeCreatedObject } from '../js/mkobj.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';
@@ -256,8 +255,7 @@ void test('bullwhip snatch transfers a live hero weapon through mpickobj', async
     const monster = await createBullwhipMonster();
     const dagger = await addInventoryItem(await mksobj(DAGGER, true, false));
     await setPrimaryWeapon(dagger);
-    const action = await beginBullwhipDisarm(monster, dagger, 3);
-    await finishDeferredMonsterMiscItem(action, game);
+    await disarmWithBullwhip(monster, 3);
     assert.deepEqual(game.inventory, []);
     assert.equal(game.uwep, null);
     assert.equal(game.u.uwep, null);
@@ -305,8 +303,7 @@ void test('bullwhip mpickobj frees a compatible incoming weapon after merging', 
         blessed: false, cursed: false, oerodeproof: false,
     }));
     await setPrimaryWeapon(incoming);
-    const action = await beginBullwhipDisarm(monster, incoming, 3);
-    await finishDeferredMonsterMiscItem(action, game);
+    await disarmWithBullwhip(monster, 3);
     assert.deepEqual(monster.minvent.filter(object => object.otyp === DAGGER), [survivor]);
     assert.equal(monster.mw?.otyp, BULLWHIP);
     assert.equal(survivor.quan, 5);
@@ -356,7 +353,7 @@ void test('bullwhip theft removes the luck of a carried stone', async () => {
     const stone = await addInventoryItem(await knownObject(LUCKSTONE));
     await setPrimaryWeapon(stone);
     assert.equal(game.u.moreluck, 3);
-    await finishDeferredMonsterMiscItem(await beginBullwhipDisarm(monster, stone, 3), game);
+    await disarmWithBullwhip(monster, 3);
     assert.equal(game.u.moreluck, 0);
     assert.ok(!game.inventory.includes(stone));
     assertMonsterOwns(monster, stone);
@@ -373,7 +370,7 @@ for (const [whereTo, destination, stackCount] of [
         placeCreatedObject(await knownObject(DAGGER, { initialize: false }), x, y);
         const weapon = await addInventoryItem(await knownObject(DAGGER, { initialize: false }));
         await setPrimaryWeapon(weapon);
-        await finishDeferredMonsterMiscItem(await beginBullwhipDisarm(monster, weapon, whereTo), game);
+        await disarmWithBullwhip(monster, whereTo);
         const daggers = floorObjectsAt(game.level, x, y).filter(object => object.otyp === DAGGER);
         assert.equal(daggers.length, stackCount);
         assert.equal(daggers.reduce((total, object) => total + object.quan, 0), 2);
@@ -433,14 +430,11 @@ async function createBullwhipMonster() {
     await equipMonsterObject(monster, await knownObject(BULLWHIP), W_WEP);
     return monster;
 }
-async function beginBullwhipDisarm(monster, target, whereTo) {
+async function disarmWithBullwhip(monster, whereTo) {
     requirePlayingGame(game);
     installPagerInput(resetInputState(), { expected: /whip|wielding|yanks|snatches/, limit: 6 });
     const turn = await takeMonsterTurn(monster, game, range => range === 4 ? whereTo : 0, (count, sides) => count * sides, () => 1);
     const effect = turn.movement.usedMisc;
-    assert.ok(effect?.kind === 'bullwhip-disarm', 'A wielded whip must select the native disarm action');
-    assert.strictEqual(effect.target, target);
-    assert.equal(effect.whereTo, whereTo);
-    return { monster, ...turn };
+    assert.ok(effect?.nativeResult, 'A wielded whip must spend the disarm turn');
 }
 //# sourceMappingURL=monster_inventory_acquisition.test.js.map

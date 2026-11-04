@@ -37,7 +37,7 @@ import { teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThr
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName } from './do_name.js';
 import { touchPetrifies, selfTouchPetrifyingWeapons, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM } from './stoning.js';
-import { useMonsterStoningCure } from './muse.js';
+import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct, finishHeroDeath } from './end.js';
 import { LL_DUMP, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
@@ -1479,7 +1479,7 @@ export async function monsterSelfTouch(monster, { prefix = '', creditHero = fals
     return { touched: true, corpse, ...petrification };
 }
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
-    const cure = await useMonsterStoningCure(monster, {
+    const cure = await munstone(monster, {
         byHero: creditHero, publish, rollOne, state,
     });
     if (cure.consumed && cure.heroDied)

@@ -113,7 +113,7 @@ import type { MonsterCombatEffectContext, MonsterCombatEffectResult } from './mo
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoAttacks, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
-import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
+import { munslime, munstone } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
 import { objectMaterial, observeObject } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
@@ -132,7 +132,7 @@ import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { heroReflectionSource, heroReflectsRay } from './muse.js';
+import { ureflects, heroReflectsRay } from './muse.js';
 
 import { d, rn2, rnd, rnl } from './rng.js';
 import type { rnd as RndType } from './rng.js';
@@ -3495,7 +3495,7 @@ async function slimeDefender(
     if (await monsterCombatAttackNegated(attacker, defender, {
         state, visible, publish, random, verbose: false,
     }) || random(4) !== 0 || monsterIsSlimeproof(defender)) return result;
-    const cure = await tryMonsterUnslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
+    const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
     if (cure.heroDied) return { ...result, done: true, heroDied: true };
     if (!cure.cured && defender.mhp > 0) {
         const change = await changeMonsterForm(defender, PM_GREEN_SLIME, state, {
@@ -5823,7 +5823,7 @@ async function applyParalysisPassive({
         // C evaluates ureflects()'s name argument even when nothing reflects.
         const reflectionOwner = possessiveName(displayedMonsterName(monster, { state, capitalized: true }));
         if (heroReflectsRay(state)) {
-            const source = heroReflectionSource(state);
+            const source = ureflects(state);
             await publish(
                 `${reflectionOwner} gaze is reflected by your ${
                     source?.noun || 'body'
@@ -6514,7 +6514,7 @@ export async function applyHeroNaturalSliming(
     if (specialAttackNegated(state.u, monster, { state, random })
         || random(4) !== 0 || monsterIsSlimeproof(monster)) return normal;
 
-    const cure = await tryMonsterUnslime(monster, {
+    const cure = await munslime(monster, {
         state, byHero: true, publish, random, rollDice, rollOne,
     });
     if (cure.heroDied) return { ...normal, damage: 0, done: true, heroDied: true };
@@ -6535,7 +6535,7 @@ export async function petrifyMonsterDefender(monster: Monster, {
     visible = canSeeMonster(monster),
     ...options
 }: MonsterStoningCureOptions & PetrificationOptions & { visible?: boolean } = {}): Promise<MonsterDefenderPetrificationResult> {
-    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    const cure = await munstone(monster, { ...options, publish });
     if (cure.consumed && cure.heroDied) return { heroDied: true };
     if (cure.consumed)
         return { survived: !cure.died, stopped: true, damage: 0, cure };

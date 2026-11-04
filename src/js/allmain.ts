@@ -89,13 +89,11 @@ import { nhgetch } from './input.js';
 import { NO_COLOR, CLR_BRIGHT_BLUE } from './terminal.js';
 import { uInitMisc, makedog, uInitInventoryAttrs, finishStartingDiscoveries } from './u_init.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { discoverHeroReflectionSource, heroReflectionSource } from './muse.js';
 
 import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
 import { aligns, nativeRoleAt } from './roles.js';
 import { initializeSourceStartup } from './startup.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
-import { finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster } from './muse.js';
 import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';
