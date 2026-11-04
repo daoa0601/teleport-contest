@@ -3,7 +3,7 @@
 // per-missile handoff to the flight owners.
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { beginCommandResult, commandResultCancelled, setMulti, isok } from './cmd.js';
+import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
@@ -13,7 +13,7 @@ import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero } from './polyself.js';
 import { isLauncherAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, A_CHA, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, P_PICK_AXE, P_SPEAR, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, A_CHA, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
 import { weaponHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
@@ -113,10 +113,11 @@ async function okToThrow() {
     }
     return true;
 }
-export async function dofire(cannedShotLimit = null) {
-    const shotLimit = cannedShotLimit === null
-        ? Math.max(0, game._commandCount || 0)
-        : Math.max(0, cannedShotLimit || 0);
+export async function dofire() {
+    // C dothrow.c:ok_to_throw() reads the count from gc.command_count; a
+    // queued dofire (fireassist swap chains) finds it untouched because
+    // no parse() runs between the two commands.
+    const shotLimit = Math.max(0, game._commandCount || 0);
     setMulti(0);
     if (!await okToThrow())
         return;
@@ -157,9 +158,10 @@ export async function dofire(cannedShotLimit = null) {
             const alternate = game.uswapwep || game.u?.uswapwep;
             if (game.flags?.fireassist !== false && alternate && isPolearm(alternate)
                 && !(alternate.cursed && alternate.bknown)) {
-                game._cannedCommands ||= [];
-                game._cannedCommands.push({ kind: 'swap-weapon' });
-                game._cannedCommands.push({ kind: 'fire', shotLimit });
+                // C dothrow.c:522-525: swap to the polearm and retry
+                // fire, each as its own queued command.
+                cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+                cmdq_add_ec(CQ_CANNED, 'dofire');
                 game.context.move = 0;
                 return;
             }
@@ -199,9 +201,9 @@ export async function dofire(cannedShotLimit = null) {
         }
         if (fireassist && !matchingLauncher(game.uwep)
             && matchingLauncher(alternate)) {
-            game._cannedCommands ||= [];
-            game._cannedCommands.push({ kind: 'swap-weapon' });
-            game._cannedCommands.push({ kind: 'fire', shotLimit });
+            // C dothrow.c:567-569: swap weapons and retry fire.
+            cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+            cmdq_add_ec(CQ_CANNED, 'dofire');
             game.context.move = quiverSelectionSpentTime ? 1 : 0;
             return;
         }
@@ -228,14 +230,13 @@ export async function dofire(cannedShotLimit = null) {
             if (inventoryLauncher) {
                 if (!inventoryLauncher.invlet)
                     throw new Error('Cannot queue a wield command for an object without an inventory letter.');
-                game._cannedCommands ||= [];
-                if (game.uwep && !game.flags?.pushweapon) {
-                    game._cannedCommands.push({ kind: 'swap-weapon' });
-                }
-                game._cannedCommands.push({
-                    kind: 'wield', invlet: inventoryLauncher.invlet,
-                });
-                game._cannedCommands.push({ kind: 'fire', shotLimit });
+                // C dothrow.c:573-577: push the old weapon aside, wield
+                // the launcher, and retry fire.
+                if (game.uwep && !game.flags?.pushweapon)
+                    cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+                cmdq_add_ec(CQ_CANNED, 'dowield');
+                cmdq_add_key(CQ_CANNED, inventoryLauncher.invlet.charCodeAt(0));
+                cmdq_add_ec(CQ_CANNED, 'dofire');
                 game.context.move = quiverSelectionSpentTime ? 1 : 0;
                 return;
             }

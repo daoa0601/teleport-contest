@@ -12,8 +12,8 @@ import { heroFaceName, heroFingerName, heroHandName, heroHasEyes, heroHeadName, 
 import { bot } from './botl.js';
 import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { useBullwhip } from './bullwhip.js';
-import { commandResultCancelled, commandResultFailed, commandResultSpentTime, setMulti } from './cmd.js';
-import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir } from './const.js';
+import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti } from './cmd.js';
+import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { useContainer } from './pickup.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -1473,8 +1473,10 @@ export async function dorub(cannedInvlet = null) {
     if (wielded.newlyWielded) {
         if (!object.invlet)
             throw new Error('A wielded inventory object must have an inventory letter.');
-        game._cannedCommands ||= [];
-        game._cannedCommands.push({ kind: 'rub', invlet: object.invlet });
+        // C apply.c:1807-1809 wield_tool() queues dorub plus the object's
+        // letter; next turn's dorub() pops the letter from CQ_CANNED.
+        cmdq_add_ec(CQ_CANNED, 'dorub');
+        cmdq_add_key(CQ_CANNED, object.invlet.charCodeAt(0));
         game.context.move = 1;
         return;
     }
@@ -2652,8 +2654,10 @@ async function applyPickAxe(item) {
     if (result.cancelled)
         commandResultCancelled(); // dig.c:use_pick_axe() res|ECMD_CANCEL.
     if ('resume' in result && result.resume) {
-        game._cannedCommands ||= [];
-        game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
+        // C dig.c:1104-1105 queues doapply plus the tool's letter; the
+        // next turn's apply pops the letter from CQ_CANNED.
+        cmdq_add_ec(CQ_CANNED, 'doapply');
+        cmdq_add_key(CQ_CANNED, inventoryCommandLetter(item).charCodeAt(0));
     }
     game.context.move = 'spentTime' in result && result.spentTime ? 1 : 0;
 }
@@ -2666,8 +2670,10 @@ export async function applyPolearm(item, autohit = false) {
     if ('heroDied' in result && result.heroDied)
         return;
     if ('resume' in result && result.resume) {
-        game._cannedCommands ||= [];
-        game._cannedCommands.push({ kind: 'apply', invlet: inventoryCommandLetter(item) });
+        // C apply.c:3441-3443 queues doapply plus the pole's letter; the
+        // next turn's apply pops the letter from CQ_CANNED.
+        cmdq_add_ec(CQ_CANNED, 'doapply');
+        cmdq_add_key(CQ_CANNED, inventoryCommandLetter(item).charCodeAt(0));
     }
     // use_pole() returns ECMD_CANCEL for a refused target prompt and
     // ECMD_FAIL for an out-of-range or unseen one (apply.c:3474-3505).
@@ -3396,10 +3402,10 @@ export async function applyTool(item, underlay) {
             return item;
         }
         if (wielded.newlyWielded) {
-            game._cannedCommands ||= [];
-            game._cannedCommands.push({
-                kind: 'apply', invlet: inventoryCommandLetter(item),
-            });
+            // C apply.c:2965-2967 queues doapply plus the whip's letter;
+            // the next turn's apply pops the letter from CQ_CANNED.
+            cmdq_add_ec(CQ_CANNED, 'doapply');
+            cmdq_add_key(CQ_CANNED, inventoryCommandLetter(item).charCodeAt(0));
             game.context.move = 1;
             return item;
         }
@@ -3463,10 +3469,10 @@ export async function applyTool(item, underlay) {
             }),
         });
         if (result.resume) {
-            game._cannedCommands ||= [];
-            game._cannedCommands.push({
-                kind: 'apply', invlet: inventoryCommandLetter(item),
-            });
+            // C apply.c:3744-3746 queues doapply plus the hook's letter;
+            // the next turn's apply pops the letter from CQ_CANNED.
+            cmdq_add_ec(CQ_CANNED, 'doapply');
+            cmdq_add_key(CQ_CANNED, inventoryCommandLetter(item).charCodeAt(0));
         }
         game.context.move = result.spentTime ? 1 : 0;
         return item;

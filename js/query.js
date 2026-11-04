@@ -5,12 +5,10 @@ import { clearMessageWindow, flushPendingTopline, rememberToplines, resetTopline
 import { flush_screen } from './display.js';
 import { pline, setTopline } from './pline.js';
 import { game } from './gstate.js';
-import { nhgetch, takeCommandResponse } from './input.js';
-import { readchar } from './cmd.js';
-import { restoreCannedCommandTail } from './cmd.js';
+import { nhgetch } from './input.js';
+import { readchar, cmdq_pop } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
-import { clearCannedCommands } from './cmd.js';
-import { rememberYnAnswerKey, takeRepeatCommand } from './cmd.js';
+import { CMDQ_KEY } from './const.js';
 import { messageWindowMode } from './prevmsg.js';
 import { doprevMessage, keyText } from './cmd.js';
 import { visibleCommandKey } from './cmd.js';
@@ -20,34 +18,19 @@ import { showChoiceWindow } from './windows.js';
 import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
 export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), options = {}) {
     // C windows.c:getlin(): queued CMDQ_KEY entries answer without any tty
-    // prompt and are echoed as pline("%s %s", query, buf). A queued non-key
-    // entry stops the drain and is discarded; '\n' ends the answer.
+    // prompt and are echoed as pline("%s %s", query, buf). The first
+    // non-key entry stops the drain and is discarded; '\n' ends the
+    // answer (windows.c:1875-1893).
     const queuedKeys = [];
     let queued = false;
     for (;;) {
-        const entry = game._inDoAgain ? takeRepeatCommand() : takeCommandResponse();
-        const queuedKey = typeof entry === 'number' ? entry
-            : typeof entry === 'object' && 'kind' in entry && entry.kind === 'key'
-                ? entry.key : undefined;
-        if (queuedKey === undefined) {
-            // windows.c:getlin() pops the one command queue until a key
-            // answers, then frees the first non-key entry it reaches — one
-            // dropped entry per prompt. A non-key response from
-            // takeCommandResponse() is that consumed entry already; only an
-            // empty response queue leaves the next pop to the canned
-            // command entries, whose bundled key or direction tails return
-            // to the response queue (cmd.c queues them behind the command).
-            if (entry === undefined && !game._inDoAgain) {
-                const dropped = game._cannedCommands?.shift();
-                if (dropped)
-                    restoreCannedCommandTail(dropped);
-            }
+        const entry = cmdq_pop();
+        if (!entry || entry.typ !== CMDQ_KEY)
             break;
-        }
         queued = true;
-        if (queuedKey === 10)
+        if (entry.key === 10)
             break;
-        queuedKeys.push(queuedKey);
+        queuedKeys.push(entry.key);
     }
     if (queued) {
         // The C buffer ends at its first NUL for both the echo and callers.

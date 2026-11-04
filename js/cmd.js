@@ -12,8 +12,8 @@ import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick
 import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
-import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, FEMALE, MALE } from './const.js';
-import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, takeCommandResponse, MAP_CLICK_KEY, inputGate } from './input.js';
+import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
+import { nhgetch, MAP_CLICK_KEY, inputGate } from './input.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
 import { wizTimeoutQueue } from './timeout.js';
@@ -286,27 +286,32 @@ export async function rhack(key) {
     let prefix = null;
     let menuPrefix = false;
     for (;;) {
-        const repeated = takeRepeatCommand();
-        // C rhack() consumes unused answers as command keys before parse().
-        // A non-key response at this boundary cancels the remaining queue.
-        const response = game._inDoAgain ? undefined : takeCommandResponse();
-        let cannedCommand = game._inDoAgain || response !== undefined
-            ? null : game._cannedCommands?.shift() ?? null;
-        if (response !== undefined)
-            key = typeof response === 'number' ? response : 0;
-        if (key === 0 && !cannedCommand && !repeated && response === undefined) {
+        // C cmd.c:rhack() pops one command queue entry before parse()
+        // (cmd.c:3642-3657): a queued extended command dispatches directly,
+        // a queued key becomes the command key, and any other entry leaves
+        // key 0 for the no-command reset below. cmdq_pop() selects
+        // CQ_REPEAT while a do-again replay owns the input.
+        const cmdq = cmdq_pop();
+        let queuedCommand = null;
+        if (cmdq) {
+            if (cmdq.typ === CMDQ_EXTCMD)
+                queuedCommand = cmdq.ecEntry;
+            else if (cmdq.typ === CMDQ_KEY)
+                key = cmdq.key;
+            else
+                key = 0;
+        }
+        else if (key === 0) {
             key = (await readCommandInput()).key;
             delete game._cursorOverride;
-            // C parse() returns NUL after a click queues its mouse command.
-            if (key === 0)
-                cannedCommand = game._cannedCommands?.shift() ?? null;
+            // C parse() returns NUL after a click queues its mouse command;
+            // got_prefix_input pops it without reading another key
+            // (cmd.c:3652-3656).
+            if (key === 0 && cmdq_peek(CQ_CANNED))
+                continue;
         }
         delete game._statusGoldOverride;
-        if (!cannedCommand && !repeated && [0, -1, 255, 27].includes(key)) {
-            resetCommandVariables(true);
-            return;
-        }
-        if (repeated && repeated.kind !== 'command') {
+        if (!queuedCommand && [0, -1, 255, 27].includes(key)) {
             resetCommandVariables(true);
             return;
         }
@@ -314,12 +319,17 @@ export async function rhack(key) {
         // dispatched here (cmd.c:3674); the empty/ESC branches above clear
         // it through reset_cmd_vars() instead.
         game.context.travel = game.context.travel1 = false;
-        const configured = repeated?.binding ?? configuredCommand(key);
-        if (!cannedCommand && response === undefined) {
+        const configured = queuedCommand
+            ? {
+                key: commandExecutionKey(queuedCommand.name)?.charCodeAt(0) ?? null,
+                command: queuedCommand, parameter: null,
+            }
+            : configuredCommand(key);
+        if (!cmdq || game._inDoAgain) {
             game._pending_message = '';
             game._retained_message = '';
         }
-        const command = cannedCommand ? cannedCommandDefinition(cannedCommand) : configured.command;
+        const command = configured.command;
         if (!command) {
             // C parse()/rhack() report an unknown key with
             // custompline(SUPPRESS_HISTORY): the previous line is
@@ -327,8 +337,8 @@ export async function rhack(key) {
             await setTopline(`Unknown command '${visibleCommandKey(key)}'.`);
             // Unlike a rejected known command, C's unknown-key tail keeps
             // pending movement flags until the next command resolves them.
-            clearCannedCommands();
-            clearRepeatCommand();
+            cmdq_clear(CQ_CANNED);
+            cmdq_clear(CQ_REPEAT);
             game.context.move = 0;
             setMulti(0);
             return;
@@ -356,22 +366,20 @@ export async function rhack(key) {
             resetCommandVariables(true);
             return;
         }
-        let binding = { ...configured, command,
-            key: cannedCommand
-                ? commandExecutionKey(command.name)?.charCodeAt(0) ?? null : configured.key,
-        };
+        let binding = { ...configured, command };
         prepareTimedCommand(binding);
         if (command.handler === 'doextcmd') {
-            clearRepeatCommand();
+            cmdq_clear(CQ_REPEAT);
             const { selected, lastExecuted } = await readExtendedCommand();
             if (!selected || !await commandAllowed(selected)) {
                 // doextcmd() leaves ext_tlist pointing at the last list it
-                // executed when the following editor quits or is rejected.
-                if (lastExecuted)
-                    rememberCommand({
-                        key: commandExecutionKey(lastExecuted.name)?.charCodeAt(0) ?? null,
-                        command: lastExecuted, parameter: null,
-                    }, false);
+                // executed when the following editor quits or is rejected;
+                // rhack() adds that entry and shifts it first
+                // (cmd.c:3752-3759).
+                if (lastExecuted) {
+                    cmdq_add_ec(CQ_REPEAT, lastExecuted.handler);
+                    cmdq_shift(CQ_REPEAT);
+                }
                 // doextcmd() reports ECMD_OK for a quit, so rhack() resets
                 // the queues only under an involuntary delay.
                 resetCommandVariables(game.multi < 0);
@@ -397,7 +405,20 @@ export async function rhack(key) {
                 game._kickedLoc = null;
             return;
         }
-        rememberCommand(binding, !!prefix && command.handler !== 'doextcmd');
+        // C cmd.c:rhack() records the command for do-again (cmd.c:3727-
+        // 3739): a fresh command replaces CQ_REPEAT, a prefix appends
+        // behind it, and do_repeat (returned above) plus the doextcmd
+        // editor never enter the queue — the '#' dispatch above cleared
+        // CQ_REPEAT the way C's func == doextcmd branch does, and the
+        // command it selected is recorded here like any other, so answers
+        // its prompts push while it runs land behind it. That is the same
+        // final order as C's post-execution add and shift (cmd.c:3752-
+        // 3759).
+        if (!game._inDoAgain && selected.handler !== 'doextcmd') {
+            if (!prefix)
+                cmdq_clear(CQ_REPEAT);
+            cmdq_add_ec(CQ_REPEAT, selected.handler);
+        }
         if (selected.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD) {
             if (!await applyMovementPrefix(selected, movement)) {
                 resetCommandVariables(true);
@@ -418,52 +439,29 @@ export async function rhack(key) {
             await dispatchMovement(binding, movement);
             return;
         }
-        await executeCommandAction(binding, { cannedCommand });
+        await executeCommandAction(binding);
         return;
     }
-}
-function cannedCommandDefinition(queued) {
-    let name;
-    switch (queued.kind) {
-        case 'inventory-action': return inventoryActionCommand(queued.action);
-        case 'context-menu':
-            name = contextMenuCommand(queued.selection);
-            break;
-        case 'command':
-            name = queued.name;
-            break;
-        case 'swap-weapon':
-            name = 'swap';
-            break;
-        case 'rub':
-        case 'apply':
-        case 'wield':
-        case 'kick':
-        case 'reqmenu':
-        case 'fire':
-            name = queued.kind;
-            break;
-    }
-    return NATIVE_COMMANDS.find(command => command.name === name) ?? null;
 }
 // C cmd.c:do_repeat(). Preserve the saved queue even when its execution
 // cancels, so another repeat makes the same attempt in the new context.
 async function repeatLastCommand() {
     if (game._inDoAgain)
         return;
-    const saved = [...(game._repeatCommands ?? [])];
-    if (!saved.length) {
+    if (!cmdq_peek(CQ_REPEAT)) {
         await plineWithContinuation('There is no command available to repeat.', { noRepeat: true });
         resetCommandVariables(true);
         return;
     }
+    const saved = cmdq_copy(CQ_REPEAT);
     game._inDoAgain = true;
     try {
         await rhack(0);
     }
     finally {
         game._inDoAgain = false;
-        game._repeatCommands = saved;
+        cmdq_clear(CQ_REPEAT);
+        game.command_queue[CQ_REPEAT] = saved;
         game.iflags.menu_requested = false;
     }
 }
@@ -552,9 +550,9 @@ async function dispatchMovement(binding, prefixes) {
 }
 // C cmd.c:rhack() clears kickedloc after an elapsed non-kick action.
 // doextcmd's selected action, not the outer # editor, owns that result.
-async function executeCommandAction(binding, options = {}) {
+async function executeCommandAction(binding) {
     beginCommandResult();
-    await runCommandHandler(binding, options);
+    await runCommandHandler(binding);
     if (game.program_state.gameover)
         return;
     // C cmd.c:rhack() result seam (3810-3826): ECMD_CANCEL and ECMD_FAIL
@@ -592,10 +590,10 @@ async function doToggleOption(parameter) {
 }
 // Admission belongs to the caller. Keep the selected binding, including its
 // parameter, rather than looking up a possibly rebound key inside the action.
-async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
+async function runCommandHandler(binding) {
     const { key, command } = binding;
     const ch = key === null ? '' : String.fromCharCode(key);
-    if (!cannedCommand && key === null && command) {
+    if (key === null && command) {
         // cmd.c:dotoggleoption() reads gc.cmd_bind->param; a parameter only
         // arrives through a key binding like BIND=x:toggle(silent).
         if (command.name === 'toggle') {
@@ -609,59 +607,6 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         }
         await pline(`#${command.name}: unknown extended command.`);
         game.context.move = 0;
-        return;
-    }
-    if (cannedCommand?.kind === 'context-menu') {
-        const selection = cannedCommand.selection;
-        contextMenuResponses(selection);
-        await runCommandHandler(binding);
-        return;
-    }
-    if (cannedCommand?.kind === 'command') {
-        await runCommandHandler(binding);
-        return;
-    }
-    // C cmd.c:rhack() pops CQ_CANNED before parse() asks tty for another
-    // byte.  Tool commands use this to resume the original operation after
-    // wield_tool() has spent one action installing the selected object.
-    if (cannedCommand?.kind === 'rub') {
-        await dorub(cannedCommand.invlet);
-        return;
-    }
-    if (cannedCommand?.kind === 'apply') {
-        await doapply(cannedCommand.invlet);
-        return;
-    }
-    if (cannedCommand?.kind === 'swap-weapon') {
-        await doswapweapon();
-        return;
-    }
-    if (cannedCommand?.kind === 'wield') {
-        queueCommandKeys(cannedCommand.invlet);
-        try {
-            await dowield();
-        }
-        finally {
-            clearCommandKeys();
-        }
-        return;
-    }
-    if (cannedCommand?.kind === 'kick') {
-        queueCommandResponses([{ dx: cannedCommand.dx, dy: cannedCommand.dy, dz: 0 }]);
-        try {
-            await dokick();
-        }
-        finally {
-            clearCommandKeys();
-        }
-        return;
-    }
-    if (cannedCommand?.kind === 'fire') {
-        await dofire(cannedCommand.shotLimit ?? 0);
-        return;
-    }
-    if (cannedCommand?.kind === 'inventory-action') {
-        await executeInventoryAction(cannedCommand.action);
         return;
     }
     if (key === 22 && game.flags?.debug) { // Ctrl-V: wiz_level_tele()
@@ -872,16 +817,124 @@ async function runCommandHandler(binding, { cannedCommand = null, } = {}) {
         game.context.move = 0;
     }
 }
+// C iactions.c:itemactions_pushkeys(): queue the chosen item action's
+// command, the m-prefix some actions need in front of it, and the object's
+// inventory letter; the command's own prompts pop the letter from the
+// shared queue (iactions.c:145-235).
 function enqueueInventoryAction(action) {
     if (!action || ['\x1b', ' ', '\n', '\r'].includes(action.key))
         return;
-    game._cannedCommands ??= [];
-    // itemactions_pushkeys() queues the normal prefix so command admission
-    // and repeat include it before the inventory command runs.
-    if (action.key === 'e' || action.key === 'q'
-        || action.key === 'T' && !((action.item.owornmask ?? 0) & W_ARMOR))
-        game._cannedCommands.push({ kind: 'reqmenu' });
-    game._cannedCommands.push({ kind: 'inventory-action', action });
+    const { key, item } = action;
+    if (!item.invlet)
+        return;
+    if (key === '-') {
+        // IA_UNWIELD: the hands letter answers the wield, swap-weapon, or
+        // quiver command's getobj() prompt.
+        cmdq_add_ec(CQ_CANNED, item === game.uwep ? 'dowield'
+            : item === game.uswapwep ? 'remarm_swapwep'
+                : item === game.uquiver ? 'dowieldquiver' : 'donull');
+        cmdq_add_key(CQ_CANNED, HANDS_ITEM_KEY);
+        return;
+    }
+    let extraKey = null;
+    let handler;
+    switch (key) {
+        case 'a':
+            // IA_APPLY_OBJ, or IA_DIP_OBJ for a potion other than known oil.
+            handler = item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item))
+                ? 'dip_into' : 'doapply';
+            break;
+        case 'c':
+            handler = 'docallcmd';
+            extraKey = 'i'.charCodeAt(0);
+            break;
+        case 'C':
+            handler = 'docallcmd';
+            extraKey = 'o'.charCodeAt(0);
+            break;
+        case 'd':
+            handler = 'dodrop';
+            break;
+        case 'e':
+            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
+            handler = 'doeat';
+            break;
+        case 'E':
+            handler = 'doengrave';
+            break;
+        case 'f':
+            cmdq_add_ec(CQ_CANNED, 'dofire');
+            return;
+        case 'i':
+            handler = 'doorganize';
+            break;
+        case 'I':
+            handler = 'adjust_split';
+            break;
+        case 'O':
+            handler = 'dosacrifice';
+            break;
+        case 'p':
+            handler = 'dopay';
+            break;
+        case 'P':
+        case 'W':
+            handler = 'dowear';
+            break;
+        case 'q':
+            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
+            handler = 'dodrink';
+            break;
+        case 'Q':
+            handler = 'dowieldquiver';
+            break;
+        case 'r':
+            handler = 'doread';
+            break;
+        case 'R':
+            handler = (item.owornmask ?? 0) & W_ACCESSORY ? 'ia_dotakeoff' : 'dorub';
+            break;
+        case 't':
+            handler = 'dothrow';
+            break;
+        case 'T':
+            if ((item.owornmask ?? 0) & W_ARMOR) {
+                handler = 'ia_dotakeoff';
+                break;
+            }
+            cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
+            handler = 'dotip';
+            break;
+        case 'w':
+            handler = 'dowield';
+            break;
+        case 'V':
+            handler = 'doinvoke';
+            break;
+        case 'x':
+            cmdq_add_ec(CQ_CANNED, 'doswapweapon');
+            return;
+        case 'X':
+            cmdq_add_ec(CQ_CANNED, 'dotwoweapon');
+            return;
+        case 'z':
+            handler = 'dozap';
+            break;
+        case '/':
+            handler = 'dowhatis';
+            extraKey = 'i'.charCodeAt(0);
+            break;
+        // itemactions() never queues anything for the quit keys.
+        case '\x1b':
+        case ' ':
+        case '\n':
+        case '\r': return;
+        default: return;
+    }
+    cmdq_add_ec(CQ_CANNED, handler);
+    if (extraKey !== null)
+        cmdq_add_key(CQ_CANNED, extraKey);
+    cmdq_add_key(CQ_CANNED, item.invlet.charCodeAt(0));
 }
 async function doquaff() {
     const result = await quaff();
@@ -1105,6 +1158,9 @@ async function dotherecmdmenu() {
     }
     enqueueContextMenu(await selectContextMenu(game.u.ux + direction.dx, game.u.uy + direction.dy, direction.dx || direction.dy ? click : CLICK_1));
 }
+// C cmd.c:act_on_act() queues the chosen action's command together with
+// the answers its prompts consume (cmd.c:4686-4835); every entry lands on
+// CQ_CANNED at menu-selection time, before the menu command returns.
 function enqueueContextMenu(selection) {
     game.context.move = 0;
     if (!selection)
@@ -1112,10 +1168,10 @@ function enqueueContextMenu(selection) {
     // act_on_act() sets this before dotherecmdmenu() clears a mouse target.
     if (selection.action === 'look-at')
         game._clicklookTarget = { x: selection.x, y: selection.y };
-    game._cannedCommands ??= [];
     if (selection.action === 'remove-saddle')
-        game._cannedCommands.push({ kind: 'reqmenu' });
-    game._cannedCommands.push({ kind: 'context-menu', selection });
+        cmdq_add_ec(CQ_CANNED, 'do_reqmenu');
+    cmdq_add_ec(CQ_CANNED, commandByName(contextMenuCommand(selection)).handler);
+    contextMenuResponses(selection);
 }
 // C cmd.c:doclicklook() retains the clicked location for later commands.
 async function doclicklook() {
@@ -1135,8 +1191,7 @@ function mouseAction(click) {
     requirePlayingGame(game);
     let dx = click.x - game.u.ux, dy = click.y - game.u.uy;
     const queue = (name) => {
-        game._cannedCommands ??= [];
-        game._cannedCommands.push({ kind: 'command', name });
+        cmdq_add_ec(CQ_CANNED, commandByName(name).handler);
     };
     if (game.flags.travel !== false) {
         if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
@@ -1232,9 +1287,11 @@ function contextMenuCommand(selection) {
         case 'throw': return selection.action;
     }
 }
+// The answer tail C cmd.c:act_on_act() queues behind each action's
+// command (cmd.c:4690-4833): directions, letters, and the user-input
+// placeholder its prompts consume.
 function contextMenuResponses(selection) {
     const dx = Math.sign(selection.x - game.u.ux), dy = Math.sign(selection.y - game.u.uy);
-    const direction = { dx, dy, dz: 0 };
     const yes = 'y'.charCodeAt(0);
     switch (selection.action) {
         case 'open':
@@ -1245,46 +1302,53 @@ function contextMenuResponses(selection) {
         case 'untrap':
         case 'ride':
         case 'chat':
-            queueCommandResponses([direction]);
+            cmdq_add_dir(CQ_CANNED, dx, dy, 0);
             return;
         case 'lock': {
             const tool = [SKELETON_KEY, LOCK_PICK, CREDIT_CARD]
                 .map(type => game.inventory.find(object => object.otyp === type)).find(object => object);
-            if (tool?.invlet)
-                queueCommandResponses([tool.invlet.charCodeAt(0), direction, yes]);
+            if (tool?.invlet) {
+                cmdq_add_key(CQ_CANNED, tool.invlet.charCodeAt(0));
+                cmdq_add_dir(CQ_CANNED, dx, dy, 0);
+                cmdq_add_key(CQ_CANNED, yes);
+            }
             return;
         }
         case 'remove-saddle':
-            queueCommandResponses([direction, yes]);
+            cmdq_add_dir(CQ_CANNED, dx, dy, 0);
+            cmdq_add_key(CQ_CANNED, yes);
             return;
         case 'saddle': {
             const saddle = game.inventory.find(object => object.otyp === SADDLE);
-            if (saddle?.invlet)
-                queueCommandResponses([saddle.invlet.charCodeAt(0), direction]);
+            if (saddle?.invlet) {
+                cmdq_add_key(CQ_CANNED, saddle.invlet.charCodeAt(0));
+                cmdq_add_dir(CQ_CANNED, dx, dy, 0);
+            }
             return;
         }
         case 'name':
-            queueCommandResponses(['m'.charCodeAt(0), direction]);
+            cmdq_add_key(CQ_CANNED, 'm'.charCodeAt(0));
+            cmdq_add_dir(CQ_CANNED, dx, dy, 0);
             return;
         case 'quaff':
         case 'tip':
         case 'eat':
-            queueCommandResponses([yes]);
+            cmdq_add_key(CQ_CANNED, yes);
             return;
         case 'dip':
-            queueCommandResponses(['user-input', yes]);
+            cmdq_add_userinput(CQ_CANNED);
+            cmdq_add_key(CQ_CANNED, yes);
             return;
         case 'throw':
             // act_on_act() retains the raw offset for throwing.
-            queueCommandResponses(['user-input', {
-                    dx: selection.x - game.u.ux, dy: selection.y - game.u.uy, dz: 0,
-                }]);
+            cmdq_add_userinput(CQ_CANNED);
+            cmdq_add_dir(CQ_CANNED, selection.x - game.u.ux, selection.y - game.u.uy, 0);
             return;
         case 'offer':
-            queueCommandResponses(['user-input']);
+            cmdq_add_userinput(CQ_CANNED);
             return;
         case 'untrap-here':
-            queueCommandResponses([{ dx: 0, dy: 0, dz: 1 }]);
+            cmdq_add_dir(CQ_CANNED, 0, 0, 1);
             return;
         case 'travel':
             game._travelTarget = { x: selection.x, y: selection.y };
@@ -1612,70 +1676,15 @@ export async function dolookaround() {
     }
     game.context.move = 0;
 }
-// windows.c:getlin() frees only the popped command entry, so any key or
-// direction C queued behind it stays queued for the next pop. Several
-// canned kinds bundle that tail inside one JS entry (dothrow.c:575-576,
-// dig.c:1104-1105, apply.c:1808-1809, 2966-2967, 3442-3443, 3745-3746 and
-// the cmd.c act_on_act() chains): restore it onto the response queue. The
-// drain only drops a canned entry after the response queue emptied, so
-// appending preserves the C order — tail first, then the remaining
-// canned commands.
-export function restoreCannedCommandTail(canned) {
-    if (canned.kind === 'rub' || canned.kind === 'apply' || canned.kind === 'wield') {
-        queueCommandResponses([canned.invlet.charCodeAt(0)]);
-    }
-    else if (canned.kind === 'kick') {
-        queueCommandResponses([{ dx: canned.dx, dy: canned.dy, dz: 0 }]);
-    }
-    else if (canned.kind === 'context-menu') {
-        contextMenuResponses(canned.selection);
-    }
-}
-// C iactions.c:itemactions_pushkeys(). The menu closes before the queued
-// command runs; its object letter answers the later inventory prompt.
-function inventoryActionCommand({ key, item }) {
-    const handlers = {
-        '-': item === game.uwep ? 'dowield'
-            : item === game.uswapwep ? 'remarm_swapwep'
-                : item === game.uquiver ? 'dowieldquiver' : 'donull',
-        'a': item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item)) ? 'dip_into' : 'doapply',
-        'c': 'docallcmd', 'C': 'docallcmd', 'd': 'dodrop', 'e': 'doeat', 'E': 'doengrave', 'f': 'dofire',
-        'i': 'doorganize', 'I': 'adjust_split', 'O': 'dosacrifice', 'p': 'dopay', 'P': 'dowear', 'q': 'dodrink',
-        'Q': 'dowieldquiver', 'r': 'doread',
-        'R': item.owornmask && item.owornmask & W_ACCESSORY ? 'ia_dotakeoff' : 'dorub',
-        't': 'dothrow', 'T': item.oclass === 3 ? 'ia_dotakeoff' : 'dotip', 'V': 'doinvoke',
-        'w': 'dowield', 'W': 'dowear', 'x': 'doswapweapon', 'X': 'dotwoweapon', 'z': 'dozap',
-        '/': 'dowhatis', '\x1b': null, ' ': null, '\n': null, '\r': null,
-    };
-    return NATIVE_COMMANDS.find(command => command.handler === handlers[key]) ?? null;
-}
 // C do_wear.c:remarm_swapwep(). The one cmdq_pop() — CQ_REPEAT during a
-// do-again replay, CQ_CANNED after — must yield the '-' item-action key
-// (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
-// drops the entry and fails ECMD_FAIL; rhack() then clears both queues
-// for that result. The success path resets a pending 'A', unwields
-// uswapwep, and reports; it spends a turn only when the weapon left or
-// its curse was revealed.
+// do-again replay, CQ_CANNED otherwise — must yield the '-' item-action
+// key (do_wear.c:3067-3080). Every other popped entry, or an empty queue,
+// fails ECMD_FAIL; rhack() then clears both queues for that result. The
+// success path resets a pending 'A', unwields uswapwep, and reports.
 const HANDS_ITEM_KEY = '-'.charCodeAt(0);
 async function remarmSwapwep() {
-    let key;
-    if (game._inDoAgain) {
-        const queued = takeRepeatCommand();
-        if (queued?.kind === 'key')
-            key = queued.key;
-    }
-    else {
-        const response = takeCommandResponse();
-        if (typeof response === 'number')
-            key = response;
-        else if (response === undefined) {
-            // The queued command behind an empty response queue is the
-            // popped entry: dropped, with its answer tail kept in order.
-            const dropped = game._cannedCommands?.shift();
-            if (dropped)
-                restoreCannedCommandTail(dropped);
-        }
-    }
+    const cmdq = cmdq_pop();
+    const key = cmdq?.typ === CMDQ_KEY ? cmdq.key : undefined;
     if (key !== HANDS_ITEM_KEY || !game.uswapwep) {
         commandResultFailed();
         game.context.move = 0;
@@ -1687,145 +1696,6 @@ async function remarmSwapwep() {
     await plineWithContinuation(twoweap ? 'You are no longer wielding two weapons at once.'
         : 'You no longer have a second weapon readied.');
     game.context.move = 1;
-}
-// The context-sensitive inventory item actions.  The '-' secondary-weapon
-// branch is C do_wear.c:remarm_swapwep(): reset a pending 'A', unwield
-// uswapwep, and report; it spends a turn only when the weapon left or its
-// curse was revealed.
-async function executeInventoryAction({ key, item }) {
-    const letter = item.invlet;
-    if (!letter || !game.inventory.includes(item)) {
-        game.context.move = 0;
-        return;
-    }
-    switch (key) {
-        case '-':
-            if (item === game.uwep) {
-                queueCommandKeys('-');
-                await dowield();
-            }
-            else if (item === game.uswapwep) {
-                // iactions.c:148-153 queues [remarm_swapwep, '-']: the
-                // unwield happens only when that queued '-' answers the pop
-                // in remarmSwapwep() below.
-                queueCommandKeys('-');
-                await remarmSwapwep();
-            }
-            else if (item === game.uquiver) {
-                queueCommandKeys('-');
-                await doready();
-            }
-            return;
-        case 'a':
-            queueCommandKeys(letter);
-            if (item.oclass === 8 && !(item.otyp === POT_OIL && objectTypeKnown(item)))
-                await dipInto();
-            else
-                await doapply();
-            return;
-        case 'c':
-            queueCommandKeys(`i${letter}`);
-            await doname();
-            return;
-        case 'C':
-            queueCommandKeys(`o${letter}`);
-            await doname();
-            return;
-        case 'd':
-            queueCommandKeys(letter);
-            await dodrop();
-            return;
-        case 'e':
-            queueCommandKeys(letter);
-            await doeat();
-            return;
-        case 'E':
-            queueCommandKeys(letter);
-            await doengrave();
-            return;
-        case 'f':
-            await dofire();
-            return;
-        case 'i':
-            queueCommandKeys(letter);
-            await doadjust();
-            return;
-        case 'I':
-            queueCommandKeys(letter);
-            await adjustSplit();
-            return;
-        case 'O':
-            queueCommandKeys(letter);
-            await dosacrifice();
-            return;
-        case 'p':
-            queueCommandKeys(letter);
-            await dopay();
-            return;
-        case 'P':
-        case 'W':
-            queueCommandKeys(letter);
-            await dowear();
-            return;
-        case 'q':
-            queueCommandKeys(letter);
-            await doquaff();
-            return;
-        case 'Q':
-            queueCommandKeys(letter);
-            await doready();
-            return;
-        case 'r':
-            queueCommandKeys(letter);
-            await readCommand();
-            return;
-        case 'R':
-            queueCommandKeys(letter);
-            if ((item.owornmask ?? 0) & W_ACCESSORY)
-                await removeWornItem('take off', true);
-            else
-                await dorub();
-            return;
-        case 'T':
-            queueCommandKeys(letter);
-            if ((item.owornmask ?? 0) & W_ARMOR)
-                await removeWornItem('take off', true);
-            else
-                await tipCommand();
-            return;
-        case 't':
-            queueCommandKeys(letter);
-            await dothrow();
-            return;
-        case 'w':
-            queueCommandKeys(letter);
-            await dowield();
-            return;
-        case 'V':
-            queueCommandKeys(letter);
-            await doinvoke();
-            return;
-        case 'x':
-            await doswapweapon();
-            return;
-        case 'X':
-            await dotwoweapon();
-            return;
-        case 'z':
-            queueCommandKeys(letter);
-            await dozap();
-            return;
-        case '/':
-            queueCommandKeys(`i${letter}`);
-            await dowhatis();
-            return;
-        case '\x1b':
-        case ' ':
-        case '\n':
-        case '\r':
-            game.context.move = 0;
-            return;
-    }
 }
 // C cmd.c:enter_explore_mode(). The pinned build's sysconf ships
 // EXPLORERS=*, so authorize_explore_mode() always grants access; the
@@ -2733,8 +2603,8 @@ export function resetCommandVariables(clearQueues) {
     game.iflags.menu_requested = false;
     game._movementAttempt = null;
     if (clearQueues) {
-        clearCannedCommands();
-        clearRepeatCommand();
+        cmdq_clear(CQ_CANNED);
+        cmdq_clear(CQ_REPEAT);
     }
 }
 // C cmd.c:reset_occupations(): forget resumable occupation state whose
@@ -2744,36 +2614,71 @@ export function resetOccupations(state = game) {
     resetPick(state);
     resetTrapSetting(state);
 }
-// C cmdq_clear(CQ_CANNED): commands and their answers share one queue.
-export function clearCannedCommands(state = game) {
-    state._cannedCommands = [];
-    clearCommandKeys();
+// ── Command queues (C cmd.c:cmdq_*) ──────────────────────────────────────
+// gc.command_queue[CQ_CANNED] holds canned sequences the game queues for
+// itself; CQ_REPEAT records the player's live command and its answers for
+// do-again. cmdq_pop() picks CQ_REPEAT while a do-again replay runs, exactly
+// like gi.in_doagain does in C (cmd.c:412).
+// C cmd.c:ext_func_tab_from_func(): the first command table entry whose
+// handler is this C function. Aliases such as #name resolve to #call.
+function extFuncTabFromFunc(handler) {
+    const command = NATIVE_COMMANDS.find(candidate => candidate.handler === handler);
+    if (!command)
+        throw new Error(`No command table entry for handler ${handler}`);
+    return command;
 }
-// C cmd.c:cmdq_pop() (cmd.c:408-419) for prompt owners which only accept
-// CMDQ_KEY answers: the shared CQ_CANNED head is the oldest response entry
-// first, then the oldest canned command with its bundled answer tail. A
-// queued direction or extended command hits every such owner's "anything
-// else" branch — the popped entry is dropped and cmdq_clear(CQ_CANNED)
-// discards the rest (invent.c:1817-1818, cmd.c:5508-5509, pager.c:1700-
-// 1703, do_name.c:516-518) — so this helper performs that clear. A
-// CMDQ_USER_INPUT entry keeps the remaining queue and reaches the
-// caller's live-input path (invent.c:1798); do-again replays pop CQ_REPEAT
-// through takeRepeatCommand() instead and never call this.
-export function takeQueuedKey() {
-    const response = takeCommandResponse();
-    if (typeof response === 'number')
-        return { key: response };
-    if (response === 'user-input')
-        return 'user-input';
-    if (typeof response === 'object') {
-        clearCannedCommands();
-        return 'cancel';
-    }
-    if (game._cannedCommands?.length) {
-        clearCannedCommands();
-        return 'cancel';
-    }
-    return 'none';
+// C cmd.c:cmdq_add_ec()
+export function cmdq_add_ec(q, handler, state = game) {
+    state.command_queue[q].push({ typ: CMDQ_EXTCMD, ecEntry: extFuncTabFromFunc(handler) });
+}
+// C cmd.c:cmdq_add_key()
+export function cmdq_add_key(q, key, state = game) {
+    state.command_queue[q].push({ typ: CMDQ_KEY, key: key & 255 });
+}
+// C cmd.c:cmdq_add_dir()
+export function cmdq_add_dir(q, dx, dy, dz, state = game) {
+    state.command_queue[q].push({ typ: CMDQ_DIR, dirx: dx, diry: dy, dirz: dz });
+}
+// C cmd.c:cmdq_add_userinput()
+export function cmdq_add_userinput(q, state = game) {
+    state.command_queue[q].push({ typ: CMDQ_USER_INPUT });
+}
+// C cmd.c:cmdq_add_int()
+export function cmdq_add_int(q, val, state = game) {
+    state.command_queue[q].push({ typ: CMDQ_INT, intval: val });
+}
+// Resolve a command by name for producers which hold the visible name
+// (act_on_act(), domouseaction()); the queue stores the handler's first
+// table entry, exactly like ext_func_tab_from_func().
+function commandByName(name) {
+    const command = NATIVE_COMMANDS.find(candidate => candidate.name === name);
+    if (!command)
+        throw new Error(`No command named ${name}`);
+    return command;
+}
+// C cmd.c:cmdq_pop(): take the topmost entry from the selected queue.
+export function cmdq_pop(state = game) {
+    const q = state._inDoAgain ? CQ_REPEAT : CQ_CANNED;
+    return state.command_queue[q].shift() ?? null;
+}
+// C cmd.c:cmdq_peek(): the top entry without popping it.
+export function cmdq_peek(q, state = game) {
+    return state.command_queue[q][0] ?? null;
+}
+// C cmd.c:cmdq_clear()
+export function cmdq_clear(q, state = game) {
+    state.command_queue[q].length = 0;
+}
+// C cmd.c:cmdq_copy()
+export function cmdq_copy(q, state = game) {
+    return state.command_queue[q].map(entry => ({ ...entry }));
+}
+// C cmd.c:cmdq_shift(): move the last entry to the front.
+export function cmdq_shift(q, state = game) {
+    const queue = state.command_queue[q];
+    const last = queue.pop();
+    if (last)
+        queue.unshift(last);
 }
 // C getpos.c:812-826: getpos()'s one cmdq_pop() answers a horizontal
 // CMDQ_DIR with the spot next to the hero; every other queued entry — a
@@ -2784,17 +2689,12 @@ export function takeQueuedKey() {
 export function takeQueuedAdjacentPosition() {
     if (game._inDoAgain)
         return undefined;
-    const response = takeCommandResponse();
-    if (response === undefined) {
-        if (game._cannedCommands?.length) {
-            clearCannedCommands();
-            return null;
-        }
+    const entry = cmdq_pop();
+    if (!entry)
         return undefined;
-    }
-    if (typeof response === 'object' && response.dz === 0)
-        return { x: game.u.ux + response.dx, y: game.u.uy + response.dy };
-    clearCannedCommands();
+    if (entry.typ === CMDQ_DIR && entry.dirz === 0)
+        return { x: game.u.ux + entry.dirx, y: game.u.uy + entry.diry };
+    cmdq_clear(CQ_CANNED);
     return null;
 }
 // C has one multi counter; involuntary delays have a positive mirror here.
@@ -2988,54 +2888,6 @@ export function commandKeyDescription(command, bindings) {
     const key = bindings.keyForCommand(name);
     return key ? visibleCommandKey(key) : `#${name}`;
 }
-// ── Repeat queue (C cmd.c:CQ_REPEAT, cmdq_add_ec()) ───────────────────────
-// C cmd.c:cmdq_clear() for the repeat queue.
-export function clearRepeatCommand() {
-    game._repeatCommands = [];
-}
-// C cmd.c:cmdq_add_ec() pushes the resolved command into CQ_REPEAT.
-// Commands retain their selected handler; object choices retain inventory
-// letters so repeating acts on the current inventory.
-export function rememberCommand(binding, append) {
-    if (game._inDoAgain)
-        return;
-    if (!append)
-        clearRepeatCommand();
-    game._repeatCommands ??= [];
-    // cmdq_add_ec() looks up the first table entry for the function. Aliases
-    // such as #name therefore repeat as #call, including Lua admission.
-    const command = NATIVE_COMMANDS.find(candidate => candidate.handler === binding.command?.handler)
-        ?? binding.command;
-    game._repeatCommands.push({ kind: 'command', binding: {
-            command, parameter: null,
-            key: commandExecutionKey(command?.name)?.charCodeAt(0) ?? null,
-        } });
-}
-export function rememberCommandKey(key) {
-    if (game._inDoAgain)
-        return;
-    game._repeatCommands ??= [];
-    game._repeatCommands.push({ kind: 'key', key });
-}
-export function rememberObjectChoice(key, count) {
-    if (game._inDoAgain)
-        return;
-    game._repeatCommands ??= [];
-    if (count !== null && count > 0)
-        game._repeatCommands.push({ kind: 'count', count });
-    rememberCommandKey(key);
-}
-// C cmd.c:yn_function() pushes a real-input answer into CQ_REPEAT without
-// checking in_doagain, so an answer typed while a do-again replay is still
-// unwinding (a death during ^A reaching end-of-game disclosure) becomes
-// the queued answer for the following question.
-export function rememberYnAnswerKey(key) {
-    game._repeatCommands ??= [];
-    game._repeatCommands.push({ kind: 'key', key });
-}
-export function takeRepeatCommand() {
-    return game._inDoAgain ? game._repeatCommands?.shift() : undefined;
-}
 const GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const impairedDirections = [
     [-1, 0], [0, -1], [1, 0], [0, 1],
@@ -3046,38 +2898,21 @@ const impairedDirections = [
 // without drawing anything, and a live answer is recorded back into
 // CQ_REPEAT for the next do-again.
 export async function ynSingleKey(message, cursorOffset = 0) {
-    if (game._inDoAgain) {
-        const queued = takeRepeatCommand();
-        if (queued) {
-            // A non-key entry clears CQ_CANNED and answers Escape.
-            if (queued.kind !== 'key')
-                clearCannedCommands();
-            return queued.kind === 'key' ? queued.key : 27;
-        }
+    // C cmd.c:yn_function(): one cmdq_pop() (cmd.c:5496) — CQ_REPEAT
+    // during do-again, CQ_CANNED otherwise — sets addcmdq FALSE when it
+    // holds anything but the user-input placeholder, so a canned answer
+    // never lands in CQ_REPEAT. A key answers, the placeholder asks live,
+    // and every other entry clears CQ_CANNED and answers Escape.
+    const cmdq = cmdq_pop();
+    if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
+        if (cmdq.typ !== CMDQ_KEY)
+            cmdq_clear(CQ_CANNED);
+        return cmdq.typ === CMDQ_KEY ? cmdq.key : 27;
     }
-    else {
-        // C cmdq_pop() takes CQ_CANNED here and sets addcmdq FALSE, so a
-        // canned answer never lands in CQ_REPEAT. That one entry decides:
-        // a key answers, a user-input placeholder asks live, and any other
-        // entry — or a canned command reached through an empty response
-        // queue — answers Escape after cmdq_clear(CQ_CANNED).
-        const response = takeCommandResponse();
-        if (typeof response === 'number')
-            return response;
-        if (response === undefined && game._cannedCommands?.length) {
-            clearCannedCommands();
-            return 27;
-        }
-        if (response !== undefined && response !== 'user-input') {
-            clearCannedCommands();
-            return 27;
-        }
-    }
-    // The single cmdq_pop() already happened above (CQ_REPEAT during a
-    // do-again, CQ_CANNED otherwise); CMDQ_USER_INPUT reads live from the
-    // terminal, so the live question never takes another canned entry.
+    // CMDQ_USER_INPUT reads live from the terminal, so the live question
+    // never takes another queue entry.
     const key = await promptKey(message, cursorOffset, { canned: false });
-    rememberYnAnswerKey(key);
+    cmdq_add_key(CQ_REPEAT, key);
     return key;
 }
 // C cmd.c:getdir() removes its query immediately after receiving a key,
@@ -3087,11 +2922,21 @@ export async function ynSingleKey(message, cursorOffset = 0) {
 // from readchar() (repeating) or yn_function() (ordinary play), never from
 // the command queue again.
 export async function readDirectionKey(message = 'In what direction? ', retry = false) {
-    // C cmdq_pop() selects CQ_REPEAT during do-again, otherwise CQ_CANNED.
+    // C cmd.c:getdir() pops one entry (cmd.c:3962); cmdq_pop() selects
+    // CQ_REPEAT during do-again, otherwise CQ_CANNED. Only CMDQ_DIR and
+    // CMDQ_KEY answer it; every other popped entry clears CQ_CANNED and
+    // reports the impossible (cmd.c:3974-3977).
+    const queued = retry ? null : cmdq_pop();
+    if (queued) {
+        if (queued.typ === CMDQ_DIR)
+            return queuedDirectionKey(queued);
+        if (queued.typ === CMDQ_KEY)
+            return queued.key;
+        cmdq_clear(CQ_CANNED);
+        await impossible('getdir: command queue had no dir?');
+        return 0;
+    }
     if (game._inDoAgain) {
-        const queued = retry ? undefined : takeRepeatCommand();
-        if (queued)
-            return queued.kind === 'key' ? queued.key : 27;
         // C getdir() bypasses yn_function() while repeating: readchar()
         // takes the next physical key without painting the question
         // (cmd.c:3985-3986), and the message line is still cleared
@@ -3099,22 +2944,6 @@ export async function readDirectionKey(message = 'In what direction? ', retry = 
         const key = (await readchar('direction')) & 255;
         clearMessageWindow();
         return key;
-    }
-    const queued = retry ? undefined : takeCommandResponse();
-    if (typeof queued === 'number')
-        return queued;
-    if (typeof queued === 'object')
-        return queuedDirectionKey(queued);
-    // C getdir() pops one entry from CQ_CANNED (cmd.c:3962) and only
-    // CMDQ_KEY and CMDQ_DIR answer it. Every other popped entry — a
-    // user-input placeholder or a queued extended command reached through
-    // an empty response queue — makes getdir clear CQ_CANNED and report
-    // the impossible (cmd.c:3974-3977); getdir has no live-input case
-    // for a popped entry, unlike yn_function().
-    if (queued !== undefined || (!retry && game._cannedCommands?.length)) {
-        clearCannedCommands();
-        await impossible('getdir: command queue had no dir?');
-        return 0;
     }
     // tty_yn_function() skips an unread topline stopped by Escape, then
     // clears WIN_STOP before painting its question.
@@ -3125,8 +2954,10 @@ export async function readDirectionKey(message = 'In what direction? ', retry = 
     game._suppressMessagesUntilInput = false;
     await paintKeyPrompt(message);
     const key = (await readchar('direction')) & 255;
+    // C cmd.c:4017-4018 records the live answer for do-again, except a
+    // redraw key, which getdir() retries instead.
     if (game.commandBindings.lookup(key)?.command?.handler !== 'doredraw')
-        rememberCommandKey(key);
+        cmdq_add_key(CQ_REPEAT, key);
     // getdir() asks through yn_function(), whose clean_up rewrites
     // gt.toplines with the prompt and its recorded answer.
     game._toplines = `${message}${keyText(key)}`;
@@ -3135,9 +2966,9 @@ export async function readDirectionKey(message = 'In what direction? ', retry = 
 }
 // C getdir() converts CMDQ_DIR through xytodir() and Cmd.dirchars only
 // when it needs the direction; other prompts must keep its entry type.
-function queuedDirectionKey({ dx, dy, dz }) {
-    const direction = dz ? zdir.findIndex(z => z === Math.sign(dz))
-        : xdir.findIndex((x, index) => index < N_DIRS && x === dx && ydir[index] === dy);
+function queuedDirectionKey({ dirx, diry, dirz }) {
+    const direction = dirz ? zdir.findIndex(z => z === Math.sign(dirz))
+        : xdir.findIndex((x, index) => index < N_DIRS && x === dirx && ydir[index] === diry);
     // A distant vector yields DIR_ERR. The pinned recorder reads NUL at
     // dirchars[-1] and cancels silently; avoid that out-of-bounds read.
     return direction < 0 ? 0 : game.commandBindings.directionKeys.charCodeAt(direction);
@@ -3304,42 +3135,28 @@ export async function getAdjacentLocation(prompt, errorMessage, x, y) {
 // Only callers using C's shared response arrays opt into menus: equal text
 // in a local buffer or string literal does not pass yn_menuable_resp().
 export async function yn_function(query, responses, defaultAnswer = '', addCommandQueue = true, { visibleChoices = responses?.split('\x1b')[0] ?? '', menuable = false } = {}) {
-    const queued = addCommandQueue ? takeRepeatCommand() : undefined;
+    // C cmd.c:yn_function(): one cmdq_pop() (cmd.c:5496) answers from the
+    // queue — CQ_REPEAT during do-again, CQ_CANNED otherwise. A key
+    // answers, the user-input placeholder asks live, and every other
+    // entry keeps the ESC initializer while cmdq_clear(CQ_CANNED) drops
+    // the remaining canned entries, so the question is never shown.
+    const cmdq = addCommandQueue ? cmdq_pop() : null;
     let result;
-    if (queued) {
-        // A non-key CQ_REPEAT entry keeps the ESC initializer, and
-        // cmdq_clear(CQ_CANNED) drops every canned command behind it.
-        if (queued.kind !== 'key')
-            clearCannedCommands();
-        const answer = queued.kind === 'key' ? String.fromCharCode(queued.key) : '\x1b';
+    if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
+        if (cmdq.typ !== CMDQ_KEY)
+            cmdq_clear(CQ_CANNED);
+        const answer = cmdq.typ === CMDQ_KEY ? String.fromCharCode(cmdq.key) : '\x1b';
         result = { answer, count: game._ynNumber ?? 0n };
     }
     else {
-        // C cmdq_pop() takes CQ_CANNED here, but never while a do-again
-        // replay owns the input. That one entry decides the outcome: a
-        // key answers, a user-input placeholder asks live, and any other
-        // entry — or a canned command reached through an empty response
-        // queue — keeps the ESC initializer while cmdq_clear(CQ_CANNED)
-        // drops the remaining canned entries, so the question is never
-        // shown.
-        const response = addCommandQueue && !game._inDoAgain
-            ? takeCommandResponse() : undefined;
-        const cannedCommand = response === undefined && addCommandQueue && !game._inDoAgain
-            ? game._cannedCommands?.shift() ?? null : null;
-        if (typeof response === 'number') {
-            result = { answer: String.fromCharCode(response), count: game._ynNumber ?? 0n };
-        }
-        else if (cannedCommand || (response !== undefined && response !== 'user-input')) {
-            clearCannedCommands();
-            result = { answer: '\x1b', count: game._ynNumber ?? 0n };
-        }
-        else {
-            result = menuable && game.flags.query_menu && game.nhDisplay && responses !== null
-                ? await queryResponseMenu(query, responses, defaultAnswer)
-                : await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
-            if (addCommandQueue)
-                rememberYnAnswerKey(result.answer ? result.answer.charCodeAt(0) : 0);
-        }
+        result = menuable && game.flags.query_menu && game.nhDisplay && responses !== null
+            ? await queryResponseMenu(query, responses, defaultAnswer)
+            : await tty_yn_function(query, responses, defaultAnswer, visibleChoices);
+        // C cmd.c:5542-5543 records the live answer without checking
+        // in_doagain, so an answer typed while a do-again replay is still
+        // unwinding becomes the queued answer for the following question.
+        if (addCommandQueue)
+            cmdq_add_key(CQ_REPEAT, result.answer ? result.answer.charCodeAt(0) : 0);
     }
     if (!responses || !result.answer || result.answer === '\0' || responses.includes(result.answer))
         return result;
@@ -3459,8 +3276,11 @@ async function readcharCore(inputState) {
         game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
         const command = click ? game.commandBindings.mouseCommand(click.button) : null;
         if (command?.name) {
-            game._cannedCommands ??= [];
-            game._cannedCommands.push({ kind: 'command', name: command.name });
+            // C cmd.c:click_to_cmd() queues the mouse button's bound
+            // command (cmd.c:4911-4912); the port reaches this from
+            // readchar() itself because its input layer reports the
+            // click directly instead of through parse().
+            cmdq_add_ec(CQ_CANNED, command.handler);
         }
         return { key: 0, click };
     }

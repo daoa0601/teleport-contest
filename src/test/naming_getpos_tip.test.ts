@@ -4,7 +4,8 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { queueCommandKeys, resetInputState } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
 import { floorObject } from './support/game-objects.js';
 import { startLuaCore } from './support/lua-game.js';
@@ -22,7 +23,7 @@ void test('first map naming keeps the verbose instruction pager after the tip', 
             if (!soldier) await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
             const input = resetInputState();
             input.feed('name\r');
-            queueCommandKeys(soldier ? '#m' : '#f');
+            queueCannedKeys(soldier ? '#m' : '#f');
             planInput(input, t, [
                 { prompt: /Tip: Farlooking or selecting a map location/, keys: ' ' },
                 { prompt: /For instructions[\s\S]*--More--/, keys: ' ' },

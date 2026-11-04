@@ -14,6 +14,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
+import { queueCannedDir, queueCannedKeys, queueCannedUserInput } from './support/canned-input.js';
 
 void test('an invalid queued tipping answer reports the problem and leaves the container alone', async () => {
     const engine = await startMenuGame();
@@ -21,7 +22,7 @@ void test('an invalid queued tipping answer reports the problem and leaves the c
         await floorObject(CHEST, 10, 10, { initialize: false });
         const moves = game.moves;
         await type(engine, '#tip');
-        engine.inputGate.queueCommandKeys('x');
+        queueCannedKeys('x');
 
         await type(engine, '\n');
 
@@ -37,7 +38,7 @@ for (const defaultAnswer of ['y', '']) {
     void test(`an invalid queued answer uses ${defaultAnswer ? 'the default' : 'Escape when there is no default'}`, async () => {
         const engine = await startMenuGame();
         try {
-            engine.inputGate.queueCommandKeys('x');
+            queueCannedKeys('x');
 
             const result = await yn_function('Continue?', 'yn', defaultAnswer);
 
@@ -53,7 +54,7 @@ for (const responses of [null, '']) {
     void test(`a queued answer is unrestricted when responses are ${responses === null ? 'null' : 'empty'}`, async () => {
         const engine = await startMenuGame();
         try {
-            engine.inputGate.queueCommandKeys('x');
+            queueCannedKeys('x');
 
             const result = await yn_function('Choose a character:', responses);
 
@@ -66,7 +67,7 @@ for (const responses of [null, '']) {
 void test('a queued NUL is returned without an invalid-answer report', async () => {
     const engine = await startMenuGame();
     try {
-        engine.inputGate.queueCommandKeys('\0');
+        queueCannedKeys('\0');
 
         const result = await yn_function('Continue?', 'yn', 'n');
 
@@ -83,7 +84,7 @@ void test('a canned tipping answer is not recorded for do-again', async () => {
     try {
         await floorObject(CHEST, 10, 10, { initialize: false });
         await type(engine, '#tip');
-        engine.inputGate.queueCommandKeys('y');
+        queueCannedKeys('y');
         await type(engine, '\n ');
 
         // The replay asks live: cmdq_pop() reads only CQ_REPEAT while the
@@ -100,7 +101,7 @@ void test('a canned Escape at the annotate question leaves the level unnamed', a
     const engine = await startMenuGame();
     try {
         await type(engine, '#annotate');
-        engine.inputGate.queueCommandKeys('\x1b');
+        queueCannedKeys('\x1b');
         await type(engine, '\r');
 
         // A following annotate offers the fresh question rather than a
@@ -120,7 +121,7 @@ void test('a canned finger answer outside rl is reported and refuses the put-on'
     try {
         const ring = await addInventoryObject(RIN_PROTECTION, { invlet: 'Z' });
         await type(engine, 'P');
-        engine.inputGate.queueCommandKeys('R');
+        queueCannedKeys('R');
         await type(engine, 'Z');
 
         assert.match(screen(), /Please report these messages to devteam@nethack\.org\./);
@@ -141,7 +142,8 @@ void test('a canned finger answer outside rl is reported and refuses the put-on'
 void test('a user-input canned entry leaves a single-key question live', async () => {
     await freshObjectRoom();
     const input = resetInputState();
-    input.queueCommandResponses(['user-input', 'k'.charCodeAt(0)]);
+    queueCannedUserInput();
+    queueCannedKeys('k');
 
     const question = ynSingleKey('What do you look for? ');
     const outcome = await Promise.race([
@@ -238,7 +240,7 @@ void test('a canned command answers a single-key question with Escape', async ()
 // queued fire never runs (cmd.c:5508).
 void test('a direction answer clears the canned command behind it', async () => {
     const input = await fireAssistRoom();
-    input.queueCommandResponses([{ dx: 0, dy: 1, dz: 0 }]);
+    queueCannedDir(0, 1);
     const key = await ynSingleKey('What do you look for? ');
     assert.equal(key, 27, 'the direction entry answers Escape');
 

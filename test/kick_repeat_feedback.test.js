@@ -4,7 +4,8 @@ import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { rhack } from '../js/cmd.js';
-import { pushKeys, queueCommandKeys, resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { CLUB } from '../js/object_data.js';
 import { kickDirection } from './support/commands.js';
 import { floorObject } from './support/game-objects.js';
@@ -19,7 +20,7 @@ void test('a queued object kick omits its repeated announcement without asking f
     game.u.ux = club.ox - 1;
     resetInputState();
     clearMessageWindow();
-    queueCommandKeys('\x04l');
+    queueCannedKeys('\x04l');
     pushKeys(' '.repeat(10));
     await rhack(4);
     assert.match(game._pending_message, /Thump!/);

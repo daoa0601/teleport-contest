@@ -1,11 +1,11 @@
 // C refs: getpos.c:getpos(), drawing.c:defsyms[], symbols.c:gs.showsyms[],
 // display.c:tmp_at() for the valid-location marking overlay.
-import { COLNO, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
+import { CMDQ_KEY, COLNO, CQ_CANNED, CQ_REPEAT, DOOR, GFILTER_NONE, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, HI_ZAP, Invocation_lev, LOOK_ONCE, LOOK_QUICK, LOOK_TRADITIONAL, LOOK_VERBOSE, NHW_MENU, PICK_ONE, ROWNO, VIBRATING_SQUARE, WEB, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, } from './const.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './tty_topline.js';
 import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, terrain_glyph } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
-import { clearCannedCommands, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
+import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { BOULDER, ROCK } from './object_data.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
@@ -15,7 +15,6 @@ import { cansee } from './vision.js';
 import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
-import { rememberCommandKey, takeRepeatCommand } from './cmd.js';
 import { visibleCommandKey } from './cmd.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { showDisclosureOverlay } from './windows.js';
@@ -664,20 +663,23 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
             // C getpos.c:871-878 pops one entry per cursor step; a non-key
-            // CQ_REPEAT entry clears CQ_CANNED and exits with -1. The
-            // loop never pops CQ_CANNED here in the port: its entry pop
+            // entry clears CQ_CANNED and exits with -1. The loop never
+            // pops CQ_CANNED when no do-again replay runs: its entry pop
             // (takeQueuedAdjacentPosition) leaves that queue empty, and
             // readcharPoskey() may queue a canned mouse command whose C
             // counterpart is queued only by parse(), never mid-cursor.
-            const queued = takeRepeatCommand();
-            if (queued && queued.kind !== 'key') {
-                clearCannedCommands();
+            const queued = game._inDoAgain ? cmdq_pop() : null;
+            if (queued && queued.typ !== CMDQ_KEY) {
+                cmdq_clear(CQ_CANNED);
                 return null;
             }
-            let read = queued ? { key: queued.key, click: null } : await readcharPoskey();
+            let read = queued && queued.typ === CMDQ_KEY
+                ? { key: queued.key, click: null } : await readcharPoskey();
             let key = read.key & 255;
-            if (!queued && game.iflags.remember_getpos)
-                rememberCommandKey(key);
+            // C getpos.c:885-886 records the live key for do-again when
+            // remember_getpos is set.
+            if (!queued && game.iflags.remember_getpos && !game._inDoAgain)
+                cmdq_add_key(CQ_REPEAT, key);
             if (autoDescription())
                 clearMessageOnExit = false;
             if (key === 27) {

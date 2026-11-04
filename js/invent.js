@@ -12,10 +12,10 @@ import { pline, plineWithContinuation, setTopline } from './pline.js';
 import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
 import { windowOrigin } from './tty_menu.js';
 import { nhgetch } from './input.js';
-import { readchar, commandResultCancelled, commandResultFailed, clearCannedCommands, takeQueuedKey, rememberObjectChoice, takeRepeatCommand, readInventoryCount, ynSingleKey, keyText, yn_function } from './cmd.js';
+import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, readInventoryCount, ynSingleKey, keyText, yn_function } from './cmd.js';
 import { ingSuffix, possessiveName } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
-import { ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR } from './const.js';
+import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR } from './const.js';
 import { ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, ARROW, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_UNIQUE, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
 import { MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, OBJECT_SUBTYPE, OBJECT_USES_KNOWN, OBJECT_MERGE, SLIME_MOLD, } from './object_data.js';
 import { MONSTER_GROWTH_TARGET, MONSTER_NAME, monsterIsHumanoid } from './monster_data.js';
@@ -823,72 +823,53 @@ function selectedInventoryObject(selection) {
     }
     return object;
 }
-// C getobj() pops CQ_REPEAT (during #repeat) or CQ_CANNED entries before
-// reassign(): a queued letter must not become a different possession merely
-// because fixinv is disabled.  Every entry which selects nothing — a
-// non-key entry, an unmatched letter, refused hands — clears CQ_CANNED and
-// returns NULL without any prompt (invent.c:1790-1830); only
-// CMDQ_USER_INPUT falls through to the interactive question.
+// C invent.c:getobj(): the need_more_cq loop pops queue entries before
+// reassign() (invent.c:1778-1830) — CQ_REPEAT during a do-again replay,
+// CQ_CANNED otherwise. A queued letter must not become a different
+// possession merely because fixinv is disabled. Every entry which selects
+// nothing — a non-key entry, an unmatched letter, refused hands — clears
+// CQ_CANNED and returns NULL without any prompt; a CMDQ_INT supplies the
+// count and pops again. CMDQ_USER_INPUT or an exhausted queue falls through
+// to the interactive loop, which starts with a fresh count.
 function takeQueuedInventorySelection(classify, allowCount, hands) {
-    let repeated = takeRepeatCommand();
-    let key;
     let count = null;
-    if (repeated) {
-        if (repeated.kind === 'count') {
-            // C invent.c:1807-1816: a CMDQ_INT supplies the count unless
-            // one was already given or the caller refuses counts; either
-            // refusal clears CQ_CANNED and returns NULL.
-            if (!allowCount) {
-                clearCannedCommands();
-                return CANCELLED;
-            }
-            count = repeated.count;
-            repeated = takeRepeatCommand();
-        }
-        if (repeated) {
-            if (repeated.kind !== 'key') {
-                // Any other CQ_REPEAT entry selects nothing, so getobj()
-                // clears CQ_CANNED (not CQ_REPEAT) and returns NULL.
-                clearCannedCommands();
-                return CANCELLED;
-            }
-            key = repeated.key;
-        }
-        else {
-            // need_more_cq found the queue empty after the count:
-            // NULL without a prompt (invent.c:1783-1785).
-            return CANCELLED;
-        }
-    }
-    else {
-        const queued = takeQueuedKey();
-        if (queued === 'cancel')
-            return CANCELLED;
-        if (queued === 'user-input')
+    let cntgiven = false;
+    for (;;) {
+        const entry = cmdq_pop();
+        if (!entry)
             return undefined;
-        if (queued !== 'none')
-            key = queued.key;
+        if (entry.typ === CMDQ_USER_INPUT)
+            return undefined;
+        if (entry.typ === CMDQ_INT) {
+            if (!cntgiven && allowCount) {
+                count = entry.intval;
+                cntgiven = true;
+                continue;
+            }
+            cmdq_clear(CQ_CANNED);
+            return CANCELLED;
+        }
+        if (entry.typ === CMDQ_KEY) {
+            if (entry.key === HANDS_SYM) {
+                if (admitsChoice(hands))
+                    return HANDS;
+            }
+            else {
+                const letter = String.fromCharCode(entry.key);
+                const object = game.inventory.find(candidate => candidate.invlet === letter
+                    && admitsChoice(classify(candidate)));
+                if (object)
+                    return {
+                        cancelled: false, object, none: false,
+                        count: count !== null && count > 0 && count < object.quan ? count : null,
+                    };
+            }
+        }
+        // C invent.c:1817-1818: the popped entry selected nothing, so
+        // discard any other queued commands too.
+        cmdq_clear(CQ_CANNED);
+        return CANCELLED;
     }
-    if (key === undefined)
-        return undefined;
-    if (key === HANDS_SYM) {
-        if (admitsChoice(hands))
-            return HANDS;
-    }
-    else {
-        const letter = String.fromCharCode(key);
-        const object = game.inventory.find(candidate => candidate.invlet === letter
-            && admitsChoice(classify(candidate)));
-        if (object)
-            return {
-                cancelled: false, object, none: false,
-                count: count !== null && count > 0 && count < object.quan ? count : null,
-            };
-    }
-    // C invent.c:1817-1818: the popped entry selected nothing, so discard
-    // any other queued commands too.
-    clearCannedCommands();
-    return CANCELLED;
 }
 // The interactive loop of C getobj(), up to its final silly_thing() check.
 async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNone, handsSuggested, handsDownplayed, handsText, suggested, downplayed }) {
@@ -1018,8 +999,13 @@ async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNon
             }
         }
         game.context.botl = true;
-        if (object)
-            rememberObjectChoice(key, count);
+        // C invent.c:2051-2053 records the live choice and its count for
+        // do-again; a queued letter never re-enters CQ_REPEAT.
+        if (object && !game._inDoAgain) {
+            if (count !== null && count > 0)
+                cmdq_add_int(CQ_REPEAT, count);
+            cmdq_add_key(CQ_REPEAT, key);
+        }
         if (!object) {
             await pline("You don't have that object.");
             if (game._inDoAgain)

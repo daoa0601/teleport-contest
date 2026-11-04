@@ -18,7 +18,6 @@ export class InputGate {
     beforeRead;
     display;
     queue;
-    commandKeys;
     pendingRead;
     mapClick = null;
     blockedWaiters;
@@ -26,7 +25,6 @@ export class InputGate {
         this.beforeRead = beforeRead;
         this.display = display;
         this.queue = [];
-        this.commandKeys = [];
         this.pendingRead = null;
         this.blockedWaiters = [];
     }
@@ -62,27 +60,6 @@ export class InputGate {
         this.pendingRead = null;
         resolve(input);
     }
-    queueCommandKeys(keys) {
-        this.commandKeys.push(...[...keys].map(keyCode));
-    }
-    queueCommandResponses(responses) {
-        this.commandKeys.push(...responses);
-    }
-    clearCommandKeys() {
-        this.commandKeys.length = 0;
-    }
-    takeCommandResponse() {
-        return this.commandKeys.shift();
-    }
-    // C cmd.c:cmdq_peek(CQ_CANNED) — inspect the next canned entry without
-    // consuming it. dip_into() refuses to run when nothing is queued.
-    peekCommandResponse() {
-        return this.commandKeys[0];
-    }
-    // The queued-key pops for prompt owners moved to cmd.ts takeQueuedKey()
-    // and takeQueuedAdjacentPosition(): their reject branches clear the
-    // whole CQ_CANNED model, including the canned commands this gate does
-    // not own.
     async readKey(inputState = 'other') {
         // tty input belongs to the player. Command owners consume canned
         // choices explicitly so message pagers cannot steal item letters.
@@ -122,7 +99,6 @@ export class InputGate {
     }
     clear() {
         this.queue.length = 0;
-        this.commandKeys.length = 0;
         this.mapClick = null;
     }
     get isBlocked() {
@@ -150,21 +126,6 @@ export function pushKey(key) {
 }
 export function pushKeys(keys) {
     activeInputGate.feed(keys);
-}
-export function queueCommandKeys(keys) {
-    activeInputGate.queueCommandKeys(keys);
-}
-export function queueCommandResponses(responses) {
-    activeInputGate.queueCommandResponses(responses);
-}
-export function takeCommandResponse() {
-    return activeInputGate.takeCommandResponse();
-}
-export function peekCommandResponse() {
-    return activeInputGate.peekCommandResponse();
-}
-export function clearCommandKeys() {
-    activeInputGate.clearCommandKeys();
 }
 export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a
