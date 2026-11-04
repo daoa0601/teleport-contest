@@ -49,7 +49,7 @@ import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_
 import { isBimanualObject } from './object_properties.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { dragonFormForArmor, heroSpecies } from './polyself.js';
-import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport.js';
 import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
 import {
@@ -172,7 +172,7 @@ export async function precheck(monster: Monster, object: GameObject,
         const species = appearance === 'milky' ? 287 : appearance === 'smoky' ? 315 : null;
         if (species !== null && !((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
             && !random(13 + 2 * (state.mvitals?.[species]?.born ?? 0))) {
-            const point = findNearbyMonsterPosition(species, monster.mx, monster.my, { state, random });
+            const point = enexto(species, monster.mx, monster.my, { state, random });
             if (!point) return null;
             const visible = cansee(monster.mx, monster.my);
             await mquaffmsg(monster, object, options);
@@ -670,7 +670,7 @@ export async function use_defensive(monster: Monster, choice: MonsterDefensiveCh
         let zapped = false;
         if (choice.kind === 'create-scroll') await mreadmsg(monster, choice.object, options);
         while (count-- > 0) {
-            const point = findNearbyMonsterPosition(placementSpecies, monster.mx, monster.my, { state, random });
+            const point = enexto(placementSpecies, monster.mx, monster.my, { state, random });
             if (!point) break;
             if (choice.kind === 'create-wand') {
                 await mzapwand(monster, choice.object, options);

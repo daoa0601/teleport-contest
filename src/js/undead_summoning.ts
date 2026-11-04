@@ -3,7 +3,7 @@ import { game, requireGameLevel, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { level_difficulty } from './dungeon.js';
-import { findMonsterNearPosition } from './mklev.js';
+import { enexto } from './teleport.js';
 import { morgueMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
@@ -19,8 +19,7 @@ export async function summonUndead(center: Position, {
     const count = Math.trunc((level_difficulty() + 1) / 10) + rnd(5);
     for (let left = count; left > 0; left--) {
         const species = morgueMonsterType();
-        if (species == null) continue;
-        const position = findMonsterNearPosition(species, center.x, center.y, { state });
+        const position = enexto(species, center.x, center.y, { state });
         if (!position) continue;
         if (reviveCorpses) {
             const corpse = level.objects?.[position.x]?.[position.y]

@@ -58,12 +58,12 @@ import { displayMessageWindow } from './tty_topline.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { canFallThrough, findMonsterNearPosition, stairwayAt } from './mklev.js';
+import { canFallThrough, stairwayAt } from './mklev.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
-import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { enexto, goodPosition, monsterTeleportRestricted } from './teleport.js';
 import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
 import { artifactById } from './artifacts.js';
@@ -872,7 +872,7 @@ async function kickTree(x: number, y: number, location: MapLocation, responses: 
         let made = 0;
         let position = { x, y };
         for (let count = rnl(4) + 2; count > 0; count--) {
-            const next = findMonsterNearPosition(bee, position.x, position.y);
+            const next = enexto(bee, position.x, position.y);
             if (!next) continue;
             position = next;
             if (await makemonAt(bee, position.x, position.y, MM_ANGRY | MM_NOMSG)) made++;

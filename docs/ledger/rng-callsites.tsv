@@ -914,7 +914,7 @@ src/js/makemon.ts	makemon	rnd	"[""3""]"	constant
 src/js/makemon.ts	makemon	rnd	"[""3""]"	constant
 src/js/makemon.ts	mkclassAligned	rn2	"[""2""]"	constant
 src/js/makemon.ts	mkclassAligned	rn2	"[""9""]"	constant
-src/js/makemon.ts	mkclassAligned	rnd	"[""totalWeight""]"	guarded
+src/js/makemon.ts	mkclassAligned	rnd	"[""totalWeight""]"	unproved
 src/js/makemon.ts	peaceMinded	rn2	"[""16 + record""]"	constant
 src/js/makemon.ts	peaceMinded	rn2	"[""2 + Math.abs(monsterAlignment)""]"	constant
 src/js/makemon.ts	randomMonsterPosition	rn1	"[""COLNO - 3"", ""2""]"	constant
@@ -968,7 +968,6 @@ src/js/mkroom.ts	barracksMonsterType	rn2	"[""probabilities.length""]"	constant
 src/js/mkroom.ts	barracksMonsterType	rnd	"[""80 + level_difficulty()""]"	invariant
 src/js/sp_lev.ts	build_room	rn2	"[""100""]"	constant
 src/js/sp_lev.ts	check_room	rn2	"[""3""]"	constant
-src/js/mklev.ts	collectShuffledMonsterCoordinates	rn2	"[""remaining""]"	unproved
 src/js/mkroom.ts	courtMonsterType	rn2	"[""3 * level_difficulty()""]"	invariant
 src/js/mkroom.ts	courtMonsterType	rn2	"[""60""]"	constant
 src/js/sp_lev.ts	lspo_drawbridge	rn2	"[""2""]"	constant
@@ -2255,7 +2254,7 @@ src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""++count""]"	guarded
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportHeroToRandomPet	rn2	"[""3""]"	constant
 src/js/teleport.ts	teleportMonsterThroughPortal	random	"[""7""]"	constant
-src/js/teleport_rules.ts	goodPosition	random	"[""13""]"	constant
+src/js/teleport.ts	goodPosition	random	"[""13""]"	constant
 src/js/trap.ts	floatHeroDown	rnd	"[""2""]"	constant
 src/js/throne.ts	attrcurse	rnd	"[""CURSEABLE_INTRINSICS.length""]"	unproved
 src/js/throne.ts	normalThroneEffect	rn1	"[""100"", ""250""]"	constant
@@ -2344,7 +2343,7 @@ src/js/cmd.ts	confusePromptDirection	rn2	"[""count""]"	constant
 src/js/wield.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
 src/js/u_init.ts	adjustStartingItem	rn2	"[""4""]"	constant
 src/js/u_init.ts	adjustStartingItem	rne	"[""3""]"	constant
-src/js/u_init.ts	collectNearbyCoords	random	"[""n""]"	guarded
+src/js/teleport.ts	collect_coords	random	"[""n""]"	guarded
 src/js/u_init.ts	initAttributes	rn2	"[""20""]"	constant
 src/js/u_init.ts	initAttributes	rn2	"[""7""]"	constant
 src/js/u_init.ts	initialRoll	rnd	"[""adv.inrnd""]"	guarded

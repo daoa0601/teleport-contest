@@ -24,7 +24,7 @@ import { canOverwriteTerrain } from './display.js';
 import { stopLevelTimer } from './timeout.js';
 import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
 import { load_special } from './sp_lev_lua.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition } from './teleport.js';
 import {mkcorpstat, createToptenObject, mkgold, mkobj_at, rndmonnum, set_corpsenm, mksobj_at, updateIceObjectTimersAt} from './mkobj.js';
 import { makemon } from './makemon.js';
 import { occupied } from './mkroom.js';

@@ -14,7 +14,7 @@ import { setMonsterGivenName } from './do_name.js';
 import { impossible } from './diagnostics.js';
 import { setMonsterMalign } from './makemon.js';
 import { rn2, rnd, d, rne } from './rng.js';
-import { findMonsterNearPosition } from './mklev.js';
+import { enexto_gpflags } from './teleport.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './do_wear.js';
@@ -335,43 +335,6 @@ export function uInitMisc(handednessRoll) {
     g._lastInvNr = 51;
     g.spells = [];
 }
-// C ref: collect_coords().  Each of the first three rings is completely
-// collected and shuffled before enexto_core() tests candidate positions.
-export function collectNearbyCoords(cx, cy, maxradius = 3, random = rn2, calls = null) {
-    const coords = [];
-    const mapRadius = Math.max(cx, COLNO - 1 - cx, cy, ROWNO - 1 - cy);
-    maxradius = maxradius ? Math.min(maxradius, mapRadius) : mapRadius;
-    for (let radius = 1; radius <= maxradius; radius++) {
-        const start = coords.length;
-        const lox = cx - radius, hix = cx + radius;
-        const loy = cy - radius, hiy = cy + radius;
-        for (let y = Math.max(loy, 0); y <= Math.min(hiy, ROWNO - 1); y++) {
-            for (let x = Math.max(lox, 1); x <= Math.min(hix, COLNO - 1); x++) {
-                if (x !== lox && x !== hix && y !== loy && y !== hiy)
-                    continue;
-                coords.push({ x, y });
-            }
-        }
-        let pass = start;
-        let n = coords.length - start;
-        while (n > 1) {
-            const k = random(n);
-            if (calls)
-                calls.push(`rn2(${n})`);
-            if (k) {
-                const current = coords[pass];
-                const chosen = coords[pass + k];
-                if (!current || !chosen || k < 0 || k >= n)
-                    throw new RangeError(`Invalid coordinate shuffle index ${k} for ${n} entries`);
-                coords[pass] = chosen;
-                coords[pass + k] = current;
-            }
-            pass++;
-            n--;
-        }
-    }
-    return coords;
-}
 const DEFAULT_DOG_NAMES = {
     caveman: 'Slasher',
     ranger: 'Sirius',
@@ -406,7 +369,7 @@ export async function makedog() {
     g.context.startingpet_typ = pettype;
     // C makemon() places a monster made on the hero with enexto_core(),
     // first avoiding scary squares and only then accepting them.
-    const spot = findMonsterNearPosition(pettype, g.u.ux, g.u.uy, { gpflags: GP_AVOID_MONPOS });
+    const spot = enexto_gpflags(pettype, g.u.ux, g.u.uy, GP_AVOID_MONPOS);
     if (!spot)
         return null;
     const monsterId = nextIdent();

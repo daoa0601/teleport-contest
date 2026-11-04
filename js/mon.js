@@ -19,8 +19,7 @@ import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js
 import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
-import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
-import { reportMonsterTeleportRestriction, monsterTeleportRestricted, findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
+import { randomMonsterRelocation, relocateMonsterTo, reportMonsterTeleportRestriction, monsterTeleportRestricted, enexto, goodPosition } from './teleport.js';
 import { fireDamageChain, monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, monsterWearsGloves, fillPitWithBoulderAt } from './trap.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMonsterHitPoints } from './makemon.js';
@@ -2183,7 +2182,7 @@ export async function mnearto(monster, x, y, state, { moveOther = false, flags =
     let newx = x;
     let newy = y;
     if (!goodPosition(newx, newy, { kind: 'monster', monster }, { state })) {
-        const near = findNearbyMonsterPosition(monster.mnum, newx, newy, { state });
+        const near = enexto(monster.mnum, newx, newy, { state });
         if (!near) {
             if (othermon)
                 await dealWithMonsterOvercrowding(othermon, state);
@@ -3217,7 +3216,7 @@ async function reviveStonedVampire(monster, baseForm, publish) {
     const location = game.level?.at(monster.mx, monster.my);
     if (monsterIsAmorphous(monster) && location?.typ === DOOR
         && (location.doormask ?? 0) & (D_CLOSED | D_LOCKED)) {
-        const spot = findNearbyMonsterPosition(baseForm, monster.mx, monster.my);
+        const spot = enexto(baseForm, monster.mx, monster.my);
         if (spot)
             await relocateMonsterTo(monster, spot.x, spot.y);
     }
@@ -3361,7 +3360,7 @@ export async function moveMonsterNextToHero(monster, state = game, { flags = RLO
         monster.my = state.u.uy;
         return { oldx, oldy, x: monster.mx, y: monster.my, moved: false };
     }
-    let destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state, random });
+    let destination = enexto(monster.mnum, state.u.ux, state.u.uy, { state, random });
     if (!destination) {
         await dealWithMonsterOvercrowding(monster, state);
         return null;
@@ -3476,7 +3475,7 @@ export async function redrawAfterRelease() {
 // C mon.c:maybe_mnexto() uses rloc_to() after choosing an accessible square.
 export async function maybeMnexto(monster, state) {
     for (let attempt = 0; attempt < 20; attempt++) {
-        const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
+        const destination = enexto(monster.mnum, state.u.ux, state.u.uy, { state });
         if (!destination)
             return null;
         const movesDiagonally = destination.x !== monster.mx
@@ -4302,7 +4301,7 @@ export async function decideMonsterShapeChange(monster, state = game, random = r
             const square = state.level?.at(monster.mx, monster.my);
             if (shouldChange && monsterIsAmorphous(monster)
                 && square?.typ === DOOR && square.doormask & (D_CLOSED | D_LOCKED)) {
-                const position = findNearbyMonsterPosition(targetMnum, monster.mx, monster.my, { state, random });
+                const position = enexto(targetMnum, monster.mx, monster.my, { state, random });
                 if (position)
                     await relocateMonsterTo(monster, position.x, position.y, { state, random });
             }

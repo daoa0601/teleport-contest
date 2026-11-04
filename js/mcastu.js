@@ -33,7 +33,7 @@ import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './d
 import { makemonNear, summonNastyMonsters } from './mklev.js';
 import { heroIsBlind, heroIsBlinded, heroIsDeaf, heroDetectsMonsters, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { makemonAt, mkclassAligned, setMonsterMalign } from './makemon.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { enexto } from './teleport.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
 import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } from './wizard.js';
@@ -891,7 +891,7 @@ export async function summonMonsterInsects(caster, state) {
     const quantity = Math.max(3, level < 2 ? 1 : rnd(Math.trunc(level / 2)));
     const created = [];
     for (let index = 0; index <= quantity; index++) {
-        const point = findNearbyMonsterPosition(caster.mnum, caster.mux ?? state.u.ux, caster.muy ?? state.u.uy, { state });
+        const point = enexto(caster.mnum, caster.mux ?? state.u.ux, caster.muy ?? state.u.uy, { state });
         // Native returns immediately if enexto() fails, including after
         // earlier successful births; it gives no summoning feedback then.
         if (!point)

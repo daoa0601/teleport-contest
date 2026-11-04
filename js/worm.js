@@ -11,7 +11,7 @@ import { monsterAtPosition, removeMonsterFromMapAt } from './steed.js';
 import { mcalcmove } from './mon.js';
 import { monsterName } from './do_name.js';
 import { d, rn2, rnd } from './rng.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition } from './teleport.js';
 const PM_LONG_WORM = MONSTER_NAME.indexOf('long worm');
 // A reserved worm slot owns both the visible tail and its hidden head.
 function requireWormBody(monster) {

@@ -24,8 +24,7 @@ import { EGG } from './object_data.js';
 import { d, rn2, rnd } from './rng.js';
 import { isPoolAt } from './dbridge.js';
 import { ceilingName } from './terrain_name.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
-import { moveHeroByTeleport } from './teleport.js';
+import { moveHeroByTeleport, enexto } from './teleport.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterIsEel, monsterIsHider } from './mondata.js';
@@ -62,7 +61,7 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
             // is eligible for the hero; the monster remembers its old spot.
             monster.mx = 0;
             monster.my = 0;
-            const spot = findNearbyMonsterPosition(species, hero.ux, hero.uy, {
+            const spot = enexto(species, hero.ux, hero.uy, {
                 state, random,
             });
             // a fish won't voluntarily swap positions when it's in water
@@ -83,7 +82,7 @@ export async function revealConcealedHeroToAttacker(monster, { state = game, pub
                 // the tail has not grown, so if it now occupies the landing
                 // square then one of the worm's original spots is free
                 if (state.level && monsterAtPosition(state.level, spot.x, spot.y)) {
-                    landing = findNearbyMonsterPosition(species, hero.ux, hero.uy, {
+                    landing = enexto(species, hero.ux, hero.uy, {
                         state, random,
                     }) ?? spot;
                 }

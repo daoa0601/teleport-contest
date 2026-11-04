@@ -15,7 +15,6 @@ import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { monsterTypeName } from './monster_data.js';
-import { findMonsterNearPosition } from './mklev.js';
 import { heroSpecies } from './polyself.js';
 import {unlinkMonsterObject, placeObject, remove_object, stack_object} from './mkobj.js';
 import { unwieldMonsterWeapon, monsterWieldedWeapon, heroStrengthDamageBonus } from './weapon.js';
@@ -28,8 +27,8 @@ import { rnl, rn2, rnd } from './rng.js';
 import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { heroIsBlind } from './senses.js';
+import { moveHeroByTeleport, enexto } from './teleport.js';
 import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';
-import { moveHeroByTeleport } from './teleport.js';
 import { vision_recalc, vision_reset } from './vision.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { propertyIsActive } from './properties.js';
@@ -266,7 +265,7 @@ function pitAnchor(targetX: number, targetY: number, monster: Monster | null, st
 
 function pitEscapeDestination(targetX: number, targetY: number, monster: Monster | null, state: GameState) {
     return monster
-        ? findMonsterNearPosition(heroSpecies(state), targetX, targetY, { state })
+        ? enexto(heroSpecies(state), targetX, targetY, { state })
         : { x: targetX, y: targetY };
 }
 

@@ -60,7 +60,7 @@ import { restoreLevelRegions } from './regions.js';
 import { beginObjectBurn } from './timeout.js';
 import { createOrcRaid } from './orc_raid.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition, enexto, enexto_gpflags } from './teleport.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { addToContainer, check_room, create_room, dig_corridor, fill_special_room, fillVault, finishLevelTrapConstruction, medusaPetrifiable, putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { beginLuaThemerooms, callLuaThemerooms, load_special, themerooms_generate } from './sp_lev_lua.js';
@@ -266,73 +266,6 @@ export async function u_on_downstairs() {
     }
     await u_on_sstairs(1); /* destination dnstairs implies moving up */
 }
-// C teleport.c:collect_coords().  Each square ring is completely collected
-// and shuffled before the next ring begins.  A zero maximum means the whole
-// usable map, excluding the center and unused column zero.
-function collectShuffledMonsterCoordinates(centerX, centerY, maxRadius = 0) {
-    const candidates = [];
-    const rowRange = centerY < ROWNO / 2
-        ? ROWNO - 1 - centerY : centerY;
-    const columnRange = centerX < COLNO / 2
-        ? COLNO - 1 - centerX : centerX;
-    const finalRadius = maxRadius
-        ? Math.min(maxRadius, Math.max(rowRange, columnRange))
-        : Math.max(rowRange, columnRange);
-    for (let radius = 1; radius <= finalRadius; radius++) {
-        const ring = [];
-        const lowx = centerX - radius, highx = centerX + radius;
-        const lowy = centerY - radius, highy = centerY + radius;
-        for (let y = Math.max(lowy, 0); y <= Math.min(highy, ROWNO - 1); y++) {
-            for (let x = Math.max(lowx, 1); x <= Math.min(highx, COLNO - 1); x++) {
-                if (x !== lowx && x !== highx && y !== lowy && y !== highy)
-                    continue;
-                ring.push({ x, y });
-            }
-        }
-        for (let i = 0, remaining = ring.length; remaining > 1; i++, remaining--) {
-            const pick = rn2(remaining);
-            if (pick) {
-                const current = ring[i], chosen = ring[i + pick];
-                if (!current || !chosen)
-                    throw new RangeError('monster placement shuffle exceeded its coordinate ring');
-                ring[i] = chosen;
-                ring[i + pick] = current;
-            }
-        }
-        candidates.push(...ring);
-    }
-    return candidates;
-}
-export function findMonsterNearPositionCore(mnum, centerX, centerY, gpflags, state) {
-    const species = mnum ?? state.u.umonster;
-    if (species === undefined)
-        throw new Error('monster placement requires a species or initialized hero body');
-    const subject = { kind: 'species', mnum: species };
-    const nearby = collectShuffledMonsterCoordinates(centerX, centerY, 3);
-    for (const pos of nearby) {
-        if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
-            return pos;
-    }
-    // NEW_ENEXTO deliberately reshuffles the near rings while collecting the
-    // complete map, then skips their count because they were already tested.
-    const all = collectShuffledMonsterCoordinates(centerX, centerY, 0);
-    for (const pos of all.slice(nearby.length)) {
-        if (goodPosition(pos.x, pos.y, subject, { state, gpflags }))
-            return pos;
-    }
-    if ((gpflags & GP_ALLOW_XY)
-        && goodPosition(centerX, centerY, subject, { state, gpflags }))
-        return { x: centerX, y: centerY };
-    return null;
-}
-// C teleport.c:enexto().  The first complete search avoids scary squares;
-// only total failure triggers an independently shuffled unrestricted search.
-// Exposing selection separately lets callbacks distinguish enexto failure
-// from a later makemon()/make_familiar() construction failure.
-export function findMonsterNearPosition(mnum, centerX, centerY, { ignoreWater = false, gpflags = 0, state = game } = {}) {
-    const flags = gpflags | (ignoreWater ? MM_IGNOREWATER : 0);
-    return findMonsterNearPositionCore(mnum, centerX, centerY, flags | GP_CHECKSCARY, state) || findMonsterNearPositionCore(mnum, centerX, centerY, flags, state);
-}
 // C refs: mhitu.c:cloneu() and dog.c:initedog().
 // The actor is a fresh makemon birth rather than a copy of youmonst: it owns
 // ordinary placement, HP, gender, attitude, and identity RNG before cloneu()
@@ -405,9 +338,7 @@ export async function makemonNear(mnum, centerX, centerY, flags = 0, requestedBy
     // Other callers, such as egg hatching, call enexto() before makemon().
     if (requestedByHero && game.iflags.debug_mongen)
         return null;
-    const pos = findMonsterNearPosition(mnum, centerX, centerY, {
-        ignoreWater: !!(flags & MM_IGNOREWATER),
-    });
+    const pos = enexto_gpflags(mnum, centerX, centerY, flags & MM_IGNOREWATER);
     if (!pos)
         return null;
     // teleport.c:enexto_core() tests every shuffled coordinate through
@@ -462,7 +393,7 @@ export async function summonNastyMonsters(summoner) {
                 || (summonerClass === S_ANGEL && candidateClass === S_DEMON));
             if (makeindex == null)
                 continue;
-            const position = summoner ? findMonsterNearPosition(makeindex, summoner.mux ?? game.u.ux, summoner.muy ?? game.u.uy)
+            const position = summoner ? enexto(makeindex, summoner.mux ?? game.u.ux, summoner.muy ?? game.u.uy)
                 : { x: game.u.ux, y: game.u.uy };
             if (!position)
                 continue;

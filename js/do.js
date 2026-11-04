@@ -67,9 +67,8 @@ import { countLevelFeatures } from './mklev.js';
 import { monsterAlignmentType } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './guardian_angel.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { randomMonsterRelocation, enexto } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { randomMonsterRelocation } from './teleport.js';
 import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './mondata.js';
 export async function dodrop() {
     const inShop = !!game.u?.ushops?.[0];
@@ -1154,7 +1153,7 @@ export async function resolveHeroArrivalCollision() {
         return;
     let movedHero = false;
     if (!rn2(2)) {
-        const destination = findNearbyMonsterPosition(game.u.umonnum, game.u.ux, game.u.uy);
+        const destination = enexto(game.u.umonnum, game.u.ux, game.u.uy);
         if (destination && Math.abs(destination.x - game.u.ux) <= 1
             && Math.abs(destination.y - game.u.uy) <= 1) {
             await placeHeroOnLevel(destination.x, destination.y);

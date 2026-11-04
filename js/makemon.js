@@ -40,8 +40,8 @@ import { registerQuestLeader } from './quest.js';
 import { createParticularMonster } from './read.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { questMonsterAlignment, questMonsterFlags3, questMonsterSound } from './role_monsters.js';
-import { goodPosition } from './teleport_rules.js';
-import { findMonsterNearPosition, findMonsterNearPositionCore, makemonNear } from './mklev.js';
+import { goodPosition, enexto, enexto_gpflags, enexto_core } from './teleport.js';
+import { makemonNear } from './mklev.js';
 import { getShopItem, shopkeeperName } from './shknam.js';
 import { questMonsterType } from './quest_pager.js';
 import { inTown, roomForIndex } from './hack.js';
@@ -657,9 +657,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         y = point.y;
     }
     else if (!game.in_mklev && x === game.u.ux && y === game.u.uy) {
-        const point = findMonsterNearPosition(mdat, x, y, {
-            ignoreWater: !!(mmflags & MM_IGNOREWATER), gpflags: GP_AVOID_MONPOS,
-        });
+        const point = enexto_gpflags(mdat, x, y, (mmflags & MM_IGNOREWATER) | GP_AVOID_MONPOS);
         if (!point)
             return null;
         x = point.x;
@@ -674,7 +672,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         if (!(mmflags & MM_ADJACENTOK))
             return null;
         // The occupied-square branch has only the scary-square-aware search.
-        const point = findMonsterNearPositionCore(mdat, x, y, gpflags, game);
+        const point = enexto_core(mdat, x, y, gpflags, { state: game });
         if (!point)
             return null;
         x = point.x;
@@ -1756,7 +1754,7 @@ export async function createCritters(count, mnum = null, neverAsk = false) {
             continue;
         let monster = null;
         if (mnum == null && game.u?.uinwater) {
-            const wetPosition = findMonsterNearPosition(PM_GIANT_EEL, game.u.ux, game.u.uy);
+            const wetPosition = enexto(PM_GIANT_EEL, game.u.ux, game.u.uy);
             if (wetPosition) {
                 monster = await makemon(null, wetPosition.x, wetPosition.y, 0);
             }
@@ -2290,7 +2288,7 @@ export async function cloneMonster(monster, state = game, { monsterMoving = !!st
     if (!isok(destination.x, destination.y))
         return null;
     if (monsterAtPosition(level, destination.x, destination.y)) {
-        const nearby = findMonsterNearPosition(monster.mnum, destination.x, destination.y, { state });
+        const nearby = enexto(monster.mnum, destination.x, destination.y, { state });
         if (!nearby || monsterAtPosition(level, nearby.x, nearby.y))
             return null;
         destination = nearby;

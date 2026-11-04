@@ -2,7 +2,7 @@ import { MM_ADJACENTOK, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG, W_ARMS } from './con
 import { canSpotMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { requireInitializedGame, requireLiveGame } from './gstate.js';
-import { findMonsterNearPosition } from './mklev.js';
+import { enexto } from './teleport.js';
 import { finishSpecialRoamer } from './sp_lev.js';
 import { makemonAt, giveMonsterStartingObject } from './makemon.js';
 import { mksobj, blessObjectState } from './mkobj.js';
@@ -91,7 +91,7 @@ export async function gainGuardianAngel(state = requireInitializedGame()) {
     }
 }
 async function createGuardianAngel(peaceful, state) {
-    const position = findMonsterNearPosition(PM_ANGEL, state.u.ux, state.u.uy, { state });
+    const position = enexto(PM_ANGEL, state.u.ux, state.u.uy, { state });
     if (!position)
         return null;
     // enexto supplies an empty square before mk_roamer creates the angel.

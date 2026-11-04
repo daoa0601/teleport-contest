@@ -12,7 +12,7 @@ import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { newuhs } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore, useUpInventoryStack } from './invent.js';
-import { findMonsterNearPosition, makemonNear } from './mklev.js';
+import { makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterAtPosition } from './steed.js';
@@ -22,8 +22,8 @@ import { costlySpot, objectOwnershipPrefix, restoreShopkeeperResidency, stolenVa
 import { destroyObjectFromMonsterInventory } from './monworn.js';
 import { BAG_OF_HOLDING, STATUE } from './object_data.js';
 import { objectTimers, objectsInTimerGraph, scheduleObjectTimer } from './timeout.js';
+import { randomMonsterRelocation, enexto } from './teleport.js';
 import { d, rn2 } from './rng.js';
-import { randomMonsterRelocation } from './teleport.js';
 import { cansee } from './vision.js';
 import { markQuestLeaderAlive } from './quest.js';
 import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './read.js';
@@ -218,7 +218,7 @@ async function createRevivedMonster(corpse, location, state) {
     let x = location.x, y = location.y;
     const occupant = monsterAtPosition(requireGameLevel(state), x, y);
     if (occupant) {
-        const nearby = findMonsterNearPosition(originalMnum, x, y);
+        const nearby = enexto(originalMnum, x, y);
         if (nearby)
             ({ x, y } = nearby);
     }

@@ -49,10 +49,9 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, surfaceName, ceilingName } from './terrain_name.js';
 import { do_attack, prepareAppliedWeaponAttack } from './uhitm.js';
-import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination } from './teleport.js';
+import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import type { HeroTeleportMovement } from './teleport.js';
-import { goodPosition, heroTeleportRestricted, findNearbyMonsterPosition } from './teleport_rules.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
 import { levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel } from './dungeon.js';
@@ -174,7 +173,7 @@ export async function reviveNastyAt(
 }
 
 async function moveRevivalOccupant(monster: Monster, x: number, y: number, state: GameState): Promise<void> {
-    const position = findNearbyMonsterPosition(monster.mnum, x, y, { state });
+    const position = enexto(monster.mnum, x, y, { state });
     if (position) await relocateMonsterTo(monster, position.x, position.y, { state });
 }
 

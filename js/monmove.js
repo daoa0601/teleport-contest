@@ -81,7 +81,7 @@ import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { stopHeroOccupation } from './occupation.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
@@ -1226,7 +1226,7 @@ async function moveHostile(monster, state, random, rollDice, rollOne, calls, cap
                 });
             }
             else {
-                const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, {
+                const destination = enexto(monster.mnum, state.u.ux, state.u.uy, {
                     state,
                     random,
                     calls,

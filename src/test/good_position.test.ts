@@ -1,5 +1,5 @@
 import { createSpecialLevel } from './support/topology.js';
-import type { PlacementSubject } from '../js/teleport_rules.js';
+import type { PlacementSubject } from '../js/teleport.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -17,8 +17,7 @@ import { placeMonsterWormTailRandomly } from '../js/worm.js';
 import { BOULDER, DIAMOND, SCR_SCARE_MONSTER, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty, setPropertyTerrainBlocked } from '../js/properties.js';
-import { heroTeleportDestinationOk, relocateObjectRandomly } from '../js/teleport.js';
-import { findNearbyMonsterPosition, goodPosition } from '../js/teleport_rules.js';
+import { heroTeleportDestinationOk, relocateObjectRandomly, enexto, goodPosition } from '../js/teleport.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -217,8 +216,8 @@ void test('enexto with no species uses the original hero body, not the current p
     requireFixtureGame(game);
     game.level.requireAt(11, 10).typ = POOL;
     installPolymorphedHero('giant eel');
-    assert.equal(findNearbyMonsterPosition(null, 10, 10), null);
-    assert.deepEqual(findNearbyMonsterPosition(game.u.umonnum, 10, 10), { x: 11, y: 10 });
+    assert.equal(enexto(null, 10, 10), null);
+    assert.deepEqual(enexto(game.u.umonnum, 10, 10), { x: 11, y: 10 });
 });
 
 void test('random object relocation rejects a raised bridge but can land under a monster', async () => {

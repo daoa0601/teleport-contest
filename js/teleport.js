@@ -1,4 +1,4 @@
-import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, sendMonsterToLimbo } from './mon.js';
+import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, monsterInAir, sendMonsterToLimbo } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
@@ -13,7 +13,7 @@ import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, 
 import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
-import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
+import { levelAtDepth, insideWizardTower, levelIsWizardTower, levelIsWaterLevel } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, endVoluntaryMultiTurn, shouldShowGetposTip, showGetposTip, heroLocomotion, announceInvocationSquare, checkSpecialRoom, exceedsActionCapacity, nearCapacity, SLT_ENCUMBER, roomsAt } from './hack.js';
@@ -21,18 +21,22 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_mons
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } from './apply.js';
 import { rn2, rnd } from './rng.js';
-import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_SYMBOL } from './monster_data.js';
-import { AMULET_OF_YENDOR, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
+import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
+import { AMULET_OF_YENDOR, BOULDER, CORPSE, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
-import { searchSpecial, somexyspace } from './mkroom.js';
+import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, MON_FLOOR, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { hasCompletedEngraving } from './engrave.js';
+import { searchSpecial, somexyspace } from './mkroom.js';
+import { monsterIsScaredAt } from './monmove.js';
+import { isLavaAt, isPoolAt } from './dbridge.js';
+import { heroHasWaterWalking } from './do_wear.js';
+import { heroLikesLava } from './polyself.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
@@ -48,13 +52,25 @@ import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
-import { monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './mondata.js';
+import { monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord, is_prince, monsterHasEyes, monsterIsCovetous, monsterIsEel, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, } from './mondata.js';
 export function requireLevel(state) {
     if (!state.level)
         throw new Error('Teleportation requires a dungeon level.');
 }
+const G_UNIQ = 0x1000;
+const S_ANGEL = 27;
+const S_DEMON = 56;
 const S_ELEMENTAL = 31;
+const S_HUMAN = 53;
 const S_MIMIC = 13;
+const S_VAMPIRE = 48;
+const PM_FLOATING_EYE = 28;
+const PM_FIRE_ELEMENTAL = 155;
+const PM_MINOTAUR = 177;
+const PM_DEATH = 311;
+const PM_PESTILENCE = 312;
+const PM_FAMINE = 313;
+const PM_SALAMANDER = 329;
 function wornRing(state, objectType) {
     return [
         state?.uleft, state?.uright,
@@ -92,6 +108,258 @@ export function heroTeleportTrapBlock(state = game) {
     if (heroTeleportRestricted(state))
         return 'level';
     return null;
+}
+// C teleport.c:m_blocks_teleporting().
+function monsterIsDemonRuler(monster) {
+    return MONSTER_SYMBOL[monster?.mnum] === S_DEMON
+        && (is_lord(monster?.mnum) || is_prince(monster?.mnum));
+}
+// noteleport_level()'s In_hell half: the demon court in Gehennom, scanned
+// through get_iter_mons(m_blocks_teleporting).
+function demonCourtBlocksTeleport(monster, state) {
+    const inHell = !!state?.dungeons?.[state?.u?.uz?.dnum ?? -1]
+        ?.flags?.hellish;
+    if (!inHell || monsterIsDemonRuler(monster))
+        return false;
+    return state?.level?.monsters?.some(candidate => candidate !== monster && (candidate.mhp ?? 1) > 0
+        && monsterIsDemonRuler(candidate)) ?? false;
+}
+// C teleport.c:noteleport_level().
+export function monsterTeleportRestricted(monster, state = game) {
+    if (demonCourtBlocksTeleport(monster, state))
+        return true;
+    if (state?.level?.flags?.noteleport && !monsterIsCovetous(monster))
+        return true;
+    const stasisUntil = state?.level?.flags?.stasis_until;
+    return typeof stasisUntil === 'number' && Number.isFinite(stasisUntil)
+        && stasisUntil >= (state?.moves ?? 1);
+}
+// C teleport.c:tele_restrict(). Adds feedback to the shared level
+// restriction when the monster is visible.
+export async function reportMonsterTeleportRestriction(monster, { state = game, publish = plineWithContinuation, } = {}) {
+    if (!monsterTeleportRestricted(monster, state))
+        return false;
+    if (canSeeMonster(monster))
+        await publish(`A mysterious force prevents ${monsterName(monster, { state })} from teleporting!`);
+    return true;
+}
+// noteleport_level(&gy.youmonst): the hero's active polymorph form decides,
+// with the original body when unpolyed.
+export function heroTeleportRestricted(state = game) {
+    const currentForm = state?.u?.mtimedone
+        ? state.u.umonnum : state?.u?.umonster;
+    if (currentForm === undefined)
+        throw new Error('Teleportation requires a hero species.');
+    return monsterTeleportRestricted({ mnum: currentForm }, state);
+}
+// C teleport.c:goodpos(). Species subjects represent a zeroed temporary actor.
+export function goodPosition(x, y, subject, { state = game, gpflags = 0, random = rn2, } = {}) {
+    if (!isok(x, y))
+        return false;
+    const level = requireGameLevel(state);
+    const location = level.at(x, y);
+    if (!location)
+        return false;
+    const isHero = subject?.kind === 'hero';
+    let monster = null;
+    if (isHero) {
+        const mnum = state.u.umonnum;
+        if (mnum === undefined)
+            throw new Error('Hero placement requires a species.');
+        monster = { mnum, m_id: 1, mcansee: 0 };
+        if (state.u.mcham !== undefined)
+            monster.cham = state.u.mcham;
+    }
+    else if (subject?.kind === 'monster') {
+        monster = subject.monster;
+    }
+    else if (subject?.kind === 'species') {
+        monster = { mnum: subject.mnum };
+    }
+    const ignoreWater = !!(gpflags & MM_IGNOREWATER);
+    const ignoreLava = !!(gpflags & MM_IGNORELAVA);
+    const avoidMonsters = !!(gpflags & GP_AVOID_MONPOS);
+    if (!(gpflags & GP_ALLOW_U) && state.u.ux === x && state.u.uy === y
+        && !isHero && !(monster === state.u.ustuck && state.u.uswallow)
+        && !(state.u.usteed && monster === state.u.usteed))
+        return false;
+    const occupant = monsterAtPosition(level, x, y);
+    if (occupant && avoidMonsters)
+        return false;
+    const pool = isPoolAt(x, y, state);
+    const lava = isLavaAt(x, y, state);
+    if (monster) {
+        const mnum = monster.mnum;
+        if (occupant && (occupant !== monster || ('wormno' in monster && monster.wormno)))
+            return false;
+        if (pool && !ignoreWater) {
+            const surface = !levelIsWaterLevel(state) && location.typ !== WATER;
+            if (isHero) {
+                return propertyIsActive('swimming', state)
+                    || propertyIsActive('magicalBreathing', state)
+                    || monsterIsAmphibious(monster.mnum)
+                    || (surface && (propertyIsActive('levitation', state)
+                        || propertyIsActive('flying', state) || heroHasWaterWalking(state)));
+            }
+            return monsterIsSwimmer(monster.mnum) || (surface && monsterInAir(monster, state));
+        }
+        else if (monsterIsEel(mnum) && random(13) && !ignoreWater) {
+            return false;
+        }
+        else if (lava && !ignoreLava) {
+            if (mnum === PM_FLOATING_EYE)
+                return false;
+            if (isHero) {
+                const boots = state.uarmf || state.u.uarmf;
+                return propertyIsActive('levitation', state) || propertyIsActive('flying', state)
+                    || (!levelIsWaterLevel(state) && propertyIsActive('fireResistance', state)
+                        && heroHasWaterWalking(state) && !!boots?.oerodeproof)
+                    || heroLikesLava(state);
+            }
+            return monsterInAir(monster, state)
+                || mnum === PM_FIRE_ELEMENTAL || mnum === PM_SALAMANDER;
+        }
+        if (monsterPassesWalls(monster.mnum)
+            && !(IS_STWALL(location.typ) && (location.wall_info & W_NONPASSWALL)))
+            return true;
+        if (monsterIsAmorphous(monster) && location.typ === DOOR
+            && (location.doormask & (D_CLOSED | D_LOCKED)))
+            return true;
+        if (gpflags & GP_CHECKSCARY) {
+            const scary = monster.m_id
+                ? monsterIsScaredAt(monster, state, x, y)
+                : monsterTypeScaredFromPosition(mnum, x, y, state);
+            if (scary)
+                return false;
+        }
+    }
+    const accessible = ACCESSIBLE(location.typ)
+        && !(location.typ === DOOR && (location.doormask & (D_CLOSED | D_LOCKED)));
+    if (!accessible && !(pool && ignoreWater) && !(lava && ignoreLava))
+        return false;
+    if (!monsterThrowsRocks(monster?.mnum ?? -1) && level.objects[x]?.[y]?.some(object => object.otyp === BOULDER))
+        return false;
+    if (avoidMonsters && level.exclusionZones?.some(zone => zone.type === 'monster-generation'
+        && x >= zone.lx && x <= zone.hx && y >= zone.ly && y <= zone.hy))
+        return false;
+    return true;
+}
+// C teleport.c:goodpos_onscary().
+function monsterTypeScaredFromPosition(mndx, x, y, state) {
+    const symbol = MONSTER_SYMBOL[mndx] ?? 0;
+    if (symbol === S_HUMAN || symbol === S_ANGEL
+        || [PM_DEATH, PM_PESTILENCE, PM_FAMINE].includes(mndx)
+        || ((MONSTER_GENO[mndx] ?? 0) & G_UNIQ))
+        return false;
+    const location = state.level?.at?.(x, y);
+    if (location?.typ === ALTAR && symbol === S_VAMPIRE)
+        return true;
+    if (state.level?.objects?.[x]?.[y]?.some(object => object.otyp === SCR_SCARE_MONSTER))
+        return true;
+    const inHell = !!state.dungeons?.[state.u?.uz?.dnum ?? -1]?.flags?.hellish;
+    const inFinalDungeon = !!state.u?.uz && !!state.astral_level
+        && state.u.uz.dnum === state.astral_level.dnum;
+    if (inHell || inFinalDungeon || mndx === PM_MINOTAUR
+        || !monsterHasEyes(mndx))
+        return false;
+    return hasCompletedEngraving('Elbereth', x, y, state);
+}
+// C teleport.c:enexto(). The first complete search avoids scary squares;
+// only total failure triggers an independently shuffled unrestricted search.
+export function enexto(mdat, xx, yy, options = {}) {
+    return enexto_core(mdat, xx, yy, GP_CHECKSCARY, options)
+        || enexto_core(mdat, xx, yy, 0, options);
+}
+// C teleport.c:enexto_gpflags().
+export function enexto_gpflags(mdat, xx, yy, entflags, options = {}) {
+    return enexto_core(mdat, xx, yy, GP_CHECKSCARY | entflags, options)
+        || enexto_core(mdat, xx, yy, entflags, options);
+}
+// C teleport.c:enexto_core(). Search the rings near <xx,yy> first, then the
+// rest of the map in expanding distance; the scary-square retry belongs to
+// the callers above. Exposing the core lets callbacks distinguish enexto
+// failure from a later makemon()/make_familiar() construction failure.
+export function enexto_core(mdat, xx, yy, entflags, { state = game, random = rn2, calls = null } = {}) {
+    const species = mdat ?? state.u.umonster;
+    if (species === undefined)
+        throw new Error('Nearby placement requires a monster species.');
+    const subject = { kind: 'species', mnum: species };
+    const fits = (point) => goodPosition(point.x, point.y, subject, { state, gpflags: entflags, random });
+    const nearby = collect_coords(xx, yy, 3, CC_NO_FLAGS, { random, calls });
+    const close = nearby.find(fits);
+    if (close)
+        return close;
+    // NEW_ENEXTO deliberately reshuffles the near rings while collecting the
+    // complete map, then skips their count because they were already tested.
+    const all = collect_coords(xx, yy, 0, CC_NO_FLAGS, { random, calls });
+    const distant = all.slice(nearby.length).find(fits);
+    if (distant)
+        return distant;
+    if ((entflags & GP_ALLOW_XY) && fits({ x: xx, y: yy }))
+        return { x: xx, y: yy };
+    return null;
+}
+// C teleport.c:collect_coords(). Expanding square rings around <cx,cy>,
+// completely collected before the next ring begins and shuffled within the
+// ring (or, with CC_RING_PAIRS, within each odd/even ring pair) unless
+// CC_UNSHUFFLED is set. CC_INCL_CENTER starts with ring 0; CC_SKIP_MONS and
+// CC_SKIP_INACCS reject occupied and non-ZAP_POS squares, then the caller's
+// filter runs, as in C. A zero maxradius means the whole usable map;
+// column 0 is never used.
+export function collect_coords(cx, cy, maxradius = 0, ccflags = CC_NO_FLAGS, { state = game, random = rn2, calls = null, filter = null, } = {}) {
+    const coords = [];
+    const includeCenter = (ccflags & CC_INCL_CENTER) !== 0;
+    const scramble = (ccflags & CC_UNSHUFFLED) === 0;
+    const ringPairs = scramble && (ccflags & CC_RING_PAIRS) !== 0;
+    const skipMons = (ccflags & CC_SKIP_MONS) !== 0;
+    const skipInaccessible = (ccflags & CC_SKIP_INACCS) !== 0;
+    const rowRange = cy < ROWNO / 2 ? ROWNO - 1 - cy : cy;
+    const colRange = cx < COLNO / 2 ? COLNO - 1 - cx : cx;
+    const finalRadius = maxradius
+        ? Math.min(maxradius, Math.max(rowRange, colRange))
+        : Math.max(rowRange, colRange);
+    let pass = 0;
+    let n = 0;
+    for (let radius = includeCenter ? 0 : 1; radius <= finalRadius; radius++) {
+        if (!ringPairs || (radius % 2) !== 0 || radius === 0) {
+            pass = coords.length;
+            n = 0;
+        }
+        const lox = cx - radius, hix = cx + radius;
+        const loy = cy - radius, hiy = cy + radius;
+        for (let y = Math.max(loy, 0); y <= Math.min(hiy, ROWNO - 1); y++) {
+            for (let x = Math.max(lox, 1); x <= Math.min(hix, COLNO - 1); x++) {
+                if (x !== lox && x !== hix && y !== loy && y !== hiy)
+                    continue;
+                if (skipMons && state.level && monsterAtPosition(state.level, x, y))
+                    continue;
+                if (skipInaccessible && !ZAP_POS(state.level?.at?.(x, y)?.typ ?? -1))
+                    continue;
+                if (filter && !filter(x, y))
+                    continue;
+                coords.push({ x, y });
+                n++;
+            }
+        }
+        if (scramble && (!ringPairs || (radius % 2) === 0 || radius === finalRadius)) {
+            while (n > 1) {
+                const k = random(n);
+                if (calls)
+                    calls.push(`rn2(${n})`);
+                if (k) {
+                    const current = coords[pass];
+                    const chosen = coords[pass + k];
+                    if (!current || !chosen || k < 0 || k >= n)
+                        throw new RangeError(`Invalid coordinate shuffle index ${k} for ${n} entries`);
+                    coords[pass] = chosen;
+                    coords[pass + k] = current;
+                }
+                pass++;
+                n--;
+            }
+        }
+    }
+    return coords;
 }
 function inside(area, x, y) {
     return area && x >= area.lx && x <= area.hx
@@ -685,7 +953,7 @@ export async function clearFixedTeleportDestination(x, y, state = game, random =
         return { cleared: true, relocation: null };
     const oldx = monster.mx;
     const oldy = monster.my;
-    const destination = findNearbyMonsterPosition(monster.mnum, monster.mx, monster.my, { state, random });
+    const destination = enexto(monster.mnum, monster.mx, monster.my, { state, random });
     if (!destination)
         return { cleared: false, relocation: null };
     await relocateMonsterTo(monster, destination.x, destination.y, { state, random });
@@ -1105,7 +1373,7 @@ export async function teleportMonsterByHero(monster, { state = game, giveFeedbac
         return true;
     }
     if ((monsterIsRider(monster) || monsterControlsTeleport(monster.mnum)) && rn2(13)) {
-        const destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
+        const destination = enexto(monster.mnum, state.u.ux, state.u.uy, { state });
         if (destination) {
             await relocateMonsterTo(monster, destination.x, destination.y, { state });
             return true;

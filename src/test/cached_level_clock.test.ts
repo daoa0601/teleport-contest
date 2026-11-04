@@ -8,7 +8,7 @@ import { gotoLevel } from '../js/level_change.js';
 import { TRIPE_RATION } from '../js/object_data.js';
 import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { heroTeleportRestricted } from '../js/teleport_rules.js';
+import { heroTeleportRestricted } from '../js/teleport.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { floorObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

@@ -12,7 +12,7 @@ import { monsterAtPosition, removeMonsterFromMapAt } from './steed.js';
 import { mcalcmove } from './mon.js';
 import { monsterName } from './do_name.js';
 import { d, rn2, rnd } from './rng.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition } from './teleport.js';
 import type { Monster, WormSegment } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';

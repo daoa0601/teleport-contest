@@ -9,7 +9,7 @@ import { rndClass } from '../../js/objnam.js';
 import { rndmonstAdj, mkclassAligned, makemonAt } from '../../js/makemon.js';
 import { oinit } from '../../js/o_init.js';
 import { level_difficulty } from '../../js/dungeon.js';
-import { monsterTeleportRestricted } from '../../js/teleport_rules.js';
+import { monsterTeleportRestricted } from '../../js/teleport.js';
 import { GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, CORPSE, STATUE, FIGURINE,
     TIN, EGG, SPE_NOVEL } from '../../js/object_data.js';
 import { MM_NOGRP, MM_ANGRY, MM_NOMSG, MM_NONAME, MM_NOTAIL } from '../../js/const.js';
