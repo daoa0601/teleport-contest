@@ -2,17 +2,17 @@
 // or changes type (C refs: worn.c:setnotworn(), steal.c:remove_worn_item()).
 // Command messages belong to the caller.
 
-import { clearHeroAccessory, removeHeroAccessory, removeEyewear, unequipEyewear } from './do_wear.js';
+import { clearHeroAccessory, removeHeroAccessory, removeEyewear } from './do_wear.js';
 
 import { armorSlotFor, clearHeroArmor, removeHeroArmor } from './do_wear.js';
 
-import { I_SPECIAL, W_BALL, W_CHAIN } from './const.js';
+import { I_SPECIAL, W_BALL, W_CHAIN, W_TOOL } from './const.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { syncBlindness } from './senses.js';
 import { uqwepgone, uswapwepgone, uwepgone } from './wield.js';
-import { setnotworn } from './worn.js';
+import { setnotworn, setworn } from './worn.js';
 import { unpunishHero } from './read.js';
 
 export async function removeHeroEquipment(object: GameObject, state: GameState = game, {
@@ -30,7 +30,9 @@ export async function removeHeroEquipment(object: GameObject, state: GameState =
     }
     await clearHeroAccessory(object, state, { deferArmorClass });
     if (state.ublindf === object || state.u?.ublindf === object) {
-        await unequipEyewear(object, state);
+        // C do_wear.c:Blindf_off() clears the slot with
+        // setworn(0, otmp->owornmask); setnotworn() runs below.
+        await setworn(null, W_TOOL, state);
         syncBlindness(state);
     }
     // C worn.c:setnotworn(): destroyed/used-up wielded items do not arm the

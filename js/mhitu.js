@@ -18,7 +18,7 @@ import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistan
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory, selectHeroDisenchantmentTarget } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { isPolearm, isPermanentlyPoisonedObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { monsterWeaponStrengthBonus, mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdSedu, mhitmAdStun, specialAttackNegated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, resolveMonsterWeaponContact, resolvePhysicalHeroHug, tryKnockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
