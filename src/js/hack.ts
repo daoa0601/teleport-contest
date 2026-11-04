@@ -1994,8 +1994,10 @@ async function findtravelpath(
 
             if (pickX === g.u.ux && pickY === g.u.uy) {
                 /* no guesses, just go in the general direction */
-                const dx = Math.sign(targetX - g.u.ux), dy = Math.sign(targetY - g.u.uy);
-                if (await testTravelMove(g.u.ux, g.u.uy, g.u.ux + dx, g.u.uy + dy, 'test', g)) {
+                g.u.dx = Math.sign(targetX - g.u.ux);
+                g.u.dy = Math.sign(targetY - g.u.uy);
+                if (await testTravelMove(g.u.ux, g.u.uy,
+                    g.u.ux + g.u.dx, g.u.uy + g.u.dy, 'test', g)) {
                     markTravelStep(g.u.ux, g.u.uy, g);
                     return true;
                 }
