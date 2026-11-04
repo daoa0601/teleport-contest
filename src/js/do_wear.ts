@@ -2458,7 +2458,7 @@ export async function removeHeroAccessory(
 // C do_wear.c:Amulet_off(): the amulet switch — ESP sees monsters first,
 // guarding's AC is computed while still worn, strangulation ends, and
 // flying/levitation settles after the slot is cleared.
-// C do_wear.c:float_vs_flight(): the levitation-blocked flying flag is
+// C polyself.c:float_vs_flight(): the levitation-blocked flying flag is
 // reconciled inside clearHeroAccessory()'s property refresh.
 async function removeAmulet(object: GameObject, state: GameState): Promise<PropertyName | null> {
     const strangled = heroIsStrangled(state);
