@@ -11,7 +11,7 @@ import { CORPSE } from './object_data.js';
 import { touchPetrifies } from './stoning.js';
 import { isHomeElemental } from './makemon.js';
 import { monsterHasColdResistance, monsterIsShade } from './mondata.js';
-export function selectAttack(attacker, defender, attackIndex, previousResults, state) {
+export function getmattk(attacker, defender, attackIndex, previousResults, state) {
     requireLiveGame(state);
     const attackerSpecies = actorSpecies(attacker, state);
     const attacks = MONSTER_ATTACKS[attackerSpecies];

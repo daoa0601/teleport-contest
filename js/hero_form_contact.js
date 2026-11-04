@@ -7,13 +7,13 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import { monsterHasHead, monsterIsBreathless, monsterIsMindless, monsterIsUnsolid } from './mondata.js';
 const SILVER = 14;
 const STRANGE_OBJECT = 0;
 const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical breathing');
 export function heroSeductionCompatibility(monster, attack, state = game) {
-    return seductionCompatibility('hero', monster, attack, state);
+    return could_seduce('hero', monster, attack, state);
 }
 export async function heroGrabMisses(monster, attack, target, { state = game, publish = plineWithContinuation } = {}) {
     const tail = monster.mx !== target.x || monster.my !== target.y;

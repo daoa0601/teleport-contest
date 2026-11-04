@@ -8,7 +8,7 @@ import { propertyIsActive } from './properties.js';
 import { is_neuter, monsterIsAnimal, monsterPerceives } from './mondata.js';
 const S_NYMPH = 14;
 const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
-export function seductionCompatibility(aggressor, defender, attack, state = game) {
+export function could_seduce(aggressor, defender, attack, state = game) {
     const species = aggressor === 'hero' ? heroSpecies(state) : aggressor.mnum;
     if (monsterIsAnimal({ mnum: species }))
         return 0;

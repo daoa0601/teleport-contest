@@ -15,7 +15,7 @@ type Participant = Monster | 'hero';
 const S_NYMPH = 14;
 const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
 
-export function seductionCompatibility(
+export function could_seduce(
     aggressor: Participant, defender: Participant, attack: AttackTuple | null,
     state: GameState = game,
 ): 0 | 1 | 2 {

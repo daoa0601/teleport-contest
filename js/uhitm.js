@@ -7,7 +7,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, monsterHasArtifactDefense } from './artifacts.js';
-import { selectAttack } from './attack_selection.js';
+import { getmattk } from './attack_selection.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
@@ -4630,7 +4630,7 @@ export async function attackHeroInMonsterForm(monster, x, y, { confirmationOverr
     let weaponCount = 0;
     let handCount = 0;
     for (let index = 0; index < results.length; index++) {
-        const [method] = selectAttack(game.u, monster, index, results, game);
+        const [method] = getmattk(game.u, monster, index, results, game);
         if (method === AT_WEAP)
             weaponCount++;
         if (method === AT_WEAP || method === AT_CLAW || method === AT_TUCH)
@@ -4646,7 +4646,7 @@ export async function attackHeroInMonsterForm(monster, x, y, { confirmationOverr
         if (index > 0 && (monster.mhp <= 0
             || monsterAtPosition(game.level, x, y) !== monster))
             continue;
-        const attack = selectAttack(game.u, monster, index, results, game);
+        const attack = getmattk(game.u, monster, index, results, game);
         if (sequence.skipBrainDrain && attack[0] === AT_TENT && attack[1] === AD_DRIN)
             continue;
         const strike = await performFormAttack(sequence, attack, index);

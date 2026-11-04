@@ -44,7 +44,7 @@ import { demandDemonBribe } from './demon_talk.js';
 import { DEATH_QUOTES } from './death_quotes.js';
 import { doseduce } from './mhitu.js';
 import { selectTributePassage } from './novel_tribute.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import { talkToPriest } from './priest_talk.js';
 import { aggravateMonsters, publishMonsterCuss } from './wizard.js';
 import { AT_TUCH, AD_SSEX } from './monster_attack_types.js';
@@ -775,7 +775,7 @@ export async function publishMonsterConversation(
         break;
     case MS_SEDUCE:
         if (MONSTER_SYMBOL[monster.mnum] !== S_NYMPH
-            && seductionCompatibility(monster, 'hero', null, state) === 1) {
+            && could_seduce(monster, 'hero', null, state) === 1) {
             await doseduce(monster, {
                 kind: 'hero-attack', attackType: AT_TUCH, damageType: AD_SSEX, hit: true,
             }, state, pline, rn2, rnd, { allowCancelledSeducer: true });

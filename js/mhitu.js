@@ -46,7 +46,7 @@ import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.
 import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
 import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems, damageObjectWithAcid } from './trap.js';
-import { selectAttack } from './attack_selection.js';
+import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker } from './mhitm.js';
@@ -76,7 +76,7 @@ import { heroIsUnaware } from './senses.js';
 import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import { randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
 import { objectTypeKnown } from './shk.js';
 import { encumber_msg } from './pickup.js';
@@ -1377,7 +1377,7 @@ export async function advanceHeroAttackSequence(sequence, state, random, rollOne
             if (sequence.firstFoundYou && !foundHero)
                 continue;
         }
-        const effectiveAttack = selectAttack(monster, state.u, attackIndex, sequence.results, state);
+        const effectiveAttack = getmattk(monster, state.u, attackIndex, sequence.results, state);
         if (sequence.skipBrainDrain && effectiveAttack[0] === AT_TENT && effectiveAttack[1] === AD_DRIN)
             continue;
         const slot = {
@@ -2477,7 +2477,7 @@ export async function doseduce(monster, attack, state, publish, random, rollOne,
         }
         return;
     }
-    if (seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) !== 1)
+    if (could_seduce(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) !== 1)
         return;
     const female = !!monster.female;
     if (monster.mspec_used) {
@@ -2819,7 +2819,7 @@ export async function missmu(monster, attack, state, random) {
     // Native missmu() publishes both miss lines through pline_mon(), which
     // anchors them at the attacker's square for accessiblemsg prefixes.
     set_msg_xy(monster.mx, monster.my);
-    const friendly = !monster.mcan && seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state);
+    const friendly = !monster.mcan && could_seduce(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state);
     const subject = monsterName(monster, { state, capitalized: true });
     if (friendly)
         return `${subject} pretends to be friendly.`;
@@ -2843,7 +2843,7 @@ async function wildmiss(monster, attack, state, random) {
     if (state.flags.verbose === false || !cansee(monster.mx, monster.my))
         return null;
     const compatibility = attack.damageType === AD_SEDU || attack.damageType === AD_SSEX
-        ? seductionCompatibility(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) : 0;
+        ? could_seduce(monster, 'hero', [attack.attackType, attack.damageType, 0, 0], state) : 0;
     const subject = monsterName(monster, { state, capitalized: true });
     set_msg_xy(monster.mx, monster.my);
     if (unseen) {

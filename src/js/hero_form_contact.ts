@@ -7,7 +7,7 @@ import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { objectMaterial } from './o_init.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
@@ -22,7 +22,7 @@ const AMULET_OF_MAGICAL_BREATHING = OBJECT_NAMES.indexOf('amulet of magical brea
 export function heroSeductionCompatibility(
     monster: Monster, attack: AttackTuple, state: GameState = game,
 ): 0 | 1 | 2 {
-    return seductionCompatibility('hero', monster, attack, state);
+    return could_seduce('hero', monster, attack, state);
 }
 
 export async function heroGrabMisses(

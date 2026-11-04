@@ -15,7 +15,7 @@ import {
 import { rejectMonsterShadeContact } from '../js/uhitm.js';
 import { DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { seductionCompatibility } from '../js/seduction_compatibility.js';
+import { could_seduce } from '../js/seduction_compatibility.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -54,14 +54,14 @@ void test('seduction compatibility distinguishes unseen seduction from theft and
     const perceptive = await createMonsterAt('Archon', 14, 10, MM_NOGRP | NO_MINVENT);
     perceptive.female = false;
 
-    assert.equal(seductionCompatibility(demon, orc, [AT_TUCH, AD_SEDU, 0, 0]), 0);
-    assert.equal(seductionCompatibility(demon, orc, [AT_TUCH, AD_SSEX, 0, 0]), 1);
-    assert.equal(seductionCompatibility(demon, orc, [AT_TUCH, AD_SITM, 0, 0]), 1);
-    assert.equal(seductionCompatibility(demon, perceptive, [AT_TUCH, AD_SEDU, 0, 0]), 1);
-    assert.equal(seductionCompatibility(demon, orc, [AT_CLAW, AD_PHYS, 1, 3]), 0);
-    assert.equal(seductionCompatibility(demon, orc, null), 1);
+    assert.equal(could_seduce(demon, orc, [AT_TUCH, AD_SEDU, 0, 0]), 0);
+    assert.equal(could_seduce(demon, orc, [AT_TUCH, AD_SSEX, 0, 0]), 1);
+    assert.equal(could_seduce(demon, orc, [AT_TUCH, AD_SITM, 0, 0]), 1);
+    assert.equal(could_seduce(demon, perceptive, [AT_TUCH, AD_SEDU, 0, 0]), 1);
+    assert.equal(could_seduce(demon, orc, [AT_CLAW, AD_PHYS, 1, 3]), 0);
+    assert.equal(could_seduce(demon, orc, null), 1);
     orc.female = true;
-    assert.equal(seductionCompatibility(demon, orc, [AT_TUCH, AD_SSEX, 0, 0]), 0);
+    assert.equal(could_seduce(demon, orc, [AT_TUCH, AD_SSEX, 0, 0]), 0);
 });
 
 void test('nymphs can engage neuter defenders but amorous demons and animals cannot', async () => {
@@ -71,9 +71,9 @@ void test('nymphs can engage neuter defenders but amorous demons and animals can
     const demon = await createMonsterAt('amorous demon', 14, 10, MM_NOGRP | NO_MINVENT);
     const dog = await createMonsterAt('little dog', 15, 10, MM_NOGRP | NO_MINVENT);
 
-    assert.equal(seductionCompatibility(nymph, cloud, [AT_CLAW, AD_SEDU, 0, 0]), 2);
-    assert.equal(seductionCompatibility(demon, cloud, [AT_TUCH, AD_SSEX, 0, 0]), 0);
-    assert.equal(seductionCompatibility(dog, nymph, [AT_TUCH, AD_SEDU, 0, 0]), 0);
+    assert.equal(could_seduce(nymph, cloud, [AT_CLAW, AD_SEDU, 0, 0]), 2);
+    assert.equal(could_seduce(demon, cloud, [AT_TUCH, AD_SSEX, 0, 0]), 0);
+    assert.equal(could_seduce(dog, nymph, [AT_TUCH, AD_SEDU, 0, 0]), 0);
 });
 
 void test('hero nymph form shares the same compatibility rule and preserves blindness independence', async () => {
@@ -84,7 +84,7 @@ void test('hero nymph form shares the same compatibility rule and preserves blin
     orc.mcansee = 0;
 
     assert.equal(heroSeductionCompatibility(orc, [AT_CLAW, AD_SEDU, 0, 0]), 1);
-    assert.equal(seductionCompatibility('hero', orc, [AT_CLAW, AD_SEDU, 0, 0]), 1);
+    assert.equal(could_seduce('hero', orc, [AT_CLAW, AD_SEDU, 0, 0]), 1);
 });
 
 void test('an invisible seducer requires the hero to perceive it for a seduction attack', async () => {
@@ -93,10 +93,10 @@ void test('an invisible seducer requires the hero to perceive it for a seduction
     demon.female = false;
     demon.minvis = true;
 
-    assert.equal(seductionCompatibility(demon, 'hero', [AT_TUCH, AD_SEDU, 0, 0]), 0);
-    assert.equal(seductionCompatibility(demon, 'hero', [AT_TUCH, AD_SSEX, 0, 0]), 1);
+    assert.equal(could_seduce(demon, 'hero', [AT_TUCH, AD_SEDU, 0, 0]), 0);
+    assert.equal(could_seduce(demon, 'hero', [AT_TUCH, AD_SSEX, 0, 0]), 1);
     grantIntrinsicProperty('seeInvisible', 'outside');
-    assert.equal(seductionCompatibility(demon, 'hero', [AT_TUCH, AD_SEDU, 0, 0]), 1);
+    assert.equal(could_seduce(demon, 'hero', [AT_TUCH, AD_SEDU, 0, 0]), 1);
 });
 
 void test('cancelled seducers use ordinary miss feedback', async () => {

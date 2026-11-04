@@ -34,7 +34,7 @@ import { monsterIsScaredAt, stopMonsterHeldByHero } from './monmove.js';
 import { swingMonsterWeapon } from './mhitu.js';
 import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWeapon } from './weapon.js';
 import { weaponHitBonus } from './weapon.js';
-import { selectAttack } from './attack_selection.js';
+import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
 import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult, } from './uhitm.js';
@@ -51,7 +51,7 @@ import { minimalObjectName, objectCombatName, pluralizeObjectNoun } from './objn
 import { AMULET_OF_REFLECTION, SHIELD_OF_REFLECTION } from './object_data.js';
 import { drainObjectEnchantment } from './zap.js';
 import { snuffMonsterInventoryLights } from './light.js';
-import { seductionCompatibility } from './seduction_compatibility.js';
+import { could_seduce } from './seduction_compatibility.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
@@ -118,7 +118,7 @@ export async function showMonsterCombatMiss(aggressor, defender, attack, { state
         return;
     }
     const subject = monsterName(aggressor, { state, capitalized: true });
-    const friendly = !aggressor.mcan && seductionCompatibility(aggressor, defender, attack, state);
+    const friendly = !aggressor.mcan && could_seduce(aggressor, defender, attack, state);
     await publish(`${subject} ${friendly ? 'pretends to be friendly to' : 'misses'} ${combatTargetName(defender, aggressor, state)}.`);
 }
 // C mhitm.c:mattackm(): "Set up the visibility of action".
@@ -217,7 +217,7 @@ export async function attackMonsterWithMonster(aggressor, defender, { state, ran
         const target = { ...state.bhitpos, notOnHead: state.notonhead };
         const damageOptions = { state, visible, random, rollDice, rollOne, calls, target, notOnHead: target.notOnHead };
         const resolveDamage = (attacker, targetMonster, attack) => resolveMonsterCombatDamage(attacker, targetMonster, attack, damageOptions);
-        const selected = selectAttack(aggressor, defender, attackIndex, nativeResults, state);
+        const selected = getmattk(aggressor, defender, attackIndex, nativeResults, state);
         if (skipBrainDrain && selected[0] === AT_TENT && selected[1] === AD_DRIN)
             continue;
         let slotResult = M_ATTK_MISS;
@@ -466,7 +466,7 @@ export async function showMonsterGrabFailure(aggressor, defender, attack, target
 // (resolveMonsterCombatDamage below).
 export async function prepareMonsterCombatContact(aggressor, defender, attack, weapon, { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d }) {
     await revealAttackingMonsters(aggressor, defender, visible);
-    const compatibility = aggressor.mcan ? 0 : seductionCompatibility(aggressor, defender, attack, state);
+    const compatibility = aggressor.mcan ? 0 : could_seduce(aggressor, defender, attack, state);
     if (!compatibility && await rejectMonsterShadeContact(aggressor, defender, weapon, {
         state, visible, publish, rollOne, rollDice,
     }))
