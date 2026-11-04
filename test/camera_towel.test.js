@@ -457,6 +457,7 @@ void test('a photograph from inside a monster records the stomach instead of fla
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
     assert.equal((await gulpmu(holder, attack)).hit, true);
+    await flushPendingTopline();
     const object = await camera();
     await aim(object, '>');
     assert.match(game._pending_message, /picture of the purple worm's stomach/);
@@ -642,6 +643,7 @@ void test('cleaning grime inside a dust vortex immediately exposes the eyes agai
     };
     placeMonsterAt(holder, game.u.ux, game.u.uy);
     assert.equal((await gulpmu(holder, attack)).hit, true);
+    await flushPendingTopline();
     game.u.ucreamed = 6;
     setHeroBlindnessTurns(6);
     const timer = game.u.uswldtim;
