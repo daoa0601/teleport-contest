@@ -1,14 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
-import { canMakeBones } from '../js/bones_admission.js';
-import { restoreBonesMonsters } from '../js/bones_monster.js';
 import { DEFUNCT_MONSTER, G_EXTINCT, G_GENOD, MAGIC_PORTAL, NO_MINVENT } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mklev } from '../js/mklev.js';
-import { saveBonesLevel } from '../js/bones.js';
+import { canMakeBones, restoreBonesMonsters, saveBonesLevel } from '../js/bones.js';
 import { mksobj, addObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createBonesFromDeath } from '../js/bones_death.js';
+import { createBonesFromDeath } from '../js/bones.js';
 import { DUST } from '../js/const.js';
 import { engravingAt, makeEngravingAt, wipeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';

@@ -1,40 +1,464 @@
-// bones.js — bones levels: savebones() and getbones() with their object,
-// monster, timer and connection resets.
+// bones.ts — bones.c in one module, ordered by the C lifecycle:
+// no_bones_level()/can_make_bones() admission, the savebones() death flow
+// (drop_upon_death(), give_to_nearby_mon()), its monster fixups
+// (fixuporacle(), remove_mon_from_bones(), the restmonchn() adaptation),
+// then the bones payload save/load with its object, timer and connection
+// resets.
 // C refs: bones.c savebones()/getbones()/resetobjs(); the restore.c getlev()
 // adaptations used only by bones (restobjchn timers, region identity repair,
-// branch connection repair) and files.c set_bonesfile_name(). Admission and
-// death policy live in bones_admission.ts / bones_death.ts; payload
-// validation lives in bones_validation.ts.
+// branch connection repair) and files.c set_bonesfile_name(). Payload
+// validation lives in bones_validation.ts and name sanitization in
+// bones_name.ts.
 import { recorderLocalEpochSeconds, recorderTimestamp } from './calendar.js';
 import { rn2 } from './rng.js';
-import { COLNO, HOLE, In_quest, MAGIC_PORTAL, ROWNO, STONE, TRICKED } from './const.js';
+import { COLNO, CORPSTAT_INIT, DEFUNCT_MONSTER, DELPHI, DISMOUNT_BONES, G_NOCORPSE, GRAVE, HEADSTONE, HOLE, In_quest, Invocation_lev, Is_oracle_level, LEAVESTATUE, MAGIC_PORTAL, MM_NONAME, MON_FLOOR, NON_PM, NO_MINVENT, PARANOID_BONES, PL_NSIZ, RLOC_NOMSG, ROOM, ROWNO, STONE, TRICKED, Upolyd, } from './const.js';
 import { GameMap } from './game.js';
-import { game } from './gstate.js';
-import { pline } from './pline.js';
-import { flush_screen } from './display.js';
+import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { pline, plineWithContinuation } from './pline.js';
+import { flush_screen, newsym } from './display.js';
 import { nhgetch } from './input.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { finishHeroDeath, scoreDeathCause } from './end.js';
-import { levelAllowsBones } from './bones_admission.js';
 import { prepareBonesObjectForRestore, prepareBonesObjectForSave } from './bones_object.js';
-import { restoreBonesMonsters } from './bones_monster.js';
+import { sanitizeBonesName } from './bones_name.js';
 import { decodeBonesPayload } from './bones_validation.js';
 import { encodeSavedGraph } from './saved_graph.js';
-import { purgeDeadMonsters } from './mon.js';
+import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonsterFromGame, restoreMonsterShape } from './mon.js';
 import { restoreLevelChains } from './level_restore.js';
-import { restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
-import { restoreLevelTimers } from './timeout.js';
+import { hideMonsterOnRestore, restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
+import { endObjectBurn, restoreLevelTimers } from './timeout.js';
 import { restoreLevelRegions } from './regions.js';
-import { fixShopDamage } from './shk.js';
-import { restoreEngravings, sanitizeEngravings } from './engrave.js';
+import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
+import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap.js';
 import { nextIdent } from './ident.js';
 import { addFruit } from './fruit.js';
-import { restoreMonsterInventoryOwnership } from './mkobj.js';
+import { addObjectToContainer, createCorpstatAt, curseObjectState, linkObjectToMonsterInventory, mkcorpstat, mksobj, objectWeight, restoreMonsterInventoryOwnership, } from './mkobj.js';
 import { ageStoresFuel } from './pickup.js';
 import { specialLevelAt } from './dungeon.js';
-import { ICE_BOX, SLIME_MOLD } from './object_data.js';
+import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_data.js';
+import { clearBypasses } from './worn.js';
+import { isok, paranoidQuery } from './cmd.js';
+import { dismountHero, monsterHasMapPosition } from './steed.js';
+import { artifactEmitsLight } from './artifacts.js';
+import { setTwoWeaponCombat } from './wield.js';
+import { placeObjectSynchronously } from './floor_object.js';
+import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
+import { initializeMonsterArmor } from './monworn.js';
+import { releaseAllMonsterLeashes } from './apply.js';
+import { setMonsterGivenName } from './do_name.js';
+import { MONSTER_ALIGNMENT, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterHidesUnder, } from './monster_data.js';
+import { objectNoLongerHeldSynchronously } from './do.js';
+import { unpunishHero } from './read.js';
+import { depth, ledgerNo, maxLedgerNo } from './hacklib.js';
+import { isRoom } from './map_types.js';
+import { findMonsterNearPosition } from './mklev.js';
+import { hasPermanentIntrinsicProperty } from './properties.js';
+import { races, roles } from './roles.js';
+import { hasShopkeeperData } from './shop_types.js';
+import { relocateMonsterTo } from './teleport.js';
+import { roomForRoomno } from './hack.js';
+// C bones.c:can_make_bones()/no_bones_level(). Dungeon topology owns which
+// levels can leave bones; the depth trial still runs in wizard and explore mode.
+export function canMakeBones(state = game, random = rn2) {
+    requirePlayingGame(state);
+    if (state.flags.bones === false)
+        return false;
+    const location = state.u.uz;
+    const ledger = ledgerNo(location, state);
+    if (ledger <= 0 || ledger > maxLedgerNo(state))
+        return false;
+    const branchLevel = isBranchLevel(location, state);
+    if (!levelAllowsBones(location, state))
+        return false;
+    if (state.u.uswallow)
+        return false;
+    if (!branchLevel && state.level.traps.some(trap => trap.ttyp === MAGIC_PORTAL))
+        return false;
+    const dungeonDepth = depth(location, state.dungeons);
+    if (dungeonDepth <= 0)
+        return false;
+    if (random(1 + (dungeonDepth >> 2)) === 0 && !state.flags.debug)
+        return false;
+    return !state.discover && !state.flags.explore;
+}
+export function levelAllowsBones(location, state = game) {
+    const dungeon = state.dungeons[location.dnum];
+    if (!dungeon?.bonetag)
+        return false;
+    const special = specialLevelAt(location, state);
+    if (special && !special.bonetag)
+        return false;
+    if (location.dlevel === dungeon.num_dunlevs)
+        return false;
+    if (isBranchLevel(location, state) && location.dlevel > 1)
+        return false;
+    return !Invocation_lev(location, state);
+}
+function isBranchLevel(location, state) {
+    const here = (end) => end.dnum === location.dnum
+        && end.dlevel === location.dlevel;
+    return state.branches.some(branch => here(branch.end1) || here(branch.end2));
+}
+// C refs: bones.c:savebones(), drop_upon_death(), and give_to_nearby_mon().
+const PM_HUMAN = 260;
+const PM_GHOST = 287;
+const S_MUMMY = 39;
+const M2_UNDEAD = 0x00000002;
+function clearHeroCarriedState(object) {
+    object.owornmask = 0;
+    object.worn = false;
+    object.wornSlot = null;
+    object.wielded = false;
+    object.alternate = false;
+    object.ready = false;
+}
+function monsterAt(x, y) {
+    return (game.level?.monsters || []).find(monster => monsterHasMapPosition(monster, game) &&
+        !monster.dead && (monster.mhp ?? 1) > 0
+        && monster.mx === x && monster.my === y) || null;
+}
+const M2_GREEDY = 0x10000000;
+const M2_JEWELS = 0x20000000;
+const M2_COLLECT = 0x40000000;
+const M2_MAGIC = 0x80000000;
+// C bones.c:give_to_nearby_mon() takes from a monster with any of the
+// likes_gold()/likes_gems()/likes_objs()/likes_magic() appetites
+// (mondata.h macros), with no check that the object matches.
+export function monsterLikesObjects(monster) {
+    const flags = MONSTER_FLAGS2[monster?.mnum] ?? 0;
+    return !!(flags & (M2_GREEDY | M2_JEWELS | M2_COLLECT | M2_MAGIC))
+        || MONSTER_HAS_WEAPON_ATTACK.has(monster?.mnum);
+}
+// C bones.c:give_to_nearby_mon(): reservoir sampling over the 3x3
+// neighborhood picks the taker.
+function nearbyMonsterForDeathDrop(x, y) {
+    let selected = null;
+    let candidateCount = 0;
+    for (let nearbyX = x - 1; nearbyX <= x + 1; nearbyX++) {
+        for (let nearbyY = y - 1; nearbyY <= y + 1; nearbyY++) {
+            if (!isok(nearbyX, nearbyY)
+                || nearbyX === game.u.ux && nearbyY === game.u.uy)
+                continue;
+            const monster = monsterAt(nearbyX, nearbyY);
+            if (!monster || !monsterLikesObjects(monster))
+                continue;
+            candidateCount++;
+            if (rn2(candidateCount) === 0)
+                selected = monster;
+        }
+    }
+    return selected;
+}
+async function giveDeathDropToNearbyMonster(object, x, y) {
+    const monster = nearbyMonsterForDeathDrop(x, y);
+    if (!monster || !monsterCanCarryObject(monster, object, game))
+        return false;
+    await linkObjectToMonsterInventory(monster, object);
+    return true;
+}
+export async function dropHeroInventoryForBones(x, y, { carrier = null, container = null } = {}) {
+    setTwoWeaponCombat(false);
+    while ((game.inventory || []).length) {
+        const object = game.inventory.shift();
+        if (!object)
+            break;
+        object.where = 'free';
+        if (!carrier || ((MONSTER_FLAGS2[carrier.mnum] ?? 0) & M2_UNDEAD))
+            objectNoLongerHeldSynchronously(object, game);
+        if ((container || artifactEmitsLight(object)) && object.lamplit)
+            endObjectBurn(object, game, game.moves ?? 0);
+        clearHeroCarriedState(object);
+        if (rn2(5))
+            curseObjectState(object);
+        if (carrier) {
+            await linkObjectToMonsterInventory(carrier, object);
+            continue;
+        }
+        if (container) {
+            await addObjectToContainer(container, object, game);
+            continue;
+        }
+        if (rn2(8) === 0 && await giveDeathDropToNearbyMonster(object, x, y))
+            continue;
+        placeObjectSynchronously(object, x, y);
+    }
+    if (container)
+        container.owt = objectWeight(container);
+}
+async function makeBonesMonster(mnum, x, y, flags) {
+    game.in_mklev = true;
+    try {
+        return await makemonAt(mnum, x, y, flags);
+    }
+    finally {
+        game.in_mklev = false;
+    }
+}
+async function addMummyWrapping(monster) {
+    if (MONSTER_SYMBOL[monster.mnum] !== S_MUMMY
+        || (monster.minvent ?? []).some(object => object.otyp === MUMMY_WRAPPING)) {
+        return;
+    }
+    await linkObjectToMonsterInventory(monster, await mksobj(MUMMY_WRAPPING, true, false));
+}
+// The dead hero leaves C mkobj.c:mk_named_object()'s named corpse or
+// statue; mkobj.c:obj_attach_mid() ties the ghost's id to it.
+export async function createBonesFromDeath(deathCause, promptDeathQuestion, when) {
+    if (!game._canMakeBones)
+        return false;
+    const level = requireGameLevel();
+    const x = game.u?.ux ?? 0;
+    const y = game.u?.uy ?? 0;
+    const arise = game.u?.ugrave_arise ?? NON_PM;
+    let corpse = null;
+    const heroForm = game.u.umonnum;
+    if (heroForm === undefined)
+        throw new Error('Death remains require an initialized hero species');
+    const formFlags = game.mvitals?.[heroForm]?.mvflags ?? MONSTER_GENO[heroForm] ?? 0;
+    if (arise === NON_PM && !(formFlags & G_NOCORPSE)) {
+        const species = Upolyd(game.u) ? heroForm : game.urace?.mnum ?? PM_HUMAN;
+        corpse = await createCorpstatAt(CORPSE, null, species, x, y, CORPSTAT_INIT);
+        corpse.name = `${game.plname || 'player'} corpse`;
+        corpse.oname = game.plname || 'player';
+        const deathSquare = level.at(x, y);
+        const trapped = level.traps.some(trap => trap.tx === x && trap.ty === y);
+        if (deathSquare && (deathSquare.typ === ROOM || deathSquare.typ === GRAVE) && !trapped) {
+            const wasGrave = deathSquare.typ === GRAVE;
+            deathSquare.typ = GRAVE;
+            if (!wasGrave)
+                deathSquare.emptygrave = 1;
+            makeEngravingAt(x, y, `${game.plname || 'player'}, ${deathCause}`, null, 0, HEADSTONE);
+        }
+    }
+    if (game.flags?.debug) {
+        // end.c:1366 asks paranoid_query(ParanoidBones, "Save bones?");
+        // its non-paranoid branch is yn_function(prompt, ynchars, 'n', FALSE)
+        // (cmd.c:5645), which neither pops nor feeds the command queue.
+        if (!await paranoidQuery(!!((game.flags.paranoia_bits ?? 0) & PARANOID_BONES), 'Save bones?'))
+            return false;
+    }
+    clearBypasses();
+    if (bonesLevelExists()) {
+        if (!game.flags?.debug)
+            return false;
+        const replace = await promptDeathQuestion('Bones file already exists.  Replace it?');
+        if (replace !== 'y')
+            return false;
+        if (!deleteBonesLevel()) {
+            await plineWithContinuation('Cannot unlink old bones.');
+            return false;
+        }
+    }
+    releaseAllMonsterLeashes();
+    if (game.u.punished)
+        await unpunishHero();
+    if (game.u.usteed)
+        await dismountHero(DISMOUNT_BONES);
+    await prepareBonesMonstersForSave();
+    forgetEngravings(level);
+    for (const object of game.inventory)
+        object.ghostly = true;
+    if (arise === LEAVESTATUE) {
+        const form = game.u?.umonnum ?? game.urace?.mnum ?? PM_HUMAN;
+        // C mkobj.c:mk_named_object(): corpse or statue named after the hero.
+        const statue = await mkcorpstat(STATUE, null, form, x, y, 0);
+        statue.oname = game.plname || 'player';
+        await dropHeroInventoryForBones(x, y, { container: statue });
+        game._bonesSaved = saveBonesLevel(deathCause, when);
+        return game._bonesSaved;
+    }
+    if (arise >= 0) {
+        const monster = await makeBonesMonster(arise, x, y, NO_MINVENT);
+        if (!monster) {
+            await dropHeroInventoryForBones(x, y);
+            game.u.ugrave_arise = NON_PM;
+            game._bonesSaved = false;
+            return false;
+        }
+        giveHeroResistancesToMonster(monster, game);
+        setMonsterGivenName(monster, game.plname || 'player');
+        await newsym(x, y);
+        await dropHeroInventoryForBones(x, y, { carrier: monster });
+        await addMummyWrapping(monster);
+        await initializeMonsterArmor(monster);
+        completeBonesMonster(monster, game);
+        game._bonesSaved = saveBonesLevel(deathCause, when);
+        return game._bonesSaved;
+    }
+    await dropHeroInventoryForBones(x, y);
+    const ghost = await makeBonesMonster(PM_GHOST, x, y, MM_NONAME);
+    if (!ghost) {
+        game._bonesSaved = false;
+        return false;
+    }
+    setMonsterGivenName(ghost, game.plname || 'player');
+    completeBonesMonster(ghost, game);
+    if (corpse) {
+        // C mkobj.c:obj_attach_mid(): the ghost's id rides on the corpse.
+        corpse.oextra = { ...(corpse.oextra || {}), omid: ghost.m_id };
+    }
+    game._bonesSaved = saveBonesLevel(deathCause, when);
+    return game._bonesSaved;
+}
+// Monster state saved in bones levels.
+// C refs: bones.c:savebones()/getbones().
+const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
+const PM_VLAD = MONSTER_NAME.indexOf('Vlad the Impaler');
+const PM_ORACLE = MONSTER_NAME.indexOf('Oracle');
+const MS_LEADER = 36;
+const MS_NEMESIS = 37;
+const M1_CONCEAL = 0x80;
+export async function prepareBonesMonstersForSave() {
+    const level = requireGameLevel();
+    for (const monster of [...level.monsters].reverse()) {
+        if (monster.mhp < 1 || (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
+            continue;
+        const sound = MONSTER_SOUND[monster.mnum];
+        if (monster.iswiz || monster.mnum === PM_MEDUSA
+            || sound === MS_LEADER || sound === MS_NEMESIS
+            || monster.mnum === PM_VLAD || monster.cham === PM_VLAD
+            || monster.mnum === PM_ORACLE && !await fixupOracle(monster))
+            await removeMonsterFromGame(monster);
+    }
+    purgeDeadMonsters(level);
+}
+async function fixupOracle(oracle) {
+    if (!Is_oracle_level(game.u.uz))
+        return false;
+    const level = requireGameLevel();
+    oracle.mpeaceful = 1;
+    const currentRoom = () => roomForRoomno(level, level.at(oracle.mx, oracle.my)?.roomno ?? 0);
+    if (currentRoom()?.rtype === DELPHI)
+        return true;
+    const chamber = level.rooms.find(room => isRoom(room) && room.orig_rtype === DELPHI);
+    if (!isRoom(chamber))
+        return true;
+    if (currentRoom() !== chamber) {
+        const x = Math.trunc((chamber.lx + chamber.hx) / 2);
+        const y = Math.trunc((chamber.ly + chamber.hy) / 2);
+        const destination = findMonsterNearPosition(oracle.mnum, x, y);
+        if (destination)
+            await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NOMSG });
+    }
+    if (currentRoom() === chamber)
+        chamber.rtype = DELPHI;
+    return true;
+}
+function sanitizeMonsterName(monster) {
+    const name = monster?.mextra?.mgivenname
+        || monster?.mgivenname
+        || monster?.name;
+    if (!name)
+        return;
+    const sanitized = sanitizeBonesName(name);
+    setMonsterGivenName(monster, sanitized);
+}
+const HERO_RESISTANCES = Object.freeze([
+    ['fireResistance', 0x01],
+    ['coldResistance', 0x02],
+    ['sleepResistance', 0x04],
+    ['disintegrationResistance', 0x08],
+    ['shockResistance', 0x10],
+    ['poisonResistance', 0x20],
+    ['acidResistance', 0x40],
+    ['stoneResistance', 0x80],
+]);
+function roleIndex(state) {
+    const index = roles.findIndex(role => role.key === state.urole?.key);
+    return index < 0 ? 0 : index;
+}
+function raceIndex(state) {
+    const index = races.findIndex(race => race.noun === state.urace?.noun);
+    return index < 0 ? 0 : index;
+}
+export function giveHeroResistancesToMonster(monster, state = game) {
+    let inherited = 0;
+    for (const [property, bit] of HERO_RESISTANCES) {
+        if (hasPermanentIntrinsicProperty(property, state))
+            inherited |= bit;
+    }
+    monster.mintrinsics = (monster.mintrinsics ?? 0) | inherited;
+    return inherited;
+}
+export function completeBonesMonster(monster, state = game) {
+    requirePlayingGame(state);
+    const finalRole = roleIndex(state);
+    const finalRace = raceIndex(state);
+    const ebones = {
+        parentmid: monster.m_id,
+        role: finalRole,
+        race: finalRace,
+        oldalign: {
+            type: state.u.ualign.type,
+            record: state.u.ualign.record,
+            abuse: state.u.ualign.abuse ?? 0,
+        },
+        deathlevel: state.u?.ulevel ?? 0,
+        luck: state.u?.uluck ?? 0,
+        mnum: SPECIAL_PM + 1 + finalRole,
+        female: !!state.flags?.female,
+        demigod: !!state.u?.uevent?.udemigod,
+        crowned: !!state.u?.uevent?.uhand_of_elbereth,
+    };
+    monster.m_lev = state.u?.ulevel || 1;
+    monster.mhp = monster.mhpmax = state.u?.uhpmax || 1;
+    monster.female = !!state.flags?.female;
+    monster.msleeping = 1;
+    monster.mextra ??= {};
+    monster.mextra.ebones = ebones;
+    return monster;
+}
+export async function restoreBonesMonsters(level, state) {
+    // C restmonchn() admits the complete chain before getbones() starts
+    // purging it. Inventory drops during purge must not affect admission
+    // of an actor later in that chain.
+    // Births append here; native fmon starts with the newest monster.
+    const monsters = [...level.monsters].reverse();
+    for (const monster of monsters) {
+        if (monster.isshk && state.u.uz?.dlevel) {
+            if (!hasShopkeeperData(monster))
+                throw new Error(`Bones shopkeeper ${monster.m_id} has no shop record.`);
+            monster.eshk.shoplevel = { ...state.u.uz };
+            const customer = (monster.eshk.customer ?? '').slice(0, PL_NSIZ).toLowerCase();
+            if (!monster.mpeaceful && customer !== state.plname.slice(0, PL_NSIZ).toLowerCase())
+                pacifyShopkeeper(monster, true);
+        }
+        // C priest.c:restpriest(): bones belong to the receiving level.
+        if (monster.ispriest && state.u.uz?.dlevel) {
+            const shrine = monster.epri ?? monster.mextra?.epri;
+            if (!shrine)
+                throw new Error(`Bones priest ${monster.m_id} has no shrine record.`);
+            shrine.shrlevel = { ...state.u.uz };
+        }
+        const species = typeof monster.cham === 'number' && Number.isInteger(monster.cham) && monster.cham >= 0
+            ? monster.cham : monster.mnum;
+        if (!propagateMonsterSpecies(species, true, true, state))
+            monster.mhpmax = DEFUNCT_MONSTER;
+    }
+    for (const monster of monsters) {
+        setShopResidency(monster, false, state);
+        if (monster.mundetected && (monsterHidesUnder(monster.mnum)))
+            await hideMonsterUnder(monster, state);
+        if (!monster.isshk) {
+            const alignment = MONSTER_ALIGNMENT[monster.mnum] ?? 0;
+            const isUnicorn = monster.mnum >= 101 && monster.mnum <= 103;
+            const coalignedUnicorn = isUnicorn
+                && Math.sign(state.u.ualign?.type ?? 0) === Math.sign(alignment);
+            monster.mpeaceful = coalignedUnicorn || peaceMinded(monster.mnum) ? 1 : 0;
+        }
+        setMonsterMalign(monster, state);
+        await restoreMonsterShape(monster, state);
+        await hideMonsterOnRestore(monster, state);
+    }
+    for (const monster of monsters) {
+        sanitizeMonsterName(monster);
+        if (monster.mhpmax !== DEFUNCT_MONSTER)
+            continue;
+        await removeMonsterFromGame(monster);
+    }
+}
 const BONES_VERSION = 20;
 // C files.c:set_bonesfile_name(): special levels keep their identity when
 // dungeon generation changes their depth; quest bones also belong to a role.
