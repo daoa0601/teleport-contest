@@ -31,7 +31,7 @@ import { setMonsterGivenName, monsterName } from '../js/do_name.js';
 import { tryKickReel } from '../js/dokick.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { hurtleMonster, breakFloorObject } from '../js/dothrow.js';
-import { mintrap, tryMonsterTrapEscape } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import {
     AMULET_OF_STRANGULATION, BLINDING_VENOM, BOULDER, BOW, CHEST, CORPSE, DAGGER, GLOB_OF_GRAY_OOZE,
     GOLD_DRAGON_SCALE_MAIL, OBJECT_NAMES, POT_HEALING, SPE_FORCE_BOLT, STATUE,
@@ -260,7 +260,7 @@ void test('a named ghost keeps its possessive name while escaping a bear trap', 
     monster.mtrapped = 1;
     const messages: string[] = [];
 
-    await tryMonsterTrapEscape(monster, game, { random: () => 0, publish: text => { messages.push(text); } });
+    await mintrap(monster, game, { random: () => 0, publish: (text: string) => { messages.push(text); } });
 
     assert.equal(messages[0], "James' ghost pulls free of the bear trap.");
 });
