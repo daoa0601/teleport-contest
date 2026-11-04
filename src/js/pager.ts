@@ -56,7 +56,7 @@ import { singularObjectName } from './objnam.js';
 import { warningSymbols } from './warning_symbols.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
-import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
 
 import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { dist2 } from './hacklib.js';
@@ -627,8 +627,8 @@ export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata
     if (glyph.kind === 'invisible') return unseenCreatureDescription();
     if (glyph.kind === 'engraving') return 'engraving';
     if (glyph.kind === 'effect' && glyph.glyph !== undefined) {
-        if (glyph.glyph >= GlyphOffset.zap && glyph.glyph < GlyphOffset.cmapC) return '';
-        if (glyph.glyph >= GlyphOffset.cmapC && glyph.glyph < GlyphOffset.swallow) {
+        if (glyphIsCmapZap(glyph.glyph)) return '';
+        if (glyphIsCmapC(glyph.glyph)) {
             if (glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud)) return 'poison cloud';
             if (glyph.glyph === cmapToGlyph(CmapSymbol.goodpos)) return 'valid position';
             return '';
@@ -781,7 +781,8 @@ export function screenDescription(x: number, y: number, description: string): Sc
         if (index === CmapSymbol.pool) name = 'pool';
         else if (index === CmapSymbol.water) name = Is_waterlevel(game.u.uz) ? 'limitless water' : 'wall of water';
         else if (index === CmapSymbol.lava) name = 'lava';
-        const liquid = [CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice].includes(index);
+        const liquids: readonly number[] = [CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice];
+        const liquid = liquids.includes(index);
         const article = name.includes(' of a room') ? `the ${name}`
             : liquid || index === CmapSymbol.stone || name === 'air' ? name : withIndefiniteArticle(name);
         append(!count && trap && trapType !== VIBRATING_SQUARE ? 'a trap' : article, name);
@@ -846,7 +847,7 @@ export async function farlookLocationDescription(x: number, y: number): Promise<
         return 'unexplored area';
     }
     if (glyph?.kind === 'warning') {
-        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
+        const index = glyph.glyph === undefined ? -1 : glyphToWarning(glyph.glyph);
         const warning = def_warnsyms[index];
         if (!warning) throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
         return warning.desc;
@@ -975,7 +976,7 @@ async function* lookListEntries(kind: LookListKind, nearby: boolean, mode: strin
                     }
                 } else if (glyph.kind === 'invisible') description = 'remembered, unseen, creature';
                 else if (glyph.kind === 'warning') {
-                    const warning = def_warnsyms[(glyph.glyph ?? -1) - GlyphOffset.warning];
+                    const warning = def_warnsyms[glyph.glyph === undefined ? -1 : glyphToWarning(glyph.glyph)];
                     if (warning) description = warning.desc;
                 }
             } else if (kind === 'objects') {

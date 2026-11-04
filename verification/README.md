@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 126 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 158 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -234,8 +234,16 @@ over the pure mons[]-table functions of mondata.c and makemon.c:
 `cantvomit`, `noattacks`, `num_horns`, `little_to_big`, `big_to_little`,
 `big_little_match` and `same_race` (two-argument species pairs),
 `can_blow`'s table half, `mbirth_limit` and `max_passive_dmg` with equal
-element-resistance call contracts. The monster claims check all 383 valid
-native species with symbolic state where applicable; movement uses
+element-resistance call contracts, and the thirty-two glyph-encoding claims
+of fv-equivalence-batch-9 over `glyph_numbers.js`, `display.js`
+(`swallowToGlyph`), and `getpos.js` (`glyphToCmapSymbol`): the display.h
+encoders (`warning/monnum/petnum/detected_monnum/ridden_monnum/
+objnum/explosion/altar/cmap_to_glyph`), display.c's real
+`zapdir_to_glyph`/`swallow_to_glyph`, the fourteen glyph_is_* predicates,
+the display.h decoders (`glyph_to_mon/obj/swallow/warning/explosion/trap`)
+and glyphs.c's real `glyph_to_cmap` over the terrain span. The monster
+claims check all 383 valid native species with symbolic state where
+applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
 An empty partition fails the claim and reports its label. The regression

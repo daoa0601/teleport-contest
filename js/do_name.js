@@ -21,7 +21,7 @@ import { definiteName, makePlural, objectName, objectNameIsPlural, observeObject
 import { impossible } from './diagnostics.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
-import { GlyphOffset } from './glyph_numbers.js';
+import { glyphIsSwallow } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
 import { heroBeautyDescription } from './apply.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, SPECIAL_PM, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, monsterTypeName } from './monster_data.js';
@@ -404,7 +404,7 @@ export async function nameChosenMonster() {
     let swallowed = false;
     if (!monster && game.u.uswallow) {
         const glyph = glyphAt(selected.x, selected.y)?.glyph;
-        if (glyph !== undefined && glyph >= GlyphOffset.swallow && glyph < GlyphOffset.explodeDark) {
+        if (glyph !== undefined && glyphIsSwallow(glyph)) {
             monster = game.u.ustuck ?? null;
             swallowed = true;
         }

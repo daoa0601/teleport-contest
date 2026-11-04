@@ -258,7 +258,7 @@ src/js/do_name.ts	randomDisplayMonsterIdentity	rn2Display	"[""2""]"	constant
 src/js/do_name.ts	randomDisplayMonsterIdentity	rn2Display	"[""SPECIAL_PM + BOGUSMONSIZE""]"	constant
 src/js/display.ts	randomHallucinatedObjectGlyph	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	randomHallucinatedObjectGlyph	rn2Display	"[""OBJECT_COLOR.length - firstObject""]"	constant
-src/js/display.ts	swallowed	rn2Display	"[""MONSTER_COLOR.length""]"	constant
+src/js/display.ts	swallowToGlyph	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	transientMonsterGlyph	rn2Display	"[""MONSTER_COLOR.length""]"	constant
 src/js/display.ts	warningProjection	rn2Display	"[""def_warnsyms.length - 1""]"	unproved
 src/js/pray.ts	giveSpell	rn2	"[""100""]"	constant

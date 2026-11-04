@@ -183,7 +183,7 @@ const EFFECT_FEATURE_SYMBOLS = ['|', '-', '\\', '/', '*', '!', ')', '(', '0', '#
 function matchingGetposSymbols(key: string, state: GameState): ReadonlySet<number> {
     const matching = new Set<number>();
     const dec = /^DECgraphics$/i.test(state.symset ?? '');
-    for (let index = CmapSymbol.bars; index <= CmapSymbol.goodpos; index++) {
+    for (let index: number = CmapSymbol.bars; index <= CmapSymbol.goodpos; index++) {
         if (index === CmapSymbol.room || index === CmapSymbol.darkroom
             || index === CmapSymbol.corr || index === CmapSymbol.litcorr) continue;
         const trap = index >= CmapSymbol.arrowTrap && index < 74;
