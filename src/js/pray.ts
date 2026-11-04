@@ -549,6 +549,7 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
 }
 
 // C pray.c:fix_worst_trouble().
+// Also C attrib.c:setuhpmax(): maximum HP, peak HP, and clamping are inlined here
 export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -776,6 +777,8 @@ export async function desecrateAltar(
     await godZapsHero(alignment, state);
 }
 
+// C pray.c:angrygods()
+// Also C pray.c:gods_angry(): the fixed godVoice message is inlined here
 export async function angryGods(alignment: number, state: GameState = game): Promise<void> {
     requirePlayingGame(state);
     const hero = state.u;
@@ -841,6 +844,7 @@ export async function angryGods(alignment: number, state: GameState = game): Pro
         hero.ublesscnt = Math.max(hero.ublesscnt || 0, rnz(300));
 }
 
+// Also C pray.c:gods_angry(): the fixed godVoice message is inlined here
 async function curseHero(alignment: number, state: PlayingGameState): Promise<void> {
     await godVoice(alignment, 'Thou hast angered me.', state);
     if (!heroIsBlind(state) && !state.u.antimagic) {
@@ -1396,6 +1400,8 @@ async function offerCorpse(corpse: GameObject, highAltar: boolean, alignment: nu
     await rewardOffering(value);
 }
 
+// C pray.c:eval_offering()
+// Also C pray.c:sacrifice_value(): corpse freshness and nutrition are inlined here
 async function offeringValue(corpse: CorpseOffering, alignment: number): Promise<number> {
     const game = requireInitializedGame();
     const age = corpse.on_ice ? corpse.age + Math.trunc((game.moves - corpse.age) / 2) : corpse.age;
@@ -1709,6 +1715,8 @@ async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment
     }
 }
 
+// C pray.c:offer_real_amulet()
+// Also C pray.c:a_gname(): inlined here using the caller's altar alignment
 async function offerAmulet(amulet: GameObject, alignment: number): Promise<void> {
     const game = requireInitializedGame();
     const hero = game.u;

@@ -26,6 +26,7 @@ function rogueGridRoom(cell) {
         throw new Error('Rogue room cell has no generated room.');
     return room;
 }
+// C extralev.c:corr()
 function rogueCorrCell(x, y) {
     const loc = game.level?.at(x, y);
     if (loc)

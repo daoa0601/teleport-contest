@@ -1960,6 +1960,8 @@ async function readExtendedCommand() {
         lastExecuted = selected;
     }
 }
+// C getline.c:tty_get_ext_cmd()
+// Also C getline.c:hooked_tty_getlin(): completion-aware line editing is inlined here
 // TTY's extended-command line editor redraws the prompt at every input
 // boundary. Completion expands visually while typed input advances the cursor.
 // Also C cmd.c:extcmd_initiator(): inlined here (the '#' initiator key).

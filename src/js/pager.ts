@@ -606,6 +606,7 @@ export function unseenCreatureDescription(): string {
         ? 'unseen creature' : 'remembered, unseen, creature';
 }
 
+// Also C pray.c:altarmask_at(): mimic-aware altar mask lookup is inlined here
 export function mapFeatureDescription(x: number, y: number, glyph: GlyphMetadata): string {
     if (glyph.kind === 'trap') return displayedTrapDescription(glyph.trapType, x, y);
     if (glyph.kind === 'invisible') return unseenCreatureDescription();

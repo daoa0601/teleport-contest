@@ -574,6 +574,7 @@ export async function uncursePrayerObject(object, label = null, state = game) {
     await adjustObjectLightAfterBlessing(object, oldLight, state);
 }
 // C pray.c:fix_worst_trouble().
+// Also C attrib.c:setuhpmax(): maximum HP, peak HP, and clamping are inlined here
 export async function fixPrayerTrouble(trouble, state = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -792,6 +793,8 @@ export async function desecrateAltar(highAltar, alignment, state = game) {
     await godVoice(alignment, `So, mortal!  You dare desecrate my ${highAltar ? 'High Temple' : 'altar'}!`, state);
     await godZapsHero(alignment, state);
 }
+// C pray.c:angrygods()
+// Also C pray.c:gods_angry(): the fixed godVoice message is inlined here
 export async function angryGods(alignment, state = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -859,6 +862,7 @@ export async function angryGods(alignment, state = game) {
     if (!state.program_state.gameover)
         hero.ublesscnt = Math.max(hero.ublesscnt || 0, rnz(300));
 }
+// Also C pray.c:gods_angry(): the fixed godVoice message is inlined here
 async function curseHero(alignment, state) {
     await godVoice(alignment, 'Thou hast angered me.', state);
     if (!heroIsBlind(state) && !state.u.antimagic) {
@@ -1464,6 +1468,8 @@ async function offerCorpse(corpse, highAltar, alignment) {
     await consumeOffering(corpse);
     await rewardOffering(value);
 }
+// C pray.c:eval_offering()
+// Also C pray.c:sacrifice_value(): corpse freshness and nutrition are inlined here
 async function offeringValue(corpse, alignment) {
     const game = requireInitializedGame();
     const age = corpse.on_ice ? corpse.age + Math.trunc((game.moves - corpse.age) / 2) : corpse.age;
@@ -1816,6 +1822,8 @@ async function offerFakeAmulet(amulet, highAltar, alignment) {
         await rejectOffering(highAltar, alignment);
     }
 }
+// C pray.c:offer_real_amulet()
+// Also C pray.c:a_gname(): inlined here using the caller's altar alignment
 async function offerAmulet(amulet, alignment) {
     const game = requireInitializedGame();
     const hero = game.u;

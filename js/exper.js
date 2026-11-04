@@ -178,6 +178,8 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
     state.context.botl = true;
 }
+// C attrib.c:adjabil()
+// Also C attrib.c:postadjabil(): visibility refresh is inlined here
 async function adjustAbilities(abilities, origin, oldLevel, newLevel, publish) {
     for (const [level, property, gainMessage, lossMessage] of abilities) {
         let changed = false;
@@ -205,7 +207,9 @@ async function adjustAbilities(abilities, origin, oldLevel, newLevel, publish) {
             await see_monsters();
     }
 }
-// C attrib.c:adjabil(). Level changes can grant or revoke role and race
+// C attrib.c:adjabil()
+// Also C attrib.c:role_abil(): role table lookup is inlined here
+// Level changes can grant or revoke role and race
 // abilities, and each changed level adds or removes one weapon-skill slot.
 export async function adjustLevelAbilities(oldLevel, newLevel, publish = plineWithContinuation) {
     const state = requireInitializedGame();

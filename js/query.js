@@ -52,6 +52,8 @@ export async function getLine(prompt, accepts = ch => /^[0-9+-]$/.test(ch), opti
         game._statusUpdatesDisabled = statusUpdatesDisabled;
     }
 }
+// C getline.c:tty_getlin()
+// Also C getline.c:hooked_tty_getlin(): line editing is inlined here
 // Direct tty callers, such as menu search, read live input without consuming
 // queued command answers. Core getlin() owns that queue through getLine().
 export async function tty_getlin(prompt, accepts, { suppressStatus = false, inMenu = false }) {

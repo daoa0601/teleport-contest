@@ -595,6 +595,7 @@ export function unseenCreatureDescription() {
     return heroIsBlind(game) || game.u.clairvoyanceDetection
         ? 'unseen creature' : 'remembered, unseen, creature';
 }
+// Also C pray.c:altarmask_at(): mimic-aware altar mask lookup is inlined here
 export function mapFeatureDescription(x, y, glyph) {
     if (glyph.kind === 'trap')
         return displayedTrapDescription(glyph.trapType, x, y);

@@ -336,6 +336,8 @@ export function heroIsVomiting(state = game) {
     return !!state.u?.vomiting || (state.u?.vomitingTurns ?? 0) > 0;
 }
 
+// C potion.c:make_vomiting()
+// Sets the timeout; callers own any recovery message.
 export function startHeroVomiting({ state = game, turns }: { state?: GameState; turns?: number } = {}) {
     const hero = state.u;
     hero.vomitingTurns = Math.max(0, turns ?? 0);
@@ -344,6 +346,8 @@ export function startHeroVomiting({ state = game, turns }: { state?: GameState; 
     return hero.vomiting;
 }
 
+// C potion.c:make_vomiting()
+// Clears the timeout; callers own the talk and Unaware checks.
 export function cureHeroVomiting(state = game) {
     const hero = state.u;
     const cured = heroIsVomiting(state);
@@ -364,7 +368,9 @@ interface PetrificationTimeoutOptions {
     publish?: MessagePublisher;
 }
 
-// C potion.c:make_stoned(). Admission belongs to the attack or command;
+// C potion.c:make_stoned()
+// Also C end.c:dealloc_killer(): delayed petrification fields are removed inline here
+// Admission belongs to the attack or command;
 // replacing an active timeout must retain its original delayed killer.
 export async function setHeroPetrificationTimeout(turns: number, {
     state = game, message = null, killer = null,
@@ -2671,6 +2677,7 @@ function potionColor(potion: GameObject): string {
     return displayColorName(game.objectDescriptions?.[potion.otyp] ?? OBJECT_DESCRIPTIONS[potion.otyp]);
 }
 
+// C potion.c:mixtype()
 function mixtureType(first: GameObject, second: GameObject): number | null {
     let left = first.otyp, right = second.otyp;
     if (first.oclass === POTION_CLASS && [POT_GAIN_LEVEL, POT_GAIN_ENERGY, POT_HEALING, POT_EXTRA_HEALING,

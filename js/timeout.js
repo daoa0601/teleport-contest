@@ -372,6 +372,7 @@ export async function burnAwayHeroSlime({ state = game, publish = plineWithConti
 // The bare Slimed reset shared by potion.c's make_slimed(0) and
 // slimed_to_death() below: no botl request, so the status line keeps
 // "Slime" until something else asks for a redraw.
+// Also C end.c:dealloc_killer(): the delayed slime killer is removed inline here
 export function dropHeroSliming(hero) {
     hero.slimedTurns = 0;
     hero.slimed = false;
@@ -1357,6 +1358,7 @@ export function queuedTimers(state = game) {
 }
 // C timeout.c:obj_is_local(). Contents follow their outermost owner;
 // objects carried by migrating monsters belong to the global batch.
+// Also C timeout.c:timer_is_local(): object-timer classification is inlined here
 function objectTimerIsGlobal(object, state) {
     let outer = object;
     while (outer.where === 'contained' && outer.container)
@@ -1876,7 +1878,9 @@ const TIMER_FUNC_NAMES = {
     [OBJECT_TIMER_KIND.SHRINK_GLOB]: 'shrink_glob',
     'melt-ice-away': 'melt_ice_away',
 };
-// timeout.c:print_queue(). C shows fmt_ptr() of the timer argument: the
+// C timeout.c:print_queue()
+// Also C timeout.c:kind_name(): object and level labels are inlined here
+// C shows fmt_ptr() of the timer argument: the
 // packed (x << 16 | y) spot coordinate for level timers and the object
 // address for object timers. Object addresses belong to the native heap, so
 // the port shows the object's stable id in the same 0x-prefixed shape.

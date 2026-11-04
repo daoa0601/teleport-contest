@@ -757,12 +757,14 @@ async function restoreEntry(guard, x, y, state) {
     deleteEngravingAt(x, y, requireGameLevel(state));
     await newsym(x, y);
 }
+// C vault.c:restfakecorr()
 async function restoreFakeCorridor(guard, state) {
     if (await clearVaultCorridor(guard, false, state)) {
         guard.isgd = 0;
         await removeMonsterFromGame(guard);
     }
 }
+// C vault.c:gd_move_cleanup()
 async function finishEscort(guard, semiDead, alreadyAnnounced, state) {
     const x = guard.mx, y = guard.my, spotted = canSpotMonster(guard);
     await parkVaultGuard(guard, state);
@@ -775,6 +777,7 @@ async function finishEscort(guard, semiDead, alreadyAnnounced, state) {
     }
     return MMOVE_DIED;
 }
+// C vault.c:gd_letknow()
 async function letHeroKnow(guard, state) {
     if (!cansee(guard.mx, guard.my) || !monsterVisible(guard)) {
         await publishHeardMessage(guard.minvent?.some(object => object.otyp === TIN_WHISTLE)
@@ -786,6 +789,7 @@ async function letHeroKnow(guard, state) {
         await pline(distant ? `You see ${name} approaching.` : `You are confronted by ${name}.`);
     }
 }
+// C vault.c:gd_mv_monaway()
 async function moveMonsterAside(guard, x, y, state, random) {
     const occupant = monsterAtPosition(requireGameLevel(state), x, y);
     if (!occupant || occupant === guard)
@@ -858,6 +862,7 @@ async function pickGoldAtGuard(guard, state) {
     if (cansee(guard.mx, guard.my))
         await newsym(guard.mx, guard.my);
 }
+// C vault.c:gd_pick_corridor_gold()
 async function pickCorridorGold(guard, x, y, state, random) {
     const oldx = guard.mx, oldy = guard.my, seen = cansee(x, y);
     const underHero = x === state.u.ux && y === state.u.uy;

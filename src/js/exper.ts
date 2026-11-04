@@ -211,6 +211,8 @@ export async function gainExperienceLevel({
     state.context.botl = true;
 }
 
+// C attrib.c:adjabil()
+// Also C attrib.c:postadjabil(): visibility refresh is inlined here
 async function adjustAbilities(abilities: readonly LevelAbility[], origin: IntrinsicOrigin, oldLevel: number, newLevel: number, publish: MessagePublisher) {
     for (const [level, property, gainMessage, lossMessage] of abilities) {
         let changed = false;
@@ -237,7 +239,9 @@ async function adjustAbilities(abilities: readonly LevelAbility[], origin: Intri
     }
 }
 
-// C attrib.c:adjabil(). Level changes can grant or revoke role and race
+// C attrib.c:adjabil()
+// Also C attrib.c:role_abil(): role table lookup is inlined here
+// Level changes can grant or revoke role and race
 // abilities, and each changed level adds or removes one weapon-skill slot.
 export async function adjustLevelAbilities(
     oldLevel: number, newLevel: number, publish: MessagePublisher = plineWithContinuation,

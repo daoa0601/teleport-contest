@@ -687,6 +687,8 @@ function updateCarriedFlags(object, carried, state) {
 function carriedPossessionFlag(object, state) {
     return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
 }
+// C attrib.c:set_moreluck()
+// Also C attrib.c:stone_luck(): inventory quantity sum is inlined here
 export function updateCarriedLuck(object, state = game) {
     if (confersLuck(object, state)) {
         const lucky = state.inventory.filter(item => confersLuck(item, state));
@@ -1504,6 +1506,8 @@ export async function inventoryActionForObject(item) {
     const key = await showItemActionMenu(item);
     return key === 0 ? null : { key: inventoryActionKey(key), item };
 }
+// Also C iactions.c:item_naming_classification(): inlined here
+// Also C iactions.c:ia_addmenu(): keyed action rows are built inline here
 function itemActionEntries(item, state, repairGold) {
     const itemName = simpleObjectName(item, state);
     const entries = [];

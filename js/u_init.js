@@ -695,6 +695,7 @@ function initialInventoryEntry(table, index) {
         throw new Error(`Initial inventory has no terminator at entry ${index}`);
     return entry;
 }
+// C attrib.c:rnd_attr()
 function rndAttr(weights) {
     let x = rn2(100);
     for (const i of ATTRIBUTE_INDICES) {
@@ -704,6 +705,8 @@ function rndAttr(weights) {
     }
     return 6;
 }
+// C attrib.c:init_attr()
+// Also C attrib.c:init_attr_role_redist(): positive-point distribution is inlined here
 // C refs: init_attr(75), vary_init_attr().
 function initAttributes() {
     const role = game.urole;

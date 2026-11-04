@@ -727,6 +727,7 @@ async function restoreEntry(guard: VaultGuard, x: number, y: number, state: Game
     await newsym(x, y);
 }
 
+// C vault.c:restfakecorr()
 async function restoreFakeCorridor(guard: VaultGuard, state: GameState) {
     if (await clearVaultCorridor(guard, false, state)) {
         guard.isgd = 0;
@@ -734,6 +735,7 @@ async function restoreFakeCorridor(guard: VaultGuard, state: GameState) {
     }
 }
 
+// C vault.c:gd_move_cleanup()
 async function finishEscort(guard: VaultGuard, semiDead: boolean, alreadyAnnounced: boolean, state: GameState) {
     const x = guard.mx, y = guard.my, spotted = canSpotMonster(guard);
     await parkVaultGuard(guard, state);
@@ -747,6 +749,7 @@ async function finishEscort(guard: VaultGuard, semiDead: boolean, alreadyAnnounc
     return MMOVE_DIED;
 }
 
+// C vault.c:gd_letknow()
 async function letHeroKnow(guard: Monster, state: GameState) {
     if (!cansee(guard.mx, guard.my) || !monsterVisible(guard)) {
         await publishHeardMessage(guard.minvent?.some(object => object.otyp === TIN_WHISTLE)
@@ -758,6 +761,7 @@ async function letHeroKnow(guard: Monster, state: GameState) {
     }
 }
 
+// C vault.c:gd_mv_monaway()
 async function moveMonsterAside(guard: Monster, x: number, y: number, state: GameState, random: (limit: number) => number) {
     const occupant = monsterAtPosition(requireGameLevel(state), x, y);
     if (!occupant || occupant === guard) return;
@@ -818,6 +822,7 @@ async function pickGoldAtGuard(guard: Monster, state: GameState) {
     if (cansee(guard.mx, guard.my)) await newsym(guard.mx, guard.my);
 }
 
+// C vault.c:gd_pick_corridor_gold()
 async function pickCorridorGold(guard: VaultGuard, x: number, y: number, state: GameState, random: (limit: number) => number) {
     const oldx = guard.mx, oldy = guard.my, seen = cansee(x, y);
     const underHero = x === state.u.ux && y === state.u.uy;

@@ -774,6 +774,7 @@ function initialInventoryEntry(table: readonly InitialInventoryEntry[], index: n
     return entry;
 }
 
+// C attrib.c:rnd_attr()
 function rndAttr(weights: AttributeValues): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
     let x = rn2(100);
     for (const i of ATTRIBUTE_INDICES) {
@@ -783,6 +784,8 @@ function rndAttr(weights: AttributeValues): 0 | 1 | 2 | 3 | 4 | 5 | 6 {
     return 6;
 }
 
+// C attrib.c:init_attr()
+// Also C attrib.c:init_attr_role_redist(): positive-point distribution is inlined here
 // C refs: init_attr(75), vary_init_attr().
 function initAttributes(): void {
     const role = game.urole;

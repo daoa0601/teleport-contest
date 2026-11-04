@@ -83,7 +83,9 @@ export async function consultOracle(oracle: Monster | null, state: GameState = g
     return true;
 }
 
-// C outoracle(): normal records are drawn without replacement by replacing
+// C rumors.c:outoracle()
+// Also C rumors.c:init_oracles(): record indices initialize from the imported table here
+// Normal records are drawn without replacement by replacing
 // the selected slot with the final slot. The special record remains at zero.
 export async function outOracle(special: boolean, delphi: boolean, state: GameState = game): Promise<void> {
     const remaining = state.oracleRemaining ??= ORACLE_TEXT.map((_text, index) => index);

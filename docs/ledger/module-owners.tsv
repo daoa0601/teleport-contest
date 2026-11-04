@@ -67,6 +67,7 @@ src/js/maze_terrain.ts	mkmaze.c
 src/js/mcastu.ts	mcastu.c
 src/js/menu_coloring.ts	windows.c
 src/js/mhitm.ts	mhitm.c
+src/js/minion.ts	minion.c
 src/js/mkmap.ts	mkmap.c
 src/js/mkmaze.ts	mkmaze.c
 src/js/mkobj.ts	mkobj.c
@@ -96,7 +97,6 @@ src/js/potion.ts	potion.c
 src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile_bars.ts	monmove.c
-src/js/quest.ts	quest.c
 src/js/ray_name.ts	mthrowu.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c
@@ -108,7 +108,6 @@ src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
 src/js/shknam.ts	shknam.c
 src/js/sit.ts	sit.c
-src/js/sp_lev.ts	sp_lev.c
 src/js/sp_lev_lua.ts	sp_lev.c
 src/js/special_level_cleanup.ts	sp_lev.c
 src/js/special_location.ts	sp_lev.c
@@ -130,6 +129,7 @@ src/js/transient_light.ts	light.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
+src/js/were.ts	were.c
 src/js/wield.ts	wield.c
 src/js/wintty.ts	wintty.c
 src/js/wizard.ts	wizard.c

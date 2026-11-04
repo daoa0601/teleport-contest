@@ -950,6 +950,9 @@ async function mkveggy_at(x: number, y: number): Promise<GameObject> {
     return object;
 }
 
+// C shknam.c:stock_room()
+// Also C shknam.c:shkinit(): shopkeeper initialization is inlined here
+// Also C shknam.c:mkshobj_at(): per-square stocking is inlined here
 export async function stockShopRoom(sroom: Room): Promise<void> {
     const level = requireGameLevel();
     const shopLevel = game.u.uz;
