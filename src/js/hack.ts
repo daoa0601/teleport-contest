@@ -3953,7 +3953,9 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             if (game.program_state.gameover) return true;
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
-        if (await do_attack(monster, newx, newy, { safeMonster })) return true;
+        // The attempted move takes time unless attack_checks() cancels it.
+        game.context.move = 1;
+        if (await do_attack(monster, newx, newy, { safeMonster })) return game.context.move !== 0;
     }
 
     // domove_core() snapshots the origin before test_move().  This includes

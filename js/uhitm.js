@@ -254,8 +254,10 @@ export async function prepareAppliedWeaponAttack(monster, weapon, { state = game
             const paranoid = !!((state.flags?.paranoia_bits ?? 0)
                 & PARANOID_HIT);
             const accepted = await paranoidQuery(paranoid, `Really attack ${monsterName(monster, { state })}?`, state.flags?.paranoia_bits ?? 0);
-            if (!accepted)
+            if (!accepted) {
+                state.context.move = 0;
                 return { proceed: false, spentTime: false };
+            }
         }
     }
     return { proceed: true, spentTime: false };
@@ -470,7 +472,7 @@ export async function do_attack(monster, x, y, { safeMonster = false, permission
     }
     const verdict = permission ?? await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x, y } });
     if (!verdict.proceed)
-        return verdict.spentTime;
+        return true;
     const confirmationOverridden = verdict.confirmationOverridden ?? false;
     atk_done: {
         game._heroMeleeThisCommand = true;

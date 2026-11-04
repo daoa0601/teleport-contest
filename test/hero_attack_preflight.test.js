@@ -161,12 +161,26 @@ void test('an actually displayed warning permits an unseen attack', async () => 
     assert.notEqual(game.level.requireAt(12, 10).remembered_glyph?.kind, 'invisible');
 });
 void test('declining a peaceful attack does not spend the action', async () => {
-    await freshObjectRoom({ flags: { verbose: true, confirm: true } });
+    await freshObjectRoom({ flags: { verbose: true, confirm: true }, context: { move: 1 } });
     const monster = await target({ mpeaceful: 1 });
     pushKeys('n');
     const result = await prepareAppliedWeaponAttack(monster, null);
     assert.deepEqual(result, { proceed: false, spentTime: false });
+    assert.equal(game.context.move, 0);
     assert.equal((monster.mstrategy ?? 0) & STRAT_WAITMASK, 0);
+});
+void test('declining an attack during movement stops without bumping the peaceful monster', async () => {
+    await freshObjectRoom({
+        heroX: 11, flags: { verbose: true, confirm: true, safe_dog: false },
+    });
+    const monster = await target({ mpeaceful: 1 });
+    pushKeys('n');
+    await rhack('l'.charCodeAt(0));
+    assert.equal(game.u.ux, 11, 'the declined attack leaves the hero in place');
+    assert.equal(game.u.uy, 10);
+    assert.equal(monster.mhp, 10, 'the peaceful monster is not attacked');
+    assert.match(game._last_message, /Really attack the giant ant\?/, 'the declined prompt ends the command without a collision message');
+    assert.equal(game.context.move, 0, 'the declined attack does not spend a turn');
 });
 void test('peaceful confirmation uses the definite article for a tame target', async () => {
     await freshObjectRoom({ flags: { verbose: true, confirm: true } });

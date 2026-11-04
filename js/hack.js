@@ -3873,8 +3873,10 @@ async function domoveCore(dx, dy) {
                 return true;
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
+        // The attempted move takes time unless attack_checks() cancels it.
+        game.context.move = 1;
         if (await do_attack(monster, newx, newy, { safeMonster }))
-            return true;
+            return game.context.move !== 0;
     }
     // domove_core() snapshots the origin before test_move().  This includes
     // the terminal blocked step of a Shift-run, which is why later monster
