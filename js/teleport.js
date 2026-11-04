@@ -368,8 +368,10 @@ function inside(area, x, y) {
 }
 // C teleport.c:tele_jump_ok().
 function crossesTeleportBoundary(state, fromX, fromY, toX, toY) {
+    // C tele_jump_ok() returns FALSE for an off-map target; this predicate
+    // answers the inverted question, so an off-map target counts as blocked.
     if (!isok(toX, toY))
-        return false;
+        return true;
     for (const region of [
         state?.level?.downTeleportRegion,
         state?.level?.upTeleportRegion,
@@ -416,14 +418,17 @@ export async function safe_teleds(state = game, { random = rn2, rollOne = rnd, a
     }
     if (!destination) {
         // collect_coords' rings: 1 or 2 steps first, then 3 or 4, on up.
-        const ccflags = CC_RING_PAIRS | CC_SKIP_INACCS;
-        const candidates = state.u.passesWalls
-            ? collect_coords(state.u.ux, state.u.uy, 0, ccflags, { state, random })
-            : collect_coords(state.u.ux, state.u.uy, 0, ccflags, {
-                state, random,
-                filter: (x, y) => !state.level?.monsters?.some(monster => monsterHasMapPosition(monster, state) && (monster.mhp ?? 1) > 0
-                    && monster.mx === x && monster.my === y),
-            });
+        // C always sets CC_SKIP_MONS and adds CC_SKIP_INACCS only without
+        // Passes_walls (teleport.c:747-749); the live-monster predicate
+        // keeps this port's mhp>0 occupant test in C's filter slot.
+        const ccflags = state.u.passesWalls
+            ? CC_RING_PAIRS
+            : CC_RING_PAIRS | CC_SKIP_INACCS;
+        const candidates = collect_coords(state.u.ux, state.u.uy, 0, ccflags, {
+            state, random,
+            filter: (x, y) => !state.level?.monsters?.some(monster => monsterHasMapPosition(monster, state) && (monster.mhp ?? 1) > 0
+                && monster.mx === x && monster.my === y),
+        });
         let trappedFallback = null;
         for (const point of candidates) {
             if (heroTeleportDestinationOk(point.x, point.y, { state })) {
