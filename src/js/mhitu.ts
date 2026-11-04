@@ -387,7 +387,7 @@ export async function presentMonsterAttackEffects(
                     }
                 if (heroAttack.revealUnderMessage !== null
                     && heroAttack.revealUnderMessage !== undefined) {
-                    // C mhitu.c:hitmu(): the hidden-attacker reveal line
+                    // C hitmu(): the hidden-attacker reveal line
                     // precedes the base-damage roll, and the to-hit die
                     // was already consumed.  Resume this same slot with
                     // that roll retained once the line has crossed tty.
@@ -442,7 +442,7 @@ export async function presentMonsterAttackEffects(
                     if (dismissal != null) paging.pagerOwned = true;
                     return dismissal;
                 };
-                // C mhitu.c:hitmu() runs mhitm_adtyping(), then
+                // C hitmu() runs mhitm_adtyping(), then
                 // mhitm_knockback(), the armor-class reduction and
                 // mdamageu()/passiveum() as one tail.  The begin-phase slot
                 // records the rolls and the ad_* inputs; the shared tail
@@ -569,7 +569,7 @@ export async function presentMonsterAttackEffects(
                     });
                 }
                 if (heroAttack.effect === 'engulf' || heroAttack.effect === 'engulf-tick') {
-                    // C mhitu.c:gulpmu(): the capture prose and every
+                    // C gulpmu(): the capture prose and every
                     // per-slot digestion effect run directly here.
                     const engulf = await presentHeroEngulfSlot(
                         monster, heroAttack, game, {
@@ -3105,7 +3105,7 @@ export async function u_slip_free(
     return true;
 }
 
-// C mhitu.c:doseduce() and mayberem(); entered from uhitm.c:mhitm_ad_ssex()'s
+// doseduce() and mayberem(); entered from uhitm.c:mhitm_ad_ssex()'s
 // hero branch and sounds.c chat with a cancelled seducer.
 
 const RIN_ADORNMENT = OBJECT_NAMES.indexOf('adornment');
