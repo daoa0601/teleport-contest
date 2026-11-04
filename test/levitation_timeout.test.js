@@ -3,8 +3,9 @@ import assert from 'node:assert/strict';
 import { LAVAPOOL, POOL, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty, levitationAtWill, refreshProperty, setInvokedProperty, } from '../js/properties.js';
-import { advanceFlyingTimeout, advanceLevitationTimeout, levitationDialogue } from '../js/timeout.js';
+import { levitationDialogue, nhTimeout } from '../js/timeout.js';
 import { applyLevitationPotion } from '../js/potion.js';
+import { resetInputState } from '../js/input.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import { saveGame, restoreGame } from '../js/save.js';
 import { knownObject } from './support/game-objects.js';
@@ -74,21 +75,23 @@ void test('each turn advances the timeout without expiring it early', async () =
     await freshObjectRoom();
     requirePlayingGame(game);
     levitatingFor(6);
-    await advanceLevitationTimeout();
+    await nhTimeout();
     assert.equal(game.u.levitationTurns, 5);
     assert.equal(game.u.levitating, true);
 });
 void test('levitation expiry lands the hero and clears the at-will marker', async () => {
     await freshObjectRoom();
     requirePlayingGame(game);
+    const input = resetInputState();
+    input.display = { readKey: () => Promise.resolve(' '.charCodeAt(0)) };
     await applyLevitationPotion(await knownObject(POT_LEVITATION, { blessed: true }), { publish: collector().publish });
     assert.ok(hasIntrinsicProperty('levitation', 'potion'));
     const turns = game.u.levitationTurns;
     assert.ok(turns !== undefined);
     game._pending_message = '';
     for (let i = 0; i < turns - 1; i++)
-        await advanceLevitationTimeout();
-    await advanceLevitationTimeout();
+        await nhTimeout();
+    await nhTimeout();
     assert.equal(game.u.levitating, false);
     assert.equal(game.u.levitationTurns, 0);
     assert.ok(!hasIntrinsicProperty('levitation', 'potion'));
@@ -100,8 +103,7 @@ void test('timed flight expiring with levitation is bypassed, not taken over', a
     levitatingFor(1);
     game.u.flyingTurns = 1;
     game._pending_message = '';
-    await advanceLevitationTimeout();
-    await advanceFlyingTimeout();
+    await nhTimeout();
     assert.equal(game.u.levitating, false);
     assert.equal(game.u.flying, false);
     assert.equal(game.u.flyingTurns, 0);
@@ -115,11 +117,11 @@ void test('timed flight alone lands with its own message', async () => {
     game.u.flyingTurns = 1;
     refreshProperty('flying');
     assert.equal(game.u.flying, true);
-    const log = collector();
-    await advanceFlyingTimeout(game, { publish: log.publish });
+    game._pending_message = '';
+    await nhTimeout();
     assert.equal(game.u.flyingTurns, 0);
     assert.equal(game.u.flying, false);
-    assert.ok(log.messages.includes('You land.'));
+    assert.match(game._pending_message, /You land\./);
 });
 void test('an independent flight source keeps the hero airborne at timeout', async () => {
     await freshObjectRoom();
@@ -127,11 +129,11 @@ void test('an independent flight source keeps the hero airborne at timeout', asy
     grantIntrinsicProperty('flying', 'outside');
     game.u.flyingTurns = 1;
     refreshProperty('flying');
-    const log = collector();
-    await advanceFlyingTimeout(game, { publish: log.publish });
+    game._pending_message = '';
+    await nhTimeout();
     assert.equal(game.u.flyingTurns, 0);
     assert.equal(game.u.flying, true);
-    assert.ok(!log.messages.includes('You land.'));
+    assert.doesNotMatch(game._pending_message || '', /You land/);
 });
 void test('saving and restoring preserves timed at-will levitation', async () => {
     await freshObjectRoom();

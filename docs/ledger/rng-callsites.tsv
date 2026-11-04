@@ -7,11 +7,11 @@ src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.lengt
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""100""]"	constant
 src/js/allmain.ts	advanceHeroShapeChange	rn2	"[""80 - (sessionIsNight(game.datetime) ? 20 : 0)""]"	constant
-src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
-src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""100""]"	constant
-src/js/timeout.ts	advanceSleepinessTimeout	rnd	"[""20""]"	constant
+src/js/timeout.ts	nhTimeout	rnd	"[""100""]"	constant
+src/js/timeout.ts	nhTimeout	rnd	"[""100""]"	constant
+src/js/timeout.ts	nhTimeout	rnd	"[""20""]"	constant
 src/js/allmain.ts	advanceWorldTurn	rn2	"[""200""]"	constant
-src/js/timeout.ts	finishFumblingTimeout	rnd	"[""20""]"	constant
+src/js/timeout.ts	nhTimeout	rnd	"[""20""]"	constant
 src/js/allmain.ts	finishHeroTookTime	rn2	"[""31""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
 src/js/allmain.ts	finishInitialTurnMaintenanceAfterMonsterDistress	rn2	"[""3""]"	constant
@@ -2290,7 +2290,7 @@ src/js/thrown_object.ts	flyPhysicalObject	random	"[""5""]"	constant
 src/js/thrown_object.ts	prepareHeroThrownTarget	random	"[""10""]"	constant
 src/js/zap.ts	rockSkipRange	rnd	"[""3""]"	constant
 src/js/zap.ts	rockSkipRange	rnd	"[""quarter""]"	guarded
-src/js/timeout.ts	advanceBodyTimeouts	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
+src/js/timeout.ts	nhTimeout	rnd	"[""100 * requireMonsterData(MONSTER_LEVEL, hero.umonnum) + 1""]"	unproved
 src/js/eat.ts	consume_tin	rnd	"[""200""]"	constant
 src/js/eat.ts	consume_tin	rnd	"[""400""]"	constant
 src/js/eat.ts	consume_tin	rn1	"[""11"", ""5""]"	constant
