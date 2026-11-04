@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { STATUE_TRAP } from '../js/const.js';
@@ -12,7 +12,7 @@ void test('a monster learns a statue trap without activating or revealing it', a
     requirePlayingGame(game);
     const health = monster.mhp;
 
-    await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
 
     assert.equal(monsterKnowsTrap(monster, trap), true);
     assert.equal(level.traps.includes(trap), true);

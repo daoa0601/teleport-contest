@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { HOLE, TRAPDOOR } from '../js/const.js';
@@ -16,7 +16,7 @@ for (const kind of [HOLE, TRAPDOOR]) {
         const xorn = await createMonsterAt('xorn', 11, 10);
         addTrap(game.level, kind, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
 
-        await triggerImmediateMonsterTrap(xorn, game, { random: () => 0 });
+        await mintrap(xorn, game, { random: () => 0 });
 
         assert.ok(game.level.monsters.includes(xorn));
         assert.equal(xorn.mx, 11);
@@ -31,7 +31,7 @@ for (const kind of [HOLE, TRAPDOOR]) {
         const observer = await createMonsterAt('goblin', 12, 10);
         const trap = addTrap(game.level, kind, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
 
-        await triggerImmediateMonsterTrap(xorn, game, { random: () => 0 });
+        await mintrap(xorn, game, { random: () => 0 });
 
         assert.equal(monsterKnowsTrap(xorn, trap), true, 'the entrant learns the trap despite having nowhere to fall');
         assert.equal(monsterKnowsTrap(observer, trap), true, 'nearby sighted observers learn the trap');
@@ -47,7 +47,7 @@ for (const kind of [HOLE, TRAPDOOR]) {
         const trap = addTrap(game.level, kind, 11, 10, { dst: { dnum: 0, dlevel: 2 } });
         monsterLearnsTrap(xorn, trap);
 
-        const action = await triggerImmediateMonsterTrap(xorn, game, { random: () => 1 });
+        const action = await mintrap(xorn, game, { random: () => 1 });
 
         assert.equal(action.event?.kind, 'known-trap-avoided');
         assert.equal(monsterKnowsTrap(observer, trap), false, 'avoiding the trap does not teach observers');

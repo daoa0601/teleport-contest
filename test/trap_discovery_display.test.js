@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, VIBRATING_SQUARE, WEB } from '../js/const.js';
@@ -37,10 +37,10 @@ for (const [type, name, species, glyph, beforeMessage] of [
             await flush_screen(1);
             shown.push(requireScreenCell(10, 11).ch);
         };
-        const action = await triggerImmediateMonsterTrap(monster, game, {
+        await mintrap(monster, game, {
             random: () => 1, rollOne: () => 1, rollDice: () => 2,
+            publish,
         });
-        await resumeDeferredMonsterTrap(action, game, { publish, rollDice: () => 2 });
         await publish();
         assert.equal(shown[0], beforeMessage ? glyph : '.', 'map when the effect is announced');
         assert.equal(shown.at(-1), glyph, 'map when the next message is published');

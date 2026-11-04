@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap, resumeDeferredMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -77,8 +77,7 @@ void test('a squeaky board addresses a named pet without a species article', asy
     requirePlayingGame(game);
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: text => { messages.push(text); } });
+    await mintrap(monster, game, { publish: text => { messages.push(text); } });
 
     assert.equal(messages[0], 'A board beneath Idefix squeaks a B flat loudly.');
 });

@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ARROW_TRAP } from '../js/const.js';
@@ -15,8 +15,7 @@ void test('an arrow trap hits a visible monster', async () => {
     const hitPointsBefore = monster.mhp;
     const messages = [];
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.ok(monster.mhp < hitPointsBefore);
@@ -32,8 +31,7 @@ void test('an arrow that misses remains on the floor', async () => {
     const hitPointsBefore = monster.mhp;
     const messages = [];
     initRng(9n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(monster.mhp, hitPointsBefore);
@@ -48,8 +46,7 @@ void test('a seen trap arrow that misses is known by appearance', async () => {
     });
     requirePlayingGame(game);
     initRng(9n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: async () => { } });
+    await mintrap(monster, game, { publish: async () => { } });
     const arrow = floorObjectsAt(level, 11, 10).find(object => object.otyp === ARROW);
     assert.equal(arrow?.dknown, true);
 });

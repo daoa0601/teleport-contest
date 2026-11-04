@@ -14,7 +14,7 @@ import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
 import { depth, dist2, distmin } from './hacklib.js';
-import { clampHoleDestination, deleteTrap, seeTrap, tryMonsterTrapEscape, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
+import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { levelAtDepth, insideWizardTower, levelIsWizardTower } from './dungeon.js';
 import { propertyIsActive } from './properties.js';
@@ -742,7 +742,8 @@ export async function relocateMonsterTo(monster: Monster, x: number, y: number, 
     await interruptOccupationForMonster(monster, state);
     if (!gameWasOver && state.program_state.gameover) return { ...relocation, died: true };
     if (monster.mtrapped && !monster.wormno) {
-        await tryMonsterTrapEscape(monster, state, {
+        requirePlayingGame(state);
+        await mintrap(monster, state, {
             random,
             describeMonster: target => monsterName(target, { state, capitalized: true }),
         });

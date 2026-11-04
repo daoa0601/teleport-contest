@@ -65,7 +65,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterHasMapPosition , monsterOccupiesPosition } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible } from './display.js';
 import { goodPosition } from './teleport_rules.js';
-import { finishImmediateMonsterTrap, petrifyMonsterImmediately, triggerImmediateMonsterTrap, erodeObject, resolveImmediatePetrification , petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
+import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrification , petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
@@ -928,11 +928,10 @@ async function hurtleOneSquare(monster: Monster, dx: number, dy: number, {
 // ends with mintrap(FORCEBUNGLE), which still rolls a known trap's avoidance.
 async function applyHurtleTrap(monster: Monster, options: Pick<ActiveHurtleOptions, 'state' | 'announce' | 'finishMonsterDeath' | 'random'>, stage: 'in-flight' | 'landing'): Promise<void> {
     const { state, announce, finishMonsterDeath, random } = options;
-    const action = await triggerImmediateMonsterTrap(monster, state, stage === 'in-flight'
-        ? { inAir: true, random } : { forceBungle: true, random });
-    await finishImmediateMonsterTrap(action, state, {
-        publish: announce,
+    await mintrap(monster, state, {
+        ...(stage === 'in-flight' ? { inAir: true } : { forcebungle: true }),
         random,
+        publish: announce,
         finishDeath: async (target, death) => {
             const outcome = await finishMonsterDeath(target, death);
             if (typeof outcome === 'boolean') return { survived: !outcome };

@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -143,8 +143,7 @@ for (const deaf of [false, true]) {
         const messages: string[] = [];
         const options = { random: (limit: number) => limit - 1, publish: async (message: string) => { messages.push(message); } };
 
-        const action = await triggerImmediateMonsterTrap(monster, game, options);
-        await finishImmediateMonsterTrap(action, game, options);
+        await mintrap(monster, game, options);
 
         assert.deepEqual(messages, deaf ? [] : ['You hear rumbling in the distance.', 'You hear a sizzling splash.']);
         assert.equal(monster.mhp, hp, 'the boulder sinks before it could hit the monster');

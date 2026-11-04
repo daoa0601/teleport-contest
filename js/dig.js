@@ -19,7 +19,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
-import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, finishImmediateMonsterTrap, seeTrap, trapAt, trapName, triggerImmediateMonsterTrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
+import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt, trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
@@ -1053,8 +1053,7 @@ export async function digActualHole(x, y, madeBy, ttyp, { state = game } = {}) {
                 }
             }
             else if (victim !== madeBy) {
-                const fall = await triggerImmediateMonsterTrap(victim, state);
-                await finishImmediateMonsterTrap(fall, state, {
+                await mintrap(victim, state, {
                     describeMonster: monster => monsterName(monster, { state, capitalized: true }),
                 });
             }

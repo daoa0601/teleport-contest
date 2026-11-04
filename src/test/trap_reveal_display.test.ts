@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -30,8 +30,7 @@ for (const [type, name] of [[ARROW_TRAP, 'arrow'], [DART_TRAP, 'dart'], [ROCKTRA
         await newsym(12, 10);
         await plineWithContinuation('You hear something moving nearby in the darkness.');
         const input = resetInputState();
-        const action = await triggerImmediateMonsterTrap(kitten, game);
-        const finishing = resumeDeferredMonsterTrap(action, game);
+        const finishing = mintrap(kitten, game);
         await input.waitUntilBlocked();
         const cell = requireScreenCell(10, 11).ch;
         input.feed(' '.repeat(4));

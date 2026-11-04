@@ -142,7 +142,7 @@ import { goodPosition, reportMonsterTeleportRestriction } from './teleport_rules
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero, teleportMonsterByHero } from './teleport.js';
 import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
-import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, finishImmediateMonsterTrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification, triggerImmediateMonsterTrap } from './trap.js';
+import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
 import type { ErosionKind } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
@@ -1511,8 +1511,7 @@ export async function tryHeroPuddingSplit(
     const withWhat = state.u.twoweap && state.flags.verbose
         ? ` with ${ownedObjectName(weapon, state, { capitalized: false })}` : '';
     await publish(`${monsterName(monster, { state, capitalized: true })} divides as you hit it${withWhat}!`);
-    const trap = await triggerImmediateMonsterTrap(clone, state);
-    await finishImmediateMonsterTrap(trap, state, { publish });
+    await mintrap(clone, state, { publish });
     return { split: true, heroDied: !!state.program_state.gameover };
 }
 

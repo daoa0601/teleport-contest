@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -24,8 +24,7 @@ void test('a visible falling rock joins known rocks before the monster picks up 
     await floorObject(ROCK, 11, 10, { quan: 7, known: false, typeKnown: false });
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async message => { messages.push(message); },
     });
     const pile = floorObjectsAt(level, 11, 10).filter(object => object.otyp === ROCK);
@@ -47,8 +46,7 @@ void test('a falling-rock trap hits a visible monster and drops its rock',
         const hitPointsBefore = monster.mhp;
         const messages: string[] = [];
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             publish: async (message: string) => messages.push(message),
         });
 
@@ -69,8 +67,7 @@ void test('a falling rock passes harmlessly through a xorn', async () => {
     const hitPointsBefore = monster.mhp;
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message: string) => messages.push(message),
     });
 
@@ -90,8 +87,8 @@ void test('a spent rock trap names the monster beneath it with mon_nam()', async
     trap.tseen = true;
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game, { random: () => 0 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        random: () => 0,
         publish: async message => { messages.push(message); },
     });
 

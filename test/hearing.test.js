@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DELPHI, DOOR, D_CLOSED, LAVAPOOL, NO_MINVENT, OROOM, ROCKTRAP, ROOMOFFSET, ROLLING_BOULDER_TRAP, RUST_TRAP } from '../js/const.js';
@@ -128,8 +128,7 @@ for (const deaf of [false, true]) {
         const hp = monster.mhp;
         const messages = [];
         const options = { random: (limit) => limit - 1, publish: async (message) => { messages.push(message); } };
-        const action = await triggerImmediateMonsterTrap(monster, game, options);
-        await finishImmediateMonsterTrap(action, game, options);
+        await mintrap(monster, game, options);
         assert.deepEqual(messages, deaf ? [] : ['You hear rumbling in the distance.', 'You hear a sizzling splash.']);
         assert.equal(monster.mhp, hp, 'the boulder sinks before it could hit the monster');
         assert.equal(boulder.where, 'gone');

@@ -1,5 +1,5 @@
 import {
-    beginMonsterPitTrap, finishMonsterPitTrap, resumeDeferredMonsterTrap, triggerImmediateMonsterTrap,
+    mintrap,
 } from '../js/trap.js';
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
@@ -29,7 +29,7 @@ void test('discovering a pit beneath a hallucinated monster redraws the monster'
     await newsym(monster.mx, monster.my);
     const original = level.requireAt(monster.mx, monster.my).disp_glyph?.glyph;
 
-    await finishMonsterPitTrap(monster, beginMonsterPitTrap(monster, trap), {
+    await mintrap(monster, game, {
         publish: () => {}, rollOne: () => 1,
     });
 
@@ -45,8 +45,7 @@ for (const seen of [false, true]) {
         requirePlayingGame(game);
         const messages: string[] = [];
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             rollOne: () => 3,
             publish: message => { messages.push(message); },
         });
@@ -65,8 +64,7 @@ void test('a grounded monster falls into a pit', async () => {
     const hitPointsBefore = monster.mhp;
     const messages: string[] = [];
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         rollOne: () => 3,
         publish: async (message: string) => messages.push(message),
     });
@@ -84,7 +82,7 @@ void test('a flying monster passes over a pit', async () => {
     requirePlayingGame(game);
     const hitPointsBefore = monster.mhp;
 
-    const action = await triggerImmediateMonsterTrap(monster, game);
+    const action = await mintrap(monster, game);
 
     assert.equal(action.event, null);
     assert.equal(monster.mtrapped ?? 0, 0);
@@ -103,8 +101,7 @@ void test('falling forces contact with a wielded cockatrice corpse before the mo
         await equipMonsterObject(monster, await untimedCorpse(MONSTER_NAME.indexOf('lizard')), 0);
         const messages: string[] = [];
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             publish: async (message: string) => messages.push(message),
         });
 
@@ -136,8 +133,7 @@ void test('a life-saved monster stops wielding the corpse that petrified it',
         );
         pushKeys(' '.repeat(12));
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             publish: async () => {},
             rollOne: () => 1,
         });

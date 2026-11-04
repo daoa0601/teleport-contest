@@ -35,7 +35,7 @@ import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, OBJECT_DESCRIPTIONS,
 import { promptYesNo } from './query.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap, waterDamageChain, waterDamageObject, deleteFloorTrap } from './trap.js';
+import { mintrap, waterDamageChain, waterDamageObject, deleteFloorTrap } from './trap.js';
 import type { WaterDamageOutcome } from './trap.js';
 import { cansee, clearAreaCells, couldsee } from './vision.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
@@ -234,13 +234,13 @@ function fountainTrapAt(monster: Monster) {
 
 async function triggerFountainTrap(monster: Monster) {
     const state = requireInitializedGame();
-    const action = await triggerImmediateMonsterTrap(monster, state);
-    if (!state.program_state.gameover) {
-        await finishImmediateMonsterTrap(action, state, {
-            describeMonster: fountainActorVisibleSubject,
-            publish: plineWithContinuation,
-        });
-    }
+    // The fountain square hosts no trap whose effect can end the game in its
+    // first half, so the completion runs unconditionally as in C's single
+    // mintrap() call (fountain.c:55).
+    await mintrap(monster, state, {
+        describeMonster: fountainActorVisibleSubject,
+        publish: plineWithContinuation,
+    });
     return { heroDied: !!state.program_state.gameover };
 }
 

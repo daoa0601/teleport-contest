@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SLP_GAS_TRAP } from '../js/const.js';
@@ -10,8 +10,7 @@ void test('sleeping gas puts a susceptible visible monster to sleep', async () =
     });
     requirePlayingGame(game);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(monster.mcanmove, 0);

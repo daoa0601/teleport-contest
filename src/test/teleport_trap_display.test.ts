@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT, TELEP_TRAP } from '../js/const.js';
@@ -52,7 +52,7 @@ void test('infravision reveals a teleport trap used by a warm monster in darknes
     const trap = addTrap(level, TELEP_TRAP, 14, 10, { teledest: { x: 15, y: 10 } });
     const messages: string[] = [];
 
-    await triggerImmediateMonsterTrap(monster, game, {
+    await mintrap(monster, game, {
         publish: async message => { messages.push(message); },
     });
 

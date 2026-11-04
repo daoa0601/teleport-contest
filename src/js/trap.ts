@@ -31,7 +31,7 @@ import { impossible } from './diagnostics.js';
 import { stopLevelTimer } from './timeout.js';
 import { d, rnl, rn2, rnd, rn2Display, rn1 } from './rng.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import type { ImmediateMonsterTrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
+import type { MintrapOptions, MonsterMovement, MonsterMovementAction, MonsterRollingBoulderEvent, MonsterTrapEvent, MonsterTrapResumeOptions, PublishMonsterMessage, RollDice, RollOne, MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import { plineWithContinuation, pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -845,8 +845,93 @@ export function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: Playi
     }
 }
 
-// C trap.c:mintrap(). Called from m_move()/postmov() after a monster steps
-// onto a square, and from the source effects below via the immediate entry.
+// C trap.c:mintrap().  m_move()'s trapped actor takes its escape roll here,
+// and postmov() calls this after a monster steps onto a trap square; source
+// effects (dig, kick, throw, zap, polymorph splits) call the same entry with
+// their own flags.  This boundary intentionally does not run tunneling,
+// pickup, concealment, distfleeck(), or an attack tail; the movement fields
+// report deaths, level exits, and staged completions to the caller.
+export async function mintrap(
+    monster: Monster,
+    state: PlayingGameState = requireInitializedGame(),
+    {
+        forcetrap = false, forcebungle = false, inAir = false,
+        movement: callerMovement, random = rn2, rollDice = d, rollOne = rnd,
+        calls = DISCARDED_CALL_LOG, publish = plineWithContinuation,
+        describeMonster, finishDeath,
+    }: MintrapOptions = {},
+): Promise<MonsterMovementAction> {
+    const movement: MonsterMovement = callerMovement ?? {
+        oldx: monster.mx,
+        oldy: monster.my,
+        x: monster.mx,
+        y: monster.my,
+        moved: false,
+        forcedTrapLanding: forcetrap,
+        forcedTrapBungle: forcebungle,
+    };
+    const action: MonsterMovementAction = { monster, movement, calls, event: null };
+    const trap = trapAt(state, monster.mx, monster.my);
+    if (!trap) {
+        monster.mtrapped = 0; /* perhaps teleported? */
+        movement.trapOutcome = 'finished';
+        return action;
+    }
+    if (monster.mtrapped) { /* is currently in the trap */
+        await tryMonsterTrapEscape(monster, state, {
+            random, publish,
+            ...(describeMonster ? { describeMonster } : {}),
+        });
+        movement.trapOutcome = monster.mtrapped ? 'caught' : 'finished';
+        return action;
+    }
+    const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
+        && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
+    // C check_in_air(): the HURTLING input arrives from the caller (mhurtle)
+    // ahead of the steed and FORCETRAP gates, as in the immediate entry this
+    // replaces.
+    if (inAir && trapTriggeredByFloor(trap) && !sokobanFall) {
+        movement.trapOutcome = 'finished';
+        return action;
+    }
+    const fixedTeleport = trap.ttyp === TELEP_TRAP && trap.teledest
+        && isok(trap.teledest.x, trap.teledest.y);
+    const forced = movement.forcedTrapLanding || fixedTeleport;
+    if (monster !== state.u.usteed && !sokobanFall && !forced) {
+        if (monsterFliesOrFloats(monster) && trapTriggeredByFloor(trap)) {
+            movement.trapOutcome = 'finished';
+            return action;
+        }
+        const alreadyKnown = monsterKnowsTrap(monster, trap)
+            || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
+        if (alreadyKnown && recordRandom(random, calls, 4) !== 0
+            && !movement.forcedTrapBungle) {
+            const event: MonsterTrapEvent = { kind: 'known-trap-avoided', trap, damage: 0 };
+            movement.trap = event;
+            action.event = event;
+            movement.trapOutcome = 'finished';
+            return action;
+        }
+    }
+    const event = await monsterTrapEffect(
+        monster, trap, state, movement, random, rollDice, rollOne, calls, publish,
+    );
+    action.event = event ?? movement.trap ?? null;
+    if (movement.deferredAfterMonsterTrap) {
+        const deferred = action.event;
+        if (!deferred) throw new Error('A deferred monster trap must retain its event');
+        movement.trapOutcome = await finishDeferredMonsterTrap(
+            monster, movement, deferred, state, calls,
+            {
+                random, rollDice, rollOne, publish,
+                ...(describeMonster ? { describeMonster } : {}),
+                ...(finishDeath ? { finishDeath } : {}),
+            },
+        );
+    }
+    return action;
+}
+
 // C trap.c:trapeffect_selector(): the monster side of the dispatch; each
 // case runs the monster branch of the named trapeffect_ function, in its
 // owner module or inline below. C trap.c:trapeffect_hole(): the grounded,
@@ -856,34 +941,19 @@ export function monsterTrapIsHarmless(monster: Monster, trap: Trap, state: Playi
 // branch replicates a fire trap 1 time in 21 through beginMonsterFireTrap
 // (trapeffect_fire_trap()'s monster branch). C trap.c:trapeffect_telep_trap():
 // the monster branch hands the move to the teleport owner's mtele path.
-export async function triggerMonsterTrap(
+async function monsterTrapEffect(
     monster: Monster,
+    trap: Trap,
     state: PlayingGameState,
     movement: MonsterMovement,
     random: RandomBelow,
     rollDice: RollDice,
     rollOne: RollOne,
     calls: MonsterCallLog,
-    publish: PublishMonsterMessage = plineWithContinuation,
+    publish: PublishMonsterMessage,
 ) {
-    const trap = trapAt(state, monster.mx, monster.my);
-    if (!trap || monster.mtrapped) return null;
     const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
         && [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
-    const fixedTeleport = trap.ttyp === TELEP_TRAP && trap.teledest
-        && isok(trap.teledest.x, trap.teledest.y);
-    const forced = movement.forcedTrapLanding || fixedTeleport;
-    if (monster !== state.u.usteed && !sokobanFall && !forced) {
-        if (monsterFliesOrFloats(monster) && trapTriggeredByFloor(trap)) return null;
-        const alreadyKnown = monsterKnowsTrap(monster, trap)
-            || trap.ttyp === HOLE && !((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_MINDLESS);
-        if (alreadyKnown && recordRandom(random, calls, 4) !== 0
-            && !movement.forcedTrapBungle) {
-            const event: MonsterTrapEvent = { kind: 'known-trap-avoided', trap, damage: 0 };
-            movement.trap = event;
-            return event;
-        }
-    }
     monsterLearnsTrap(monster, trap);
     monstersSeeTrap(state, trap);
     if (trap.madeby_u && rnl(5)) await angerMonster(monster);
@@ -1183,112 +1253,10 @@ export async function triggerMonsterTrap(
     if (!event.finished || event.forced) movement.deferredAfterMonsterTrap = true;
     return event;
 }
-
-// C trap.c:mintrap() entry for actors placed by a source effect rather than
-// by m_move()/postmov().  The trap engine remains the single state/RNG owner;
-// this boundary intentionally does not run tunneling, pickup, concealment,
-// distfleeck(), or an attack tail.  Callers must present and resume any
-// deferred trap event before continuing their own source transaction.
-export async function triggerImmediateMonsterTrap(
-    monster: Monster,
-    state: PlayingGameState = requireInitializedGame(),
-    {
-        inAir = false, force = false, forceBungle = false,
-        random = rn2, rollDice = d, rollOne = rnd, publish = plineWithContinuation,
-    }: ImmediateMonsterTrapOptions = {},
-) {
-    const calls = DISCARDED_CALL_LOG;
-    const movement: MonsterMovement = {
-        oldx: monster?.mx,
-        oldy: monster?.my,
-        x: monster?.mx,
-        y: monster?.my,
-        moved: false,
-        forcedTrapLanding: force,
-        forcedTrapBungle: forceBungle,
-    };
-    const trap = trapAt(state, monster.mx, monster.my);
-    if (!trap) {
-        monster.mtrapped = 0;
-        return { monster, movement, event: null, calls };
-    }
-    const floorTriggered = trapTriggeredByFloor(trap);
-    const sokobanFall =
-        state.level.flags.sokoban_rules &&
-        !trap.madeby_u &&
-        [PIT, SPIKED_PIT, HOLE, TRAPDOOR].includes(trap.ttyp);
-    // C mintrap() takes its already-trapped branch before any check_in_air().
-    if (monster.mtrapped) {
-        movement.escapingTrap = true;
-        return { monster, movement, event: null, calls };
-    }
-    if (inAir && floorTriggered && !sokobanFall) return { monster, movement, event: null, calls };
-    const event = await triggerMonsterTrap(
-        monster,
-        state,
-        movement,
-        random,
-        rollDice,
-        rollOne,
-        calls,
-        publish,
-    );
-    return { monster, movement, event, calls };
-}
-
-// Complete mintrap() for a source effect without running a movement tail.
-// C mintrap() gives an already trapped monster its escape roll whatever the
-// caller's flags, so a monster caught mid-hurtle rolls again on landing.
-export async function finishImmediateMonsterTrap(
-    action: MonsterMovementAction,
-    state: PlayingGameState = requireInitializedGame(),
-    { publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, finishDeath, describeMonster }: MonsterTrapResumeOptions = {},
-) {
-    if (action.event?.kind === 'rolling-boulder') return action;
-    await resumeDeferredMonsterTrap(action, state, {
-        publish, random, rollOne, rollDice,
-        ...(finishDeath ? { finishDeath } : {}),
-        ...(describeMonster ? { describeMonster } : {}),
-    });
-    return action;
-}
-
-// Resume a deferred monster trap event staged by a source effect's
-// immediate mintrap() call: the trapped actor's escape roll and any staged
-// trap-effect completion, without a movement tail.
-export async function resumeDeferredMonsterTrap(
-    action: MonsterMovementAction,
-    state: PlayingGameState,
-    options: MonsterTrapResumeOptions = {},
-) {
-    const movement = action?.movement;
-    if (movement?.escapingTrap) {
-        await tryMonsterTrapEscape(action.monster, state, {
-            random: options.random ?? rn2,
-            publish: options.publish ?? plineWithContinuation,
-            ...(options.describeMonster ? { describeMonster: options.describeMonster } : {}),
-        });
-        delete movement.escapingTrap;
-        return action;
-    }
-    const event = movement?.trap;
-    if (!movement?.deferredAfterMonsterTrap) return action;
-    if (!event) throw new Error('A deferred monster trap must retain its event');
-    await finishDeferredMonsterTrap(
-        action.monster,
-        movement,
-        event,
-        state,
-        action.calls || DISCARDED_CALL_LOG,
-        options,
-    );
-    return action;
-}
-
-// Finish the trap-effect completion which triggerMonsterTrap() staged for
-// mintrap()'s caller, then trap.c:3831-3837's "appears" reveal of a newly
-// caught hider.  Updates the movement's death fields and reports whether the
-// actor died, left the level, or the hero died.
+// Finish the trap-effect completion which mintrap() staged for its caller,
+// then trap.c:3831-3837's "appears" reveal of a newly caught hider.
+// Updates the movement's death fields and reports whether the actor died,
+// left the level, or the hero died.
 export async function finishDeferredMonsterTrap(
     monster: Monster,
     movement: MonsterMovement,
@@ -1381,18 +1349,11 @@ export async function finishDeferredMonsterTrap(
                 rollOne: recordedRollOne,
                 ...(describeMonster ? { describeMonster } : {}),
                 forceTrapAtMonster: async victim => {
-                    relocated.action = await finishImmediateMonsterTrap(
-                        await triggerImmediateMonsterTrap(victim, state, {
-                            force: true, random: recordedRandom, rollOne: recordedRollOne,
-                            rollDice, publish,
-                        }),
-                        state,
-                        {
-                            publish, random: recordedRandom, rollOne: recordedRollOne, rollDice,
-                            finishDeath,
-                            ...(describeMonster ? { describeMonster } : {}),
-                        },
-                    );
+                    relocated.action = await mintrap(victim, state, {
+                        forcetrap: true, random: recordedRandom, rollOne: recordedRollOne,
+                        rollDice, publish, finishDeath,
+                        ...(describeMonster ? { describeMonster } : {}),
+                    });
                 },
             });
             const nested = relocated.action?.movement;
@@ -2085,8 +2046,7 @@ async function activateTrap(target: TrapTarget, hero: boolean, trap: Trap, state
     const noticed = cansee(trap.tx, trap.ty) || canSpotMonster(target);
     if (falling && (await wakeMonster(target, { attacked: true })).heroDied)
         return result(false, noticed, state);
-    const action = await triggerImmediateMonsterTrap(target, state, { force: true });
-    await finishImmediateMonsterTrap(action, state);
+    const action = await mintrap(target, state, { forcetrap: true });
     // Native mintrap's nonzero results are caught, dead, or moved.
     const changed = !!target.mtrapped || (target.mhp ?? 1) <= 0
         || action.movement.actorLeftLevel || action.movement.actorDied
@@ -5751,8 +5711,7 @@ async function triggerWeb(
     if (steed && !noWebMessage) {
         steed.mx = hero.ux;
         steed.my = hero.uy;
-        const action = await triggerImmediateMonsterTrap(steed, game, { force: forceTrap });
-        await finishImmediateMonsterTrap(action, game);
+        await mintrap(steed, game, { forcetrap: forceTrap });
         if (!steed.mtrapped) {
             await resetUtrap(false);
             return;

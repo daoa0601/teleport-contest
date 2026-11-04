@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
@@ -21,8 +21,7 @@ async function giantSetsOffMine(): Promise<void> {
     game._helplessReason = 'fainted from lack of food';
     game._helplessDoneMessage = 'You regain consciousness.';
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(giant, game);
-    await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+    await mintrap(giant, game, { publish: async () => {} });
     assert.ok(giant.mhp < 100, 'the mine exploded under the giant');
 }
 

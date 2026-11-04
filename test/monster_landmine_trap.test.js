@@ -1,5 +1,5 @@
 import { mfndpos } from '../js/mon.js';
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap, tryMonsterTrapEscape, } from '../js/trap.js';
+import { mintrap, } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LANDMINE, PIT } from '../js/const.js';
@@ -20,12 +20,11 @@ for (const observer of [false, true]) {
         });
         requirePlayingGame(game);
         const bystander = observer ? await createMonsterAt('orc', 12, 11) : null;
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
             rollOne: () => 2, publish: () => { },
         });
         assert.equal(trap.ttyp, PIT);
-        await tryMonsterTrapEscape(monster, game, { random: () => 0, publish: () => { } });
+        await mintrap(monster, game, { random: () => 0, publish: () => { } });
         assert.equal(monster.mtrapped, 0);
         placeMonsterAt(monster, 12, 10);
         const walker = bystander ?? monster;
@@ -42,8 +41,7 @@ void test('a heavy monster sets off a land mine and falls into the new pit', asy
     });
     requirePlayingGame(game);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         rollOne: () => 2,
         publish: async (message) => messages.push(message),
     });
@@ -60,7 +58,7 @@ void test('a light monster can cross a land mine without setting it off', async 
         monster: { species: 'gnome', hitPoints: 30 },
     });
     requirePlayingGame(game);
-    const action = await triggerImmediateMonsterTrap(monster, game);
+    await mintrap(monster, game);
     assert.equal(trap.ttyp, LANDMINE);
     assert.equal(monster.mhp, 30);
 });
@@ -70,8 +68,7 @@ void test('a flying monster passes over a land mine without revealing it', async
     });
     requirePlayingGame(game);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(trap.ttyp, LANDMINE);
@@ -86,8 +83,8 @@ void test('a forced land mine activation can reveal its trigger below a flying m
     });
     requirePlayingGame(game);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { force: true });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        forcetrap: true,
         publish: async (message) => messages.push(message),
     });
     assert.equal(trap.ttyp, LANDMINE);

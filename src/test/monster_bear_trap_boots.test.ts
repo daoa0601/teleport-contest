@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -21,8 +21,7 @@ for (const [boots, protects] of [
         monster.mhp = monster.mhpmax = 50;
         await equipMonsterObject(monster, await knownObject(boots), W_ARMF);
 
-        const action = await triggerImmediateMonsterTrap(monster, game);
-        await resumeDeferredMonsterTrap(action, game, { publish: async () => {} });
+        await mintrap(monster, game, { publish: async () => {} });
 
         assert.equal(monster.mtrapped, 1, 'the dwarf is caught');
         // C trap.c:wearing_iron_shoes() checks the boots' material.

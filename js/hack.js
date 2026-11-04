@@ -30,7 +30,7 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MON
 import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, requireObjectData } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
 import { gotoLevel } from './level_change.js';
@@ -3561,8 +3561,7 @@ export async function settleBeastHeroDisplacement(beast, state) {
         if (!state.level.monsters.includes(beast) || beast.dead || beast.mhp <= 0
             || state.program_state.gameover)
             return;
-        const trap = await triggerImmediateMonsterTrap(beast, state);
-        await finishImmediateMonsterTrap(trap, state);
+        await mintrap(beast, state);
     }
     finally {
         if (moving === undefined)
@@ -3660,8 +3659,7 @@ export async function settlePetHeroDisplacement(monster, state) {
         return;
     let trapMovedMonster = false;
     if (!monster.dead && monster.mhp > 0) {
-        const action = await triggerImmediateMonsterTrap(monster, state);
-        await finishImmediateMonsterTrap(action, state);
+        const action = await mintrap(monster, state);
         if (state.program_state.gameover)
             return;
         // trapeffect_telep_trap() returns Trap_Moved_Mon even when blocked.

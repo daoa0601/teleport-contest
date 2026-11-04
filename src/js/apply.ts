@@ -66,7 +66,7 @@ import { heroIsUnaware } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine } from './insight.js';
-import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImmediateMonsterTrap, trapName, triggerImmediateMonsterTrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
+import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
@@ -539,10 +539,9 @@ async function summonPets(object: GameObject, state: GameState) {
             await newsym(pet.mx, pet.my);
         }
         state._lastPlineKind = PLNMSG_enum;
-        const trap = await triggerImmediateMonsterTrap(pet, state, {
+        await mintrap(pet, state, {
             inAir: monsterInAir(pet, state),
         });
-        await finishImmediateMonsterTrap(trap, state);
         if (state.program_state.gameover) return;
         if (pet.mhp <= 0)
             state.u.uluck = Math.max(LUCKMIN, (state.u.uluck || 0) - 1);

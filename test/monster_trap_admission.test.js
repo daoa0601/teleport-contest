@@ -1,4 +1,4 @@
-import { finishImmediateMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { FIRE_TRAP, PIT, SPIKED_PIT } from '../js/const.js';
@@ -22,8 +22,7 @@ void test('a peaceful monster blames the hero for an unknown hero-made fire trap
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     initRng(2n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await finishImmediateMonsterTrap(action, game);
+    await mintrap(monster, game);
     assert.equal(monster.mpeaceful, 0);
     assert.ok(monster.mhp < 40);
 });
@@ -36,8 +35,7 @@ void test('Sokoban drags a flyer into a familiar pit', async () => {
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
     initRng(3n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await finishImmediateMonsterTrap(action, game);
+    await mintrap(monster, game);
     assert.equal(monster.mtrapped, 1);
     assert.ok(monster.mhp < 80);
     assert.match(game._last_message || '', /is dragged into a pit!/);
@@ -47,8 +45,7 @@ void test('magically opening a pit under a flyer reveals it without pulling the 
         monster: { species: 'red dragon', hitPoints: 80 },
     });
     requirePlayingGame(game);
-    const action = await triggerImmediateMonsterTrap(monster, game, { force: true });
-    await finishImmediateMonsterTrap(action, game);
+    await mintrap(monster, game, { forcetrap: true });
     assert.equal(monster.mtrapped ?? 0, 0);
     assert.equal(monster.mhp, 80);
     assert.equal(trap.tseen, true);

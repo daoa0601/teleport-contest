@@ -26,7 +26,7 @@ import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits } from './mondata.js';
-import { setHeroTrap, dotrap, finishImmediateMonsterTrap, triggerImmediateMonsterTrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
+import { setHeroTrap, dotrap, mintrap, objectIsVulnerableToErosion, deleteTrap, trapName, closeHoldingTrap, openFallingTrap, openHoldingTrap, erosionMatters, sokobanGuilt, igniteItems, resetUtrap, maketrap, deleteFloorTrap, meltIceTrap } from './trap.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName, mungWishSpaces } from './hacklib.js';
 import { destroyObjectFromMonsterInventory, checkMonsterGearNextTurn } from './monworn.js';
@@ -1052,8 +1052,7 @@ async function evaporatePoolAt(x: number, y: number, state: GameState, publish: 
             await dotrap(pit);
         else if (pit && monster) {
             requirePlayingGame(state);
-            await finishImmediateMonsterTrap(
-                await triggerImmediateMonsterTrap(monster, state), state, { publish });
+            await mintrap(monster, state, { publish });
         }
     }
     return rangeChange;

@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -39,8 +39,7 @@ void test('a visible fire trap names the monster standing in its flames', async 
     const { monster } = await freshMonsterFireTrap({ species: 'minotaur', hitPoints: 100 });
     requirePlayingGame(game);
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: quietFireRandom,
         publish: async (message) => { messages.push(message); },
     });
@@ -51,8 +50,7 @@ void test('a fire trap burns a vulnerable monster', async () => {
     requirePlayingGame(game);
     const messages = [];
     initRng(29n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: quietFireRandom,
         publish: async (message) => messages.push(message),
     });
@@ -69,9 +67,9 @@ void test('a hallucinating hero sees an imaginary owner when a fire trap burns m
     await equipMonsterObject(monster, armor, W_ARM);
     game.u.hallucinationTurns = 20;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
     initRng(1n);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        rollDice: () => 2,
         random: quietFireRandom,
         publish: async (message) => { messages.push(message); },
     });
@@ -88,10 +86,10 @@ void test('armor that silently resists a fire trap does not change later halluci
         if (armor)
             await equipMonsterObject(monster, armor, W_ARM);
         game.u.hallucinationTurns = 20;
-        const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 2 });
         initRng(1n);
         const messages = [];
-        await resumeDeferredMonsterTrap(action, game, {
+        await mintrap(monster, game, {
+            rollDice: () => 2,
             random: quietFireRandom,
             publish: message => { messages.push(message); },
         });
@@ -122,8 +120,7 @@ void test('worn fire resistance stops the flame but not an exploding potion', as
         return fiveSidedRolls++ === 0 ? 1 : 0;
     };
     initRng(31n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random,
         rollOne: () => 2,
         publish: async (message) => messages.push(message),
@@ -140,8 +137,7 @@ void test('a fire trap completely burns a paper golem', async () => {
     });
     requirePlayingGame(game);
     initRng(37n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: quietFireRandom,
         publish: async () => { },
     });
@@ -161,8 +157,7 @@ void test('a life-saving amulet lets a monster survive a fire trap', async () =>
     });
     await addObjectToMonsterInventory(monster, amulet, game);
     initRng(41n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: quietFireRandom,
         publish: async () => { },
     });
@@ -176,8 +171,7 @@ void test('a fire trap burns scrolls lying under the monster', async () => {
     requirePlayingGame(game);
     const scroll = await floorObject(SCR_IDENTIFY, 11, 10);
     initRng(43n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: (range) => range === 5 ? 1 : range === 100 ? 99 : 0,
         publish: async () => { },
     });
@@ -196,9 +190,9 @@ void test('an unseen monster fire trap identifies floor oil and credits Wisdom a
     const oil = await floorObject(POT_OIL, 11, 10, { dknown: false, typeKnown: false });
     game.u.acurr.a[A_WIS] = 3;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { rollDice: () => 4 });
     initRng(1n);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        rollDice: () => 4,
         random: quietFireRandom,
         rollOne: () => 3,
         publish: message => { messages.push(message); },
@@ -217,8 +211,7 @@ void test('a magic trap can produce the complete fire-trap effect', async () => 
     });
     requirePlayingGame(game);
     initRng(17n);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         random: quietFireRandom,
         publish: async () => { },
     });

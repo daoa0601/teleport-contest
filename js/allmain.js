@@ -48,7 +48,7 @@ import { OBJECT_DELAY, ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, OBJECT_BI
 import { heroIsUnaware } from './senses.js';
 import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { openHoldingTrap, erodeArmor, erodeAttackingWeapon, igniteItems, petrifyMonsterImmediately, resumeDeferredMonsterTrap, burnHeroArmorByFire, sinkHeroIntoLava } from './trap.js';
+import { openHoldingTrap, erodeArmor, erodeAttackingWeapon, igniteItems, petrifyMonsterImmediately, burnHeroArmorByFire, sinkHeroIntoLava } from './trap.js';
 import { AD_COLD, AD_DGST, AD_DRST, AD_FIRE, AD_MAGM, AD_SEDU, AD_SITM, AD_SSEX, AD_STCK } from './monster_attack_types.js';
 import { loseHeroExperience } from './exper.js';
 import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAction, completeMonsterOffensiveAction, heroEveryturnEffect, runMonsterEveryturnEffects, beginMonsterMove, beginMonsterDochug, runMonsterAction } from './monmove.js';

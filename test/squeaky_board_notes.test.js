@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
@@ -33,8 +33,7 @@ void test('a visible monster makes a squeaky board sound an F sharp', async () =
         trap: { tnote: 6 },
     });
     requirePlayingGame(game);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
     assert.equal(trap.tseen, true);
     assert.equal(topline(), 'A board beneath the giant squeaks an F sharp loudly.');
@@ -44,8 +43,7 @@ void test('a visible monster makes a squeaky board sound a G sharp', async () =>
         trap: { tnote: 8 },
     });
     requirePlayingGame(game);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
     assert.equal(trap.tseen, true);
     assert.equal(topline(), 'A board beneath the giant squeaks a G sharp loudly.');
@@ -56,8 +54,7 @@ void test('an unseen monster can be heard squeaking an F sharp nearby', async ()
         trap: { tnote: 6 },
     });
     requirePlayingGame(game);
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(monster, game);
     await flush_screen(1);
     assert.equal(trap.tseen ?? false, false);
     assert.equal(topline(), 'You hear an F sharp squeak nearby.');

@@ -1,4 +1,4 @@
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ARROW_TRAP, NO_MINVENT } from '../js/const.js';
@@ -42,7 +42,7 @@ void test('revealing an arrow trap displays its victim before announcing the hit
     await newsym(12, 10);
     addTrap(level, ARROW_TRAP, 11, 10);
 
-    await triggerImmediateMonsterTrap(centaur, game);
+    await mintrap(centaur, game);
 
     const glyph = glyphAt(11, 10);
     assert.equal(glyph?.kind, 'monster');

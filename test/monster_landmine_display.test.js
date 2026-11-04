@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, MM_NOGRP, NO_MINVENT } from '../js/const.js';
@@ -38,8 +38,7 @@ void test('a land mine reveals its infrared-visible victim before paging the exp
     };
     pushKeys(' '.repeat(10));
     initRng(1n);
-    const action = await triggerImmediateMonsterTrap(giant, game);
-    await resumeDeferredMonsterTrap(action, game);
+    await mintrap(giant, game);
     assert.equal(sawPager, true);
 });
 //# sourceMappingURL=monster_landmine_display.test.js.map

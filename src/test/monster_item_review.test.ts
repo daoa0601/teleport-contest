@@ -5,7 +5,7 @@ import { canSeeMonster, canSpotMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { takeMonsterTurn } from '../js/monmove.js';
-import { triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { mcastSpell, movementSpellContext } from '../js/mcastu.js';
 import {
     findMonsterDefensiveItem, lootMonsterContainer, prepareMonsterItemUse, useMonsterDefensiveItem,
@@ -120,7 +120,7 @@ for (const force of [true, false]) {
         addTrap(level, LEVEL_TELEP, 10, 10);
         installPagerInput(resetInputState(), { expected: /leash|disappears/, limit: 4 });
 
-        await triggerImmediateMonsterTrap(pet, game, { force, random: limit => limit === 5 ? 2 : 10 });
+        await mintrap(pet, game, { forcetrap: force, random: limit => limit === 5 ? 2 : 10 });
 
         assert.equal(level.monsters.includes(pet), !force);
         assert.equal(!!pet.mleashed, !force);

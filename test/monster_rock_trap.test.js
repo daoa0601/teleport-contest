@@ -1,4 +1,4 @@
-import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { ROCKTRAP } from '../js/const.js';
@@ -20,8 +20,7 @@ void test('a visible falling rock joins known rocks before the monster picks up 
     game.flags.verbose = true;
     await floorObject(ROCK, 11, 10, { quan: 7, known: false, typeKnown: false });
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => { messages.push(message); },
     });
     const pile = floorObjectsAt(level, 11, 10).filter(object => object.otyp === ROCK);
@@ -39,8 +38,7 @@ void test('a falling-rock trap hits a visible monster and drops its rock', async
     requirePlayingGame(game);
     const hitPointsBefore = monster.mhp;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.ok(monster.mhp < hitPointsBefore);
@@ -56,8 +54,7 @@ void test('a falling rock passes harmlessly through a xorn', async () => {
     requirePlayingGame(game);
     const hitPointsBefore = monster.mhp;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game);
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
         publish: async (message) => messages.push(message),
     });
     assert.equal(monster.mhp, hitPointsBefore);
@@ -72,8 +69,8 @@ void test('a spent rock trap names the monster beneath it with mon_nam()', async
     trap.once = true;
     trap.tseen = true;
     const messages = [];
-    const action = await triggerImmediateMonsterTrap(monster, game, { random: () => 0 });
-    await resumeDeferredMonsterTrap(action, game, {
+    await mintrap(monster, game, {
+        random: () => 0,
         publish: async (message) => { messages.push(message); },
     });
     assert.deepEqual(messages, ['A trap door above the grid bug opens, but nothing falls out!']);

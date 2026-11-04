@@ -59,7 +59,7 @@ import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
 import { somexy } from './mkroom.js';
 
 import { deliverOrcRaidLoot } from './orc_raid.js';
-import { tryMonsterTrapEscape } from './trap.js';
+import { mintrap } from './trap.js';
 import { monsterCarriesAmulet } from './wizard.js';
 import { setShopResidency, makeShopkeeperHappy, makeShoppersHappy } from './shk.js';
 import {placeObject} from './mkobj.js';
@@ -904,7 +904,7 @@ export async function collectLevelFollowers(state: GameState = game, petsOnly = 
             && !((monster.mstrategy ?? 0) & STRAT_WAITFORU);
         if (follows) {
             if (monster.mtrapped) {
-                await tryMonsterTrapEscape(monster, state, {
+                await mintrap(monster, state, {
                     describeMonster: target => monsterName(target, { capitalized: true, state }),
                 });
             }
