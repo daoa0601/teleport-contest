@@ -171,7 +171,7 @@ function blessorcurse(otmp: GameObject | null | undefined, chance = 10): void {
     }
 }
 
-// C ref: mkobj.c mksobj — create a specific object.
+// C mkobj.c:mksobj().  Create a specific type of object; never Null.
 export async function mksobj(
     otyp: number, init: boolean, artif: boolean, { zombify = false } = {},
 ): Promise<GameObject> {
@@ -216,7 +216,7 @@ export async function mksobj(
         if (title === undefined) throw new Error('Novel title selection requires a title');
         otmp.oextra = { ...(otmp.oextra || {}), oname: title };
     }
-    // C mkobj.c:mksobj() computes weight only after type-specific state,
+    // mkobj.c:mksobj() computes weight only after type-specific state,
     // quantities, corpse identity, timers, and generated contents are final.
     otmp.owt = objectWeight(otmp);
     return otmp;
@@ -407,7 +407,82 @@ async function mksobj_init(
         else if (otyp !== LUCKSTONE && !rn2(6)) otmp.quan = 2;
         break;
     case TOOL_CLASS:
-        await initTool(otmp);
+        switch (otyp) {
+        case TALLOW_CANDLE:
+        case WAX_CANDLE:
+            otmp.spe = 1;
+            otmp.age = 20 * objectBaseCost(otyp);
+            otmp.lamplit = false;
+            otmp.quan = 1 + (rn2(2) ? rn2(7) : 0);
+            blessorcurse(otmp, 5);
+            break;
+        case BRASS_LANTERN:
+        case OIL_LAMP:
+            otmp.spe = 1;
+            otmp.age = rn1(500, 1000);
+            otmp.lamplit = false;
+            blessorcurse(otmp, 5);
+            break;
+        case MAGIC_LAMP:
+            otmp.spe = 1;
+            otmp.lamplit = false;
+            blessorcurse(otmp, 2);
+            break;
+        case CHEST:
+        case LARGE_BOX:
+            otmp.olocked = !!rn2(5);
+            otmp.otrapped = !rn2(10);
+            otmp.tknown = otmp.otrapped && !rn2(100); /* obvious trap */
+            /* FALLTHROUGH to the box group in C */
+            await mkboxCnts(otmp);
+            break;
+        case ICE_BOX:
+        case SACK:
+        case OILSKIN_SACK:
+        case BAG_OF_HOLDING:
+            await mkboxCnts(otmp);
+            break;
+        case EXPENSIVE_CAMERA:
+        case TINNING_KIT:
+        case MAGIC_MARKER:
+            otmp.spe = rn1(70, 30);
+            break;
+        case CAN_OF_GREASE:
+            otmp.spe = rn1(21, 5); /* 0..20 + 5 => 5..25 */
+            blessorcurse(otmp, 10);
+            break;
+        case CRYSTAL_BALL:
+            otmp.spe = rn1(5, 3); /* 0..4 + 3 => 3..7 */
+            blessorcurse(otmp, 2);
+            break;
+        case HORN_OF_PLENTY:
+        case BAG_OF_TRICKS:
+            otmp.spe = rn1(18, 3); /* 0..17 + 3 => 3..20 */
+            break;
+        case FIGURINE: {
+            // C mksobj_init(): figurines deliberately select from a
+            // harder band than ordinary corpses/statues and reject human forms
+            // through a bounded post-check retry.  Store the chosen identity so
+            // mksobj()'s shared corpse/statue/figurine tail only assigns gender.
+            let tryCount = 0;
+            do {
+                otmp.corpsenm = rndmonnumAdj(5, 10);
+            } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
+                && tryCount++ < 30);
+            blessorcurse(otmp, 4);
+            break;
+        }
+        case BELL_OF_OPENING:
+            otmp.spe = 3;
+            break;
+        case MAGIC_FLUTE:
+        case MAGIC_HARP:
+        case FROST_HORN:
+        case FIRE_HORN:
+        case DRUM_OF_EARTHQUAKE:
+            otmp.spe = rn1(5, 4);
+            break;
+        }
         break;
     case POTION_CLASS:
     case SCROLL_CLASS:
@@ -440,64 +515,7 @@ async function mksobj_init(
     mkobjErosions(otmp);
 }
 
-// C mkobj.c:mksobj_init(), TOOL_CLASS branch.
-async function initTool(otmp: GameObject): Promise<void> {
-    const otyp = otmp.otyp;
-    if (otyp === TALLOW_CANDLE || otyp === WAX_CANDLE) {
-        otmp.spe = 1;
-        otmp.age = 20 * objectBaseCost(otyp);
-        otmp.lamplit = false;
-        otmp.quan = 1 + (rn2(2) ? rn2(7) : 0);
-        blessorcurse(otmp, 5);
-    } else if (otyp === BRASS_LANTERN || otyp === OIL_LAMP) {
-        otmp.spe = 1;
-        otmp.age = rn1(500, 1000);
-        otmp.lamplit = false;
-        blessorcurse(otmp, 5);
-    } else if (otyp === MAGIC_LAMP) {
-        otmp.spe = 1;
-        otmp.lamplit = false;
-        blessorcurse(otmp, 2);
-    } else if (otyp === CHEST || otyp === LARGE_BOX) {
-        otmp.olocked = !!rn2(5);
-        otmp.otrapped = !rn2(10);
-        otmp.tknown = otmp.otrapped && !rn2(100);
-        await mkboxCnts(otmp);
-    } else if (otyp === ICE_BOX || otyp === SACK || otyp === OILSKIN_SACK
-        || otyp === BAG_OF_HOLDING) {
-        await mkboxCnts(otmp);
-    } else if (otyp === EXPENSIVE_CAMERA || otyp === TINNING_KIT
-        || otyp === MAGIC_MARKER) {
-        otmp.spe = rn1(70, 30);
-    } else if (otyp === CAN_OF_GREASE) {
-        otmp.spe = rn1(21, 5);
-        blessorcurse(otmp, 10);
-    } else if (otyp === CRYSTAL_BALL) {
-        otmp.spe = rn1(5, 3);
-        blessorcurse(otmp, 2);
-    } else if (otyp === HORN_OF_PLENTY || otyp === BAG_OF_TRICKS) {
-        otmp.spe = rn1(18, 3);
-    } else if (otyp === FIGURINE) {
-        // C mkobj.c:mksobj_init(): figurines deliberately select from a
-        // harder band than ordinary corpses/statues and reject human forms
-        // through a bounded post-check retry.  Store the chosen identity so
-        // mksobj()'s shared corpse/statue/figurine tail only assigns gender.
-        let tryCount = 0;
-        do {
-            otmp.corpsenm = rndmonnumAdj(5, 10);
-        } while (((MONSTER_FLAGS2[otmp.corpsenm] ?? 0) & M2_HUMAN)
-            && tryCount++ < 30);
-        blessorcurse(otmp, 4);
-    } else if (otyp === BELL_OF_OPENING) {
-        otmp.spe = 3;
-    } else if (otyp === MAGIC_FLUTE || otyp === MAGIC_HARP
-        || otyp === FROST_HORN || otyp === FIRE_HORN
-        || otyp === DRUM_OF_EARTHQUAKE) {
-        otmp.spe = rn1(5, 4);
-    }
-}
-
-// C ref: mkobj.c mkbox_cnts().
+// C mkobj.c:mkbox_cnts().
 async function mkboxCnts(box: GameObject): Promise<void> {
     let maximum;
     if (box.otyp === ICE_BOX) maximum = 20;
@@ -728,19 +746,11 @@ export function set_corpsenm(otmp: GameObject | null | undefined, pm: number): v
     }
 }
 
-// C mkobj.c:mkcorpstat(). Generation uses an explicit square; live callers
-// may request <0,0>, whose relocation can run floor effects and show messages.
-export async function createCorpstatAt(
-    objtyp: number, mtmp: Monster | null, pm: number | null,
-    x: number, y: number, flags: number, { zombify = false, noRevive = false } = {},
-): Promise<GameObject> {
-    if (!isok(x, y)) throw new RangeError('Corpstat creation needs an explicit map square');
-    const object = await mksobj(objtyp, !!(flags & CORPSTAT_INIT), false, { zombify });
-    placeCreatedObject(object, x, y);
-    return finishCorpstat(object, mtmp, pm, flags, zombify, noRevive);
-}
-
-// C mkobj.c:mkcorpstat().
+// C mkobj.c:mkcorpstat().  Make a corpse or statue; never returns Null.
+// Generation uses an explicit square; live callers may request <0,0>, whose
+// relocation (C rloco()) can run floor effects and show messages.  The
+// explicit-square branch is C mksobj_at()'s body inline because it must
+// forward mksobj()'s zombify option, which mksobj_at() does not take.
 export async function mkcorpstat(
     objtyp: number, mtmp: Monster | null, pm: number | null,
     x: number, y: number, flags: number,
@@ -749,29 +759,37 @@ export async function mkcorpstat(
     } = {},
 ): Promise<GameObject> {
     requireLiveGame(state);
-    if (x !== 0 || y !== 0)
-        return await createCorpstatAt(objtyp, mtmp, pm, x, y, flags, { zombify, noRevive });
-    const object = await mksobj(objtyp, !!(flags & CORPSTAT_INIT), false, { zombify });
-    await relocateObjectRandomly(object, { state });
-    return finishCorpstat(object, mtmp, pm, flags, zombify, noRevive);
-}
-
-// C mkobj.c:mkcorpstat(), after placement.
-function finishCorpstat(
-    otmp: GameObject, mtmp: Monster | null, pm: number | null,
-    flags: number, zombify: boolean, noRevive: boolean,
-): GameObject {
-    // Placement sees mksobj's temporary identity, not the caller's override.
+    const init = (flags & CORPSTAT_INIT) !== 0;
+    let otmp: GameObject;
+    if (x === 0 && y === 0) { /* special case - random placement */
+        otmp = await mksobj(objtyp, init, false, { zombify });
+        await relocateObjectRandomly(otmp, { state });
+    } else {
+        // Placement sees mksobj's temporary identity, not the caller's override.
+        if (!isok(x, y)) throw new RangeError('Corpstat creation needs an explicit map square');
+        otmp = await mksobj(objtyp, init, false, { zombify });
+        placeCreatedObject(otmp, x, y);
+    }
+    /* record gender and 'historic statue' in overloaded enchantment field;
+       C reads gm.mkcorpstat_norevive here, which the port passes as noRevive */
     otmp.spe = flags & CORPSTAT_SPE_VAL;
     if (noRevive) otmp.norevive = true;
+
+    /* when 'mtmp' is non-null save the monster's details with the
+       corpse or statue; it will also force the 'pm' override below */
     if (mtmp) {
+        /* save_mtraits updates otmp->oextra->omonst in place */
         otmp.oextra = {
             ...(otmp.oextra || {}),
             omonst: saveMonsterTraits(mtmp),
         };
         if (pm == null) pm = mtmp.mnum;
+        /* don't give a revive timer to a cancelled troll's corpse */
         if (mtmp.mcan && !isRider(pm)) otmp.norevive = true;
     }
+
+    /* when 'pm' is non-null it comes from our caller or from 'mtmp';
+       override mksobj()'s initialization of a random monster type */
     if (pm != null) {
         const oldCorpsenm = otmp.corpsenm;
         otmp.corpsenm = pm;
@@ -864,7 +882,7 @@ interface MonsterLinkOptions extends MonsterPickupOptions {
     state?: GameState;
 }
 
-// C mkobj.c:clear_dknown().
+// C mkobj.c dknowns[] (the class table clear_dknown() consults).
 const DESCRIPTION_UNKNOWN_CLASSES = new Set([
     WEAPON_CLASS,
     RING_CLASS,
@@ -1252,15 +1270,6 @@ export function linkObjectAfter(
     chain.splice(index + 1, 0, next);
 }
 
-// C mkobj.c:unsplitobj() only searches carried, monster-carried, and
-// contained chains; both halves must share one.
-export function sharesUnsplitChain(
-    parent: GameObject, child: GameObject, state: GameState = game,
-): boolean {
-    if (child.where !== 'inventory' && child.where !== 'minvent' && child.where !== 'contained')
-        return false;
-    return !!ownerChain(child, state)?.includes(parent);
-}
 
 // C mkobj.c:replace_object(). Keep the owner's order without pickup,
 // dropping, merging, or transferring the old object's timers.
@@ -1348,11 +1357,11 @@ export function deallocateObject(object: GameObject, state: GameState = game): b
     return true;
 }
 
-// C mkobj.c:mksobj(): zeroobj, identity, age, and unknow_object().
-// Identity allocation belongs to the caller; initializing these fields draws
-// no random numbers and does not run class-specific creation effects.
-
-// C mkobj.c:clear_dknown().
+// Shared head of C mkobj.c:mksobj() (newobj(), zeroobj, age, o_id, quan,
+// and unknow_object()'s dknown/known defaults): the bones tests and hero
+// gold construct plain objects through it too.  Identity allocation belongs
+// to the caller; initializing these fields draws no random numbers and does
+// not run class-specific creation effects.
 export function createObjectBase(
     otyp: number, objectId: number, currentTurn: number,
 ): GameObject {
@@ -1444,7 +1453,7 @@ export async function addCreatedObjectToContainer(
 // Container predicates and the two mkobj.c helpers the pickup.c container
 // transfers share. The pickup.c use_container()/in_container()/out_container()
 // ports live in pickup.ts; this section keeps mkobj.c container_weight()
-// (updateContainerWeights) and unsplitobj() (restoreRejectedSplit).
+// (containerWeight) and unsplitobj() (restoreRejectedSplit).
 // ---------------------------------------------------------------------------
 
 export interface TransferStack { object: GameObject; parent: GameObject | null }
@@ -1457,14 +1466,14 @@ export function isContainer(object: Pick<GameObject, 'otyp'> | null | undefined)
     return !!object && CONTAINER_TYPES.has(object.otyp);
 }
 
-// C mkobj.c:container_weight().
-export function updateContainerWeights(container: GameObject): void {
-    let current: GameObject | null | undefined = container;
-    const visited = new Set<GameObject>();
-    while (current && !visited.has(current)) {
-        visited.add(current);
-        current.owt = objectWeight(current);
-        current = current.where === 'contained' ? current.container : null;
+// C mkobj.c:container_weight().  Update the container's weight, then every
+// enclosing container's, recursively (C recurses through ocontainer; the
+// timer-graph lookup covers restored states whose back-link was not saved).
+export function containerWeight(object: GameObject, state: GameState = game): void {
+    object.owt = objectWeight(object);
+    if (object.where === 'contained') {
+        const parent = parentContainer(object, state);
+        if (parent) containerWeight(parent, state);
     }
 }
 
@@ -1640,14 +1649,19 @@ export function nextObjectId(oldObject: GameObject, newObject: GameObject, state
     return ident;
 }
 
-// C mkobj.c:unsplitobj(): floor, free, and other chains never rejoin.
+// C mkobj.c:unsplitobj(): floor, free, billed, buried, and migrating chains
+// never rejoin; the caller knows both halves, which must share one carried,
+// monster-carried, or contained chain (C walks obj->nobj lists here).
 export async function rejoinObjectStack(
     parent: GameObject, split: GameObject, state: GameState = game,
 ): Promise<GameObject | null> {
     const latest = state.context.objsplit;
     if (latest?.parent_oid !== parent.o_id || latest.child_oid !== split.o_id)
         return null;
-    if (!sharesUnsplitChain(parent, split, state)) return null;
+    if (split.where !== 'inventory' && split.where !== 'minvent'
+        && split.where !== 'contained')
+        return null;
+    if (!ownerChain(split, state)?.includes(parent)) return null;
     return await mergeObjectStacks(parent, split, state);
 }
 
@@ -1897,18 +1911,6 @@ function globIceState(glob: GameObject, state: GameState): 'none' | 'buried' | '
     return outer.where === 'buried' ? 'buried' : 'on-ice';
 }
 
-// C mkobj.c:container_weight().
-function updateGlobContainerWeights(container: GameObject, state: GameState): void {
-    let current: GameObject | null = container;
-    const seen = new Set<GameObject>();
-    while (current && !seen.has(current)) {
-        seen.add(current);
-        current.owt = objectWeight(current);
-        current = current.where === 'contained'
-            ? parentContainer(current, state) : null;
-    }
-}
-
 function clearHeroEquipment(object: GameObject, state: GameState): void {
     const slots = [
         'uwep', 'uswapwep', 'uquiver',
@@ -2014,7 +2016,7 @@ export async function runClaimedGlobTimer(
             };
         }
         glob.owt -= delta;
-        if (container) updateGlobContainerWeights(container, state);
+        if (container) containerWeight(container, state);
         scheduleNextGlobAttempt(glob, state, currentTurn, delay);
         return {
             glob, x, y, overdue: true, delta, delay,
@@ -2043,7 +2045,7 @@ export async function runClaimedGlobTimer(
         if ((glob.oeaten ?? 0) > 1) glob.oeaten = (glob.oeaten ?? 0) - 1;
     }
     const gone = glob.owt === 0;
-    if (container) updateGlobContainerWeights(container, state);
+    if (container) containerWeight(container, state);
 
     let message: string | null = null;
     if (inInventory && (shrinkThreshold || gone)) {
@@ -2145,7 +2147,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     // least one unit even below 50 pieces.
     if (object.oclass === COIN_CLASS)
         return Math.max(1, Math.trunc((quantity(object) + 50) / 100));
-    // C mkobj.c:weight(): globs keep quantity one while absorption and
+    // mkobj.c:weight(): globs keep quantity one while absorption and
     // SHRINK_GLOB mutate their complete weight directly in owt.  This check
     // precedes partly-eaten food scaling because oeaten is also glob mass.
     if (object.globby) return object.owt ?? base ?? 0;
@@ -2161,7 +2163,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
         }
         return fullWeight;
     }
-    // C mkobj.c:weight()->eaten_stat() scales partly eaten food by its
+    // mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition per item, including stacks of partly eaten wishes.
     if (object.oclass === FOOD_CLASS && uneatenNutrition > 0 && base > 0) {
         const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;

@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { meltIce } from '../js/zap.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import { nameToMonster } from '../js/mondata.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { wakeMonstersNearWithMessages } from '../js/mon.js';
@@ -110,7 +110,7 @@ void test('a silent animal does not produce a hallucinated yelp or stop running'
     assert.equal(game.context.run, 0);
 });
 async function buriedZombieAt(x, y) {
-    const corpse = await createCorpstatAt(CORPSE, null, nameToMonster('human'), x, y, CORPSTAT_INIT, { zombify: true });
+    const corpse = await mkcorpstat(CORPSE, null, nameToMonster('human'), x, y, CORPSTAT_INIT, { zombify: true });
     await buryObject(corpse);
     return corpse;
 }

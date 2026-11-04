@@ -21,7 +21,7 @@ import {
 import { initializePet } from '../js/dog.js';
 import { GameMap } from '../js/game.js';
 import { requireGameDisplay, game } from '../js/gstate.js';
-import { createCorpstatAt } from '../js/mkobj.js';
+import { mkcorpstat } from '../js/mkobj.js';
 import {
     AMULET_OF_LIFE_SAVING, ARROW, HEAVY_IRON_BALL, IRON_SHOES, ORCISH_HELM,
     ROCK, SCR_IDENTIFY, STATUE,
@@ -312,7 +312,7 @@ void test('stepping on a statue trap releases its monster', async () => {
     const level = freshGameplayRoom();
     requireFixtureGame(game);
     initRng(9402n);
-    const statue = await createCorpstatAt(STATUE, null, 12, 11, 10, 0);
+    const statue = await mkcorpstat(STATUE, null, 12, 11, 10, 0);
     addTrap(level, STATUE_TRAP, 11, 10, { tseen: false });
     // The live floor-look announcement must be acknowledged before the
     // statue's activation message can replace it.

@@ -4,7 +4,7 @@ import { reviveCorpseForHero } from '../js/corpse_revival.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
-import { createCorpstatAt, unlinkObject } from '../js/mkobj.js';
+import { mkcorpstat, unlinkObject } from '../js/mkobj.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { CORPSE, DAGGER, STATUE } from '../js/object_data.js';
 import { addShopObjectToBill, objectOwnershipPrefix, shopResident } from '../js/shk.js';
@@ -31,7 +31,7 @@ for (const petrified of [false, true]) {
         });
         let remains;
         if (petrified) {
-            remains = await createCorpstatAt(STATUE, shopkeeper, null, 12, 10, 0);
+            remains = await mkcorpstat(STATUE, shopkeeper, null, 12, 10, 0);
             await finishEnvironmentalMonsterDeath(shopkeeper, game, { noCorpse: true });
         }
         else {

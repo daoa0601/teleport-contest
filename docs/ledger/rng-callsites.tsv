@@ -1250,17 +1250,17 @@ src/js/mkmap.ts	mkmap	rn2	"[""width - 1""]"	constant
 src/js/mkmap.ts	mkmap	rnd	"[""height - 1""]"	constant
 src/js/mkobj.ts	blessorcurse	rn2	"[""2""]"	constant
 src/js/mkobj.ts	blessorcurse	rn2	"[""chance""]"	guarded
-src/js/mkobj.ts	initTool	rn1	"[""18"", ""3""]"	constant
-src/js/mkobj.ts	initTool	rn1	"[""21"", ""5""]"	constant
-src/js/mkobj.ts	initTool	rn1	"[""5"", ""3""]"	constant
-src/js/mkobj.ts	initTool	rn1	"[""5"", ""4""]"	constant
-src/js/mkobj.ts	initTool	rn1	"[""500"", ""1000""]"	constant
-src/js/mkobj.ts	initTool	rn1	"[""70"", ""30""]"	constant
-src/js/mkobj.ts	initTool	rn2	"[""10""]"	constant
-src/js/mkobj.ts	initTool	rn2	"[""100""]"	constant
-src/js/mkobj.ts	initTool	rn2	"[""2""]"	constant
-src/js/mkobj.ts	initTool	rn2	"[""5""]"	constant
-src/js/mkobj.ts	initTool	rn2	"[""7""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""18"", ""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""21"", ""5""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""5"", ""3""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""5"", ""4""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""500"", ""1000""]"	constant
+src/js/mkobj.ts	mksobj_init	rn1	"[""70"", ""30""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""10""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""100""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""2""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""5""]"	constant
+src/js/mkobj.ts	mksobj_init	rn2	"[""7""]"	constant
 src/js/mkobj.ts	mkboxCnts	rn2	"[""maximum + 1""]"	unproved
 src/js/mkobj.ts	mkboxCnts	rnd	"[""100""]"	constant
 src/js/mkobj.ts	mkboxCnts	rnd	"[""75""]"	constant

@@ -16,7 +16,7 @@ import {
     SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH,
 } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { createCorpstatAt, addObjectToContainer } from '../js/mkobj.js';
+import { mkcorpstat, addObjectToContainer } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/mon.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -322,7 +322,7 @@ void test('stone-to-flesh restores a petrified shopkeeper with its saved name an
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.name = 'Manlobbi';
     shopkeeper.eshk.debit = 37;
-    const statue = await createCorpstatAt(STATUE, shopkeeper, shopkeeper.mnum,
+    const statue = await mkcorpstat(STATUE, shopkeeper, shopkeeper.mnum,
         shopkeeper.mx, shopkeeper.my, CORPSTAT_INIT);
     await removeMonsterFromGame(shopkeeper);
     installPagerInput(resetInputState(), { expected: /statue|comes to life/, limit: 3 });

@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { initRng } from '../js/rng.js';
 import { AMULET_OF_CHANGE, AMULET_OF_GUARDING, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, ARROW, CHEST, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, LEASH, LUCKSTONE, MAGIC_LAMP, MEAT_RING, OIL_LAMP, OBJECT_NAMES, POT_OIL, POT_WATER, ROCK, SPE_BLANK_PAPER, SPE_FORCE_BOLT, STATUE, WAN_POLYMORPH, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { createCorpstatAt, addObjectToContainer } from '../js/mkobj.js';
+import { mkcorpstat, addObjectToContainer } from '../js/mkobj.js';
 import { removeMonsterFromGame } from '../js/mon.js';
 import { hatchableEggSpecies, eggSpeciesIsDead } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -262,7 +262,7 @@ void test('stone-to-flesh restores a petrified shopkeeper with its saved name an
     const { shopkeeper } = await createStaffedShop();
     shopkeeper.name = 'Manlobbi';
     shopkeeper.eshk.debit = 37;
-    const statue = await createCorpstatAt(STATUE, shopkeeper, shopkeeper.mnum, shopkeeper.mx, shopkeeper.my, CORPSTAT_INIT);
+    const statue = await mkcorpstat(STATUE, shopkeeper, shopkeeper.mnum, shopkeeper.mx, shopkeeper.my, CORPSTAT_INIT);
     await removeMonsterFromGame(shopkeeper);
     installPagerInput(resetInputState(), { expected: /statue|comes to life/, limit: 3 });
     assert.equal(await stone_to_flesh_obj(statue), 1);

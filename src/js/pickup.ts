@@ -30,7 +30,7 @@ import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY
 import { isok } from './cmd.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
-import {objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, updateContainerWeights, restoreRejectedSplit, startGlobTimeout} from './mkobj.js';
+import {objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout} from './mkobj.js';
 
 import { hitFloorWithObject } from './dothrow.js';
 import { learnObjectType, observeObject } from './o_init.js';
@@ -2199,7 +2199,7 @@ export async function putIntoContainer(
         await sellHeroDroppedObject(object, container.ox, container.oy, state);
     await addObjectToContainer(container, object, state);
     container.cknown = true;
-    updateContainerWeights(container);
+    containerWeight(container);
     await bot();
     return {
         moved: true,
@@ -2257,7 +2257,7 @@ export async function takeFromContainer(
     if (resetJustPicked) clearJustPicked(state);
     const { object: carried, count: addedCount } = await addPickedInventoryObject(object);
     container.cknown = true;
-    updateContainerWeights(container);
+    containerWeight(container);
     observeObjectForNaming(carried, { state });
     // C prinv()/xprname() formats the surviving stack itself, with only the
     // removed quantity substituted: the stack keeps its identity, so
@@ -2517,7 +2517,7 @@ export async function use_container(container: GameObject, {
         if (loss) {
             spentTime = true;
             await plineWithContinuation(`You owe ${loss} ${currency(loss)} for lost merchandise.`);
-            updateContainerWeights(container);
+            containerWeight(container);
         }
         const emptyMessage = container.contents.length ? ''
             : `${ownedSimpleObjectName(container)} is ${quantumCat || cursedBag ? 'now ' : ''}empty.`;
