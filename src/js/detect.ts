@@ -248,9 +248,9 @@ async function searchAdjacentSecrets(automatic = false): Promise<AutomaticSearch
             // its disguise/concealment is distinct from being able to spot it:
             // a blind hero records an invisible-memory glyph and gets tactile
             // feedback after the Wisdom exercise draw.
-            const monster = automatic ? undefined : game.level?.monsters?.find(candidate => monsterHasMapPosition(candidate, game) &&
-                !candidate.dead && (candidate.mhp ?? 1) > 0
-                && candidate.mx === x && candidate.my === y);
+            // C m_at() includes worm tails; mfind0() acts on their head.
+            const monster = !automatic && game.level
+                ? monsterAtPosition(game.level, x, y) : null;
             if (monster) {
                 const result = await findHiddenMonster(monster, false);
                 if (result === -1) continue;
