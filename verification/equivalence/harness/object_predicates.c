@@ -127,3 +127,64 @@ int verification_is_multigen(struct obj *otmp)
 {
     return is_multigen(otmp);
 }
+
+/* fv-equivalence-batch-12: the remaining obj.h weapon and armor macros. */
+int verification_is_launcher(struct obj *otmp)
+{
+    return is_launcher(otmp);
+}
+
+int verification_is_spear(struct obj *otmp)
+{
+    return is_spear(otmp);
+}
+
+int verification_is_shield(struct obj *otmp)
+{
+    return is_shield(otmp);
+}
+
+int verification_is_helmet(struct obj *otmp)
+{
+    return is_helmet(otmp);
+}
+
+int verification_is_boots(struct obj *otmp)
+{
+    return is_boots(otmp);
+}
+
+int verification_is_gloves(struct obj *otmp)
+{
+    return is_gloves(otmp);
+}
+
+int verification_is_cloak(struct obj *otmp)
+{
+    return is_cloak(otmp);
+}
+
+int verification_is_shirt(struct obj *otmp)
+{
+    return is_shirt(otmp);
+}
+
+int verification_is_suit(struct obj *otmp)
+{
+    return is_suit(otmp);
+}
+
+int verification_is_elven_armor(struct obj *otmp)
+{
+    return is_elven_armor(otmp);
+}
+
+int verification_is_elven_weapon(struct obj *otmp)
+{
+    return is_elven_weapon(otmp);
+}
+
+int verification_pair_of(struct obj *o)
+{
+    return pair_of(o);
+}

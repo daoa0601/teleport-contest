@@ -6,9 +6,9 @@
 // (shknam.ts); this module owns the live relationship among room, resident,
 // customer, and hero.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
-import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
+import { objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE, } from './object_data.js';
 import { impossible } from './diagnostics.js';
-import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
+import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
 import { pline, plineWithContinuation, verbalize } from './pline.js';
@@ -123,11 +123,6 @@ export function shopkeeperKillerName(monster) {
     const personal = /^[-+=]/.test(raw);
     const honorific = personal ? '' : monster?.female ? 'Ms. ' : 'Mr. ';
     return `${honorific}${shopkeeperName(monster)}; the shopkeeper`;
-}
-// C objects[otyp].oc_name_known belongs to the type, never to an instance.
-export function objectTypeKnown(object, state = game) {
-    return !!OBJECT_INITIAL_KNOWN[object.otyp]
-        || !!state._knownObjectTypes?.has(object.otyp);
 }
 function shopkeeperForRoom(roomno, state = game) {
     if (!roomno)

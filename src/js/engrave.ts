@@ -11,6 +11,7 @@ import {
     BALL_CLASS, VENOM_CLASS,
 } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
+import { is_boots } from './object_properties.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameMap } from './game.js';
@@ -56,7 +57,8 @@ import { heroResistsBlindingLight } from './blinding_attack.js';
 import { heroFingerTipName, heroHandName } from './body_parts.js';
 import { learnWand, zappable, zapWithoutDirection } from './zap.js';
 import { explodeWand } from './read.js';
-import { chargeUnpaidUsage, objectTypeKnown } from './shk.js';
+import { chargeUnpaidUsage } from './shk.js';
+import { objectTypeKnown } from './o_init.js';
 import { dryTowel } from './weapon.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import {
@@ -546,10 +548,6 @@ function trapAtHeroInState(state: GameState): Trap | null {
 
 // object_data.js: an uncursed athame never dulls while carving.
 const ATHAME = 38;
-// armor.ts: armor types 163..172 are the boots subcategory (oc_armcat
-// ARM_BOOTS).
-const BOOT_TYPES_FIRST = 163;
-const BOOT_TYPES_LAST = 172;
 
 const S_VAMPIRE = 48;
 const DRAWBRIDGE_DOWN = 34;
@@ -926,7 +924,7 @@ export async function doengrave(state: GameState = game): Promise<void> {
             if (state.objectToughness?.[object.otyp]) setup.type = ENGRAVE;
             break;
         case ARMOR_CLASS:
-            if (object.otyp >= BOOT_TYPES_FIRST && object.otyp <= BOOT_TYPES_LAST) {
+            if (is_boots(object)) {
                 setup.type = DUST;
                 break;
             }

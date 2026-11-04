@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { armorBaseBonus } from '../js/do_wear.js';
 

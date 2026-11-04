@@ -6,7 +6,7 @@ import { resetInputState } from '../js/input.js';
 import { CRYSTAL_BALL, OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { ALTAR, M_AP_FURNITURE, ROOM } from '../js/const.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { CmapSymbol } from '../js/glyph_numbers.js';
 import { glyphAt, newsym } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

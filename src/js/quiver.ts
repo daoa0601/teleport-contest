@@ -3,15 +3,15 @@
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
 
 import { WEAPON_CLASS, COIN_CLASS, GEM_CLASS } from './objclass.js';
+import { is_launcher } from './object_properties.js';
 import {
     objectClassForType, objectSkill, AKLYS, FLINT, ROCK,
 } from './object_data.js';
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, objectTypeKnown } from './o_init.js';
 import {
-    P_BOW, P_CROSSBOW, P_DAGGER, P_SLING,
+    P_DAGGER, P_SLING,
 } from './const.js';
 
-import { objectTypeKnown } from './shk.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import {
@@ -81,8 +81,6 @@ export function readySuggestion(item: GameObject, state: GameState): boolean {
         return launcherMatchesAmmo(item, state.uwep)
             || launcherMatchesAmmo(item, state.uswapwep);
     }
-    const skill = objectSkill(item.otyp);
-    if (quiverObjectClass(item) === WEAPON_CLASS
-        && skill >= P_BOW && skill <= P_CROSSBOW) return false;
+    if (is_launcher(item)) return false;
     return [WEAPON_CLASS, COIN_CLASS].includes(quiverObjectClass(item));
 }

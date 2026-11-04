@@ -1,5 +1,5 @@
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG, CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH, MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, } from './object_data.js';
+import { objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG, CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH, MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, } from './object_data.js';
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
@@ -53,7 +53,7 @@ import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSel
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
-import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
+import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
@@ -113,7 +113,6 @@ const POT_SPEED = 302;
 const LOW_BOOTS = 163;
 const IRON = 11;
 const GEMSTONE = 20, MINERAL = 21;
-const ARM_GLOVES = 3, ARM_CLOAK = 5, ARM_SHIRT = 6;
 const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 function isFiniteNumber(value) {
     return typeof value === 'number' && Number.isFinite(value);
@@ -699,7 +698,7 @@ export async function readyMonsterDiggingWeapon(monster, state, x, y) {
 }
 function monsterHasLauncherAndAmmo(monster) {
     const launcher = monsterWieldedWeapon(monster);
-    if (!launcher)
+    if (!launcher || !is_launcher(launcher))
         return false;
     const inventory = monster.minvent || monster.inventory || [];
     return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
@@ -1060,8 +1059,9 @@ function inventoryBlocksDoorPassage(inventory) {
         // The pinned source compares otyp, not oclass, for this first test.
         if (type === COIN_CLASS && object.quan > 100)
             return true;
-        const flexibleArmor = object.oclass === ARMOR_CLASS
-            && [ARM_CLOAK, ARM_GLOVES, ARM_SHIRT].includes(objectSkill(type) ?? -1);
+        // C monmove.c:stuff_prevents_passage() tests is_cloak/is_gloves/
+        // is_shirt; each macro carries the armor-class guard.
+        const flexibleArmor = is_cloak(object) || is_gloves(object) || is_shirt(object);
         const tinyCorpse = type === CORPSE && object.corpsenm !== undefined
             && monsterIsVerySmall(object.corpsenm);
         if (![RING_CLASS, AMULET_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)

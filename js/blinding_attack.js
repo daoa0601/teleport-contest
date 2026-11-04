@@ -2,13 +2,14 @@
 // C refs: mondata.c can_blnd(), uhitm.c hmon_hitmon_misc_obj(), and
 // mthrowu.c m_throw()/ohitmon().
 import { W_ARMH } from './const.js';
+import { OBJ_DESCR } from './o_init.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
 import { heroSpecies } from './polyself.js';
 import { heroIsUnaware, blindfolded, heroIsBlind } from './senses.js';
 import { AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { game } from './gstate.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
-import { BLINDING_VENOM, CREAM_PIE, OBJECT_DESCRIPTIONS, } from './object_data.js';
+import { BLINDING_VENOM, CREAM_PIE, } from './object_data.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroHasEyes, monsterFaceName } from './body_parts.js';
 import { makePlural, verbForSubject, objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
@@ -31,8 +32,7 @@ export function monsterResistsBlindingLight(monster, state = game) {
 }
 function wearsVisoredHelmet(objects, state) {
     return objects.some(object => ((object?.owornmask ?? 0) & W_ARMH)
-        && (state.objectDescriptions?.[object.otyp]
-            ?? OBJECT_DESCRIPTIONS[object.otyp]) === 'visored helmet');
+        && (OBJ_DESCR(object.otyp, state)) === 'visored helmet');
 }
 // C mondata.c:can_blnd() for a monster's contact attack on the hero.
 export function heroCanBeBlindedByContact(attacker, attackType, state = game) {

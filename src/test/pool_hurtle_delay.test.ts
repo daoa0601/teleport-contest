@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';

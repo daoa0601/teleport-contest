@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 173 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 245 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -214,7 +214,7 @@ fv-equivalence-batch-4 (`verysmall`, `haseyes`, `hates_silver`,
 `mon_hates_blessings`, `mon_resistancebits`, `erosion_matters`,
 `is_damageable`, the two guarded readobjnam erosion tests, and
 `weapon_type`), the twenty claims of fv-equivalence-batch-5: the
-nineteen PR 610 mondata predicates (`bigmonst`, `is_flyer`, `is_floater`,
+twenty-two PR 610 mondata predicates (`bigmonst`, `is_flyer`, `is_floater`,
 `is_clinger`, `is_swimmer`, `amphibious`, `passes_walls`, `can_teleport`,
 `control_teleport`, `perceives`, `hides_under`, `is_hider`, `is_demon`,
 `is_golem`, `is_giant`, `is_female`, `throws_rocks`, `type_is_pname`,
@@ -241,10 +241,17 @@ encoders (`warning/monnum/petnum/detected_monnum/ridden_monnum/
 objnum/explosion/altar/cmap_to_glyph`), display.c's real
 `zapdir_to_glyph`/`swallow_to_glyph`, the fourteen glyph_is_* predicates,
 the display.h decoders (`glyph_to_mon/obj/swallow/warning/explosion/trap`)
-and glyphs.c's real `glyph_to_cmap` over the terrain span, plus the fifteen
-object-field claims of fv-equivalence-batch-10: all fourteen initial objects[]
+and glyphs.c's real `glyph_to_cmap` over the terrain span, the fifteen
+object-field claims of fv-equivalence-batch-10 (all fourteen initial objects[]
 columns read by the shared `object_data.js` owners over every otyp, and the
-port-only zero class outside the valid int32 table range. The monster
+port-only zero class outside the valid int32 table range), and the twenty-two
+claims of fv-equivalence-batch-12: twelve remaining obj.h predicates,
+eight initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
+oc_hitbon, oc_wsdam, oc_wldam), and OBJ_NAME/OBJ_DESCR index mapping.
+The name claims execute the real macros over every obj_descr_init row and
+compare nullable string contents. Their index correspondence assumes
+init_objects has assigned the indices; shuffling preservation is separate.
+The live oc_name_known bit is the moved objectTypeKnown owner. The monster
 claims check all 383 valid native species with symbolic state where
 applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable

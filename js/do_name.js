@@ -8,15 +8,16 @@
 // hcolor(), rndcolor(), hliquid(), rndorcname(), noveltitle(),
 // lookup_novel().  The category menu is naming_categories.ts.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
+import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
+import { OBJ_DESCR } from './o_init.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { renameDiscoveredType, recordObjectEncounter, rememberType } from './o_init.js';
+import { renameDiscoveredType, recordObjectEncounter, rememberType, objectTypeKnown } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './invent.js';
 import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomBogusMonsterIdentity, seeMonsterWithInfrared, } from './display.js';
-import { objectTypeKnown, repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
+import { repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
 import { definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { impossible } from './diagnostics.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -737,8 +738,8 @@ function restrictedArtifactName(object, artifact) {
         return false;
     if (object.oclass !== objectClassForType(artifact.baseType))
         return false;
-    const description = game.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
-    const other = game.objectDescriptions?.[artifact.baseType] ?? OBJECT_DESCRIPTIONS[artifact.baseType];
+    const description = OBJ_DESCR(object.otyp);
+    const other = OBJ_DESCR(artifact.baseType);
     if (!description || !other)
         return false;
     const [low, high] = appearanceRange(object);
@@ -785,7 +786,7 @@ export function objectTypeIsCallable(object, state = game) {
         return false;
     return [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS,
         SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
-        && !!OBJECT_DESCRIPTIONS[object.otyp];
+        && !!OBJ_DESCR(object.otyp);
 }
 // C docall() stores the call name on the shared type.
 export function recordObjectCall(otyp, name, state = game) {
@@ -823,7 +824,7 @@ export async function callObjectType(object, state = game) {
         sample.owt = 120;
     let prompt;
     if (object.oclass === POTION_CLASS && object.fromsink) {
-        const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        const appearance = OBJ_DESCR(object.otyp, state);
         prompt = `Call a stream of ${appearance} fluid:`;
     }
     else {

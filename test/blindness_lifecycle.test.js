@@ -10,7 +10,7 @@ import { readObjectName } from '../js/objnam.js';
 import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

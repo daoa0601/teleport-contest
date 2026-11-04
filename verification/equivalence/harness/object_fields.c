@@ -16,10 +16,21 @@ int verification_object_uses_known(int otyp) { return objects[otyp].oc_uses_know
 int verification_object_unique(int otyp) { return objects[otyp].oc_unique; }
 int verification_object_magic(int otyp) { return objects[otyp].oc_magic; }
 int verification_object_charged(int otyp) { return objects[otyp].oc_charged; }
-
+int verification_object_level(int otyp) { return objects[otyp].oc_level; }
+int verification_object_nutrition(int otyp) { return objects[otyp].oc_nutrition; }
+int verification_object_color(int otyp) { return objects[otyp].oc_color; }
+int verification_object_prob(int otyp) { return objects[otyp].oc_prob; }
+int verification_object_nowish(int otyp) { return objects[otyp].oc_nowish; }
+int verification_object_hitbon(int otyp) { return objects[otyp].oc_hitbon; }
+int verification_object_wsdam(int otyp) { return objects[otyp].oc_wsdam; }
+int verification_object_wldam(int otyp) { return objects[otyp].oc_wldam; }
 /* Port-only extension: C has no class lookup outside its object table.
  * This guard defines the port's zero result; it is not a native safety claim. */
 int verification_object_class_outside(int otyp)
 {
     return otyp < 0 || otyp >= NUM_OBJECTS ? 0 : objects[otyp].oc_class;
 }
+
+/* Index mapping after init_objects has assigned oc_name_idx/oc_descr_idx. */
+const char *verification_OBJ_NAME(int otyp) { return OBJ_NAME(objects[otyp]); }
+const char *verification_OBJ_DESCR(int otyp) { return OBJ_DESCR(objects[otyp]); }

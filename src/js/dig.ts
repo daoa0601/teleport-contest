@@ -1,4 +1,5 @@
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { wakeNearby } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
@@ -39,7 +40,7 @@ import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
-import {createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';
+import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously} from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
 import { closedDoor, triggerMonsterDoorTrap } from './monmove.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
@@ -91,7 +92,6 @@ import { heroCanReachFloor } from './engrave.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import type { AppliedWeaponAttackPermission } from './uhitm.js';
 import { MONSTER_MOVE } from './monster_data.js';
-import { OBJECT_NAMES } from './object_data.js';
 import { confusePromptDirection } from './cmd.js';
 import type { Hero } from './hero_types.js';
 import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
@@ -2292,7 +2292,7 @@ export async function applyPickAxeDirection(
         );
         await hurtHero(
             damage,
-            `${state.flags.female ? 'her' : 'his'} own ${OBJECT_NAMES[tool.otyp]}`,
+            `${state.flags.female ? 'her' : 'his'} own ${OBJ_NAME(tool.otyp)}`,
             state,
         );
     } else if (!hero.dz) {

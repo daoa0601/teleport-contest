@@ -8,6 +8,7 @@
 //         wipeoff(), set_wounded_legs(), heal_legs().
 
 import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -28,9 +29,10 @@ import { makeBlinded } from './potion.js';
 import { gulp_blnd_check } from './mhitu.js';
 import { heroFaceName, heroHandName, heroLegName, monsterStomachName } from './body_parts.js';
 import type { GameObject } from './object_types.js';
-import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, OBJECT_NAMES, TIN, WORM_TOOTH } from './object_data.js';
+import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, TIN, WORM_TOOTH } from './object_data.js';
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, objectMonsterName, ownedObjectAction, definiteObjectAction } from './objnam.js';
-import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
+import { objectTypeKnown } from './o_init.js';
+import { billForObject, chargeAlteredUnpaidObject, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { callObjectType, displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import type { ObjectCallResult } from './do_name.js';
@@ -62,7 +64,7 @@ import {
     floorObjectDescription, freeInventoryObject,
 } from './invent.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
-import {objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, stack_object} from './mkobj.js';
+import { objectQuantity, rejoinObjectStack, splitObjectStack, placeObject, stack_object} from './mkobj.js';
 import { getLine, tty_yn_function } from './query.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';
@@ -878,7 +880,7 @@ function* crysknifeReversions(object: GameObject): Generator<GameObject, void> {
 function revertCrysknife(object: GameObject): void {
     object.otyp = WORM_TOOTH;
     object.oerodeproof = false;
-    const name = OBJECT_NAMES[WORM_TOOTH];
+    const name = OBJ_NAME(WORM_TOOTH);
     if (typeof name !== 'string')
         throw new Error('Worm tooth has no canonical object name');
     if (object.name !== undefined) object.name = name;

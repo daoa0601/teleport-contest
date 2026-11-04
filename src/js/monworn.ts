@@ -2,10 +2,9 @@
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
 
-import {
+import { objectPropertyName,
     objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP,
-    ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData,
-} from './object_data.js';
+    ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, SADDLE, } from './object_data.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
@@ -37,7 +36,7 @@ import { isBimanualObject } from './object_properties.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP } from './const.js';
 import { objectNoLongerHeld } from './do.js';
 import { deleteObject } from './shk.js';
-import {unlinkMonsterObject, placeObject} from './mkobj.js';
+import { unlinkMonsterObject, placeObject} from './mkobj.js';
 import type { PropertyName } from './property_types.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, bypassObject } from './worn.js';
 import { unwieldMonsterWeapon } from './weapon.js';
@@ -89,7 +88,7 @@ const RESISTANCE_BITS: Partial<Record<PropertyName, number>> = {
 };
 
 function equipmentProperties(object: GameObject): PropertyName[] {
-    const primary = requireObjectData(OBJECT_PROPERTY, object.otyp);
+    const primary = objectPropertyName(object.otyp);
     if (!primary) return [];
     if (object.otyp !== ALCHEMY_SMOCK) return [primary];
     return [primary, primary === 'poisonResistance' ? 'acidResistance' : 'poisonResistance'];

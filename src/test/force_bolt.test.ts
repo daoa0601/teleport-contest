@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { createDungeon } from './support/topology.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';

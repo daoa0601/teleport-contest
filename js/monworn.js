@@ -1,7 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
-import { objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
+import { objectPropertyName, objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, SADDLE, } from './object_data.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
@@ -59,7 +59,7 @@ const RESISTANCE_BITS = {
     stoneResistance: 0x80,
 };
 function equipmentProperties(object) {
-    const primary = requireObjectData(OBJECT_PROPERTY, object.otyp);
+    const primary = objectPropertyName(object.otyp);
     if (!primary)
         return [];
     if (object.otyp !== ALCHEMY_SMOCK)

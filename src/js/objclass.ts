@@ -21,5 +21,15 @@ export const CHAIN_CLASS = 16;
 export const VENOM_CLASS = 17;
 export const MAXOCLASSES = 18;
 
+// C objclass.h: enum obj_armor_types. Armor rows carry their category in
+// objects[].oc_armcat, the oc_subtyp alias.
+export const ARM_SUIT = 0;
+export const ARM_SHIELD = 1;
+export const ARM_HELM = 2;
+export const ARM_GLOVES = 3;
+export const ARM_BOOTS = 4;
+export const ARM_CLOAK = 5;
+export const ARM_SHIRT = 6;
+
 // C objclass.h: mkobj() alone accepts this class to exclude novels.
 export const SPBOOK_no_NOVEL = -SPBOOK_CLASS;

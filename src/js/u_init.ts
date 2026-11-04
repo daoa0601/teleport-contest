@@ -21,7 +21,7 @@ import {
     SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT,
     SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP,
     WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES,
-    OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, ELVEN_SHORT_SWORD,
+    OBJECT_BASES, ELVEN_SHORT_SWORD,
     ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT,
     ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR,
     ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL,
@@ -31,8 +31,11 @@ import {
     RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH,
     SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID,
     SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON,
+    oc_level,
 } from './object_data.js';
 import { game } from './gstate.js';
+import { OBJ_DESCR } from './o_init.js';
+import { is_launcher, isLauncherAmmunition, is_spear } from './object_properties.js';
 import type { GameState } from './game_state.js';
 import { createHeroState } from './hero_types.js';
 import type { GameObject } from './object_types.js';
@@ -73,7 +76,7 @@ import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.j
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { newMonsterHitPoints } from './makemon.js';
 import { invWeight } from './hack.js';
-import {objectWeight, nextIdent} from './mkobj.js';
+import { objectWeight, nextIdent} from './mkobj.js';
 
 interface InitialInventoryEntry {
     typ: number;
@@ -549,8 +552,9 @@ function knowsClass(oclass: number, role: RoleKey): void {
             const skill = objectSkill(otyp);
             if (['barbarian', 'valkyrie'].includes(role) && skill === 16)
                 continue;
+            const view = { otyp, oclass: WEAPON_CLASS };
             if (role === 'ranger'
-                && !([-20, -22, 17, 20, 21, 22].includes(skill)))
+                && !(is_launcher(view) || isLauncherAmmunition(view) || is_spear(view)))
                 continue;
             if (role === 'rogue' && skill !== 1) continue;
         }
@@ -602,7 +606,7 @@ function initializeRolePreknowledge(role: RoleKey): void {
 export async function finishStartingDiscoveries(): Promise<boolean> {
     if (game._startingEffectsApplied) return false;
     for (const item of game.inventory || []) {
-        if (OBJECT_DESCRIPTIONS[item.otyp] && item.known) {
+        if (OBJ_DESCR(item.otyp) && item.known) {
             recordObjectKnowledge(item.otyp);
             recordObjectEncounter(item.otyp);
         }
@@ -676,7 +680,7 @@ async function iniInv(
             ? addHeroGoldObject(game, raw).object
             : await addCreatedInventoryItem(raw, null, false);
         if (!item) throw new Error('Starting inventory failed to link its object');
-        if (item.oclass === SPBOOK_CLASS && OBJECT_SPELL_LEVEL[item.otyp] === 1)
+        if (item.oclass === SPBOOK_CLASS && oc_level(item.otyp) === 1)
             gotLevelOneSpellbook = true;
         if (--quan) continue;
         index++;
@@ -719,7 +723,7 @@ function randomStartingItemAllowed(
     if (type === SCR_ENCHANT_WEAPON && game.urole?.key === 'monk') return false;
     if (type === SPE_FORCE_BOLT && game.urole?.key === 'wizard') return false;
     return item.oclass !== SPBOOK_CLASS
-        || ((OBJECT_SPELL_LEVEL[type] ?? 0) <= (gotLevelOneSpellbook ? 3 : 1)
+        || ((oc_level(type) ?? 0) <= (gotLevelOneSpellbook ? 3 : 1)
             && roleAllowsSpellbook(type, game));
 }
 

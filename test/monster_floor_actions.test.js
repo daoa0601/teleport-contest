@@ -14,7 +14,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { CORPSE, DAGGER, GOLD_PIECE, SACK, SCR_BLANK_PAPER, WAN_STRIKING } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

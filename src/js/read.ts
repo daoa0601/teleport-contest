@@ -11,13 +11,13 @@ import {
     SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS,
     CHAIN_CLASS,
 } from './objclass.js';
-import {
+import { OBJ_NAME,
     objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING,
     BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM,
     CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM,
     ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN,
     GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE,
-    MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP,
+    MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP,
     POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER,
     SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON,
     SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT,
@@ -27,9 +27,9 @@ import {
     SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL,
     SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING,
     WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES,
-    objectDirection, requireObjectData,
-} from './object_data.js';
+    objectDirection, } from './object_data.js';
 import { exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
@@ -63,7 +63,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js';
 import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import type { ObjectInscriptionView } from './objnam.js';
-import { learnObjectType, observeObject } from './o_init.js';
+import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { tryCallObjectType } from './do.js';
 import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState, mksobj } from './mkobj.js';
 import { askTeleportDestination, teleportHero } from './teleport.js';
@@ -72,7 +72,7 @@ import { d, rn2, rn1, rnd } from './rng.js';
 import { wipeoutText } from './engrave.js';
 import { APRON_MESSAGES, CANDY_WRAPPERS, HAWAIIAN_BACKGROUNDS, HAWAIIAN_MOTIFS, SHIRT_MESSAGES } from './readable_object_text.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { chargeAlteredUnpaidObject, deleteObject, objectTypeKnown, updateUnpaidObjectPrice } from './shk.js';
+import { chargeAlteredUnpaidObject, deleteObject, updateUnpaidObjectPrice } from './shk.js';
 import { dropCursedSecondaryWeapon, chwepon, objectEnchantment, setWeaponEnchantment } from './wield.js';
 import { cansee, couldsee } from './vision.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
@@ -212,7 +212,7 @@ export async function doread(options: Omit<ScrollEffectOptions, 'state'> = {}) {
     });
     if (effect.heroDied || game.program_state.gameover) return finishRead(false);
     if (!effect.consumed) {
-        if (!OBJECT_INITIAL_KNOWN[type] && !game._knownObjectTypes?.has(type)) {
+        if (!objectTypeKnown({ otyp: type }, game)) {
             if (effect.known) learnScrollType(type);
             else await tryCallObjectType(source);
         }
@@ -254,7 +254,7 @@ function finishRead(spentTime: boolean, cancelled = false) {
 export function learnScrollType(otyp: number, { state = game }: { state?: GameState | undefined } = {}): boolean {
     requireLiveGame(state);
     requirePlayingGame(state);
-    if (OBJECT_INITIAL_KNOWN[otyp] || state._knownObjectTypes?.has(otyp)) return false;
+    if (objectTypeKnown({ otyp }, state)) return false;
     learnObjectType(otyp, state);
     addExperience(0, 10, state);
     return true;
@@ -637,7 +637,7 @@ async function proofArmor(armor: GameObject, cursed: boolean, state: PlayingGame
     } else {
         armor.rknown = true;
         const color = displayColorName(cursed ? 'black' : 'golden', state);
-        const protection = cursed ? 'glow' : armorSlotFor(armor.otyp) === 'uarms' ? 'layer' : 'shield';
+        const protection = cursed ? 'glow' : is_shield(armor) ? 'layer' : 'shield';
         await pline(`${ownedObjectAction(armor, 'are', state)} covered by a `
             + `${cursed ? 'mottled' : 'shimmering'} ${color} ${protection}!`);
     }
@@ -659,7 +659,7 @@ async function hardenDragonScales(armor: GameObject, source: GameObject, state: 
         if (!armor.blessed) blessObjectState(armor);
     } else if (armor.cursed) uncurseObjectState(armor);
     armor.known = true;
-    const name = requireObjectData(OBJECT_NAMES, armor.otyp);
+    const name = OBJ_NAME(armor.otyp);
     if (name === null) throw new Error('Hardened dragon scales require a native armor name.');
     if (armor.name !== undefined) armor.name = name;
     if (armor.plural !== undefined) armor.plural = makePlural(name);
@@ -1147,8 +1147,7 @@ async function chargingEffect(source: GameObject, state: PlayingGameState): Prom
         state.context.botl = true;
         return;
     }
-    const known = source.oclass === SPBOOK_CLASS || OBJECT_INITIAL_KNOWN[source.otyp]
-        || state._knownObjectTypes?.has(source.otyp);
+    const known = source.oclass === SPBOOK_CLASS || objectTypeKnown(source, state);
     if (!known) {
         await plineWithContinuation('This is a charging scroll.');
         learnScroll(source, { state });
@@ -1327,8 +1326,7 @@ function blessing(source: Pick<GameObject, 'blessed' | 'cursed'>): -1 | 0 | 1 {
 }
 
 function sourceTypeKnown(source: GameObject, state: GameState): boolean {
-    return source.oclass === SPBOOK_CLASS || !!OBJECT_INITIAL_KNOWN[source.otyp]
-        || !!state._knownObjectTypes?.has(source.otyp);
+    return source.oclass === SPBOOK_CLASS || objectTypeKnown(source, state);
 }
 
 // C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
@@ -1549,8 +1547,7 @@ async function scrollEffect(
         return applyLightScrollEffect(source, hooks.finishMonsterKill
             ? { finishMonsterKill: hooks.finishMonsterKill } : {});
     case SCR_GENOCIDE:
-        if (source.oclass !== SPBOOK_CLASS && !OBJECT_INITIAL_KNOWN[source.otyp]
-            && !state._knownObjectTypes?.has(source.otyp))
+        if (source.oclass !== SPBOOK_CLASS && !objectTypeKnown(source, state))
             await plineWithContinuation('You have found a scroll of genocide!');
         if (source.blessed) await doClassGenocide(hooks.finishHeroDeath
             ? { finishHeroDeath: hooks.finishHeroDeath } : {});

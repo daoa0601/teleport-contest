@@ -4,7 +4,7 @@ import { WEAPON_CLASS } from './objclass.js';
 import { MFAST, MSLOW, NON_PM } from './const.js';
 import { game } from './gstate.js';
 import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
-import { OBJECT_PROPERTY } from './object_data.js';
+import { objectPropertyName } from './object_data.js';
 import { naturalMonsterSpeed } from './mon.js';
 import { artifactById } from './artifacts.js';
 import { see_monsters } from './display.js';
@@ -33,7 +33,7 @@ export function setMonsterPermanentInvisibility(monster, permanent = true) {
     };
 }
 function wearsSpeedItem(monster) {
-    return (monster?.minvent || monster?.inventory || []).some(object => OBJECT_PROPERTY[object.otyp] === 'fast' && (object.owornmask ?? 0) !== 0);
+    return (monster?.minvent || monster?.inventory || []).some(object => objectPropertyName(object.otyp) === 'fast' && (object.owornmask ?? 0) !== 0);
 }
 export function adjustMonsterSpeed(monster, amount) {
     const oldSpeed = monster.mspeed ?? 0;
@@ -84,7 +84,7 @@ export function recalculateTelepathyRange(state) {
         state.uarmg, state.uarmf, state.uarmu, state.uamul, state.uleft,
         state.uright, state.ublindf, state.uwep, state.uswapwep, state.uquiver];
     const ordinary = worn.filter(object => object && object.owornmask
-        && OBJECT_PROPERTY[object.otyp] === 'telepathy').length;
+        && objectPropertyName(object.otyp) === 'telepathy').length;
     const sources = ordinary + Number(hasCarriedProperty('telepathy', null, state));
     state.u.unblind_telepat_range = sources ? 64 * sources : -1;
 }
@@ -184,7 +184,7 @@ export async function setworn(object, mask, state = game) {
                     // monsters will notice and attempt attacks of that type
                     // again: monstunseesu_prop(p) = monstunseu(
                     // cvt_prop_to_mseenres(p)).
-                    const property = OBJECT_PROPERTY[oobj.otyp];
+                    const property = objectPropertyName(oobj.otyp);
                     if (property && slot.propertySlot) {
                         removeWornProperty(property, oobj, slot.propertySlot, state);
                         monstersForgetHeroResistance(seenResistanceForProperty(property), state);
@@ -211,7 +211,7 @@ export async function setworn(object, mask, state = game) {
                 // through the quiver, etc.  Allow weapon-tools, too.
                 if ((slot.mask & ~(W_SWAPWEP | W_QUIVER)) !== 0) {
                     if (object.oclass === WEAPON_CLASS || isWeaponTool(object) || mask !== W_WEP) {
-                        const property = OBJECT_PROPERTY[object.otyp];
+                        const property = objectPropertyName(object.otyp);
                         if (property && slot.propertySlot)
                             grantWornProperty(property, object, slot.propertySlot, state);
                         refreshWornBlocks(object, mask, state, true);
@@ -253,7 +253,7 @@ export async function setnotworn(object, state = game) {
             cancelSlotTakeoff(slot.slot, state);
         assignWornSlot(slot, null, state);
         unworn |= slot.mask;
-        const property = OBJECT_PROPERTY[object.otyp];
+        const property = objectPropertyName(object.otyp);
         if (property && slot.propertySlot) {
             removeWornProperty(property, object, slot.propertySlot, state);
             monstersForgetHeroResistance(seenResistanceForProperty(property), state);

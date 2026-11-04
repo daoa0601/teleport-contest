@@ -10,6 +10,7 @@ import {
 import {
     objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER,
     OBJECT_BASES, OBJECT_COLOR,
+    objectBaseColor,
 } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
@@ -36,7 +37,7 @@ import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BRO
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
-import { recordObjectEncounter } from './o_init.js';
+import { recordObjectEncounter, objectTypeColor } from './o_init.js';
 import { hasCarriedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -363,7 +364,7 @@ export function objectColor(object: ObjectGlyphSource): number {
     // hero has observed it closely enough. Generic class rows are indexed by
     // oclass and deliberately use the ordinary gray tty foreground.
     if (objectUsesGenericGlyph(object))
-        return OBJECT_COLOR[object.oclass] ?? CLR_GRAY;
+        return objectBaseColor(object.oclass);
     // C obj_to_glyph(): a corpse keeps the depicted monster's color; it is
     // not colored as a generic food-class object.
     if (object?.otyp === CORPSE && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm))
@@ -372,8 +373,7 @@ export function objectColor(object: ObjectGlyphSource): number {
     if (object?.otyp === LARGE_BOX || object?.otyp === CHEST) return CLR_BROWN;
     if (object?.otyp === FOOD_RATION) return CLR_BROWN;
     if (object?.otyp === GOLD_PIECE) return CLR_YELLOW;
-    const metadataColor = game.objectColors?.[object?.otyp]
-        ?? OBJECT_COLOR[object?.otyp];
+    const metadataColor = objectTypeColor(object?.otyp);
     return typeof metadataColor === 'number' && Number.isInteger(metadataColor)
         ? metadataColor : CLR_GRAY;
 }
@@ -1386,7 +1386,7 @@ function randomHallucinatedObjectGlyph(): ObjectGlyph {
         // runtime objects[] table.  o_init() shuffles oc_color together with
         // unidentified descriptions, so Hallucination must not use the
         // generated compile-time color table here.
-        color: game.objectColors?.[otyp] ?? OBJECT_COLOR[otyp] ?? CLR_GRAY,
+        color: objectTypeColor(otyp) ?? CLR_GRAY,
         decgfx: false, kind: 'object', otyp, piletop: false,
         glyph: objnumToGlyph(otyp),
     };

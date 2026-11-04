@@ -649,6 +649,14 @@ def erosion_state(world, front, modules):
     object_table_index_precondition(world, front, world.c_state['obj.otyp'][0])
 
 
+def all_damageable_state(world, front, modules):
+    object_predicate_state('otmp')(world, front, modules)
+    native = world.c_state['otmp.otyp'][0]
+    port = world.js_state['otmp.otyp']
+    count = front.enum_value('NUM_OBJECTS')
+    world.pre.extend([native >= 0, native < count, port >= 0, port < count])
+
+
 def damageable_state(world, front, modules):
     object_predicate_state('otmp')(world, front, modules)
     object_table_index_precondition(world, front, world.c_state['otmp.otyp'][0])
@@ -690,18 +698,19 @@ STATE_SPECS += [
          mutants=[('js/objnam.js',
                    'if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]\n        .includes(object.oclass))',
                    'if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS]\n        .includes(object.oclass))')]),
-    Spec('is_damageable:tables', 'verification_damageable', 'objectIsDamageable', [],
-         js_file='js/objnam.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
+    Spec('is_damageable:tables', 'verification_damageable', 'is_damageable', [],
+         js_file='js/object_properties.js', state=[('otmp.oclass', (8, True), 'otmp.oclass'),
                                         ('otmp.otyp', (16, True), 'otmp.otyp')],
-         assumptions=OBJECT_PREDICATE_ASSUMPTIONS + (
-             'objclass.h:is_damageable expands is_flammable (mkobj.c, with its candle and fire-resistance exclusions), is_rottable, is_rustprone, is_corrodeable and is_crackable; every real-material row agrees, so the zero-material generic rows are the only divergence and are dropped as unreachable-observable per the assumption above',
+         assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+             'objclass.h:is_damageable expands is_flammable (mkobj.c, with its candle and fire-resistance exclusions), is_rottable, is_rustprone, is_corrodeable and is_crackable; every otyp in 0..NUM_OBJECTS-1 is included, with any signed-char oclass; each initial table is executed independently',
          ),
-         require_counterexamples=True, configure=damageable_state,
+         require_counterexamples=True, configure=all_damageable_state,
          arguments=object_predicate_arguments('otmp'),
          pre=lambda s: [],
          probes=[('otyp correspondence omitted', UnrelatedState(
-             lambda s: [], ('otmp.otyp',)))],
-         mutants=[('js/objnam.js',
+             lambda s: [s['otmp.otyp'] == 34, z3.Int('js:otmp.otyp') == 440], ('otmp.otyp',)))],
+         mutant_pre=lambda s: [s['otmp.otyp'] == 101],
+         mutants=[('js/object_properties.js',
                    'return objectIsRustprone(object) || objectIsFlammable(object)\n        || objectIsRottable(object) || objectIsCorrodeable(object)\n        || objectIsCrackable(object);',
                    'return objectIsRustprone(object) || objectIsFlammable(object)\n        || objectIsCorrodeable(object)\n        || objectIsCrackable(object);')]),
     Spec('primary_erosion:tables', 'verification_primary_erosion',
@@ -1157,6 +1166,122 @@ STATE_SPECS += [
                   unrelated(lambda s: [s['otmp.otyp'] == 134], 'otmp.otyp'))],
          mutants=[('js/mkobj.js', '|| material === DRAGON_HIDE;',
                    '|| material === PLASTIC;')]),
+]
+
+# ---- fv-equivalence-batch-12: the remaining obj.h object macros ----
+
+# is_launcher/is_spear and the seven armor-category macros read oclass plus
+# the oc_subtyp column; the elven sets compare otyp with constants, like
+# is_graystone. Every claim keeps the whole initial table in its domain.
+LAUNCHER_ASSUMPTION = OBJECT_MACRO_ASSUMPTIONS + (
+    'obj.h:is_launcher reads objects[otyp].oc_skill between P_BOW and P_CROSSBOW behind the WEAPON_CLASS guard',
+)
+SPEAR_ASSUMPTION = OBJECT_MACRO_ASSUMPTIONS + (
+    'obj.h:is_spear reads objects[otyp].oc_skill == P_SPEAR behind the WEAPON_CLASS guard',
+)
+ARMCAT_ASSUMPTIONS = OBJECT_MACRO_ASSUMPTIONS + (
+    'objclass.h keeps the armor category in oc_armcat, the oc_subtyp alias; obj.h is_shield/is_helmet/is_boots/is_gloves/is_cloak/is_shirt/is_suit test it behind the ARMOR_CLASS guard',
+    'the generic armor marker row 3 carries ARM_SUIT, so C classifies it as a suit; the port does too after this batch',
+)
+ELVEN_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS[:1] + (
+    'obj.h:is_elven_armor/is_elven_weapon compare otyp with fixed elven type sets; no objects[] column beyond otyp is read, so otyp spans the whole table and oclass stays free',
+)
+
+
+def bounded_type_state(world, front, modules):
+    graystone_state(world, front, modules)
+    object_table_index_precondition(world, front, world.c_state['obj.otyp'][0])
+
+
+def armor_cat_spec(name, harness, function, mutant_pair, pin):
+    return Spec(name, harness, function, [], slow=True, js_file=OBJ_FILE,
+                state=OBJECT_STATE,
+                assumptions=ARMCAT_ASSUMPTIONS,
+                require_counterexamples=True,
+                configure=plain_object_state('obj'),
+                arguments=object_predicate_arguments('obj'),
+                probes=[('oclass correspondence omitted', unrelated(
+                    lambda s, pin=pin: [s['obj.otyp'] == pin], 'obj.oclass'))],
+                mutant_pre=lambda s: [s['obj.otyp'] == pin],
+                mutants=[(OBJ_FILE,) + mutant_pair])
+
+
+STATE_SPECS += [
+    Spec('is_launcher:tables', 'verification_is_launcher', 'is_launcher', [],
+         slow=True, js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=LAUNCHER_ASSUMPTION,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned bow)',
+                  unrelated(lambda s: [s['obj.otyp'] == 83], 'obj.oclass'))],
+         mutant_pre=lambda s: [s['obj.otyp'] == 34],
+         mutants=[(OBJ_FILE, 'return object.oclass === WEAPON_CLASS\n        && skill >= P_BOW && skill <= P_CROSSBOW;',
+                   'return object.oclass === WEAPON_CLASS\n        && skill >= P_DAGGER && skill <= P_CROSSBOW;')]),
+    Spec('is_spear:tables', 'verification_is_spear', 'is_spear', [],
+         slow=True, js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=SPEAR_ASSUMPTION,
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned spear)',
+                  unrelated(lambda s: [s['obj.otyp'] == 27], 'obj.oclass'))],
+         mutant_pre=lambda s: [s['obj.otyp'] == 27],
+         mutants=[(OBJ_FILE, 'return object.oclass === WEAPON_CLASS\n        && objectSkill(object.otyp) === P_SPEAR;',
+                   'return object.oclass === WEAPON_CLASS\n        && objectSkill(object.otyp) === P_LANCE;')]),
+    armor_cat_spec('is_shield:tables', 'verification_is_shield', 'is_shield',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIELD;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;'), 150),
+    armor_cat_spec('is_helmet:tables', 'verification_is_helmet', 'is_helmet',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_BOOTS;'), 97),
+    armor_cat_spec('is_boots:tables', 'verification_is_boots', 'is_boots',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_BOOTS;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;'), 163),
+    armor_cat_spec('is_gloves:tables', 'verification_is_gloves', 'is_gloves',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_GLOVES;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;'), 159),
+    armor_cat_spec('is_cloak:tables', 'verification_is_cloak', 'is_cloak',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_CLOAK;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SUIT;'), 138),
+    armor_cat_spec('is_shirt:tables', 'verification_is_shirt', 'is_shirt',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_CLOAK;'), 136),
+    armor_cat_spec('is_suit:tables', 'verification_is_suit', 'is_suit',
+                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SUIT;',
+                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;'), 121),
+    Spec('is_elven_armor:tables', 'verification_is_elven_armor', 'is_elven_armor', [],
+         slow=True, js_file=OBJ_FILE,
+         state=[('obj.otyp', (16, True), 'obj.otyp')],
+         assumptions=ELVEN_ASSUMPTIONS,
+         require_counterexamples=True, configure=bounded_type_state,
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned elven mithril-coat)',
+                  unrelated(lambda s: [s['obj.otyp'] == 127], 'obj.otyp'))],
+         mutant_pre=lambda s: [s['obj.otyp'] == 169],
+         mutants=[(OBJ_FILE, 'return object.otyp === ELVEN_LEATHER_HELM\n        || object.otyp === ELVEN_MITHRIL_COAT || object.otyp === ELVEN_CLOAK\n        || object.otyp === ELVEN_SHIELD || object.otyp === ELVEN_BOOTS;',
+                   'return object.otyp === ELVEN_LEATHER_HELM\n        || object.otyp === ELVEN_MITHRIL_COAT || object.otyp === ELVEN_CLOAK\n        || object.otyp === ELVEN_SHIELD;')]),
+    Spec('is_elven_weapon:tables', 'verification_is_elven_weapon', 'is_elven_weapon', [],
+         slow=True, js_file=OBJ_FILE,
+         state=[('obj.otyp', (16, True), 'obj.otyp')],
+         assumptions=ELVEN_ASSUMPTIONS,
+         require_counterexamples=True, configure=bounded_type_state,
+         arguments=object_predicate_arguments('obj'),
+         probes=[('otyp correspondence omitted (pinned elven arrow)',
+                  unrelated(lambda s: [s['obj.otyp'] == 19], 'obj.otyp'))],
+         mutant_pre=lambda s: [s['obj.otyp'] == 84],
+         mutants=[(OBJ_FILE, 'return object.otyp === ELVEN_ARROW || object.otyp === ELVEN_SPEAR\n        || object.otyp === ELVEN_DAGGER || object.otyp === ELVEN_SHORT_SWORD\n        || object.otyp === ELVEN_BROADSWORD || object.otyp === ELVEN_BOW;',
+                   'return object.otyp === ELVEN_ARROW || object.otyp === ELVEN_SPEAR\n        || object.otyp === ELVEN_DAGGER || object.otyp === ELVEN_SHORT_SWORD\n        || object.otyp === ELVEN_BROADSWORD;')]),
+    Spec('pair_of:tables', 'verification_pair_of', 'pair_of', [],
+         slow=True, js_file=OBJ_FILE, state=OBJECT_STATE,
+         assumptions=ARMCAT_ASSUMPTIONS + (
+             'obj.h:pair_of is otyp == LENSES || is_gloves(o) || is_boots(o); the oclass guard comes from the two macros',
+         ),
+         require_counterexamples=True, configure=plain_object_state('obj'),
+         arguments=object_predicate_arguments('obj'),
+         probes=[('oclass correspondence omitted (pinned leather gloves)',
+                  unrelated(lambda s: [s['obj.otyp'] == 159], 'obj.oclass'))],
+         mutant_pre=lambda s: [s['obj.otyp'] == 163],
+         mutants=[(OBJ_FILE, 'return object.otyp === LENSES || is_gloves(object) || is_boots(object);',
+                   'return object.otyp === LENSES || is_gloves(object);')]),
 ]
 
 # ---- fv-equivalence-batch-5: the named mondata.h/mondata.c predicates ----

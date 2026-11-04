@@ -1,6 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
@@ -1134,7 +1135,7 @@ function collectFinalPossessions() {
                 const score = Math.trunc(value * 5 / 2);
                 points += score;
                 artifacts.push({ object, value, points: score,
-                    name: artifact?.name || `The ${OBJECT_NAMES[object.otyp]}` });
+                    name: artifact?.name || `The ${OBJ_NAME(object.otyp)}` });
             }
             else if (!object.contents?.length
                 && (object.oclass === AMULET_CLASS

@@ -28,7 +28,8 @@ import { beginObjectBurn } from '../js/timeout.js';
 import { objectTimers } from '../js/timeout.js';
 import { objectMaterial } from '../js/o_init.js';
 
-import { addShopObjectToBill, objectTypeKnown, itemizedShopBill } from '../js/shk.js';
+import { addShopObjectToBill, itemizedShopBill } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject, corpseObject, floorObject, knownObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';

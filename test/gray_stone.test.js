@@ -9,7 +9,7 @@ import { objectMaterial } from '../js/o_init.js';
 import { ACID_VENOM, BLINDFOLD, DAGGER, DIAMOND, FLINT, GOLD_PIECE, LOADSTONE, LUCKSTONE, OBJECT_BASES, OBJECT_NAMES, QUARTERSTAFF, SCR_BLANK_PAPER, TALLOW_CANDLE, TOUCHSTONE, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

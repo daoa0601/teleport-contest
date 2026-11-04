@@ -14,7 +14,7 @@ import { game } from '../js/gstate.js';
 import { useHeroHide } from '../js/polyself.js';
 import { resetInputState } from '../js/input.js';
 import { CHEST, DAGGER, HELMET, POT_FRUIT_JUICE, POT_SICKNESS, ROCK, SPE_EXTRA_HEALING, WAN_CANCELLATION, WAN_LOCKING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, } from '../js/object_data.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { doride } from '../js/steed.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { applyWandEffect } from '../js/zap.js';

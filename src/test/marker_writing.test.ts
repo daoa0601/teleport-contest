@@ -9,7 +9,7 @@ import {
     MAGIC_MARKER, OBJECT_NAMES, SCR_BLANK_PAPER, SCR_ENCHANT_ARMOR, SCR_IDENTIFY,
     SCR_GENOCIDE, SCR_LIGHT, SPE_BLANK_PAPER, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_NOVEL,
 } from '../js/object_data.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { createMemorizedSpell } from '../js/spell.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject } from './support/game-objects.js';

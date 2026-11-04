@@ -42,10 +42,10 @@ import { specialDisplayName, initOverviewRecord, insideWizardTower, levelAtDepth
 import { addInventoryItem } from './invent.js';
 import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
-import { recordObjectEncounter } from './o_init.js';
+import { recordObjectEncounter, objectTypeKnown } from './o_init.js';
 import { reassignInventoryLetters } from './invent.js';
 import { observeObjectForNaming } from './objnam.js';
-import { objectTypeKnown, setPaidShopkeeper } from './shk.js';
+import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { flip_level, flip_level_rnd } from './sp_lev.js';
 import { makeDeaf, startHeroSickness, makeHallucinated, makeStunned, makeBlinded, setHeroSlimingTimeout, setHeroPetrificationTimeout, setSlipperyHands } from './potion.js';

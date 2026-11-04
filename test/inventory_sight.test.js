@@ -6,7 +6,7 @@ import { gameLogEvents } from '../js/gamelog.js';
 import { pline } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_TELEPORTATION, SCR_IDENTIFY, SCR_BLANK_PAPER } from '../js/object_data.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { objectName } from '../js/objnam.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';

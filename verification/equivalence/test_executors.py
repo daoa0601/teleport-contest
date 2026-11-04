@@ -14,6 +14,7 @@ from csym import CPtr
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from specs import INT, LONG, Spec
+from state_world import native_table
 
 GLIBC_ASSERT = '''
     extern void __assert_fail(const char *, const char *, unsigned, const char *)
@@ -71,6 +72,35 @@ class ExecutorTests(unittest.TestCase):
         self.assertFalse(proved, report)
         self.assertIn('C : returns 0', report)
         self.assertIn('JS: returns 1', report)
+
+    def test_nullable_string_table_returns_compare_contents(self):
+        def strings(world, front, modules):
+            world.c_globals['names'] = native_table(world, front, front.files[0], 'names')
+
+        native = 'static const char *names[] = {"first", "second", 0}; ' \
+                 'const char *example(int x) { return names[x]; }'
+        options = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] < 3],
+                       configure=strings)
+        self.equivalent(native, 'function example(x) { return ["first", "second", null][x]; }',
+                        **options)
+        self.rejected(native, 'function example(x) { return ["first", "wrong", null][x]; }',
+                      reason='outputs differ', **options)
+        self.rejected(native, 'function example(x) { return ["first", "second", "third"][x]; }',
+                      reason='outputs differ', **options)
+
+    def test_null_string_pointer_differs_from_empty_string(self):
+        self.equivalent('const char *example(void) { return 0; }',
+                        'function example() { return null; }')
+        self.equivalent('const char *example(void) { return ""; }',
+                        'function example() { return ""; }')
+        self.rejected('const char *example(void) { return ""; }',
+                      'function example() { return null; }', reason='outputs differ')
+        self.rejected('const char *example(void) { return 0; }',
+                      'function example() { return ""; }', reason='outputs differ')
+
+    def test_string_return_does_not_equal_a_numeric_return(self):
+        self.rejected('const char *example(void) { return "1"; }',
+                      'function example() { return 1; }', reason='outputs differ')
 
     def test_object_shorthand_captures_the_current_binding_value(self):
         self.equivalent('int example(int x) { return x; }',

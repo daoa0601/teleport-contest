@@ -2,12 +2,12 @@ import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMUL
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
 import { guardianGenus, hatchableEggSpecies } from './mon.js';
-import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
+import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJ_NAME, oc_nowish, oc_level, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
-import { objectProb, objectMaterial, observeObject } from './o_init.js';
+import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
 import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
-import { objectOwnershipPrefix, objectTypeKnown, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
+import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
 import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
@@ -21,7 +21,7 @@ import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
 import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutrition } from './eat.js';
-import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
+import { isBimanualObject, is_boots, is_gloves, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, is_damageable, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
 import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.js';
@@ -98,11 +98,11 @@ export function objectName(object, state = game, { minimal = false } = {}) {
         && [RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
             SPBOOK_CLASS, WAND_CLASS, GEM_CLASS].includes(oclass))
         return unseenObjectNoun(object);
-    const ordinaryName = OBJECT_NAMES[object.otyp] || object.name || 'object';
+    const ordinaryName = OBJ_NAME(object.otyp) || object.name || 'object';
     const samurai = state.urole?.key === 'samurai';
     const trueName = actualObjectTypeName(object, state);
     const appearance = samurai && ['wooden harp', 'magic harp'].includes(ordinaryName)
-        ? 'koto' : state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        ? 'koto' : OBJ_DESCR(object.otyp, state);
     const known = overrideIdentity || (objectTypeKnown(object, state)
         && (object.dknown || !minimal && ![WEAPON_CLASS, TOOL_CLASS].includes(oclass)));
     const callName = !minimal && !known && (object.dknown || overrideIdentity)
@@ -421,7 +421,7 @@ export function simpleObjectTypeName(otyp, state = game) {
             className = 'wand';
             break;
         case SPBOOK_CLASS:
-            if (OBJECT_NAMES[otyp] === 'novel')
+            if (OBJ_NAME(otyp) === 'novel')
                 return known ? 'novel' : 'book';
             className = 'spellbook';
             break;
@@ -432,11 +432,11 @@ export function simpleObjectTypeName(otyp, state = game) {
         return objectUnique(otyp) ? actual : `${className} of ${actual}`;
     }
     const appearance = state.urole?.key === 'samurai'
-        && ['wooden harp', 'magic harp'].includes(OBJECT_NAMES[otyp] ?? '')
-        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? actual;
+        && ['wooden harp', 'magic harp'].includes(OBJ_NAME(otyp) ?? '')
+        ? 'koto' : OBJ_DESCR(otyp, state) ?? actual;
     const name = known ? actual : appearance;
     if (oclass === ARMOR_CLASS)
-        return armorPresentationName(name, OBJECT_NAMES[otyp]);
+        return armorPresentationName(name, otyp);
     if (oclass === GEM_CLASS)
         return gemPresentationName(otyp, actual, known ? null : appearance);
     return name;
@@ -458,10 +458,10 @@ export function objectTypeName(otyp, state = game) {
     const callName = state._objectCallNames?.[otyp];
     if (callName)
         name += ` called ${callName}`;
-    const ordinaryName = OBJECT_NAMES[otyp];
+    const ordinaryName = OBJ_NAME(otyp);
     const appearance = state.urole?.key === 'samurai'
         && ['wooden harp', 'magic harp'].includes(ordinaryName ?? '')
-        ? 'koto' : state.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+        ? 'koto' : OBJ_DESCR(otyp, state);
     const classHasAppearance = [AMULET_CLASS, POTION_CLASS, SCROLL_CLASS,
         WAND_CLASS, SPBOOK_CLASS, RING_CLASS].includes(oclass);
     if (appearance && (classHasAppearance || objectTypeKnown({ otyp, oclass }, state)))
@@ -484,7 +484,7 @@ export function minimalObjectName(object, state = game) {
     return objectName(bare, state, { minimal: true });
 }
 function actualObjectTypeName(object, state) {
-    const ordinaryName = OBJECT_NAMES[object.otyp] || object.name || 'object';
+    const ordinaryName = OBJ_NAME(object.otyp) || object.name || 'object';
     return state.urole?.key === 'samurai'
         ? japaneseItemName(object.otyp) || ordinaryName : ordinaryName;
 }
@@ -501,18 +501,18 @@ export function gemObjectName(object, state = game, { minimal = false } = {}) {
     const callName = minimal ? null : state._objectCallNames?.[object.otyp];
     if (callName)
         return `${classNoun} called ${callName}`;
-    const appearance = state.objectDescriptions?.[object.otyp]
-        ?? OBJECT_DESCRIPTIONS[object.otyp] ?? actualName;
+    const appearance = OBJ_DESCR(object.otyp, state)
+        ?? actualName;
     return gemPresentationName(object.otyp, actualName, appearance);
 }
 // C xname_flags() ARMOR_CLASS. The concrete type owns pair/set grammar.
 export function armorObjectName(object, state, { minimal = false } = {}) {
     const actualName = actualObjectTypeName(object, state);
-    const ordinaryName = OBJECT_NAMES[object.otyp];
+    const ordinaryName = OBJ_NAME(object.otyp);
     const overrideIdentity = !!(state.iflags.override_ID || object.overrideIdentified);
     const descriptionKnown = object.dknown || overrideIdentity;
     if (/ dragon scales$/.test(actualName))
-        return armorPresentationName(actualName, actualName);
+        return armorPresentationName(actualName, object);
     if (!descriptionKnown) {
         if (['elven shield', 'Uruk-hai shield', 'orcish shield'].includes(actualName))
             return 'shield';
@@ -524,8 +524,8 @@ export function armorObjectName(object, state, { minimal = false } = {}) {
     const callName = minimal ? null : state._objectCallNames?.[object.otyp];
     const noun = typeKnown ? actualName
         : callName ? `${armorSimpleName(object, state)} called ${callName}`
-            : state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp] ?? actualName;
-    return armorPresentationName(noun, ordinaryName);
+            : OBJ_DESCR(object.otyp, state) ?? actualName;
+    return armorPresentationName(noun, object);
 }
 // C simpleonames(): suppress personal/call names and the quantity prefix.
 export function simpleObjectName(object, state = game) {
@@ -550,7 +550,7 @@ export function simpleObjectNameWithArticle(object, state = game) {
     if (quantity !== 1)
         return noun;
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
-    if (objectUnique(uniqueType) && noun === OBJECT_NAMES[uniqueType])
+    if (objectUnique(uniqueType) && noun === OBJ_NAME(uniqueType))
         return definiteName(noun, state);
     return withIndefiniteArticle(noun);
 }
@@ -723,7 +723,7 @@ export function objectHasPersonalName(object, state = game) {
         return false;
     const showsProofing = [ARMOR_CLASS, WEAPON_CLASS, BALL_CLASS]
         .includes(object.oclass) || isWeaponTool(object);
-    return !!object.rknown || !showsProofing || !objectIsDamageable(object);
+    return !!object.rknown || !showsProofing || !is_damageable(object);
 }
 // C objnam.c:Yobjnam2(), for messages such as "Your 12 arrows glow".
 // C obj.h is_plural(): the discovered Eyes are plural even as one object.
@@ -801,16 +801,16 @@ export function unseenObjectNoun(object) {
         case POTION_CLASS: return 'potion';
         case SCROLL_CLASS: return 'scroll';
         case SPBOOK_CLASS:
-            return OBJECT_NAMES[object?.otyp] === 'novel' ? 'book' : 'spellbook';
+            return OBJ_NAME(object?.otyp) === 'novel' ? 'book' : 'spellbook';
         case WAND_CLASS: return 'wand';
         case GEM_CLASS:
             return objectMaterial(object?.otyp) === 21 ? 'stone' : 'gem';
         default:
-            return object?.name || OBJECT_NAMES[object?.otyp] || 'object';
+            return object?.name || OBJ_NAME(object?.otyp) || 'object';
     }
 }
 function currentDescription(otyp) {
-    return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+    return OBJ_DESCR(otyp);
 }
 // C objclass.h:is_damageable() and objnam.c:readobjnam()'s primary and
 // secondary erosion tests, expanded through the named owners in
@@ -821,13 +821,7 @@ function erosionMatters(object) {
     if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]
         .includes(object.oclass))
         return true;
-    return object.oclass === TOOL_CLASS
-        && objectSkill(object.otyp) !== 0;
-}
-function objectIsDamageable(object) {
-    return objectIsRustprone(object) || objectIsFlammable(object)
-        || objectIsRottable(object) || objectIsCorrodeable(object)
-        || objectIsCrackable(object);
+    return isWeaponTool(object);
 }
 function objectAcceptsPrimaryErosion(object) {
     return objectIsFlammable(object) || objectIsRustprone(object)
@@ -918,7 +912,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
             object.oeroded = Math.min(3, parsed.eroded);
         if (parsed.eroded2 !== null && objectAcceptsSecondaryErosion(object))
             object.oeroded2 = Math.min(3, parsed.eroded2);
-        if (parsed.erodeproof && (objectIsDamageable(object) || object.otyp === CRYSKNIFE))
+        if (parsed.erodeproof && (is_damageable(object) || object.otyp === CRYSKNIFE))
             object.oerodeproof = luck >= 0 || wizardWish;
     }
     if (object.oclass === WAND_CLASS) {
@@ -968,7 +962,7 @@ function permittedWishType(type) {
         case BELL_OF_OPENING: return BELL;
         case SPE_BOOK_OF_THE_DEAD: return SPE_BLANK_PAPER;
         case MAGIC_LAMP: return OIL_LAMP;
-        default: return OBJECT_NOWISH[type] ? null : type;
+        default: return oc_nowish(type) ? null : type;
     }
 }
 function applyWishEnchantment(object, parsed, wizardWish, luck) {
@@ -1110,7 +1104,7 @@ export function wishedObjectPresentation(object) {
         name = fruitFromIndex(object.spe)?.fname || 'fruit';
     }
     else if (cls === ARMOR_CLASS) {
-        name = armorPresentationName(description || realName, realName);
+        name = armorPresentationName(description || realName, object);
     }
     else if (cls === RING_CLASS) {
         name = description ? `${description} ring` : `ring of ${realName}`;
@@ -1152,13 +1146,13 @@ export function wishedObjectPresentation(object) {
         // study_book() consults after the wished book enters inventory.
         spellName: cls === SPBOOK_CLASS ? realName : undefined,
         spellLevel: cls === SPBOOK_CLASS
-            ? OBJECT_SPELL_LEVEL[otyp] : undefined,
+            ? oc_level(otyp) : undefined,
         spellCategory: cls === SPBOOK_CLASS
             ? OBJECT_SPELL_CATEGORY[otyp] : undefined,
     };
 }
 function requireObjectName(otyp) {
-    const name = requireObjectData(OBJECT_NAMES, otyp);
+    const name = OBJ_NAME(otyp);
     if (!name)
         throw new RangeError(`Object type ${otyp} has no native name`);
     return name;
@@ -1365,7 +1359,7 @@ export function parseWishNoun(parsed) {
         const species = nameToMonster(glob[1] ?? '');
         if (species < 0) {
             const type = GLOB_OF_GRAY_OOZE + rn2(GLOB_OF_BLACK_PUDDING - GLOB_OF_GRAY_OOZE);
-            const name = OBJECT_NAMES[type];
+            const name = OBJ_NAME(type);
             if (!name)
                 throw new RangeError(`Missing glob name for object type ${type}`);
             parsed.name = name;
@@ -2321,14 +2315,17 @@ async function say(message) {
 // Noun grammar. C refs: obj.h pair_of(), objnam.c armor_simple_name()/
 // obj_typename(), makeplural(), makesingular(), just_an(), vtense().
 // ---------------------------------------------------------------------------
-export function armorUsesPairGrammar(actualName) {
-    return /(?:gloves|gauntlets|boots|shoes)(?: of .+)?$/
-        .test(String(actualName || ''));
-}
-export function armorPresentationName(name, actualName = name) {
-    if (armorUsesPairGrammar(actualName))
+// C objnam.c:xname()'s ARMOR_CLASS naming: obj.h is_boots()/is_gloves()
+// take pair grammar and the inline dragon-scales range takes set grammar.
+// Callers holding only a type pass its number; obj_typename() likewise
+// builds a temporary object carrying the class from objects[].
+export function armorPresentationName(name, source = null) {
+    const view = typeof source === 'number'
+        ? { otyp: source, oclass: objectClassForType(source) } : source;
+    if (is_boots(view) || is_gloves(view))
         return `pair of ${name}`;
-    if (/dragon scales$/.test(String(actualName || '')))
+    const otyp = view?.otyp;
+    if (otyp !== undefined && otyp >= GRAY_DRAGON_SCALES && otyp <= YELLOW_DRAGON_SCALES)
         return `set of ${name}`;
     return name;
 }

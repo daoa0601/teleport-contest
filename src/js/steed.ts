@@ -1,4 +1,5 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
+import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
 import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, In_endgame, In_quest, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, Is_knox_level, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
@@ -20,7 +21,7 @@ import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
-import { BOULDER, SADDLE, OBJECT_DESCRIPTIONS } from './object_data.js';
+import { BOULDER, SADDLE, } from './object_data.js';
 import { mksobj } from './mkobj.js';
 import { fullyIdentifyObject, freeInventoryObject } from './invent.js';
 import { applyMonsterEquipmentProperties } from './monworn.js';
@@ -520,7 +521,7 @@ export async function useSaddle(saddle: GameObject): Promise<boolean> {
     const skill = hero.weaponSkills?.[P_RIDING]?.skill ?? 0;
     chance += skill === P_EXPERT ? 30 : skill === P_SKILLED ? 15 : skill === P_BASIC ? 0 : -20;
     const description = (object: GameObject | null | undefined) => object
-        ? game.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp] : null;
+        ? OBJ_DESCR(object.otyp) : null;
     if (hero.confused || (hero.confusionTurns ?? 0) > 0 || propertyIsActive('fumbling', game)
         || hero.glib || (hero.glibTurns ?? 0) > 0) chance -= 20;
     else if (description(game.uarmg) === 'riding gloves' || description(game.uarmf) === 'riding boots') chance += 10;

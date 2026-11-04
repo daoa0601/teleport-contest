@@ -7,9 +7,10 @@
 
 import { WEAPON_CLASS, TOOL_CLASS, POTION_CLASS, WAND_CLASS, ROCK_CLASS } from './objclass.js';
 import {
-    objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, CORPSE, ICE_BOX, CREDIT_CARD,
+    objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, CORPSE, ICE_BOX, CREDIT_CARD,
     LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK,
     SPE_FORCE_BOLT,
+    oc_wldam,
 } from './object_data.js';
 import { currency } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
@@ -41,7 +42,7 @@ import { heroCanReachFloor } from './engrave.js';
 import { surfaceName } from './terrain_name.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade } from './object_properties.js';
-import {startCorpseTimeout, unlinkObject, isContainer, placeObject, stack_object} from './mkobj.js';
+import { startCorpseTimeout, unlinkObject, isContainer, placeObject, stack_object} from './mkobj.js';
 import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -145,7 +146,7 @@ export async function doforce(state: GameState = game): Promise<void> {
             text: 'forcing the lock',
             container: box,
             picktyp: prying,
-            chance: 2 * (OBJECT_LARGE_DAMAGE[weapon.otyp] || 0),
+            chance: 2 * (oc_wldam(weapon.otyp) || 0),
             usedtime: 0,
         };
         state.context.move = 1;

@@ -14,7 +14,7 @@ import type { GameObject } from '../js/object_types.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 
 import { makeHallucinated } from '../js/potion.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

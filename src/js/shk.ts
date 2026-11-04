@@ -16,13 +16,13 @@ import {
 import {
     objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN,
     CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY,
-    LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP,
+    LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, DUNCE_CAP,
     OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK,
     MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER,
     ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
 } from './object_data.js';
 import { impossible } from './diagnostics.js';
-import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
+import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -179,15 +179,6 @@ export function shopkeeperKillerName(monster: Monster): string {
     const personal = /^[-+=]/.test(raw);
     const honorific = personal ? '' : monster?.female ? 'Ms. ' : 'Mr. ';
     return `${honorific}${shopkeeperName(monster)}; the shopkeeper`;
-}
-
-// C objects[otyp].oc_name_known belongs to the type, never to an instance.
-export function objectTypeKnown(
-    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass'>>,
-    state: GameState = game,
-): boolean {
-    return !!OBJECT_INITIAL_KNOWN[object.otyp]
-        || !!state._knownObjectTypes?.has(object.otyp);
 }
 
 function shopkeeperForRoom(roomno: number | undefined, state: GameState = game): Shopkeeper | null {

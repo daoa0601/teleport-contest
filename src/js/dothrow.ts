@@ -9,11 +9,13 @@ import {
 import {
     objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG,
     SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON,
-    MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING,
+    MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING,
     BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES,
-    KELP_FROND, OBJECT_NAMES, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE,
+    KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE,
 } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
+import { isWeaponTool, isMissileObject } from './object_properties.js';
+import { RUBBER_HOSE, OBJ_NAME } from './object_data.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
@@ -43,7 +45,7 @@ import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject } from './invent.js';
 import { objectMaterial } from './o_init.js';
-import {rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object} from './mkobj.js';
+import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object} from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange } from './thrown_object.js';
@@ -1088,7 +1090,7 @@ export function rangedTargetHitBonus(object: GameObject, defender: Monster, {
     } else if (object.otyp === BOULDER) {
         bonus += 6;
     } else if (object.oclass === WEAPON_CLASS || object.oclass === GEM_CLASS
-        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0)) {
+        || isWeaponTool(object)) {
         bonus += weaponHitBonus(object, defender, { state, random, rollOne });
     }
     return bonus;
@@ -1854,11 +1856,6 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
 // Thrown-projectile helpers.
 // C refs: dothrow.c harmless_missile() and should_mulch_missile().
 // ---------------------------------------------------------------------------
-const P_BOW = 20;
-const P_CROSSBOW = 22;
-const P_DART = 23;
-const P_BOOMERANG = 25;
-const RUBBER_HOSE = OBJECT_NAMES.indexOf('rubber hose');
 const CLOTH = 6;
 
 // C dothrow.c:harmless_missile(). Contents make an otherwise soft bag hurt.
@@ -1883,12 +1880,11 @@ export function harmlessMissile(object: GameObject, state: GameState = game): bo
     }
 }
 
-export function projectileKind(object: Pick<GameObject, 'otyp'> | null | undefined): 'ammunition' | 'missile' | null {
-    const subtype = object ? objectSkill(object.otyp) : 0;
-    if (subtype >= -P_CROSSBOW && subtype <= -P_BOW)
-        return 'ammunition';
-    if (subtype >= -P_BOOMERANG && subtype <= -P_DART)
-        return 'missile';
+export function projectileKind(object: Pick<GameObject, 'otyp' | 'oclass'> | null | undefined): 'ammunition' | 'missile' | null {
+    // C should_mulch_missile() tests is_ammo(obj) || is_missile(obj); the
+    // kind label is the port's own classification of the two branches.
+    if (isLauncherAmmunition(object)) return 'ammunition';
+    if (isMissileObject(object)) return 'missile';
     return null;
 }
 
@@ -1903,7 +1899,7 @@ export function destroyMulchedProjectile(object: GameObject | null | undefined):
 
 export function shouldMulchMissile(object: GameObject | null | undefined, { monsterMoving = false }: { monsterMoving?: boolean } = {}): boolean {
     if (!object || !projectileKind(object)
-        || OBJECT_NAMES[object.otyp] === 'boomerang'
+        || OBJ_NAME(object.otyp) === 'boomerang'
         || objectMagic(object.otyp)) return false;
 
     const erosion = Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);

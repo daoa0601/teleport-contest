@@ -11,7 +11,7 @@ import { runSegment } from '../js/jsmain.js';
 import { CLOAK_OF_MAGIC_RESISTANCE, JADE } from '../js/object_data.js';
 import { recordObjectCall } from '../js/do_name.js';
 
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs,
 } from '../js/u_init.js';

@@ -1,10 +1,11 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_DESCRIPTIONS, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
+import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
+import { pair_of } from './object_properties.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
-import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, armorUsesPairGrammar, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
+import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
 import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
@@ -22,7 +23,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { levelPrizeKind } from './level_prize.js';
 import { recordLiteracy } from './literacy.js';
-import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial } from './o_init.js';
+import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
@@ -48,7 +49,7 @@ import { iceDescriptionAt } from './pager.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible, panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
-import { objectTypeKnown, currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, } from './shk.js';
+import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, } from './shk.js';
 import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { assertCreatedObject } from './do.js';
@@ -303,7 +304,7 @@ const CLASS_PRESENTATION = {
 function qualifiedObjectName(raw) {
     if (raw.otyp === CORPSE && raw.corpsenm !== undefined && MONSTER_NAME[raw.corpsenm])
         return `${MONSTER_NAME[raw.corpsenm]} corpse`;
-    const name = OBJECT_NAMES[raw.otyp] || `object ${raw.otyp}`;
+    const name = OBJ_NAME(raw.otyp) || `object ${raw.otyp}`;
     switch (raw.oclass) {
         case RING_CLASS: return `ring of ${name}`;
         case POTION_CLASS: return `potion of ${name}`;
@@ -315,11 +316,11 @@ function qualifiedObjectName(raw) {
 }
 function sourceKnownPresentation(raw) {
     const name = qualifiedObjectName(raw);
-    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJECT_NAMES[raw.otyp]}`
-        : raw.oclass === POTION_CLASS ? `potions of ${OBJECT_NAMES[raw.otyp]}`
-            : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJECT_NAMES[raw.otyp]}`
-                : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJECT_NAMES[raw.otyp]}`
-                    : raw.oclass === WAND_CLASS ? `wands of ${OBJECT_NAMES[raw.otyp]}`
+    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJ_NAME(raw.otyp)}`
+        : raw.oclass === POTION_CLASS ? `potions of ${OBJ_NAME(raw.otyp)}`
+            : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJ_NAME(raw.otyp)}`
+                : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJ_NAME(raw.otyp)}`
+                    : raw.oclass === WAND_CLASS ? `wands of ${OBJ_NAME(raw.otyp)}`
                         : makePlural(name);
     return {
         class: CLASS_PRESENTATION[raw.oclass] || 'Other',
@@ -327,9 +328,9 @@ function sourceKnownPresentation(raw) {
         enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
             || (raw.oclass === RING_CLASS && raw.spe !== 0),
         showBuc: raw.oclass === WAND_CLASS ? false : undefined,
-        spellName: raw.oclass === SPBOOK_CLASS ? OBJECT_NAMES[raw.otyp] : undefined,
+        spellName: raw.oclass === SPBOOK_CLASS ? OBJ_NAME(raw.otyp) : undefined,
         spellLevel: raw.oclass === SPBOOK_CLASS
-            ? OBJECT_SPELL_LEVEL[raw.otyp] : undefined,
+            ? oc_level(raw.otyp) : undefined,
         spellCategory: raw.oclass === SPBOOK_CLASS
             ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
     };
@@ -1146,7 +1147,7 @@ export function fullyIdentifyObject(object, state = game) {
         object.dknown = true;
     object.buc = object.blessed ? 'blessed'
         : object.cursed ? 'cursed' : 'uncursed';
-    const canonical = OBJECT_NAMES[object.otyp];
+    const canonical = OBJ_NAME(object.otyp);
     if (canonical && object.oclass === SCROLL_CLASS) {
         object.name = `scroll of ${canonical}`;
         object.plural = `scrolls of ${canonical}`;
@@ -1724,7 +1725,7 @@ export function objectTypeCallable(object, state = game) {
     return !!state._objectCallNames?.[object.otyp]
         || ![AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR].includes(object.otyp)
             && [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)
-            && !!(state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp]);
+            && !!OBJ_DESCR(object.otyp, state);
 }
 function accessoryActionText(item, state) {
     if (item.oclass === AMULET_CLASS)
@@ -1856,7 +1857,7 @@ export function identifyObjectForDisclosure(item, identifyTinContents = false) {
         : !redundantNeutral
             && [ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, GEM_CLASS].includes(item.oclass)
             ? 'uncursed' : '';
-    const canonicalName = OBJECT_NAMES[item.otyp];
+    const canonicalName = OBJ_NAME(item.otyp);
     if (item.oclass === GEM_CLASS && canonicalName)
         item.name = canonicalName;
 }
@@ -2996,7 +2997,7 @@ export function classifyLoot(object, state = game) {
     const position = classOrder.indexOf(oclass);
     const seen = !!object.dknown;
     const discovered = objectTypeKnown(object, state);
-    const description = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+    const description = OBJ_DESCR(object.otyp, state);
     return {
         order: position >= 0 ? position + 1 : classOrder.length + 1 + Number(oclass !== VENOM_CLASS),
         subclass: lootSubclass(object, oclass, seen, discovered),
@@ -3225,9 +3226,9 @@ export function mergable(otmp, obj, state = game) {
     if (hasAttachment(otmp) || hasAttachment(obj))
         return false;
     const otmpName = objectMergeName(otmp);
-    const objName = objectMergeName(obj);
-    if ((otmpName && objName && otmpName !== objName)
-        || (obj.otyp === CORPSE && !!otmpName !== !!objName))
+    const OBJ_NAME = objectMergeName(obj);
+    if ((otmpName && OBJ_NAME && otmpName !== OBJ_NAME)
+        || (obj.otyp === CORPSE && !!otmpName !== !!OBJ_NAME))
         return false;
     // C keeps the two stamped-mail flavors (bones/wished vs hand-written)
     // apart unless the stack ids share a parity.
@@ -3356,7 +3357,7 @@ export async function displayBuriedInventory(x, y, state) {
                 throw new Error('A visible one-object pile must contain its object.');
             const plural = objectNameIsPlural(object, state);
             await plineWithContinuation(`There ${plural ? 'are' : 'is'} ${await inventoryItemDescription(object)} under the ${liquid} here.`);
-            underwhat = plural || armorUsesPairGrammar(OBJECT_NAMES[object.otyp] ?? '') ? 'under them' : 'beneath it';
+            underwhat = plural || pair_of(object) ? 'under them' : 'beneath it';
         }
         else {
             await showProbedObjectInventory(pile, `Things that are under the ${liquid} here:`, { state, groupByClass: false });

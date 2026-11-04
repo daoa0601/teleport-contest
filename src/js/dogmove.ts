@@ -1,3 +1,5 @@
+import { OBJ_DESCR } from './o_init.js';
+import { OBJ_NAME } from './object_data.js';
 import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
@@ -6,7 +8,7 @@ import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, mo
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
 import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
-import {splitObjectStack, remove_object} from './mkobj.js';
+import { splitObjectStack, remove_object} from './mkobj.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { Hero } from './hero_types.js';
@@ -36,8 +38,7 @@ import { beginPetEating, finishPetEating } from './pet_eating.js';
 import { releaseMonsterInventory, addObjectToMonsterInventory } from './steal.js';
 import { isLevelPrize } from './level_prize.js';
 import {
-    BOULDER, OBJECT_DESCRIPTIONS, OBJECT_NAMES, SCR_MAIL, TRIPE_RATION, requireObjectData,
-} from './object_data.js';
+    BOULDER, SCR_MAIL, TRIPE_RATION, } from './object_data.js';
 import { loseGuardianAngel } from './guardian_angel.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { updateMonsterRegions } from './regions.js';
@@ -1323,8 +1324,8 @@ function disguiseDescription(disguise: MealDisguise, female: boolean): string {
         if (!symbol) throw new RangeError('Mimic meal has an invalid furniture appearance.');
         return symbol.name;
     }
-    return requireObjectData(OBJECT_DESCRIPTIONS, disguise.appearance)
-        || requireObjectData(OBJECT_NAMES, disguise.appearance) || 'something';
+    return OBJ_DESCR(disguise.appearance)
+        || OBJ_NAME(disguise.appearance) || 'something';
 }
 
 // Native glyph identity distinguishes two species even when both use 'f'.

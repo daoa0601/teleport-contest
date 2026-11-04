@@ -288,6 +288,25 @@ split `rnl` row use this batch's complete runs.
 | `is_ndemon:tables` (slow) | `mondata.h:is_ndemon` ↔ `mondata.js:is_ndemon` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 2.60 s total |
 | `is_dlord:tables` (slow) | `mondata.h:is_dlord` ↔ `mondata.js:is_dlord` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
 | `is_dprince:tables` (slow) | `mondata.h:is_dprince` ↔ `mondata.js:is_dprince` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
+| `is_launcher:tables` (slow) | `obj.h:is_launcher` ↔ `object_properties.js:is_launcher` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 5.46 s total |
+| `is_spear:tables` (slow) | `obj.h:is_spear` ↔ `object_properties.js:is_spear` | Same relation | 1×1 | 5.81 s total |
+| `is_shield:tables` | `obj.h:is_shield` ↔ `object_properties.js:is_shield` | Held object with the class relation; initial oc_armcat column | 1×1 | 2.41 s total |
+| `is_helmet:tables` | `obj.h:is_helmet` ↔ `object_properties.js:is_helmet` | Same relation | 1×1 | 2.37 s total |
+| `is_boots:tables` | `obj.h:is_boots` ↔ `object_properties.js:is_boots` | Same relation | 1×1 | 2.45 s total |
+| `is_gloves:tables` | `obj.h:is_gloves` ↔ `object_properties.js:is_gloves` | Same relation | 1×1 | 2.42 s total |
+| `is_cloak:tables` | `obj.h:is_cloak` ↔ `object_properties.js:is_cloak` | Same relation | 1×1 | 2.49 s total |
+| `is_shirt:tables` | `obj.h:is_shirt` ↔ `object_properties.js:is_shirt` | Same relation | 1×1 | 2.38 s total |
+| `is_suit:tables` | `obj.h:is_suit` ↔ `object_properties.js:is_suit` | Same relation | 1×1 | 2.52 s total |
+| `is_elven_armor:tables` | `obj.h:is_elven_armor` ↔ `object_properties.js:is_elven_armor` | Any short otyp; five constants, no table read | 2×5 | 2.36 s total |
+| `is_elven_weapon:tables` | `obj.h:is_elven_weapon` ↔ `object_properties.js:is_elven_weapon` | Any short otyp; six constants, no table read | 2×6 | 2.46 s total |
+| `pair_of:tables` | `obj.h:pair_of` ↔ `object_properties.js:pair_of` | Held object with the class relation; LENSES plus both macros | 1×1 | 2.80 s total |
+| `object_level:tables` (slow) | `objects.h:oc_level` ↔ `object_data.js:oc_level` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.16 s total |
+| `object_nutrition:tables` (slow) | `objects.h:oc_nutrition` ↔ `object_data.js:oc_nutrition` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.80 s total |
+| `object_color:tables` (slow) | `objects.h:oc_color` ↔ `object_data.js:objectBaseColor` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.18 s total |
+| `object_prob:tables` (slow) | `objects.h:oc_prob` ↔ `object_data.js:objectBaseProb` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.00 s total |
+| `object_nowish:tables` (slow) | `objects.h:oc_nowish` ↔ `object_data.js:oc_nowish` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.91 s total |
+| `object_hitbon:tables` (slow) | `objects.h:oc_hitbon` ↔ `object_data.js:oc_hitbon` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows); the a_ac alias reads the same column | 1×1 | 1.52 s total |
+| `object_wldam:tables` (slow) | `objects.h:oc_wldam` ↔ `object_data.js:oc_wldam` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.88 s total |
 
 **Flag-owner batch.** The 50 added claims execute the real `mondata.h`
 macros and the canonical `mondata.js` owners over every species index
@@ -909,6 +928,27 @@ absent locally.
 | `object_magic:tables` | 1.69 s | slow |
 | `object_charged:tables` | 1.70 s | slow |
 | `object_class:outside` | 1.60 s | fast |
+
+**Object-macro owner batch (fv-equivalence-batch-12).** Twenty-two added
+claims cover twelve obj.h predicates, eight initial objects[] fields, and
+OBJ_NAME/OBJ_DESCR index mapping. Every new predicate keeps its C macro name;
+existing exported owners keep their names. Armor categories use oc_armcat
+with the ARMOR_CLASS guard. The generic armor marker consequently has a
+suit slot, matching is_suit; a behavior test fails on the previous range
+classification. The shared is_damageable owner now lives in
+object_properties.ts and its existing claim includes all 481 object types.
+
+The field factory executes each native objects.c:obj_init column and emitted
+object_data.js column independently. The name claims execute the real macros
+and objects.c:obj_descr_init against the emitted strings, with
+oc_name_idx/oc_descr_idx == otyp as established by init_objects. They compare
+string contents and null separately; pointer identity and preservation by
+later shuffling remain outside the claims. The live OBJ_DESCR reader uses
+the game's description array, covered separately by behavior tests.
+
+All new claims are slow to preserve the fast CI budget. Each has a pinned
+negative probe and mutant, requiring a concrete counterexample. Local totals
+and final gate results are recorded after the complete ledger-writing run.
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
 that followed took 1037.68 s), including **77 domain probes** and **83

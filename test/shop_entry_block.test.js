@@ -5,7 +5,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DWARVISH_MATTOCK, PICK_AXE } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createSaddledSteed } from './support/monsters.js';

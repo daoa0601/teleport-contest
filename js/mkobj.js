@@ -1,7 +1,7 @@
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, VENOM_CLASS, SPBOOK_no_NOVEL, } from './objclass.js';
-import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_PROPERTY, WAN_FIRE, } from './object_data.js';
+import { objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic, getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, WAN_FIRE, oc_nutrition, objectPropertyName, } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
 import { eating_glob, set_tin_variety } from './eat.js';
@@ -2004,7 +2004,7 @@ export function objectWeight(object) {
     // mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition per item, including stacks of partly eaten wishes.
     if (object.oclass === FOOD_CLASS && uneatenNutrition > 0 && base > 0) {
-        const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
+        const fullNutrition = oc_nutrition(object.otyp) ?? 0;
         if (fullNutrition > 0) {
             return Math.max(1, Math.trunc(base * count * Math.min(uneatenNutrition, fullNutrition) / fullNutrition));
         }
@@ -2040,7 +2040,7 @@ export function objectWeight(object) {
 export function objectIsFlammable(object, state) {
     if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE)
         return false;
-    if (OBJECT_PROPERTY[object.otyp] === 'fireResistance'
+    if (objectPropertyName(object.otyp) === 'fireResistance'
         || object.otyp === WAN_FIRE)
         return false;
     const material = objectMaterial(object, state);

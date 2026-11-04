@@ -1,4 +1,5 @@
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { wakeNearby } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
@@ -80,7 +81,6 @@ import { wipeHeroEngraving } from './engrave.js';
 import { heroCanReachFloor } from './engrave.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { MONSTER_MOVE } from './monster_data.js';
-import { OBJECT_NAMES } from './object_data.js';
 import { confusePromptDirection } from './cmd.js';
 import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and
@@ -2105,7 +2105,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
     else if (!hero.dx && !hero.dy && !hero.dz) {
         const damage = Math.max(1, rnd(2) + heroStrengthDamageBonus(state) + (tool.spe ?? 0));
         await plineWithContinuation(`You hit yourself with ${ownedObjectName(tool, state, { capitalized: false })}.`);
-        await hurtHero(damage, `${state.flags.female ? 'her' : 'his'} own ${OBJECT_NAMES[tool.otyp]}`, state);
+        await hurtHero(damage, `${state.flags.female ? 'her' : 'his'} own ${OBJ_NAME(tool.otyp)}`, state);
     }
     else if (!hero.dz) {
         confusePromptDirection(hero);

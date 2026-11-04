@@ -2,6 +2,7 @@
 // C mkmaze.c:stolen_booty(), migr_booty_item(), shiny_orc_stuff(), migrate_orc();
 // do_name.c:rndorcname()/christen_orc(), dokick.c:deliver_obj_to_mon().
 import { RING_CLASS, FOOD_CLASS, GEM_CLASS } from './objclass.js';
+import { objectProb } from './o_init.js';
 import { MIGR_LEFTOVERS, MIGR_RANDOM, MIGR_TO_SPECIES, MM_NONAME, NON_PM } from './const.js';
 import { upstart } from './hacklib.js';
 import { addFruit } from './fruit.js';
@@ -13,7 +14,7 @@ import { randomOrcName, setMonsterGivenName } from './do_name.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import {
     CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES,
-    LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, OBJECT_PROB, ROCK, SKELETON_KEY,
+    LEMBAS_WAFER, LONG_SWORD, OBJECT_NAMES, ROCK, SKELETON_KEY,
     SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE,
 } from './object_data.js';
 import { rn2, rnd } from './rng.js';
@@ -45,7 +46,7 @@ export async function createOrcRaid(): Promise<void> {
     await createStolenItem(LEATHER_GLOVES + rn2(GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1), gang, state);
     for (let count = rnd(10); count > 0; count--) {
         const type = TRIPE_RATION + rn2(TIN - TRIPE_RATION + 1);
-        if (type !== LEMBAS_WAFER && ((OBJECT_PROB[type] ?? 0) > 0 || type === C_RATION || type === K_RATION)
+        if (type !== LEMBAS_WAFER && ((objectProb[type] ?? 0) > 0 || type === C_RATION || type === K_RATION)
             && type !== CORPSE && type !== EGG && type !== TIN)
             await createStolenItem(type, gang, state);
     }

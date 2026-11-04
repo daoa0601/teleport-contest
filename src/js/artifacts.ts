@@ -5,9 +5,10 @@
 // that ordinary object, and oname() then commits the named artifact.
 
 import { WEAPON_CLASS } from './objclass.js';
-import {
+import { OBJ_DESCR } from './o_init.js';
+import { OBJ_NAME,
     objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES,
-    OBJECT_DESCRIPTIONS, OBJECT_NAMES, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM,
+    ACID_VENOM, ARROW, BLINDING_VENOM,
     CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL,
 } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
@@ -22,11 +23,11 @@ import { dragonFormForArmor, heroHatesSilver, heroSpecies } from './polyself.js'
 import { heroHasDrainResistance } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
-import { insideShopRoomAt, objectTypeKnown } from './shk.js';
-import {mksobj, objectWeight, objectQuantity, isContainer} from './mkobj.js';
+import { insideShopRoomAt } from './shk.js';
+import { mksobj, objectWeight, objectQuantity, isContainer} from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races, roles } from './roles.js';
-import { recordObjectEncounter, objectMaterial } from './o_init.js';
+import { recordObjectEncounter, objectMaterial, objectTypeKnown } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
@@ -163,7 +164,7 @@ const QUEST_ARTIFACT_NAMES = new Set(
 );
 
 export const ARTIFACTS: readonly Artifact[] = ARTIFACT_DATA.map((artifact) => {
-    const baseName = requireObjectData(OBJECT_NAMES, artifact.baseType);
+    const baseName = OBJ_NAME(artifact.baseType);
     if (baseName === null) throw new Error(`Artifact ${artifact.id} requires a named base type`);
     return {
         ...artifact,
@@ -305,14 +306,12 @@ export function restrictName(object: GameObject, name: string, state: GameState)
     if (/^the /iu.test(wanted)) wanted = wanted.slice(4);
     const otyp = object.otyp;
     const sameTypes = new Set([otyp]);
-    const description = state.objectDescriptions?.[otyp]
-        ?? OBJECT_DESCRIPTIONS[otyp];
+    const description = OBJ_DESCR(otyp, state);
     if (!objectTypeKnown(object, state) && description) {
         const oclass = objectClassForType(otyp);
         const { first, last } = getObjectClassBounds(oclass);
         for (let candidate = first; candidate <= last; candidate++) {
-            const other = state.objectDescriptions?.[candidate]
-                ?? OBJECT_DESCRIPTIONS[candidate];
+            const other = OBJ_DESCR(candidate, state);
             if (candidate !== otyp && other === description
                 && !state._knownObjectTypes?.has(candidate)) {
                 sameTypes.add(candidate);

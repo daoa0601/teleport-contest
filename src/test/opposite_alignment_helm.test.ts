@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { HELM_OF_OPPOSITE_ALIGNMENT } from '../js/object_data.js';
 import { uncurseObjectState } from '../js/mkobj.js';
 import type { GameObject } from '../js/object_types.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';

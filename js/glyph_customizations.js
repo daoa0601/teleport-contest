@@ -1,10 +1,12 @@
+import { objectTypeColor } from './o_init.js';
 // Pinned dat/symbols, expanded as glyphs.c:glyph_find_core()/apply_customizations().
 import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { game } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { MONSTER_NAME, MONSTER_COLOR, MONSTER_SYMBOL, MONSTER_CLASS_SYMBOLS } from './monster_data.js';
-import { OBJECT_NAMES, OBJECT_COLOR, getObjectDefinition, requireObjectData } from './object_data.js';
+import { getObjectDefinition, } from './object_data.js';
 import { CLR_BLACK, CLR_BLUE, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA, CLR_BROWN, CLR_GRAY, CLR_GREEN, CLR_MAGENTA, CLR_ORANGE, CLR_RED, CLR_WHITE, CLR_YELLOW, NO_COLOR } from './terminal.js';
 const BASIC_COLOR = 0x1000000;
 const WALL_NAMES = ['vwall', 'hwall', 'tlcorn', 'trcorn', 'blcorn', 'brcorn',
@@ -162,11 +164,11 @@ function dungeonGlyph(glyph, symbol, id, baseColor, rogueColor) {
     return { glyph, id: `G_${id}`, symbol: { kind: 'cmap', index: symbol }, baseColor, rogueColor };
 }
 function objectGlyphs(otyp) {
-    const name = OBJECT_NAMES[otyp];
+    const name = OBJ_NAME(otyp);
     if (!name)
         throw new Error(`Missing object glyph name ${otyp}`);
     const { oclass } = getObjectDefinition(otyp);
-    const baseColor = game.objectColors?.[otyp] ?? requireObjectData(OBJECT_COLOR, otyp);
+    const baseColor = objectTypeColor(otyp);
     const rogueColor = oclass === COIN_CLASS ? CLR_YELLOW : oclass === FOOD_CLASS ? CLR_RED : CLR_BRIGHT_BLUE;
     return [GlyphOffset.object, GlyphOffset.objectPiletop].map((offset, index) => ({
         glyph: offset + otyp, id: `G_${index ? 'piletop_' : ''}${name.toLowerCase().replace(/[^a-z0-9]/g, '_')}`,

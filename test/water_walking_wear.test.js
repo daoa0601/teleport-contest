@@ -7,7 +7,7 @@ import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('water-walking boots lift a submerged hero and identify themselves at dressing completion', async () => {

@@ -6,7 +6,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { bindInputGate, InputGate, nhgetch } from '../js/input.js';
 import { inventoryReport } from '../js/invent.js';
 import { CRYSTAL_BALL, DAGGER, SPE_FORCE_BOLT } from '../js/object_data.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { selectSpellToCast } from '../js/spell.js';
 import { promptDirection } from '../js/cmd.js';

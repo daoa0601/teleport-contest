@@ -18,7 +18,7 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { mksobj, set_corpsenm, objectWeight, stack_object } from './mkobj.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
-import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, OBJECT_NUTRITION, TOWEL, WATER_WALKING_BOOTS } from './object_data.js';
+import { CHEST, CORPSE, CREAM_PIE, EGG, LARGE_BOX, TOWEL, WATER_WALKING_BOOTS, oc_nutrition } from './object_data.js';
 import { objectCombatName, definiteName } from './objnam.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterPossessive, lays_eggs, monsterIsAmorphous, monsterIsHumanoid, monsterIsSlithy, eggs_in_water, } from './mondata.js';
@@ -58,7 +58,7 @@ async function layEgg() {
             : 'Males'} can't lay eggs!`);
         return false;
     }
-    const nutrition = OBJECT_NUTRITION[EGG] ?? 0;
+    const nutrition = oc_nutrition(EGG) ?? 0;
     if ((game.u?.uhunger ?? 0) < nutrition) {
         await pline("You don't have enough energy to lay an egg.");
         return false;

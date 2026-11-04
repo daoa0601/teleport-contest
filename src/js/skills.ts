@@ -3,7 +3,7 @@
 
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS } from './objclass.js';
 import {
-    objectSkill, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
+    objectSkill, OBJECT_SPELL_CATEGORY, oc_level,
 } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import {
@@ -562,7 +562,7 @@ function identifySpellbooksForSkills(state: GameState): void {
     for (let type = 0; type < OBJECT_SPELL_CATEGORY.length; type++) {
         if (!OBJECT_SPELL_CATEGORY[type]) continue;
         const category = spellSkillType(type, state);
-        const spellLevel = OBJECT_SPELL_LEVEL[type];
+        const spellLevel = oc_level(type);
         if (spellLevel === undefined)
             throw new Error(`Spellbook ${type} has incomplete skill data`);
         const skill = requiredSkill(skills, category).skill;

@@ -20,7 +20,7 @@ import {
 import { stopHeroOccupation } from '../js/occupation.js';
 import { grantIntrinsicProperty, propertyIsActive, revokeIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { recordObjectKnowledge } from '../js/o_init.js';
 

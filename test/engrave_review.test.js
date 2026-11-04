@@ -7,7 +7,7 @@ import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, MAGIC_MARKER, POT_HEALING, WAN_LIGHT, WAN_NOTHING, WAN_POLYMORPH } from '../js/object_data.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { makeBlinded } from '../js/potion.js';
 import { addInventoryObject, addInventoryWeapon } from './support/game-objects.js';
 import { requireFixtureGame } from './support/game-state.js';

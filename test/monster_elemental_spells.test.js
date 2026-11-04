@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
