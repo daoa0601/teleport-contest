@@ -1,12 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { moveloop_core } from '../js/allmain.js';
-import { MM_ANGRY, MM_NOGRP, NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
+import { MM_NOGRP, NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
 import { DAGGER, OIL_LAMP, TALLOW_CANDLE } from '../js/object_data.js';
-import { initRng } from '../js/rng.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { resumeDeferredMonsterTrap, triggerImmediateMonsterTrap } from '../js/trap.js';
@@ -15,31 +12,26 @@ import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 
 for (const quantity of [1, 3]) {
-    void test(`waiting while a gnome lord steps onto a rust trap describes ${quantity === 1 ? 'a dagger rusting' : 'daggers rusting'}`, async () => {
+    void test(`a rust trap hitting a gnome lord's right arm describes ${quantity === 1 ? 'a dagger rusting' : 'daggers rusting'}`, async () => {
         const level = await freshObjectRoom({ left: 10, right: 12, top: 10, bottom: 10 });
-        const monster = await createMonsterAt('gnome lord', 12, 10, MM_ANGRY | MM_NOGRP | NO_MINVENT);
+        requirePlayingGame(game);
+        const monster = await createMonsterAt('gnome lord', 11, 10, MM_NOGRP | NO_MINVENT);
         const weapon = await knownObject(DAGGER, { quan: quantity, oeroded: 0 });
         await equipMonsterObject(monster, weapon, W_WEP);
         monster.female = false;
-        monster.msleeping = 0;
-        monster.movement = 12;
-        addTrap(level, RUST_TRAP, 11, 10);
-        game._moveloopStarted = true;
-        game.u.umovement = 12;
-        const input = resetInputState();
+        const trap = addTrap(level, RUST_TRAP, 11, 10);
         const messages: string[] = [];
-        input.beforeRead = () => { messages.push(game._pending_message); };
-        installPagerInput(input, { expected: /gush of water|dagger/, limit: 8 });
-        input.feed('.');
-        initRng(2n);
 
-        await moveloop_core();
-        await finishAtCommandInput(input, moveloop_core, /gush of water|dagger/);
+        const action = await triggerImmediateMonsterTrap(monster, game);
+        await resumeDeferredMonsterTrap(action, game, {
+            random: () => 2,
+            publish: message => { messages.push(message); },
+        });
 
-        assert.equal(monster.mx, 11, 'the gnome lord must step onto the trap');
+        assert.equal(trap.tseen, true);
+        assert.equal(messages[0], "A gush of water hits the gnome lord's right arm!");
         assert.equal(weapon.oeroded, 1, `The weapon must rust: ${messages.join(' | ')}`);
         const feedback = quantity === 1 ? "The gnome lord's dagger rusts!" : "The gnome lord's daggers rust!";
         assert.ok(messages.some(message => message.includes(feedback)),
