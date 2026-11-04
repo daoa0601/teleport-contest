@@ -373,6 +373,8 @@ async function hear(sound: string): Promise<void> {
     if (message) await pline(message);
 }
 
+// Also C mkobj.c:init_dummyobj(): inlined here (the name-formatting dummy
+// object literal with the slime-mold fruit id).
 async function diagnoseMonster(monster: Monster, x: number, y: number) {
     // C formats this even when only the later status line is printed.
     // During hallucination each formatting selects a new perceived identity.

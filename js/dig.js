@@ -1555,6 +1555,7 @@ async function digVertically(state, direction) {
 }
 // C dig.c:adj_pit_checks(). Returns null to permit digging, an empty string
 // to reject silently, or the rejection message.
+// Also C stairs.c:On_ladder(): inlined here as the stairway's ladder flag test.
 function adjacentPitRejection(x, y, state) {
     const location = requireGameLevel(state).requireAt(x, y);
     const type = location.typ;

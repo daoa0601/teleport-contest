@@ -192,6 +192,7 @@ export function initOverviewRecord(location, state = game) {
 // learned about the current level, not every feature in the live map.
 // C dungeon.c:count_feat_lastseentyp(): the cap-3 feature counts over
 // last-seen terrain.
+// Also C dungeon.c:find_mapseen(): inlined here as a lookup by dungeon and level.
 export function recordMappedOverviewState({ discoveredRoom = null, state = game } = {}) {
     const level = state.level;
     if (!level)
@@ -592,6 +593,7 @@ function possiblePlaces(index, levels, dungeon, finalByName) {
 }
 // Direct port of dungeon.c place_level(): recursively try placements and
 // backtrack only when a later special level has no valid square.
+// Also C dungeon.c:pick_level(): inlined here (the nth free place draw).
 function placeLevels(index, levels, dungeon, finalByName) {
     if (index === levels.length)
         return true;
@@ -857,6 +859,8 @@ function annotationLevelDescription(level) {
             : `level ${dungeonDepth(level.dnum, level.dlevel)}`;
     return otherBranch ? `${description}, ${dungeon.dname.replace('The ', 'the ')}` : description;
 }
+// The query_annotation() prompt; setLevelAnnotation() stores the answer.
+// Also C dungeon.c:get_annotation(): inlined here (the current value read).
 export async function queryLevelAnnotation(level = null, inMenu = false) {
     requirePlayingGame(game);
     const location = level ?? game.u.uz;

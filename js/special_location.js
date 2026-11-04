@@ -15,6 +15,8 @@ export const ANY_LOC = 0x10;
 export const NO_LOC_WARN = 0x20;
 export const SPACELOC = 0x40;
 // C sp_lev.c:get_location_coord(). Resolve a packed coordinate, retrying random placement if needed.
+// Also C sp_lev.c:get_unpacked_coord(): inlined here (the -1 random
+// sentinel and the explicit humidity flags).
 export async function get_location_coord(context, coordinate, humidity, filter) {
     // sp_lev.h packs explicit axes as unsigned bytes; only (-1, -1)
     // denotes a random coordinate at the Lua boundary.

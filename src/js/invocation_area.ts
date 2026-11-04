@@ -42,6 +42,9 @@ function invocationRings(x: number, y: number): Position[][] {
     return rings;
 }
 
+// C mklev.c:mkinvokearea().
+// Also C mklev.c:mkinvk_check_wall(): inlined here (the wall probe that
+// decides the crumbling-walls message).
 export async function makeInvocationArea({ state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -70,6 +73,7 @@ export async function makeInvocationArea({ state = game }: { state?: GameState }
     state.vision_full_recalc = 1;
 }
 
+// C mklev.c:mkinvpos().
 async function changeInvocationSquare({ x, y }: Position, distance: number, state: PlayingGameState): Promise<void> {
     if (x < 2 || y < 2 || x > ((COLNO - 1) & ~1) || y > ((ROWNO - 1) & ~1)) {
         if (distance < 5) {

@@ -1267,6 +1267,8 @@ function noncoalignedSpecialAmask(): number {
 }
 
 // C sp_lev.c:sp_amask_to_amask(). Resolve coaligned, noncoaligned and random masks.
+// Also C sp_lev.c:get_table_align(): inlined here (the alignment name
+// resolves to a mask in one step).
 function sp_amask_to_amask(value = 'random'): number {
     if (value === 'coaligned')
         return Align2amask(game.u?.ualignbase?.[1] ?? game.u?.ualign?.type ?? A_NEUTRAL);
@@ -1356,6 +1358,8 @@ function get_table_roomtype_opt(name = 'ordinary') {
 
 // C sp_lev.c:l_push_mkroom_table(): the room table passed to a contents
 // callback; get_mkroom_name()'s reverse lookup is the names map below.
+// Also C sp_lev.c:l_push_wid_hei_table(): inlined here (the width/height
+// entries of the room table).
 export function l_push_mkroom_table(room: Room) {
     const names = new Map([
         [OROOM, 'ordinary'], [THEMEROOM, 'themed'], [COURT, 'throne'],
@@ -1383,6 +1387,8 @@ export function l_push_mkroom_table(room: Room) {
 }
 
 // C sp_lev.c:lspo_region(). Light a selection, or create a rectangular/irregular room and its contents.
+// Also C sp_lev.c:sel_set_lit(): inlined here (the selection lighting
+// callback, lava excepted).
 export async function lspo_region(scope: SpecialLevelRoomScope, context: SpecialLevelContext, state: LuaGameState, value: LuaValue | SpecialSelection | undefined, lighting = 'unlit'): Promise<Room | null> {
     if (value instanceof SpecialSelection) {
         const lit = lighting === 'lit';
@@ -1467,6 +1473,10 @@ export async function lspo_region(scope: SpecialLevelRoomScope, context: Special
 }
 
 // C sp_lev.c:lspo_room(). Read room placement, build it, then run its nested contents.
+// Also C sp_lev.c:spo_endroom(): inlined here (the finally pops the room
+// scope).
+// Also C sp_lev.c:update_croom(): inlined here (the same restore of the
+// parent room context).
 export async function lspo_room(scope: SpecialLevelRoomScope, active: ActiveSpecialLevel,
     state: LuaGameState, value: LuaValue | undefined,
 ): Promise<Room | null> {
@@ -1515,6 +1525,8 @@ export async function lspo_room(scope: SpecialLevelRoomScope, active: ActiveSpec
 }
 
 // C sp_lev.c:l_create_stairway(). Both Lua bindings share placement and trap clearance.
+// Also C sp_lev.c:good_stair_loc(): inlined here (the random-spot terrain
+// filter).
 async function l_create_stairway(context: SpecialLevelContext, mappedCells: SpecialSelection, usingLadder: boolean, directionValue: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined): Promise<Position> {
     const options = directionValue instanceof LuaTable ? tableOptions(directionValue) : null;
     const direction = options ? String(options.dir ?? 'down') : String(directionValue);
@@ -1768,6 +1780,8 @@ export async function lspo_object(
 }
 
 // C sp_lev.c:create_object(). Create one object and apply its level-description attributes.
+// Also C sp_lev.c:get_table_buc(): inlined here (the buc name switches
+// directly instead of decoding to a curse-state code).
 async function create_object(
     context: SpecialLevelContext, options: DesObjectOptions, corpseSpecies: number | null,
     parentContainer: GameObject | null, parentMonster: Monster | null,
@@ -1917,6 +1931,12 @@ async function create_object(
 }
 
 // C sp_lev.c:lspo_monster(). Parse the request, create the monster, then run its custom inventory.
+// Also C sp_lev.c:get_table_monclass(): inlined here (the single-character
+// class string).
+// Also C sp_lev.c:get_table_montype(): inlined here (the id field through
+// find_montype()).
+// Also C sp_lev.c:spo_end_moninvent(): inlined here (m_dowear after the
+// inventory callback closes).
 export async function lspo_monster(
     context: SpecialLevelContext, state: LuaGameState, inventories: Array<Monster | null>,
     id: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined,
@@ -2157,6 +2177,10 @@ export async function create_monster(context: SpecialLevelContext, options: DesM
 }
 
 // C sp_lev.c:lspo_trap(): trap type, placement and construction options.
+// Also C sp_lev.c:get_traptype_byname(): inlined here (the TRAP_TYPES
+// lookup with the unknown-name error).
+// Also C sp_lev.c:get_table_traptype_opt(): inlined here (the type field of
+// the table form).
 export async function lspo_trap(context: SpecialLevelContext,
     type: LuaValue | undefined, x: LuaValue | undefined, y: LuaValue | undefined,
 ) {

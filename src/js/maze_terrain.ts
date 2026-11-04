@@ -10,6 +10,8 @@ import type { GameMap } from './game.js';
 // mz_move() direction order: north, east, south, west.
 const directions = [[0, -1], [1, 0], [0, 1], [-1, 0]] as const;
 
+// C mkmaze.c:create_maze() with the maze grid scaled to corridor and wall.
+// Also C mkmaze.c:maze0xy(): inlined here (the odd-grid start draw).
 export function createMaze(corridorWidth = -1, wallThickness = -1,
     removeDeadEnds = false, state: GameState = game): void {
     const level = requireGameLevel(state);
@@ -35,6 +37,8 @@ export function createMaze(corridorWidth = -1, wallThickness = -1,
             nativeXMax, nativeYMax);
 }
 
+// C mkmaze.c:walkfrom() (iterative form).
+// Also C mkmaze.c:okay(): inlined here (the two-step direction probe).
 export function carveMazeFrom(
     x: number, y: number, passageType: number, mazeXMax: number, mazeYMax: number,
     state: GameState = game,
@@ -83,6 +87,8 @@ function initializeMazeGrid(level: GameMap, mazeXMax: number, mazeYMax: number):
     }
 }
 
+// C mkmaze.c:maze_remove_deadends().
+// Also C mkmaze.c:maze_inbounds(): inlined here (the inMaze closure).
 function openDeadEnds(level: GameMap, passageType: number, mazeXMax: number, mazeYMax: number): void {
     const inMaze = (x: number, y: number): boolean => x >= 2 && y >= 2
         && x < mazeXMax && y < mazeYMax && isok(x, y);

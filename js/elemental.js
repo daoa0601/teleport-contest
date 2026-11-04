@@ -237,6 +237,7 @@ export function restoreElementalBubbles() {
         changeBubbleDirection(bubble, motion.collision, true);
     }
 }
+// C mkmaze.c:mk_bubble().
 async function makeBubble(x, y, maskIndex) {
     if (x >= BOUNDS.bubbleXMax || y >= BOUNDS.bubbleYMax)
         return;

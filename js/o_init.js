@@ -35,6 +35,7 @@ const DISCOVERY_ORDERS = {
 export function discoverySortDescription() {
     return DISCOVERY_ORDERS[game.flags.discosort ?? 'o'];
 }
+// C o_init.c:choose_disco_sort().
 export async function chooseDiscoverySort(mode) {
     const previous = game.flags.discosort ?? 'o';
     const window = tty_create_nhwindow(NHW_MENU);
@@ -193,6 +194,11 @@ function discoveryBaseName(otyp, known, actualName, appearance) {
             return known ? actualName : appearance || actualName;
     }
 }
+// C o_init.c:disco_typename(): the discoveries row's type name.
+// Also C o_init.c:interesting_to_discover(): inlined here (a row needs an
+// appearance, a call name, or a Japanese name to explain).
+// Also C o_init.c:disco_append_typename(): inlined here (the assembled row
+// with its price quote).
 function formattedDiscovery(otyp) {
     const known = !!OBJECT_INITIAL_KNOWN[otyp] || !!game._knownObjectTypes?.has(otyp);
     const encountered = !!game._encounteredObjectTypes?.has(otyp);
@@ -402,6 +408,7 @@ async function chooseDiscoveryClass(choices) {
         await tty_destroy_nhwindow(window);
     }
 }
+// C o_init.c:oclass_to_name().
 function discoveryClassName(oclass) {
     const name = OBJECT_CLASS_LABELS[oclass];
     if (!name)
@@ -417,6 +424,10 @@ function discoveryClassOrder() {
     const classes = inventoryClassOrder();
     return classes.includes(VENOM_CLASS) ? classes : [...classes, VENOM_CLASS];
 }
+// The per-class discoveries rows, in the discosort order.
+// Also C o_init.c:disco_output_sorted(): inlined here (the sorted pass).
+// Also C o_init.c:sortloot_descr(): inlined here (classifyLoot replaces the
+// numeric sortloot key).
 function classDiscoveries(oclass, order) {
     const entries = [];
     for (const type of game._objectDiscoveryOrder ?? []) {
@@ -436,6 +447,7 @@ function classDiscoveries(oclass, order) {
             || compareDiscoveryNames(left.line, right.line));
     return entries.map(entry => entry.line);
 }
+// C o_init.c:discovered_cmp().
 function compareDiscoveryNames(left, right) {
     const a = left.slice(2).toLowerCase(), b = right.slice(2).toLowerCase();
     return a < b ? -1 : a > b ? 1 : 0;
@@ -443,6 +455,7 @@ function compareDiscoveryNames(left, right) {
 function discoveryHeading(text) {
     return { text, attr: terminalAttrFromCAttr(game.iflags.menu_headings?.attr ?? C_ATR_INVERSE) };
 }
+// C o_init.c:disco_fmt_uniq(): the unique-items rows and their gather loop.
 function discoveredRelics() {
     const lines = [];
     for (const type of [AMULET_OF_YENDOR, BELL_OF_OPENING,
@@ -531,6 +544,8 @@ export function recordObjectEncounter(otyp, state = game) {
         state._encounteredObjectTypes = new Set();
     state._encounteredObjectTypes.add(otyp);
 }
+// Mark a type known without an encounter.
+// Also C u_init.c:knows_object(): its pauper guard lives at the callers.
 export function recordObjectKnowledge(otyp, state = game) {
     discoverKnownType(otyp, false, state);
 }

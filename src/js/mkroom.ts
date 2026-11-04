@@ -238,6 +238,8 @@ async function invalidShopShape(croom: Room): Promise<boolean> {
     return exits === 1;
 }
 
+// C mkroom.c:mkshop().
+// Also C mkroom.c:isbig(): inlined here (the area > 20 wand/book shop test).
 export async function mkshop(): Promise<boolean> {
     const level = requireGameLevel();
     const rooms = level.rooms.slice(0, level.nroom);

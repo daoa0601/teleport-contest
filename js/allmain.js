@@ -171,6 +171,8 @@ async function showLegacy() {
 }
 // C allmain.c:welcome(). Greeting, chronicle entry, and restore reminders
 // share the hero's innate identity even while another body is active.
+// Also C dungeon.c:print_level_annotation(): inlined here (the restore
+// reminder, like in goto_level()).
 export async function welcome(newGame) {
     const g = requireInitializedGame();
     await currentLuaLifecycle().callCore(g, newGame ? 'start_new_game' : 'restore_old_game');

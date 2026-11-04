@@ -581,6 +581,8 @@ export async function mksobj_at(
 }
 
 // C mkobj.c:mkobj().
+// Also C o_init.c:init_oclass_probs(): the per-class oc_prob totals are
+// summed on demand by the roll below instead of cached per class.
 export async function mkobj(oclass: number, artif: boolean): Promise<GameObject> {
     if (oclass === RANDOM_CLASS) {
         // mkobj.c:mkobj() switches the RANDOM_CLASS reservoir in Gehennom.
@@ -1566,6 +1568,9 @@ function setQuantity(object: GameObject, count: number): void {
     object.owt = objectWeight(object);
 }
 
+// C mkobj.c:splitobj(): split one stack into two.
+// Also C mkobj.c:copy_oextra(): inlined here (the split keeps the parent's
+// extensions minus the m-id association).
 export function splitObjectStack(
     object: GameObject | null | undefined, count: number,
     state: GameState = game, objectId: number | null = null,

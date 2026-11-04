@@ -210,6 +210,8 @@ async function destinationAtDepth(requested: number, state: PlayingGameState): P
 
 // C dungeon.c:lev_by_name(): names require an actually visited level and
 // can address only this branch or the main-dungeon/Gehennom connection.
+// Also C dungeon.c:find_mapseen_by_str(): inlined here (the annotation
+// lookup that runs before the branch and prototype names).
 export function levelDepthByName(input: string, state: GameState = game): number {
     requirePlayingGame(state);
     let name = input.toLowerCase();

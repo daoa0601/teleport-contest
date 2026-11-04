@@ -180,6 +180,8 @@ function sameLevel(left, right) {
     return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
 }
 // C stairs.c:stairs_description().
+// Also C stairs.c:known_branch_stairs(): inlined here (the traversed
+// cross-branch destination test).
 export function stairwayDescription(stairway, state) {
     const noun = stairway.isladder ? 'ladder' : 'staircase';
     const direction = stairway.up ? 'up' : 'down';
@@ -575,6 +577,9 @@ export function countLevelFeatures(state = game) {
     lvl.flags.nsinks = nsinks;
 }
 // C ref: mklev.c clear_level_structures()
+// Also C region.c:clear_regions(): a fresh GameMap owns no regions.
+// Also C dungeon.c:free_exclusions(): a fresh GameMap owns no exclusion zones.
+// Also C stairs.c:stairway_free_all(): inlined here as the stairway-chain reset.
 function clear_level_structures() {
     const g = game;
     g.fmon = null;
@@ -626,6 +631,8 @@ function clear_level_structures() {
     init_rect();
 }
 // C ref: mklev.c makelevel()
+// Also C mklev.c:themerooms_post_level_generate(): inlined here (the
+// post_level_generate theme call plus whole-level wallification).
 async function makelevel() {
     const g = game;
     oinit();

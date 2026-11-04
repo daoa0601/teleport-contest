@@ -36,6 +36,9 @@ function invocationRings(x, y) {
     }
     return rings;
 }
+// C mklev.c:mkinvokearea().
+// Also C mklev.c:mkinvk_check_wall(): inlined here (the wall probe that
+// decides the crumbling-walls message).
 export async function makeInvocationArea({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -66,6 +69,7 @@ export async function makeInvocationArea({ state = game } = {}) {
     await newsym(state.u.ux, state.u.uy);
     state.vision_full_recalc = 1;
 }
+// C mklev.c:mkinvpos().
 async function changeInvocationSquare({ x, y }, distance, state) {
     if (x < 2 || y < 2 || x > ((COLNO - 1) & ~1) || y > ((ROWNO - 1) & ~1)) {
         if (distance < 5) {

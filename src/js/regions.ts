@@ -298,6 +298,8 @@ export function visibleRegionAt(state: GameState, x: number, y: number): GasClou
 }
 
 // C region.c:visible_region_summary().
+// Also C region.c:any_visible_region(): inlined here (the empty-summary
+// guard the #timeout caller tests).
 export function visibleRegionLines(state: GameState): string[] {
     const visible = requireGameLevel(state).regions
         .filter(region => region.visible && region.ttl !== -2);

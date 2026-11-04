@@ -253,6 +253,7 @@ export function restoreElementalBubbles(): void {
     }
 }
 
+// C mkmaze.c:mk_bubble().
 async function makeBubble(x: number, y: number, maskIndex: number): Promise<void> {
     if (x >= BOUNDS.bubbleXMax || y >= BOUNDS.bubbleYMax) return;
     const mask = BUBBLE_MASKS[Math.min(maskIndex, BUBBLE_MASKS.length - 1)];

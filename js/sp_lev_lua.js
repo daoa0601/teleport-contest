@@ -61,6 +61,8 @@ function luaTimerArrayEntry(table, entry) {
     return luaToInteger(converted);
 }
 // C sp_lev.c:sp_level_coder_init(). Create the per-level room, inventory, and map state.
+// Also C sp_lev.c:create_des_coder(): the lazy coder allocation; every Lua
+// session builds its coder state directly here.
 function sp_level_coder_init() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
@@ -81,6 +83,7 @@ function sp_level_coder_init() {
             throw new Error('Lua level generation has no bound state');
         return luaState;
     };
+    // Also C sp_lev.c:spo_pop_container(): inlined here in the finally block.
     const invokeObjectContents = async (callback, object) => {
         containers.push(object);
         try {

@@ -35,6 +35,7 @@ Mb_hit	nomul
 Mb_hit	rn2
 Mb_hit	rnd
 Mb_hit	shieldeff
+On_ladder	stairway_at
 RND	isaac64_next_uint64
 Ring_off_or_gone	float_down
 Ring_off_or_gone	learnring
@@ -133,6 +134,8 @@ avoid_trap_andor_region	nomul
 avoid_trap_andor_region	paranoid_query
 avoid_trap_andor_region	rnd
 avoid_trap_andor_region	visible_region_at
+baalz_fixup	isok
+baalz_fixup	wallification
 back_on_ground	surface
 backfire	d
 backfire	losehp
@@ -561,6 +564,7 @@ disclose	container_contents
 disclose	list_genocided
 disclose	should_query_disclose_option
 disclose	yn_function
+disco_typename	Japanese_item_name
 disintegrate_arm	surface
 disintegrate_cursed_armor	rn2
 dismount_steed	adjalign
@@ -1560,6 +1564,8 @@ get_pricing_units	weight
 get_rnd_toptenentry	rnd
 get_room_loc	rn2
 get_shop_item	rnd
+get_table_coords_or_region	get_table_region
+get_table_montype	find_montype
 get_valid_jump_position	isok
 get_valid_polearm_position	glyph_at
 get_valid_polearm_position	isok
@@ -1789,6 +1795,7 @@ intemple	makemon
 intemple	nomul
 intemple	record_achievement
 intemple	rn2
+interesting_to_discover	Japanese_item_name
 interrupt_multi	nomul
 intervene	aggravate
 intervene	rn2
@@ -1826,6 +1833,7 @@ is_drawbridge_wall	isok
 is_ice	isok
 is_innate	innately
 is_moat	isok
+is_solid	isok
 is_valid_jump_pos	isok
 is_valid_travelpt	findtravelpath
 is_valid_travelpt	glyph_at
@@ -2372,7 +2380,9 @@ mayberem	acurr
 mayberem	rn2
 mayberem	yn_function
 maybewakesteed	rn2
+maze0xy	rn2
 maze1xy	rn2
+maze_inbounds	isok
 maze_remove_deadends	rn2
 mbag_explodes	rn2
 mbag_item_gone	costly_spot
@@ -2503,6 +2513,8 @@ minliquid_core	hliquid
 minliquid_core	rn2
 minliquid_core	water_damage_chain
 mk_artifact	rn2
+mk_bubble	mv_bubble
+mk_bubble	rn2
 mk_knox_portal	rn2
 mk_mplayer_armor	rn2
 mk_mplayer_armor	rnd
@@ -2544,6 +2556,16 @@ mkgrave	mksobj_at
 mkgrave	rn2
 mkgrave	rnd
 mkgrave	weight
+mkinvk_check_wall	isok
+mkinvokearea	buried_ball_to_punishment
+mkinvokearea	flush_screen
+mkinvokearea	mkstairs
+mkinvokearea	newsym
+mkinvokearea	reset_utrap
+mkinvpos	is_pool
+mkinvpos	isok
+mkinvpos	maketrap
+mkinvpos	newsym
 mklev	getbones
 mklev	level_finalize_topology
 mklev	makelevel
@@ -3164,6 +3186,12 @@ pooleffects	docrt
 pooleffects	hliquid
 pooleffects	is_pool
 pooleffects	is_waterwall
+populate_maze	makemon
+populate_maze	mkgold
+populate_maze	mkobj_at
+populate_maze	mksobj_at
+populate_maze	mktrap
+populate_maze	rn2
 possible_places	level_range
 postmov	dissolve_bars
 postmov	in_rooms
@@ -3291,6 +3319,7 @@ remote_burglary	call_kops
 remote_burglary	in_rooms
 remote_burglary	rob_shop
 remote_burglary	shop_keeper
+remove_mon_from_bones	fixuporacle
 remove_region	isok
 remove_region	newsym
 repair_damage	closed_door
@@ -3320,6 +3349,7 @@ reset_utrap	float_up
 responsive_mon_at	isok
 restrap	rn2
 restrap	set_mimic_sym
+restricted_spell_discipline	spell_skilltype
 resurrect	makemon
 resurrect	rn2
 retouch_equipment	clear_bypasses
@@ -3810,6 +3840,7 @@ test_move	doorless_door
 test_move	isok
 test_move	nomul
 theft_petrifies	instapetrify
+themerooms_post_level_generate	wallification
 there_cmd_menu	test_move
 there_cmd_menu_common	glyph_at
 there_cmd_menu_next2u	can_saddle
@@ -4034,6 +4065,13 @@ u_init_inventory_attrs	hidden_gold
 u_init_inventory_attrs	ini_inv
 u_init_inventory_attrs	u_init_carry_attr_boost
 u_init_misc	set_uasmon
+u_init_race	ini_inv
+u_init_race	rn2
+u_init_role	Japanese_item_name
+u_init_role	ini_inv
+u_init_role	knows_class
+u_init_role	rn2
+u_init_role	rnd
 u_maybe_impaired	rn2
 u_on_dnstairs	stairway_find_dir
 u_on_dnstairs	u_on_newpos

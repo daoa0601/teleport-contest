@@ -458,6 +458,7 @@ export async function retreatCovetousMonster(
 // point for guardians (Kops). C prefers stairs, then a ladder, in the travel
 // direction; then a branch stairway in any direction; then stairs or a
 // ladder in the other direction. Null when only a portal reaches the level.
+// Also C stairs.c:stairway_find_type_dir(): inlined here in the ordered searches.
 export function chooseStairs(dir: boolean, state: PlayingGameState | ShopGameState): Stairway | null {
     const stairs: Stairway[] = [];
     for (let stair = state.stairs; stair; stair = stair.next) stairs.push(stair);

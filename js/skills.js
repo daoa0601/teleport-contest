@@ -116,6 +116,7 @@ const ROLE_STARTING_MAGIC_SKILLS = {
 export function practiceNeededToAdvance(level) {
     return level * level * 20;
 }
+// C u_init.c:skills_for_role().
 function roleMaximums(game) {
     const key = game.urole?.key;
     if (!key)
@@ -136,6 +137,7 @@ function roleMaximums(game) {
         wizard: WIZARD_MAXIMUMS,
     }[key];
 }
+// C u_init.c:restricted_spell_discipline(): inverted to report an allowed discipline.
 // Startup precedes skill_init(); admission uses the role's skill list.
 export function roleAllowsSpellbook(otyp, state) {
     const skill = spellSkillType(otyp, state);
@@ -260,6 +262,8 @@ async function giveMayAdvanceMessage(skill, state) {
         await plineWithContinuation('(Tip: use the #enhance command to advance them.)');
     }
 }
+// C weapon.c:skill_init().
+// Also C u_init.c:pauper_reinit(): inlined here for skill resets and two free slots.
 export function ensureHeroSkills(game) {
     if (game.u.weaponSkills)
         return game.u.weaponSkills;
