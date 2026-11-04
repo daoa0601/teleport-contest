@@ -1066,14 +1066,14 @@ export async function mintrap(
     return action;
 }
 
-// C trap.c:trapeffect_selector(): the monster side of the dispatch; each
+// trap.c trapeffect_selector(): the monster side of the dispatch; each
 // case runs the monster branch of the named trapeffect_ function, in its
-// owner module or inline below. C trap.c:trapeffect_hole(): the grounded,
+// owner module or inline below. trap.c trapeffect_hole(): the grounded,
 // size, and worm checks and the Sokoban yank sit inline before the fall.
 // C trap.c:trapeffect_level_telep(): the fall itself is the level-teleport
-// owner's monster move. C trap.c:trapeffect_magic_trap(): the monster
+// owner's monster move. trap.c trapeffect_magic_trap(): the monster
 // branch replicates a fire trap 1 time in 21 through beginMonsterFireTrap
-// (trapeffect_fire_trap()'s monster branch). C trap.c:trapeffect_telep_trap():
+// (trapeffect_fire_trap()'s monster branch). trap.c trapeffect_telep_trap():
 // the monster branch hands the move to the teleport owner's mtele path.
 async function monsterTrapEffect(
     monster: Monster,
@@ -3979,7 +3979,7 @@ const MAGIC_RESISTANCE_ARMOR = new Set([
     GRAY_DRAGON_SCALES,
 ]);
 
-// C trap.c:trapeffect_anti_magic(): the hero branch — positively-enchanted
+// trap.c trapeffect_anti_magic(): the hero branch — positively-enchanted
 // iron shoes shed the drain onto their enchantment; otherwise the
 // anti-magic field hits the protected hero (a carried artifact's
 // C zap.c:defends_when_carried() bonus included) and drains power; the
@@ -4216,7 +4216,7 @@ export interface MonsterPolymorphChangeEvent extends PolymorphTrapBase {
     killed?: boolean;
 }
 
-// C trap.c:trapeffect_poly_trap(): resists_magm() stages only mon.c
+// trap.c trapeffect_poly_trap(): resists_magm() stages only mon.c
 // shieldeff_mon()'s shield effect and its "<mon> resists!" report; the
 // monster keeps its form and the trap stays hidden.
 export interface ShieldedPolymorphTrap extends PolymorphTrapBase {
@@ -4319,7 +4319,7 @@ export async function finishMonsterPolymorphTrap(
     if (!event) return event;
 
     if ('shielded' in event) {
-        // C trap.c:trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
+        // trap.c trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
         // shield effect runs whenever the monster's square is visible, and a
         // visible square reports "<mon> resists!".  C reveals the trap only
         // after an actual shape change, so it stays hidden here.
@@ -4447,7 +4447,7 @@ async function resolveMineLiquid(
     });
 }
 
-// C trap.c:trapeffect_landmine(): the monster branch — a monster lighter
+// trap.c trapeffect_landmine(): the monster branch — a monster lighter
 // than the trigger weight never sets it off, airborne ones rarely do, and
 // the blast stages the pit and the kill; an unconscious hero is awakened
 // by the explosion (C hack.c:unconscious()).
@@ -5848,7 +5848,7 @@ async function triggerWeb(
     }
 }
 
-// C trap.c:trapeffect_landmine() guards steedintrap() with a static
+// trap.c trapeffect_landmine() guards steedintrap() with a static
 // recursive_mine flag: the dying steed's dismount must not re-enter the
 // still-armed mine before it is converted to a pit.
 let landmineSteedHitInProgress = false;
@@ -6158,9 +6158,9 @@ async function triggerMagicTrap(trap: Trap) {
     await triggerHeroMagicTrapEffect();
 }
 
-// C trap.c:trapeffect_arrow_trap(): the hero branch — the 1-in-15
+// trap.c trapeffect_arrow_trap(): the hero branch — the 1-in-15
 // exhausted-trap click, the shot at the hero, and the steed's chance to
-// take it. C trap.c:trapeffect_dart_trap(): the dart twin, with a 1-in-6
+// take it. trap.c trapeffect_dart_trap(): the dart twin, with a 1-in-6
 // poisoned missile; the monster branches are beginMonsterProjectileTrap.
 async function triggerProjectileTrap(trap: Trap) {
     const hero = game.u;
@@ -6234,7 +6234,7 @@ function heroPassesRocks() {
 // ── moved from src/js/hero_polymorph_trap.ts ──
 const WAND_CLASS = 12;
 
-// C trap.c:trapeffect_poly_trap(): the hero branch — the trigger message
+// trap.c trapeffect_poly_trap(): the hero branch — the trigger message
 // with the steed's lead-in, the form change or its reversal, the worn-gear
 // consequences, and the steed's own steedintrap() polymorph.
 export async function triggerHeroPolymorphTrap(trap: Trap, viaSitting: boolean): Promise<void> {
@@ -6593,7 +6593,7 @@ async function triggerRollingBoulderTrap(trap: Trap) {
         ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
 
-// C trap.c:trapeffect_bear_trap(): the hero branch — harmless close over
+// trap.c trapeffect_bear_trap(): the hero branch — harmless close over
 // amorphous or tiny forms, the leg damage, and the TT_BEARTRAP snag.
 async function triggerBearTrap(trap: Trap, {
     failedUntrap = false, forceTrap = false,
@@ -6808,9 +6808,9 @@ export async function dotrap(
 // C trap.c:trapeffect_magic_portal(): feelTrap plus the buried-ball
 // reattachment before the portal owner runs; monsters fall through to
 // trapeffect_level_telep()'s monster move.
-// C trap.c:trapeffect_vibrating_square(): the hero branch only feels the
+// trap.c trapeffect_vibrating_square(): the hero branch only feels the
 // trap; its symbol just marks the square.
-// C trap.c:trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap and
+// trap.c trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap and
 // runs dofiretrap() through triggerHeroFireTrap.
 async function trapeffectSelector(
     hero: Hero,

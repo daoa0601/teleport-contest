@@ -260,6 +260,7 @@ void test('a named ghost keeps its possessive name while escaping a bear trap', 
     monster.mtrapped = 1;
     const messages: string[] = [];
 
+    requirePlayingGame(game);
     await mintrap(monster, game, { random: () => 0, publish: (text: string) => { messages.push(text); } });
 
     assert.equal(messages[0], "James' ghost pulls free of the bear trap.");

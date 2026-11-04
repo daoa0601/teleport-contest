@@ -7,7 +7,7 @@ import { makeHallucinated } from '../js/potion.js';
 import { BOULDER } from '../js/object_data.js';
 import { fillPitWithBoulderAt } from '../js/trap.js';
 import { initRng } from '../js/rng.js';
-import { tryMonsterTrapEscape } from '../js/trap.js';
+import { mintrap } from '../js/trap.js';
 import { floorObject } from './support/game-objects.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 void test('a hallucinating hero sees monsters pull free of varying imaginary traps', async () => {
@@ -17,7 +17,7 @@ void test('a hallucinating hero sees monsters pull free of varying imaginary tra
     const names = new Set();
     for (let attempt = 0; attempt < 12; attempt++) {
         monster.mtrapped = 1;
-        await tryMonsterTrapEscape(monster, game, {
+        await mintrap(monster, game, {
             random: () => 0,
             publish: message => { names.add(message.replace(/^.* pulls free of the (.*)\.$/u, '$1')); },
         });
@@ -36,7 +36,8 @@ for (const type of [BEAR_TRAP, SPIKED_PIT]) {
         await newsym(monster.mx, monster.my);
         const before = glyphAt(monster.mx, monster.my);
         assert.ok(before?.kind === 'monster');
-        await tryMonsterTrapEscape(monster, game, { random: () => 1, publish: () => { } });
+        requirePlayingGame(game);
+        await mintrap(monster, game, { random: () => 1, publish: () => { } });
         assert.equal(monster.meating, 5);
         assert.equal(monster.mtrapped, type === BEAR_TRAP ? 0 : 1);
         if (type === BEAR_TRAP)
@@ -55,7 +56,8 @@ void test('escaping a boulder-covered pit leaves the same appearance as the sett
     const settled = glyphAt(reference.monster.mx, reference.monster.my);
     assert.ok(settled?.kind === 'monster');
     const { level, monster, trap, boulder } = await boulderCoveredPit();
-    await tryMonsterTrapEscape(monster, game, { random: () => 0, publish: () => { } });
+    requirePlayingGame(game);
+    await mintrap(monster, game, { random: () => 0, publish: () => { } });
     assert.equal(monster.mtrapped, 0);
     assert.equal(level.traps.includes(trap), false);
     assert.equal(boulder.where, 'gone');

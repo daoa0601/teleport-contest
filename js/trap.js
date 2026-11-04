@@ -818,6 +818,8 @@ export function monsterTrapIsHarmless(monster, trap, state) {
             return false;
     }
 }
+const M1_METALLIVORE = 0x80000000;
+const MZ_HUGE = 4;
 // C trap.c:mintrap().  m_move()'s trapped actor takes its escape roll here,
 // and postmov() calls this after a monster steps onto a trap square; source
 // effects (dig, kick, throw, zap, polymorph splits) call the same entry with
@@ -842,10 +844,63 @@ export async function mintrap(monster, state = requireInitializedGame(), { force
         return action;
     }
     if (monster.mtrapped) { /* is currently in the trap */
-        await tryMonsterTrapEscape(monster, state, {
-            random, publish,
-            ...(describeMonster ? { describeMonster } : {}),
-        });
+        // The already-trapped escape roll (trap.c:3741-3789) — noticing an
+        // unseen trap under a trapped monster, the 1-in-40 (or easy-pit)
+        // escape, the boulder that fills the pit, and the metallivore's
+        // snack.  m_easy_escape_pit(): climbsEasily — a pit fiend or a
+        // huge body.
+        const describe = describeMonster
+            ?? (target => canonicalMonsterName(target, { state, capitalized: true }));
+        const { mx: x, my: y } = monster;
+        const level = requireGameLevel(state);
+        const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
+        const pit = is_pit(trap.ttyp);
+        if (!trap.tseen && seeSquare && inSight
+            && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
+            await seeTrap(trap, state);
+        }
+        const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
+            || MONSTER_NAME[monster.mnum] === 'pit fiend';
+        if (random(40) === 0 || (pit && climbsEasily)) {
+            const boulder = pit && (level.objects[x]?.[y] || [])
+                .some(object => object.otyp === BOULDER);
+            if (boulder) {
+                if (random(2) === 0) {
+                    monster.mtrapped = 0;
+                    if (inSight)
+                        await publish(`${describe(monster)} pulls free...`);
+                    await fillPitWithBoulderAt(x, y, state, { publish });
+                }
+            }
+            else {
+                if (inSight) {
+                    if (pit) {
+                        await publish(`${describe(monster)} climbs ${climbsEasily ? 'easily ' : ''}out of the pit.`);
+                    }
+                    else if (trap.ttyp === BEAR_TRAP || trap.ttyp === WEB) {
+                        // C trapname() draws a hallucinated trap name after Monnam().
+                        const subject = describe(monster);
+                        await publish(`${subject} pulls free of the ${trapName(trap.ttyp, { state })}.`);
+                    }
+                }
+                monster.mtrapped = 0;
+            }
+        }
+        else if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_METALLIVORE) {
+            if (trap.ttyp === BEAR_TRAP) {
+                if (inSight)
+                    await publish(`${describe(monster)} eats a bear trap!`);
+                deleteTrap(trap, state);
+                monster.meating = 5;
+                monster.mtrapped = 0;
+            }
+            else if (trap.ttyp === SPIKED_PIT) {
+                if (inSight)
+                    await publish(`${describe(monster)} munches on some spikes!`);
+                trap.ttyp = PIT;
+                monster.meating = 5;
+            }
+        }
         movement.trapOutcome = monster.mtrapped ? 'caught' : 'finished';
         return action;
     }
@@ -891,14 +946,14 @@ export async function mintrap(monster, state = requireInitializedGame(), { force
     }
     return action;
 }
-// C trap.c:trapeffect_selector(): the monster side of the dispatch; each
+// trap.c trapeffect_selector(): the monster side of the dispatch; each
 // case runs the monster branch of the named trapeffect_ function, in its
-// owner module or inline below. C trap.c:trapeffect_hole(): the grounded,
+// owner module or inline below. trap.c trapeffect_hole(): the grounded,
 // size, and worm checks and the Sokoban yank sit inline before the fall.
 // C trap.c:trapeffect_level_telep(): the fall itself is the level-teleport
-// owner's monster move. C trap.c:trapeffect_magic_trap(): the monster
+// owner's monster move. trap.c trapeffect_magic_trap(): the monster
 // branch replicates a fire trap 1 time in 21 through beginMonsterFireTrap
-// (trapeffect_fire_trap()'s monster branch). C trap.c:trapeffect_telep_trap():
+// (trapeffect_fire_trap()'s monster branch). trap.c trapeffect_telep_trap():
 // the monster branch hands the move to the teleport owner's mtele path.
 async function monsterTrapEffect(monster, trap, state, movement, random, rollDice, rollOne, calls, publish) {
     const sokobanFall = state.level.flags.sokoban_rules && !trap.madeby_u
@@ -1723,72 +1778,6 @@ async function trapeffectPit(mtmp, trap, { state = game, movement, publish = pli
     return event;
 }
 // ---------------------------------------------------------------------------
-// Escape attempts by an already trapped monster. trap.c mintrap().
-// dochug refreshes stationary monsters; a settling boulder owns its redraw.
-// ---------------------------------------------------------------------------
-const M1_METALLIVORE = 0x80000000;
-const MZ_HUGE = 4;
-// C trap.c:mintrap(): the already-trapped escape roll — noticing an unseen
-// trap under a trapped monster, the 1-in-40 (or easy-pit) escape, the
-// boulder that fills the pit, and the metallivore's snack.
-// C trap.c:m_easy_escape_pit(): climbsEasily — a pit fiend or a huge body.
-export async function tryMonsterTrapEscape(monster, state = game, { random = rn2, publish = plineWithContinuation, describeMonster = target => canonicalMonsterName(target, { state, capitalized: true }), } = {}) {
-    const { mx: x, my: y } = monster;
-    const level = requireGameLevel(state);
-    const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-    if (!trap) {
-        monster.mtrapped = 0;
-        return;
-    }
-    const { inSight, seeSquare } = monsterTrapVisibility(monster, state);
-    const pit = is_pit(trap.ttyp);
-    if (!trap.tseen && seeSquare && inSight
-        && (pit || [BEAR_TRAP, HOLE, WEB].includes(trap.ttyp))) {
-        await seeTrap(trap, state);
-    }
-    const climbsEasily = (MONSTER_SIZE[monster.mnum] ?? 0) >= MZ_HUGE
-        || MONSTER_NAME[monster.mnum] === 'pit fiend';
-    if (random(40) === 0 || (pit && climbsEasily)) {
-        const boulder = pit && (level.objects[x]?.[y] || [])
-            .some(object => object.otyp === BOULDER);
-        if (boulder) {
-            if (random(2) === 0) {
-                monster.mtrapped = 0;
-                if (inSight)
-                    await publish(`${describeMonster(monster)} pulls free...`);
-                await fillPitWithBoulderAt(x, y, state, { publish });
-            }
-        }
-        else {
-            if (inSight) {
-                if (pit) {
-                    await publish(`${describeMonster(monster)} climbs ${climbsEasily ? 'easily ' : ''}out of the pit.`);
-                }
-                else if (trap.ttyp === BEAR_TRAP || trap.ttyp === WEB) {
-                    // C trapname() draws a hallucinated trap name after Monnam().
-                    const subject = describeMonster(monster);
-                    await publish(`${subject} pulls free of the ${trapName(trap.ttyp, { state })}.`);
-                }
-            }
-            monster.mtrapped = 0;
-        }
-    }
-    else if ((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_METALLIVORE) {
-        if (trap.ttyp === BEAR_TRAP) {
-            if (inSight)
-                await publish(`${describeMonster(monster)} eats a bear trap!`);
-            deleteTrap(trap, state);
-            monster.meating = 5;
-            monster.mtrapped = 0;
-        }
-        else if (trap.ttyp === SPIKED_PIT) {
-            if (inSight)
-                await publish(`${describeMonster(monster)} munches on some spikes!`);
-            trap.ttyp = PIT;
-            monster.meating = 5;
-        }
-    }
-}
 // C trap.c:deltrap()/maybe_finish_sokoban(). Callers own actor release,
 // terrain changes, and redraw; raw deletion only removes the trap itself.
 export function deleteTrap(trap, state = game) {
@@ -3389,7 +3378,7 @@ const MAGIC_RESISTANCE_ARMOR = new Set([
     GRAY_DRAGON_SCALE_MAIL,
     GRAY_DRAGON_SCALES,
 ]);
-// C trap.c:trapeffect_anti_magic(): the hero branch — positively-enchanted
+// trap.c trapeffect_anti_magic(): the hero branch — positively-enchanted
 // iron shoes shed the drain onto their enchantment; otherwise the
 // anti-magic field hits the protected hero (a carried artifact's
 // C zap.c:defends_when_carried() bonus included) and drains power; the
@@ -3626,7 +3615,7 @@ export async function finishMonsterPolymorphTrap(event, { publish = async () => 
     if (!event)
         return event;
     if ('shielded' in event) {
-        // C trap.c:trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
+        // trap.c trapeffect_poly_trap() -> mon.c:shieldeff_mon(): the
         // shield effect runs whenever the monster's square is visible, and a
         // visible square reports "<mon> resists!".  C reveals the trap only
         // after an actual shape change, so it stays hidden here.
@@ -3709,7 +3698,7 @@ async function resolveMineLiquid(monster, state, options) {
         }),
     });
 }
-// C trap.c:trapeffect_landmine(): the monster branch — a monster lighter
+// trap.c trapeffect_landmine(): the monster branch — a monster lighter
 // than the trigger weight never sets it off, airborne ones rarely do, and
 // the blast stages the pit and the kill; an unconscious hero is awakened
 // by the explosion (C hack.c:unconscious()).
@@ -4877,7 +4866,7 @@ async function triggerWeb(trap, { viaSitting = false, failedUntrap = false, forc
         await newsym(hero.ux, hero.uy);
     }
 }
-// C trap.c:trapeffect_landmine() guards steedintrap() with a static
+// trap.c trapeffect_landmine() guards steedintrap() with a static
 // recursive_mine flag: the dying steed's dismount must not re-enter the
 // still-armed mine before it is converted to a pit.
 let landmineSteedHitInProgress = false;
@@ -5174,9 +5163,9 @@ async function triggerMagicTrap(trap) {
     }
     await triggerHeroMagicTrapEffect();
 }
-// C trap.c:trapeffect_arrow_trap(): the hero branch — the 1-in-15
+// trap.c trapeffect_arrow_trap(): the hero branch — the 1-in-15
 // exhausted-trap click, the shot at the hero, and the steed's chance to
-// take it. C trap.c:trapeffect_dart_trap(): the dart twin, with a 1-in-6
+// take it. trap.c trapeffect_dart_trap(): the dart twin, with a 1-in-6
 // poisoned missile; the monster branches are beginMonsterProjectileTrap.
 async function triggerProjectileTrap(trap) {
     const hero = game.u;
@@ -5241,7 +5230,7 @@ function heroPassesRocks() {
 }
 // ── moved from src/js/hero_polymorph_trap.ts ──
 const WAND_CLASS = 12;
-// C trap.c:trapeffect_poly_trap(): the hero branch — the trigger message
+// trap.c trapeffect_poly_trap(): the hero branch — the trigger message
 // with the steed's lead-in, the form change or its reversal, the worn-gear
 // consequences, and the steed's own steedintrap() polymorph.
 export async function triggerHeroPolymorphTrap(trap, viaSitting) {
@@ -5607,7 +5596,7 @@ async function triggerRollingBoulderTrap(trap) {
         await plineWithContinuation(wasKnown
             ? 'No boulder was released.' : 'Fortunately for you, no boulder was released.');
 }
-// C trap.c:trapeffect_bear_trap(): the hero branch — harmless close over
+// trap.c trapeffect_bear_trap(): the hero branch — harmless close over
 // amorphous or tiny forms, the leg damage, and the TT_BEARTRAP snag.
 async function triggerBearTrap(trap, { failedUntrap = false, forceTrap = false, viaSitting = false, } = {}) {
     requirePlayingGame(game);
@@ -5811,9 +5800,9 @@ export async function dotrap(trap, { finishTeleport = null, gotoLevel = null, vi
 // C trap.c:trapeffect_magic_portal(): feelTrap plus the buried-ball
 // reattachment before the portal owner runs; monsters fall through to
 // trapeffect_level_telep()'s monster move.
-// C trap.c:trapeffect_vibrating_square(): the hero branch only feels the
+// trap.c trapeffect_vibrating_square(): the hero branch only feels the
 // trap; its symbol just marks the square.
-// C trap.c:trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap and
+// trap.c trapeffect_fire_trap(): the FIRE_TRAP case reveals the trap and
 // runs dofiretrap() through triggerHeroFireTrap.
 async function trapeffectSelector(hero, trap, { finishTeleport = null, gotoLevel = null, viaSitting = false, failedUntrap = false, forceTrap = false, forceBungle = false, noWebMessage = false, tookPlunge = false, recursiveTrap = false, } = {}) {
     let died = false;
