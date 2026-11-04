@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';
 import { AMULET_OF_YENDOR, RING_MAIL } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

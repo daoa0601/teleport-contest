@@ -6,7 +6,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { selectInventoryObject } from '../js/invent.js';
-import { chooseInventoryObject, getobj } from '../js/inventory_prompt.js';
+import { chooseInventoryObject, getobj } from '../js/invent.js';
 import { ARROW, DAGGER, DART, FOOD_RATION, GOLD_PIECE, POT_HEALING } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';

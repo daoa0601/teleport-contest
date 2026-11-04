@@ -28,7 +28,7 @@ import { AMULET_OF_LIFE_SAVING, CHEST, DAGGER, PICK_AXE, POT_HEALING, POT_WATER,
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { applyInventoryObject, dropInventoryObject, throwInventoryObject, runExtendedCommand, invokeInventoryObject, } from './support/commands.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

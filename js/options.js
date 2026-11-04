@@ -18,7 +18,7 @@ import { clearStatusHilites, countStatusHilites, statusHiliteMenu } from './botl
 import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import { countBindKeys, handlerRebindKeys } from './cmd.js';
 import { CommandBindings } from './command_bindings.js';
-import { reassignInventoryLetters } from './inventory_prompt.js';
+import { reassignInventoryLetters } from './invent.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import { currentBoulderSymbol, docrt, flush_screen, reglyph_darkroom, reglyphBoulderSymbols, reglyphSymbolSet, } from './display.js';

@@ -14,7 +14,7 @@ import {
     POT_EXTRA_HEALING, POT_HEALING, POT_WATER, RIN_PROTECTION,
     SACK, TOOLED_HORN, TOWEL, WAN_FIRE, WAX_CANDLE,
 } from '../js/object_data.js';
-import { lootObjectName } from '../js/objnam.js';
+import { lootObjectName } from '../js/invent.js';
 import { learnObjectType } from '../js/o_init.js';
 import { recordObjectCall } from '../js/do_name.js';
 import { changeInventoryOrder } from '../js/options.js';

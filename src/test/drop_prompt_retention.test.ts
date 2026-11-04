@@ -5,7 +5,7 @@ import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST } from '../js/const.js';
-import { getobj } from '../js/inventory_prompt.js';
+import { getobj } from '../js/invent.js';
 import { APPLE, EGG } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshGameplayRoom } from './support/playable-room.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flush_screen, newsym } from '../js/display.js';
 import { deleteEngraving, makeEngravingAt } from '../js/engrave.js';
-import { lookHere } from '../js/floor_object_display.js';
+import { lookHere } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';

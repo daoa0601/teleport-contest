@@ -7,7 +7,7 @@ import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KI
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
 
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { deleteObject } from './shk.js';
 import { hideMonsterUnder } from './mon.js';
 import { monsterAtPosition } from './steed.js';

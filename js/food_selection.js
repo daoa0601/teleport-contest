@@ -8,7 +8,7 @@ import { heroFormClings, heroIsFlying, heroIsBreathless, heroSpecies } from './p
 import { heroIsStrangled } from './do_wear.js';
 import { clearHeroTrap, deleteTrap } from './trap.js';
 import { inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_UNIQUE } from './object_data.js';

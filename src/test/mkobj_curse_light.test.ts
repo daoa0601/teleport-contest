@@ -5,7 +5,7 @@ import { lightWieldedArtifact } from '../js/light.js';
 import { pushKeys } from '../js/input.js';
 import { curseObject } from '../js/mkobj.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

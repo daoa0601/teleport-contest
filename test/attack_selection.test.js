@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { AD_COLD, AD_DISE, AD_DREN, AD_DRLI, AD_DRST, AD_ELEC, AD_FAMN, AD_PEST, AD_PHYS, AD_POLY, AD_SSEX, AD_STCK, AD_STUN, AT_CLAW, AT_ENGL, AT_HUGS, AT_TUCH, AT_WEAP, } from '../js/monster_attack_types.js';
 import { LEATHER_GLOVES, WHITE_DRAGON_SCALE_MAIL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { artifactObject, corpseObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

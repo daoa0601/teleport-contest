@@ -6,7 +6,7 @@ import { buryObject } from '../dig.js';
 import { newsym } from '../display.js';
 import { game } from '../gstate.js';
 import { removeHeroEquipment } from '../hero_equipment.js';
-import { finishInventoryRemoval } from '../hero_inventory.js';
+import { finishInventoryRemoval } from '../invent.js';
 import { cleanupObjectBurn } from '../timeout.js';
 import { mkobj, mksobj, addObjectToContainer, unlinkObject } from '../mkobj.js';
 import { MONSTER_NAME } from '../monster_data.js';
@@ -24,7 +24,7 @@ import { objectClassForType } from '../o_init.js';
 
 import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
-import { addInventoryItem } from '../u_init.js';
+import { addInventoryItem } from '../invent.js';
 
 import { objectTypeForName } from './des.js';
 import { luaInteger } from './arguments.js';

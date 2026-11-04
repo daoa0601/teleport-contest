@@ -1,13 +1,11 @@
 // u_init.js — Initial hero, pet, inventory, and attribute setup.
 // C refs: u_init.c, attrib.c, dog.c, teleport.c, makemon.c.
-import { objectTypeKnown, pickedContainer } from './shk.js';
 import { game } from './gstate.js';
 import { createHeroState } from './hero_types.js';
+import { isGrayStone } from './object_properties.js';
+import { useUpInventoryStack, addCreatedInventoryItem } from './invent.js';
 import { useStartingItem } from './starting_equipment.js';
-import { isGrayStone, isLauncherAmmunition, isThrowingWeapon } from './object_properties.js';
-import { artifactById } from './artifacts.js';
-import { prepareInventoryAddition, finishInventoryAddition, recordHeroPrizeAcquisition, useUpInventoryStack, } from './hero_inventory.js';
-import { japaneseItemName, wishedObjectPresentation } from './objnam.js';
+import { japaneseItemName } from './objnam.js';
 import { setHeroSpecies } from './polyself.js';
 import { seeMonsterCloseup } from './mon.js';
 import { setMonsterGivenName } from './do_name.js';
@@ -19,17 +17,13 @@ import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { MONSTER_MOVE, MONSTER_NAME, SPECIAL_PM } from './monster_data.js';
 import { findArmorClass } from './do_wear.js';
 import { ensureQuestStatus } from './quest.js';
-import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, LOST_NONE, LOST_THROWN, NOT_HUNGRY, } from './const.js';
-import { AKLYS, ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE, STATUE, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, STETHOSCOPE, TIN_OPENER, MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT, WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM, CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD, CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER, POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_SICKNESS, POT_OIL, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_USES_KNOWN, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, OBJECT_MAGIC, ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, CHAIN_MAIL, RIN_LEVITATION, RIN_HUNGER, RIN_AGGRAVATE_MONSTER, RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON, } from './object_data.js';
+import { GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, NOT_HUNGRY, } from './const.js';
+import { ARROW, CROSSBOW_BOLT, YA, DART, DAGGER, SCALPEL, SPEAR, AXE, BATTLE_AXE, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, KATANA, LANCE, MACE, CLUB, QUARTERSTAFF, BULLWHIP, BOW, CROSSBOW, YUMI, SLING, HELMET, FEDORA, SPLINT_MAIL, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, LEATHER_GLOVES, ROBE, SMALL_SHIELD, HAWAIIAN_SHIRT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, LARGE_BOX, BAG_OF_TRICKS, SACK, CORPSE, STATUE, LOCK_PICK, CREDIT_CARD, EXPENSIVE_CAMERA, TOWEL, LEASH, STETHOSCOPE, TIN_OPENER, MAGIC_MARKER, BLINDFOLD, OIL_LAMP, PICK_AXE, TINNING_KIT, WOODEN_FLUTE, TOOLED_HORN, WOODEN_HARP, BELL, BUGLE, LEATHER_DRUM, CRAM_RATION, FOOD_RATION, TRIPE_RATION, TIN, EUCALYPTUS_LEAF, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, SLIME_MOLD, CREAM_PIE, CANDY_BAR, FORTUNE_COOKIE, PANCAKE, LEMBAS_WAFER, POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_SICKNESS, POT_OIL, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_DETECT_MONSTERS, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, SPE_PROTECTION, WAN_SLEEP, WAN_WISHING, GOLD_PIECE, AMULET_OF_YENDOR, TOUCHSTONE, FLINT, ROCK, OBJECT_NAMES, OBJECT_DESCRIPTIONS, OBJECT_BASES, OBJECT_CHARGED, OBJECT_USES_KNOWN, OBJECT_SPELL_LEVEL, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, OBJECT_MAGIC, ELVEN_SHORT_SWORD, ELVEN_ARROW, ELVEN_BOW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_BROADSWORD, ELVEN_MITHRIL_COAT, ELVEN_LEATHER_HELM, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_CLOAK, ORCISH_ARROW, ORCISH_SPEAR, ORCISH_DAGGER, ORCISH_SHORT_SWORD, ORCISH_BOW, ORCISH_HELM, ORCISH_CHAIN_MAIL, ORCISH_RING_MAIL, ORCISH_CLOAK, URUK_HAI_SHIELD, ORCISH_SHIELD, DWARVISH_SPEAR, DWARVISH_SHORT_SWORD, DWARVISH_MATTOCK, DWARVISH_IRON_HELM, DWARVISH_MITHRIL_COAT, DWARVISH_CLOAK, DWARVISH_ROUNDSHIELD, CHAIN_MAIL, RIN_LEVITATION, RIN_HUNGER, RIN_AGGRAVATE_MONSTER, RIN_POISON_RESISTANCE, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, POT_POLYMORPH, WAN_POLYMORPH, SPE_POLYMORPH, SPE_BLANK_PAPER, SPE_NOVEL, WAN_NOTHING, POT_HALLUCINATION, POT_ACID, SCR_AMNESIA, SCR_FIRE, SCR_BLANK_PAPER, SCR_ENCHANT_WEAPON, } from './object_data.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
-import { mergable, mergeCreatedObjectStacks, mergeObjectStacks } from './invent.js';
-import { makePlural } from './objnam.js';
 import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
 import { hiddenGold } from './vault.js';
 import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
 import { syncBlindness, syncDeafness } from './senses.js';
-import { attachCursedFigurineTimer } from './figurine_timer.js';
-import { assertCreatedObject } from './do.js';
 import { putSaddleOnMonster } from './steed.js';
 import { grantIntrinsicProperty } from './properties.js';
 import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
@@ -54,7 +48,6 @@ const ROCK_CLASS = 14;
 const UNDEF_BLESS = 2;
 const UNDEF_TYP = -1;
 const UNDEF_SPE = null;
-const PM_LICHEN = 158;
 // C u_init.c inv_subs[].  These numeric object identities come from the
 // configured objects.h table; substitution happens before inventory linking
 // so presentation, equipment, and combat all observe the same concrete type.
@@ -83,11 +76,6 @@ const INITIAL_RACE_SUBSTITUTIONS = new Map([
     [3, new Map([
             [BOW, CROSSBOW], [ARROW, CROSSBOW_BOLT],
         ])],
-]);
-const DAGGER_TYPES = new Set([DAGGER, ELVEN_DAGGER, ORCISH_DAGGER]);
-const SHORT_SWORD_TYPES = new Set([
-    SHORT_SWORD, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD,
-    DWARVISH_SHORT_SWORD,
 ]);
 const ARCHEOLOGIST_INVENTORY = [
     { typ: BULLWHIP, spe: 2, cls: WEAPON_CLASS, min: 1, max: 1, bless: UNDEF_BLESS },
@@ -236,197 +224,6 @@ function oneItem(typ, spe = 0) {
         { typ: 0, spe: 0, cls: 0, min: 0, max: 0, bless: 0 },
     ];
 }
-const ITEM_PRESENTATION = new Map([
-    [DAGGER, { class: 'Weapons', name: 'dagger', plural: 'daggers', enchanted: true }],
-    [AXE, { class: 'Weapons', name: 'axe', plural: 'axes', enchanted: true }],
-    [BATTLE_AXE, {
-            class: 'Weapons', name: 'battle-axe', plural: 'battle-axes', enchanted: true,
-        }],
-    [SPEAR, {
-            class: 'Weapons', name: 'spear', plural: 'spears', enchanted: true,
-            omitUncursed: true,
-        }],
-    [BOW, { class: 'Weapons', name: 'bow', plural: 'bows', enchanted: true }],
-    [ARROW, { class: 'Weapons', name: 'arrow', plural: 'arrows', enchanted: true }],
-    [DART, {
-            class: 'Weapons', name: 'dart', plural: 'darts', enchanted: true, omitUncursed: true,
-        }],
-    [KATANA, {
-            class: 'Weapons', name: 'katana', plural: 'katanas', enchanted: true,
-            omitUncursed: true,
-        }],
-    [MACE, { class: 'Weapons', name: 'mace', plural: 'maces', enchanted: true }],
-    [SCALPEL, {
-            class: 'Weapons', name: 'scalpel', plural: 'scalpels', enchanted: true,
-            omitUncursed: true,
-        }],
-    [CLUB, { class: 'Weapons', name: 'club', plural: 'clubs', enchanted: true, omitUncursed: true }],
-    [QUARTERSTAFF, {
-            class: 'Weapons', name: 'quarterstaff', plural: 'quarterstaffs', enchanted: true,
-        }],
-    [SLING, { class: 'Weapons', name: 'sling', plural: 'slings', enchanted: true, omitUncursed: true }],
-    [SHORT_SWORD, {
-            class: 'Weapons', name: 'wakizashi', plural: 'wakizashi', enchanted: true,
-            omitUncursed: true,
-        }],
-    [AMULET_OF_YENDOR, {
-            class: 'Amulets', name: 'Amulet of Yendor',
-            plural: 'Amulets of Yendor',
-        }],
-    [LONG_SWORD, {
-            class: 'Weapons', name: 'long sword', plural: 'long swords', enchanted: true,
-        }],
-    [TWO_HANDED_SWORD, {
-            class: 'Weapons', name: 'two-handed sword', plural: 'two-handed swords',
-            enchanted: true,
-        }],
-    [BULLWHIP, { class: 'Weapons', name: 'bullwhip', plural: 'bullwhips', enchanted: true }],
-    [LANCE, { class: 'Weapons', name: 'lance', plural: 'lances', enchanted: true }],
-    [YUMI, {
-            class: 'Weapons', name: 'yumi', plural: 'yumi', enchanted: true,
-            omitUncursed: true,
-        }],
-    [YA, {
-            class: 'Weapons', name: 'ya', plural: 'ya', enchanted: true, omitUncursed: true,
-        }],
-    [SPLINT_MAIL, {
-            class: 'Armor', name: 'splint mail', plural: 'splint mails', enchanted: true,
-        }],
-    [HELMET, { class: 'Armor', name: 'helmet', plural: 'helmets', enchanted: true }],
-    [RING_MAIL, { class: 'Armor', name: 'ring mail', plural: 'ring mails', enchanted: true }],
-    [LEATHER_ARMOR, {
-            class: 'Armor', name: 'leather armor', plural: 'leather armors', enchanted: true,
-        }],
-    [LEATHER_JACKET, {
-            class: 'Armor', name: 'leather jacket', plural: 'leather jackets', enchanted: true,
-        }],
-    [FEDORA, { class: 'Armor', name: 'fedora', plural: 'fedoras', enchanted: true }],
-    [ROBE, { class: 'Armor', name: 'robe', plural: 'robes', enchanted: true }],
-    [SMALL_SHIELD, {
-            class: 'Armor', name: 'small shield', plural: 'small shields', enchanted: true,
-        }],
-    [LEATHER_GLOVES, {
-            class: 'Armor', name: 'pair of leather gloves',
-            plural: 'pairs of leather gloves', enchanted: true,
-        }],
-    [POT_HEALING, { class: 'Potions', name: 'potion of healing', plural: 'potions of healing' }],
-    [POT_SICKNESS, { class: 'Potions', name: 'potion of sickness', plural: 'potions of sickness' }],
-    [LOCK_PICK, { class: 'Tools', name: 'lock pick', plural: 'lock picks' }],
-    [SACK, { class: 'Tools', name: 'sack', plural: 'sacks', empty: true }],
-    [FLINT, { class: 'Gems/Stones', name: 'flint stone', plural: 'flint stones' }],
-    [ROCK, { class: 'Gems/Stones', name: 'rock', plural: 'rocks' }],
-    [HAWAIIAN_SHIRT, {
-            class: 'Armor', name: 'Hawaiian shirt', plural: 'Hawaiian shirts', enchanted: true,
-        }],
-    [CLOAK_OF_DISPLACEMENT, {
-            class: 'Armor', name: 'cloak of displacement', plural: 'cloaks of displacement',
-            enchanted: true,
-        }],
-    [CLOAK_OF_MAGIC_RESISTANCE, {
-            class: 'Armor', name: 'cloak of magic resistance',
-            plural: 'cloaks of magic resistance', enchanted: true,
-        }],
-    [264, { class: 'Comestibles', name: 'tripe ration', plural: 'tripe rations' }],
-    [266, { class: 'Comestibles', name: 'egg', plural: 'eggs' }],
-    [EUCALYPTUS_LEAF, { class: 'Comestibles', name: 'eucalyptus leaf', plural: 'eucalyptus leaves' }],
-    [APPLE, { class: 'Comestibles', name: 'apple', plural: 'apples' }],
-    [ORANGE, { class: 'Comestibles', name: 'orange', plural: 'oranges' }],
-    [PEAR, { class: 'Comestibles', name: 'pear', plural: 'pears' }],
-    [MELON, { class: 'Comestibles', name: 'melon', plural: 'melons' }],
-    [BANANA, { class: 'Comestibles', name: 'banana', plural: 'bananas' }],
-    [CARROT, { class: 'Comestibles', name: 'carrot', plural: 'carrots' }],
-    [SPRIG_OF_WOLFSBANE, {
-            class: 'Comestibles', name: 'sprig of wolfsbane', plural: 'sprigs of wolfsbane',
-        }],
-    [CLOVE_OF_GARLIC, {
-            class: 'Comestibles', name: 'clove of garlic', plural: 'cloves of garlic',
-        }],
-    [SLIME_MOLD, { class: 'Comestibles', name: 'slime mold', plural: 'slime molds' }],
-    [CREAM_PIE, { class: 'Comestibles', name: 'cream pie', plural: 'cream pies' }],
-    [CANDY_BAR, { class: 'Comestibles', name: 'candy bar', plural: 'candy bars' }],
-    [FORTUNE_COOKIE, {
-            class: 'Comestibles', name: 'fortune cookie', plural: 'fortune cookies',
-        }],
-    [PANCAKE, { class: 'Comestibles', name: 'pancake', plural: 'pancakes' }],
-    [LEMBAS_WAFER, { class: 'Comestibles', name: 'lembas wafer', plural: 'lembas wafers' }],
-    [CRAM_RATION, { class: 'Comestibles', name: 'cram ration', plural: 'cram rations' }],
-    [FOOD_RATION, { class: 'Comestibles', name: 'food ration', plural: 'food rations' }],
-    [POT_EXTRA_HEALING, {
-            class: 'Potions', name: 'potion of extra healing', plural: 'potions of extra healing',
-        }],
-    [POT_WATER, { class: 'Potions', name: 'potion of water', plural: 'potions of water' }],
-    [SCR_MAGIC_MAPPING, {
-            class: 'Scrolls', name: 'scroll of magic mapping', plural: 'scrolls of magic mapping',
-        }],
-    [SCR_PUNISHMENT, {
-            class: 'Scrolls', name: 'scroll of punishment', plural: 'scrolls of punishment',
-        }],
-    [SPE_HEALING, {
-            class: 'Spellbooks', name: 'spellbook of healing', plural: 'spellbooks of healing',
-            spellName: 'healing', spellLevel: 1, spellCategory: 'healing', appearance: 'purple',
-        }],
-    [SPE_FORCE_BOLT, {
-            class: 'Spellbooks', name: 'spellbook of force bolt',
-            plural: 'spellbooks of force bolt', spellName: 'force bolt',
-            spellLevel: 1, spellCategory: 'attack', appearance: 'red',
-        }],
-    [SPE_CONFUSE_MONSTER, {
-            class: 'Spellbooks', name: 'spellbook of confuse monster',
-            plural: 'spellbooks of confuse monster', spellName: 'confuse monster',
-            spellLevel: 2, spellCategory: 'enchantment', appearance: 'orange',
-        }],
-    [SPE_PROTECTION, {
-            class: 'Spellbooks', name: 'spellbook of protection',
-            plural: 'spellbooks of protection', spellName: 'protection',
-            spellLevel: 1, spellCategory: 'clerical', appearance: 'dull',
-        }],
-    [SPE_DETECT_MONSTERS, {
-            class: 'Spellbooks', name: 'spellbook of detect monsters',
-            plural: 'spellbooks of detect monsters', spellName: 'detect monsters',
-            spellLevel: 1, spellCategory: 'divination', appearance: 'silver',
-        }],
-    [SPE_EXTRA_HEALING, {
-            class: 'Spellbooks', name: 'spellbook of extra healing',
-            plural: 'spellbooks of extra healing', spellName: 'extra healing',
-            spellLevel: 3, spellCategory: 'healing', appearance: 'dog eared',
-        }],
-    [SPE_STONE_TO_FLESH, {
-            class: 'Spellbooks', name: 'spellbook of stone to flesh',
-            plural: 'spellbooks of stone to flesh', spellName: 'stone to flesh',
-            spellLevel: 3, spellCategory: 'healing', appearance: 'stained',
-        }],
-    [EXPENSIVE_CAMERA, {
-            class: 'Tools', name: 'expensive camera', plural: 'expensive cameras',
-            showBuc: false,
-        }],
-    [CREDIT_CARD, { class: 'Tools', name: 'credit card', plural: 'credit cards' }],
-    [TIN_OPENER, { class: 'Tools', name: 'tin opener', plural: 'tin openers' }],
-    [PICK_AXE, { class: 'Tools', name: 'pick-axe', plural: 'pick-axes', enchanted: true }],
-    [TINNING_KIT, {
-            class: 'Tools', name: 'tinning kit', plural: 'tinning kits',
-            showBuc: false,
-        }],
-    [TOUCHSTONE, {
-            class: 'Gems/Stones', name: 'touchstone', plural: 'touchstones', showBuc: false,
-        }],
-    [LEASH, { class: 'Tools', name: 'leash', plural: 'leashes' }],
-    [STETHOSCOPE, { class: 'Tools', name: 'stethoscope', plural: 'stethoscopes' }],
-    [TOWEL, { class: 'Tools', name: 'towel', plural: 'towels' }],
-    [MAGIC_MARKER, {
-            class: 'Tools', name: 'magic marker', plural: 'magic markers',
-            showBuc: false,
-        }],
-    [BLINDFOLD, { class: 'Tools', name: 'blindfold', plural: 'blindfolds' }],
-    [OIL_LAMP, { class: 'Tools', name: 'oil lamp', plural: 'oil lamps' }],
-    [WAN_WISHING, {
-            class: 'Wands', name: 'wand of wishing', plural: 'wands of wishing',
-            showBuc: false,
-        }],
-    [WAN_SLEEP, {
-            class: 'Wands', name: 'wand of sleep', plural: 'wands of sleep',
-            showBuc: false,
-        }],
-]);
 function initialRoll(adv) {
     if (!adv)
         return 0;
@@ -710,49 +507,6 @@ function trquan(trobj) {
         return 1;
     return trobj.min + rn2(trobj.max - trobj.min + 1);
 }
-const CLASS_PRESENTATION = {
-    [WEAPON_CLASS]: 'Weapons', [ARMOR_CLASS]: 'Armor',
-    [RING_CLASS]: 'Rings', [AMULET_CLASS]: 'Amulets',
-    [TOOL_CLASS]: 'Tools', [FOOD_CLASS]: 'Comestibles',
-    [POTION_CLASS]: 'Potions', [SCROLL_CLASS]: 'Scrolls',
-    [SPBOOK_CLASS]: 'Spellbooks', [WAND_CLASS]: 'Wands',
-    [COIN_CLASS]: 'Coins', [GEM_CLASS]: 'Gems/Stones',
-    [ROCK_CLASS]: 'Boulders',
-};
-function qualifiedObjectName(raw) {
-    if (raw.otyp === CORPSE && raw.corpsenm !== undefined && MONSTER_NAME[raw.corpsenm])
-        return `${MONSTER_NAME[raw.corpsenm]} corpse`;
-    const name = OBJECT_NAMES[raw.otyp] || `object ${raw.otyp}`;
-    switch (raw.oclass) {
-        case RING_CLASS: return `ring of ${name}`;
-        case POTION_CLASS: return `potion of ${name}`;
-        case SCROLL_CLASS: return `scroll of ${name}`;
-        case SPBOOK_CLASS: return `spellbook of ${name}`;
-        case WAND_CLASS: return `wand of ${name}`;
-        default: return name;
-    }
-}
-function sourceKnownPresentation(raw) {
-    const name = qualifiedObjectName(raw);
-    const plural = raw.oclass === RING_CLASS ? `rings of ${OBJECT_NAMES[raw.otyp]}`
-        : raw.oclass === POTION_CLASS ? `potions of ${OBJECT_NAMES[raw.otyp]}`
-            : raw.oclass === SCROLL_CLASS ? `scrolls of ${OBJECT_NAMES[raw.otyp]}`
-                : raw.oclass === SPBOOK_CLASS ? `spellbooks of ${OBJECT_NAMES[raw.otyp]}`
-                    : raw.oclass === WAND_CLASS ? `wands of ${OBJECT_NAMES[raw.otyp]}`
-                        : makePlural(name);
-    return {
-        class: CLASS_PRESENTATION[raw.oclass] || 'Other',
-        name, plural,
-        enchanted: raw.oclass === WEAPON_CLASS || raw.oclass === ARMOR_CLASS
-            || (raw.oclass === RING_CLASS && raw.spe !== 0),
-        showBuc: raw.oclass === WAND_CLASS ? false : undefined,
-        spellName: raw.oclass === SPBOOK_CLASS ? OBJECT_NAMES[raw.otyp] : undefined,
-        spellLevel: raw.oclass === SPBOOK_CLASS
-            ? OBJECT_SPELL_LEVEL[raw.otyp] : undefined,
-        spellCategory: raw.oclass === SPBOOK_CLASS
-            ? OBJECT_SPELL_CATEGORY[raw.otyp] : undefined,
-    };
-}
 // C ref: u_init.c knows_class().  Role preknowledge is installed before
 // ini_inv_use_obj() records starting-inventory encounters, so discovery order
 // within each class remains the object-table order followed by any exceptions
@@ -850,221 +604,6 @@ export async function finishStartingDiscoveries() {
     findArmorClass(game);
     game._startingEffectsApplied = true;
     return true;
-}
-// Display-only callers receive a projection without changing the carried object.
-export function inventoryItem(raw, presentation = null) {
-    return { ...raw, ...inventoryPresentation(raw, presentation) };
-}
-// Acquisition and polymorph retain the same object already held by timers and
-// ownership links. Only presentation fields are updated here.
-export function updateInventoryPresentation(raw, presentation = null) {
-    const view = inventoryPresentation(raw, presentation);
-    raw.class = view.class;
-    raw.name = view.name;
-    raw.plural = view.plural;
-    if ('enchanted' in view)
-        raw.enchanted = view.enchanted;
-    if ('omitUncursed' in view)
-        raw.omitUncursed = view.omitUncursed;
-    if ('showBuc' in view)
-        raw.showBuc = view.showBuc;
-    if ('empty' in view)
-        raw.empty = view.empty;
-    if ('spellName' in view)
-        raw.spellName = view.spellName;
-    if ('spellLevel' in view)
-        raw.spellLevel = view.spellLevel;
-    if ('spellCategory' in view)
-        raw.spellCategory = view.spellCategory;
-    if ('appearance' in view)
-        raw.appearance = view.appearance;
-    raw.quantity = view.quantity;
-    raw.enchantment = view.enchantment;
-    raw.buc = view.buc;
-    return raw;
-}
-function inventoryPresentation(raw, presentation) {
-    let view = presentation || ITEM_PRESENTATION.get(raw.otyp)
-        || (raw._startingInventory || objectTypeKnown(raw)
-            ? sourceKnownPresentation(raw) : null) || wishedObjectPresentation(raw);
-    if (game.urole?.key === 'knight'
-        && (raw.otyp === LONG_SWORD || raw.otyp === LANCE)) {
-        view = { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === SHORT_SWORD && game.urole?.key !== 'samurai') {
-        view = {
-            ...view, name: 'short sword', plural: 'short swords',
-            omitUncursed: true,
-        };
-    }
-    if (SHORT_SWORD_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        const orcish = game.urace?.raceIndex === 4;
-        view = raw.otyp === SHORT_SWORD ? {
-            ...view,
-            name: orcish ? 'orcish short sword' : 'short sword',
-            plural: orcish ? 'orcish short swords' : 'short swords',
-            omitUncursed: true,
-        } : { ...view, omitUncursed: true };
-    }
-    if (DAGGER_TYPES.has(raw.otyp) && game.urole?.key === 'rogue') {
-        view = raw.otyp === DAGGER && game.urace?.raceIndex === 4
-            ? {
-                ...view, name: 'orcish dagger', plural: 'orcish daggers',
-                omitUncursed: true,
-            }
-            : { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === DAGGER && game.urole?.key === 'valkyrie') {
-        view = { ...view, omitUncursed: true };
-    }
-    if (raw.otyp === TIN) {
-        // objnam.c:xname() appends tin_details() only after the individual
-        // tin's contents have become known.  Generation may already retain
-        // corpsenm without making that state legal presentation data.
-        view = !raw.known
-            ? { class: 'Comestibles', name: 'tin', plural: 'tins' }
-            : raw.corpsenm === PM_LICHEN
-                ? { class: 'Comestibles', name: 'tin of lichen', plural: 'tins of lichen' }
-                : raw.corpsenm === 322
-                    ? { class: 'Comestibles', name: 'tin of newt meat', plural: 'tins of newt meat' }
-                    : raw.corpsenm == null
-                        ? { class: 'Comestibles', name: 'tin of spinach', plural: 'tins of spinach' }
-                        : { class: 'Comestibles', name: 'tin', plural: 'tins' };
-    }
-    const buc = raw.bknown
-        ? raw.blessed ? 'blessed' : raw.cursed ? 'cursed' : 'uncursed'
-        : undefined;
-    return {
-        ...view,
-        quantity: raw.quan,
-        enchantment: view.enchanted ? raw.spe : undefined,
-        buc: view.showBuc === false || (view.omitUncursed && buc === 'uncursed')
-            ? undefined : buc,
-    };
-}
-export function assignInventoryLetter(item) {
-    if (item.oclass === COIN_CLASS) {
-        item.invlet = '$';
-        return item;
-    }
-    // invent.c:assigninvlet() uses a persistent rotating cursor rather than
-    // inventory length.  Consuming p and r must not make a later wished item
-    // reuse q; after the last assignment was r, the next free slot is s.
-    if (!Number.isInteger(game._lastInvNr)) {
-        const previous = Array.from(game.inventory).reverse().find(object => /^[a-zA-Z]$/.test(object.invlet || ''));
-        if (!previous?.invlet)
-            game._lastInvNr = 51;
-        else {
-            const code = previous.invlet.charCodeAt(0);
-            game._lastInvNr = code >= 97 ? code - 97 : code - 65 + 26;
-        }
-    }
-    const inUse = new Set(game.inventory.map(object => object.invlet));
-    // C invent.c:assigninvlet() first preserves a valid incoming letter when
-    // no carried object currently owns it.  Stolen/dropped/recovered objects
-    // retain identity across freeinv(), so reassignment must not advance the
-    // rotating cursor merely because the object left hero inventory.
-    if (/^[a-zA-Z]$/.test(item.invlet || '')
-        && !inUse.has(item.invlet))
-        return item;
-    item.invlet = null;
-    let index = game._lastInvNr;
-    if (index === undefined)
-        throw new Error('Inventory letter cursor is not initialized');
-    for (let count = 0; count < 52; count++) {
-        index = (index + 1) % 52;
-        const letter = index < 26
-            ? String.fromCharCode(97 + index)
-            : String.fromCharCode(65 + index - 26);
-        if (inUse.has(letter))
-            continue;
-        item.invlet = letter;
-        game._lastInvNr = index;
-        break;
-    }
-    if (!item.invlet)
-        item.invlet = '#';
-    return item;
-}
-function prepareInventoryItem(raw, presentation, observe) {
-    raw.how_lost = LOST_NONE;
-    raw.no_charge = false;
-    if (raw.contents?.length)
-        pickedContainer(raw);
-    raw.ox = raw.oy = 0;
-    const item = updateInventoryPresentation(raw, presentation);
-    if (observe)
-        item.dknown = true;
-    recordHeroPrizeAcquisition(item, game);
-    return item;
-}
-function linkInventoryItem(item) {
-    assignInventoryLetter(item);
-    item.where = 'inventory';
-    game.inventory.push(item);
-    // C invent.c:addinv_core0()/reorder_invent(): fixed letters order the
-    // carried chain, including gold before letters and lowercase before uppercase.
-    if (game.flags.fixinv !== false) {
-        game.inventory.sort((left, right) => inventoryLetterRank(left) - inventoryLetterRank(right));
-    }
-    return item;
-}
-// C invent.c:reorder_invent() toggles the ASCII case bit to put a-z before A-Z.
-export function inventoryLetterRank(item) {
-    return (item.invlet?.charCodeAt(0) ?? 0) ^ 0x20;
-}
-async function finishAddedInventoryItem(item, recoveredThrownStack = false) {
-    if (recoveredThrownStack && game.flags.pickup_thrown !== false && !game.uquiver
-        && item.otyp !== AKLYS && artifactById(item.oartifact)?.name !== 'Mjollnir'
-        && (isThrowingWeapon(item) || isLauncherAmmunition(item)))
-        await setQuiverObject(item, game);
-    item.pickup_prev = true;
-    await finishInventoryAddition(item, game);
-    attachCursedFigurineTimer(item, game);
-    return item;
-}
-export async function addInventoryItem(raw, presentation = null, observe = true) {
-    return await addInventoryItemCore(raw, presentation, observe, null);
-}
-export async function addInventoryItemBefore(raw, next) {
-    return await addInventoryItemCore(raw, null, true, next);
-}
-// C invent.c:addinv_core0(): merge with a carried stack, or take a letter
-// and slot into the fixed-letter order; reinsertion keeps its predecessor.
-async function addInventoryItemCore(raw, presentation, observe, next) {
-    const wasThrown = raw.how_lost === LOST_THROWN;
-    let item = prepareInventoryItem(raw, presentation, observe);
-    await prepareInventoryAddition(item, game);
-    const nextIndex = next ? game.inventory.indexOf(next) : -1;
-    // C addinv_core0(): reinsertion needs a predecessor and skips both
-    // merging and autoquivering, including with fixed inventory letters.
-    if (nextIndex > 0) {
-        item.where = 'inventory';
-        game.inventory.splice(nextIndex, 0, item);
-        return await finishAddedInventoryItem(item);
-    }
-    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
-        : game.inventory.find(other => mergable(other, item, game));
-    const added = existing ? await mergeObjectStacks(existing, item, game)
-        : linkInventoryItem(item);
-    if (!added)
-        throw new Error(`Inventory merge rejected object ${item.o_id} after admission`);
-    item = added;
-    return await finishAddedInventoryItem(item, wasThrown && !existing);
-}
-export async function addCreatedInventoryItem(raw, presentation = null, observe = true) {
-    assertCreatedObject(raw, game);
-    const wasThrown = raw.how_lost === LOST_THROWN;
-    let item = prepareInventoryItem(raw, presentation, observe);
-    await prepareInventoryAddition(item, game);
-    const existing = game.uquiver && mergable(game.uquiver, item, game) ? game.uquiver
-        : game.inventory.find(other => mergable(other, item, game));
-    const added = existing ? await mergeCreatedObjectStacks(existing, item, game)
-        : linkInventoryItem(item);
-    if (!added)
-        throw new Error(`Initial inventory merge rejected object ${item.o_id} after admission`);
-    item = added;
-    return await finishAddedInventoryItem(item, wasThrown && !existing);
 }
 function startingInventoryRestrictions() {
     return {

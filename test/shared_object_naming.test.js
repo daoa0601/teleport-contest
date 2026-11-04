@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { flush_screen } from '../js/display.js';
-import { floorObjectDescription, showFloorPile } from '../js/floor_object_display.js';
+import { floorObjectDescription, showFloorPile } from '../js/invent.js';
 import { game } from '../js/gstate.js';
 import { fullyIdentifyObject, inventoryItemDescription } from '../js/invent.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

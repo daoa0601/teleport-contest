@@ -12,7 +12,7 @@ import { knownObject, artifactObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 for (const [type, intelligence, expectedBonus] of [[10, 18, 1], [15, 25, 3]]) {
     void test(`spell ray type ${type} adds the caster's intelligence bonus`, async () => {
         const damages = [];

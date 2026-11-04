@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GRAVE, MM_NOGRP, NO_MINVENT, ROOM, ROOMOFFSET, VAULT } from '../js/const.js';
-import { currency } from '../js/currency.js';
+import { currency } from '../js/invent.js';
 import { engravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hiddenGold } from '../js/vault.js';

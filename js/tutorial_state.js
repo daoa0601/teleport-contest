@@ -5,10 +5,10 @@ import { plineWithContinuation } from './pline.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { game } from './gstate.js';
 import { removeHeroEquipment } from './hero_equipment.js';
-import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
+import { prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './invent.js';
 import { deleteObject } from './shk.js';
 import { syncBlindness } from './senses.js';
-import { assignInventoryLetter } from './u_init.js';
+import { assignInventoryLetter } from './invent.js';
 import { findArmorClass } from './do_wear.js';
 import { restoreHeroNutrition } from './eat.js';
 const WORN_SLOTS = [

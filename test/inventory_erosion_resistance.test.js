@@ -4,7 +4,7 @@ import { erodeObject } from '../js/trap.js';
 import { CLUB } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { ensureQuestStatus } from '../js/quest.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const { source, roll, erosion } of [

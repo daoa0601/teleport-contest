@@ -17,13 +17,13 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_NAME, monsterD
 import { monsterIsScaredAt } from './monmove.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
 import { AT_BOOM, AD_POLY } from './monster_attack_types.js';
-import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE } from './const.js';
+import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE } from './const.js';
 import { isok, paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulpBlindnessCheck } from './engulf_blindness.js';
 import { heroFaceName, heroHandName, heroLegName, monsterStomachName } from './body_parts.js';
 import type { GameObject } from './object_types.js';
-import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, OBJECT_NAMES, TIN, WORM_TOOTH } from './object_data.js';
+import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, OBJECT_NAMES, TIN, WORM_TOOTH } from './object_data.js';
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, objectMonsterName, ownedObjectAction, definiteObjectAction } from './objnam.js';
 import { billForObject, chargeAlteredUnpaidObject, objectTypeKnown, deleteObject, objectIsUnpaid, stolenValue, sellHeroDroppedObject, SELL_DELIBERATE, SELL_NORMAL, setSellDisposition } from './shk.js';
 import { d, rn1, rn2, rnd } from './rng.js';
@@ -55,7 +55,8 @@ import { getLine, tty_yn_function } from './query.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { showMultiSelectWindow } from './windows.js';
 import type { MultiSelectSection } from './windows.js';
-import { canLetGo, freeInventoryObject, finishInventoryRemoval } from './hero_inventory.js';
+import { isBimanualObject } from './object_properties.js';
+import { freeInventoryObject, finishInventoryRemoval } from './invent.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { possessiveName } from './hacklib.js';
@@ -72,11 +73,11 @@ import { propertyIsActive } from './properties.js';
 import { dropBall } from './ball.js';
 import { requireHeroAttributes } from './hero_types.js';
 import { objectResistsDestruction } from './zap.js';
-import { floorObjectDescription } from './floor_object_display.js';
+import { floorObjectDescription } from './invent.js';
 import { countLevelFeatures } from './mklev.js';
 import { make_grave } from './engrave.js';
 import { setHeroGrip } from './hero_grip.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { monsterAlignmentType } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './guardian_angel.js';
@@ -525,6 +526,47 @@ export async function dropRingIntoSink(
 }
 
 const RING_CLASS = 4;
+
+// C do.c:canletgo(). A silent check still discovers curses.
+export async function canLetGo(object: GameObject, verb = '', state: GameState = game) {
+    if ((object.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY)) {
+        if (verb) await plineWithContinuation(
+            `You cannot ${verb} something you are wearing.`, { noRepeat: true },
+        );
+        return false;
+    }
+    if (isWeldedPrimary(object, state)) {
+        object.bknown = true;
+        if (verb) {
+            let hand = heroHandName(state);
+            if (isBimanualObject(object)) hand = makePlural(hand);
+            await plineWithContinuation(
+                `You cannot ${verb} something welded to your ${hand}.`, { noRepeat: true },
+            );
+        }
+        return false;
+    }
+    if (object.otyp === LOADSTONE && object.cursed) {
+        const quantity = object.quantity ?? object.quan ?? 1;
+        if (verb) {
+            if (verb === 'throw' && quantity > 1) object.corpsenm = 1;
+            await plineWithContinuation(`For some reason, you cannot ${verb}${
+                object.corpsenm ? ' any of' : ''} the stone${quantity !== 1 ? 's' : ''}!`);
+        }
+        object.corpsenm = 0;
+        object.bknown = true;
+        return false;
+    }
+    if (object.otyp === LEASH && object.leashmon) {
+        if (verb) await plineWithContinuation(`The leash is tied around your ${heroHandName(state)}.`);
+        return false;
+    }
+    if ((object.owornmask ?? 0) & W_SADDLE) {
+        if (verb) await plineWithContinuation(`You cannot ${verb} something you are sitting on.`);
+        return false;
+    }
+    return true;
+}
 
 // C do.c:714-780 drop(): the hero drops one carried object.  Returns
 // whether a time-taking action occurred (C ECMD_TIME vs ECMD_FAIL).

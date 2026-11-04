@@ -44,7 +44,7 @@ import {
     runExtendedCommand,
     invokeInventoryObject,
 } from './support/commands.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon, setSecondaryWeapon, setQuiverObject } from '../js/wield.js';
 
 import { freshObjectRoom } from './support/object-room.js';

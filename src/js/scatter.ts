@@ -1,5 +1,5 @@
 import { publishHeardMessage } from './hero_speech.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 

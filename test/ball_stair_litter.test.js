@@ -7,7 +7,7 @@ import { unlinkObject } from '../js/mkobj.js';
 import { POT_WATER } from '../js/object_data.js';
 import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addInventoryObject } from './support/game-objects.js';
 void test('potions scattered by the iron ball shatter on the downstairs landing', async () => {

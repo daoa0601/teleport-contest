@@ -9,7 +9,7 @@ import { pushKeys } from '../js/input.js';
 import { DAGGER, MACE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { addTrap } from './support/level-state.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

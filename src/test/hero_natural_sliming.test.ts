@@ -16,7 +16,7 @@ import { tryMonsterUnslime } from '../js/muse.js';
 import { CLOAK_OF_PROTECTION, FIRE_HORN, POT_OIL, SCR_FIRE, WAN_FIRE } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { vision_recalc } from '../js/vision.js';
 import { artifactObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

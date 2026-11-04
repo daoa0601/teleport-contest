@@ -7,7 +7,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { ELVEN_BOOTS, FOOD_RATION } from '../js/object_data.js';
 import { answerPrompts } from './support/input-boundaries.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { knownObject } from './support/game-objects.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';

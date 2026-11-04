@@ -52,7 +52,7 @@ import {
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
 import { mksobj } from '../js/mkobj.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { objectWeight } from '../js/mkobj.js';
 
 function screen() {

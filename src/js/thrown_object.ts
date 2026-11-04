@@ -29,7 +29,7 @@ import type { DisplayGlyph } from './display.js';
 import type { MessagePublisher } from './pline.js';
 import { costlySpot, shopkeeperCatch } from './shk.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval } from './invent.js';
 import { endObjectBurn } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { addObjectToMonsterInventory } from './steal.js';

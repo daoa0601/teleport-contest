@@ -26,7 +26,7 @@ import { parseStatusHl1, replayStatusHiliteOperations } from './botl.js';
 import type { StatusHiliteOperation } from './botl.js';
 import { countBindKeys, handlerRebindKeys } from './cmd.js';
 import { CommandBindings } from './command_bindings.js';
-import { reassignInventoryLetters } from './inventory_prompt.js';
+import { reassignInventoryLetters } from './invent.js';
 import { changePreferredFruit, normalizePreferredFruitName } from './fruit.js';
 import { bot, checkGoldSymbol, reassessStatusFields } from './botl.js';
 import {

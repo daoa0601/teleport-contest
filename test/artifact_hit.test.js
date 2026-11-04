@@ -9,7 +9,7 @@ import { addObjectToMonsterInventory } from '../js/steal.js';
 import { OIL_LAMP, SCR_IDENTIFY } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { artifactObject, knownObject, uninitializedObject } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';

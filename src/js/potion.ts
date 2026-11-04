@@ -48,7 +48,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero } from './dothrow.js';
 import { burnAwayHeroSlime, dropHeroSliming, putHeroToSleep } from './timeout.js';
-import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './hero_inventory.js';
+import { freeInventoryObject, learnUnseenInventory, useUpInventoryStack } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 
 import type { Hero } from './hero_types.js';
@@ -65,8 +65,8 @@ import { doEnlightenmentEffect } from './zap.js';
 import { showEnlightenment } from './insight.js';
 
 import { consumeInventoryItem, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject, getobj } from './inventory_prompt.js';
-import type { InventoryClassification } from './inventory_prompt.js';
+import { chooseInventoryObject, getobj } from './invent.js';
+import type { InventoryClassification } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { floatingAbove } from './levitation_commands.js';
 import { pickupBurden } from './pickup.js';

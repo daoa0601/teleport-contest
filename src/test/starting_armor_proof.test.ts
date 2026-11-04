@@ -6,7 +6,7 @@ import { mksobj } from '../js/mkobj.js';
 import { OBJECT_NAMES, RING_MAIL, SPLINT_MAIL } from '../js/object_data.js';
 import { erodeObject } from '../js/trap.js';
 import type { GameObject } from '../js/object_types.js';
-import { addCreatedInventoryItem } from '../js/u_init.js';
+import { addCreatedInventoryItem } from '../js/invent.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
 

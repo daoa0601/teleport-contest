@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { W_ARMF, W_WEP, MM_ANGRY, LOST_STOLEN, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, OBJECT_TIMER_KIND } from '../js/const.js';
 import { petDroppableObject, initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { punishHero } from '../js/read.js';

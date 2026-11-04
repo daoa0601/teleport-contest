@@ -10,7 +10,7 @@ import { fullyIdentifyObject } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { CHEST, CLUB, LOADSTONE, POT_HEALING } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -10,7 +10,7 @@ import { initRng } from '../js/rng.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { applyInventoryObject, throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { lightWieldedArtifact } from '../js/light.js';
 import { endObjectBurn } from '../js/timeout.js';
 import { applyArmorOnEffects, wearHeroArmor } from '../js/do_wear.js';

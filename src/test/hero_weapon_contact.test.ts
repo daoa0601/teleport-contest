@@ -11,7 +11,7 @@ import {
 import { ownedObjectAction, ownedObjectName } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon, setTwoWeaponCombat } from '../js/wield.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills, installPolymorphedHero } from './support/hero-state.js';

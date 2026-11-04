@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createDungeon } from './support/topology.js';

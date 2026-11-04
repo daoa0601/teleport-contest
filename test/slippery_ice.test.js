@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { ICE, NO_MINVENT, PLNMSG_ONE_ITEM_HERE } from '../js/const.js';
-import { showFloorPile } from '../js/floor_object_display.js';
+import { showFloorPile } from '../js/invent.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, STATUE } from '../js/object_data.js';

@@ -11,7 +11,7 @@ import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { consumeInventoryItem } from './invent.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { recordLiteracy } from './literacy.js';
 import { mksobj } from './mkobj.js';
 import { getObjectClassBounds, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SPELL_LEVEL, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, } from './object_data.js';

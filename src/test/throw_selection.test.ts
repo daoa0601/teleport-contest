@@ -7,7 +7,7 @@ import type { RoleKey } from '../js/roles.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

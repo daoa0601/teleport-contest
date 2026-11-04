@@ -2,7 +2,7 @@
 import { adjustHeroAlignment } from './alignment.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_WIS } from './const.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { plineWithContinuation as pline } from './pline.js';
 import type { PlayingGameState } from './game_state.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';

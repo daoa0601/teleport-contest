@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitMonsterWithHeroObject } from '../js/uhitm.js';
 import { SPLINT_MAIL } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

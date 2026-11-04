@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { MENU_TRADITIONAL } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { bindInputGate, InputGate, nhgetch } from '../js/input.js';
-import { inventoryReport } from '../js/inventory_reports.js';
+import { inventoryReport } from '../js/invent.js';
 import { CRYSTAL_BALL, DAGGER, SPE_FORCE_BOLT } from '../js/object_data.js';
 import { objectTypeKnown } from '../js/shk.js';
 import { forceLearnSpell } from '../js/spell.js';

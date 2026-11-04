@@ -17,7 +17,7 @@ import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import {
     SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL,
     OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL,

@@ -47,7 +47,7 @@ import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunne
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './potion.js';
-import { freeInventoryObject, useUpInventoryStack } from './hero_inventory.js';
+import { freeInventoryObject, useUpInventoryStack } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { attackHostileMonster } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
@@ -65,7 +65,7 @@ import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './z
 import { hitMonsterWithWand } from './immediate_monster_magic.js';
 import { monsterStatusLine } from './insight.js';
 import { consumeInventoryItem, consumeObjectCharge, delobj, inventoryCommandLetter, inventoryItemDescription } from './invent.js';
-import { chooseInventoryObject, getobj } from './inventory_prompt.js';
+import { chooseInventoryObject, getobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { lightDamage, lightRoom, transformMagicLampToOilLamp } from './light.js';
@@ -111,7 +111,7 @@ import { ceilingName, surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectTimers, stopLevelTimer, stopObjectTimer } from './timeout.js';
 import { confusePromptDirection, promptDirection, readDirectionKey } from './cmd.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItem } from './invent.js';
 import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';

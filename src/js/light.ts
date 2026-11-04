@@ -36,7 +36,7 @@ import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { billDummyObject, carriedObjectOwner, chargeUnpaidUsage, costlySpot, objectOwnershipPrefix, deleteObject } from './shk.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { getObjectLocation } from './zap.js';
 import { loseHeroHp, roomForRoomno } from './hack.js';
 

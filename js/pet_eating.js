@@ -1,4 +1,4 @@
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';

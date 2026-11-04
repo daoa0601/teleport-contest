@@ -12,7 +12,7 @@ import { capitalizedDefiniteName } from './ray_hit_message.js';
 import { updateHeroHunger } from './eat.js';
 import { stopHeroOccupation } from './occupation.js';
 import { delobjCore } from './invent.js';
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { findMonsterNearPosition, makemonNear } from './mklev.js';
 import { makemonAt } from './makemon.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_SYMBOL, monsterIsDisplacer, monsterIsEel } from './monster_data.js';

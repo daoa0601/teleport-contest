@@ -3,7 +3,7 @@ import test from 'node:test';
 import { askMonsterTeleportDestination, askTeleportDestination } from '../js/teleport.js';
 import { STAIRS } from '../js/const.js';
 import { flush_screen, newsym } from '../js/display.js';
-import { showFloorPile } from '../js/floor_object_display.js';
+import { showFloorPile } from '../js/invent.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { APPLE, DAGGER } from '../js/object_data.js';

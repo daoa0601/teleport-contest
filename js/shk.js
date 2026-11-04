@@ -19,7 +19,7 @@ import { possessiveName, depth, distmin, dist2, pointsOnline, upstart } from './
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency } from './currency.js';
+import { currency } from './invent.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
@@ -57,7 +57,7 @@ import { SPBOOK_CLASS } from './mklev.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
-import { addInventoryItem } from './u_init.js';
+import { addInventoryItem } from './invent.js';
 import { intrinsicPossible } from './eat.js';
 import { countContents } from './invent.js';
 import { artifactById } from './artifacts.js';
@@ -70,7 +70,7 @@ import { heroIsPunished, unplaceBallAndChain, placeBallAndChain } from './ball.j
 import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval } from './invent.js';
 import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { pickingAt } from './lock.js';
 import { linkObjectToMonsterInventory, mksobj, unlinkObject, deallocateObject } from './mkobj.js';

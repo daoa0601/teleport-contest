@@ -8,7 +8,7 @@ import { addCreatedObjectToContainer } from '../../js/mkobj.js';
 import { artifactByName } from '../../js/artifacts.js';
 import { mksobj, set_corpsenm } from '../../js/mkobj.js';
 import { stopAllObjectTimers } from '../../js/timeout.js';
-import { addInventoryItem } from '../../js/u_init.js';
+import { addInventoryItem } from '../../js/invent.js';
 import {objectWeight, placeCreatedObject} from '../../js/mkobj.js';
 
 

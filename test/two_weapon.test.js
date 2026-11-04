@@ -15,7 +15,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';
 import { wearHeroArmor } from '../js/do_wear.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { readObjectName } from '../js/objnam.js';
 import { BATTLE_AXE, BOW, DAGGER, SACK, SHORT_SWORD, SMALL_SHIELD } from '../js/object_data.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -18,7 +18,7 @@ import { beginObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_YENDOR, FOOD_RATION, LEASH, LEATHER_GLOVES, OIL_LAMP, POT_CONFUSION, SPLINT_MAIL } from '../js/object_data.js';
 import { scheduleObjectTimer } from '../js/timeout.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

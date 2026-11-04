@@ -22,7 +22,7 @@ import { answerPrompts } from './support/input-boundaries.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { mapFeatureDescription } from '../js/pager.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, GOLD_PIECE } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, corpseObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

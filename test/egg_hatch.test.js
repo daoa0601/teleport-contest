@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { EGG } from '../js/object_data.js';
 import { inventoryItemDescription } from '../js/invent.js';
-import { addCreatedInventoryItem } from '../js/u_init.js';
+import { addCreatedInventoryItem } from '../js/invent.js';
 import { claimNextDueObjectTimer, objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { vision_recalc } from '../js/vision.js';

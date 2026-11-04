@@ -30,7 +30,7 @@ import { visibleRegionAt } from './regions.js';
 import { isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { surfaceName, waterbodyName } from './terrain_name.js';
 import { trapName } from './trap.js';
-import type { FeatureOptions } from './floor_object_display.js';
+import type { FeatureOptions } from './invent.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GlyphMetadata } from './display.js';

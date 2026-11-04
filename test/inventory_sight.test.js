@@ -12,7 +12,8 @@ import { pickupAtHero } from '../js/pickup.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { changeTutorialState } from '../js/tutorial_state.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
-import { learnUnseenInventory } from '../js/hero_inventory.js';
+import { learnUnseenInventory } from '../js/invent.js';
+import { makedog } from '../js/u_init.js';
 import { CLUB, SACK } from '../js/object_data.js';
 import { removeCurseEffect } from '../js/read.js';
 import { makeWish } from '../js/zap.js';
@@ -20,7 +21,7 @@ import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { completeHeroStartup } from './support/startup.js';
-import { addInventoryItem, makedog } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { mksobj, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { GameDisplay } from '../js/game_display.js';
 async function unseenScroll(otyp = SCR_IDENTIFY, quantity = 1) {

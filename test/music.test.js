@@ -10,7 +10,7 @@ import { placeMonsterAt } from '../js/steed.js';
 import { playInstrument } from '../js/music.js';
 import { initRng } from '../js/rng.js';
 import { BUGLE, FIRE_HORN, FROST_HORN, LEATHER_DRUM, MAGIC_FLUTE, WOODEN_HARP, } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { applyInventoryObject } from './support/commands.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -13,7 +13,7 @@ import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { artifactObject } from './support/game-objects.js';
 import { applyInventoryObject } from './support/commands.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { installPagerInput } from './support/pager-input.js';
 void test('blindness expiry redraws a warm monster in a dark corridor through infravision', async () => {
     const input = freshTurnRoom();

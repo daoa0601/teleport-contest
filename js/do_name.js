@@ -13,7 +13,7 @@ import { takeRepeatCommand } from './cmd.js';
 import { chooseNamingCategory } from './naming_categories.js';
 import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
-import { chooseInventoryObject } from './inventory_prompt.js';
+import { chooseInventoryObject } from './invent.js';
 import { SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS, } from './object_data.js';
 import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible, randomBogusMonsterIdentity, seeMonsterWithInfrared, } from './display.js';
 import { objectTypeKnown, repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';

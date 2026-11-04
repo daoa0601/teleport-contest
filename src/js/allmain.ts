@@ -64,7 +64,7 @@ import { makeMonsterFlee, interruptOccupationForMonster, monsterSightingBeforeAc
 import { stopHeroOccupation } from './occupation.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { isWeldedPrimary } from './wield.js';
-import { finishInventoryRemoval } from './hero_inventory.js';
+import { finishInventoryRemoval } from './invent.js';
 import { reassessMonsterArmor } from './monworn.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { d, rn2, rnd } from './rng.js';

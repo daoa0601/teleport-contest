@@ -2,7 +2,7 @@ import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { mergeObjectStacks } from '../js/invent.js';
 
 import { ARROW, DAGGER, GLOB_OF_GRAY_OOZE } from '../js/object_data.js';

@@ -13,7 +13,7 @@ import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { addInventoryObject, knownObject, artifactObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { invokeInventoryObject } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

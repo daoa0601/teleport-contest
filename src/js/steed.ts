@@ -37,7 +37,7 @@ import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { freeInventoryObject } from './hero_inventory.js';
+import { freeInventoryObject } from './invent.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
 import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';

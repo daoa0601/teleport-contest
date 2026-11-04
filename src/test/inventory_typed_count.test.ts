@@ -3,7 +3,7 @@ import test from 'node:test';
 import { GETOBJ_SUGGEST } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { bindInputGate, InputGate, nhgetch, resetInputState } from '../js/input.js';
-import { chooseInventoryObject } from '../js/inventory_prompt.js';
+import { chooseInventoryObject } from '../js/invent.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -19,7 +19,7 @@ import { polymorphHero } from '../js/polyself.js';
 import { punishHero } from '../js/read.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setSlipperyHands } from '../js/potion.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import {
     setPrimaryWeapon,
     setQuiverObject,

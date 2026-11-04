@@ -4,7 +4,7 @@ import { A_STR, G_GENOD, ICE, NO_MINVENT, WEB } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { doeat, applyOrdinaryFoodFirstBite, applyOrdinaryFoodPostEffects, applyRottenFood } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { races } from '../js/roles.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';

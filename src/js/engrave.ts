@@ -60,8 +60,8 @@ import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js'
 import { plineWithContinuation as pline } from './pline.js';
 import { plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit } from './query.js';
-import { getobj } from './inventory_prompt.js';
-import type { InventoryClassification } from './inventory_prompt.js';
+import { getobj } from './invent.js';
+import type { InventoryClassification } from './invent.js';
 import { requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import {
     ACCESSIBLE, ALTAR, A_WIS, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY,
@@ -98,7 +98,7 @@ import { makemonAt } from './makemon.js';
 import { exerciseAttribute } from './attrib.js';
 import { unlinkObject, splitObjectStack } from './mkobj.js';
 
-import { useUpInventoryStack } from './hero_inventory.js';
+import { useUpInventoryStack } from './invent.js';
 import { impossible } from './diagnostics.js';
 import {
     MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER,

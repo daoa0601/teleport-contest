@@ -58,7 +58,7 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation } from './pline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { updateCarriedLuck } from './hero_inventory.js';
+import { updateCarriedLuck } from './invent.js';
 import { objectLightRadius, adjustObjectLightAfterBlessing, objectShedsLight } from './light.js';
 
 import { bookCursed } from './spell.js';

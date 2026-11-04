@@ -9,7 +9,7 @@ import { artifactObject, floorArtifact, knownObject } from './support/game-objec
 import { freshObjectRoom } from './support/object-room.js';
 import { applyInventoryObject, dropInventoryObject } from './support/commands.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { canSenseMonster, flush_screen, newsym, unblindTelepathyRange } from '../js/display.js';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { createMonsterAt } from './support/monsters.js';

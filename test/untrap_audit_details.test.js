@@ -6,7 +6,7 @@ import { CAN_OF_GREASE, DART, MACE } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { initializePet } from '../js/dog.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { untrap } from '../js/trap.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';

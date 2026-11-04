@@ -17,7 +17,7 @@ import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { AMULET_OF_LIFE_SAVING, POT_HEALING, SCR_BLANK_PAPER, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { addInventoryObject, artifactObject, floorObject, knownObject } from './support/game-objects.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 

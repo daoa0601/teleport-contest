@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { cls } from '../js/display.js';
-import { addInventoryItem } from '../js/u_init.js';
+import { addInventoryItem } from '../js/invent.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import {
