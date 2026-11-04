@@ -26,10 +26,9 @@ for (const hallucinating of [false, true]) {
             initRng(33n);
             const messages: string[] = [];
 
-            const event = await beginMonsterRustTrap(monster, trap, game, {
-                random: limit => limit === 5 ? 0 : greaseRoll,
-            });
+            const event = await beginMonsterRustTrap(monster, trap, game);
             await finishMonsterRustTrap(monster, event, game, {
+                random: limit => limit === 5 ? 0 : greaseRoll,
                 publish: text => { messages.push(text); },
             });
 
@@ -58,8 +57,9 @@ void test('a monster stepping onto an unseen rust trap is drawn there before the
     assert.notEqual(cell(), 'H');
     let shownAtMessage: string | undefined;
 
-    const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 4 });
+    const event = await beginMonsterRustTrap(monster, trap, game);
     await finishMonsterRustTrap(monster, event, game, {
+        random: () => 4,
         publish: async () => {
             await flush_screen(1);
             shownAtMessage ??= cell();
@@ -79,8 +79,9 @@ for (const [species, part] of headCases) {
         const { monster, trap } = await freshMonsterTrapRoom(RUST_TRAP, { monster: { species } });
         const messages: string[] = [];
 
-        const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 0 });
+        const event = await beginMonsterRustTrap(monster, trap, game);
         await finishMonsterRustTrap(monster, event, game, {
+            random: () => 0,
             publish: text => { messages.push(text); },
         });
 
@@ -98,10 +99,10 @@ void test('a gremlin splits on a rust trap only after the gush is reported', asy
     const before = living();
     const messages: string[] = [];
 
-    const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 4 });
+    const event = await beginMonsterRustTrap(monster, trap, game);
     assert.equal(living(), before, 'preparing the trap must not split the gremlin yet');
     await finishMonsterRustTrap(monster, event, game, {
-        random: () => 1,
+        random: limit => limit === 5 ? 4 : 1,
         publish: text => {
             messages.push(`${text} [${living()}]`);
         },
