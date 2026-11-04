@@ -136,10 +136,10 @@ getpos.c	getpos_help	' to move the cursor to	composed	src/js/getpos.ts:getposHel
 getpos.c	getpos_help	(Reset 'whatis_coord' option to omit coordinates from '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
 getpos.c	getpos_help	(Set 'whatis_coord' option to include coordinates with '	dead	getpos.c:getpos_help() only writes this hint into sbuf, never putstr()s it, and overwrites sbuf with the Type a ... prompt before the next putstr().
 hack.c	domove_fight_web	uswapwep != NULL	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hack.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
-hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hack.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
-hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hack.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
-hack.c	domove_swap_with_pet	won't fit through.	composed	src/js/hack.ts:petRefusesHeroSwap; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	can't move diagonally.	composed	src/js/hack.ts:settlePetHeroDisplacement; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	doesn't want to swap places.	composed	src/js/hack.ts:settlePetHeroDisplacement; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	won't fit into the same spot that you're at.	composed	src/js/hack.ts:settlePetHeroDisplacement; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
+hack.c	domove_swap_with_pet	won't fit through.	composed	src/js/hack.ts:settlePetHeroDisplacement; Selects each diagonal, occupied-square, tight-passage or unwilling-swap refusal after You stop and the pet name.
 hack.c	still_chewing	chew through the door.	composed	src/js/hack.ts:continueChewingTerrain; Composes `You chew through the ${secret ? 'secret ' : ''}door.` for the SDOOR and DOOR outcomes.
 hack.c	still_chewing	chew through the secret door.	composed	src/js/hack.ts:continueChewingTerrain; Composes `You chew through the ${secret ? 'secret ' : ''}door.` for the SDOOR and DOOR outcomes.
 hack.c	test_move	impossible [background glyph=	diagnostic	impossible() while computing travel moves for a background glyph; developer diagnostic.

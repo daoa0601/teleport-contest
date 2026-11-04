@@ -229,9 +229,9 @@ export async function moveSteedWithHero() {
     }
 }
 
-// C hack.c:test_move(TEST_MOVE) checks reach without opening, chewing, or
-// pushing anything. Boulders normally pass this test; landing_spot() makes
-// its own decision about avoiding them on its first two passes.
+// test_move(TEST_MOVE) (C hack.c) checks reach without opening, chewing,
+// or pushing anything. Boulders normally pass this test; landing_spot()
+// makes its own decision about avoiding them on its first two passes.
 async function ridingStepIsClear(
     state: PlayingGameState, x: number, y: number,
     publish: MessagePublisher = plineWithContinuation,

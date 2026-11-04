@@ -3,7 +3,7 @@ import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './he
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
-import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt } from './hack.js';
+import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig } from './hack.js';
 import { impossible, panic } from './diagnostics.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { veganCorpse } from './food_traits.js';
@@ -20,7 +20,7 @@ import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
 import { monsterHasMagicKey, artifactEmitsLight, artifactById } from './artifacts.js';
-import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monsterMayDigLocation, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
+import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { canTrack, monsterCorrodesBars, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
@@ -746,7 +746,7 @@ export async function readyMonsterDiggingWeapon(monster, state, x, y) {
     const closedDoor = IS_DOOR(loc.typ) && !!((loc.doormask ?? 0) & (D_CLOSED | D_LOCKED));
     const tree = IS_TREE(loc.typ);
     const rock = IS_STWALL(loc.typ) && !tree;
-    if (!closedDoor && (!(tree || rock) || !monsterMayDigLocation(loc)))
+    if (!closedDoor && (!(tree || rock) || !mayDig(x, y, state)))
         return null;
     const current = monsterWieldedWeapon(monster);
     if (willWeld(current))
@@ -1931,7 +1931,7 @@ export async function completeMovedMonsterAction(monster, movement, state, rando
             return movement;
         }
         if (requireMovementCapabilities(movement).canTunnel
-            && monsterMayDigLocation(state.level.at(monster.mx, monster.my))) {
+            && mayDig(monster.mx, monster.my, state)) {
             const tunnel = await digMonsterTunnel(monster, state, {
                 random: range => recordRandom(random, calls, range),
                 rollOne: sides => { calls.push(`rnd(${sides})`); return rollOne(sides); },
