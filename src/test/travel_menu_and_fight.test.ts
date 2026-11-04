@@ -9,6 +9,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
+import { queueCannedDir, queueCannedKeys } from './support/canned-input.js';
 import { freshTurnRoom } from './support/playable-room.js';
 
 function toplineText(): string {
@@ -18,8 +19,8 @@ function toplineText(): string {
 // C getpos.c:getpos() accepts a queued direction before printing cursor help.
 void test('travel to a queued position shows only the travel question', async () => {
     const input = freshTurnRoom({ flags: { tips: false, verbose: true } });
-    input.queueCommandKeys('_');
-    input.queueCommandResponses([{ dx: 0, dy: 0, dz: 0 }]);
+    queueCannedKeys('_');
+    queueCannedDir(0, 0);
 
     await rhack(0);
     await doprevMessage();

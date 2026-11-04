@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { CQ_CANNED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { moveloop_core } from '../js/allmain.js';
 import { tryCallObjectType } from '../js/do.js';
@@ -80,7 +81,7 @@ void test("close's direction query on the queued fire reports the impossible", a
     // impossible trio.
     await moveloop_core();
     assert.match(pages[0] ?? '', /getdir: command queue had no dir/, 'the queued fire reached the close direction query');
-    assert.equal(game._cannedCommands?.length ?? 0, 0, 'the impossible cleared the command queue');
+    assert.equal(game.command_queue[CQ_CANNED].length, 0, 'the impossible cleared the command queue');
     assert.equal(game.uquiver?.quan, 3, 'no arrow was fired');
 });
 // dothrow.c:573-576 queues [dowield, <launcher letter>, dofire] for a

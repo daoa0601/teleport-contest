@@ -2,6 +2,8 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
+import { cmdq_clear } from '../js/cmd.js';
+import { CQ_REPEAT } from '../js/const.js';
 import { promptChoice } from '../js/query.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C cmd.c:yn_function() records a real-input answer into CQ_REPEAT even
@@ -13,7 +15,7 @@ void test('a question answered during do-again feeds the next question', async (
     await freshObjectRoom({ flags: { tips: false, verbose: false } });
     requirePlayingGame(game);
     game._inDoAgain = true;
-    game._repeatCommands = [];
+    cmdq_clear(CQ_REPEAT);
     try {
         const input = resetInputState();
         const first = promptChoice('First question?', ['y', 'n'], 'n');
@@ -34,7 +36,7 @@ void test('a question answered during do-again feeds the next question', async (
     }
     finally {
         game._inDoAgain = false;
-        game._repeatCommands = [];
+        cmdq_clear(CQ_REPEAT);
     }
 });
 //# sourceMappingURL=doagain_yn_queue.test.js.map

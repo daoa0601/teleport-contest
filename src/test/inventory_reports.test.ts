@@ -8,6 +8,7 @@ import { DAGGER, GOLD_PIECE, OBJECT_NAMES, OIL_LAMP, RIN_PROTECTION } from '../j
 import { setPrimaryWeapon } from '../js/wield.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { planInput } from './support/planned-input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { finish, screen, startMenuGame, type } from './support/context-menu-game.js';
 
@@ -128,7 +129,7 @@ void test('typed inventory reports an invalid canned class without asking for li
         game.flags.menu_style = 0;
         const moves = game.moves;
         await type(engine, '#inventtype');
-        engine.inputGate.queueCommandKeys('v');
+        queueCannedKeys('v');
 
         await type(engine, '\n');
 

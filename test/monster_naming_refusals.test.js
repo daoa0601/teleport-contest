@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import test, {} from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { queueCommandKeys, resetInputState } from '../js/input.js';
+import { resetInputState } from '../js/input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { monsterLeashName, monsterName } from '../js/do_name.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { RIN_PROTECTION } from '../js/object_data.js';
@@ -16,7 +17,7 @@ import { planInput } from './support/planned-input.js';
 async function nameMonsterAt(t, keys) {
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('#m');
+    queueCannedKeys('#m');
     planInput(input, t, [
         { prompt: /instructions/, keys: 'l.' },
         { prompt: /What do you want to call/, keys: `${keys}\r` },
@@ -89,7 +90,7 @@ void test('hallucinated floor naming announces a bogus caller name', async (t) =
     await floorObject(RIN_PROTECTION, 10, 10, { typeKnown: false });
     const input = resetInputState();
     input.feed('name\r');
-    queueCommandKeys('#f');
+    queueCannedKeys('#f');
     planInput(input, t, [
         { prompt: /instructions/, keys: '.' },
     ]);

@@ -11,6 +11,7 @@ import { showMultiSelectWindow } from '../js/windows.js';
 import { getLine } from '../js/query.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { planInput } from './support/planned-input.js';
+import { queueCannedKeys } from './support/canned-input.js';
 import { GameDisplay } from '../js/game_display.js';
 import { Terminal } from '../js/terminal.js';
 
@@ -299,7 +300,7 @@ void test('menu search reads live text and leaves a canned answer for the next q
     tty_add_menu(window, { identifier: 'sword', selector: 'b', text: 'a sword' });
     tty_end_menu(window, 'Choose a weapon');
     const input = resetInputState();
-    input.queueCommandKeys('sword\n');
+    queueCannedKeys('sword\n');
     planInput(input, t, [
         { prompt: /Choose a weapon/, keys: ':' },
         { prompt: /Search for:/, keys: 'dagger\n' },
