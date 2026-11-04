@@ -23,7 +23,8 @@ import {
     monsterAvoidsKickedLocation, monsterAvoidsSokobanPushLocation, readyMonsterDiggingWeapon,
     speciesHasWeaponAttack, setMonsterApparentHeroPosition,
 } from './monmove.js';
-import { mfndpos, monAllowFlags, monsterMayDigLocation, resistConflict } from './mon.js';
+import { mfndpos, monAllowFlags, resistConflict } from './mon.js';
+import { mayDig } from './hack.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { couldSeeFromHero, cansee, clearPath, visibleCellsFrom } from './vision.js';
 import { trapAt } from './trap.js';
@@ -333,7 +334,7 @@ function petCanReachLocation(
             if (!loc) continue;
             const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
             if (IS_OBSTRUCTED(loc.typ) && !(flags & M1_WALLWALK)
-                && (!monsterMayDigLocation(loc) || !(flags & M1_TUNNEL)
+                && (!mayDig(x, y, state) || !(flags & M1_TUNNEL)
                     || Is_rogue_level(state.u.uz, state))) continue;
             if (IS_DOOR(loc.typ) && (loc.doormask ?? 0) & (D_CLOSED | D_LOCKED)) continue;
             if (!monsterCouldReachItem(monster, x, y, state)) continue;

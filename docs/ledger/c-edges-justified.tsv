@@ -1005,7 +1005,7 @@ findtravelpath	distmin	inlined	travelDistance max-metric helper (cmd.ts)
 findtravelpath	selection_getpoint	inlined	travel bitmap replaced by the searchTravelPath distance map (cmd.ts)
 findtravelpath	selection_new	inlined	distance Map allocation (cmd.ts searchTravelPath)
 findtravelpath	selection_setpoint	inlined	visited/radius entries set on the distance map (cmd.ts searchTravelPath)
-findtravelpath	sgn	inlined	Math.sign toward the target (cmd.ts findGuessedTravelDirection)
+findtravelpath	sgn	inlined	Math.sign toward the target (hack.ts findtravelpath)
 findtravelpath	sobj_at	inlined	travelBoulderAt checks the boulder on a path cell (cmd.ts searchTravelPath)
 findtravelpath	tmp_at	n/a	DEBUG-only iflags.trav_debug path visualization
 savebones	alloc	n/a	memory allocation

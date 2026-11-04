@@ -273,8 +273,8 @@ function autopickupDescription() {
 // section that follows on the second attributes page.
 // C insight.c:cause_known(): knownCause below — a worn, discovered item of
 // that type is a definite cause. C insight.c:walking_on_water(): the active
-// water-walking test at the swimming branch (C hack.c:is_pool_or_lava() is
-// the isPoolAt/isLavaAt pair).
+// water-walking test at the swimming branch (C dbridge.c:is_pool_or_lava()
+// is the isPoolAt/isLavaAt pair).
 function statusEnlightenmentLines(magic = false, final = 0, killer = '') {
     const u = game.u;
     const wizard = !!game.flags.debug;
@@ -622,7 +622,7 @@ export function piousness(record, { showNegative = true, suffix = '' } = {}) {
 // contractEnlightenment below. C insight.c:N_times(): the "N times"
 // phrasing is times(). C invent.c:carrying(): the luckstone inventory
 // scan. C pray.c:u_gname(): the god's name is deityName().
-// C hack.c:is_pool_or_lava(): the water-or-lava test under a water
+// C dbridge.c:is_pool_or_lava(): the water-or-lava test under a water
 // walker.
 export function attributeEnlightenmentLines(final = 0) {
     const u = game.u;

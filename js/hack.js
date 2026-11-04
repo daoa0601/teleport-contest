@@ -58,7 +58,7 @@ import { finishTeleportArrival } from './location_effects.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { placeHeroOnLevel } from './hero_location.js';
-import { hideHeroUnder, wakeMonstersNearWithMessages, monsterMayDigLocation, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
+import { hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
@@ -141,8 +141,8 @@ async function moveRevivalOccupant(monster, x, y, state) {
     if (position)
         await relocateMonsterTo(monster, position.x, position.y, { state });
 }
-// C hack.c:moverock().  Hero boulder pushes and their sokoban consequences.
-// C hack.c:moverock_done(): every boulder left on the starting square
+// C hack.c:moverock().  The push attempt over the destination pile, then
+// moverock_done()'s cleanup: every boulder left on the starting square
 // resumes normal naming once the push attempt ends.
 export async function pushBouldersAt(sx, sy, dx, dy) {
     requirePlayingGame(game);
@@ -491,27 +491,6 @@ async function moveBoulder(boulder, sx, sy, rx, ry, costly) {
     }
 }
 const M1_METALLIVORE = 0x80000000;
-export async function heroCanEnterIronBars(x, y, state) {
-    if (state.level.at(x, y)?.typ !== IRONBARS)
-        return true;
-    if (state.blind)
-        await feel_location(x, y);
-    if (heroPassesWalls(state))
-        return true;
-    if (state.u.uinwater) {
-        await pline('There is an obstacle there.');
-        return false;
-    }
-    const body = { mnum: heroSpecies(state) };
-    const eatsMetal = !!((MONSTER_FLAGS1[body.mnum] ?? 0) & M1_METALLIVORE);
-    if ((eatsMetal || monsterCorrodesBars(body)) && await continueChewingTerrain(x, y, state))
-        return false;
-    if (monsterPassesBars(body))
-        return true;
-    if (state.flags.mention_walls)
-        await pline('You cannot pass through the bars.');
-    return false;
-}
 export async function chewIronBars({ state = game } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -520,6 +499,10 @@ export async function chewIronBars({ state = game } = {}) {
     if (chewing && state.level.at(x, y)?.typ === IRONBARS)
         await pline('You pause to swallow.');
 }
+// C hack.c:still_chewing().  Nominal-grid chewing progress for tunnelers,
+// amorphous bodies, metallivores and giants: teeth-hurt and too-full
+// refusals, per-square effort, then the breakthrough that consumes the
+// boulder, tree, rock, bars or door.
 export async function continueChewingTerrain(x, y, state) {
     const location = state.level.at(x, y);
     if (!location)
@@ -841,7 +824,7 @@ export function badRockForMonster(monster, state, x, y) {
     if (!IS_OBSTRUCTED(loc.typ))
         return false;
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
-    const mayTunnel = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK) && monsterMayDigLocation(loc);
+    const mayTunnel = !!(flags & M1_TUNNEL) && !(flags & M1_NEEDPICK) && mayDig(x, y, state);
     const mayPassWall = !!(flags & M1_WALLWALK) && !(IS_STWALL(loc.typ) && (loc.wall_info ?? 0) & W_NONPASSWALL);
     return !mayTunnel && !mayPassWall;
 }
@@ -1557,81 +1540,26 @@ export function blocksMove(x, y) {
         return true;
     return false;
 }
-// C hack.c:test_move() checks cant_squeeze_thru() for a tight diagonal.
-async function rejectTightHeroDiagonal(dx, dy) {
-    if (!dx || !dy
-        || !heroBadRock(game, game.u.ux, game.u.uy + dy)
-        || !heroBadRock(game, game.u.ux + dx, game.u.uy))
-        return false;
-    const reason = heroTightDiagonalReason(game);
-    if (!reason)
-        return false;
-    if (reason === 1)
-        await pline('Your body is too large to fit through.');
-    else if (reason === 2)
-        await pline('You are carrying too much to get through.');
-    else
-        await pline('You cannot pass that way.');
-    game.context.move = 0;
-    return true;
-}
-// C hack.c:test_move() allows can_ooze() through a closed door.
+// test_move()'s ooze test (C hack.c:1075-1082): a closed door that this
+// body, unable to pass walls, can ooze under.
 function heroOozesUnderDoor(destination, g = game) {
     return destination?.typ === DOOR
         && !!(destination.doormask & (D_CLOSED | D_LOCKED))
         && !heroPassesWalls(g) && heroCanOoze(g);
 }
-// C test_move(DO_MOVE): entry precedes tight shoulders; exit follows them.
-async function rejectHeroDiagonalDoorEntry(dx, dy, destination) {
-    if (!dx || !dy || heroPassesWalls(game))
-        return false;
-    const entryDoor = heroOozesUnderDoor(destination) ? null : destination;
-    const x = game.u.ux + dx, y = game.u.uy + dy;
-    const intactEntry = blocksDiagonalDoor(null, entryDoor);
-    const doorKeeper = !intactEntry && entryDoor?.typ === DOOR ? shopkeeperBlockingDoor(x, y) : null;
-    const entering = intactEntry || !!doorKeeper;
-    if (!entering)
-        return false;
-    if (doorKeeper) {
-        const invisible = propertyIsActive('invisible', game);
-        await plineWithContinuation(`${shopkeeperName(doorKeeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
-    }
-    if (game.flags.mention_walls || game.u.uinwater || game.underwater) {
-        await plineWithContinuation("You can't move diagonally into an intact doorway.");
-    }
-    game.context.move = 0;
-    return true;
-}
-// C hack.c:test_move() checks the origin doorway after tight diagonals.
-async function rejectHeroDiagonalDoorExit(dx, dy) {
-    const origin = game.level?.at(game.u.ux, game.u.uy);
-    if (!dx || !dy || heroPassesWalls(game) || origin?.typ !== DOOR)
-        return false;
-    const intact = blocksDiagonalDoor(origin, null);
-    const keeper = intact ? null : shopkeeperBlockingEntry(game.u.ux + dx, game.u.uy + dy);
-    if (!intact && !keeper)
-        return false;
-    if (keeper) {
-        const invisible = propertyIsActive('invisible', game);
-        await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
-    }
-    if (game.flags.mention_walls)
-        await plineWithContinuation("You can't move diagonally out of an intact doorway.");
-    game.context.move = 0;
-    return true;
-}
 // C test_move(TEST_MOVE): tests obstacles without performing auto-open,
 // boulder pushing, or the hero's eventual movement.
 export function heroTestMove(x, y, g = game) {
-    return testHeroMove(g.u.ux, g.u.uy, x, y, 'move', g).passes;
+    return testHeroMove(g.u.ux, g.u.uy, x, y, 'test', g).passes;
 }
 // C test_move(TEST_MOVE) from an arbitrary origin square. zap.c bhit()
 // checks the chain's next step from a thrown iron ball's previous square.
 export function heroMoveBlockedBetween(fromX, fromY, x, y, g = game) {
-    return !testHeroMove(fromX, fromY, x, y, 'move', g).passes;
+    return !testHeroMove(fromX, fromY, x, y, 'test', g).passes;
 }
-// Shop doorway checks print even during a path search, so publish them at
-// the awaited boundary while the shared movement decision remains pure.
+// Shop doorway checks print even during a path search (C block_door()/
+// block_entry() pline from inside test_move()), so publish them at this
+// awaited boundary while the shared movement decision stays pure.
 async function testTravelMove(fromX, fromY, x, y, mode, g) {
     const result = testHeroMove(fromX, fromY, x, y, mode, g);
     if (result.blockedBy) {
@@ -1641,9 +1569,13 @@ async function testTravelMove(fromX, fromY, x, y, mode, g) {
     }
     return result.passes;
 }
-// C test_move() shares physical checks across TEST_MOVE, TEST_TRAV and
-// TEST_TRAP. Travel admits closed doors and checks consecutive boulders;
-// the trap mode reports hazards after checking entry, before checking exit.
+// C hack.c:test_move().  The physical checks shared by DO_MOVE, TEST_MOVE,
+// TEST_TRAV and TEST_TRAP: travel admits closed doors and checks consecutive
+// boulders, and the trap mode reports hazards after checking entry, before
+// checking exit.  C's DO_MOVE messages, auto-open, chewing and boulder
+// pushing cannot live in this synchronous decision (click menus call
+// TEST_MOVE without awaiting), so domoveCore() performs the DO_MOVE branches
+// inline at C's test_move() call site (hack.c:2843).
 function testHeroMove(fromX, fromY, x, y, mode, g) {
     if (!isok(x, y))
         return { passes: false };
@@ -1676,7 +1608,7 @@ function testHeroMove(fromX, fromY, x, y, mode, g) {
                 return { passes: false };
             if (tunnels)
                 checkDoorEntry = false;
-            else if (mode === 'move')
+            else if (mode === 'test')
                 return { passes: false };
         }
     }
@@ -1720,7 +1652,7 @@ function testHeroMove(fromX, fromY, x, y, mode, g) {
             return { passes: false, blockedBy };
     }
     if (travelBoulderAt(x, y, g) && (!passesWalls || g.level?.flags.sokoban_rules)) {
-        if (mode === 'move') {
+        if (mode === 'test') {
             if ((g.context.run ?? 0) >= 2 && !heroIsBlind(g)
                 && !heroIsHallucinating(g) && !heroCouldMoveOntoBoulder(x, y, g))
                 return { passes: false };
@@ -1831,41 +1763,19 @@ async function searchTravelPath(startX, startY, goalX, goalY, mode, g) {
     }
     return { distance, direction: null };
 }
-// C is_valid_travelpt() searches forward; live travel searches backward so
-// its predecessor gives the next step. Guessing is only for live movement.
+// C hack.c:is_valid_travelpt().  Saves and restores the travel target
+// around findtravelpath(TRAVP_VALID), like C's u.tx/u.ty swap.
 export async function isValidTravelTarget(targetX, targetY, g = game) {
     if (g.u.ux === targetX && g.u.uy === targetY)
         return true;
     if (glyphAt(targetX, targetY, g)?.glyph === cmapToGlyph(CmapSymbol.stone)
         && !g.level?.at(targetX, targetY)?.seenv)
         return false;
-    // C hack.c:1268-1269 creates gt.travelmap at findtravelpath() entry;
-    // the adjacent-target shortcut below may free it again (hack.c:1276
-    // end_running(FALSE)), leaving no selection for the rest of the call.
-    g._travelMap ??= new Set();
-    if (g.context.travel1 && travelDistance(g.u.ux, g.u.uy, targetX, targetY) === 1) {
-        requirePlayingGame(g);
-        if (await crawlDestinationAllowed(g, targetX, targetY, rn2, plineWithContinuation)) {
-            stopRun(g, false);
-            if (await testTravelMove(g.u.ux, g.u.uy, targetX, targetY, 'move', g))
-                return true;
-        }
-    }
-    const { direction } = await searchTravelPath(g.u.ux, g.u.uy, targetX, targetY, 'valid', g);
-    if (direction) {
-        g.u.dx = direction.dx;
-        g.u.dy = direction.dy;
-        // C hack.c:1416-1418 selection_setpoint(): every successful
-        // validation marks the hero's cell in gt.travelmap, even with no
-        // travel run active. The mark survives until end_running() or
-        // reset_cmd_vars() frees the selection.
-        markTravelStep(g.u.ux, g.u.uy, g);
-    }
-    return direction !== null;
+    return await findtravelpath('valid', targetX, targetY, g);
 }
-// C hack.c findtravelpath() selection_setpoint(u.ux, u.uy, gt.travelmap, 1).
-// selvar.c:186-187: a freed (NULL) selection ignores the write, and the
-// map only comes back at the next findtravelpath() entry.
+// findtravelpath()'s selection_setpoint(u.ux, u.uy, gt.travelmap, 1) (C
+// hack.c:1416, 1486).  selvar.c:186-187: a freed (NULL) selection ignores
+// the write, and the map only comes back at the next findtravelpath() entry.
 function markTravelStep(x, y, g) {
     if (!g._travelMap)
         return;
@@ -1879,120 +1789,131 @@ function travelDistanceSquared(x1, y1, x2, y2) {
     const dy = y1 - y2;
     return dx * dx + dy * dy;
 }
-// C TRAVP_GUESS limits the forward search to couldsee() squares, then scans
-// x-major. Ties require both a shorter search radius and smaller dist2().
-async function findGuessedTravelDirection(targetX, targetY, g) {
-    // C domove() runs findtravelpath(TRAVP_GUESS) as its own entry, which
-    // recreates the selection when the failed TRAVP_TRAVEL call left it
-    // freed (hack.c:1268-1269).
+// C hack.c:findtravelpath().  TRAVP_TRAVEL searches backward from the
+// target so the predecessor of the hero is the next step; TRAVP_GUESS
+// limits the forward search to couldsee() squares, then re-enters the
+// backward search from the guessed goal; TRAVP_VALID searches forward to a
+// candidate.  Like C, the direction travels in u.dx/u.dy and the travel
+// map in gt.travelmap (g._travelMap); domove_core()'s travel block below
+// and is_valid_travelpt() above are the callers.  searchTravelPath() is
+// the shared `noguess' loop of hack.c:1315-1449.
+async function findtravelpath(mode, targetX, targetY, g) {
     g._travelMap ??= new Set();
-    const originX = g.u.ux, originY = g.u.uy;
-    const { distance } = await searchTravelPath(originX, originY, targetX, targetY, 'guess', g);
-    let pickX = originX, pickY = originY;
-    let bestDistance = travelDistance(targetX, targetY, originX, originY);
-    let bestSquared = travelDistanceSquared(targetX, targetY, originX, originY);
-    let bestPath = COLNO * ROWNO;
-    for (let x = 1; x < COLNO; x++) {
-        for (let y = 0; y < ROWNO; y++) {
-            const path = distance.get(y * COLNO + x);
-            if (!path || !couldsee(x, y))
-                continue;
-            const candidateDistance = travelDistance(targetX, targetY, x, y);
-            const candidateSquared = travelDistanceSquared(targetX, targetY, x, y);
-            if (candidateDistance < bestDistance
-                || candidateDistance === bestDistance && path < bestPath && candidateSquared < bestSquared) {
-                pickX = x;
-                pickY = y;
-                bestDistance = candidateDistance;
-                bestSquared = candidateSquared;
-                bestPath = path;
+    /* if travel to adjacent, reachable location, use normal movement rules */
+    if (mode !== 'guess' && g.context.travel1
+        && travelDistance(g.u.ux, g.u.uy, targetX, targetY) === 1) {
+        requirePlayingGame(g);
+        if (await crawlDestinationAllowed(g, targetX, targetY, rn2, plineWithContinuation)) {
+            stopRun(g, false);
+            if (await testTravelMove(g.u.ux, g.u.uy, targetX, targetY, 'test', g)) {
+                if (mode === 'travel') {
+                    g.u.dx = targetX - g.u.ux;
+                    g.u.dy = targetY - g.u.uy;
+                    nomul(0, g);
+                    g._travelTarget = null;
+                }
+                return true;
             }
+            if (mode === 'travel')
+                g.context.run = 8;
         }
     }
-    if (pickX !== originX || pickY !== originY) {
-        await showTravelSearch([[pickX, pickY]], 2, g);
-        const { direction } = await searchTravelPath(pickX, pickY, originX, originY, 'travel', g);
-        return direction ? { ...direction, checkVisited: true } : null;
+    if (targetX !== g.u.ux || targetY !== g.u.uy) {
+        let searchMode = mode;
+        let searchTargetX = targetX, searchTargetY = targetY;
+        for (;;) { /* noguess: */
+            const search = searchMode === 'travel'
+                ? await searchTravelPath(searchTargetX, searchTargetY, g.u.ux, g.u.uy, 'travel', g)
+                : await searchTravelPath(g.u.ux, g.u.uy, searchTargetX, searchTargetY, searchMode, g);
+            if (searchMode !== 'guess') {
+                const direction = search.direction;
+                if (direction) {
+                    /* reached the search goal (C hack.c:1398-1418) */
+                    const nextX = g.u.ux + direction.dx, nextY = g.u.uy + direction.dy;
+                    const visited = (g._travelMap ?? new Set())
+                        .has(nextY * COLNO + nextX);
+                    g.u.dx = direction.dx;
+                    g.u.dy = direction.dy;
+                    if (searchMode === 'travel'
+                        && (nextX === targetX && nextY === targetY || visited)) {
+                        nomul(0, g);
+                        /* reset run so domove run checks work */
+                        g.context.run = 8;
+                        if (visited)
+                            await plineWithContinuation('You stop, unsure which way to go.');
+                        else
+                            g._travelTarget = null;
+                    }
+                    markTravelStep(g.u.ux, g.u.uy, g);
+                    return true;
+                }
+                return false;
+            }
+            /* if guessing, find best location in travel matrix and go there */
+            const { distance } = search;
+            let pickX = g.u.ux, pickY = g.u.uy;
+            let bestDistance = travelDistance(targetX, targetY, g.u.ux, g.u.uy);
+            let bestSquared = travelDistanceSquared(targetX, targetY, g.u.ux, g.u.uy);
+            let bestPath = COLNO * ROWNO;
+            for (let x = 1; x < COLNO; x++) {
+                for (let y = 0; y < ROWNO; y++) {
+                    const path = distance.get(y * COLNO + x);
+                    if (!path || !couldsee(x, y))
+                        continue;
+                    const candidateDistance = travelDistance(targetX, targetY, x, y);
+                    const candidateSquared = travelDistanceSquared(targetX, targetY, x, y);
+                    if (candidateDistance < bestDistance
+                        || candidateDistance === bestDistance && path < bestPath && candidateSquared < bestSquared) {
+                        pickX = x;
+                        pickY = y;
+                        bestDistance = candidateDistance;
+                        bestSquared = candidateSquared;
+                        bestPath = path;
+                    }
+                }
+            }
+            if (pickX === g.u.ux && pickY === g.u.uy) {
+                /* no guesses, just go in the general direction */
+                g.u.dx = Math.sign(targetX - g.u.ux);
+                g.u.dy = Math.sign(targetY - g.u.uy);
+                if (await testTravelMove(g.u.ux, g.u.uy, g.u.ux + g.u.dx, g.u.uy + g.u.dy, 'test', g)) {
+                    markTravelStep(g.u.ux, g.u.uy, g);
+                    return true;
+                }
+                break; /* goto found */
+            }
+            await showTravelSearch([[pickX, pickY]], 2, g);
+            searchMode = 'travel';
+            searchTargetX = pickX;
+            searchTargetY = pickY;
+        }
     }
-    // With no better visible goal, C tests the general direction using
-    // TEST_MOVE: an unseen square may be discovered by ordinary movement.
-    const dx = Math.sign(targetX - originX), dy = Math.sign(targetY - originY);
-    return await testTravelMove(originX, originY, originX + dx, originY + dy, 'move', g)
-        ? { dx, dy, checkVisited: false } : null;
+    return false;
 }
-// C hack.c:findtravelpath() searches backward, then tries TRAVP_GUESS.
-export async function findTravelDirection(state = game._runState, g = game) {
-    if (!state || state.mode !== 8 || !g.level)
-        return null;
-    const { targetX, targetY } = state;
-    const atTarget = g.u.ux === targetX && g.u.uy === targetY;
-    const direct = atTarget ? null
-        : (await searchTravelPath(targetX, targetY, g.u.ux, g.u.uy, 'travel', g)).direction;
-    const direction = atTarget ? null : direct ? { ...direct, checkVisited: true }
-        : await findGuessedTravelDirection(targetX, targetY, g);
-    g.u.dx = direction?.dx ?? 0;
-    g.u.dy = direction?.dy ?? 0;
-    return direction;
-}
-// C hack.c:findtravelpath() updates repetition before the rest of
-// domove_core(), even when it leaves a zero direction after a failed guess.
+// domove_core()'s travel block (C hack.c:2724-2728): one TRAVP_TRAVEL
+// attempt, then TRAVP_GUESS, then travel1 = 0.  A failed guess leaves the
+// zero direction of C's `found:' tail (hack.c:1518-1522) before the rest
+// of domove_core() runs.
 async function selectTravelStep(state) {
     requirePlayingGame(game);
-    const { targetX, targetY } = state;
-    const hero = game.u;
-    // C findtravelpath(TRAVP_TRAVEL) creates gt.travelmap at entry; the
-    // adjacent-target shortcut below may free it again (hack.c:1276), so
-    // later selection_setpoint() calls in this same invocation are no-ops.
-    game._travelMap ??= new Set();
-    if (game.context.travel1
-        && travelDistance(hero.ux, hero.uy, targetX, targetY) === 1
-        && await crawlDestinationAllowed(game, targetX, targetY, rn2, plineWithContinuation)) {
-        stopRun(game, false);
-        if (await testTravelMove(hero.ux, hero.uy, targetX, targetY, 'move', game)) {
-            nomul(0);
-            game._travelTarget = null;
-            return { dx: targetX - hero.ux, dy: targetY - hero.uy };
-        }
-        game.context.run = 8;
+    if (!await findtravelpath('travel', state.targetX, state.targetY, game)
+        && !await findtravelpath('guess', state.targetX, state.targetY, game)) {
+        game.u.dx = 0;
+        game.u.dy = 0;
+        nomul(0, game);
     }
-    const direction = await findTravelDirection(state);
-    if (!direction) {
-        nomul(0);
-        return { dx: 0, dy: 0 };
-    }
-    // C hack.c:1400-1401 checks gt.travelmap, a global selection that also
-    // holds marks from earlier is_valid_travelpt() calls, against the
-    // proposed first step. The general-direction fallback records the
-    // origin without testing history; only a completed backward search
-    // checks the chosen next step.
-    const travelMap = game._travelMap ?? new Set();
-    const nextX = hero.ux + direction.dx, nextY = hero.uy + direction.dy;
-    const returning = direction.checkVisited && travelMap.has(nextY * COLNO + nextX);
-    if (returning || direction.checkVisited && nextX === targetX && nextY === targetY) {
-        nomul(0);
-        // Keep the running checks for a final path step, unlike the
-        // adjacent first-step shortcut above. C's trailing
-        // selection_setpoint() writes into the map nomul(0) just freed
-        // (end_running), so no mark survives a stopping step.
-        game.context.run = 8;
-        if (returning)
-            await plineWithContinuation('You stop, unsure which way to go.');
-        else
-            game._travelTarget = null;
-    }
-    else {
-        // C hack.c:1416 and 1486: both the backward search and the
-        // general-direction fallback mark the hero's cell.
-        markTravelStep(hero.ux, hero.uy, game);
-    }
-    return direction;
+    game.context.travel1 = false;
+    return { dx: game.u.dx ?? 0, dy: game.u.dy ?? 0 };
 }
-// C hack.c:lookaround() for travel (context.run == 8): moveloop runs it
-// before every automatic travel step.  Travel stops for a grid-bug
-// diagonal, a visible monster that is not peaceful-safe, a known trap
-// directly ahead of the previous step's direction, or liquid ahead that
-// the hero cannot safely cross.  Doors, objects, stairs, and the corridor
-// turning of run modes do not stop travel.
+// lookaround()'s travel window (C hack.c:3905-3940, 4005-4008, read with
+// context.run == 8): moveloop runs it before every automatic travel step.
+// Travel stops for a grid-bug diagonal, a visible monster that is not
+// peaceful-safe, a known trap directly ahead of the previous step's
+// direction, or liquid ahead that the hero cannot safely cross.  Doors,
+// objects, stairs, and the corridor turning of run modes do not stop
+// travel, so only the front square needs terrain checks.  lookaroundRun()
+// below is the full C-order port for run modes; travel reads u.dx/u.dy
+// rather than the run state's persistent direction.
 async function travelLookaroundStops(g = game) {
     const u = g.u;
     const noDiagonal = MONSTER_NAME[u.umonnum ?? -1] === 'grid bug';
@@ -2350,6 +2271,10 @@ export async function strikeIronBarsWithWeapon(weapon, x, y, state = game) {
         x: state.u.ux, y: state.u.uy, barsX: x, barsY: y, state,
     });
 }
+// C hack.c:domove_fight_web().  Force-fighting a seen web: Sting or a
+// flaming artifact cuts or burns through, unsuitable weapons refuse with
+// their description, and a successful swing against the adjusted roll
+// dissolves the trap.
 export async function fightSeenWebWithForce(x, y, state = game) {
     if (!state.context.forcefight)
         return false;
@@ -2417,7 +2342,7 @@ export async function fightSeenWebWithForce(x, y, state = game) {
     await newsym(x, y);
     return true;
 }
-// C ref: hack.c:domove_fight_empty(). Forced attacks at the map edge and
+// C hack.c:domove_fight_empty(). Forced attacks at the map edge and
 // ordinary moves into remembered invisible-monster knowledge converge here.
 // Both spend the action without entering terrain movement; only the
 // remembered-invisible path is excluded by nopick.
@@ -2993,8 +2918,9 @@ export async function applyHeroLocationEffects(publish = plineWithContinuation, 
         publish, pick,
     });
 }
-// C hack.c:domove_core() common tail, including a refused pet swap.
-// Repositioning and concealment finish before vision and arrival effects.
+// domove_core()'s common tail (C hack.c:2934-2990), including a refused pet
+// swap.  Repositioning and concealment finish before vision and arrival
+// effects; domoveCore() owns the function itself, above.
 async function finishHeroMovement({ oldx, oldy, loc, ballChainMove = null, }) {
     const u = game.u;
     // This tail is domove_core()'s epilogue; reaching it (rather than one
@@ -3193,10 +3119,10 @@ async function heroTrapmove(targetX, targetY) {
             return false;
     }
 }
-// C hack.c:domove(): trapmove()'s only caller releases the hero through
-// reset_utrap(TRUE) the moment the bare u.utrap zeroing appears, so the
-// was-levitating/was-flying snapshots see float_vs_flight()'s blocked
-// masks and the recompute below restores flight blocked by the trap.
+// domove_core()'s trapped-move block (C hack.c:2830-2841): trapmove(), then
+// the reset_utrap(TRUE) release the moment the bare u.utrap zeroing appears,
+// so the was-levitating/was-flying snapshots see float_vs_flight()'s blocked
+// masks and the recompute restores flight blocked by the trap.
 export async function heroCanMoveFromTrap(targetX, targetY) {
     const hero = game.u;
     if (!hero?.utrap)
@@ -3420,6 +3346,10 @@ function avoidsGroundTraps(type, state) {
     return !!(state.u.levitating || state.u.flying || (flags & 1)
         || symbol === 5 || symbol === 25 || ((flags & 0x10) && ceiling));
 }
+// C hack.c:domove().  Evaluates a successful step after all destination
+// effects: domove_succeeded survives for the caller's assessments, the
+// origin is snapshotted for maybe_smudge_engr(), and the kicked location
+// clears.
 export async function domove(dx, dy, explicitAttempt = true) {
     const oldx = game.u.ux, oldy = game.u.uy;
     game._domoveSucceeded = false;
@@ -3571,12 +3501,14 @@ export async function settleBeastHeroDisplacement(beast, state) {
     }
 }
 const TIP_UNTRAP_MON = 1 << 2;
-// C hack.c:domove_swap_with_pet(): the refusal checks — a boulder-pinned
-// pit, grid-bug diagonals, a boulder at the hero's square, tight
-// diagonals, a trap under a peaceful pet, and undisplaceable targets.
-// sobj_at() is the boulder scan at the hero's square; handle_tip()'s
-// TIP_UNTRAP_MON hint prints inline.
-export async function petRefusesHeroSwap(monster, state) {
+// C hack.c:domove_swap_with_pet().  The refusal checks — a boulder-pinned
+// pit, grid-bug diagonals, a boulder at the hero's square, tight diagonals,
+// a trap under a peaceful pet, and undisplaceable targets — then the swap
+// itself: trade places, run the landing liquid, the trap, and the kill or
+// abuse consequences.  True when the places were traded (C's !didnt_move);
+// the hero starts at the monster's square.  sobj_at() is the boulder scan
+// at the hero's square; handle_tip()'s TIP_UNTRAP_MON hint prints inline.
+export async function settlePetHeroDisplacement(monster, state) {
     const hero = state.u;
     const x = hero.ux, y = hero.uy;
     // Reveal the pet while the hero is still drawn at the departure square.
@@ -3590,19 +3522,23 @@ export async function petRefusesHeroSwap(monster, state) {
     if (!trap)
         monster.mtrapped = 0;
     const boulder = state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER);
+    /* can't swap places with pet pinned in a pit by a boulder */
     if (trap && is_pit(trap.ttyp) && boulder)
-        return true;
+        return false;
     const diagonal = hero.ux0 !== x && hero.uy0 !== y;
     let reason = null;
     if (diagonal && MONSTER_NAME[monster.mnum] === 'grid bug') {
+        /* can't swap places when pet can't move to your spot */
         reason = "can't move diagonally";
     }
     else if (boulder && !(monsterIsVerySmall(monster.mnum) && currentMonsterLoad(monster) <= 600)) {
+        /* can't swap places when pet won't fit there with the boulder */
         reason = "won't fit into the same spot that you're at";
     }
     else if (diagonal && petBadRock(monster, state, x, hero.uy0)
         && petBadRock(monster, state, hero.ux0, y)
         && (monsterIsBig(monster.mnum) || currentMonsterLoad(monster) > 600)) {
+        /* can't swap places when pet won't fit thru the opening */
         reason = "won't fit through";
     }
     else if (monster.mpeaceful && trap) {
@@ -3616,25 +3552,21 @@ export async function petRefusesHeroSwap(monster, state) {
             state.context.tips = (state.context.tips ?? 0) | TIP_UNTRAP_MON;
             await plineWithContinuation('(Tip: perhaps #untrap would help?)');
         }
-        return true;
+        return false;
     }
     else if (monster.mpeaceful && (!goodPosition(hero.ux0, hero.uy0, { kind: 'monster', monster }, { state })
         || state.level.traps.some(candidate => candidate.tx === hero.ux0 && candidate.ty === hero.uy0)
         || monster.ispriest || monster.isshk || monster.isgd
         || MONSTER_NAME[monster.mnum] === 'Oracle'
         || monster.m_id === state.quest_status?.leader_m_id)) {
+        /* displacing peaceful into unsafe or trapped space, or trying to
+           displace quest leader, Oracle, shk, priest, or vault guard */
         reason = "doesn't want to swap places";
     }
-    if (!reason)
+    if (reason) {
+        await plineWithContinuation(`You stop.  ${monsterName(monster, { state, article: 'your', capitalized: true })} ${reason}.`);
         return false;
-    await plineWithContinuation(`You stop.  ${monsterName(monster, { state, article: 'your', capitalized: true })} ${reason}.`);
-    return true;
-}
-// The hero is at the monster's square and the refusal checks have passed.
-// C hack.c:domove_swap_with_pet(): the swap itself — trade places, then
-// run the landing liquid, the trap, and the kill or abuse consequences.
-export async function settlePetHeroDisplacement(monster, state) {
-    const hero = state.u;
+    }
     monster.mtrapped = 0;
     monster.mx = hero.ux0;
     monster.my = hero.uy0;
@@ -3656,12 +3588,12 @@ export async function settlePetHeroDisplacement(monster, state) {
         finishDeath: finishHeroLiquidMonsterDeath,
     });
     if (state.program_state.gameover)
-        return;
+        return true;
     let trapMovedMonster = false;
     if (!monster.dead && monster.mhp > 0) {
         const action = await mintrap(monster, state);
         if (state.program_state.gameover)
-            return;
+            return true;
         // trapeffect_telep_trap() returns Trap_Moved_Mon even when blocked.
         trapMovedMonster = !!action.movement.actorLeftLevel || action.event?.kind === 'teleport-trap';
     }
@@ -3684,6 +3616,7 @@ export async function settlePetHeroDisplacement(monster, state) {
         await abusePet(monster, state);
         adjustHeroAlignment(-3, state);
     }
+    return true;
 }
 function petBadRock(monster, state, x, y) {
     const location = state.level.at(x, y);
@@ -3711,8 +3644,9 @@ function petBadRock(monster, state, x, y) {
 // traversable square or 50 attempts cancel the move.
 // C hack.c:avoid_running_into_trap_or_liquid(): a seen trap, or a
 // dangerous liquid while blind, stops or cancels the run before the step.
-// C hack.c:domove_attackmon_at(): the target-monster branch for the
-// swallower and an ordinary destination — displacement offer or attack.
+// domove_attackmon_at(): the target-monster branch for the swallower and an
+// ordinary destination — displacement offer or attack (beastChoosesHeroDisplacement()
+// owns its displacer-beast roll below).
 async function domoveCore(dx, dy) {
     requirePlayingGame(game);
     const u = game.u;
@@ -3996,7 +3930,8 @@ async function domoveCore(dx, dy) {
     }
     if (await rootedHeroCannotMove())
         return true;
-    if (heroTestMove(newx, newy) && !await confirmHeroStep(newx, newy))
+    if (testHeroMove(u.ux, u.uy, newx, newy, 'test', game).passes
+        && !await confirmHeroStep(newx, newy))
         return false;
     if (u.utrap) {
         // domove()'s trapmove() + reset_utrap(TRUE) release live in the
@@ -4013,8 +3948,29 @@ async function domoveCore(dx, dy) {
                 && blocksDiagonalDoor(null, loc)))) {
         await feel_location(newx, newy);
     }
-    if (!await heroCanEnterIronBars(newx, newy, game))
-        return rejectHeroMove();
+    // C test_move()'s iron-bars branch (hack.c:1011, 1024-1036): a blind
+    // hero feels the bars; an underwater body reports the obstacle; a
+    // rusting, corrosive or metallivorous body chews; anything that neither
+    // passes walls nor fits between the bars is stopped.
+    if (loc?.typ === IRONBARS) {
+        if (game.blind)
+            await feel_location(newx, newy);
+        if (!heroPassesWalls(game)) {
+            if (game.u.uinwater) {
+                await pline('There is an obstacle there.');
+                return rejectHeroMove();
+            }
+            const body = { mnum: heroSpecies(game) };
+            const eatsMetal = !!((MONSTER_FLAGS1[body.mnum] ?? 0) & M1_METALLIVORE);
+            if ((eatsMetal || monsterCorrodesBars(body)) && await continueChewingTerrain(newx, newy, game))
+                return rejectHeroMove();
+            if (!monsterPassesBars(body)) {
+                if (game.flags.mention_walls)
+                    await pline('You cannot pass through the bars.');
+                return rejectHeroMove();
+            }
+        }
+    }
     const formFlags = MONSTER_FLAGS1[heroSpecies(game)] ?? 0;
     const tunnels = !!(formFlags & M1_TUNNEL) && !(formFlags & M1_NEEDPICK);
     if (loc && (IS_OBSTRUCTED(loc.typ)
@@ -4140,10 +4096,40 @@ async function domoveCore(dx, dy) {
         }
         return rejectHeroMove();
     }
-    if (await rejectHeroDiagonalDoorEntry(dx, dy, loc))
-        return rejectHeroMove();
-    if (await rejectTightHeroDiagonal(dx, dy))
-        return rejectHeroMove();
+    // C test_move()'s diagonal doorway-entry reject (hack.c:1140-1150): the
+    // destination doorway must be doorless or unblocked, and an ooze under a
+    // closed door left as passable above does not count as a doorway.
+    if (dx && dy && !heroPassesWalls(game)) {
+        const entryDoor = heroOozesUnderDoor(loc) ? null : loc;
+        const intactEntry = blocksDiagonalDoor(null, entryDoor);
+        const doorKeeper = !intactEntry && entryDoor?.typ === DOOR ? shopkeeperBlockingDoor(newx, newy) : null;
+        if (intactEntry || doorKeeper) {
+            if (doorKeeper) {
+                const invisible = propertyIsActive('invisible', game);
+                await plineWithContinuation(`${shopkeeperName(doorKeeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
+            }
+            if (game.flags.mention_walls || game.u.uinwater || game.underwater) {
+                await plineWithContinuation("You can't move diagonally into an intact doorway.");
+            }
+            game.context.move = 0;
+            return rejectHeroMove();
+        }
+    }
+    // C test_move()'s tight-diagonal reject (hack.c:1153-1171): both
+    // orthogonal shoulders blocked by rock asks cant_squeeze_thru().
+    if (dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy)) {
+        const reason = heroTightDiagonalReason(game);
+        if (reason) {
+            if (reason === 1)
+                await pline('Your body is too large to fit through.');
+            else if (reason === 2)
+                await pline('You are carrying too much to get through.');
+            else
+                await pline('You cannot pass that way.');
+            game.context.move = 0;
+            return rejectHeroMove();
+        }
+    }
     if (!(dx && dy && heroBadRock(game, u.ux, newy) && heroBadRock(game, newx, u.uy))
         && wormCrossesBetween(u.ux, u.uy, newx, newy, game)) {
         const worm = monsterAtPosition(game.level, u.ux, newy);
@@ -4152,8 +4138,23 @@ async function domoveCore(dx, dy) {
         await pline(`${monsterName(worm, { state: game, article: 'your', capitalized: true })} is in your way.`);
         return rejectHeroMove();
     }
-    if (await rejectHeroDiagonalDoorExit(dx, dy))
-        return rejectHeroMove();
+    // C test_move()'s diagonal doorway-exit reject (hack.c:1208-1214): the
+    // origin doorway must be doorless, or its shopkeeper unblocked.
+    if (dx && dy && !heroPassesWalls(game)) {
+        const origin = game.level?.at(u.ux, u.uy);
+        const intact = origin?.typ === DOOR ? blocksDiagonalDoor(origin, null) : false;
+        const keeper = !intact && origin?.typ === DOOR ? shopkeeperBlockingEntry(newx, newy) : null;
+        if (!intact && keeper) {
+            const invisible = propertyIsActive('invisible', game);
+            await plineWithContinuation(`${shopkeeperName(keeper, { capitalized: true })}${invisible ? ' senses your motion and' : ''} blocks your way!`);
+        }
+        if (intact || keeper) {
+            if (game.flags.mention_walls)
+                await plineWithContinuation("You can't move diagonally out of an intact doorway.");
+            game.context.move = 0;
+            return rejectHeroMove();
+        }
+    }
     const boulder = heroPassesWalls(game) && !game.level.flags.sokoban_rules ? null
         : (game.level.objects[newx]?.[newy] || []).find(object => object.otyp === BOULDER);
     const hallucinating = heroIsHallucinating(game);
@@ -4218,19 +4219,15 @@ async function domoveCore(dx, dy) {
         const monster = destinationMonster;
         // C drag_ball() can pull the hero back before the swap check.
         // A refused swap still completes ball placement and its delay.
-        if (await petRefusesHeroSwap(monster, game)) {
+        if (!await settlePetHeroDisplacement(monster, game)) {
             u.ux = oldx;
             u.uy = oldy;
             if (u.usteed) {
                 u.usteed.mx = oldx;
                 u.usteed.my = oldy;
             }
-            return finishHeroMovement({
-                oldx, oldy, loc, ballChainMove,
-            });
         }
-        await settlePetHeroDisplacement(monster, game);
-        if (game.program_state.gameover)
+        else if (game.program_state.gameover)
             return true;
     }
     return finishHeroMovement({
@@ -4238,8 +4235,9 @@ async function domoveCore(dx, dy) {
     });
 }
 // ---------------------------------------------------------------------------
-// C hack.c:notice_mon() and notice_all_mons(): the accessibility notices
-// behind the spot_monsters option (C a11y.mon_notices). C latches each
+// The accessibility notices behind the spot_monsters option (C
+// a11y.mon_notices), ported in noticeMonster() (hack.c:notice_mon()) and
+// noticeAllMonsters() (hack.c:notice_all_mons()) below. C latches each
 // monster's mspotted and prints "You see <mon>." once per sighting; a
 // monster that can no longer be spotted drops its latch silently.
 // vision_recalc() owns the catch-up, including recalculations triggered by
@@ -4417,10 +4415,13 @@ export function stopRun(g = game, andTravel = true) {
     if (g.multi > 0)
         g.multi = 0;
 }
-// C hack.c:findtravelpath() restores run to 8 after nomul(0) on arrival.
-// Keep that value: allmain.c suppresses new time updates until a command
-// resets run. Only a screen flush consumes an already pending update;
-// suppressed movement messages do not flush the screen (pline.c:vpline()).
+// The travel-arrival cleanup of C end_running() (hack.c:4149-4157): clear
+// the travel flags, free gt.travelmap (findtravelpath()'s selection) and
+// cancel a pending repeat.  findtravelpath() restores run to 8 after its
+// nomul(0) on arrival; keep that value: allmain.c suppresses new time
+// updates until a command resets run. Only a screen flush consumes an
+// already pending update; suppressed movement messages do not flush the
+// screen (pline.c:vpline()).
 export function arriveTravel(g = game) {
     g._travelMap = undefined;
     g._runState = null;
@@ -4606,7 +4607,7 @@ export function disturbBuriedZombies(x, y, state = game) {
         scheduleObjectTimer(corpse, OBJECT_TIMER_KIND.ZOMBIFY_MON, moves + Math.max(1, Math.floor((remaining * 2) / 3)), state);
     }
 }
-// C hack.c may_dig(): only ROCKs and TREEs carry W_NONDIGGABLE.
+// C hack.c:may_dig().  Only ROCKs and TREEs carry W_NONDIGGABLE.
 export function mayDig(x, y, state = game) {
     const location = state.level?.at(x, y);
     if (!location)
@@ -4926,8 +4927,8 @@ export function heroGoldAmount(state) {
     const object = heroGoldObject(state);
     return object ? heroGoldQuantity(object) : 0;
 }
-// C hack.c:money_cnt() over a monster's minvent; C callers shk.c:4046,
-// shk.c:5586, priest.c:614.
+// money_cnt() over a monster's minvent (the same C function as
+// heroGoldAmount() above); C callers shk.c:4046, shk.c:5586, priest.c:614.
 export function monsterGoldAmount(monster) {
     return monster.minvent?.find(object => object.oclass === COIN_CLASS)?.quan ?? 0;
 }

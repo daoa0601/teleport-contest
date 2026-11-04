@@ -3189,7 +3189,7 @@ function canAlmostSee(state, x, y) {
 }
 // C trap.c:trapeffect_sqky_board(): the hero branch — a flying hero notices
 // the board, otherwise it squeaks trapnote()'s note; the monster branch —
-// the squeak heard by the hero, waking nearby sleepers (C hack.c:wake_nearby()
+// the squeak heard by the hero, waking nearby sleepers (C mon.c:wake_nearby()
 // runs at the end).
 async function trapeffectSqkyBoard(mtmp, trap, { state = game, movement, publish = async () => { }, viaSitting = false, failedUntrap = false, forceTrap = false, } = {}) {
     if (isHeroDefender(mtmp, state)) {
@@ -3700,7 +3700,7 @@ async function resolveMineLiquid(monster, state, options) {
 // trap.c trapeffect_landmine(): the monster branch — a monster lighter
 // than the trigger weight never sets it off, airborne ones rarely do, and
 // the blast stages the pit and the kill; an unconscious hero is awakened
-// by the explosion (C hack.c:unconscious()).
+// by the explosion (C trap.c:unconscious()).
 export function beginMonsterLandMine(monster, trap, state = game, { random = rn2, rollOne = rnd } = {}) {
     const visibility = monsterTrapVisibility(monster, state);
     const rawDamage = rollOne(16);

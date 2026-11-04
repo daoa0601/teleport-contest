@@ -70,7 +70,7 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion } from './hack.js';
+import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig } from './hack.js';
 import type { MapLocation } from './map_types.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
@@ -939,13 +939,6 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
     return { rockOk, treeOk };
 }
 
-// Diggability of a location for monster tunnelling.
-// C hack.c:may_dig(): stone walls and trees flagged W_NONDIGGABLE
-// cannot be dug through.
-export function monsterMayDigLocation(loc: MapLocation | null | undefined) {
-    if (!loc) return false;
-    return !((IS_STWALL(loc.typ) || IS_TREE(loc.typ)) && (loc.wall_info ?? 0) & W_NONDIGGABLE);
-}
 
 // ---------------------------------------------------------------------------
 // C mon.c:can_touch_safely(), curr_mon_load(), max_mon_load() and can_carry().
@@ -1088,7 +1081,7 @@ export async function mfndpos(
                     !!(flags & ALLOW_WALL) &&
                     !(IS_STWALL(loc.typ) && loc.wall_info & W_NONPASSWALL);
                 const mayTunnel =
-                    (IS_TREE(loc.typ) ? treeOk : rockOk) && monsterMayDigLocation(loc);
+                    (IS_TREE(loc.typ) ? treeOk : rockOk) && mayDig(nx, ny, state);
                 if (IS_OBSTRUCTED(loc.typ) && !mayPassWall && !mayTunnel) continue;
                 if (
                     IS_OBSTRUCTED(loc.typ) &&
