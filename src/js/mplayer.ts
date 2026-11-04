@@ -201,6 +201,7 @@ async function equipSpecialPlayer(monster: Monster, equipment: PlayerEquipment):
         await addCreatedObjectToMonsterInventory(monster, await mkobj(RANDOM_CLASS, false));
 }
 
+// C mplayer.c:mk_mplayer_armor()
 async function givePlayerArmor(monster: Monster, type: number): Promise<void> {
     if (type === STRANGE_OBJECT) return;
     const object = await mksobj(type, false, false);
@@ -221,6 +222,7 @@ const DEVELOPERS = [
     'Eric', 'Marvin', 'Warwick', 'Alex', 'Dion', 'Michael', 'Helge', 'Ron', 'Timo', 'Joshua', 'Pat', '',
 ];
 
+// C mplayer.c:get_mplname()
 function namePlayerMonster(monster: Monster): void {
     const femaleKind = monsterIsFemale(monster.mnum);
     const developer = unusedDeveloperName();
@@ -230,6 +232,7 @@ function namePlayerMonster(monster: Monster): void {
     setMonsterGivenName(monster, `${name} the ${monsterRank(monster)}`);
 }
 
+// C mplayer.c:dev_name()
 function unusedDeveloperName(): string | null {
     for (let attempts = 0; attempts < 100; attempts++) {
         const name = DEVELOPERS[rn2(DEVELOPERS.length)];

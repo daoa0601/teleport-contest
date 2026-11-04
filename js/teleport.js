@@ -513,6 +513,7 @@ export async function teleportHero({ chooseDestination, source = null, discover 
 function heroIsStunned(state) {
     return !!(state?.u?.stunned || (state?.u?.stunnedTurns ?? 0) > 0);
 }
+// Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({ state = game, random = rn2, rollOne = rnd, chooseDestination = null, finishArrival = finishTeleportArrival, publish = plineWithContinuation, ignoreRestrictions = false, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -954,6 +955,7 @@ async function teleportMonsterPet(monster, state, force, publish) {
     return true;
 }
 // C teleport.c:mtele_trap().
+// Also C teleport.c:mvault_tele(): inlined here for one-use teleport traps.
 export async function teleportMonsterFromTrap(monster, trap, { state = game, calls = [], random = rn2, rollOne = rnd, publish = plineWithContinuation, } = {}) {
     requireLevel(state);
     const event = {

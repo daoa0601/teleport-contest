@@ -656,6 +656,7 @@ export function teleportHeroAtWill<Arrival extends ArrivalResult>(
     options: TeleportAtWillOptions<Arrival> & { finishArrival: (movement: HeroTeleportMovement) => Promise<Arrival> },
 ): Promise<TeleportAtWillResult<Arrival>>;
 export function teleportHeroAtWill(options?: TeleportAtWillOptions<DefaultArrival>): Promise<TeleportAtWillResult<DefaultArrival>>;
+// Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 export async function teleportHeroAtWill({
     state = game, random = rn2, rollOne = rnd, chooseDestination = null,
     finishArrival = finishTeleportArrival, publish = plineWithContinuation,
@@ -1102,6 +1103,7 @@ async function teleportMonsterPet(
 }
 
 // C teleport.c:mtele_trap().
+// Also C teleport.c:mvault_tele(): inlined here for one-use teleport traps.
 export async function teleportMonsterFromTrap(
     monster: Monster, trap: Trap, {
         state = game, calls = [], random = rn2, rollOne = rnd, publish = plineWithContinuation,

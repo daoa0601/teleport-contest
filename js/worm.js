@@ -27,6 +27,7 @@ export async function redrawMonsterWormSegments(monster) {
 }
 // C worm.c:cutworm(). The struck segment becomes the new head when the
 // severed tail survives. Neither outcome is a monster death or a birth tally.
+// Also C worm.c:toss_wsegs(): inlined here when the severed tail dies.
 export async function cutWorm(monster, x, y, sliceOrChop, { state = game, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, } = {}) {
     if (!monster.wormno || monster.mx === x && monster.my === y)
         return;
@@ -140,6 +141,7 @@ export function wormCrossesBetween(x1, y1, x2, y2, state = game) {
     }
     return false;
 }
+// C worm.c:remove_worm()
 // Visible segments are head-outward. wormHead holds C's hidden dummy segment;
 // literal head-only moves can leave it behind until worm_move() or restore.
 // Clearing occupancy retains the body slot and deadline for relocation.
@@ -164,6 +166,8 @@ async function clearWormSquare(point) {
     removeMonsterFromMapAt(point.x, point.y);
     await newsym(point.x, point.y);
 }
+// C worm.c:wormgone()
+// Also C worm.c:toss_wsegs(): clearing occupancy and discarding the segment array.
 export async function removeMonsterWormBody(monster) {
     if (!monster?.wormno)
         return;
@@ -305,6 +309,7 @@ export async function shrinkStationaryMonsterWorm(monster, { rollDice = d } = {}
         monster.mhp = Math.max(1, monster.mhp - rollDice(2, 2));
 }
 // C worm.c:shrink_worm(). Drops the starting tail segment.
+// Also C worm.c:toss_wsegs(): inlined here for the single discarded segment.
 async function removeWormTailTip(monster) {
     const tip = monster.wormSegments.pop();
     if (tip)

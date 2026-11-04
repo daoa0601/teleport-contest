@@ -349,6 +349,8 @@ function petCanReachObject(monster: Monster, object: GameObject, state: PlayingG
     );
 }
 
+// Also C dogmove.c:cursed_object_at(): inlined here.
+// Also C dogmove.c:wantdoor(): inlined here.
 function dogGoal(
     monster: Monster,
     state: PlayingGameState,
@@ -908,6 +910,7 @@ async function pullLeashedPetCloser(
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
 
+// Also C dogmove.c:cursed_object_at(): inlined here.
 export async function movePet(
     monster: Monster,
     state: PlayingGameState,
@@ -1264,6 +1267,7 @@ const DISGUISES: readonly MealDisguise[] = [
     FOOD_DISGUISE,
 ];
 
+// Also C dogmove.c:mnum_leashable(): all monster disguises in this table are leashable.
 export async function beginMonsterMealMimicry(
     monster: Monster, state: GameState = game,
 ): Promise<void> {

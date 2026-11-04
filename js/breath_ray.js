@@ -30,6 +30,7 @@ export async function breatheFromMonster(sourceMonster, target, options = {}) {
         originX: sourceMonster.mx, originY: sourceMonster.my,
     });
 }
+// C mthrowu.c:breathwep_name(): ordinary breath names; callers handle hallucination.
 export function breathWeaponName(damageType) {
     return ['', 'fragments', 'fire', 'frost', 'sleep gas',
         'a disintegration blast', 'lightning', 'poison gas', 'acid',

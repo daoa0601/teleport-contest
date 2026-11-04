@@ -2494,6 +2494,7 @@ async function choosePolearmTarget(
     });
 }
 
+// Also C apply.c:snickersnee_used_dist_attk(): inlined here.
 export async function usePolearm(
     object: GameObject,
     { state = game, ensureWielded, autohit = false }: PolearmOptions = {},

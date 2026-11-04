@@ -712,6 +712,7 @@ export async function throwMonsterProjectile(source, object, { state = game, dx,
     shot.projectileBroken = missile.where === 'gone';
     return shot;
 }
+// C mthrowu.c:return_from_mtoss()
 export async function returnMonsterWeapon(monster, weapon, impactX, impactY, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, animateReturn, dropTether, } = {}) {
     const impaired = monster.mconf || monster.mstun || monster.mblinded;
     const visible = canSeeMonster(monster);
@@ -900,6 +901,9 @@ async function reportDryThroat(source, state, publish) {
             await publish(message);
     }
 }
+// C mthrowu.c:breamm(): monster target.
+// Also C mondata.c:get_atkdam_type(): inlined here.
+// Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
 export async function resolveMonsterCombatBreath(source, target, attack, { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     const damageType = attack[1] === AD_RBRE ? rayDamageType(random(8)) : attack[1];
     if (!monsterLinedUpWithMonster(source, target, state))
@@ -948,6 +952,8 @@ export async function resolveMonsterCombatBreath(source, target, attack, { state
 // this one transaction: m_lined_up(), the mcan cough, the seen-resistance
 // and recharge gates, the breath line, dobuzz(), nomul(0) and the
 // recharge, sleep and pet-hunger tail all run in C order here.
+// Also C mondata.c:get_atkdam_type(): inlined here.
+// Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
 export async function resolveMonsterBreathAtHero(monster, attack, { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     let damageType = attack[1];
     const dice = attack[2];

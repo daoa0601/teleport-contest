@@ -723,6 +723,8 @@ function possessive(noun) {
     return noun.endsWith('s') ? `${noun}'` : `${noun}'s`;
 }
 const S_BLOB = 2;
+// C uhitm.c:hmon_hitmon_weapon_melee(): base damage, backstab, and weapon shattering.
+// Also C uhitm.c:hmon_hitmon_weapon(): the normal/improvised weapon choice is inlined here.
 export async function prepareHeroWeaponContact(monster, weapon, { mode, dieRoll, state = game, publish = plineWithContinuation }) {
     requirePlayingGame(state);
     if (weapon.oclass !== WEAPON_CLASS && weapon.oclass !== GEM_CLASS && !isWeaponTool(weapon))
@@ -837,6 +839,8 @@ const VEGGY = 3;
 const PAPER = 5;
 const PHYSICAL_OBJECTS = new Set([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]);
 const SHADE_AWARE_OBJECTS = new Set([...PHYSICAL_OBJECTS, MIRROR, CLOVE_OF_GARLIC]);
+// C uhitm.c:hmon_hitmon_misc_obj()
+// Also C uhitm.c:hmon_hitmon_potion(): the potion contact branch is inlined here.
 export async function resolveHeroObjectContact(monster, object, { mode, state = game, target = { x: monster.mx, y: monster.my }, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, finishMonsterDeath = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
     requirePlayingGame(state);
     const contact = {
@@ -1325,6 +1329,7 @@ export async function hitMonsterWithHeroObject(monster, object, options) {
         objectConsumed: object?.where === 'gone' || object?.where === 'onbill',
     };
 }
+// C uhitm.c:hmon_hitmon()
 async function resolvePhysicalHit(monster, originalObject, context) {
     const { state, mode, publish, finishMonsterDeath } = context;
     const handToHand = mode === 'melee'
@@ -1460,6 +1465,8 @@ async function resolvePhysicalHit(monster, originalObject, context) {
     }
     return { survived: !destroyed, heroDied: false };
 }
+// C uhitm.c:hmon_hitmon_do_hit()
+// Also C uhitm.c:hmon_hitmon_weapon_melee(): artifact, silver, light, jousting, and ammunition effects.
 async function preparePhysicalContact(monster, object, context) {
     const { state, publish, mode, dieRoll } = context;
     const material = object ? objectMaterial(object, state) : 0;
@@ -4235,6 +4242,7 @@ const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const FLAMING_SPECIES = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander']
     .map(name => MONSTER_NAME.indexOf(name)));
+// C uhitm.c:gulpum()
 export async function resolveHeroCombatEngulf(defender, attack, { state = game, publish = plineWithContinuation, random = rn2, rollDice = d, } = {}) {
     requirePlayingGame(state);
     const [, damageType, dice, sides] = attack;
@@ -4615,6 +4623,7 @@ const S_LICH = 38;
 const S_MUMMY = 39;
 const S_ZOMBIE = 52;
 const PM_ROPE_GOLEM = MONSTER_NAME.indexOf('rope golem');
+// C uhitm.c:hmonas()
 export async function attackHeroInMonsterForm(monster, x, y, { confirmationOverridden = false, } = {}) {
     requirePlayingGame(game);
     const results = Array(6).fill(M_ATTK_MISS);

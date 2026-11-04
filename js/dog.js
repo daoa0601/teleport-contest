@@ -143,6 +143,7 @@ export async function abusePet(monster, state = game) {
     }
     return true;
 }
+// C uhitm.c:hmon_hitmon_pet()
 export async function abusePetAfterHeroHit(monster, damage, state = game) {
     if (damage <= 0 || !await abusePet(monster, state))
         return { heroDied: false };

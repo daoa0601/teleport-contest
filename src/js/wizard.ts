@@ -298,6 +298,7 @@ type CovetousStrategy =
 
 interface CovetousDecision { strategy: CovetousStrategy; goal: Position | undefined }
 
+// C wizard.c:strategy(): install the chosen strategy and goal.
 export function chooseCovetousStrategy(monster: Monster, state: PlayingGameState): CovetousStrategy {
     const { strategy, goal } = decideCovetousStrategy(monster, state);
     if (goal) monster.mgoal = goal;
@@ -309,6 +310,7 @@ export function chooseCovetousStrategy(monster: Monster, state: PlayingGameState
     return strategy;
 }
 
+// C wizard.c:strategy(): health thresholds and artifact priorities.
 function decideCovetousStrategy(monster: Monster, state: PlayingGameState): CovetousDecision {
     if (shopkeeperInOwnShop(monster, state) || priestIsInOwnTemple(monster, state))
         return { strategy: { kind: 'harass' }, goal: undefined };
@@ -332,6 +334,10 @@ function decideCovetousStrategy(monster: Monster, state: PlayingGameState): Cove
     return { strategy: { kind: health < 3 ? 'heal' : 'harass' }, goal };
 }
 
+// C wizard.c:target_on()
+// Also C wizard.c:mon_has_arti(): inlined here for the seeking monster.
+// Also C wizard.c:on_ground(): inlined here for floor objects.
+// Also C wizard.c:other_mon_has_arti(): inlined here for other carriers.
 function findCovetousTarget(monster: Monster, mask: number, state: PlayingGameState): CovetousTarget | null {
     // C wizard.c:target_on() checks the requested wants mask directly.
     if (!(questMonsterFlags3(monster.mnum, state) & mask)) return null;
@@ -353,6 +359,7 @@ function findCovetousTarget(monster: Monster, mask: number, state: PlayingGameSt
     return null;
 }
 
+// Also C wizard.c:which_arti(): object-type selection is inlined into this predicate.
 function objectMatchesTarget(object: GameObject, mask: number, state: PlayingGameState): boolean {
     if (mask === WANTS_AMULET) return object.otyp === AMULET_OF_YENDOR;
     if (mask === WANTS_BELL) return object.otyp === BELL_OF_OPENING;
@@ -361,6 +368,7 @@ function objectMatchesTarget(object: GameObject, mask: number, state: PlayingGam
     return !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
 }
 
+// C wizard.c:you_have()
 function heroHasTarget(mask: number, state: PlayingGameState): boolean {
     const owns = state.u.uhave;
     if (mask === WANTS_AMULET) return !!owns?.amulet;

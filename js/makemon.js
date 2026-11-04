@@ -143,6 +143,7 @@ const CHAIN_MAIL = 128;
 const G_LGROUP = 0x0040;
 const G_SGROUP = 0x0080;
 // C makemon.c:cmp_init_mongen_order().
+// Also C makemon.c:init_mongen_order(): initialization and sorting are inlined here.
 function monsterGenerationOrder() {
     // C makemon.c:init_mongen_order() sorts once, on first use. Alignment
     // abuse may have changed Erinys difficulty before this first selection.
@@ -644,6 +645,8 @@ export function setMonsterMalign(monster, state = game) {
         monster.malign = absoluteAlignment;
     }
 }
+// Also C makemon.c:m_initweap(): species-specific starting weapons are inlined here.
+// Also C makemon.c:m_initinv(): species-specific starting inventory is inlined here.
 export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
     const level = requireGameLevel();
     if (game.iflags.debug_mongen || mdat == null && level.flags.rndmongen === false)

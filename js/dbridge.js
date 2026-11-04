@@ -594,6 +594,7 @@ async function crushEntity(entity, bridge, state, options, killer, death) {
 function occupantAt(occupants, x, y) {
     return occupants.find(entity => entity?.active && entity.x === x && entity.y === y) ?? null;
 }
+// C dbridge.c:E_phrase()
 function entityPhrase(entity, verb, state) {
     return `${entityName(entity, state, true)} ${entity.hero ? verb : verbForSubject(null, verb)}`;
 }

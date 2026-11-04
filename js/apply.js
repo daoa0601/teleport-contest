@@ -2481,6 +2481,7 @@ async function choosePolearmTarget(start, state, min, max) {
         isValidLocation: valid,
     });
 }
+// Also C apply.c:snickersnee_used_dist_attk(): inlined here.
 export async function usePolearm(object, { state = game, ensureWielded, autohit = false } = {}) {
     if (state.u?.uswallow || state.uswallow) {
         await syncPline("There's not enough room here to use that.");

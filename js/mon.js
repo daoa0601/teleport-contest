@@ -479,6 +479,7 @@ export function schedulable(monster) {
 // reverse of creation order just like movement allocation does. Yielding at
 // each transformation lets its messages and consequences finish before the
 // next source-ordered random decision.
+// Also C mon.c:iter_mons(): inlined here for the distress pass.
 export async function* monsterDistressEvents(monsters = [], state = requireInitializedGame(), random = rn2, distressTurn = state.moves ?? 1, publish = plineWithContinuation) {
     for (const monster of monstersInFmonOrder(monsters)) {
         if (!schedulable(monster))
@@ -1173,6 +1174,7 @@ function monsterHidingActor(monster, state) {
         tame: !!monster.mtame, stoneResistant: monsterHasStoneResistance(monster),
     };
 }
+// Also C dogmove.c:cursed_object_at(): inlined here for tame hiders.
 function hidingPlace(actor, state) {
     const { x, y } = actor;
     const nowhere = { undetected: false, cover: null, water: false };
@@ -1211,6 +1213,7 @@ export async function presentMonsterGrowth(monster, growth) {
     if (growth.genocided)
         await finishEnvironmentalMonsterDeath(monster, game);
 }
+// Also C mon.c:iter_mons_safe(): the actor loop uses an identity snapshot.
 async function executeMonsterTurns() {
     const game = requireInitializedGame();
     const level = game.level;
@@ -3943,6 +3946,7 @@ export async function normalizeMonsterShape(monster, state = game, publish = pli
 // mimic regains its ordinary disguise once protection stops suppressing it.
 // C mon.c:m_restartcham(): the iter_mons callback — each shapechanger
 // resumes its innate form unless cancelled.
+// Also C mon.c:iter_mons(): inlined here for shapechanger restoration.
 export async function restartMonsterShapechanging(state = game) {
     requireLiveGame(state);
     for (const monster of [...(state.level?.monsters ?? [])].reverse()) {

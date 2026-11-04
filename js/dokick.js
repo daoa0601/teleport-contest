@@ -640,6 +640,7 @@ export async function kickDoor(x, y, average, responses) {
         await witnessDoorKick(x, y, false);
     }
 }
+// Also C mon.c:get_iter_mons_xy(): inlined here for the first watchman witness.
 async function witnessDoorKick(x, y, broken) {
     requirePlayingGame(game);
     if (!inTown(game.level, x, y))

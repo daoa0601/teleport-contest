@@ -1022,6 +1022,7 @@ export function willMonsterHurtle(
     });
 }
 
+// C uhitm.c:hmon_hitmon_stagger()
 export async function tryUnarmedStagger(monster: Monster, {
     skill,
     damage,

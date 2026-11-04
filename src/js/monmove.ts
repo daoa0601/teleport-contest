@@ -347,6 +347,7 @@ export function monsterIsScaredAt(
 }
 
 // C monmove.c:bee_eat_jelly(). A living queen leaves the meal untouched.
+// Also C monmove.c:find_pmmonst(): inlined here for the queen bee search.
 export async function feedBeeRoyalJelly(monster: Monster, object: GameObject, state: GameState): Promise<boolean> {
     const queensGenocided = !!((state.mvitals?.[PM_QUEEN_BEE]?.mvflags ?? 0) & G_GENOD);
     if (!queensGenocided && state.level?.monsters.some(candidate =>
@@ -851,6 +852,7 @@ function monsterHasLauncherAndAmmo(monster: Monster) {
 }
 
 // mhitu.c:ranged_attk_available() excludes effects the hero has resisted.
+// Also C mondata.c:get_atkdam_type(): inlined here for random breath attacks.
 function monsterHasAvailableDistanceAttack(monster: Monster, random: RandomBelow) {
     for (const [method, damage] of MONSTER_ATTACKS[monster.mnum] ?? []) {
         if (![AT_SPIT, AT_BREA, AT_MAGC, AT_GAZE].includes(method)) continue;
@@ -1433,6 +1435,7 @@ export function setMonsterApparentHeroPosition(
     return true;
 }
 
+// Also C monmove.c:leppie_avoidance(): inlined here.
 async function moveHostile(
     monster: Monster,
     state: PlayingGameState,
@@ -1984,6 +1987,8 @@ async function runCovetousHarassTactics(
 // C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
 // C trap.c:count_traps(): existingWebs is count_traps(WEB), the web count
 // that lowers the spinning probability.
+// Also C monmove.c:soko_allow_web(): inlined here.
+// Also C monmove.c:count_webbing_walls(): inlined here.
 async function maybeSpinMonsterWeb(
     monster: Monster,
     movement: MonsterMovement,

@@ -841,6 +841,7 @@ function linedup_chk_corpse(x: number, y: number, state: PlayingGameState): bool
 }
 
 // C muse.c:m_use_undead_turning().
+// Also C mthrowu.c:linedup_callback(): inlined here.
 function m_use_undead_turning(monster: Monster, object: GameObject, state: PlayingGameState): boolean {
     if (object.otyp !== WAN_UNDEAD_TURNING || object.spe <= 0) return false;
     if (state.inventory.some(object => object.otyp === CORPSE)) return true;

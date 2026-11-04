@@ -297,6 +297,7 @@ function occupant(x, y, state) {
 function ignoresDeathField(mnum) {
     return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
+// C explode.c:explosionmask(): hero resistance branch.
 function heroResists(damageType, objectClass, state) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(heroSpecies(state));
@@ -306,6 +307,7 @@ function heroResists(damageType, objectClass, state) {
     return !!kind.property && (state.u[kind.property] || propertyIsActive(kind.property, state))
         || !!kind.defense && heroHasArtifactDefense(kind.defense, state);
 }
+// C explode.c:explosionmask(): monster resistance branch.
 function monsterResists(monster, damageType, objectClass) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(monster.mnum) || monsterIsVampireShifter(monster);

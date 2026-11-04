@@ -390,6 +390,7 @@ async function senseDetectedTrap(trap: DetectionTrap) {
     await map_object(image, true, false);
 }
 
+// C detect.c:foundone()
 async function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     const location = requireGameLevel(game).requireAt(x, y);
     if (glyph.kind === 'terrain' || glyph.kind === 'trap'
@@ -402,6 +403,7 @@ async function showFoundFeature(x: number, y: number, glyph: GlyphMetadata) {
     vision[x] = previousVision;
 }
 
+// C detect.c:detect_obj_traps(): trapped-container reporting during magical searching.
 async function revealTrappedContainers(objects: readonly GameObject[] | null | undefined, x: number, y: number): Promise<number> {
     let found = 0;
     for (const object of objects || []) {
@@ -432,6 +434,8 @@ function countDescription(count: number, singular: string, plural: string) {
 
 // C detect.c:findit().  Magical searching reveals every hidden thing within
 // eight spaces that is not behind blocking terrain.
+// Also C detect.c:findone(): inlined here.
+// Also C detect.c:detecting(): the findone() callback choice is explicit here.
 export async function findit() {
     requirePlayingGame(game);
     if (game.u?.uswallow) return 0;
@@ -608,6 +612,7 @@ type DetectionMap = Map<string, DetectionObject>;
 
 const HERE = 1, ELSEWHERE = 2;
 
+// C detect.c:trap_detect()
 export async function detectTraps(source: Pick<GameObject, 'cursed'> | null | undefined, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -671,6 +676,7 @@ async function displayTrapMap(cursed: boolean, state: PlayingGameState): Promise
     return { result: 0, known: false, strangeFeeling: false };
 }
 
+// C detect.c:detect_obj_traps(): detection and optional map display.
 async function detectContainerTraps(objects: readonly GameObject[], shown: DetectionMap | null, cursed: boolean, state: PlayingGameState): Promise<number> {
     let result = 0;
     for (const object of objects) {
@@ -822,6 +828,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
     return effectResult(0, known);
 }
 
+// C detect.c:food_detect()
 export async function detectFood(source: GameObject | null, { state = game }: DetectionOptions = {}): Promise<DetectionResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -917,6 +924,7 @@ export async function detectMonsters(source: GameObject | null, { state = game, 
     return effectResult(0, true);
 }
 
+// C detect.c:object_detect()
 export async function detectObjects(source: GameObject | null, { state = game, objectClass = RANDOM_CLASS }: DetectionOptions & { objectClass?: number } = {}): Promise<DetectionResult> {
     requireLiveGame(state);
     requirePlayingGame(state);
@@ -1062,6 +1070,8 @@ function goldIn(object: GameObject, blessed: boolean, state: GameState): GameObj
         || objectOfClass(object, COIN_CLASS);
 }
 
+// C detect.c:clear_stale_map()
+// Also C detect.c:check_map_spot(): inlined here.
 async function clearStaleObjects(objectClass: number, material: number, state: PlayingGameState): Promise<boolean> {
     let changed = false;
     const monsters = new Map(liveMonsters(state).map(monster =>
@@ -1338,6 +1348,7 @@ function glyphCharacter(glyph: ReturnType<typeof glyphAt>): string | undefined {
 }
 
 // C detect.c:openit()/openone(). Each opened feature keeps its normal owner.
+// Also C detect.c:detecting(): the openone() callback choice is explicit here.
 export async function openit(state: GameState = game) {
     requireLiveGame(state);
     requirePlayingGame(state);

@@ -209,6 +209,7 @@ function levelDistance(destination) {
     }
     return sameDungeon ? 'near you' : 'in the distance';
 }
+// C detect.c:furniture_detect()
 async function detectFurniture() {
     const level = requireGameLevel();
     const constraints = unconstrainMap();
