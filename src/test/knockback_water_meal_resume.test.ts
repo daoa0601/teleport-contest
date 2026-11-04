@@ -25,8 +25,10 @@ import { tryKnockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { NOT_HUNGRY, NO_MINVENT, POOL } from '../js/const.js';
-import { FOOD_RATION } from '../js/object_data.js';
+import { NOT_HUNGRY, NO_MINVENT, POOL, SATIATED } from '../js/const.js';
+import { FORTUNE_COOKIE, FOOD_RATION } from '../js/object_data.js';
+import { MONSTER_NAME } from '../js/monster_data.js';
+import { finishHeroHelplessness } from '../js/allmain.js';
 import { continueCountedCommand, rhack } from '../js/cmd.js';
 import { createMonsterAt } from './support/monsters.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -110,4 +112,74 @@ void test('a knockback into water keeps the empty nomovemsg, which finishes the 
     assert.equal(/  $/.test(game._pending_message ?? ''), true,
         'pline1("") appends two blank columns');
     assert.equal(visibleTopline().includes('--More--'), false);
+});
+
+// The same empty nomovemsg reaching eat.c:2048-2060: a satiated
+// (canchoke) hero whose bite enters with u.uhunger >= 2000 chokes in
+// bite()'s own gate (eat.c:3138-3141) before any nutrition transfers, so
+// the survivable choke() vomits (eat.c:3759-3762 sets nomovemsg =
+// You_can_move_again, nomul(-2), "vomiting") and start_eating's
+// `if (!old_nomovemsg)` pointer tests run with old_nomovemsg = "" — C
+// keeps it set, so done_eating(FALSE) consumes the vomit message silently
+// (eat.c:551-554: `if (message)` is FALSE) and never restores it.  The
+// vomiting helplessness then recovers through unmul()'s default, because
+// nomovemsg is NULL again.  A breathless hero (skeleton form) makes
+// choke()'s survivable branch (eat.c:3306 `Breathless || Hunger ||
+// (!Strangled && !rn2(20))`) deterministic, and its small size stays under
+// mhitm_knockback's size gate, which a size-4 form like a fire elemental
+// fails (uhitm.c: mgrav > mdef+1 sizes).
+void test('a choking bite of a meal started with the empty nomovemsg consumes the vomit message', async () => {
+    const race = races.find(candidate => candidate.name === 'elf');
+    assert.ok(race);
+    await freshObjectRoom({
+        race,
+        gameplaySeed: 41n,
+        hero: {
+            uhunger: 2100,
+            uhs: SATIATED,
+            umonnum: MONSTER_NAME.indexOf('skeleton'),
+            mh: 60,
+            mhmax: 60,
+        },
+    });
+    requireFixtureGame(game);
+    const input = resetInputState();
+    installPagerInput(input, {
+        expected: /knock|water|rock|Pheew|eating|finish|vomit|stuff|drowning|touch bottom|wobbly|move again|scrap of paper|cookie|They say|It reads|fortune/i,
+        limit: 32,
+    });
+
+    // The idle hero is knocked into the pool; a breathless hero sinks and
+    // touches bottom instead of crawling out, but hurtle_step()'s direct
+    // multi reset has already restored control with nomovemsg = "".
+    game.level.requireAt(9, 10).typ = POOL;
+    const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
+    giant.mpeaceful = false;
+    giant.minvis = true;
+
+    const knocked = await tryKnockback(giant, game.u,
+        { attackType: AT_CLAW, damageType: AD_PHYS },
+        { random: sides => (sides === 4 ? 3 : 0) });
+    assert.equal(knocked.knocked, true);
+    await stopHeroOccupation(game);
+    assert.equal(game.multi, 0, 'the direct multi reset leaves the hero free in the pool');
+    assert.equal(game._helplessReason, null);
+    assert.equal(game._helplessDoneMessage, '',
+        'the water landing keeps hurtle()\'s empty-but-set nomovemsg');
+
+    // A one-bite cookie eaten while satiated chokes on bite()'s entry
+    // gate; the empty old_nomovemsg stays "set" for C's pointer tests.
+    const cookie = await addInventoryObject(FORTUNE_COOKIE);
+    input.feed(cookie.invlet);
+    await rhack('e'.charCodeAt(0));
+
+    assert.ok((game.multi ?? 0) < 0, 'the survivable choke vomits and leaves the hero helpless');
+    assert.equal(game._helplessReason, 'vomiting');
+    assert.equal(game._helplessDoneMessage, null,
+        'done_eating(FALSE) consumes the vomit message instead of restoring it around the empty one');
+
+    await finishHeroHelplessness(undefined, game);
+    assert.match(game._pending_message ?? '', /You can move again\./,
+        'unmul() prints its default because nomovemsg is NULL again');
+    assert.equal(game._helplessDoneMessage, null);
 });
