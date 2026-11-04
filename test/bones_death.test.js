@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones_death.js';
+import { createBonesFromDeath, dropHeroInventoryForBones } from '../js/bones.js';
 import { resetInputState } from '../js/input.js';
 import { promptYesNo } from '../js/query.js';
 import { BURNING, DIED, FOUNTAIN, G_GENOD, GRAVE, HEADSTONE, LEAVESTATUE, NON_PM, PIT, ROOM, W_ARM, W_ARMC } from '../js/const.js';

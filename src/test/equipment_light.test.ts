@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 
 import { applyArmorOnEffects, removeHeroArmor, wearHeroArmor, wearEyewear } from '../js/do_wear.js';
 
-import { dropHeroInventoryForBones } from '../js/bones_death.js';
+import { dropHeroInventoryForBones } from '../js/bones.js';
 import { rhack } from '../js/cmd.js';
 import { NEED_HTH_WEAPON, NO_MINVENT, W_WEP } from '../js/const.js';
 import { pline } from '../js/pline.js';

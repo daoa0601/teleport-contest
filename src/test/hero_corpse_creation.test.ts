@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createBonesFromDeath } from '../js/bones_death.js';
+import { createBonesFromDeath } from '../js/bones.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { CORPSE } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';

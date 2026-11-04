@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createBonesFromDeath } from '../js/bones_death.js';
+import { createBonesFromDeath } from '../js/bones.js';
 import { dungeonOverviewDisclosure } from '../js/dungeon.js';
 import { setMulti } from '../js/cmd.js';
 import { CORR, STARVING, STONING } from '../js/const.js';

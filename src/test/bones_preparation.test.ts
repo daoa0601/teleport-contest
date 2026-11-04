@@ -1,14 +1,13 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createBonesFromDeath } from '../js/bones_death.js';
 import { BURN, G_GENOD, LEAVESTATUE, NO_MINVENT } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { mklev } from '../js/mklev.js';
-import { saveBonesLevel } from '../js/bones.js';
+import { createBonesFromDeath, saveBonesLevel } from '../js/bones.js';
 import { LEASH } from '../js/object_data.js';
 import { punishHero } from '../js/read.js';
 import { init_objects } from '../js/o_init.js';

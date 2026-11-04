@@ -12,7 +12,7 @@ import { rhack } from '../js/cmd.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { dosave, saveGame, restoreGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { restoreBonesMonsters } from '../js/bones_monster.js';
+import { restoreBonesMonsters } from '../js/bones.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

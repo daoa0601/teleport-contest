@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { createBonesFromDeath } from '../js/bones_death.js';
+import { createBonesFromDeath } from '../js/bones.js';
 import { DELPHI, MON_LIMBO, NO_MINVENT, OROOM, ROOMOFFSET, STRAT_APPEARMSG } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameLevel } from '../js/gstate.js';

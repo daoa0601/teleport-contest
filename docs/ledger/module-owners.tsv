@@ -5,9 +5,6 @@ src/js/attrib.ts	attrib.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
-src/js/bones_admission.ts	bones.c
-src/js/bones_death.ts	bones.c
-src/js/bones_monster.ts	bones.c
 src/js/botl.ts	botl.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c

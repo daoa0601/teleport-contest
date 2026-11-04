@@ -138,8 +138,8 @@ role_init	randrole	inlined	priest pantheon rn2(13) loop (startup.ts)
 role_init	randrole_filtered	n/a	character selection resolves a valid role before role_init
 role_init	randrace	n/a	character selection resolves a valid race before role_init
 role_init	randalign	n/a	character selection resolves a valid alignment before role_init
-savebones	dismount_steed	inlined	dismountHero(DISMOUNT_BONES) (bones_death.ts)
-savebones	drop_upon_death	inlined	dropHeroInventoryForBones (bones_death.ts)
+savebones	dismount_steed	inlined	dismountHero(DISMOUNT_BONES) (bones.ts)
+savebones	drop_upon_death	inlined	dropHeroInventoryForBones (bones.ts)
 sel_set_ter	set_levltyp_lit	inlined	setLevelTerrainLit, rn2(2) for random lighting (mkmaze.ts)
 set_artifact_intrinsic	arti_invoke	inlined	deactivateArtifactProperty on removal (hero_inventory.ts, artifacts.ts)
 set_wear	Amulet_on	n/a	starting set_wear() never meets an amulet; polymorphed ones go through wearHeroAccessory
@@ -926,7 +926,7 @@ really_done	finish_paybill	inlined	finishShopkeeperRepossession (end.ts, shk.ts)
 really_done	free_pickinv_cache	n/a	persistent perm_invent window cache cleanup
 really_done	get_valuables	inlined	collectFinalPossessions counts amulets and gems recursively (end.ts)
 really_done	keepdogs	inlined	collectLevelFollowers(game, true) gathers pets for escape/ascension (end.ts finishLivingGame)
-really_done	mk_named_object	inlined	createBonesFromDeath makes the named CORPSE and grave text (bones_death.ts)
+really_done	mk_named_object	inlined	createBonesFromDeath makes the named CORPSE and grave text (bones.ts)
 really_done	money_cnt	inlined	gameSummaryValues counts loose plus hidden container gold (end.ts)
 really_done	nh_terminate	n/a	process termination
 really_done	paybill	inlined	settleShopkeepersOnExit (end.ts, shk.ts)
@@ -1010,14 +1010,14 @@ findtravelpath	sobj_at	inlined	travelBoulderAt checks the boulder on a path cell
 findtravelpath	tmp_at	n/a	DEBUG-only iflags.trav_debug path visualization
 savebones	alloc	n/a	memory allocation
 savebones	compress_bonesfile	n/a	bones file compression
-savebones	iter_mons	inlined	prepareBonesMonstersForSave walks the monster list (bones_death.ts)
-savebones	mk_named_object	inlined	named hero corpse built in createBonesFromDeath (bones_death.ts)
-savebones	obj_attach_mid	inlined	objects stay linked to the arising monster's inventory (bones_death.ts)
-savebones	set_ghostly_objlist	inlined	inventory entries marked ghostly before save (bones_death.ts)
+savebones	iter_mons	inlined	prepareBonesMonstersForSave walks the monster list (bones.ts)
+savebones	mk_named_object	inlined	named hero corpse built in createBonesFromDeath (bones.ts)
+savebones	obj_attach_mid	inlined	objects stay linked to the arising monster's inventory (bones.ts)
+savebones	set_ghostly_objlist	inlined	inventory entries marked ghostly before save (bones.ts)
 savebones	sfo_char	n/a	bones file byte serialization
-savebones	unpunish	inlined	unpunishHero before saving (bones_death.ts)
-savebones	update_mlstmv	inlined	monster last-move bookkeeping in completeBonesMonster (bones_death.ts)
-savebones	yn_function	inlined	"Save bones?" answered via promptDeathQuestion (bones_death.ts)
+savebones	unpunish	inlined	unpunishHero before saving (bones.ts)
+savebones	update_mlstmv	inlined	monster last-move bookkeeping in completeBonesMonster (bones.ts)
+savebones	yn_function	inlined	"Save bones?" answered via promptDeathQuestion (bones.ts)
 getobj	cmdq_add_int	inlined	counted answers via takeRepeatCommand kind 'count' (inventory_prompt.ts)
 getobj	cmdq_add_key	inlined	queued keys via takeCommandKey (inventory_prompt.ts, input.ts)
 getobj	cmdq_clear	inlined	clearCommandKeys (inventory_prompt.ts)

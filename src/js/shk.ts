@@ -71,7 +71,7 @@ import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { dropHeroInventoryForBones } from './bones_death.js';
+import { dropHeroInventoryForBones } from './bones.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
