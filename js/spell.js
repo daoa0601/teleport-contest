@@ -3,7 +3,6 @@ import { requirePlayingGame } from './gstate.js';
 import { commandResultFailed } from './cmd.js';
 import { game, requireLiveGame } from './gstate.js';
 import { plineWithContinuation } from './pline.js';
-import { promptKey } from './tty_prompts.js';
 import { promptDirection } from './cmd.js';
 import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
@@ -18,7 +17,7 @@ import { mksobj } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills } from './skills.js';
 import { findArmorClass } from './do_wear.js';
-import { cmdq_add_key, cmdq_pop } from './cmd.js';
+import { cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
 import { canSeeMonster, canSpotMonster, flush_screen, shieldeff, map_invisible, zapdir_to_glyph, } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
 import { explode } from './explosion.js';
@@ -1022,12 +1021,8 @@ async function selectTraditionalSpell(spells) {
     const letters = count === 1 ? 'a' : count < 27 ? `a-${spellLetter(count - 1)}`
         : count === 27 ? 'a-zA' : `a-zA-${spellLetter(count - 1)}`;
     for (let tries = 0; tries < 10; tries++) {
-        // yn_function() acknowledges unread prose before replacing it with
-        // an unrestricted, case-sensitive single-key question.
-        await flushPendingTopline();
-        const key = await promptKey(`Cast which spell? [${letters} *?] `);
-        if (!game._inDoAgain)
-            cmdq_add_key(CQ_REPEAT, key);
+        const { answer } = await yn_function(`Cast which spell? [${letters} *?]`, null, '', true);
+        const key = answer.charCodeAt(0);
         if (key === 42 || key === 63)
             return 'menu';
         // C strchr(quitchars, ilet) also matches a literal fuzzer NUL.

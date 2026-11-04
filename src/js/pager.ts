@@ -2,7 +2,7 @@
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 
 import {
-    A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, CMDQ_USER_INPUT, COLNO, CORR, CQ_CANNED, CQ_REPEAT, D_BROKEN, D_TRAPPED,
+    A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, D_BROKEN, D_TRAPPED,
     def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel,
     is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
     M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT,
@@ -35,7 +35,7 @@ import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GlyphMetadata } from './display.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
-import { cmdq_add_key, cmdq_clear, cmdq_pop } from './cmd.js';
+import { cmdq_clear, cmdq_pop, yn_function } from './cmd.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { getLine, promptYesNo } from './query.js';
 import {
@@ -67,9 +67,8 @@ import { findDrawbridgeAt } from './dbridge.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import { DEC_TO_UNICODE } from './terminal.js';
 import { detectedTrapDisguise } from './detect.js';
-import { promptKey } from './tty_prompts.js';
 import { promptDirection, readDirectionKey, restoreCommandMap } from './cmd.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { KEY_HELP } from './keyhelp_data.js';
 import { HELP_FILES } from './help_files.js';
 import { showExtendedCommandList } from './cmd.js';
@@ -421,26 +420,9 @@ export async function whatDoesCommand(): Promise<void> {
         await pline(`Ask about '&' or '?' to get more info.${game.iflags.altmeta ? '  (For ESC, type it twice.)' : ''}`);
         game._whatdoesShown = true;
     }
-    const readKey = async (prompt: string) => {
-        // C pager.c:dowhatdoes() asks through yn_function(..., TRUE)
-        // (pager.c:2676): one cmdq_pop() (cmd.c:5496-5509) answers from
-        // the queue — a key answers, the user-input placeholder asks
-        // live, and every other entry clears CQ_CANNED and answers
-        // Escape.
-        const cmdq = cmdq_pop();
-        if (cmdq && cmdq.typ === CMDQ_KEY) return cmdq.key;
-        if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
-            cmdq_clear(CQ_CANNED);
-            return 27;
-        }
-        await flushPendingTopline();
-        const key = await promptKey(prompt, 0, { canned: false });
-        if (!game._inDoAgain) cmdq_add_key(CQ_REPEAT, key);
-        return key;
-    };
-    let key = await readKey('What command? ');
+    let key = (await yn_function('What command?', null, '', true)).answer.charCodeAt(0);
     if (key === 27 && game.iflags.altmeta) {
-        key = await readKey('] ');
+        key = (await yn_function(']', null, '', true)).answer.charCodeAt(0);
         if (key !== 27) key |= 128;
     }
     // Native key lookup, key text, and numeric diagnostics use unsigned char.

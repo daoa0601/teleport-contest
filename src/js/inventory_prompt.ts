@@ -158,8 +158,8 @@ function selectedInventoryObject(selection: InventoryObjectSelection): GameObjec
 // possession merely because fixinv is disabled. Every entry which selects
 // nothing — a non-key entry, an unmatched letter, refused hands — clears
 // CQ_CANNED and returns NULL without any prompt; a CMDQ_INT supplies the
-// count and pops again; only CMDQ_USER_INPUT falls through to the
-// interactive question.
+// count and pops again. CMDQ_USER_INPUT or an exhausted queue falls through
+// to the interactive loop, which starts with a fresh count.
 function takeQueuedInventorySelection(
     classify: (object: GameObject) => InventoryClassification,
     allowCount: boolean,
@@ -167,19 +167,14 @@ function takeQueuedInventorySelection(
 ): InventoryObjectSelection | undefined {
     let count: number | null = null;
     let cntgiven = false;
-    let needMore = false;
     for (;;) {
         const entry = cmdq_pop();
-        if (!entry) {
-            if (needMore) return CANCELLED;
-            return undefined;
-        }
+        if (!entry) return undefined;
         if (entry.typ === CMDQ_USER_INPUT) return undefined;
         if (entry.typ === CMDQ_INT) {
             if (!cntgiven && allowCount) {
                 count = entry.intval;
                 cntgiven = true;
-                needMore = true;
                 continue;
             }
             cmdq_clear(CQ_CANNED);
