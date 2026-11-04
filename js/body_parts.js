@@ -191,12 +191,15 @@ function currentHeroMonsterNumber(state) {
         return SPECIAL_PM + 1 + role.mnum;
     return PM_HUMAN;
 }
+// C polyself.c:body_part(): ARM for the current hero form.
 export function heroArmName(state = game) {
     return monsterArmName(currentHeroMonsterNumber(state));
 }
+// C polyself.c:body_part(): FOOT for the current hero form.
 export function heroFootName(state = game) {
     return monsterFootName(currentHeroMonsterNumber(state));
 }
+// C polyself.c:body_part(): TOE for the current hero form.
 // C mbodypart(TOE). Hooves, tentacles, and body edges retain their own names.
 export function heroToeName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
@@ -230,6 +233,7 @@ export function heroToeName(state = game) {
         return 'rhizome tip';
     return monsterIsHumanoid(mnum) ? 'toe' : 'rear claw tip';
 }
+// C polyself.c:body_part(): HAND for the current hero form.
 export function heroHandName(state = game) {
     return monsterHandName(currentHeroMonsterNumber(state));
 }
@@ -267,6 +271,7 @@ export function heroHandedName(state = game) {
         return 'swirled';
     return symbol === S_FUNGUS ? 'stranded' : 'clawed';
 }
+// C polyself.c:body_part(): BLOOD for the current hero form.
 export function heroBloodName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
@@ -281,6 +286,7 @@ export function heroBloodName(state = game) {
         return 'juices';
     return 'blood';
 }
+// C polyself.c:body_part(): LUNG for the current hero form.
 export function heroLungName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
@@ -301,6 +307,7 @@ export function heroLungName(state = game) {
         return 'center';
     return symbol === S_FUNGUS ? 'gill' : 'lung';
 }
+// C polyself.c:body_part(): FINGER for the current hero form.
 // C mbodypart(FINGER). A clawed humanoid still has fingers; HAND's
 // special claw rule does not apply to this part.
 export function heroFingerName(state = game) {
@@ -335,6 +342,7 @@ export function heroFingerName(state = game) {
         return 'minor current';
     return symbol === S_FUNGUS ? 'hypha' : 'foreclaw';
 }
+// C polyself.c:body_part(): FINGERTIP for the current hero form.
 // C mbodypart(FINGERTIP). Engraving is the sole FINGERTIP caller; each form
 // keeps its own writing tip name rather than reusing FINGER or TOE.
 export function heroFingerTipName(state = game) {
@@ -372,9 +380,11 @@ export function heroFingerTipName(state = game) {
         return 'hypha';
     return 'claw tip';
 }
+// C polyself.c:body_part(): HEAD for the current hero form.
 export function heroHeadName(state = game) {
     return monsterHeadName(currentHeroMonsterNumber(state));
 }
+// C polyself.c:body_part(): HAIR for the current hero form.
 // C mbodypart(HAIR). The morgue's chill affects the current body's covering.
 export function heroHairName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
@@ -409,6 +419,7 @@ export function heroHairName(state = game) {
         return 'spores';
     return monsterIsHumanoid(mnum) ? 'hair' : 'fur';
 }
+// C polyself.c:body_part(): NOSE for the current hero form.
 // C mbodypart(NOSE).
 export function heroNoseName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
@@ -437,6 +448,7 @@ export function heroNoseName(state = game) {
         return 'leading edge';
     return symbol === S_FUNGUS ? 'gill' : 'nose';
 }
+// C polyself.c:body_part(): LEG for the current hero form.
 export function heroLegName(state = game) {
     return monsterLegName(currentHeroMonsterNumber(state));
 }
@@ -469,6 +481,7 @@ export function monsterLegName(mnum) {
         return 'rhizome';
     return monsterIsHumanoid(mnum) ? 'leg' : 'rear limb';
 }
+// C polyself.c:body_part(): NECK for the current hero form.
 // C mbodypart(NECK). A body without a humanoid neck still has its own name
 // for that region, for example a spider's cephalothorax or an eye's equator.
 export function heroNeckName(state = game) {
@@ -497,6 +510,7 @@ export function monsterNeckName(mnum) {
         return 'stalk';
     return 'neck';
 }
+// C polyself.c:body_part(): SPINE for the current hero form.
 export function heroSpineName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
     const symbol = MONSTER_SYMBOL[mnum];
@@ -520,6 +534,7 @@ export function heroSpineName(state = game) {
         return 'root';
     return 'spine';
 }
+// C polyself.c:body_part(): LIGHT_HEADED for the current hero form.
 // C mbodypart(LIGHT_HEADED), including non-humanoid sensations.
 export function heroLightHeadedFeeling(state = game) {
     const mnum = currentHeroMonsterNumber(state);
@@ -542,6 +557,7 @@ export function heroLightHeadedFeeling(state = game) {
         return 'addled';
     return symbol === S_FUNGUS ? 'sporulated' : 'light headed';
 }
+// C polyself.c:body_part(): STOMACH for the current hero form.
 // C mbodypart(STOMACH).
 export function heroStomachName(state = game) {
     return monsterStomachName(currentHeroMonsterNumber(state));
@@ -564,6 +580,7 @@ export function heroHasEyes(state = game) {
 export function heroEyeCount(state = game) {
     return eyecount(currentHeroMonsterNumber(state));
 }
+// C polyself.c:body_part(): EYE for the current hero form.
 // C mbodypart(EYE).
 export function heroEyeName(state = game) {
     const mnum = currentHeroMonsterNumber(state);
@@ -582,6 +599,7 @@ export function heroEyeName(state = game) {
         return 'dark spot';
     return symbol === S_FUNGUS ? 'visual area' : 'eye';
 }
+// C polyself.c:body_part(): FACE for the current hero form.
 // C mbodypart(FACE). Eels and worms precede the slithy-form rule.
 export function heroFaceName(state = game) {
     return monsterFaceName(currentHeroMonsterNumber(state));

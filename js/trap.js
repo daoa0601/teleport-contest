@@ -779,6 +779,7 @@ const MZ_HUGE = 4;
 // their own flags.  This boundary intentionally does not run tunneling,
 // pickup, concealment, distfleeck(), or an attack tail; the movement fields
 // report deaths, level exits, and staged completions to the caller.
+// Also C trap.c:m_easy_escape_pit(): inlined here for already-trapped monsters.
 export async function mintrap(monster, state = requireInitializedGame(), { forcetrap = false, forcebungle = false, inAir = false, movement: callerMovement, random = rn2, rollDice = d, rollOne = rnd, calls = DISCARDED_CALL_LOG, publish = plineWithContinuation, describeMonster, finishDeath, } = {}) {
     const movement = callerMovement ?? {
         oldx: monster.mx,
@@ -2018,6 +2019,7 @@ const EROSION = {
     corrosion: { field: 'oeroded2', verb: 'corrode', past: 'corroded', cause: 'corrosion' },
     crack: { field: 'oeroded', verb: 'crack', past: 'cracked', cause: 'impact' },
 };
+// C mhitm.c:rustm()
 export async function erodeAttackingWeapon(defender, weapon, { state = game, random = rn2, ...options } = {}) {
     if (!weapon)
         return;
@@ -5010,6 +5012,7 @@ export async function climbOutOfPit() {
 }
 // C trap.c:trapeffect_telep_trap(): the hero branch — reveal the trap and
 // jump; the monster branch is the TELEP_TRAP case of triggerMonsterTrap.
+// Also C teleport.c:vault_tele(): inlined here for one-use teleport traps.
 async function triggerTeleportTrap(trap, finishTeleport) {
     await seeTrap(trap);
     if (game._inTeleportTrap)

@@ -983,6 +983,7 @@ async function finishHeroContactDamage(monster, damage, attackType, oldForm, sta
         return { attackerStopped: false };
     return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
 }
+// Also C mhitu.c:calc_mattacku_vars(): initial targeting state is inlined here.
 export async function beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls) {
     // calc_mattacku_vars() also resets targeting left by an earlier ray/throw.
     state.bhitpos = { x: state.u.ux, y: state.u.uy };
@@ -1085,6 +1086,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         await advanceHeroAttackSequence(sequence, state, random, rollOne, rollDice, calls);
     return { heroAttackSequence: sequence };
 }
+// Also C mhitu.c:calc_mattacku_vars(): targeting is recomputed between attack slots.
 export async function advanceHeroAttackSequence(sequence, state, random, rollOne, rollDice, calls) {
     const monster = sequence.monster;
     while (!sequence.done && sequence.nextSlot < 6) {
@@ -2643,6 +2645,7 @@ async function removeExploder(monster, state, publish) {
         noCorpse: true, publish,
     });
 }
+// C mhitu.c:explmu()
 export async function resolveMonsterSelfExplosion(monster, attack, { foundHero, state = game, publish = plineWithContinuation, die, }) {
     requirePlayingGame(state);
     if (monster.mcan)

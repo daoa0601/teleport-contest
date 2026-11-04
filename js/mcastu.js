@@ -673,6 +673,7 @@ export function chooseMonsterSpell(monster, damageType, state, random, calls) {
     }
     return list[0];
 }
+// C mcastu.c:cursetxt(): choose visible pointing or an audible curse.
 export function monsterCurseKind(monster, undirected, state, random, calls) {
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
         if (undirected)
@@ -689,6 +690,8 @@ export function monsterCurseKind(monster, undirected, state, random, calls) {
         return 'audible';
     return null;
 }
+// C mcastu.c:cursetxt(): publish the selected curse.
+// Also C mcastu.c:is_undirected_spell(): inlined here.
 async function publishMonsterSpellFailure(monster, spell, state, random, calls) {
     const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
     if (kind === 'audible')
@@ -700,6 +703,7 @@ async function publishMonsterSpellFailure(monster, spell, state, random, calls) 
         await plineWithContinuation(`${canonicalMonsterName(monster, { state, capitalized: true })} points ${points}.`);
     }
 }
+// Also C mcastu.c:is_undirected_spell(): inlined here for movement-phase casting.
 export async function movementSpellSelections(monster, state, random, calls) {
     if (monster.mspec_used ||
         dist2(monster.mx, monster.my, state?.u?.ux ?? monster.mx, state?.u?.uy ?? monster.my) > 49)

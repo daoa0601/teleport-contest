@@ -714,6 +714,7 @@ function weightAddedByLift(object, count, container, state) {
         : objectWeight(withQuantity(object, count));
     return added - removed;
 }
+// Also C hack.c:max_capacity(): inlined here as the current carrying limit.
 function maximumLiftedCount(object, requested, container, state) {
     const current = invWeight(state) - 2 * weightCapacity(state);
     const fits = (count) => current

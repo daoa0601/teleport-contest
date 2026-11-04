@@ -1053,6 +1053,7 @@ async function finishHeroContactDamage(
     if (damage <= 0) return { attackerStopped: false };
     return applyHeroFormPassive(monster, oldForm, attackType, { state, random, rollDice, publish });
 }
+// Also C mhitu.c:calc_mattacku_vars(): initial targeting state is inlined here.
 export async function beginMonsterHeroAttack(
     monster: Monster,
     state: PlayingGameState,
@@ -1153,6 +1154,7 @@ export async function beginMonsterHeroAttack(
     return { heroAttackSequence: sequence };
 }
 
+// Also C mhitu.c:calc_mattacku_vars(): targeting is recomputed between attack slots.
 export async function advanceHeroAttackSequence(
     sequence: HeroAttackSequence,
     state: PlayingGameState,
@@ -2804,6 +2806,7 @@ export interface MonsterSelfExplosionOptions {
     die?: DeathHandler;
 }
 
+// C mhitu.c:explmu()
 export async function resolveMonsterSelfExplosion(monster: Monster, attack: MonsterAttack, {
     foundHero, state = game, publish = plineWithContinuation, die,
 }: MonsterSelfExplosionOptions) {

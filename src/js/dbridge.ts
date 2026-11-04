@@ -630,6 +630,7 @@ function occupantAt(occupants: Occupants, x: number, y: number): DrawbridgeEntit
     return occupants.find(entity => entity?.active && entity.x === x && entity.y === y) ?? null;
 }
 
+// C dbridge.c:E_phrase()
 function entityPhrase(entity: DrawbridgeEntity, verb: string, state: GameState): string {
     return `${entityName(entity, state, true)} ${entity.hero ? verb : verbForSubject(null, verb)}`;
 }

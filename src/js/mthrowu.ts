@@ -740,6 +740,7 @@ interface ReturningWeaponOptions {
     dropTether?: () => void | Promise<void>;
 }
 
+// C mthrowu.c:return_from_mtoss()
 export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, impactX: number, impactY: number, {
     state = game,
     publish = plineWithContinuation,
@@ -971,6 +972,9 @@ export interface MonsterCombatBreathResult {
     heroDied: boolean;
 }
 
+// C mthrowu.c:breamm(): monster target.
+// Also C mondata.c:get_atkdam_type(): inlined here.
+// Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
 export async function resolveMonsterCombatBreath(
     source: Monster, target: Monster, attack: AttackTuple, {
         state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation,
@@ -1024,6 +1028,8 @@ export interface MonsterBreathResult {
 // this one transaction: m_lined_up(), the mcan cough, the seen-resistance
 // and recharge gates, the breath line, dobuzz(), nomul(0) and the
 // recharge, sleep and pet-hunger tail all run in C order here.
+// Also C mondata.c:get_atkdam_type(): inlined here.
+// Also C mthrowu.c:breathwep_name(): hallucinated and ordinary names are selected here.
 export async function resolveMonsterBreathAtHero(
     monster: Monster,
     attack: AttackTuple,

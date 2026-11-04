@@ -54,6 +54,7 @@ export async function breatheFromMonster(
     });
 }
 
+// C mthrowu.c:breathwep_name(): ordinary breath names; callers handle hallucination.
 export function breathWeaponName(damageType: number) {
     return ['', 'fragments', 'fire', 'frost', 'sleep gas',
         'a disintegration blast', 'lightning', 'poison gas', 'acid',

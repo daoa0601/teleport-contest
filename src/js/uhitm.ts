@@ -920,6 +920,8 @@ export interface HeroWeaponContactResult {
 
 const S_BLOB = 2;
 
+// C uhitm.c:hmon_hitmon_weapon_melee(): base damage, backstab, and weapon shattering.
+// Also C uhitm.c:hmon_hitmon_weapon(): the normal/improvised weapon choice is inlined here.
 export async function prepareHeroWeaponContact(
     monster: Monster, weapon: GameObject,
     { mode, dieRoll, state = game, publish = plineWithContinuation }: HeroWeaponContactOptions,
@@ -1075,6 +1077,8 @@ const PAPER = 5;
 const PHYSICAL_OBJECTS = new Set([BOULDER, HEAVY_IRON_BALL, IRON_CHAIN]);
 const SHADE_AWARE_OBJECTS = new Set([...PHYSICAL_OBJECTS, MIRROR, CLOVE_OF_GARLIC]);
 
+// C uhitm.c:hmon_hitmon_misc_obj()
+// Also C uhitm.c:hmon_hitmon_potion(): the potion contact branch is inlined here.
 export async function resolveHeroObjectContact(
     monster: Monster, object: GameObject, {
         mode, state = game, target = { x: monster.mx, y: monster.my },
@@ -1742,6 +1746,7 @@ export async function hitMonsterWithHeroObject(
     };
 }
 
+// C uhitm.c:hmon_hitmon()
 async function resolvePhysicalHit(
     monster: Monster, originalObject: GameObject | null, context: ActivePhysicalHit,
 ): Promise<PhysicalBodyResult> {
@@ -1860,6 +1865,8 @@ async function resolvePhysicalHit(
     return { survived: !destroyed, heroDied: false };
 }
 
+// C uhitm.c:hmon_hitmon_do_hit()
+// Also C uhitm.c:hmon_hitmon_weapon_melee(): artifact, silver, light, jousting, and ammunition effects.
 async function preparePhysicalContact(
     monster: Monster, object: GameObject | null, context: ActivePhysicalHit,
 ): Promise<PreparedContact> {
@@ -4883,6 +4890,7 @@ const PM_MEDUSA = MONSTER_NAME.indexOf('Medusa');
 const FLAMING_SPECIES = new Set(['fire vortex', 'flaming sphere', 'fire elemental', 'salamander']
     .map(name => MONSTER_NAME.indexOf(name)));
 
+// C uhitm.c:gulpum()
 export async function resolveHeroCombatEngulf(defender: Monster, attack: AttackTuple, {
     state = game, publish = plineWithContinuation, random = rn2, rollDice = d,
 }: HeroCombatEngulfOptions = {}): Promise<HeroCombatEngulfResult> {
@@ -5270,6 +5278,7 @@ type FormStrike =
     | { kind: 'interrupted'; weapon: GameObject | null }
     | { kind: 'processed'; result: number; weapon: GameObject | null; heroDied: boolean; exploded?: boolean };
 
+// C uhitm.c:hmonas()
 export async function attackHeroInMonsterForm(monster: Monster, x: number, y: number, {
     confirmationOverridden = false,
 }: { confirmationOverridden?: boolean } = {}): Promise<void> {

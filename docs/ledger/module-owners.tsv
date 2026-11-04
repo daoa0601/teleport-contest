@@ -5,7 +5,9 @@ src/js/attrib.ts	attrib.c
 src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
+src/js/body_parts.ts	polyself.c
 src/js/botl.ts	botl.c
+src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/character_choices.ts	role.c
 src/js/character_filters.ts	role.c
@@ -13,6 +15,7 @@ src/js/character_name.ts	role.c
 src/js/character_selection.ts	role.c
 src/js/color_query.ts	coloratt.c
 src/js/config_errors.ts	wintty.c
+src/js/crystal_ball.ts	detect.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c
 src/js/do.ts	do.c
@@ -20,7 +23,6 @@ src/js/do_name.ts	do_name.c
 src/js/do_wear.ts	do_wear.c
 src/js/dogmove.ts	dogmove.c
 src/js/dokick.ts	dokick.c
-src/js/dothrow.ts	dothrow.c
 src/js/draft_message.ts	dig.c
 src/js/dungeon.ts	dungeon.c
 src/js/eat.ts	eat.c
@@ -123,7 +125,6 @@ src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
-src/js/trap.ts	trap.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c

@@ -339,6 +339,7 @@ function ignoresDeathField(mnum: number) {
     return monsterIsNonliving(mnum) || monsterIsDemon(mnum);
 }
 
+// C explode.c:explosionmask(): hero resistance branch.
 function heroResists(damageType: DamageType, objectClass: number, state: GameState) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(heroSpecies(state));
@@ -348,6 +349,7 @@ function heroResists(damageType: DamageType, objectClass: number, state: GameSta
         || !!kind.defense && heroHasArtifactDefense(kind.defense, state);
 }
 
+// C explode.c:explosionmask(): monster resistance branch.
 function monsterResists(monster: Monster, damageType: DamageType, objectClass: number) {
     if (damageType === AD_DISN && objectClass === WAND_CLASS)
         return ignoresDeathField(monster.mnum) || monsterIsVampireShifter(monster);

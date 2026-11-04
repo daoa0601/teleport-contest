@@ -758,6 +758,7 @@ export function chooseMonsterSpell(
     return list[0];
 }
 
+// C mcastu.c:cursetxt(): choose visible pointing or an audible curse.
 export function monsterCurseKind(monster: Monster, undirected: boolean, state: PlayingGameState,
     random: RandomBelow, calls: MonsterCallLog): Exclude<HeroSpellAttack['curseKind'], undefined> {
     if (canSeeMonster(monster) && couldsee(monster.mx, monster.my)) {
@@ -773,6 +774,8 @@ export function monsterCurseKind(monster: Monster, undirected: boolean, state: P
     return null;
 }
 
+// C mcastu.c:cursetxt(): publish the selected curse.
+// Also C mcastu.c:is_undirected_spell(): inlined here.
 async function publishMonsterSpellFailure(monster: Monster, spell: MonsterSpell,
     state: PlayingGameState, random: RandomBelow, calls: MonsterCallLog): Promise<void> {
     const kind = monsterCurseKind(monster, !!(spell.flags & MCF_INDIRECT), state, random, calls);
@@ -785,6 +788,7 @@ async function publishMonsterSpellFailure(monster: Monster, spell: MonsterSpell,
     }
 }
 
+// Also C mcastu.c:is_undirected_spell(): inlined here for movement-phase casting.
 export async function movementSpellSelections(
     monster: Monster,
     state: PlayingGameState,

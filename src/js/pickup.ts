@@ -771,6 +771,7 @@ function weightAddedByLift(object: GameObject, count: number, container: GameObj
     return added - removed;
 }
 
+// Also C hack.c:max_capacity(): inlined here as the current carrying limit.
 function maximumLiftedCount(object: GameObject, requested: number, container: GameObject | null, state: GameState): number {
     const current = invWeight(state) - 2 * weightCapacity(state);
     const fits = (count: number) => current

@@ -874,6 +874,7 @@ function linedup_chk_corpse(x, y, state) {
     return (state.level.objects[x]?.[y] ?? []).some(object => object.otyp === CORPSE);
 }
 // C muse.c:m_use_undead_turning().
+// Also C mthrowu.c:linedup_callback(): inlined here.
 function m_use_undead_turning(monster, object, state) {
     if (object.otyp !== WAN_UNDEAD_TURNING || object.spe <= 0)
         return false;

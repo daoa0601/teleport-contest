@@ -843,6 +843,7 @@ export function willMonsterHurtle(monster, state, x, y, random = rn2) {
         state, gpflags: MM_IGNOREWATER | MM_IGNORELAVA, random,
     });
 }
+// C uhitm.c:hmon_hitmon_stagger()
 export async function tryUnarmedStagger(monster, { skill, damage, dx, dy, state = game, announce = async () => { }, nameMonster = target => monsterName(target, { state, capitalized: true }), wakeMonster = async () => {
     monster.msleeping = 0;
 }, finishLiquidDeath, finishMonsterDeath, }) {

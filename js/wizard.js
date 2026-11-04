@@ -262,6 +262,7 @@ const WANTS_BELL = 2;
 const WANTS_BOOK = 4;
 const WANTS_CANDELABRUM = 8;
 const WANTS_ARTIFACT = 16;
+// C wizard.c:strategy(): install the chosen strategy and goal.
 export function chooseCovetousStrategy(monster, state) {
     const { strategy, goal } = decideCovetousStrategy(monster, state);
     if (goal)
@@ -273,6 +274,7 @@ export function chooseCovetousStrategy(monster, state) {
     monster.mstrategy = ((monster.mstrategy ?? 0) & (STRAT_WAITMASK | STRAT_APPEARMSG)) | flags;
     return strategy;
 }
+// C wizard.c:strategy(): health thresholds and artifact priorities.
 function decideCovetousStrategy(monster, state) {
     if (shopkeeperInOwnShop(monster, state) || priestIsInOwnTemple(monster, state))
         return { strategy: { kind: 'harass' }, goal: undefined };
@@ -296,6 +298,10 @@ function decideCovetousStrategy(monster, state) {
     }
     return { strategy: { kind: health < 3 ? 'heal' : 'harass' }, goal };
 }
+// C wizard.c:target_on()
+// Also C wizard.c:mon_has_arti(): inlined here for the seeking monster.
+// Also C wizard.c:on_ground(): inlined here for floor objects.
+// Also C wizard.c:other_mon_has_arti(): inlined here for other carriers.
 function findCovetousTarget(monster, mask, state) {
     // C wizard.c:target_on() checks the requested wants mask directly.
     if (!(questMonsterFlags3(monster.mnum, state) & mask))
@@ -316,6 +322,7 @@ function findCovetousTarget(monster, mask, state) {
     }
     return null;
 }
+// Also C wizard.c:which_arti(): object-type selection is inlined into this predicate.
 function objectMatchesTarget(object, mask, state) {
     if (mask === WANTS_AMULET)
         return object.otyp === AMULET_OF_YENDOR;
@@ -327,6 +334,7 @@ function objectMatchesTarget(object, mask, state) {
         return object.otyp === CANDELABRUM_OF_INVOCATION;
     return !!object.questArtifact || !!artifactById(object.oartifact, state)?.questArtifact;
 }
+// C wizard.c:you_have()
 function heroHasTarget(mask, state) {
     const owns = state.u.uhave;
     if (mask === WANTS_AMULET)

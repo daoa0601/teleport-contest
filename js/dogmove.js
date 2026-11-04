@@ -297,6 +297,8 @@ function petCanReachObject(monster, object, state) {
     return (monsterCouldReachItem(monster, targetX, targetY, state) &&
         petCanReachLocation(monster, monster.mx, monster.my, targetX, targetY, state));
 }
+// Also C dogmove.c:cursed_object_at(): inlined here.
+// Also C dogmove.c:wantdoor(): inlined here.
 function dogGoal(monster, state, random, calls) {
     if (monster === state.u.usteed)
         return null;
@@ -765,6 +767,7 @@ async function pullLeashedPetCloser(monster, state, random, calls) {
     await newsym(monster.mx, monster.my);
     setMonsterApparentHeroPosition(monster, state, random, calls);
 }
+// Also C dogmove.c:cursed_object_at(): inlined here.
 export async function movePet(monster, state, random, rollDice, rollOne, calls) {
     const oldx = monster.mx;
     const oldy = monster.my;
@@ -1091,6 +1094,7 @@ const DISGUISES = [
     { symbol: DOG_SYMBOL, type: M_AP_FURNITURE, appearance: SINK_APPEARANCE },
     FOOD_DISGUISE,
 ];
+// Also C dogmove.c:mnum_leashable(): all monster disguises in this table are leashable.
 export async function beginMonsterMealMimicry(monster, state = game) {
     requireLiveGame(state);
     const wasLeashed = !!monster.mleashed;

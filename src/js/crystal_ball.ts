@@ -205,6 +205,7 @@ function levelDistance(destination: DungeonLocation): string {
     return sameDungeon ? 'near you' : 'in the distance';
 }
 
+// C detect.c:furniture_detect()
 async function detectFurniture(): Promise<void> {
     const level = requireGameLevel();
     const constraints = unconstrainMap();

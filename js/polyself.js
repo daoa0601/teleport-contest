@@ -1332,6 +1332,7 @@ async function unsuccessfulPolymorph() {
     }
     return { transformed: false, died };
 }
+// C polyself.c:livelog_newform()
 function recordRenewedHumanGender(oldGender) {
     requirePlayingGame(game);
     const newGender = heroPolyGender(game);
@@ -2241,6 +2242,7 @@ async function mergeDragonArmor(armor, mnum) {
     }
     return polymonHero(mnum);
 }
+// C polyself.c:skinback()
 async function restoreDragonArmor(state = game, publish = plineWithContinuation) {
     const armor = state.uskin;
     if (!armor)
@@ -2377,6 +2379,7 @@ function isAirLevel(state) {
 function isWaterLevel(state) {
     return sameLevel(state.u.uz, state.water_level);
 }
+// C polyself.c:dohide()
 export async function useHeroHide({ state = game, publish = plineWithContinuation, die = finishHeroDeath, refresh = newsym, } = {}) {
     const ability = heroHidingAbility(state);
     if (!ability)

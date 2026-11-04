@@ -2839,6 +2839,7 @@ export async function checkSpecialRoom({ newLevel = false } = {}) {
     }
     return result;
 }
+// Also C hack.c:monstinroom(): inlined here for the barracks message.
 function specialRoomEntryMessage(room, roomno) {
     switch (room.rtype) {
         case ZOO: return "Welcome to David's treasure zoo!";
@@ -4701,6 +4702,7 @@ export async function fallIntoSink(state = game, { publish = plineWithContinuati
     return { fell: ufall, died: false };
 }
 // C hack.c:losehp(). Damage belongs to the body the hero currently occupies.
+// Also C hack.c:showdamage(): inlined here.
 export async function loseHeroHp(amount, killer, { state = game, publish = plineWithContinuation, die = finishHeroDeath, deathCause = null, killerFormat = KILLED_BY_AN, } = {}) {
     requirePlayingGame(state);
     const hero = state.u;

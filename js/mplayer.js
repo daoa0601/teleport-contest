@@ -213,6 +213,7 @@ async function equipSpecialPlayer(monster, equipment) {
     for (let count = rn2(10); count > 0; count--)
         await addCreatedObjectToMonsterInventory(monster, await mkobj(RANDOM_CLASS, false));
 }
+// C mplayer.c:mk_mplayer_armor()
 async function givePlayerArmor(monster, type) {
     if (type === STRANGE_OBJECT)
         return;
@@ -235,6 +236,7 @@ const DEVELOPERS = [
     'Andy', 'Chris', 'Dean', 'Jon', 'Jonathan', 'Kevin', 'Wang',
     'Eric', 'Marvin', 'Warwick', 'Alex', 'Dion', 'Michael', 'Helge', 'Ron', 'Timo', 'Joshua', 'Pat', '',
 ];
+// C mplayer.c:get_mplname()
 function namePlayerMonster(monster) {
     const femaleKind = monsterIsFemale(monster.mnum);
     const developer = unusedDeveloperName();
@@ -243,6 +245,7 @@ function namePlayerMonster(monster) {
     monster.female = femaleKind || name === 'Janet';
     setMonsterGivenName(monster, `${name} the ${monsterRank(monster)}`);
 }
+// C mplayer.c:dev_name()
 function unusedDeveloperName() {
     for (let attempts = 0; attempts < 100; attempts++) {
         const name = DEVELOPERS[rn2(DEVELOPERS.length)];
