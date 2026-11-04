@@ -34,7 +34,8 @@ import { initializeMonsterArmor } from './monworn.js';
 import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { scheduleLevelTimer, stopLevelTimer } from './timeout.js';
 import { SpecialSelection, mapCharacterType } from './selvar.js';
-import { countLevelFeatures, make_grave, makecorridors, mineralize } from './mklev.js';
+import { countLevelFeatures, makecorridors, mineralize } from './mklev.js';
+import { make_grave } from './engrave.js';
 import { wallification } from './mkmaze.js';
 import { addDoorsToSpecialRoom, buildSpecialRoom, centeredSpecialMap, createLuaAltar, createLuaCorridor, createLuaDoor, createLuaDrawbridge, createLuaEngraving, createLuaExclusion, createLuaFeature, createLuaGold, createLuaMonster, createLuaObject, createLuaRoomRegion, createLuaStair, createLuaTrap, createLuaWallProperty, ensureWaysOut, fillEmptySpecialMaze, fillSpecialLevel, flipLuaRegions, flipSpecialLevelRandom, levelRegionCoordinates, linkSpecialLevelDoors, loadSpecialAsciiMap, luaRoomSpec, luaRoomTable, luaSelectionCoordinates, markSpecialSelectionWallProperty, placeThemedMap, replaceLuaTerrain, setLuaLevelFlags, setSpecialTerrain, solidifyLuaMap, specialMapRows, specialMapSelection, specialMazeWalk, specialNonDiggable, specialRoomContext, specialSelectionNonDiggable, specialSelectionTerrain, wallifyMap } from './sp_lev.js';
 

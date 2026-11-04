@@ -955,7 +955,7 @@ accessory_or_armor_on	setworn	inlined	wearHeroArmor/wearHeroAccessory install th
 accessory_or_armor_on	unmul	inlined	finishHeroHelplessness runs the zero-delay afternmv action (cmd.ts putOnArmorObject)
 kick_nondoor	adjalign	inlined	adjustHeroAlignment(-Math.sign(align)) when breaking a grave (dokick.ts)
 kick_nondoor	del_engr_at	inlined	deleteEngravingAt when the headstone breaks (dokick.ts)
-kick_nondoor	disturb_grave	inlined	disturbGrave (grave.ts) from the kick grave branch (dokick.ts)
+kick_nondoor	disturb_grave	inlined	disturbGrave (engrave.ts) from the kick grave branch (dokick.ts)
 kick_nondoor	kick_dumb	inlined	kickDumb callback injected by dokick() (dokick.ts)
 kick_nondoor	kick_ouch	inlined	kickOuch callback injected by dokick() (dokick.ts)
 kick_nondoor	mksobj_at	inlined	mksobj plus placeCreatedObject for the rock and throne gems (dokick.ts)
@@ -1239,7 +1239,7 @@ do_repeat	cmdq_peek	inlined	saved queue inspected for emptiness (cmd.ts repeatLa
 doclose	is_db_wall	inlined	DBWALL branch names the closed portcullis (cmd.ts doclose)
 doclose	obstructed	inlined	doorObstructed check (cmd.ts doclose)
 doengrave	alloc	n/a	memory allocation
-doengrave	set_occupation	inlined	_occupation for the delayed engraving (engrave_command.ts)
+doengrave	set_occupation	inlined	_occupation for the delayed engraving (engrave.ts)
 doextcmd	accept_menu_prefix	inlined	M-prefix admission handled by rhack and the doextcmd notice (cmd.ts)
 doextcmd	cmd_from_func	inlined	name-based extended command dispatch (cmd.ts readExtendedCommand)
 dofire	cmdq_add_ec	inlined	_cannedCommands push {kind:'fire'} (cmd.ts dofire)

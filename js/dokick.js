@@ -31,7 +31,7 @@ import { monsterAtPosition } from './steed.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { captureThrownObjectFlight, flyKickedObject, snuffThrownCandle } from './thrown_object.js';
 import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseName, objectCombatName, objectDescription, makePlural, rndClass, withIndefiniteArticle } from './objnam.js';
-import { disturbGrave } from './grave.js';
+import { disturbGrave } from './engrave.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight } from './mkobj.js';
 import { placeCreatedObject, placeObject, remove_object, stack_object } from './floor_object.js';

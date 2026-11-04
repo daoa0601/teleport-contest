@@ -32,7 +32,6 @@ src/js/eat.ts	eat.c
 src/js/egg_species.ts	mon.c
 src/js/elemental.ts	mkmaze.c
 src/js/engrave.ts	engrave.c
-src/js/engrave_command.ts	engrave.c
 src/js/engulf_blindness.ts	mhitu.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
@@ -43,7 +42,6 @@ src/js/floor_object_display.ts	invent.c
 src/js/fruit.ts	objnam.c
 src/js/glob.ts	mkobj.c
 src/js/glyph_customizations.ts	display.c
-src/js/grave.ts	engrave.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
 src/js/hero_expulsion.ts	monmove.c

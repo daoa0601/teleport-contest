@@ -35,7 +35,8 @@ import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassO
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval } from './hero_inventory.js';
 import { lightDamage, lightRoom } from './light.js';
 import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
-import { randomEngraving, CANDELABRUM_OF_INVOCATION } from './mklev.js';
+import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
+import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, armorUsesPairGrammar, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight } from './mkobj.js';

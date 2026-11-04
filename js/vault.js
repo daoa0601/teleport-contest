@@ -45,7 +45,7 @@ import { deleteObject } from './shk.js';
 import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { currency } from './currency.js';
 import { freeInventoryObject } from './hero_inventory.js';
-import { make_grave } from './mklev.js';
+import { make_grave } from './engrave.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
