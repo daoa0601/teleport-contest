@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DB_FLOOR, DRAWBRIDGE_UP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { isSteadfast } from '../js/uhitm.js';
+import { m_is_steadfast } from '../js/uhitm.js';
 import { descendFromLevitation } from '../js/levitation_commands.js';
 import { LOADSTONE } from '../js/object_data.js';
 import { refreshProperty } from '../js/properties.js';
@@ -28,6 +28,6 @@ void test('descending above a dry raised-bridge bed on the Water Plane names the
 void test('a loadstone cannot anchor the hero in an air bubble below a raised bridge', async () => {
     await dryBridgeOnWaterPlane();
     await addInventoryObject(LOADSTONE);
-    assert.equal(isSteadfast(game.u, game), false);
+    assert.equal(m_is_steadfast(game.u, game), false);
 });
 //# sourceMappingURL=water_plane_underlay.test.js.map

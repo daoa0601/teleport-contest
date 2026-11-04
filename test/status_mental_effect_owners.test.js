@@ -7,7 +7,7 @@ import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { startHeroVomiting } from '../js/potion.js';
 import { pushKeys } from '../js/input.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
 import { fixPrayerTrouble, Trouble } from '../js/pray.js';
@@ -42,7 +42,7 @@ void test('a giant knockback displays the resulting stun', async () => {
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
     await bot();
     pushKeys(' '.repeat(10));
-    await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0 });
+    await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0 });
     await flush_screen(1);
     assert.equal(game.u.ux, 8);
     assert.equal(game.u.stunnedTurns, 3);

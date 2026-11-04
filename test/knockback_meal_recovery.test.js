@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 // with no --More-- anywhere in the sequence.
 import { races } from '../js/roles.js';
 import { stopHeroOccupation } from '../js/occupation.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -75,7 +75,7 @@ void test('a monster knocking a hero mid-meal ends the meal silently and the her
     };
     // C mhitu.c:hitmu() order: mhitm_knockback() hurtles the hero and
     // blanks nomovemsg, then the shared tail calls stop_occupation().
-    const knocked = await tryKnockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
+    const knocked = await mhitm_knockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
     assert.equal(knocked.knocked, true);
     await stopHeroOccupation(game);
     assert.equal(pagers, 1, 'only the knockback line pages during the attack');

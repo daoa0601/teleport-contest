@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -16,7 +16,7 @@ void test('a perceived invisible attacker retains its invisibility in knockback 
     const defender = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const messages: string[] = [];
 
-    const result = await tryKnockback(giant, defender, { attackType: AT_CLAW, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(giant, defender, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         state: game, random: () => 0, publish: message => { messages.push(message); },
     });
 
@@ -32,7 +32,7 @@ void test('knockback preserves the spelling of a named defender', async () => {
     setMonsterGivenName(defender, 'sparky');
     const messages: string[] = [];
 
-    const result = await tryKnockback(giant, defender, { attackType: AT_CLAW, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(giant, defender, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         state: game, random: () => 0, publish: message => { messages.push(message); },
     });
 

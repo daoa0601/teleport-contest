@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_DEX, MM_NOGRP, NO_MINVENT, STRAT_WAITFORU, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { attackHostileMonster } from '../js/uhitm.js';
+import { do_attack } from '../js/uhitm.js';
 import { resolveHeroWeaponHit } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
@@ -113,7 +113,7 @@ void test('a hero with no active attacks spends no combat nutrition and releases
     monster.mstrategy = STRAT_WAITFORU;
     const hunger = state.u.uhunger;
 
-    const acted = await attackHostileMonster(monster, 11, 10);
+    const acted = await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
 
     assert.equal(acted, true);
     assert.equal(monster.mhp, 100);
@@ -128,7 +128,7 @@ void test('an eye saved from a lethal ordinary hit does not make its living pass
     const amulet = await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     monster.mhp = 1;
 
-    await attackHostileMonster(monster, 11, 10);
+    await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
 
     assert.ok(monster.mhp > 0);
     assert.equal(amulet.where, 'gone');
@@ -156,8 +156,8 @@ void test('Cleaver hits both adjacent targets and reverses the swing on its next
     };
     initRng(71n);
 
-    await attackHostileMonster(monster, 11, 10);
-    await attackHostileMonster(monster, 11, 10);
+    await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
+    await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
 
     assert.ok(monster.mhp < 100 && north.mhp < 100 && south.mhp < 100);
     const prose = [...messages, state._pending_message].join('\n');
@@ -172,7 +172,7 @@ void test('a Cleaver wielder can save after attacking and continue fighting afte
     state.plname = 'CleaverSaver';
     const storage = memoryStorage();
 
-    await attackHostileMonster(monster, 11, 10);
+    await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
     const savedHealth = monster.mhp;
     assert.ok(savedHealth < 100, 'The first Cleaver attack must damage the target.');
 
@@ -184,7 +184,7 @@ void test('a Cleaver wielder can save after attacking and continue fighting afte
     assert.equal(restoredMonster.mhp, savedHealth);
     assert.equal(game.uwep?.oartifact, cleaver.oartifact);
 
-    await attackHostileMonster(restoredMonster, 11, 10);
+    await do_attack(restoredMonster, 11, 10, { permission: { proceed: true, spentTime: true } });
 
     assert.ok(restoredMonster.mhp < savedHealth, 'The restored hero must be able to attack again.');
 });
@@ -197,7 +197,7 @@ void test('a newly cursed offhand weapon drops before the next attack and cannot
     setTwoWeaponCombat(true);
     secondary.cursed = true;
 
-    await attackHostileMonster(monster, 11, 10);
+    await do_attack(monster, 11, 10, { permission: { proceed: true, spentTime: true } });
 
     assert.equal(state.u.twoweap, false);
     assert.equal(secondary.where, 'floor');

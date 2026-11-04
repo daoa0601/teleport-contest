@@ -19,7 +19,7 @@ import assert from 'node:assert/strict';
 // of announcing "You finish eating the food ration."
 import { races } from '../js/roles.js';
 import { stopHeroOccupation } from '../js/occupation.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -67,7 +67,7 @@ void test('a knockback into water keeps the empty nomovemsg, which finishes the 
     // C mhitu.c:hitmu() order: mhitm_knockback() hurtles the hero (into the
     // pool and out again via drown()), then the shared tail calls
     // stop_occupation().
-    const knocked = await tryKnockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
+    const knocked = await mhitm_knockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
     assert.equal(knocked.knocked, true);
     await stopHeroOccupation(game);
     assert.equal(game.multi, 0, 'hurtle_step() resets the counter directly so drown() can crawl the hero out');
@@ -137,7 +137,7 @@ void test('a choking bite of a meal started with the empty nomovemsg consumes th
     const giant = await createMonsterAt('hill giant', 11, 10, NO_MINVENT);
     giant.mpeaceful = false;
     giant.minvis = true;
-    const knocked = await tryKnockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
+    const knocked = await mhitm_knockback(giant, game.u, { attackType: AT_CLAW, damageType: AD_PHYS }, { random: sides => (sides === 4 ? 3 : 0) });
     assert.equal(knocked.knocked, true);
     await stopHeroOccupation(game);
     assert.equal(game.multi, 0, 'the direct multi reset leaves the hero free in the pool');

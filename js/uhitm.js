@@ -1,34 +1,6 @@
-// C-shaped owner of uhitm.c. Each attack effect's actor branches (hero
-// attacking a monster, monster attacking the hero, monster versus monster)
-// live in one module: the mhitm_ad_fire(), mhitm_ad_cold(), mhitm_ad_elec(),
-// mhitm_ad_drli(), mhitm_ad_blnd(), mhitm_ad_ench(), mhitm_ad_stun() and
-// mhitm_ad_legs() owners hold all three branches, while the remaining
-// uhitm.c effects keep their per-branch owners here in C source order:
-// mhitm_mgc_atk_negated(), mhitm_ad_rust()/corr()/dcay()/acid(),
-// mhitm_ad_sedu()/sgld(), mhitm_ad_dren/deth/pest/famn/dise/curs(),
-// mhitm_ad_tlpt()/poly()/slim(), mhitm_really_poison()/mhitm_ad_drst(),
-// mhitm_ad_drin(), mhitm_ad_wrap(), the mhitm_adtyping() status branches
-// (plys/slee/slow/conf/halu/stck/were), mhitm_ad_phys() (weapon contact,
-// hugs, monster-versus-monster), mhitm_ad_heal(), mhitm_ad_dgst(),
-// passive()/passive_obj(), and the hero-side dispatch that C reaches
-// through mattacku() -> mhitm_adtyping(). Every message is awaited
-// directly, so a --More-- suspends the attack at the same source boundary
-// as C and no per-attack progress flags survive the call.
-//
-// C uhitm.c:mhitm_knockback() and m_is_steadfast(): a physical blow can
-// throw a much smaller opponent backward. The shared owner tests the
-// knockback destination through dothrow.c:will_hurtle(), words the
-// message, then hurtles the defender.
-//
-// The hero-side attack chain folded here owns, in C call order:
-// attack_checks(), check_caitiff(), first_weapon_hit(),
-// find_roll_to_hit(), mon_maybe_unparalyze(), missum(), do_attack()
-// (with its safepet displacement and leprechaun m_move() dodge),
-// known_hitum(), hitum()/hitum_cleave()/double_punch(), hmon() with its
-// hmon_hitmon_* phase helpers, m_slips_free(), joust(), demonpet(),
-// steal_it(), theft_petrifies(), damageum() and mhitm_adtyping()'s two
-// actor arms, explum(), gulpum()/start_engulf()/end_engulf(), hmonas(),
-// that_is_a_mimic()/stumble_onto_mimic(), and nohandglow().
+// NetHack uhitm.c combat, including each attacker/defender direction of
+// the physical, seduction, brain-drain, elemental and status effects below.
+// Message publishers await tty input at the point where C prints a line.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, TOWEL, YA, YUMI, } from './object_data.js';
 import { adjustHeroAlignment } from './alignment.js';
@@ -123,7 +95,7 @@ import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, mi
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
-import { dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, weaponHitBonus } from './weapon.js';
+import { dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, weaponHitBonus } from './weapon.js';
 import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';
@@ -421,48 +393,7 @@ function heroAttributeHitBonus(state) {
     return bonus + (dexterity < 4 ? -3 : dexterity < 6 ? -2
         : dexterity < 8 ? -1 : dexterity < 14 ? 0 : dexterity - 14);
 }
-export async function runSafepetDisplacement(monster) {
-    // C uhitm.c:do_attack(): a tame monster normally yields to
-    // the hero, and ordinary peacefuls share the same displacement path.
-    // Only tame actors flee after refusal.
-    const tame = !!(monster.pet || monster.mtame);
-    const blocked = heroIsPunished() || rn2(7) === 0
-        || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
-            .includes(MONSTER_NAME[monster.mnum] ?? ''))
-        || (IS_OBSTRUCTED(requireGameLevel(game).requireAt(game.u.ux, game.u.uy).typ)
-            && !monsterPassesWalls(monster.mnum));
-    const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
-        .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
-    if ((blocked || inShop) && monster.isshk
-        && !game.context.travel && !game.context.run) {
-        await dopay();
-        return 'paid';
-    }
-    if ((blocked || inShop) && tame) {
-        const flight = await makeMonsterFlee(monster, {
-            turns: rnd(6), announce: false,
-        });
-        if (flight.heroDied)
-            return 'stopped';
-    }
-    if (blocked || inShop) {
-        // C uhitm.c do_attack(): y_monnam(), capitalized.
-        const displayName = monsterName(monster, {
-            state: game, article: 'your', capitalized: true,
-        });
-        await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
-        stopRun(game);
-        return 'stopped';
-    }
-    if (monster.mfrozen || monster.msleeping || !monster.mcanmove
-        || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
-        await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
-        stopRun(game);
-        return 'frozen';
-    }
-    return 'evaded';
-}
-// C uhitm.c:do_attack() calls m_move(monster, 0) for a leprechaun dodge.
+// Await monmove.c m_move(), its post-move effects and messages as one call.
 // Resolve that movement transaction before the hero tests its new position;
 // no movement ration, dochug prelude, or dochug attack tail belongs here.
 export async function moveMonsterForHeroAttack(monster, state = requireInitializedGame()) {
@@ -492,68 +423,114 @@ const DIRECTIONS = [
 ];
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const S_LEPRECHAUN = requireMonsterData(MONSTER_SYMBOL, MONSTER_NAME.indexOf('leprechaun'));
-export async function attackHostileMonster(monster, x, y, { confirmationOverridden = false, } = {}) {
+// C uhitm.c:do_attack().
+export async function do_attack(monster, x, y, { safeMonster = false, permission, } = {}) {
     requirePlayingGame(game);
-    game._heroMeleeThisCommand = true;
-    if (Upolyd(game.u) && monsterHasNoAttacks(heroSpecies(game))) {
-        await plineWithContinuation('You have no way to attack monsters physically.');
-        monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-        await finishAttackDisplay(monster, x, y);
-        return true;
-    }
-    if (exceedsActionCapacity(game)) {
-        await plineWithContinuation('You cannot fight while so heavily loaded.');
-        await finishAttackDisplay(monster, x, y);
-        return true;
-    }
-    if (await checkHeroAttackOverexertion()) {
-        await finishAttackDisplay(monster, x, y);
-        return true;
-    }
-    if (game.u.twoweap && !await canBeginTwoWeaponCombat(game))
-        await stopTwoWeaponCombat(game);
-    await announceImprovisedAttack();
-    await exerciseAttribute(A_STR, true);
-    wipeHeroEngraving(3);
-    if (MONSTER_SYMBOL[monster.mnum] === S_LEPRECHAUN && !monster.mfrozen
-        && !monsterIsHelpless(monster) && !monster.mconf && monster.mcansee && rn2(7) === 0) {
-        const movement = await moveMonsterForHeroAttack(monster, game);
-        if (movement.heroDied)
+    if (safeMonster && !game.context.forcefight
+        && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
+        // C uhitm.c:do_attack(): a tame monster normally yields to
+        // the hero, and ordinary peacefuls share the same displacement path.
+        // Only tame actors flee after refusal.
+        const tame = !!(monster.pet || monster.mtame);
+        const blocked = heroIsPunished() || rn2(7) === 0
+            || (!!monster.wormno && ['baby long worm', 'long worm', 'long worm tail']
+                .includes(MONSTER_NAME[monster.mnum] ?? ''))
+            || (IS_OBSTRUCTED(requireGameLevel(game).requireAt(game.u.ux, game.u.uy).typ)
+                && !monsterPassesWalls(monster.mnum));
+        const inShop = !blocked && roomsAt(game.level, monster.mx, monster.my, SHOPBASE)
+            .some(roomno => tendedShop(roomForRoomno(game.level, roomno), game));
+        if ((blocked || inShop) && monster.isshk
+            && !game.context.travel && !game.context.run) {
+            await dopay();
             return true;
-        if (movement.status === MMOVE_DIED || monster.mx !== x || monster.my !== y) {
-            await plineWithContinuation('You miss wildly and stumble forwards.');
-            return false;
         }
+        if ((blocked || inShop) && tame) {
+            const flight = await makeMonsterFlee(monster, {
+                turns: rnd(6), announce: false,
+            });
+            if (flight.heroDied)
+                return true;
+        }
+        if (blocked || inShop) {
+            // C uhitm.c do_attack(): y_monnam(), capitalized.
+            const displayName = monsterName(monster, {
+                state: game, article: 'your', capitalized: true,
+            });
+            await plineWithContinuation(`You stop.  ${displayName} is in the way!`);
+            stopRun(game);
+            return true;
+        }
+        if (monster.mfrozen || monster.msleeping || !monster.mcanmove
+            || ((MONSTER_MOVE[monster.mnum] ?? 0) === 0 && rn2(6))) {
+            await plineWithContinuation(`${monsterName(monster, { state: game, capitalized: true })} doesn't seem to move!`);
+            stopRun(game);
+            return true;
+        }
+        return false;
     }
-    if (Upolyd(game.u)) {
-        await attackHeroInMonsterForm(monster, x, y, { confirmationOverridden });
+    const verdict = permission ?? await prepareAppliedWeaponAttack(monster, game.uwep ?? null, { state: game, struckAt: { x, y } });
+    if (!verdict.proceed)
+        return verdict.spentTime;
+    const confirmationOverridden = verdict.confirmationOverridden ?? false;
+    atk_done: {
+        game._heroMeleeThisCommand = true;
+        if (Upolyd(game.u) && monsterHasNoAttacks(heroSpecies(game))) {
+            await plineWithContinuation('You have no way to attack monsters physically.');
+            monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
+            break atk_done;
+        }
+        if (exceedsActionCapacity(game)) {
+            await plineWithContinuation('You cannot fight while so heavily loaded.');
+            break atk_done;
+        }
+        if (await checkHeroAttackOverexertion()) {
+            break atk_done;
+        }
+        if (game.u.twoweap && !await canBeginTwoWeaponCombat(game))
+            await stopTwoWeaponCombat(game);
+        if (game._unweapon) {
+            game._unweapon = false;
+            if (game.flags.verbose !== false) {
+                const weapon = primaryWeapon();
+                if (weapon) {
+                    observeObjectForNaming(weapon);
+                    await pline(`You begin bashing monsters with ${ownedObjectName(weapon, game, { capitalized: false })}.`);
+                }
+                else if (!monsterHasNoHands(heroSpecies(game)) && !monsterIsVerySmall(heroSpecies(game))) {
+                    const action = game.urole?.key === 'monk' ? 'striking' : 'bashing';
+                    const covered = game.uarmg || game.u.uarmg ? 'gloved' : 'bare';
+                    await pline(`You begin ${action} monsters with your ${covered} ${makePlural(heroHandName(game))}.`);
+                }
+            }
+        }
+        await exerciseAttribute(A_STR, true);
+        wipeHeroEngraving(3);
+        if (MONSTER_SYMBOL[monster.mnum] === S_LEPRECHAUN && !monster.mfrozen
+            && !monsterIsHelpless(monster) && !monster.mconf && monster.mcansee && rn2(7) === 0) {
+            const movement = await moveMonsterForHeroAttack(monster, game);
+            if (movement.heroDied)
+                return true;
+            if (movement.status === MMOVE_DIED || monster.mx !== x || monster.my !== y) {
+                await plineWithContinuation('You miss wildly and stumble forwards.');
+                return false;
+            }
+        }
+        if (Upolyd(game.u)) {
+            await attackHeroInMonsterForm(monster, x, y, { confirmationOverridden });
+        }
+        else {
+            const attack = requireMonsterData(MONSTER_ATTACKS, heroSpecies(game))[0];
+            if (!attack)
+                throw new Error('The hero species is missing its first attack.');
+            await attackWithHumanForm(monster, x, y, attack, confirmationOverridden);
+        }
+        monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
     }
-    else {
-        const attack = requireMonsterData(MONSTER_ATTACKS, heroSpecies(game))[0];
-        if (!attack)
-            throw new Error('The hero species is missing its first attack.');
-        await attackWithHumanForm(monster, x, y, attack, confirmationOverridden);
-    }
-    monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITMASK;
-    await finishAttackDisplay(monster, x, y);
+    if (game.context.forcefight && !monster.dead && monster.mhp > 0
+        && !canSpotMonster(monster) && !(game.u.uswallow && game.u.ustuck === monster)
+        && game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible')
+        await map_invisible(x, y);
     return true;
-}
-async function announceImprovisedAttack() {
-    if (!game._unweapon)
-        return;
-    game._unweapon = false;
-    if (game.flags.verbose === false)
-        return;
-    const weapon = primaryWeapon();
-    if (weapon) {
-        observeObjectForNaming(weapon);
-        await pline(`You begin bashing monsters with ${ownedObjectName(weapon, game, { capitalized: false })}.`);
-    }
-    else if (!monsterHasNoHands(heroSpecies(game)) && !monsterIsVerySmall(heroSpecies(game))) {
-        const action = game.urole?.key === 'monk' ? 'striking' : 'bashing';
-        const covered = game.uarmg || game.u.uarmg ? 'gloved' : 'bare';
-        await pline(`You begin ${action} monsters with your ${covered} ${makePlural(heroHandName(game))}.`);
-    }
 }
 async function attackWithHumanForm(monster, x, y, attack, confirmationOverridden) {
     requirePlayingGame(game);
@@ -651,12 +628,6 @@ function primaryWeapon() {
 }
 function secondaryWeapon() {
     return game.uswapwep || game.u.uswapwep || null;
-}
-async function finishAttackDisplay(monster, x, y) {
-    if (game.context.forcefight && !monster.dead && monster.mhp > 0
-        && !canSpotMonster(monster) && !(game.u.uswallow && game.u.ustuck === monster)
-        && game.level?.at(x, y)?.remembered_glyph?.kind !== 'invisible')
-        await map_invisible(x, y);
 }
 export async function resolveHeroWeaponHit(monster, x, y, weapon, { attack, hit, threshold, armorPenalty, dieRoll, twoHits, confirmationOverridden = false }) {
     requirePlayingGame(game);
@@ -1472,7 +1443,7 @@ async function resolvePhysicalHit(monster, originalObject, context) {
             const attack = requireMonsterData(MONSTER_ATTACKS, heroSpecies(state))[0];
             if (!attack)
                 throw new Error('Hero knockback requires the first species attack');
-            const impact = await tryKnockback(state.u, monster, { attackType: attack[0], damageType: attack[1] }, {
+            const impact = await mhitm_knockback(state.u, monster, { attackType: attack[0], damageType: attack[1] }, {
                 state, publish, weaponUsed: true,
                 nameMonster: victim => monsterName(victim, { state }),
                 wakeDefender: () => wakeAttackedMonster(monster),
@@ -1589,7 +1560,7 @@ export async function mhitmAdFire(call) {
         const { state, publish, attack, random, rollOne } = call.context;
         // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
         // cancelled, so the rn2(10) probe always runs.
-        if (specialAttackNegated(state.u, mdef, { state, random })) {
+        if (await mhitm_mgc_atk_negated(state.u, mdef, { state, random })) {
             if (canSeeMonster(mdef))
                 await publish(`${monsterName(mdef, { state, capitalized: true })} avoids harm.`);
             return continueResult(0);
@@ -1687,7 +1658,7 @@ export async function mhitmAdFire(call) {
         /* mhitm: monster versus monster */
         const { attacker, defender, context } = call;
         const { state, visible, publish, random, rollOne } = context;
-        if (await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random }))
+        if (await mhitm_mgc_atk_negated(attacker, defender, { verbose: true, state, visible, publish, random }))
             return continueResult(0);
         const seen = visible && canSeeMonster(defender);
         if (seen)
@@ -1730,7 +1701,7 @@ export async function mhitmAdCold(call) {
         const { state, publish, random, rollOne } = call.context;
         // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
         // cancelled, so the rn2(10) probe always runs.
-        if (specialAttackNegated(state.u, mdef, { state, random })) {
+        if (await mhitm_mgc_atk_negated(state.u, mdef, { state, random })) {
             if (canSeeMonster(mdef))
                 await publish(`${monsterName(mdef, { state, capitalized: true })} avoids harm.`);
             return elementContinueResult(0);
@@ -1801,7 +1772,7 @@ export async function mhitmAdCold(call) {
         /* mhitm: monster versus monster */
         const { attacker, defender, context } = call;
         const { state, visible, publish, random, rollOne } = context;
-        if (await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random }))
+        if (await mhitm_mgc_atk_negated(attacker, defender, { verbose: true, state, visible, publish, random }))
             return elementContinueResult(0);
         const seen = visible && canSeeMonster(defender);
         if (seen)
@@ -1828,7 +1799,7 @@ export async function mhitmAdElec(call) {
         const { state, publish, random, rollOne } = call.context;
         // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
         // cancelled, so the rn2(10) probe always runs.
-        if (specialAttackNegated(state.u, mdef, { state, random })) {
+        if (await mhitm_mgc_atk_negated(state.u, mdef, { state, random })) {
             if (canSeeMonster(mdef))
                 await publish(`${monsterName(mdef, { state, capitalized: true })} avoids harm.`);
             return elementContinueResult(0);
@@ -1899,7 +1870,7 @@ export async function mhitmAdElec(call) {
         /* mhitm: monster versus monster */
         const { attacker, defender, context } = call;
         const { state, visible, publish, random, rollOne } = context;
-        if (await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random }))
+        if (await mhitm_mgc_atk_negated(attacker, defender, { verbose: true, state, visible, publish, random }))
             return elementContinueResult(0);
         const seen = visible && canSeeMonster(defender);
         if (seen)
@@ -1923,27 +1894,6 @@ const M1_FLY = 0x00000001;
 const M1_NOEYES = 0x00001000;
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
 const LOW_BOOTS = 163;
-// C uhitm.c:mhitm_ad_phys(), uhitm branch: shade contact, the special
-// damage bonus and the hand-to-hand accuracy rings. The hero attacker
-// cannot be cancelled, and this branch never sets mhm->done, so callers
-// inline the follow-up `if (mhm->done) return;` only in the other branches.
-export function physicalDamage(monster, { state, damage, attack, specialDamage }) {
-    if (monsterIsShade(monster))
-        damage = 0;
-    damage += specialDamage;
-    if (attack[0] === AT_WEAP)
-        return 0;
-    if ([AT_KICK, AT_CLAW, AT_TUCH, AT_HUGS].includes(attack[0])) {
-        if (monsterIsThickSkinned(monster))
-            damage = attack[0] === AT_KICK ? 0 : Math.trunc((damage + 1) / 2);
-        const bonus = state.u.udaminc ?? 0;
-        if (bonus > 0)
-            damage += bonus;
-        else if (damage > 0)
-            damage = Math.max(1, damage + bonus);
-    }
-    return damage;
-}
 // C mondata.c:can_blnd() for the hero's own contact attack; the monster
 // defender twin lives with mhitm_ad_blnd's monster-versus-monster branch.
 function naturalAttackCanBlind(monster, { state, attack }) {
@@ -1982,7 +1932,7 @@ export async function mhitmAdDrli(call) {
             return statusContinueResult(call.context.damage);
         // mhitm_mgc_atk_negated(magr, mdef, TRUE): the hero cannot be
         // cancelled, so the rn2(10) probe always runs.
-        if (specialAttackNegated(state.u, mdef, { state, random })) {
+        if (await mhitm_mgc_atk_negated(state.u, mdef, { state, random })) {
             if (canSeeMonster(mdef))
                 await publish(`${monsterName(mdef, { state, capitalized: true })} avoids harm.`);
             return statusContinueResult(call.context.damage);
@@ -2020,11 +1970,9 @@ export async function mhitmAdDrli(call) {
         if (recordRandom(random, calls, 3) === 0 && !heroHasDrainResistance(state)) {
             // mhitm_mgc_atk_negated(magr, mdef, TRUE), which owns the
             // "You avoid harm." line; a cancelled attacker returns quietly.
-            const negated = specialAttackNegated(attacker, state.u, {
-                state, random: limit => recordRandom(random, calls, limit),
+            const negated = await mhitm_mgc_atk_negated(attacker, state.u, {
+                state, random: limit => recordRandom(random, calls, limit), publish, verbose: true,
             });
-            if (negated && !attacker.mcan)
-                await publish('You avoid harm.');
             // unlike hitting with Stormbringer, the wounded attacker doesn't
             // heal any from the drained life
             if (!negated && await loseHeroExperience('life drainage', { die, publish }))
@@ -2044,7 +1992,7 @@ export async function mhitmAdDrli(call) {
             || (random(3) === 0
                 && !(monsterHasDrainResistance(defender)
                     || monsterCombatDefense(defender, AD_DRLI, state))
-                && !await monsterCombatAttackNegated(attacker, defender, {
+                && !await mhitm_mgc_atk_negated(attacker, defender, {
                     state, visible, random, publish, verbose: true,
                 }))) {
             if (!isDeath) /* Stormbringer uses monhp_per_lvl (1d8) */
@@ -2176,7 +2124,7 @@ export async function mhitmAdStun(call) {
             await publish(`${monsterName(mdef, { state, capitalized: true })} ${staggerVerb(mdef.mnum)} for a moment.`);
         mdef.mstun = 1;
         // mhitm_ad_phys(); its uhitm branch never sets mhm->done.
-        return statusContinueResult(physicalDamage(mdef, call.context));
+        return mhitm_ad_phys({ magr: 'youmonst', defender: mdef, context: call.context });
     }
     else if ('mdef' in call) {
         /* mhitu: a monster attacks the hero with a stunning blow */
@@ -2213,7 +2161,7 @@ export async function mhitmAdLegs(call) {
         /* uhitm: the #if 0 u.ucancelled probe is disabled upstream, so the
            branch reduces to mhitm_ad_phys(), whose uhitm branch never sets
            mhm->done. */
-        return statusContinueResult(physicalDamage(call.defender, call.context));
+        return mhitm_ad_phys({ magr: 'youmonst', defender: call.defender, context: call.context });
     }
     else if ('mdef' in call) {
         /* mhitu: a xan pricks the hero's leg */
@@ -2276,136 +2224,178 @@ export async function mhitmAdLegs(call) {
         return await context.applyPhysical();
     }
 }
-// C uhitm.c:mhitm_ad_sedu() mhitu branch's flight tail (uhitm.c:4675-4688):
-// rloc() away from the scene, the animal's run-away line, monflee() and
-// the mhm.done / M_ATTK_AGR_DONE that ends hitmu()'s slot.
-async function retreatAfterTheft(monster, attack, animal, stolenName, calls) {
-    const game = requireInitializedGame();
-    if (animal) {
-        if (stolenName && canSeeMonster(monster))
-            await plineWithContinuation(`${monsterName(monster, { state: game,
-                capitalized: true })} tries to run away with ${stolenName}.`);
+// C uhitm.c:mhitm_ad_sedu().
+export async function mhitm_ad_sedu(call) {
+    if ('magr' in call) {
+        await steal_it(call.defender, call.context);
+        const heroDied = !!call.context.state.program_state.gameover;
+        return { ...effectResult(0, M_ATTK_MISS, heroDied), done: heroDied };
     }
-    else if (!await reportMonsterTeleportRestriction(monster, { state: game })) {
-        const relocation = await randomMonsterRelocation(monster, {
-            calls, flags: RLOC_MSG,
-        });
-        if (relocation && 'died' in relocation && relocation.died)
-            return;
-    }
-    const flight = await makeMonsterFlee(monster, { announce: false });
-    if (flight.heroDied)
-        return;
-    attack.attackerDone = true;
-    attack.contactDone = true;
-    attack.nativeResult = M_ATTK_AGR_DONE;
-}
-// C uhitm.c:mhitm_ad_sedu(), mhitu branch (uhitm.c:4631-4690).
-export async function mhitmAdSedu(call) {
-    const { state, attacker, attack, hitMessage, publish, random, calls } = call.context;
-    const draw = (limit) => {
-        calls.push(`rn2(${limit})`);
-        return random(limit);
-    };
-    const animal = monsterIsAnimal(attacker);
-    if (animal) {
-        // C uhitm.c:4637-4642: hitmsg() precedes everything for animals;
-        // a cancelled animal stops before steal().
-        if (hitMessage)
-            await publish(hitMessage);
-        if (attacker.mcan)
-            return { pagerOwned: false };
-    }
-    else if (MONSTER_ATTACKS[heroSpecies(state)]?.some(attack => attack[1] === AD_SEDU || attack[1] === AD_SSEX)) {
-        // C uhitm.c:4642-4656: a seductive hero only hears the thief's
-        // remarks, and the thief leaves.
-        const subject = monsterName(attacker, { state, capitalized: true });
-        await plineWithContinuation(`${subject} ${heroIsDeaf(state)
-            ? "says something but you can't hear it"
-            : (attacker.minvent || attacker.inventory || []).length ? 'brags about the goods some dungeon explorer provided'
-                : 'makes some remarks about how difficult theft is lately'}.`);
-        if (!await reportMonsterTeleportRestriction(attacker, { state }))
-            await randomMonsterRelocation(attacker, { calls, flags: RLOC_MSG });
-        attack.attackerDone = true;
-        attack.contactDone = true;
-        attack.nativeResult = M_ATTK_AGR_DONE;
-        return { pagerOwned: true };
-    }
-    else if (attacker.mcan) {
-        // C uhitm.c:4656-4669: a cancelled seducer fails to charm, then
-        // usually teleports away.
-        if (!heroIsBlind(state)) {
-            const subject = monsterName(attacker, { state,
-                capitalized: true, adjective: 'plain' });
-            await plineWithContinuation(`${subject} tries to ${state.flags.female
-                ? 'charm' : 'seduce'} you, but you seem ${state.flags.female
-                ? 'unaffected' : 'uninterested'}.`);
+    else if ('mdef' in call) {
+        const { state, attacker, attack, hitMessage, publish, random, calls } = call.context;
+        const draw = (limit) => {
+            calls.push(`rn2(${limit})`);
+            return random(limit);
+        };
+        const animal = monsterIsAnimal(attacker);
+        if (animal) {
+            // C uhitm.c:4637-4642: hitmsg() precedes everything for animals;
+            // a cancelled animal stops before steal().
+            if (hitMessage)
+                await publish(hitMessage);
+            if (attacker.mcan)
+                return { ...effectResult(attack.damage ?? 0), pagerOwned: false };
         }
-        if (draw(3)) {
+        else if (MONSTER_ATTACKS[heroSpecies(state)]?.some(attack => attack[1] === AD_SEDU || attack[1] === AD_SSEX)) {
+            // C uhitm.c:4642-4656: a seductive hero only hears the thief's
+            // remarks, and the thief leaves.
+            const subject = monsterName(attacker, { state, capitalized: true });
+            await plineWithContinuation(`${subject} ${heroIsDeaf(state)
+                ? "says something but you can't hear it"
+                : (attacker.minvent || attacker.inventory || []).length ? 'brags about the goods some dungeon explorer provided'
+                    : 'makes some remarks about how difficult theft is lately'}.`);
             if (!await reportMonsterTeleportRestriction(attacker, { state }))
                 await randomMonsterRelocation(attacker, { calls, flags: RLOC_MSG });
             attack.attackerDone = true;
             attack.contactDone = true;
             attack.nativeResult = M_ATTK_AGR_DONE;
+            return { ...effectResult(attack.damage ?? 0), pagerOwned: true };
         }
-        return { pagerOwned: false };
+        else if (attacker.mcan) {
+            // C uhitm.c:4656-4669: a cancelled seducer fails to charm, then
+            // usually teleports away.
+            if (!heroIsBlind(state)) {
+                const subject = monsterName(attacker, { state,
+                    capitalized: true, adjective: 'plain' });
+                await plineWithContinuation(`${subject} tries to ${state.flags.female
+                    ? 'charm' : 'seduce'} you, but you seem ${state.flags.female
+                    ? 'unaffected' : 'uninterested'}.`);
+            }
+            if (draw(3)) {
+                if (!await reportMonsterTeleportRestriction(attacker, { state }))
+                    await randomMonsterRelocation(attacker, { calls, flags: RLOC_MSG });
+                attack.attackerDone = true;
+                attack.contactDone = true;
+                attack.nativeResult = M_ATTK_AGR_DONE;
+            }
+            return { ...effectResult(attack.damage ?? 0), pagerOwned: false };
+        }
+        const theft = await stealFromHero(attacker, random, calls);
+        let pagerOwned = true;
+        let stolenName;
+        switch (theft.outcome) {
+            case 'petrified':
+                attack.nativeResult = M_ATTK_AGR_DIED;
+                attack.contactDone = true;
+                return { ...effectResult(attack.damage ?? 0), pagerOwned: true };
+            case 'nothing-to-steal':
+                break;
+            case 'refused':
+                if (!theft.fled)
+                    return { ...effectResult(attack.damage ?? 0), pagerOwned: false };
+                pagerOwned = false;
+                break;
+            case 'stole':
+                if (heroHasInvoluntaryDelay(state))
+                    return { ...effectResult(attack.damage ?? 0), pagerOwned: true };
+                stolenName = theft.stolenName ?? undefined;
+                break;
+            case 'hero-died':
+            case 'vanished':
+                return { ...effectResult(attack.damage ?? 0), pagerOwned: true };
+            case 'too-far':
+            case 'busy':
+            case 'gone':
+            case 'armor-removal':
+                return { ...effectResult(attack.damage ?? 0), pagerOwned: false };
+        }
+        const game = requireInitializedGame();
+        if (animal) {
+            if (stolenName && canSeeMonster(attacker))
+                await plineWithContinuation(`${monsterName(attacker, { state: game,
+                    capitalized: true })} tries to run away with ${stolenName}.`);
+        }
+        else if (!await reportMonsterTeleportRestriction(attacker, { state: game })) {
+            const relocation = await randomMonsterRelocation(attacker, {
+                calls, flags: RLOC_MSG,
+            });
+            if (relocation && 'died' in relocation && relocation.died)
+                return { ...effectResult(attack.damage ?? 0), pagerOwned };
+        }
+        const flight = await makeMonsterFlee(attacker, { announce: false });
+        if (flight.heroDied)
+            return { ...effectResult(attack.damage ?? 0), pagerOwned };
+        attack.attackerDone = true;
+        attack.contactDone = true;
+        attack.nativeResult = M_ATTK_AGR_DONE;
+        return { ...effectResult(attack.damage ?? 0), pagerOwned };
     }
-    const theft = await stealFromHero(attacker, random, calls);
-    switch (theft.outcome) {
-        // C uhitm.c:4672-4674: steal() returned -1 — the thief touched a
-        // petrifying corpse; hitmu() reports the aggressor's death.
-        case 'petrified':
-            attack.nativeResult = M_ATTK_AGR_DIED;
-            attack.contactDone = true;
-            return { pagerOwned: true };
-        // C uhitm.c:4675-4688: steal() returned 1 — leave the scene.
-        case 'nothing-to-steal':
-            await retreatAfterTheft(attacker, attack, animal, undefined, calls);
-            return { pagerOwned: true };
-        case 'refused':
-            if (theft.fled)
-                await retreatAfterTheft(attacker, attack, animal, undefined, calls);
-            return { pagerOwned: false };
-        case 'stole':
-            // C steal.c:611-612: an involuntary delay keeps the thief in
-            // place; steal() returned 0 and mhitm_ad_sedu() returns quietly.
-            if (heroHasInvoluntaryDelay(state))
-                return { pagerOwned: true };
-            await retreatAfterTheft(attacker, attack, animal, theft.stolenName ?? undefined, calls);
-            return { pagerOwned: true };
-        // C uhitm.c:4670-4671: the remaining outcomes are steal() == 0
-        // without a flight tail; hitmu() simply continues. 'vanished'
-        // keeps the pager claim the old resolver made: its removal prose
-        // and the gameover guard both returned true there.
-        case 'hero-died':
-        case 'vanished':
-            return { pagerOwned: true };
-        case 'too-far':
-        case 'busy':
-        case 'gone':
-        case 'armor-removal':
-            return { pagerOwned: false };
+    else {
+        const { attacker, defender, context } = call;
+        if (attacker.mcan)
+            return effectResult(context.damage);
+        const object = (defender.minvent || defender.inventory || [])
+            .find(candidate => !attacker.mtame || !candidate.cursed);
+        if (!object)
+            return effectResult(0);
+        const { state, publish, visible, random, finishDeath } = context;
+        const nymph = MONSTER_SYMBOL[attacker.mnum] === S_NYMPH;
+        const victimName = monsterName(defender, { state, suppressSaddle: false });
+        if (state.u.usteed === defender && ((object.owornmask ?? 0) & W_SADDLE)) {
+            const dismount = await dismountHero(DISMOUNT_POLY, { state, random, announce: publish });
+            if (dismount.died)
+                return { ...effectResult(0), done: true, heroDied: true };
+        }
+        await removeObjectFromMonsterInventory(defender, object, state, { publish });
+        if (state.program_state.gameover)
+            return { ...effectResult(0), done: true, heroDied: true };
+        // C doname() records the appearance it names while the hero can see.
+        if (visible)
+            observeObjectForNaming(object, { state });
+        const description = visible ? await inventoryItemDescription(object) : '';
+        // add_to_minv retains ownership without mpickobj's pickup side effects.
+        await linkObjectToMonsterInventory(attacker, object, { state });
+        const thiefName = monsterName(attacker, { state, capitalized: true });
+        if (visible && canSeeMonster(defender))
+            await publish(`${thiefName} steals ${description} from ${victimName}!`);
+        await updateMonsterWeaponAfterPolymorph(defender, state, { publish });
+        defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
+        const touch = await monsterSelfTouch(defender, { state, publish, finishDeath, creditHero: false });
+        if (touch.heroDied)
+            return { ...effectResult(0), done: true, heroDied: true };
+        if (defender.mhp <= 0) {
+            const growth = await context.growAttacker(defender);
+            return {
+                damage: context.damage,
+                nativeResult: M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED),
+                done: true, heroDied: growth.heroDied,
+            };
+        }
+        if (nymph)
+            return escapeAfterTheft(attacker, thiefName, context);
+        return effectResult(0);
     }
 }
 const M1_UNSOLID = 0x00100000;
 const S_EYE = 5;
 const S_LIGHT = 25;
+// Shared actor comparison with &gy.youmonst in the uhitm.c effect functions.
 function isHeroActor(actor, state) {
     return actor === state.u;
 }
+// Shared actor->data lookup; the hero uses u.umonnum (monst.h and you.h).
 function species(actor, state) {
     if (!isHeroActor(actor, state))
         return actor.mnum;
     requireInitializedHero(actor);
     return actor.umonnum;
 }
-function inventory(actor, state) {
-    return isHeroActor(actor, state) ? state.inventory : actor.minvent ?? [];
-}
+// Shared uwep/MON_WEP() expression (decl.h and monst.h:MON_WEP).
 function wieldedWeapon(actor, state) {
     return isHeroActor(actor, state) ? state.uwep : monsterWieldedWeapon(actor);
 }
-export function isSteadfast(actor, state) {
+// C uhitm.c:m_is_steadfast().
+export function m_is_steadfast(actor, state) {
     requirePlayingGame(state);
     const mnum = species(actor, state);
     const floating = isHeroActor(actor, state)
@@ -2418,22 +2408,13 @@ export function isSteadfast(actor, state) {
         return false;
     if (artifactById(wieldedWeapon(actor, state)?.oartifact)?.name === 'Giantslayer')
         return true;
-    return inventory(actor, state).some(object => object.otyp === LOADSTONE)
+    const carried = isHeroActor(actor, state) ? state.inventory : actor.minvent ?? [];
+    return carried.some(object => object.otyp === LOADSTONE)
         || (actor === state.u.usteed
             && state.inventory.some(object => object.otyp === LOADSTONE));
 }
-// C test_move(TEST_MOVE), before a blow can start the hero hurtling.
-export function canKnockHeroToward(dx, dy) {
-    requirePlayingGame(game);
-    const { ux, uy } = game.u;
-    const x = ux + dx;
-    const y = uy + dy;
-    // A boulder passes this test ("assume you'll be able to push it"); the
-    // hurtle itself then stops against it.
-    return isok(x, y) && heroTestMove(x, y);
-}
 // C uhitm.c:mhitm_knockback().
-export async function tryKnockback(attacker, defender, attack, { state = game, random = rn2, publish = plineWithContinuation, weaponUsed = false, hit = true, finishMonsterDeath, finishLiquidDeath, nameMonster = monster => monsterName(monster, {
+export async function mhitm_knockback(attacker, defender, attack, { state = game, random = rn2, publish = plineWithContinuation, weaponUsed = false, hit = true, finishMonsterDeath, finishLiquidDeath, nameMonster = monster => monsterName(monster, {
     state, article: 'your',
     suppressSaddle: !!MGIVENNAME(monster) || monster === state.u.usteed,
 }), wakeDefender, } = {}) {
@@ -2459,7 +2440,9 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
     const dx = Math.sign(x - (attackerMonster?.mx ?? state.u.ux));
     const dy = Math.sign(y - (attackerMonster?.my ?? state.u.uy));
     if (heroTarget) {
-        if (!canKnockHeroToward(dx, dy))
+        requirePlayingGame(game);
+        const { ux, uy } = game.u;
+        if (!isok(ux + dx, uy + dy) || !heroTestMove(ux + dx, uy + dy))
             return { knocked: false };
     }
     else {
@@ -2501,7 +2484,7 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
     if (((MONSTER_FLAGS1[attackerForm] ?? 0) & M1_UNSOLID)
         || ((heroAttacks || movingHero) && !hit))
         return { knocked: false };
-    if (isSteadfast(target ?? state.u, state)) {
+    if (m_is_steadfast(target ?? state.u, state)) {
         if (movingHero || target === state.u.usteed) {
             await publish(state.u.usteed
                 ? `You and ${nameMonster(state.u.usteed)} don't budge.` : "You don't budge.");
@@ -2580,11 +2563,18 @@ export async function tryKnockback(attacker, defender, attack, { state = game, r
             || (target !== null && !heroTarget && target !== state.u.usteed && !state.level.monsters.includes(target)),
     };
 }
-// C uhitm.c:mhitm_mgc_atk_negated(), for monster-vs-monster effects.
-export async function monsterCombatAttackNegated(attacker, defender, { state = game, visible, verbose = true, publish = plineWithContinuation, random = rn2, }) {
-    const negated = specialAttackNegated(attacker, defender, { state, random });
-    if (negated && !attacker.mcan && verbose && visible && canSeeMonster(defender))
-        await publish(`${monsterName(defender, { state, capitalized: true })} avoids harm.`);
+// C uhitm.c:mhitm_mgc_atk_negated().
+export async function mhitm_mgc_atk_negated(attacker, defender, { state = game, random = rn2, verbose = false, visible = true, publish = plineWithContinuation, } = {}) {
+    if (attacker !== state.u && attacker.mcan)
+        return true;
+    const armpro = magicNegation(defender, state);
+    const negated = random(10) < 3 * armpro;
+    if (negated && verbose) {
+        if (defender === state.u)
+            await publish('You avoid harm.');
+        else if ('mnum' in defender && visible && canSeeMonster(defender))
+            await publish(`${monsterName(defender, { state, capitalized: true })} avoids harm.`);
+    }
     return negated;
 }
 // Native uhitm.c monster-vs-monster acid and erosion; mhitm_ad_fire(),
@@ -2653,10 +2643,10 @@ function damageResult(damage) {
 const S_NYMPH = 14;
 export async function applyMonsterTheftEffect(attacker, defender, context) {
     return context.attack[1] === AD_SGLD
-        ? stealGold(attacker, defender, context) : stealItem(attacker, defender, context);
+        ? stealGold(attacker, defender, context) : mhitm_ad_sedu({ attacker, defender, context });
 }
 async function stealGold(attacker, defender, context) {
-    const result = theftResult(0);
+    const result = effectResult(0);
     if (attacker.mcan)
         return result;
     const gold = (defender.minvent || defender.inventory || [])
@@ -2672,64 +2662,17 @@ async function stealGold(attacker, defender, context) {
         await publish(`${thiefName} steals some gold from ${monsterName(defender, { state })}.`);
     return escapeAfterTheft(attacker, thiefName, context);
 }
-// C uhitm.c:mhitm_ad_sedu(), its monster-vs-monster theft branch: steal a
-// non-cursed item when the thief is tame. The hero branch is steal_it,
-// ported in hero_natural_theft.ts.
-async function stealItem(attacker, defender, context) {
-    if (attacker.mcan)
-        return theftResult(context.damage);
-    const object = (defender.minvent || defender.inventory || [])
-        .find(candidate => !attacker.mtame || !candidate.cursed);
-    if (!object)
-        return theftResult(0);
-    const { state, publish, visible, random, finishDeath } = context;
-    const nymph = MONSTER_SYMBOL[attacker.mnum] === S_NYMPH;
-    const victimName = monsterName(defender, { state, suppressSaddle: false });
-    if (state.u.usteed === defender && ((object.owornmask ?? 0) & W_SADDLE)) {
-        const dismount = await dismountHero(DISMOUNT_POLY, { state, random, announce: publish });
-        if (dismount.died)
-            return { ...theftResult(0), done: true, heroDied: true };
-    }
-    await removeObjectFromMonsterInventory(defender, object, state, { publish });
-    if (state.program_state.gameover)
-        return { ...theftResult(0), done: true, heroDied: true };
-    // C doname() records the appearance it names while the hero can see.
-    if (visible)
-        observeObjectForNaming(object, { state });
-    const description = visible ? await inventoryItemDescription(object) : '';
-    // add_to_minv retains ownership without mpickobj's pickup side effects.
-    await linkObjectToMonsterInventory(attacker, object, { state });
-    const thiefName = monsterName(attacker, { state, capitalized: true });
-    if (visible && canSeeMonster(defender))
-        await publish(`${thiefName} steals ${description} from ${victimName}!`);
-    await updateMonsterWeaponAfterPolymorph(defender, state, { publish });
-    defender.mstrategy = (defender.mstrategy ?? 0) & ~STRAT_WAITFORU;
-    const touch = await monsterSelfTouch(defender, { state, publish, finishDeath, creditHero: false });
-    if (touch.heroDied)
-        return { ...theftResult(0), done: true, heroDied: true };
-    if (defender.mhp <= 0) {
-        const growth = await context.growAttacker(defender);
-        return {
-            damage: context.damage,
-            nativeResult: M_ATTK_DEF_DIED | (growth.survived ? 0 : M_ATTK_AGR_DIED),
-            done: true, heroDied: growth.heroDied,
-        };
-    }
-    return nymph ? escapeAfterTheft(attacker, thiefName, context) : theftResult(0);
-}
+// Shared teleport-and-disappear tail of mhitm_ad_sgld() and mhitm_ad_sedu().
 async function escapeAfterTheft(attacker, before, { state, publish, visible, random, rollOne }) {
     if (await reportMonsterTeleportRestriction(attacker, { state, publish }))
-        return theftResult(0);
+        return effectResult(0);
     const spotted = canSpotMonster(attacker);
     const relocation = await randomMonsterRelocation(attacker, { state, random, rollOne, flags: RLOC_NOMSG });
     if (state.program_state.gameover || relocation?.died)
-        return { ...theftResult(0), nativeResult: M_ATTK_AGR_DONE, done: true, heroDied: true };
+        return { ...effectResult(0), nativeResult: M_ATTK_AGR_DONE, done: true, heroDied: true };
     if (visible && spotted && !canSpotMonster(attacker))
         await publish(`${before} suddenly disappears!`);
-    return { ...theftResult(0), nativeResult: M_ATTK_AGR_DONE };
-}
-function theftResult(damage) {
-    return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
+    return { ...effectResult(0), nativeResult: M_ATTK_AGR_DONE };
 }
 // C uhitm.c:mhitm_ad_dren/deth/pest/famn/dise/curs(), monster defenders;
 // mhitm_ad_drli() lives above with its other actor branches and
@@ -2786,7 +2729,7 @@ function isDrainDamageType(damageType) {
 }
 async function drainEnergy(attacker, defender, context) {
     const { state, visible, random, rollDice, publish } = context;
-    if (await monsterCombatAttackNegated(attacker, defender, {
+    if (await mhitm_mgc_atk_negated(attacker, defender, {
         state, visible, random, publish, verbose: false,
     }) || random(4))
         return;
@@ -2861,7 +2804,7 @@ async function teleportDefender(attacker, defender, context) {
     if (attacker.mcan || context.damage >= defender.mhp
         || await reportMonsterTeleportRestriction(defender, { state, publish }))
         return result;
-    if (await monsterCombatAttackNegated(attacker, defender, { state, publish, visible, random })) {
+    if (await mhitm_mgc_atk_negated(attacker, defender, { verbose: true, state, publish, visible, random })) {
         if (visible)
             await publish(`${monsterName(defender, { state, capitalized: true })} is not affected.`);
         return result;
@@ -2883,7 +2826,7 @@ async function teleportDefender(attacker, defender, context) {
 }
 async function polymorphDefender(attacker, defender, context) {
     const { state, publish, visible, random, rollOne, finishDeath } = context;
-    const negated = await monsterCombatAttackNegated(attacker, defender, {
+    const negated = await mhitm_mgc_atk_negated(attacker, defender, {
         state, publish, visible, random, verbose: false,
     }) || !!attacker.mspec_used;
     if (context.damage >= defender.mhp || negated)
@@ -2964,7 +2907,7 @@ async function announcePolymorph(defender, before, { state, publish }) {
 async function slimeDefender(attacker, defender, context) {
     const { state, visible, publish, random, rollDice, rollOne, finishDeath } = context;
     const result = transformationResult(context.damage);
-    if (await monsterCombatAttackNegated(attacker, defender, {
+    if (await mhitm_mgc_atk_negated(attacker, defender, {
         state, visible, publish, random, verbose: false,
     }) || random(4) !== 0 || monsterIsSlimeproof(defender))
         return result;
@@ -3034,88 +2977,129 @@ export async function poisonMonsterFromAttack(attacker, defender, attackType, da
         await publish('The poison was deadly...');
     return damage;
 }
-// C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero defender.
-export async function drainHeroBrain(monster, attack, state, publish, random = rn2, rollOne = rnd) {
-    const hero = state.u;
-    const baseDamage = attack.damage;
-    if (baseDamage === undefined)
-        throw new Error('Brain drain requires rolled contact damage');
-    if (!monsterHasHead({ mnum: heroSpecies(state) })) {
-        await publish("You don't seem harmed.");
-        attack.skipBrainDrain = true;
-        return;
-    }
-    const helmet = state.uarmh ?? hero.uarmh;
-    if (helmet?.greased && (!helmet.cursed || random(3))) {
-        await publish(`${monsterName(monster, { state, capitalized: true })} grabs you, but cannot hold onto your greased ${objectCombatName(helmet, { state })}!`);
-        if (!random(2)) {
-            await publish('The grease wears off.');
-            helmet.greased = false;
+// C uhitm.c:mhitm_ad_drin().
+export async function mhitm_ad_drin(call) {
+    if ('magr' in call) {
+        const monster = call.defender;
+        const context = call.context;
+        const { state, publish, random, target } = context;
+        const result = {
+            damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
+        };
+        if (target.x !== monster.mx || target.y !== monster.my || !monsterHasHead(monster)) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} doesn't seem harmed.`);
+            result.damage = 0;
+            result.skipBrainDrain = true;
+            if (!heroIsUnchanging(state) && monster.mnum === PM_GREEN_SLIME && !heroIsSliming(state)) {
+                await publish("You suck in some slime and don't feel very well.");
+                await setHeroSlimingTimeout(10, { state });
+            }
+            return result;
         }
-        return;
+        if (await monsterSlipsFromHeroGrip(monster, { head: true, state, publish, random }))
+            return result;
+        const helmet = monster.minvent?.find(object => (object.owornmask ?? 0) & W_ARMH);
+        if (helmet && random(8)) {
+            const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
+            const kind = objectIsHardHelmet(helmet) ? 'helm' : 'hat';
+            await publish(`${owner} ${kind} blocks your attack to ${monsterPossessive(monster, { state, random })} head.`);
+            return result;
+        }
+        const amulet = monster.minvent?.find(object => (object.owornmask ?? 0) & W_AMUL);
+        await eat_brains({ kind: 'hero-attacker', monster, context, result });
+        if (amulet?.otyp === AMULET_OF_LIFE_SAVING
+            && !monster.minvent?.some(object => (object.owornmask ?? 0) & W_AMUL))
+            result.skipBrainDrain = true;
+        return result;
     }
-    if (helmet && random(8)) {
-        await publish(`Your ${armorSimpleName(helmet, state)} blocks the attack to your head.`);
-        return;
-    }
-    // Brain damage precedes the meal and bypasses negative AC. Blocked
-    // tentacles instead leave their ordinary damage for hitmu's common tail.
-    const damage = propertyIsActive('halfPhysicalDamage', state) || hero.halfPhysicalDamage
-        ? Math.trunc((baseDamage + 1) / 2) : baseDamage;
-    attack.damage = 0;
-    if (await damageHeroFromMonster(monster, damage, { state, publish })) {
-        attack.heroDied = true;
-        return;
-    }
-    if (helmet?.otyp !== DUNCE_CAP) {
-        const mortality = hero.umortality ?? 0;
-        const eaten = await eat_brains({ kind: 'hero-defender', monster, attack, state, publish, rollOne });
-        if ((hero.umortality ?? 0) > mortality)
+    else if ('mdef' in call) {
+        const { state, attacker: monster, attack, publish, random, rollOne } = call.context;
+        const hero = state.u;
+        const baseDamage = attack.damage;
+        if (baseDamage === undefined)
+            throw new Error('Brain drain requires rolled contact damage');
+        if (!monsterHasHead({ mnum: heroSpecies(state) })) {
+            await publish("You don't seem harmed.");
             attack.skipBrainDrain = true;
-        if (!eaten || state.program_state.gameover)
-            return;
-    }
-    const change = adjustAttribute(A_INT, -rollOne(2), state);
-    const message = attributeChangeMessage(A_INT, change, state);
-    if (message && (change.changed || change.blockedByDunceCap || state.flags.verbose))
-        await publish(message);
-    if (!random(5)) {
-        loseHeroSpellMemory({ state });
-        attack.skipBrainDrain = true;
-    }
-    if (!random(5)) {
-        await drainHeroWeaponSkills(rollOne(2), state);
-        attack.skipBrainDrain = true;
-    }
-}
-// This phase never finishes the hit. Even a fatal meal leaves the pending
-// tentacle damage for mdamagem(), which can kill the defender as well.
-export async function resolveMonsterBrainAttack(attacker, defender, damage, { state = game, visible, notOnHead = false, random = rn2, rollOne = rnd, publish = plineWithContinuation, finishDeath, }) {
-    if (notOnHead || !monsterHasHead(defender)) {
-        if (visible && canSpotMonster(defender)) {
-            await publish(`${monsterName(defender, { state, capitalized: true })} doesn't seem harmed.`);
+            return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+                skipBrainDrain: !!attack.skipBrainDrain };
         }
-        return { damage: 0, hitFlags: M_ATTK_MISS, skipBrainDrain: true, heroDied: false };
-    }
-    if (((defender.misc_worn_check ?? 0) & W_ARMH) && random(8)) {
-        if (visible && canSpotMonster(attacker) && canSeeMonster(defender)) {
-            const defenderName = possessiveName(monsterName(defender, { state, capitalized: true }));
-            const attackerName = possessiveName(monsterName(attacker, { state }));
-            const whoseHead = monsterPossessive(defender, { state, random });
-            await publish(`${defenderName} helmet blocks ${attackerName} attack to ${whoseHead} head.`);
+        const helmet = state.uarmh ?? hero.uarmh;
+        if (helmet?.greased && (!helmet.cursed || random(3))) {
+            await publish(`${monsterName(monster, { state, capitalized: true })} grabs you, but cannot hold onto your greased ${objectCombatName(helmet, { state })}!`);
+            if (!random(2)) {
+                await publish('The grease wears off.');
+                helmet.greased = false;
+            }
+            return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+                skipBrainDrain: !!attack.skipBrainDrain };
         }
-        return { damage, hitFlags: M_ATTK_MISS, skipBrainDrain: false, heroDied: false };
+        if (helmet && random(8)) {
+            await publish(`Your ${armorSimpleName(helmet, state)} blocks the attack to your head.`);
+            return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+                skipBrainDrain: !!attack.skipBrainDrain };
+        }
+        // Brain damage precedes the meal and bypasses negative AC. Blocked
+        // tentacles instead leave their ordinary damage for hitmu's common tail.
+        const damage = propertyIsActive('halfPhysicalDamage', state) || hero.halfPhysicalDamage
+            ? Math.trunc((baseDamage + 1) / 2) : baseDamage;
+        attack.damage = 0;
+        if (await damageHeroFromMonster(monster, damage, { state, publish })) {
+            attack.heroDied = true;
+            return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+                skipBrainDrain: !!attack.skipBrainDrain };
+        }
+        if (helmet?.otyp !== DUNCE_CAP) {
+            const mortality = hero.umortality ?? 0;
+            const eaten = await eat_brains({ kind: 'hero-defender', monster, attack, state, publish, rollOne });
+            if ((hero.umortality ?? 0) > mortality)
+                attack.skipBrainDrain = true;
+            if (!eaten || state.program_state.gameover)
+                return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+                    skipBrainDrain: !!attack.skipBrainDrain };
+        }
+        const change = adjustAttribute(A_INT, -rollOne(2), state);
+        const message = attributeChangeMessage(A_INT, change, state);
+        if (message && (change.changed || change.blockedByDunceCap || state.flags.verbose))
+            await publish(message);
+        if (!random(5)) {
+            loseHeroSpellMemory({ state });
+            attack.skipBrainDrain = true;
+        }
+        if (!random(5)) {
+            await drainHeroWeaponSkills(rollOne(2), state);
+            attack.skipBrainDrain = true;
+        }
+        return { ...effectResult(attack.damage ?? baseDamage, M_ATTK_MISS, !!attack.heroDied),
+            skipBrainDrain: !!attack.skipBrainDrain };
     }
-    const amulet = wornAmulet(defender);
-    const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
-    const result = await eat_brains({
-        kind: 'monster-defender', attacker, defender, damage,
-        context: { state, visible, random, rollOne, publish, finishDeath },
-    });
-    return { ...result, skipBrainDrain: lifeSaving && !wornAmulet(defender) };
-}
-function wornAmulet(monster) {
-    return (monster.minvent ?? monster.inventory ?? []).find(object => (object.owornmask ?? 0) & W_AMUL);
+    else {
+        const { attacker, defender, damage } = call;
+        const { state = game, visible, notOnHead = false, random = rn2, rollOne = rnd, publish = plineWithContinuation, finishDeath } = call.context;
+        if (notOnHead || !monsterHasHead(defender)) {
+            if (visible && canSpotMonster(defender)) {
+                await publish(`${monsterName(defender, { state, capitalized: true })} doesn't seem harmed.`);
+            }
+            return { damage: 0, nativeResult: M_ATTK_MISS, skipBrainDrain: true, done: false, heroDied: false };
+        }
+        if (((defender.misc_worn_check ?? 0) & W_ARMH) && random(8)) {
+            if (visible && canSpotMonster(attacker) && canSeeMonster(defender)) {
+                const defenderName = possessiveName(monsterName(defender, { state, capitalized: true }));
+                const attackerName = possessiveName(monsterName(attacker, { state }));
+                const whoseHead = monsterPossessive(defender, { state, random });
+                await publish(`${defenderName} helmet blocks ${attackerName} attack to ${whoseHead} head.`);
+            }
+            return { damage, nativeResult: M_ATTK_MISS, skipBrainDrain: false, done: false, heroDied: false };
+        }
+        const amulet = (defender.minvent ?? defender.inventory ?? []).find(object => (object.owornmask ?? 0) & W_AMUL);
+        const lifeSaving = amulet?.otyp === AMULET_OF_LIFE_SAVING;
+        const result = await eat_brains({
+            kind: 'monster-defender', attacker, defender, damage,
+            context: { state, visible, random, rollOne, publish, finishDeath },
+        });
+        return { damage: result.damage, nativeResult: result.hitFlags, done: false,
+            heroDied: result.heroDied, skipBrainDrain: lifeSaving && !(defender.minvent ?? defender.inventory ?? []).some(object => (object.owornmask ?? 0) & W_AMUL) };
+    }
 }
 // ─── C uhitm.c:m_slips_free()/mhitm_ad_stck()/mhitm_ad_wrap(), hero attacker (from hero_natural_grip.ts) ───
 // Hero stick and wrap attacks. C uhitm.c:mhitm_ad_stck(), mhitm_ad_wrap().
@@ -3136,7 +3120,7 @@ export async function applyHeroNaturalGrip(monster, context) {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
 async function stickToMonster(monster, { state, publish, random, }) {
-    const negated = specialAttackNegated(state.u, monster, { state, random });
+    const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
     const distance = (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2;
     if (negated || monsterSpeciesSticks(monster.mnum) || distance > 2)
         return;
@@ -3286,7 +3270,7 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
             break;
         case AD_PLYS:
             if (defender.mcanmove && random(3) === 0
-                && !await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random, verbose: true })) {
+                && !await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: true })) {
                 if (visible && canSpotMonster(defender)) {
                     const name = monsterName(defender, { state, capitalized: true });
                     await publish(`${name} is frozen by ${monsterName(attacker, { state })}.`);
@@ -3314,7 +3298,7 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
             }
             break;
         case AD_SLOW: {
-            const blocked = await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random, verbose: false });
+            const blocked = await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: false });
             if (!monsterCombatDefense(defender, AD_SLOW, state) && !blocked && defender.mspeed !== MSLOW) {
                 const speed = adjustMonsterSpeed(defender, -1);
                 // mon_adjust_speed() announces the change before mhitm_ad_slow() does.
@@ -3341,7 +3325,7 @@ export async function applyMonsterStatusEffect(attacker, defender, context) {
         case AD_HEAL:
             return context.applyPhysical();
         case AD_STCK:
-            if (await monsterCombatAttackNegated(attacker, defender, { state, visible, publish, random, verbose: false }))
+            if (await mhitm_mgc_atk_negated(attacker, defender, { state, visible, publish, random, verbose: false }))
                 damage = 0;
             break;
         case AD_WRAP:
@@ -3438,52 +3422,6 @@ export async function resolveDeathTouchContact(monster, attack, state, publish, 
         attack.damage = 0;
     }
 }
-// C uhitm.c:mhitm_ad_phys(), hero defender's weapon branch: silver contact
-// and pudding division.
-const IRON = 11, METAL = 12, SILVER = 14;
-const PUDDINGS = new Set(['black pudding', 'brown pudding'].map(name => MONSTER_NAME.indexOf(name)));
-export async function resolveMonsterWeaponContact(monster, weapon, damage, state, publish, rollOne) {
-    if (objectMaterial(weapon, state) === SILVER && heroHatesSilver(state)) {
-        await publish('The silver sears your flesh!');
-        await exerciseAttribute(A_CON, false, state);
-    }
-    // Native calculates this trial reduction for every armed physical hit.
-    // The shared hitmu() tail rolls its own reduction if division did not occur.
-    let reducedDamage = damage;
-    if (state.u.uac < 0)
-        reducedDamage -= rollOne(-state.u.uac);
-    reducedDamage = Math.max(1, reducedDamage);
-    if (state.u.halfPhysicalDamage)
-        reducedDamage = Math.trunc((reducedDamage + 1) / 2);
-    if (state.u.mh - reducedDamage <= 1 || !PUDDINGS.has(state.u.umonnum)
-        || ![IRON, METAL].includes(objectMaterial(weapon, state)))
-        return damage;
-    if (reducedDamage > 1)
-        await exerciseAttribute(A_STR, false, state);
-    state.u.mh -= reducedDamage;
-    state.context.botl = true;
-    if (await cloneHeroMonsterForm(state))
-        await publish(`You divide as ${monsterName(monster, { state })} hits you!`);
-    return 0;
-}
-// C uhitm.c:mhitm_ad_phys(), hero defender's hug branch.
-const ROPE_GOLEM = MONSTER_NAME.indexOf('rope golem');
-export async function resolvePhysicalHeroHug(monster, damage, state, random, publish) {
-    const holder = state.u.ustuck;
-    if (!holder && random(2)) {
-        if (await heroSlipsFree(monster, state, random, publish))
-            return 0;
-        setHeroGrip(monster, state);
-        await publish(`${monsterName(monster, { state, capitalized: true })} grabs you!`);
-    }
-    else if (holder === monster) {
-        await exerciseAttribute(A_STR, false, state);
-        await publish(`You are being ${monster.mnum === ROPE_GOLEM ? 'choked' : 'crushed'}.`);
-    }
-    // A failed capture still deals the rolled hug damage. Another holder
-    // prevents capture and crushing prose, but does not protect against it.
-    return damage;
-}
 export async function rejectMonsterShadeContact(aggressor, defender, weapon, { state = game, visible, publish = plineWithContinuation, rollOne = rnd, rollDice = d, thrown = false }) {
     if (!monsterIsShade(defender)
         || weapon && rollPhysicalWeaponDamage(weapon, defender, { state, rollOne, rollDice }) !== 0)
@@ -3500,66 +3438,216 @@ export async function rejectMonsterShadeContact(aggressor, defender, weapon, { s
     defender.msleeping = 0;
     return true;
 }
+const IRON = 11, METAL = 12, SILVER = 14;
+const PUDDINGS = new Set(['black pudding', 'brown pudding'].map(name => MONSTER_NAME.indexOf(name)));
+const ROPE_GOLEM = MONSTER_NAME.indexOf('rope golem');
 const PM_PURPLE_WORM = MONSTER_NAME.indexOf('purple worm');
 const PM_SHRIEKER = MONSTER_NAME.indexOf('shrieker');
-export async function resolveMonsterPhysicalDamage(aggressor, defender, attack, damage, { state = game, visible, dieRoll, hitOnHead, finishDeath, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, }) {
-    // hitmm's contact weapon is null for a claw. This later physical-damage
-    // phase deliberately rereads the held weapon, as mhitm_ad_phys does.
-    const weapon = attack.attackType === AT_WEAP || attack.attackType === AT_CLAW
-        ? monsterWieldedWeapon(aggressor) ?? null : null;
-    if (await rejectMonsterShadeContact(aggressor, defender, weapon, {
-        state, visible: canSeeMonster(aggressor) && canSeeMonster(defender),
-        publish, rollOne, rollDice,
-    }))
-        return { damage: 0, done: false, hitFlags: M_ATTK_MISS, heroDied: false };
-    if (attack.attackType === AT_KICK && monsterIsThickSkinned(defender))
-        return { damage: 0, done: false, hitFlags: M_ATTK_MISS, heroDied: false };
-    if (!weapon) {
-        if (aggressor.mnum === PM_PURPLE_WORM && defender.mnum === PM_SHRIEKER
-            && damage >= defender.mhp && defender.mhp > 1)
-            damage = defender.mhp - 1;
-        return { damage, done: false, hitFlags: M_ATTK_MISS, heroDied: false };
-    }
-    if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)) {
-        const stone = await petrifyMonsterDefender(defender, {
-            state, visible: visible && canSeeMonster(defender), publish, rollOne, finishDeath,
-        });
-        if (stone.heroDied)
-            return { damage: 0, done: true, hitFlags: M_ATTK_MISS, heroDied: true };
-        if (stone.stopped) {
-            if (!stone.survived && defender.mtame && !visible)
-                await publish('You have a peculiarly sad feeling for a moment, then it passes.');
-            return { damage: 0, done: true,
-                hitFlags: stone.survived ? M_ATTK_MISS : M_ATTK_DEF_DIED, heroDied: false };
+// C uhitm.c:mhitm_ad_phys().
+export async function mhitm_ad_phys(call) {
+    if ('magr' in call) {
+        const monster = call.defender;
+        const { state, attack, specialDamage } = call.context;
+        let damage = call.context.damage;
+        if (monsterIsShade(monster))
+            damage = 0;
+        damage += specialDamage;
+        if (attack[0] === AT_WEAP)
+            return effectResult(0);
+        if ([AT_KICK, AT_CLAW, AT_TUCH, AT_HUGS].includes(attack[0])) {
+            if (monsterIsThickSkinned(monster))
+                damage = attack[0] === AT_KICK ? 0 : Math.trunc((damage + 1) / 2);
+            const bonus = state.u.udaminc ?? 0;
+            if (bonus > 0)
+                damage += bonus;
+            else if (damage > 0)
+                damage = Math.max(1, damage + bonus);
         }
-        damage = stone.damage;
+        return effectResult(damage);
     }
-    damage += rollPhysicalWeaponDamage(weapon, defender, { state, rollOne, rollDice });
-    damage = Math.max(1, damage + monsterWeaponStrengthBonus(aggressor, random));
-    let hitFlags = M_ATTK_MISS;
-    if (weapon.oartifact) {
-        const artifact = await applyArtifactHit(weapon, defender, damage, {
-            attacker: aggressor, state,
-            publish, random, rollOne, dieRoll, hitOnHead,
-        });
-        if (artifact.heroDied)
-            return { damage: 0, done: true, hitFlags, heroDied: true };
-        damage = artifact.damage;
-        if (!artifact.specialMessage) {
-            await showMonsterArtifactFallbackHit(aggressor, defender, { state, visible, publish });
-            hitFlags |= M_ATTK_HIT;
+    else if ('mdef' in call) {
+        const { state, attacker: monster, attack, calls, publish, random, rollOne, rollDice, hitMessage, die } = call.context;
+        let damage = attack.damage ?? 0;
+        if (attack.attackType === AT_HUGS && !heroFormSticks(state)) {
+            const holder = state.u.ustuck;
+            const draw = (limit) => recordRandom(random, calls, limit);
+            if (!holder && draw(2)) {
+                if (await heroSlipsFree(monster, state, draw, publish))
+                    return effectResult(0);
+                setHeroGrip(monster, state);
+                await publish(`${monsterName(monster, { state, capitalized: true })} grabs you!`);
+            }
+            else if (holder === monster) {
+                await exerciseAttribute(A_STR, false, state);
+                await publish(`You are being ${monster.mnum === ROPE_GOLEM ? 'choked' : 'crushed'}.`);
+            }
+            // A failed capture still deals the rolled hug damage. Another holder
+            // prevents capture and crushing prose, but does not protect against it.
+            return effectResult(damage);
         }
-        if (defender.dead || defender.mhp <= 0)
-            return { damage, done: true, hitFlags: M_ATTK_DEF_DIED, heroDied: false };
+        else {
+            const weapon = attack.attackType === AT_WEAP ? monsterWieldedWeapon(monster) : null;
+            if (weapon) {
+                const poisoned = (attack.roll ?? 0) <= 5
+                    && (weapon.opoisoned || isPermanentlyPoisonedObject(weapon));
+                if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)) {
+                    await publish(`${monsterSentenceSubject(monster)} hits you with the ${MONSTER_NAME[weapon.corpsenm ?? -1]} corpse.`);
+                    if (await startHeroPetrificationFromMonster(monster, state)) {
+                        attack.damage = 0;
+                        attack.effect = 'petrifying-corpse';
+                        attack.contactDone = true;
+                        return { ...effectResult(0, M_ATTK_HIT), done: true };
+                    }
+                    damage = 1;
+                }
+                damage += rollPhysicalWeaponDamageAgainstHero(weapon, state, {
+                    rollOne: range => { calls.push(`rnd(${range})`); return rollOne(range); },
+                    rollDice: (count, sides) => { calls.push(`d(${count},${sides})`); return rollDice(count, sides); },
+                });
+                const gloves = (monster.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
+                if (gloves?.otyp === GAUNTLETS_OF_POWER)
+                    damage += 3 + random(4);
+                damage = Math.max(1, damage);
+                const artifact = await applyArtifactHit(weapon, 'hero', damage, {
+                    state, attacker: monster, dieRoll: attack.roll ?? 0, publish, random, rollOne,
+                });
+                if (artifact.heroDied)
+                    return { ...effectResult(0, M_ATTK_MISS, true), done: true };
+                damage = artifact.damage;
+                attack.specialMessage = artifact.specialMessage;
+                if (hitMessage) {
+                    const message = await hitMessage();
+                    if (message)
+                        await publish(message);
+                }
+                if (!damage)
+                    return effectResult(0);
+                if (objectMaterial(weapon, state) === SILVER && heroHatesSilver(state)) {
+                    await publish('The silver sears your flesh!');
+                    await exerciseAttribute(A_CON, false, state);
+                }
+                // Native calculates this trial reduction for every armed physical hit.
+                // The shared hitmu() tail rolls its own reduction if division did not occur.
+                let reducedDamage = damage;
+                if (state.u.uac < 0)
+                    reducedDamage -= rollOne(-state.u.uac);
+                reducedDamage = Math.max(1, reducedDamage);
+                if (state.u.halfPhysicalDamage)
+                    reducedDamage = Math.trunc((reducedDamage + 1) / 2);
+                if (state.u.mh - reducedDamage > 1 && PUDDINGS.has(state.u.umonnum)
+                    && [IRON, METAL].includes(objectMaterial(weapon, state))) {
+                    if (reducedDamage > 1)
+                        await exerciseAttribute(A_STR, false, state);
+                    state.u.mh -= reducedDamage;
+                    state.context.botl = true;
+                    if (await cloneHeroMonsterForm(state))
+                        await publish(`You divide as ${monsterName(monster, { state })} hits you!`);
+                    damage = 0;
+                }
+                await erodeAttackingWeapon(state.u, weapon, { state, random, publish });
+                if (poisoned) {
+                    const poison = await poisonHeroFromMonster(monster, attack.attackType, {
+                        attribute: A_STR, fatal: 10, state, random, rollOne, rollDice, publish,
+                        ...(die ? { die } : {}),
+                    });
+                    if (poison.died)
+                        return { ...effectResult(0, M_ATTK_MISS, true), done: true };
+                }
+            }
+            else if (hitMessage) {
+                const message = await hitMessage();
+                if (message)
+                    await publish(message);
+            }
+        }
+        return effectResult(damage);
     }
-    if (damage)
-        await erodeAttackingWeapon(defender, weapon, { state, random, publish });
-    if ((weapon.opoisoned || isPermanentlyPoisonedObject(weapon)) && random(4) === 0) {
-        damage = await poisonMonsterFromAttack(aggressor, defender, attack.attackType, damage, {
-            state, visible, random, publish,
-        });
+    else {
+        const { attacker: aggressor, defender, context } = call;
+        const { state, visible, dieRoll, publish, random, rollOne, rollDice } = context;
+        const hitOnHead = !context.notOnHead;
+        let damage = context.damage;
+        // hitmm's contact weapon is null for a claw. This later physical-damage
+        // phase deliberately rereads the held weapon, as mhitm_ad_phys does.
+        const weapon = context.attack[0] === AT_WEAP || context.attack[0] === AT_CLAW
+            ? monsterWieldedWeapon(aggressor) ?? null : null;
+        let nativeResult = M_ATTK_MISS;
+        if (await rejectMonsterShadeContact(aggressor, defender, weapon, {
+            state, visible: canSeeMonster(aggressor) && canSeeMonster(defender),
+            publish, rollOne, rollDice,
+        })) {
+            damage = 0;
+        }
+        else if (context.attack[0] === AT_KICK && monsterIsThickSkinned(defender)) {
+            damage = 0;
+        }
+        else if (weapon) {
+            if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)) {
+                const stone = await petrifyMonsterDefender(defender, {
+                    state, visible: visible && canSeeMonster(defender), publish, rollOne,
+                    finishDeath: async (monster, options) => {
+                        const outcome = await context.finishDeath(monster, options);
+                        if (!outcome.survived && !outcome.heroDied && monster === defender)
+                            return { ...outcome, heroDied: (await context.growAttacker(defender)).heroDied };
+                        return outcome;
+                    },
+                });
+                if (stone.heroDied)
+                    return { damage: 0, done: true,
+                        nativeResult: aggressor.mhp <= 0 || aggressor.dead ? M_ATTK_AGR_DIED : M_ATTK_MISS, heroDied: true };
+                if (stone.stopped) {
+                    if (!stone.survived && defender.mtame && !visible)
+                        await publish('You have a peculiarly sad feeling for a moment, then it passes.');
+                    return { damage: 0, done: true,
+                        nativeResult: (stone.survived ? M_ATTK_MISS : M_ATTK_DEF_DIED)
+                            | (aggressor.mhp <= 0 || aggressor.dead ? M_ATTK_AGR_DIED : M_ATTK_MISS), heroDied: false };
+                }
+                damage = stone.damage;
+            }
+            damage += rollPhysicalWeaponDamage(weapon, defender, { state, rollOne, rollDice });
+            const gloves = (aggressor.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
+            if (gloves?.otyp === GAUNTLETS_OF_POWER)
+                damage += 3 + random(4);
+            damage = Math.max(1, damage);
+            if (weapon.oartifact) {
+                const artifact = await applyArtifactHit(weapon, defender, damage, {
+                    attacker: aggressor, state,
+                    publish, random, rollOne, dieRoll, hitOnHead,
+                });
+                if (artifact.heroDied)
+                    return { damage: 0, done: true,
+                        nativeResult: nativeResult | (aggressor.mhp <= 0 || aggressor.dead ? M_ATTK_AGR_DIED : M_ATTK_MISS), heroDied: true };
+                damage = artifact.damage;
+                if (!artifact.specialMessage) {
+                    await showMonsterArtifactFallbackHit(aggressor, defender, { state, visible, publish });
+                    nativeResult |= M_ATTK_HIT;
+                }
+                if (defender.dead || defender.mhp <= 0) {
+                    nativeResult = M_ATTK_DEF_DIED;
+                    const growth = await context.growAttacker(defender);
+                    if (!growth.survived)
+                        nativeResult |= M_ATTK_AGR_DIED;
+                    if (aggressor.mhp <= 0 || aggressor.dead)
+                        nativeResult |= M_ATTK_AGR_DIED;
+                    return { damage, done: true, nativeResult, heroDied: growth.heroDied };
+                }
+            }
+            if (damage)
+                await erodeAttackingWeapon(defender, weapon, { state, random, publish });
+            if ((weapon.opoisoned || isPermanentlyPoisonedObject(weapon)) && random(4) === 0) {
+                damage = await poisonMonsterFromAttack(aggressor, defender, context.attack[0], damage, {
+                    state, visible, random, publish,
+                });
+            }
+        }
+        else if (aggressor.mnum === PM_PURPLE_WORM && defender.mnum === PM_SHRIEKER) {
+            if (damage >= defender.mhp && defender.mhp > 1)
+                damage = defender.mhp - 1;
+        }
+        if (aggressor.mhp <= 0 || aggressor.dead)
+            nativeResult |= M_ATTK_AGR_DIED;
+        return { damage, done: false, nativeResult, heroDied: false };
     }
-    return { damage, done: false, hitFlags, heroDied: false };
 }
 // C uhitm.c:mhitm_ad_heal(), against the hero.
 export function nurseContactMode(monster, state) {
@@ -3742,17 +3830,13 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_SLIM:
             return applyMonsterTransformEffect(attacker, defender, context);
         case AD_DGST: return applyMonsterDigestionEffect(attacker, defender, context);
-        case AD_DRIN: {
-            const brain = await resolveMonsterBrainAttack(attacker, defender, context.damage, context);
-            return { damage: brain.damage, nativeResult: brain.hitFlags, done: false,
-                skipBrainDrain: brain.skipBrainDrain, heroDied: brain.heroDied };
-        }
+        case AD_DRIN: return mhitm_ad_drin({ attacker, defender, damage: context.damage, context });
         case AD_STON: return petrifyingEffect(attacker, defender, context);
         case AD_DRST:
         case AD_DRDX:
         case AD_DRCO: {
             let damage = context.damage;
-            if (!await monsterCombatAttackNegated(attacker, defender, { ...context, verbose: false })
+            if (!await mhitm_mgc_atk_negated(attacker, defender, { ...context, verbose: false })
                 && context.random(8) === 0)
                 damage = await poisonMonsterFromAttack(attacker, defender, context.attack[0], damage, context);
             return effectResult(damage);
@@ -3767,31 +3851,6 @@ export async function applyMonsterCombatEffect(attacker, defender, context) {
         case AD_RBRE:
             return effectResult(0);
     }
-}
-export async function physicalEffect(attacker, defender, context) {
-    let grew = false;
-    const physical = await resolveMonsterPhysicalDamage(attacker, defender, { attackType: context.attack[0] }, context.damage, {
-        ...context, hitOnHead: !context.notOnHead,
-        finishDeath: async (monster, options) => {
-            const outcome = await context.finishDeath(monster, options);
-            if (!outcome.survived && !outcome.heroDied && monster === defender) {
-                grew = true;
-                return { ...outcome, heroDied: (await context.growAttacker(defender)).heroDied };
-            }
-            return outcome;
-        },
-    });
-    let nativeResult = physical.hitFlags;
-    let heroDied = physical.heroDied;
-    if ((nativeResult & M_ATTK_DEF_DIED) && !heroDied && !grew) {
-        const growth = await context.growAttacker(defender);
-        heroDied = growth.heroDied;
-        if (!growth.survived)
-            nativeResult |= M_ATTK_AGR_DIED;
-    }
-    if (attacker.mhp <= 0 || attacker.dead)
-        nativeResult |= M_ATTK_AGR_DIED;
-    return { damage: physical.damage, done: physical.done, nativeResult, heroDied };
 }
 async function petrifyingEffect(attacker, defender, context) {
     if (attacker.mcan)
@@ -3878,7 +3937,7 @@ async function applyNaturalEffect(monster, context) {
         case AD_PHYS:
         case AD_WERE:
         case AD_HEAL:
-            damage = physicalDamage(monster, context);
+            damage = (await mhitm_ad_phys({ magr: 'youmonst', defender: monster, context })).damage;
             break;
         case AD_LEGS: {
             // C uhitm.c:mhitm_ad_legs() uhitm branch reduces to mhitm_ad_phys().
@@ -3932,7 +3991,7 @@ async function applyNaturalEffect(monster, context) {
             damage = (await mhitmAdDrli({ magr: 'youmonst', defender: monster, context })).damage;
             break;
         case AD_DREN:
-            if (!await negated(monster, context, false) && !random(4))
+            if (!await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: false }) && !random(4))
                 await drainMonsterEnergy(monster, context);
             damage = 0;
             break;
@@ -3942,7 +4001,7 @@ async function applyNaturalEffect(monster, context) {
             damage = await poisonNaturalTarget(monster, context);
             break;
         case AD_PLYS:
-            if (!random(3) && damage < monster.mhp && !await negated(monster, context, true)) {
+            if (!random(3) && damage < monster.mhp && !await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: true })) {
                 if (!heroIsBlind(state))
                     await publish(`${subject(monster, context)} is frozen by you!`);
                 paralyzeMonster(monster, rollOne(10));
@@ -3980,7 +4039,7 @@ async function applyNaturalEffect(monster, context) {
         case AD_SSEX:
             return applyHeroNaturalTheft(monster, context);
         case AD_DRIN:
-            return applyHeroNaturalBrain(monster, context);
+            return mhitm_ad_drin({ magr: 'youmonst', defender: monster, context });
         case AD_STCK:
         case AD_WRAP:
             return applyHeroNaturalGrip(monster, context);
@@ -4062,7 +4121,7 @@ async function curseNaturalTarget(monster, context) {
 async function poisonNaturalTarget(monster, context) {
     const { state, attack, random, publish } = context;
     let damage = context.damage;
-    if (await negated(monster, context, false) || random(8))
+    if (await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: false }) || random(8))
         return damage;
     const weapon = state.uwep || state.u.uwep;
     const method = attack[0];
@@ -4082,7 +4141,7 @@ async function poisonNaturalTarget(monster, context) {
 }
 async function sleepNaturalTarget(monster, context) {
     const { state, publish, rollOne } = context;
-    if (monster.msleeping || await negated(monster, context, false))
+    if (monster.msleeping || await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: false }))
         return;
     const duration = rollOne(10);
     if (monsterResistsSleep(monster) || monsterHasArtifactDefense(monster, 'sleep', state)) {
@@ -4099,7 +4158,7 @@ async function sleepNaturalTarget(monster, context) {
     }
 }
 async function slowNaturalTarget(monster, context) {
-    const blocked = await negated(monster, context, false);
+    const blocked = await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: false });
     if (blocked || monster.mspeed === MSLOW
         || wearsDragonDefense(monster, 'blue dragon', BLUE_DRAGON_SCALES, BLUE_DRAGON_SCALE_MAIL))
         return;
@@ -4115,7 +4174,7 @@ async function slowNaturalTarget(monster, context) {
 async function teleportNaturalTarget(monster, context) {
     const { state, publish } = context;
     let damage = Math.max(1, context.damage);
-    if (await negated(monster, context, true)) {
+    if (await mhitm_mgc_atk_negated(context.state.u, monster, { ...context, verbose: true })) {
         await publish(`${subject(monster, context)} is not affected.`);
         return damage;
     }
@@ -4139,12 +4198,6 @@ async function petrifyNaturalTarget(monster, context) {
             recordConduct: !death?.noCorpse,
         }),
     });
-}
-async function negated(monster, { state, random, publish }, tell) {
-    const blocked = specialAttackNegated(state.u, monster, { state, random });
-    if (blocked && tell && canSeeMonster(monster))
-        await publish(`${monsterName(monster, { state, capitalized: true })} avoids harm.`);
-    return blocked;
 }
 function wearsDragonDefense(monster, species, scales, mail) {
     return speciesIs(monster, species) || (monster.minvent ?? []).some(object => ((object.owornmask ?? 0) & W_ARM) && (object.otyp === scales || object.otyp === mail));
@@ -4434,13 +4487,13 @@ async function endHeroEngulfDisplay(display, state) {
     await newsym(state.u.ux, state.u.uy);
 }
 // ─── C uhitm.c:steal_it()/theft_petrifies()/AD_SGLD/SEDU/SITM/SSEX hero arms (from hero_natural_theft.ts) ───
-// C uhitm.c:steal_it(), theft_petrifies(), and hero AD_SGLD/SEDU/SITM/SSEX.
+// Dispatch hero gold and item theft to their native effects.
 const M2_NEUTER = 0x00040000;
 export async function applyHeroNaturalTheft(monster, context) {
     if (context.attack[1] === AD_SGLD)
         await heroStealsGold(monster, context);
     else
-        await stealItems(monster, context);
+        return mhitm_ad_sedu({ magr: 'youmonst', defender: monster, context });
     const heroDied = !!context.state.program_state.gameover;
     return { damage: 0, nativeResult: M_ATTK_MISS, done: heroDied, heroDied };
 }
@@ -4465,16 +4518,39 @@ async function heroStealsGold(monster, { state, publish }) {
     }
     await exerciseAttribute(A_DEX, true, state);
 }
-async function stealItems(monster, context) {
-    const { state, publish } = context;
+// C uhitm.c:steal_it().
+async function steal_it(monster, context) {
+    const { state, publish, attack } = context;
     const inventory = monster.minvent || monster.inventory || [];
     const first = inventory[0];
     if (!first || first.oclass === COIN_CLASS && inventory.length === 1)
         return;
-    const suit = moveSeducedSuitLast(monster, context);
+    let suit = null;
+    if (monster.mcanmove && heroSeductionCompatibility(monster, attack, state)) {
+        const suits = inventory.filter(object => (object.owornmask ?? 0) & W_ARM);
+        if (suits.length > 1)
+            throw new Error(`Monster ${monster.m_id} wears multiple suits`);
+        suit = suits[0] ?? null;
+        if (suit) {
+            inventory.splice(inventory.indexOf(suit), 1);
+            inventory.push(suit);
+        }
+    }
     let gold = monsterGold(monster);
-    if (suit)
-        await announceDisrobing(monster, !!gold, context);
+    if (suit) {
+        const neuter = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER);
+        const sameGender = !neuter && !!monster.female === !!state.u.mfemale;
+        const name = monsterName(monster, { state });
+        const subject = monsterSubjectPronoun(monster, { state });
+        const possessive = monsterPossessive(monster, { state });
+        if (sameGender && MONSTER_SYMBOL[state.u.umonnum] === S_NYMPH) {
+            const capitalized = subject.charAt(0).toUpperCase() + subject.slice(1);
+            await publish(`You charm ${name}.  ${capitalized} gladly hands over ${gold ? 'most of ' : ''}${possessive} possessions.`);
+        }
+        else {
+            await publish(`You seduce ${name} and ${subject} starts to take off ${possessive} clothes.`);
+        }
+    }
     if (gold)
         unlinkMonsterObject(monster, gold);
     for (;;) {
@@ -4509,7 +4585,7 @@ async function stealItems(monster, context) {
             return;
         if (!held.object || held.object.where !== 'inventory')
             continue;
-        if (await theftPetrifies(held.object, context))
+        if (await theft_petrifies(held.object, context))
             break;
         if (wornMask & W_WEP) {
             await updateMonsterWeaponAfterPolymorph(monster, state, { publish });
@@ -4531,38 +4607,12 @@ async function stealItems(monster, context) {
     if (gold)
         await addObjectToMonsterInventory(monster, gold, state);
 }
+// Shared coin lookup for steal_it() and the hero gold-theft effect.
 function monsterGold(monster) {
     return (monster.minvent || monster.inventory || []).find(object => object.oclass === COIN_CLASS) ?? null;
 }
-function moveSeducedSuitLast(monster, { state, attack }) {
-    if (!monster.mcanmove || !heroSeductionCompatibility(monster, attack, state))
-        return null;
-    const inventory = monster.minvent || monster.inventory || [];
-    const suits = inventory.filter(object => (object.owornmask ?? 0) & W_ARM);
-    if (suits.length > 1)
-        throw new Error(`Monster ${monster.m_id} wears multiple suits`);
-    const suit = suits[0];
-    if (!suit)
-        return null;
-    inventory.splice(inventory.indexOf(suit), 1);
-    inventory.push(suit);
-    return suit;
-}
-async function announceDisrobing(monster, hasGold, { state, publish }) {
-    const neuter = !!((MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_NEUTER);
-    const sameGender = !neuter && !!monster.female === !!state.u.mfemale;
-    const name = monsterName(monster, { state });
-    const subject = monsterSubjectPronoun(monster, { state });
-    const possessive = monsterPossessive(monster, { state });
-    if (sameGender && MONSTER_SYMBOL[state.u.umonnum] === S_NYMPH) {
-        const capitalized = subject.charAt(0).toUpperCase() + subject.slice(1);
-        await publish(`You charm ${name}.  ${capitalized} gladly hands over ${hasGold ? 'most of ' : ''}${possessive} possessions.`);
-    }
-    else {
-        await publish(`You seduce ${name} and ${subject} starts to take off ${possessive} clothes.`);
-    }
-}
-async function theftPetrifies(object, { state, publish }) {
+// C uhitm.c:theft_petrifies().
+async function theft_petrifies(object, { state, publish }) {
     if (state.uarmg || state.u.uarmg || object.otyp !== CORPSE
         || !touchPetrifies(object.corpsenm) || heroResistsStoning(state))
         return false;
@@ -4632,7 +4682,7 @@ export async function attackHeroInMonsterForm(monster, x, y, { confirmationOverr
             return;
         // Native knockback samples its chance even for an ineligible or missed
         // attack. Its owner, rather than this loop, decides whether it applies.
-        const knockback = await tryKnockback(game.u, monster, {
+        const knockback = await mhitm_knockback(game.u, monster, {
             attackType: attack[0], damageType: attack[1],
         }, {
             weaponUsed: sequence.weaponUsed, hit: !!(strike.result & M_ATTK_HIT),
@@ -5329,7 +5379,7 @@ export async function applyMonsterPassiveToObject(defender, object, { carried = 
 export async function resolveMonsterContactEffect(monster, attack, { state, publish, random = rn2, rollOne = rnd, rollDice = d }) {
     attack.deferredSpecialContact = false;
     if (attack.damageType === AD_DRIN)
-        await drainHeroBrain(monster, attack, state, publish, random, rollOne);
+        await mhitm_ad_drin({ mdef: 'youmonst', context: { attacker: monster, attack, state, publish, random, rollOne } });
     else if (attack.damageType === AD_WERE)
         await infectHero(monster, state, publish, random);
     else if (attack.damageType === AD_SLEE)
@@ -5429,7 +5479,7 @@ async function curseHero(monster, state, publish, random) {
 async function paralyzeHero(monster, state, publish, random, rollOne) {
     if (heroHasInvoluntaryDelay(state) || random(3) !== 0)
         return;
-    if (await magicPreventsContact(monster, state, publish, random))
+    if (await mhitm_mgc_atk_negated(monster, state.u, { state, publish, random, verbose: true }))
         return;
     if (heroHasFreeAction(state)) {
         await publish('You momentarily stiffen.');
@@ -5449,7 +5499,7 @@ async function paralyzeHero(monster, state, publish, random, rollOne) {
     await exerciseAttribute(A_DEX, false, state);
 }
 async function teleportHeroOnContact(monster, attack, state, publish, random) {
-    if (specialAttackNegated(monster, state.u, { state, random })) {
+    if (await mhitm_mgc_atk_negated(monster, state.u, { state, random })) {
         await publish('You are not affected.');
         return;
     }
@@ -5472,12 +5522,6 @@ async function teleportHeroOnContact(monster, attack, state, publish, random) {
             state.u[hp]++;
     }
 }
-async function magicPreventsContact(monster, state, publish, random) {
-    const negated = specialAttackNegated(monster, state.u, { state, random });
-    if (negated && !monster.mcan)
-        await publish('You avoid harm.');
-    return negated;
-}
 async function infectHero(monster, state, publish, random) {
     if (random(4) !== 0 || state.u.ulycn !== -1
         || heroHasProtectionFromShapeChangers(state))
@@ -5485,7 +5529,7 @@ async function infectHero(monster, state, publish, random) {
     const weapon = state.uwep || state.u.uwep;
     if (artifactById(weapon?.oartifact, state)?.defense === 'lycanthropy')
         return;
-    if (await magicPreventsContact(monster, state, publish, random))
+    if (await mhitm_mgc_atk_negated(monster, state.u, { state, publish, random, verbose: true }))
         return;
     await publish('You feel feverish.', { urgent: true });
     await exerciseAttribute(A_CON, false, state);
@@ -5495,7 +5539,7 @@ async function infectHero(monster, state, publish, random) {
 async function sleepHero(monster, state, publish, random, rollOne) {
     if (heroHasInvoluntaryDelay(state) || random(5) !== 0)
         return;
-    if (await magicPreventsContact(monster, state, publish, random))
+    if (await mhitm_mgc_atk_negated(monster, state.u, { state, publish, random, verbose: true }))
         return;
     const seesHero = (observer) => monsterHasLineOfSightToHero(observer, state);
     if (state.u.sleepResistance) {
@@ -5600,44 +5644,11 @@ export async function applyMonsterStoningAttack(monster, { state = game, random 
         return false;
     return startHeroPetrificationFromMonster(monster, state);
 }
-// ─── C uhitm.c:mhitm_ad_drin(), hero attacker (from hero_natural_brain.ts) ───
-// C uhitm.c:mhitm_ad_drin() and eat.c:eat_brains(), hero attacker branch.
-export async function applyHeroNaturalBrain(monster, context) {
-    const { state, publish, random, target } = context;
-    const result = {
-        damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
-    };
-    if (target.x !== monster.mx || target.y !== monster.my || !monsterHasHead(monster)) {
-        await publish(`${monsterName(monster, { state, capitalized: true })} doesn't seem harmed.`);
-        result.damage = 0;
-        result.skipBrainDrain = true;
-        if (!heroIsUnchanging(state) && monster.mnum === PM_GREEN_SLIME && !heroIsSliming(state)) {
-            await publish("You suck in some slime and don't feel very well.");
-            await setHeroSlimingTimeout(10, { state });
-        }
-        return result;
-    }
-    if (await monsterSlipsFromHeroGrip(monster, { head: true, state, publish, random }))
-        return result;
-    const helmet = monster.minvent?.find(object => (object.owornmask ?? 0) & W_ARMH);
-    if (helmet && random(8)) {
-        const owner = possessiveName(monsterName(monster, { state, capitalized: true }));
-        const kind = objectIsHardHelmet(helmet) ? 'helm' : 'hat';
-        await publish(`${owner} ${kind} blocks your attack to ${monsterPossessive(monster, { state, random })} head.`);
-        return result;
-    }
-    const amulet = monster.minvent?.find(object => (object.owornmask ?? 0) & W_AMUL);
-    await eat_brains({ kind: 'hero-attacker', monster, context, result });
-    if (amulet?.otyp === AMULET_OF_LIFE_SAVING
-        && !monster.minvent?.some(object => (object.owornmask ?? 0) & W_AMUL))
-        result.skipBrainDrain = true;
-    return result;
-}
 // ─── C uhitm.c:mhitm_ad_poly(), hero attacker (from hero_natural_polymorph.ts) ───
 // C uhitm.c:mhitm_ad_poly() and mhitm.c:mon_poly(), for a hero attacker.
 export async function applyHeroNaturalPolymorph(monster, context) {
     const { state, publish, random } = context;
-    const negated = specialAttackNegated(state.u, monster, { state, random });
+    const negated = await mhitm_mgc_atk_negated(state.u, monster, { state, random });
     if (state.uwep || state.u.uwep || context.damage >= monster.mhp)
         return { damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
     if (negated) {
@@ -5721,7 +5732,7 @@ export async function applyHeroNaturalSliming(monster, context) {
     const normal = {
         damage: context.damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false,
     };
-    if (specialAttackNegated(state.u, monster, { state, random })
+    if (await mhitm_mgc_atk_negated(state.u, monster, { state, random })
         || random(4) !== 0 || monsterIsSlimeproof(monster))
         return normal;
     const cure = await munslime(monster, {
@@ -5759,18 +5770,6 @@ export async function petrifyMonsterDefender(monster, { publish = plineWithConti
         await publish(`${monsterSubject(monster)} turns to stone!`);
     const result = await finishMonsterPetrification(monster, { ...options, publish });
     return { ...result, stopped: true, damage: 0 };
-}
-// C uhitm.c:mhitm_ad_phys(). Carrying these gloves is not enough.
-export function monsterWeaponStrengthBonus(monster, random = rn2) {
-    const gloves = (monster.minvent || []).find(object => (object.owornmask ?? 0) & W_ARMG);
-    return gloves?.otyp === GAUNTLETS_OF_POWER ? 3 + random(4) : 0;
-}
-// C uhitm.c:mhitm_mgc_atk_negated(): a cancelled attacker never lands its
-// special attack; otherwise magic_negation() on the defender decides.
-export function specialAttackNegated(attacker, defender, { state = game, random = rn2, } = {}) {
-    if (attacker !== state.u && attacker.mcan)
-        return true;
-    return random(10) < 3 * magicNegation(defender, state);
 }
 // ─── C uhitm.c:that_is_a_mimic()/stumble_onto_mimic() (from mimic.ts) ───
 // Revealing a monster disguised as an object or dungeon feature.

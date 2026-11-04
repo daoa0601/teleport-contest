@@ -55,7 +55,7 @@ import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, re
 import { swingMonsterWeapon, advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
 import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
-import { monsterWeaponStrengthBonus, poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
+import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { heroHasConflict } from './hero_conflict.js';

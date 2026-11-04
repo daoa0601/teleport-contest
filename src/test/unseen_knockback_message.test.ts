@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT, STONE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { monsterName } from '../js/do_name.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
@@ -20,7 +20,7 @@ void test('a blind hero feels something knocked back without naming the unseen d
     await vision_recalc(0);
     level.requireAt(12, 10).typ = STONE;
 
-    const result = await tryKnockback(game.u, wolf, { attackType: AT_CLAW, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(game.u, wolf, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         random: () => 0, nameMonster: monster => monsterName(monster),
     });
 

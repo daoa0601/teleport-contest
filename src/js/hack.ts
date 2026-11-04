@@ -48,7 +48,7 @@ import { gotoLevel } from './level_change.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, surfaceName, ceilingName } from './terrain_name.js';
-import { attackHostileMonster } from './uhitm.js';
+import { do_attack, prepareAppliedWeaponAttack } from './uhitm.js';
 import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import type { HeroTeleportMovement } from './teleport.js';
@@ -78,7 +78,6 @@ import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
-import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance } from './mondata.js';
@@ -90,7 +89,6 @@ import { isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } f
 import { applyPickAxeDirection } from './dig.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
-import { runSafepetDisplacement } from './uhitm.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
@@ -2485,8 +2483,8 @@ async function fightEmptyDestination(x: number, y: number): Promise<boolean> {
                 game.u.dz = 0;
                 await applyPickAxeDirection(weapon, {
                     state: game,
-                    attackMonster: (monster, struckAt) =>
-                        attackHostileMonster(monster, struckAt.x, struckAt.y),
+                    attackMonster: (monster, struckAt, permission) =>
+                        do_attack(monster, struckAt.x, struckAt.y, { permission }),
                     payShopkeeper: dopay,
                 });
                 return true;
@@ -3804,23 +3802,13 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
         if (await bumpIntoMonster(monster, monster.mx, monster.my)) return true;
         const safeMonster = !game.context.forcefight && heroMayDisplaceMonster(monster);
         if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
-            // do_attack() returning FALSE (the swallower yields) continues
-            // domove_core() into its ordinary move checks with the zeroed
-            // vector.  The destination re-lookup below then finds the
-            // co-located swallower and offers the pet swap, exactly like
-            // hack.c's second m_at() and domove_swap_with_pet().
-            if (await runSafepetDisplacement(monster) !== 'evaded') return true;
+            if (await do_attack(monster, monster.mx, monster.my, { safeMonster })) return true;
             swallowerYielded = true;
         } else {
-            // domove_attackmon_at(): do_attack() runs the attack_checks()
-            // reveal sequence for the swallower exactly as for any target.
-            const verdict = await prepareAppliedWeaponAttack(
-                monster, game.uwep ?? null,
+            const permission = await prepareAppliedWeaponAttack(monster, game.uwep ?? null,
                 { state: game, struckAt: { x: monster.mx, y: monster.my } });
-            if (!verdict.proceed) return verdict.spentTime;
-            await attackHostileMonster(monster, monster.mx, monster.my, {
-                confirmationOverridden: verdict.confirmationOverridden ?? false,
-            });
+            if (!permission.proceed) return permission.spentTime;
+            await do_attack(monster, monster.mx, monster.my, { permission });
             return true;
         }
     }
@@ -3965,24 +3953,7 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             if (game.program_state.gameover) return true;
             return finishHeroMovement({ oldx, oldy, loc, ballChainMove });
         }
-        if (safeMonster && artifactById(game.uwep?.oartifact, game)?.name !== 'Stormbringer') {
-            if (await runSafepetDisplacement(monster) !== 'evaded') return true;
-            // C do_attack() returns FALSE here: a yielding monster takes
-            // the same DO_MOVE checks as an unoccupied destination.
-        } else {
-            // attack() runs the whole attack_checks() reveal sequence: the
-            // unseen-monster marker, the disguised-mimic stumble, and the
-            // hidden-under reveal, each able to consume the move on its own.
-            // C gb.bhitpos is the struck square, even for a worm tail.
-            const verdict = await prepareAppliedWeaponAttack(
-                monster, game.uwep ?? null,
-                { state: game, struckAt: { x: newx, y: newy } });
-            if (!verdict.proceed)
-                return verdict.spentTime;
-            if (await attackHostileMonster(monster, newx, newy, {
-                confirmationOverridden: verdict.confirmationOverridden ?? false,
-            })) return true;
-        }
+        if (await do_attack(monster, newx, newy, { safeMonster })) return true;
     }
 
     // domove_core() snapshots the origin before test_move().  This includes
@@ -4147,8 +4118,8 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             u.dz = 0;
             const result = await applyPickAxeDirection(weapon, {
                 state: game,
-                attackMonster: (target: Monster, struckAt: Position) =>
-                    attackHostileMonster(target, struckAt.x, struckAt.y),
+                attackMonster: (target, struckAt, permission) =>
+                    do_attack(target, struckAt.x, struckAt.y, { permission }),
                 payShopkeeper: dopay,
             });
             if (result.died) return false;

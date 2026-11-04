@@ -199,7 +199,7 @@ import { checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';
 import { hitMonsterWithForce } from './force_bolt.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import { isSteadfast } from './uhitm.js';
+import { m_is_steadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { revealMimicIdentity } from './uhitm.js';
 import { respondToImmediateMagic, wakeAttackedMonster } from './mon.js';
@@ -5103,7 +5103,7 @@ export async function hitMonsterWithWand(monster: Monster, wand: GameObject, {
         if (wand.otyp === SPE_KNOCK) {
             wake = true;
             result = 1;
-            if ((MONSTER_SIZE[monster.mnum] ?? 0) < 2 && !isSteadfast(monster, state)) {
+            if ((MONSTER_SIZE[monster.mnum] ?? 0) < 2 && !m_is_steadfast(monster, state)) {
                 if (canSeeMonster(monster)) await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is knocked back!`);
                 await hurtleMonster(monster, monster.mx - state.u.ux, monster.my - state.u.uy, rnd(2), { state });
             } else if (canSeeMonster(monster)) await plineWithContinuation(`${monsterName(monster, { capitalized: true })} doesn't budge.`);

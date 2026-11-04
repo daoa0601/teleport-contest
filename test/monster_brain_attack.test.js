@@ -5,7 +5,7 @@ import { M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOGRP, MM_NOMSG,
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { resolveMonsterBrainAttack } from '../js/uhitm.js';
+import { mhitm_ad_drin } from '../js/uhitm.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -26,12 +26,12 @@ void test('brain drain adds pending damage without settling the defender death e
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     defender.mhp = 5;
     const messages = [];
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: true, rollOne: maximumRoll, finishDeath,
-        publish: async (message) => { messages.push(message); },
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: true, rollOne: maximumRoll, finishDeath,
+            publish: async (message) => { messages.push(message); },
+        } });
     assert.equal(result.damage, 12);
-    assert.equal(result.hitFlags, M_ATTK_HIT);
+    assert.equal(result.nativeResult, M_ATTK_HIT);
     assert.equal(result.skipBrainDrain, false);
     assert.equal(defender.mhp, 5);
     assert.equal(game.level.monsters.includes(defender), true);
@@ -43,11 +43,11 @@ void test('a cancelled mind flayer still drains a brain', async () => {
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     attacker.mcan = 1;
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 12);
-    assert.equal(result.hitFlags, M_ATTK_HIT);
+    assert.equal(result.nativeResult, M_ATTK_HIT);
 });
 void test('a brain meal extends an overdue pet hunger deadline without restoring starvation HP', async () => {
     await freshObjectRoom({ moves: 1000 });
@@ -64,9 +64,9 @@ void test('a brain meal extends an overdue pet hunger deadline without restoring
     attacker.mconf = 1;
     attacker.mflee = 1;
     attacker.mfleetim = 20;
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 12);
     assert.equal(pet.hungrytime, 960);
     assert.equal(attacker.mconf, 0);
@@ -83,9 +83,9 @@ void test('a minion brain eater gains damage but no pet feeding effects', async 
     attacker.mtame = 10;
     attacker.isminion = true;
     attacker.mconf = 1;
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 12);
     assert.equal(attacker.mconf, 1);
     assert.equal(attacker.edog, undefined);
@@ -95,11 +95,11 @@ void test('headless green slime stops the remaining brain attacks without infect
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('green slime', 12, 10, TEST_MONSTER_FLAGS);
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 0);
-    assert.equal(result.hitFlags, M_ATTK_MISS);
+    assert.equal(result.nativeResult, M_ATTK_MISS);
     assert.equal(result.skipBrainDrain, true);
     assert.equal(attacker.mnum, MONSTER_NAME.indexOf('mind flayer'));
 });
@@ -108,9 +108,9 @@ void test('a tentacle on a worm tail causes no brain or physical damage', async 
     requirePlayingGame(game);
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('long worm', 12, 10, TEST_MONSTER_FLAGS);
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, notOnHead: true, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, notOnHead: true, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 0);
     assert.equal(result.skipBrainDrain, true);
 });
@@ -122,12 +122,12 @@ for (const helmetType of [HELMET, DUNCE_CAP]) {
         const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
         const helmet = await equipMonsterObject(defender, await knownObject(helmetType, { greased: true }), W_ARMH);
         const messages = [];
-        const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-            state: game, visible: true, random: () => 1, rollOne: maximumRoll, finishDeath,
-            publish: async (message) => { messages.push(message); },
-        });
+        const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+                state: game, visible: true, random: () => 1, rollOne: maximumRoll, finishDeath,
+                publish: async (message) => { messages.push(message); },
+            } });
         assert.equal(result.damage, 2);
-        assert.equal(result.hitFlags, M_ATTK_MISS);
+        assert.equal(result.nativeResult, M_ATTK_MISS);
         assert.equal(result.skipBrainDrain, false);
         assert.equal(helmet.greased, true);
         assert.match(messages[0] ?? '', /helmet blocks the mind flayer's attack/);
@@ -139,11 +139,11 @@ void test('a tentacle that penetrates a monster dunce cap can eat its brain', as
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     await equipMonsterObject(defender, await knownObject(DUNCE_CAP), W_ARMH);
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, random: () => 0, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, random: () => 0, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 12);
-    assert.equal(result.hitFlags, M_ATTK_HIT);
+    assert.equal(result.nativeResult, M_ATTK_HIT);
 });
 for (const species of ['ghost', 'straw golem']) {
     void test(`${species} brains provide no extra damage or pet nutrition`, async () => {
@@ -156,11 +156,11 @@ for (const species of ['ghost', 'straw golem']) {
         assert.ok(pet);
         const hungerBefore = pet.hungrytime;
         attacker.mconf = 1;
-        const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-            state: game, visible: false, rollOne: maximumRoll, finishDeath,
-        });
+        const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+                state: game, visible: false, rollOne: maximumRoll, finishDeath,
+            } });
         assert.equal(result.damage, 2);
-        assert.equal(result.hitFlags, M_ATTK_MISS);
+        assert.equal(result.nativeResult, M_ATTK_MISS);
         assert.equal(result.skipBrainDrain, false);
         assert.equal(pet.hungrytime, hungerBefore);
         assert.equal(attacker.mconf, 1);
@@ -172,11 +172,11 @@ void test('a mind flayer killed by an earlier contact does not continue eating b
     const attacker = await createMonsterAt('mind flayer', 11, 10, TEST_MONSTER_FLAGS);
     const defender = await createMonsterAt('orc', 12, 10, TEST_MONSTER_FLAGS);
     await finishEnvironmentalMonsterDeath(attacker, game, { noCorpse: true });
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+        } });
     assert.equal(result.damage, 2);
-    assert.equal(result.hitFlags, M_ATTK_AGR_DIED);
+    assert.equal(result.nativeResult, M_ATTK_AGR_DIED);
 });
 void test('eating Medusa brain leaves a real statue containing the attacker inventory', async () => {
     const level = await freshObjectRoom();
@@ -187,12 +187,12 @@ void test('eating Medusa brain leaves a real statue containing the attacker inve
     await addObjectToMonsterInventory(attacker, dagger);
     const killsBefore = game.u.uconduct.killer ?? 0;
     const messages = [];
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: true, rollOne: maximumRoll, finishDeath,
-        publish: async (message) => { messages.push(message); },
-    });
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: true, rollOne: maximumRoll, finishDeath,
+            publish: async (message) => { messages.push(message); },
+        } });
     assert.equal(result.damage, 2, 'Petrification leaves only pending tentacle damage');
-    assert.equal(result.hitFlags, M_ATTK_AGR_DIED);
+    assert.equal(result.nativeResult, M_ATTK_AGR_DIED);
     assert.equal(result.heroDied, false);
     assert.notEqual(monsterAtPosition(level, attacker.mx, attacker.my), attacker);
     const statue = floorObjectsAt(level, 11, 10).find(object => object.otyp === STATUE);
@@ -210,13 +210,13 @@ void test('life saving stops a Medusa brain meal before extra damage and statue 
     const defender = await createMonsterAt('Medusa', 12, 10, TEST_MONSTER_FLAGS);
     const amulet = await equipMonsterObject(attacker, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     const input = resetInputState();
-    const result = await answerPrompts(resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: true, rollOne: maximumRoll, finishDeath, publish: async () => { },
-    }), input, [
+    const result = await answerPrompts(mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: true, rollOne: maximumRoll, finishDeath, publish: async () => { },
+        } }), input, [
         { prompt: /But wait\.\.\.  .*medallion begins to glow.*--More--/, keys: ' ' },
     ]);
     assert.equal(result.damage, 2);
-    assert.equal(result.hitFlags, M_ATTK_MISS);
+    assert.equal(result.nativeResult, M_ATTK_MISS);
     assert.ok(attacker.mhp > 0);
     assert.equal(amulet.where, 'gone');
     assert.equal(level.monsters.includes(attacker), true);
@@ -230,11 +230,11 @@ void test('unseen Medusa brain petrification gives the distinct lost-pet thought
     initializePet(attacker, { state: game });
     await makeBlinded(10, { talk: false });
     const messages = [];
-    const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-        state: game, visible: false, rollOne: maximumRoll, finishDeath,
-        publish: async (message) => { messages.push(message); },
-    });
-    assert.equal(result.hitFlags, M_ATTK_AGR_DIED);
+    const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+            state: game, visible: false, rollOne: maximumRoll, finishDeath,
+            publish: async (message) => { messages.push(message); },
+        } });
+    assert.equal(result.nativeResult, M_ATTK_AGR_DIED);
     assert.ok(messages.includes('You have a sad thought for a moment, then it passes.'));
     assert.ok(messages.every(message => !/brain is eaten|turns to stone/.test(message)));
 });
@@ -246,11 +246,11 @@ for (const lifeSaving of [false, true]) {
         const defender = await createMonsterAt('Death', 12, 10, TEST_MONSTER_FLAGS);
         const amulet = lifeSaving ? await equipMonsterObject(attacker, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL) : null;
         await makeBlinded(10, { talk: false });
-        const result = await resolveMonsterBrainAttack(attacker, defender, 2, {
-            state: game, visible: false, rollOne: maximumRoll, finishDeath,
-        });
+        const result = await mhitm_ad_drin({ attacker, defender, damage: 2, context: {
+                state: game, visible: false, rollOne: maximumRoll, finishDeath,
+            } });
         assert.equal(result.damage, 12);
-        assert.equal(result.hitFlags, lifeSaving ? M_ATTK_HIT : M_ATTK_AGR_DIED);
+        assert.equal(result.nativeResult, lifeSaving ? M_ATTK_HIT : M_ATTK_AGR_DIED);
         assert.equal(attacker.mhp > 0, lifeSaving);
         assert.equal(monsterAtPosition(level, attacker.mx, attacker.my) === attacker, lifeSaving);
         if (amulet)

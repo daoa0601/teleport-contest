@@ -19,9 +19,9 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
-import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus } from './weapon.js';
 import { isPolearm, isPermanentlyPoisonedObject, isMissileObject, isWeaponTool } from './object_properties.js';
-import { monsterWeaponStrengthBonus, mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitmAdSedu, mhitmAdStun, specialAttackNegated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, resolveMonsterWeaponContact, resolvePhysicalHeroHug, tryKnockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, monsterWieldsOrWearsDefense } from './artifacts.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
@@ -427,23 +427,27 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     || heroAttack.effect === 'cancelled-rust-natural'
                     || heroAttack.effect === 'cancelled-corrosion-natural'
                     || heroAttack.effect === 'cancelled-decay-natural');
-                if (heroAttack.hit && heroAttack.effect === 'physical-weapon'
-                    && !contactCompletedInline) {
-                    const artifact = await applyArtifactHit(monsterWieldedWeapon(monster), 'hero', heroAttack.damage ?? 0, {
-                        state: game, attacker: monster, dieRoll: heroAttack.roll ?? 0,
-                        publish: publishEquipmentMessage, random, rollOne,
-                    });
-                    if (artifact.heroDied)
+                const physicalContact = heroAttack.hit && heroAttack.damageType === AD_PHYS
+                    && (heroAttack.effect === 'physical-weapon' || heroAttack.effect === 'physical-natural'
+                        || heroAttack.effect === 'physical-hug' || heroAttack.effect === 'physical-unarmed-weapon'
+                        || heroAttack.effect === 'silent-physical-touch');
+                if (physicalContact && !contactCompletedInline) {
+                    const physicalAttack = heroAttack;
+                    const physical = await mhitm_ad_phys({ mdef: 'youmonst', context: {
+                            state: game, attacker: monster, attack: heroAttack, calls: action.calls,
+                            publish: publishEquipmentMessage, random, rollOne, rollDice,
+                            hitMessage: () => monsterAttackMessage(monster, physicalAttack, previousHeroAttack, random),
+                            die: finishHeroDeathAfterMonsterMessage,
+                        } });
+                    heroAttack.damage = physical.damage;
+                    if (physical.heroDied)
                         return { heroDied: true };
-                    heroAttack.damage = artifact.damage;
-                    heroAttack.specialMessage = artifact.specialMessage;
-                    if (!artifact.damage)
-                        heroAttack.poison = null;
                 }
                 // mhitm_ad_fire/cold/elec/drli/blnd/ench/stun/legs/sedu
                 // project hitmsg() themselves from uhitm.ts, so one of
                 // those slots composes its hit line there instead of here.
-                const message = heroAttack.effect === 'fire-natural'
+                const message = physicalContact && !contactCompletedInline
+                    || heroAttack.effect === 'fire-natural'
                     || heroAttack.effect === 'cold-natural'
                     || heroAttack.effect === 'electric-natural'
                     || heroAttack.effect === 'life-drain-natural'
@@ -459,14 +463,6 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                 if (contactDismissal !== null
                     && contactDismissal !== undefined) {
                     paging.pagerOwned = true;
-                }
-                if (heroAttack.hit && heroAttack.effect === 'physical-weapon' && heroAttack.damage) {
-                    const weapon = monsterWieldedWeapon(monster);
-                    if (weapon)
-                        heroAttack.damage = await resolveMonsterWeaponContact(monster, weapon, heroAttack.damage ?? 0, game, publishEquipmentMessage, rollOne);
-                    await erodeAttackingWeapon(game.u, weapon, {
-                        publish: publishEquipmentMessage,
-                    });
                 }
                 if (heroAttack.deferredSpecialContact)
                     await resolveMonsterContactEffect(monster, heroAttack, {
@@ -496,7 +492,7 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     // every steal() result, including refusal and armor
                     // removal still in progress (mhitu.c:1196-1199).
                     const hitMessage = await monsterAttackMessage(monster, heroAttack, previousHeroAttack, random);
-                    const theft = await mhitmAdSedu({
+                    const theft = await mhitm_ad_sedu({
                         mdef: 'youmonst',
                         context: {
                             state: game,
@@ -510,8 +506,8 @@ export async function presentMonsterAttackEffects(action, game, { random = rn2, 
                     });
                     if (game.program_state.gameover)
                         return { heroDied: true };
-                    paging.pagerOwned ||= theft.pagerOwned;
-                    await tryKnockback(monster, game.u, heroAttack, {
+                    paging.pagerOwned ||= !!theft.pagerOwned;
+                    await mhitm_knockback(monster, game.u, heroAttack, {
                         state: game, random, hit: heroAttack.hit,
                         weaponUsed: !!monsterWieldedWeapon(monster),
                         publish: publishEquipmentMessage,
@@ -1588,109 +1584,33 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             engulfOldY,
         };
     }
-    else if (hit && contactWeapon && damageType === AD_PHYS) {
-        const poison = (roll ?? 0) <= 5 &&
-            (contactWeapon.opoisoned || isPermanentlyPoisonedObject(contactWeapon))
-            ? { attribute: A_STR, fatal: 10 }
-            : null;
-        if (contactWeapon.otyp === CORPSE && touchPetrifies(contactWeapon.corpsenm)) {
-            // C uhitm.c:4050-4052: Monnam(magr) and the corpse species'
-            // neutral pmname; an unseen attacker already names itself "It".
-            await plineWithContinuation(`${monsterSentenceSubject(monster)} hits you with the ${MONSTER_NAME[contactWeapon.corpsenm ?? -1]} corpse.`);
-            if (await startHeroPetrificationFromMonster(monster, state)) {
-                await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
-                return {
-                    kind: 'hero-attack',
-                    roll,
-                    threshold,
-                    hit,
-                    damage: 0,
-                    attackType,
-                    damageType,
-                    effect: 'petrifying-corpse',
-                };
-            }
-            damage = 1;
-        }
-        const weaponDamage = rollPhysicalWeaponDamageAgainstHero(contactWeapon, state, {
-            rollOne: (range) => {
-                calls.push(`rnd(${range})`);
-                return rollOne(range);
-            },
-            rollDice: (count, sides) => {
-                calls.push(`d(${count},${sides})`);
-                return rollDice(count, sides);
-            },
-        });
-        damage = Math.max(1, damage + weaponDamage + monsterWeaponStrengthBonus(monster, random));
-        if (deferVisibleContact) {
-            return {
-                kind: 'hero-attack',
-                roll,
-                threshold,
-                hit,
-                damage,
-                attackType,
-                damageType,
-                effect: 'physical-weapon',
-                oldFormMnum,
-                poison,
-            };
-        }
-        const artifact = await applyArtifactHit(contactWeapon, 'hero', damage, {
-            state, attacker: monster, dieRoll: roll ?? 0,
-            publish: plineWithContinuation, random, rollOne,
-        });
-        if (artifact.heroDied)
-            return {
-                kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType,
-            };
-        damage = artifact.damage;
-        if (damage) {
-            damage = await resolveMonsterWeaponContact(monster, contactWeapon, damage, state, plineWithContinuation, rollOne);
-            await erodeAttackingWeapon(state.u, contactWeapon, { state, random });
-        }
-        if (artifact.damage && poison) {
-            const effect = await poisonHeroFromMonster(monster, attackType, {
-                ...poison,
-                state,
-                random,
-                rollOne,
-                rollDice,
-            });
-            if (effect.died)
-                return {
-                    kind: 'hero-attack',
-                    roll,
-                    threshold,
-                    hit,
-                    damage: 0,
-                    heroDied: true,
-                    attackType,
-                    damageType,
-                };
-        }
-        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
-        if (knockback.defenderDied)
-            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
-        const passive = await finishHeroContactDamage(monster, damage, attackType, oldFormMnum, state, {
-            random,
-            rollDice,
-        });
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
-            effect: 'physical-weapon',
-            specialMessage: artifact.specialMessage,
-            passive,
-            heroDied: !!passive.heroDied,
+    else if (hit && damageType === AD_PHYS) {
+        const physicalHug = attackType === AT_HUGS && !heroFormSticks(state);
+        const effect = contactWeapon ? 'physical-weapon' : physicalHug ? 'physical-hug'
+            : attackType === AT_TUCH && damage === 0 && state.u.ustuck === monster
+                ? 'silent-physical-touch'
+                : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
+        const physical = {
+            kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
+            effect, oldFormMnum,
         };
+        if (deferVisibleContact)
+            return physical;
+        const outcome = await mhitm_ad_phys({ mdef: 'youmonst', context: {
+                state, attacker: monster, attack: physical, calls, random, rollOne, rollDice,
+                publish: physicalHug ? monsterAttackMessagePublisher(sequence.paging) : plineWithContinuation,
+            } });
+        if (outcome.heroDied)
+            return { ...physical, damage: 0, heroDied: true };
+        damage = outcome.damage;
+        const knockback = await knockHeroFromMonster(monster, physical, state, random);
+        if (knockback.defenderDied)
+            return { ...physical, damage: 0, heroDied: true };
+        if (outcome.done)
+            return physical;
+        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
+        const passive = await finishHeroContactDamage(monster, damage, attackType, oldFormMnum, state, { random, rollDice });
+        return { ...physical, damage, passive, heroDied: !!passive.heroDied };
     }
     else if (hit && monster.mnum === 116 && !deferVisibleContact) {
         // PM_GRID_BUG: AT_BITE AD_ELEC 1d1.  The electric special checks
@@ -1730,7 +1650,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         // uhitm.c:mhitm_ad_drst() family.  Poisonous natural attacks roll
         // their physical damage first, then magic cancellation; only a
         // non-negated attack reaches the one-in-eight attribute-poison gate.
-        const negated = specialAttackNegated(monster, state.u, { state, random });
+        const negated = await mhitm_mgc_atk_negated(monster, state.u, { state, random });
         const poison = negated ? null : { attribute: poisonAttribute, chance: 8 };
         if (deferVisibleContact) {
             return {
@@ -1794,9 +1714,9 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
         || damageType === AD_CONF || damageType === AD_PEST || damageType === AD_FAMN
         || damageType === AD_DETH || damageType === AD_SAMU)) {
         const negated = damageType === AD_SLOW
-            ? specialAttackNegated(monster, state.u, { state, random })
+            ? await mhitm_mgc_atk_negated(monster, state.u, { state, random })
             : damageType === AD_POLY
-                && (specialAttackNegated(monster, state.u, { state, random }) || !!monster.mspec_used);
+                && (await mhitm_mgc_atk_negated(monster, state.u, { state, random }) || !!monster.mspec_used);
         return {
             kind: 'hero-attack', roll, threshold, hit, damage, attackType, damageType,
             oldFormMnum, negated, deferredSpecialContact: true,
@@ -2052,57 +1972,6 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
             oldFormMnum,
         };
     }
-    else if (hit &&
-        (attackType !== AT_WEAP || !monsterWieldedWeapon(monster)) &&
-        damageType === AD_PHYS) {
-        const physicalHug = attackType === AT_HUGS && !heroFormSticks(state);
-        if (physicalHug) {
-            damage = await resolvePhysicalHeroHug(monster, damage, state, range => recordRandom(random, calls, range), monsterAttackMessagePublisher(sequence.paging));
-        }
-        const physicalEffect = physicalHug ? 'physical-hug'
-            : attackType === AT_TUCH && damage === 0 && state.u.ustuck === monster
-                ? 'silent-physical-touch'
-                : attackType === AT_WEAP ? 'physical-unarmed-weapon' : 'physical-natural';
-        // hitmu() rolls ordinary physical damage before pline() announces the
-        // hit, but knockback and HP subtraction happen after that message.
-        // The deferred slot records that boundary; the presenter resumes the
-        // same contact when the hit line returns from tty.
-        if (deferVisibleContact) {
-            return {
-                kind: 'hero-attack',
-                roll,
-                threshold,
-                hit,
-                damage,
-                attackType,
-                damageType,
-                effect: physicalEffect,
-                oldFormMnum,
-            };
-        }
-        // hitmu() enters mhitm_knockback() after ordinary physical damage.
-        // Attack eligibility is tested only after both chance gates.
-        const knockback = await knockHeroFromMonster(monster, { attackType, damageType, hit }, state, random);
-        if (knockback.defenderDied)
-            return { kind: 'hero-attack', hit, damage: 0, heroDied: true, attackType, damageType };
-        damage = reduceHeroContactDamage(monster, damage, state, rollOne, calls);
-        const passive = await finishHeroContactDamage(monster, damage, attackType, oldFormMnum, state, {
-            random,
-            rollDice,
-        });
-        return {
-            kind: 'hero-attack',
-            roll,
-            threshold,
-            hit,
-            damage,
-            attackType,
-            damageType,
-            effect: physicalEffect,
-            passive,
-            heroDied: !!passive.heroDied,
-        };
-    }
     return {
         kind: 'hero-attack',
         roll,
@@ -2154,7 +2023,7 @@ async function presentHeroEngulfSlot(monster, attack, state, { random = rn2, rol
 }
 async function knockHeroFromMonster(monster, attack, state, random, publish = plineWithContinuation) {
     const finishDeath = (target, options = {}) => finishEnvironmentalMonsterDeath(target, state, { ...options, publish });
-    return tryKnockback(monster, state.u, attack, {
+    return mhitm_knockback(monster, state.u, attack, {
         state,
         random,
         publish,
