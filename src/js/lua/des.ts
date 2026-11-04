@@ -311,18 +311,8 @@ export function tableOptions(
         if (key === 'region' && preferExplicitRegion
             && [options.x1, options.y1, options.x2, options.y2]
                 .some(axis => axis !== undefined && axis !== -1)) continue;
-        const entry = value.get(key);
-        if (entry == null) continue;
-        const coordinates = luaArgument(entry);
-        if (!Array.isArray(coordinates) || coordinates.length !== 4
-            || !coordinates.every(value => typeof value === 'number'))
-            throw new TypeError(`des.${key} must contain four coordinates`);
-        const [lx, ly, hx, hy] = coordinates;
-        if (typeof lx !== 'number' || typeof ly !== 'number'
-            || typeof hx !== 'number' || typeof hy !== 'number'
-            || ![lx, ly, hx, hy].every(Number.isInteger))
-            throw new TypeError(`des.${key} must contain four coordinates`);
-        options[key] = [lx, ly, hx, hy];
+        const region = get_table_region(value, key);
+        if (region) options[key] = region;
     }
     for (const key of ['contents', 'inventory', 'selection'] as const) {
         const entry = value.get(key);
@@ -472,3 +462,18 @@ export function l_register_des(
     return bindings;
 }
 
+// C sp_lev.c:get_table_region(). Read the four-entry region or exclusion array.
+function get_table_region(table: LuaTable, key: 'region' | 'exclude'): LuaRegion | null {
+    const entry = table.get(key);
+    if (entry == null) return null;
+    const coordinates = luaArgument(entry);
+    if (!Array.isArray(coordinates) || coordinates.length !== 4
+        || !coordinates.every(value => typeof value === 'number'))
+        throw new TypeError(`des.${key} must contain four coordinates`);
+    const [lx, ly, hx, hy] = coordinates;
+    if (typeof lx !== 'number' || typeof ly !== 'number'
+        || typeof hx !== 'number' || typeof hy !== 'number'
+        || ![lx, ly, hx, hy].every(Number.isInteger))
+        throw new TypeError(`des.${key} must contain four coordinates`);
+    return [lx, ly, hx, hy];
+}

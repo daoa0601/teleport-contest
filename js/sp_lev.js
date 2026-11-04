@@ -75,12 +75,8 @@ async function specialRandomLocation(context, acceptable) {
     const point = await get_location_coord(context, null, DRY, acceptable);
     return point.x === -1 && point.y === -1 ? null : point;
 }
-export function specialSelectionTerrain(selection, typ, lit = -2) {
-    selection.forEachXMajor((x, y) => setSpecialTerrain(x, y, typ, lit));
-}
-// sp_lev.c:sel_set_ter() applies these effects to both coordinate and
-// selection forms of des.terrain(). replace_terrain() only changes the type.
-export function setSpecialTerrain(x, y, typ, lit) {
+// C sp_lev.c:sel_set_ter(). Apply terrain, lighting, and its door/bar/cloud effects.
+export function sel_set_ter(x, y, typ, lit) {
     const level = requireGameLevel();
     if (!setLevelTerrainLit(x, y, typ, lit))
         return;
@@ -293,6 +289,10 @@ export function set_wall_property(context = null) {
 // C sp_lev.c:lspo_non_diggable(): the selection form flags the selected
 // walls and trees directly.
 export function lspo_non_diggable(selection) {
+    if (!selection) {
+        set_wall_property();
+        return;
+    }
     const level = requireGameLevel();
     selection.forEachXMajor((x, y) => {
         const loc = level.at(x, y);
@@ -2976,10 +2976,10 @@ export async function lspo_terrain(context, args) {
         const location = await getPackedLocationCoord(context, coordinate, ANY_LOC);
         if (!isok(location.x, location.y))
             throw new TypeError('terrain coord not ok');
-        setSpecialTerrain(location.x, location.y, type, lit);
+        sel_set_ter(location.x, location.y, type, lit);
     }
     else if (selection) {
-        specialSelectionTerrain(selection, type, lit);
+        selection.forEachXMajor((x, y) => sel_set_ter(x, y, type, lit));
     }
 }
 // C sp_lev.c:lspo_wallify(). Default omitted bounds to the current map outline.
@@ -3370,5 +3370,9 @@ function get_room_loc(coordinate, room) {
         point.y += room.ly;
     }
     return point;
+}
+// C sp_lev.c:lspo_non_passwall(). An absent selection covers the whole map.
+export function lspo_non_passwall(selection) {
+    set_wallprop_in_selection(selection ?? new SpecialSelection().negate(), W_NONPASSWALL);
 }
 //# sourceMappingURL=sp_lev.js.map

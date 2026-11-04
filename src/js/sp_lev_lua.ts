@@ -25,7 +25,7 @@ import { nameToMonster } from './mondata.js';
 import { luaTableToArray, LuaTable, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
 import { level_difficulty } from './dungeon.js';
 
-import { COLNO, ROWNO, W_NONPASSWALL, G_GENOD, LEVEL_TIMER_KIND } from './const.js';
+import { COLNO, ROWNO, G_GENOD, LEVEL_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
 
 import { scheduleLevelTimer, stopLevelTimer } from './timeout.js';
@@ -37,9 +37,8 @@ import {
     lspo_corridor, lspo_level_init, lspo_teleport_region, lspo_levregion, lspo_map, lspo_altar,
     lspo_door, lspo_drawbridge, lspo_engraving, lspo_exclusion, lspo_feature, lspo_gold,
     lspo_monster, lspo_object, lspo_region, lspo_stair, lspo_ladder, lspo_trap,
-    lspo_wall_property, lspo_finalize_level, lspo_room, set_wallprop_in_selection,
-    lspo_replace_terrain, lspo_level_flags, lspo_terrain, lspo_mazewalk, set_wall_property,
-    lspo_non_diggable, lspo_wallify,
+    lspo_wall_property, lspo_finalize_level, lspo_room, lspo_replace_terrain, lspo_level_flags,
+    lspo_terrain, lspo_mazewalk, lspo_non_diggable, lspo_non_passwall, lspo_wallify,
 } from './sp_lev.js';
 
 // nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
@@ -139,12 +138,8 @@ function sp_level_coder_init() {
         grave: (value, y, text) => lspo_grave(roomScope.context, value, y, text),
         feature: (value, x, y) => lspo_feature(roomScope.context, value, x, y),
         altar: options => lspo_altar(roomScope.context, options),
-        nonDiggable: selection => selection
-            ? lspo_non_diggable(selection)
-            : set_wall_property(),
-        nonPasswall: selection => set_wallprop_in_selection(
-            selection ?? new SpecialSelection().negate(), W_NONPASSWALL,
-        ),
+        nonDiggable: lspo_non_diggable,
+        nonPasswall: lspo_non_passwall,
         wallProperty: options => lspo_wall_property(currentLevel().context ?? wholeLevel, options),
         wallify: options => lspo_wallify(currentLevel().context ?? wholeLevel, options),
         teleportRegion: value => lspo_teleport_region(currentLevel().context ?? wholeLevel, currentLevel(), value),
