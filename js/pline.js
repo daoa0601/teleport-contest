@@ -48,12 +48,18 @@ export async function pline(msg) {
 export async function verbalize(message) {
     await pline(`"${message}"`);
 }
-// C pline.c:vpline(). Await the window port before recording the last message.
-export async function plineWithContinuation(msg, { noRepeat = false, urgent = false, overrideMessageType = false, position, } = {}) {
+// C pline.c:vpline(). Await the window port before recording the last
+// message.  The empty-line guard `if (!line || !*line) return;` tests the
+// caller's format: the port receives already-formatted text, so a direct
+// empty message is dropped, while the `unpackedArgument` path below keeps
+// vpline()'s substituted "%s" argument, which is never format-filtered.
+export async function plineWithContinuation(msg, { noRepeat = false, urgent = false, overrideMessageType = false, position, } = {}, unpackedArgument = false) {
     const location = position ?? game.iflags.messageLocation;
     delete game.iflags.messageLocation;
     msg = msg.split('\0', 1)[0] ?? '';
-    if (!msg || game.program_state.wizkit_wishing)
+    if (!msg && !unpackedArgument)
+        return;
+    if (game.program_state.wizkit_wishing)
         return;
     if (game.flags.accessiblemsg && location && isok(location.x, location.y)) {
         const mode = game.iflags.getpos_coords;
@@ -92,6 +98,14 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
     return messageType === MSGTYP_STOP ? await displayMessageWindow() : dismissal;
+}
+// C include/hack.h:1026 `#define pline1(cstr) pline("%s", cstr)`.  vpline()'s
+// empty-line filter tests the "%s" format, never the substituted argument,
+// so pline1("") still reaches putmesg("") and update_topl()'s append, which
+// widens the topline by two blank columns without glyphs or a pager
+// (eat.c:done_eating() relies on this while hurtle() has set nomovemsg="").
+export async function pline1(msg, options = {}) {
+    return plineWithContinuation(msg, options, true);
 }
 // Replace the message line without tty's update_topl() negotiation. Only the
 // tty topline owner, its direct pagers, and prompt owners (whose native
