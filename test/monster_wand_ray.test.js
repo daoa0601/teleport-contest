@@ -7,7 +7,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { resolveMonsterImmediateWand } from '../js/muse.js';
+import { mbhit } from '../js/muse.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
@@ -64,7 +64,7 @@ void test('a striking ray hits multiple monsters without the hero Knight bonus o
     assert.ok(knight);
     game.urole = knight;
     options.state.u.uhave.questart = true;
-    const result = await resolveMonsterImmediateWand(source, wand, options);
+    const result = await mbhit(source, wand, options);
     assert.equal(result.heroDied, false);
     assert.equal(first.mhp, 92);
     assert.equal(second.mhp, 92);
@@ -78,7 +78,7 @@ void test('intervening stone stops a ray before it reaches a later monster', asy
     level.requireAt(10, 10).typ = STONE;
     vision_note_blocker_change(10, 10);
     await vision_recalc(0);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(target.mhp, 100);
     assert.equal(game.bhitpos.x, 9);
     assert.equal(objectTypeKnown(wand, options.state), false);
@@ -89,7 +89,7 @@ void test('a displaced aim sends the ray toward the remembered square instead of
     source.muy = 14;
     const target = await createMonsterAt('orc', 9, 12, MONSTER_FLAGS);
     target.mhp = target.mhpmax = 100;
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(game.u.uhp, 40);
     assert.equal(target.mhp, 92);
 });
@@ -99,7 +99,7 @@ void test('striking wakes and reveals a mimic even when the attack misses', asyn
     mimic.msleeping = 1;
     mimic.m_ap_type = M_AP_OBJECT;
     mimic.mappearance = BOULDER;
-    await resolveMonsterImmediateWand(source, wand, { ...options, rollOne: sides => sides });
+    await mbhit(source, wand, { ...options, rollOne: sides => sides });
     assert.equal(mimic.msleeping, 0);
     assert.equal(mimic.m_ap_type, 0);
     assert.equal(mimic.mhp, 100);
@@ -108,7 +108,7 @@ void test('striking wakes and reveals a mimic even when the attack misses', asyn
 void test('innate magic resistance blocks striking and identifies a seen wand', async () => {
     const { source, wand, options, messages } = await wandRoom();
     const dragon = await targetAt(9, 'gray dragon');
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(dragon.mhp, 100);
     assert.ok(messages.includes('Boing!'));
     assert.equal(objectTypeKnown(wand, options.state), true);
@@ -117,7 +117,7 @@ void test('a visible resisted impact does not identify a wand whose use was unse
     const { source, wand, options } = await wandRoom();
     game.context.zap_oseen = false;
     const dragon = await targetAt(9, 'gray dragon');
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(dragon.mhp, 100);
     assert.equal(objectTypeKnown(wand, options.state), false);
 });
@@ -125,7 +125,7 @@ void test('a monster resistance roll halves striking damage and preserves peacef
     const { source, wand, options, messages } = await wandRoom();
     const lich = await targetAt(8, 'lich');
     lich.mpeaceful = 1;
-    await resolveMonsterImmediateWand(source, wand, { ...options, random: () => 0 });
+    await mbhit(source, wand, { ...options, random: () => 0 });
     assert.equal(lich.mhp, 96);
     assert.equal(lich.mpeaceful, 1);
     assert.ok(messages.some(message => /resists!/.test(message)));
@@ -134,7 +134,7 @@ void test('an inexperienced caster misses the hero while still interrupting repe
     const { source, wand, options, messages } = await wandRoom(WAN_STRIKING, 10, 10);
     source.mwandexp = false;
     game.multi = 4;
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(game.u.uhp, 40);
     assert.equal(game.multi, 0);
     assert.ok(messages.includes('The wand misses you.'));
@@ -144,7 +144,7 @@ void test('an experienced striking caster damages the hero and forgets an obsole
     const { source, wand, options } = await wandRoom(WAN_STRIKING, 10, 10);
     source.seen_resistance = M_SEEN_MAGR;
     grantIntrinsicProperty('halfSpellDamage', 'outside');
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(game.u.uhp, 36);
     assert.equal((source.seen_resistance ?? 0) & M_SEEN_MAGR, 0);
     assert.equal(objectTypeKnown(wand, options.state), true);
@@ -153,7 +153,7 @@ void test('hero antimagic is observed and disclosed even on an inexperienced cas
     const { source, wand, options, messages } = await wandRoom(WAN_STRIKING, 10, 10);
     source.mwandexp = false;
     grantIntrinsicProperty('antimagic', 'outside');
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(game.u.uhp, 40);
     assert.equal((source.seen_resistance ?? 0) & M_SEEN_MAGR, M_SEEN_MAGR);
     assert.ok(messages.includes('Boing!'));
@@ -163,7 +163,7 @@ void test('striking damage waits for the hit-message continuation', async () => 
     const { source, wand, options } = await wandRoom(WAN_STRIKING, 10, 10);
     const input = resetInputState();
     await pline('You hear a loud rumbling sound somewhere deep in the dungeon.');
-    const ray = resolveMonsterImmediateWand(source, wand, options);
+    const ray = mbhit(source, wand, options);
     await input.waitUntilBlocked();
     assert.equal(game.u.uhp, 40);
     input.feed(' ');
@@ -176,7 +176,7 @@ void test('hero life saving completes before striking reaches the next monster',
     await wearHeroAccessory(amulet, 'uamul');
     game.u.uhp = 1;
     const target = await targetAt(11);
-    const result = await resolveMonsterImmediateWand(source, wand, options);
+    const result = await mbhit(source, wand, options);
     assert.equal(result.heroDied, false);
     assert.equal(amulet.where, 'gone');
     assert.ok(game.u.uhp > 0);
@@ -188,7 +188,7 @@ void test('monster life saving preserves the victim and lets the ray continue', 
     first.mhp = 1;
     const amulet = await equipMonsterObject(first, await uninitializedObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     const second = await targetAt(11);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.ok(first.mhp > 0);
     assert.equal(amulet.where, 'gone');
     assert.equal(second.mhp, 92);
@@ -198,7 +198,7 @@ void test('striking processes both boulders in a pile but shortens the ray only 
     await floorObject(BOULDER, 9, 10);
     await floorObject(BOULDER, 9, 10);
     const target = await targetAt(19);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(target.mhp, 92);
     assert.equal(floorObjectsAt(level, 9, 10).some(object => object.otyp === BOULDER), false);
     assert.ok(floorObjectsAt(level, 9, 10).some(object => object.otyp === ROCK));
@@ -209,7 +209,7 @@ void test('a striking ray shatters a potion beneath multiple boulders', async ()
     await floorObject(BOULDER, 9, 10);
     const potion = await floorObject(POT_WATER, 9, 10);
     initRng(40n);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(floorObjectsAt(level, 9, 10).some(object => object.otyp === BOULDER), false);
     assert.ok(floorObjectsAt(level, 9, 10).some(object => object.otyp === ROCK));
     // Fracturing moves rocks below the remaining boulder. The ray
@@ -224,7 +224,7 @@ void test('striking opens a closed door and continues into the room', async () =
     vision_note_blocker_change(9, 10);
     await vision_recalc(0);
     const target = await targetAt(12);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(door.doormask, D_BROKEN);
     assert.equal(target.mhp, 92);
 });
@@ -238,7 +238,7 @@ void test('a striking ray passes over a raised bridge then destroys its portcull
     wall.typ = DBWALL;
     vision_note_blocker_change(10, 10);
     await vision_recalc(0);
-    const result = await resolveMonsterImmediateWand(source, wand, options);
+    const result = await mbhit(source, wand, options);
     assert.equal(result.heroDied, false);
     assert.notEqual(bridge.typ, DRAWBRIDGE_UP);
     assert.notEqual(wall.typ, DBWALL);
@@ -249,7 +249,7 @@ void test('teleportation relocates a monster and every floor object at its old s
     const target = await targetAt(9);
     const rock = await floorObject(ROCK, 9, 10);
     target.msleeping = 1;
-    await resolveMonsterImmediateWand(source, wand, { state: options.state });
+    await mbhit(source, wand, { state: options.state });
     assert.ok(target.mx !== 9 || target.my !== 10);
     assert.equal(target.msleeping, 0);
     assert.equal(rock.where, 'floor');
@@ -261,7 +261,7 @@ void test('restricted monster teleportation wakes its target without relocating 
     const target = await targetAt(9);
     target.msleeping = 1;
     level.flags.noteleport = true;
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(target.mx, 9);
     assert.equal(target.my, 10);
     assert.equal(target.msleeping, 0);
@@ -273,7 +273,7 @@ void test('undead turning revives floor corpses and a living monster carried cor
     const carriedCorpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'));
     await addObjectToMonsterInventory(carrier, carriedCorpse);
     carrier.msleeping = 1;
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(floorCorpse.where, 'gone');
     assert.equal(carriedCorpse.where, 'gone');
     assert.equal(carrier.msleeping, 0);
@@ -284,7 +284,7 @@ void test('undead turning leaves an unaffected living sleeper asleep', async () 
     const { source, wand, options } = await wandRoom(WAN_UNDEAD_TURNING);
     const target = await targetAt(9);
     target.msleeping = 1;
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(target.msleeping, 1);
     assert.equal(target.mhp, 100);
     assert.equal(objectTypeKnown(wand, options.state), false);
@@ -293,7 +293,7 @@ void test('monster-cast undead turning damages and wakes undead without making t
     const { source, wand, options } = await wandRoom(WAN_UNDEAD_TURNING);
     const zombie = await targetAt(9, 'giant zombie');
     zombie.msleeping = 1;
-    await resolveMonsterImmediateWand(source, wand, { ...options, rollOne: sides => sides });
+    await mbhit(source, wand, { ...options, rollOne: sides => sides });
     assert.equal(zombie.mhp, 92);
     assert.equal(zombie.msleeping, 0);
     assert.equal(!!zombie.mflee, false);
@@ -302,7 +302,7 @@ void test('a corpse created by undead turning is not revived by the same ray', a
     const { source, wand, options, level } = await wandRoom(WAN_UNDEAD_TURNING);
     const zombie = await targetAt(9, 'giant zombie');
     zombie.mhp = 1;
-    await resolveMonsterImmediateWand(source, wand, { ...options, rollOne: sides => sides });
+    await mbhit(source, wand, { ...options, rollOne: sides => sides });
     assert.equal(zombie.dead, true);
     const corpse = floorObjectsAt(level, 9, 10).find(object => object.otyp === CORPSE);
     assert.ok(corpse, 'the giant zombie should leave its corpse on the floor');
@@ -315,7 +315,7 @@ void test('undead turning stuns the actual undead hero form and revives carried 
     const corpse = await untimedCorpse(MONSTER_NAME.indexOf('troll'));
     corpse.where = 'inventory';
     game.inventory.push(corpse);
-    await resolveMonsterImmediateWand(source, wand, options);
+    await mbhit(source, wand, options);
     assert.equal(corpse.where, 'gone');
     assert.ok((game.u.stunnedTurns ?? 0) > 0);
     assert.equal(game.u.mh, 40);

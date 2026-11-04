@@ -51,7 +51,7 @@ import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGold
 import { attackMonsterWithMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { summonMonsterAttackHelp } from './minion.js';
-import { selectMonsterOffensiveItem } from './muse.js';
+import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
@@ -65,7 +65,7 @@ import { unplaceBallAndChain } from './ball.js';
 import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource } from './muse.js';
+import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects } from './muse.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
@@ -1072,7 +1072,7 @@ export async function beginMonsterHeroAttack(monster, state, random, rollOne, ro
         }
         return {};
     }
-    const offensive = selectMonsterOffensiveItem(monster, state, {
+    const offensive = find_offensive(monster, state, {
         random: limit => recordRandom(random, calls, limit),
     });
     const sequence = {
@@ -2935,12 +2935,12 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
             }
             if (reflectable) {
                 const seen = visible();
-                const reflection = heroReflectionSource(state);
+                const reflection = ureflects(state);
                 if (seen && reflection) {
                     await publish(`${possessiveName(name())} gaze is reflected by your ${reflection.noun}.`);
                     identifyGazeReflection(reflection, state);
                 }
-                const reflectedBack = monsterReflectionSource(monster, state);
+                const reflectedBack = mon_reflects(monster, state);
                 if (reflectedBack) {
                     if (seen) {
                         await publish(`The gaze is reflected away by ${possessiveName(name(false))} ${reflectedBack.noun}!`);

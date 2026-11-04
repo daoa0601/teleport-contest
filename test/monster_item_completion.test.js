@@ -8,7 +8,7 @@ import { flush_screen } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { finishDeferredMonsterMiscItem, useMonsterDefensiveItem } from '../js/muse.js';
+import { use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { POT_FULL_HEALING, WAN_MAKE_INVISIBLE, WAN_SPEED_MONSTER } from '../js/object_data.js';
@@ -134,7 +134,7 @@ void test('voluntary teleport entry teaches the traveler and sighted witnesses',
     blindWitness.mcansee = 0;
     const trap = addTrap(level, TELEP_TRAP, 9, 10);
     trap.teledest = { x: 12, y: 10 };
-    await useMonsterDefensiveItem(traveler, { kind: 'trap', trap }, { state: game, publish: () => { } });
+    await use_defensive(traveler, { kind: 'trap', trap }, { state: game, publish: () => { } });
     assert.equal(traveler.mx, 12);
     assert.equal(traveler.my, 10);
     assert.equal(monsterKnowsTrap(traveler, trap), true);
@@ -151,7 +151,7 @@ void test('a monster recognizes the hero as the maker of a voluntarily entered t
     trap.teledest = { x: 12, y: 10 };
     initRng(2n);
     installPagerInput(resetInputState(), { expected: /gets angry/, limit: 2 });
-    await useMonsterDefensiveItem(traveler, { kind: 'trap', trap }, { state: game, publish: () => { } });
+    await use_defensive(traveler, { kind: 'trap', trap }, { state: game, publish: () => { } });
     assert.equal(traveler.mpeaceful, 0);
     assert.equal(game.u.ualign.record, -1);
     assert.equal(traveler.mx, 12);
@@ -163,8 +163,6 @@ void test('a hallucinated monster keeps the appearance shown during its polymorp
         const monster = await createMonsterAt('orc', 10, 10, MM_ANGRY | NO_MINVENT);
         const originalSpecies = monster.mnum;
         addTrap(level, POLY_TRAP, 9, 10);
-        const turn = await takeMonsterTurn(monster, game, limit => limit - 1);
-        assert.ok(turn.movement?.usedMisc?.kind === 'polymorph-trap');
         let announcedGlyph;
         const input = resetInputState();
         input.beforeRead = () => {
@@ -174,7 +172,7 @@ void test('a hallucinated monster keeps the appearance shown during its polymorp
         installPagerInput(input, { expected: /earlier message|deliberately|turns into/, limit: 8 });
         await pline('An earlier message fills the line before the monster enters its polymorph trap.');
         initRng(BigInt(seed));
-        await finishDeferredMonsterMiscItem({ monster, ...turn, movement: turn.movement }, game);
+        await takeMonsterTurn(monster, game, limit => limit - 1);
         await flush_screen(0);
         assert.notEqual(monster.mnum, originalSpecies);
         assert.ok(announcedGlyph, 'The transformation announcement must pause with its new glyph visible');

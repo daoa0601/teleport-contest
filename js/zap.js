@@ -124,7 +124,7 @@ import { makeMonsterFlee } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource, monsterReflectsRay } from './muse.js';
+import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import { poisonHero } from './poison.js';
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
@@ -3601,7 +3601,7 @@ export async function hitMonsterWithRay(monster, nativeType, dice, { state = gam
 // damageRayMonster() below; zhitu() is hitHeroWithRay() (hero_breath.ts);
 // disintegrate_mon() is disintegrateMonster(); flashburn() is
 // blindHeroWithLightning(); shieldeff(), stop_occupation() as
-// stopHeroOccupation, ureflects() as heroReflectionSource, and
+// stopHeroOccupation, ureflects() as ureflects, and
 // monstseesu()/monstunseesu() as monstersObserveHeroResistance/
 // monstersForgetHeroResistance all live along the hit paths; the hero hit
 // anchors its line like pline_dir(xytodir(-dx, -dy)) through
@@ -3819,7 +3819,7 @@ async function showMonsterReflection(monster, context) {
         x: monster.mx, y: monster.my, state,
     }));
     await shieldeff(monster.mx, monster.my, state);
-    const reflection = monsterReflectionSource(monster, state);
+    const reflection = mon_reflects(monster, state);
     if (!reflection)
         throw new Error('A reflecting monster has no reflection source.');
     await publish(`But it reflects from ${possessiveName(monsterName(monster, { state }))} ${reflection.noun}!`);
@@ -3840,7 +3840,7 @@ async function hitHeroOnRay(x, y, rayDx, rayDy, context) {
         if (state.iflags.messageLocation)
             delete state.iflags.messageLocation;
         if (heroReflectsRay(state)) {
-            const source = heroReflectionSource(state);
+            const source = ureflects(state);
             if (heroIsBlind(state)) {
                 await publish('For some reason you are not affected.');
             }

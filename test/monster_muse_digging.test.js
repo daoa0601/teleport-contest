@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AIR, HOLE, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { useMonsterDefensiveItem } from '../js/muse.js';
+import { use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { WAN_DIGGING } from '../js/object_data.js';
 import { makeBlinded } from '../js/potion.js';
@@ -24,7 +24,7 @@ void test('a digger on air reports its failed pit like an occupied square', asyn
     const wand = await addObjectToMonsterInventory(monster, await knownObject(WAN_DIGGING, { spe: 3 }), game);
     assert.ok(wand);
     const messages = [];
-    const result = await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    const result = await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
     assert.equal(result.nativeResult, 2);
@@ -43,7 +43,7 @@ void test('a digger opens a hole and falls through to the next level', async () 
     const wand = await addObjectToMonsterInventory(monster, await knownObject(WAN_DIGGING, { spe: 3 }), game);
     assert.ok(wand);
     const messages = [];
-    const result = await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    const result = await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
     const hole = level.traps.find(trap => trap.tx === 10 && trap.ty === 10);
@@ -68,7 +68,7 @@ void test('a blind hero hears an unseen digger crash through the floor', async (
     await makeBlinded(10, { state: game, talk: false });
     await vision_recalc(0);
     const messages = [];
-    await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
     const hole = level.traps.find(trap => trap.tx === 10 && trap.ty === 10);

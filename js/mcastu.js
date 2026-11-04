@@ -20,7 +20,7 @@ import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
-import { discoverHeroReflectionSource, heroReflectionSource } from './muse.js';
+import { discoverHeroReflectionSource, ureflects } from './muse.js';
 import { flashBurn } from './zap.js';
 import { makeBlinded } from './potion.js';
 import { rndcurse } from './throne.js';
@@ -509,7 +509,7 @@ async function mcastFirePillar(ctx) {
 async function mcastLightning(ctx) {
     const { state } = ctx;
     const effectLineDismissal = await ctx.publish('A bolt of lightning strikes down at you from above!');
-    const reflection = heroReflectionSource(state);
+    const reflection = ureflects(state);
     if (reflection) {
         await ctx.publish(`It bounces off your ${reflection.noun}.`);
         discoverHeroReflectionSource(reflection, state);

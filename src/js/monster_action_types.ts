@@ -350,36 +350,16 @@ export interface HeroAttackSequence {
     done: boolean;
 }
 
-interface MiscItemProgress {
-    object: GameObject;
-    index: number;
-    deferredEffect?: boolean;
-    effectApplied?: boolean;
+// The turn driver uses this result to preserve the action's occupation
+// notice check after all item feedback has completed.
+export interface MonsterMiscResult extends MonsterOffensiveResult {
+    checkOccupation: boolean;
 }
 
-export type MonsterMiscItem =
-    | (MiscItemProgress & {
-          kind: 'potion-gain-level';
-          riseDestination?: DungeonLocation;
-          growth?: MonsterGrowth;
-          increase?: number;
-      })
-    | (MiscItemProgress & { kind: 'potion-invisibility' | 'wand-invisibility' | 'container' | 'wand-polymorph' | 'potion-polymorph' })
-    | { kind: 'polymorph-trap'; trap: Trap; deferredEffect: true; effectApplied?: boolean }
-    | (MiscItemProgress & {
-          kind: 'wand-speed-monster' | 'potion-speed';
-          oldSpeed?: number;
-          speedChanged?: boolean;
-          speedMuch?: boolean;
-      })
-    | (MiscItemProgress & {
-          kind: 'bullwhip-disarm';
-          heroWeapon: GameObject;
-          heroSwapWeapon: GameObject | null;
-          target?: GameObject | null;
-          whereTo?: number;
-      })
-    | (MiscItemProgress & { kind: 'item-result'; nativeResult: 0 | 1 | 2; heroDied: boolean });
+export type MonsterMiscChoice =
+    | { kind: 'potion-gain-level' | 'potion-invisibility' | 'wand-invisibility' | 'container'
+        | 'wand-polymorph' | 'potion-polymorph' | 'wand-speed-monster' | 'potion-speed' | 'bullwhip-disarm'; object: GameObject }
+    | { kind: 'polymorph-trap'; trap: Trap };
 
 export type MonsterTrapEvent =
     | MonsterBearTrapEvent
@@ -483,7 +463,7 @@ export interface MonsterMovement extends PetInventoryAction, MonsterAttackInitia
     trapOutcome?: 'finished' | 'caught' | 'hero-died' | 'killed' | 'left-level';
     reluctant?: boolean;
     usedDefense?: MonsterOffensiveResult;
-    usedMisc?: MonsterMiscItem;
+    usedMisc?: MonsterMiscResult;
     trap?: MonsterTrapEvent | null;
     equipment?: Awaited<ReturnType<typeof reassessMonsterArmor>>;
     spellCast?: MovementSpellCast;

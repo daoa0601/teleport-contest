@@ -7,7 +7,7 @@
 // (munstone/mon_consume_unstone/cures_stoning/mcould_eat_tin/munslime/
 // muse_unslime/cures_sliming).
 import { objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL, } from './object_data.js';
-import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, loseHeroHp, roomsAt } from './hack.js';
 import { BEAR_TRAP, BOLT_LIM, CORR, D_BROKEN, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, FIRE_TRAP, G_GONE, HOLE, In_endgame, In_sokoban, IS_AIR, IS_DOOR, IS_DRAWBRIDGE, IS_FURNITURE, IS_OBSTRUCTED, is_hole, is_pit, ismnum, LADDER, MFAST, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MM_NOMSG, MON_OFFMAP, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NORMAL_SPEED, P_DAGGER, P_KNIFE, PIT, PLNMSG_enum, PLNMSG_UNKNOWN, POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE, WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS } from './const.js';
@@ -23,7 +23,7 @@ import { isBimanualObject } from './object_properties.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { dragonFormForArmor, heroSpecies } from './polyself.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
-import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName } from './do_name.js';
+import { displayColorName, monsterName, monsterReflexiveAction, randomDisplayMonsterName, visibleMonsterSubject } from './do_name.js';
 import { possessiveName, dist2, distmin, depth, ledgerNo, upstart } from './hacklib.js';
 import { monsterObjectPronoun, monsterSubjectPronoun, monsterKnowsTrap, monsterLearnsTrap, monsterIsHelpless, monsterHasAcidResistance, monsterHasStoneResistance, monsterLocomotion, monsterPolymorphsWhenStoned, monstersForgetHeroResistance, monstersObserveHeroResistance, sameMonsterRace, speciesCanBlow } from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
@@ -39,7 +39,7 @@ import { thawObject } from './pickup.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { canLetGo } from './do.js';
 import { finishInventoryRemoval } from './invent.js';
-import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, paralyzeMonster, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance } from './mon.js';
+import { changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled, healMonster, maybeUnhideAt, paralyzeMonster, removeMonsterFromGame, wakeMonster, monsterCanCarryObject, revealMonsterAppearance, presentMonsterGrowth } from './mon.js';
 import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
@@ -49,7 +49,7 @@ import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToConta
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
+import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
@@ -66,11 +66,11 @@ import { changeDoorByMagic } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { propertyIsActive } from './properties.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { heroHasHalfSpellDamage, monsterResistsEffect } from './zap.js';
+import { heroHasHalfSpellDamage, monsterResistsEffect, learnWand } from './zap.js';
 import { askTeleportDestination, heroControlsTeleport, randomMonsterRelocation, teleportHero } from './teleport.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { awakenSoldiers } from './music.js';
-import { canDigDown, canFallThrough } from './mklev.js';
+import { canDigDown, canFallThrough, stairwayAt } from './mklev.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
@@ -134,11 +134,11 @@ function itemUseIsNearby(monster, state) {
     const range = couldsee(monster.mx, monster.my) ? BOLT_LIM + 1 : BOLT_LIM - 3;
     return (monster.mx - state.u.ux) ** 2 + (monster.my - state.u.uy) ** 2 <= range * range;
 }
+// C muse.c:precheck().
 // Return null when the selected item can still be used. An exploded wand
 // spends no action if its owner survives, but cancels the selected choice.
-// C muse.c:precheck().
-export async function prepareMonsterItemUse(monster, object, options) {
-    const { state, random = rn2, publish = plineWithContinuation } = options;
+export async function precheck(monster, object, options) {
+    const { state, random = rn2, rollDice = d, publish = plineWithContinuation } = options;
     if (object.oclass === 8) {
         const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
         const species = appearance === 'milky' ? 287 : appearance === 'smoky' ? 315 : null;
@@ -148,7 +148,7 @@ export async function prepareMonsterItemUse(monster, object, options) {
             if (!point)
                 return null;
             const visible = cansee(monster.mx, monster.my);
-            await presentMonsterQuaff(monster, object, options);
+            await mquaffmsg(monster, object, options);
             await consumeMonsterItem(monster, object, state);
             const occupant = await makemonAt(species, point.x, point.y, MM_NOMSG);
             if (!occupant) {
@@ -184,13 +184,8 @@ export async function prepareMonsterItemUse(monster, object, options) {
             return { nativeResult: 2, heroDied: !!state.program_state.gameover };
         }
     }
-    const backfire = await checkMonsterWandBackfire(monster, object, options);
-    return backfire.exploded ? { nativeResult: backfire.nativeResult, heroDied: backfire.heroDied } : null;
-}
-// The cursed-wand half of precheck().  C muse.c:precheck().
-export async function checkMonsterWandBackfire(monster, object, { state, publish = plineWithContinuation, random = rn2, rollDice = d, }) {
     if (object.oclass !== WAND_CLASS || !object.cursed || random(WAND_BACKFIRE_CHANCE) !== 0)
-        return { exploded: false, nativeResult: 0, heroDied: false, monsterDied: false };
+        return null;
     const damage = rollDice(object.spe + 2, 6);
     if (cansee(monster.mx, monster.my)) {
         const subject = monsterName(monster, { state, capitalized: true });
@@ -204,20 +199,17 @@ export async function checkMonsterWandBackfire(monster, object, { state, publish
     await consumeMonsterItem(monster, object, state);
     monster.mhp -= damage;
     if (monster.mhp > 0)
-        return { exploded: true, nativeResult: 0, heroDied: false, monsterDied: false };
+        return { nativeResult: 0, heroDied: false };
     const death = await finishMonsterKilled(monster, state, {
         damageType: AD_RBRE, cause: '', publish, random, rollDice,
     });
     // Native precheck returns 1 after monkilled(), including life saving.
     return {
-        exploded: true, nativeResult: 1,
-        heroDied: !!death.heroDied, monsterDied: !death.survived,
+        nativeResult: 1, heroDied: !!death.heroDied,
     };
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mzapwand().
-// ---------------------------------------------------------------------------
-export async function presentMonsterWandUse(monster, object, { state, self = false, publish = plineWithContinuation, }) {
+export async function mzapwand(monster, object, { state, self = false, publish = plineWithContinuation, }) {
     if (object.spe < 1) {
         await impossible(`Mon zapping wand with ${object.spe} charges?`, { state });
         return;
@@ -241,10 +233,8 @@ export async function presentMonsterWandUse(monster, object, { state, self = fal
     }
     object.spe--;
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mplayhorn().
-// ---------------------------------------------------------------------------
-export async function presentMonsterHornUse(monster, object, { state, self = false, publish = plineWithContinuation, }) {
+export async function mplayhorn(monster, object, { state, self = false, publish = plineWithContinuation, }) {
     if (!canSeeMonster(monster)) {
         const message = formatHeardMessage(`a horn being played ${itemUseIsNearby(monster, state) ? 'nearby' : 'in the distance'}.`, state);
         if (message)
@@ -269,10 +259,8 @@ export async function presentMonsterHornUse(monster, object, { state, self = fal
     }
     object.spe--;
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mreadmsg().
-// ---------------------------------------------------------------------------
-export async function presentMonsterScrollRead(monster, object, { state, publish = plineWithContinuation, }) {
+export async function mreadmsg(monster, object, { state, publish = plineWithContinuation, }) {
     const visible = canSeeMonster(monster);
     if (!visible && heroIsDeaf(state))
         return;
@@ -301,35 +289,30 @@ export async function presentMonsterScrollRead(monster, object, { state, publish
         const heard = formatHeardMessage(`${subject} ${words}.`, state);
         if (heard)
             await publish(heard);
-        if (sensed)
-            await flashReadingMonster(monster, state);
+        if (sensed) {
+            let count = couldsee(monster.mx, monster.my) ? 8 : 4;
+            if (state.flags.sparkle === false)
+                count /= 2;
+            const row = state.viz_array?.[monster.my];
+            const saved = row?.[monster.mx];
+            if (!row || saved === undefined)
+                throw new Error('A sensed reader needs its visibility cell');
+            row[monster.mx] = saved | 3;
+            try {
+                await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
+            }
+            finally {
+                row[monster.mx] = saved;
+                await newsym(monster.mx, monster.my);
+            }
+        }
     }
     if (monster.mconf)
         await publish(`Being confused, ${visible
             ? monsterName(monster, { state }) : monsterSubjectPronoun(monster, { state })} mispronounces the magic words...`);
 }
-// The sensemon() telepathy spark that closes an unseen mreadmsg().
-async function flashReadingMonster(monster, state) {
-    let count = couldsee(monster.mx, monster.my) ? 8 : 4;
-    if (state.flags.sparkle === false)
-        count /= 2;
-    const row = state.viz_array?.[monster.my];
-    const saved = row?.[monster.mx];
-    if (!row || saved === undefined)
-        throw new Error('A sensed reader needs its visibility cell');
-    row[monster.mx] = saved | 3;
-    try {
-        await flashGlyphAt(monster.mx, monster.my, transientMonsterGlyph(monster), count);
-    }
-    finally {
-        row[monster.mx] = saved;
-        await newsym(monster.mx, monster.my);
-    }
-}
-// ---------------------------------------------------------------------------
 // C muse.c:mquaffmsg().
-// ---------------------------------------------------------------------------
-export async function presentMonsterQuaff(monster, object, { state, publish = plineWithContinuation, }) {
+export async function mquaffmsg(monster, object, { state, publish = plineWithContinuation, }) {
     const seen = canSeeMonster(monster);
     if (seen) {
         observeObject(object, state);
@@ -344,28 +327,20 @@ export async function presentMonsterQuaff(monster, object, { state, publish = pl
     }
     return seen;
 }
-// ---------------------------------------------------------------------------
-// C muse.c:m_use_healing(). Blind and peaceful monsters fall back to the
-// first healing potion they carry.
-// ---------------------------------------------------------------------------
-const healingTypes = [
-    [POT_FULL_HEALING, 'full-healing'], [POT_EXTRA_HEALING, 'extra-healing'], [POT_HEALING, 'healing'],
-];
 // C muse.c:m_use_healing().
-function healingChoice(monster) {
+function m_use_healing(monster) {
     const inventory = monster.minvent || monster.inventory || [];
-    for (const [type, kind] of healingTypes) {
-        const object = inventory.find(item => item.otyp === type);
-        if (object)
-            return { kind, object };
-    }
-    return null;
+    const full = inventory.find(object => object.otyp === POT_FULL_HEALING);
+    if (full)
+        return { kind: 'full-healing', object: full };
+    const extra = inventory.find(object => object.otyp === POT_EXTRA_HEALING);
+    if (extra)
+        return { kind: 'extra-healing', object: extra };
+    const healing = inventory.find(object => object.otyp === POT_HEALING);
+    return healing ? { kind: 'healing', object: healing } : null;
 }
-// ---------------------------------------------------------------------------
-// C muse.c:m_tele(). The shared tail of every defensive teleport: report
-// level restriction, amulet disorientation, or relocate.
-// ---------------------------------------------------------------------------
-async function teleportForEscape(monster, type, seen, options, trap = null) {
+// C muse.c:m_tele().
+async function m_tele(monster, type, seen, options, trap = null) {
     const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     if (await reportMonsterTeleportRestriction(monster, { state, publish })) {
         if (seen && type)
@@ -386,26 +361,39 @@ async function teleportForEscape(monster, type, seen, options, trap = null) {
             await randomMonsterRelocation(monster, { ...options, flags: RLOC_MSG });
     }
 }
+// Shared noteleport_level()/mon_knows_traps() condition in find_defensive() and find_offensive().
 function teleportNotKnownBlocked(monster, state) {
     return !monsterTeleportRestricted(monster, state) || !monsterKnowsTrap(monster, { ttyp: TELEP_TRAP });
 }
+// mon_has_amulet() inventory predicate, shared by the teleport paths.
 function hasAmulet(monster) {
     return (monster.minvent || monster.inventory || []).some(object => object.otyp === AMULET_OF_YENDOR);
 }
+// Is_botlevel() expression shared by find_defensive() and use_defensive().
 function atBottom(state) {
     return state.u.uz.dlevel === state.dungeons[state.u.uz.dnum]?.num_dunlevs;
 }
+// is_floater() macro: S_EYE or S_LIGHT.
 function monsterFloats(monster) {
     const symbol = MONSTER_SYMBOL[monster.mnum];
     return symbol === 5 || symbol === 25; // S_EYE, S_LIGHT
 }
-function stairAt(state, x, y) {
-    for (let stair = state.stairs; stair; stair = stair.next)
-        if (stair.sx === x && stair.sy === y)
-            return stair;
-    return null;
+// C muse.c:m_next2m().
+function m_next2m(monster, state) {
+    return state.level.monsters.some(other => other !== monster && !other.dead
+        && dist2(monster.mx, monster.my, other.mx, other.my) <= 2);
 }
-export function findMonsterDefensiveItem(monster, state, { tryEscape = false, random = rn2, } = {}) {
+// C muse.c:m_sees_sleepy_soldier().
+function m_sees_sleepy_soldier(monster, state) {
+    return state.level.monsters.some(other => other !== monster
+        && monsterHasMapPosition(other, state) && isok(other.mx, other.my)
+        && Math.abs(other.mx - monster.mx) <= 3 && Math.abs(other.my - monster.my) <= 3
+        && (MONSTER_FLAGS2[other.mnum] ?? 0) & M2_MERC
+        && MONSTER_NAME[other.mnum] !== 'guard'
+        && (other.msleeping || !other.mcanmove));
+}
+// C muse.c:find_defensive().
+export function find_defensive(monster, state, { tryEscape = false, random = rn2, } = {}) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     const noHands = !!(flags & M1_NOHANDS);
     const stuck = state.u.ustuck === monster;
@@ -418,8 +406,7 @@ export function findMonsterDefensiveItem(monster, state, { tryEscape = false, ra
     if (tryEscape && state.knox_level?.dnum === state.u.uz.dnum
         && state.knox_level.dlevel === state.u.uz.dlevel
         && dist2(monster.mx, monster.my, state.u.ux, state.u.uy) > 2
-        && state.level.monsters.some(other => other !== monster && !other.dead
-            && dist2(monster.mx, monster.my, other.mx, other.my) <= 2))
+        && m_next2m(monster, state))
         return null;
     const inventory = monster.minvent || monster.inventory || [];
     const blind = !monster.mcansee;
@@ -433,12 +420,12 @@ export function findMonsterDefensiveItem(monster, state, { tryEscape = false, ra
         if (corpse)
             return { kind: 'lizard', object: corpse };
         const tin = inventory.slice().reverse().find(object => object.otyp === TIN && MONSTER_NAME[object.corpsenm ?? -1] === 'lizard');
-        if (tin && monsterCanOpenTin(monster) && random(3))
+        if (tin && mcould_eat_tin(monster) && random(3))
             return { kind: 'lizard', object: tin };
     }
     const pestilence = MONSTER_NAME[monster.mnum] === 'Pestilence';
     if (blind && !noHands && !pestilence) {
-        const healing = healingChoice(monster);
+        const healing = m_use_healing(monster);
         if (healing)
             return healing;
     }
@@ -456,19 +443,52 @@ export function findMonsterDefensiveItem(monster, state, { tryEscape = false, ra
         if (monster.mhp >= monster.mhpmax || monster.mhp >= 10 && monster.mhp * fraction >= monster.mhpmax)
             return null;
         if (monster.mpeaceful)
-            return noHands ? null : healingChoice(monster);
+            return noHands ? null : m_use_healing(monster);
     }
-    let selected = physicalEscape(monster, state, stuck);
+    let selected = null;
+    if (!stuck && MONSTER_MOVE[monster.mnum] && !monster.mtrapped) {
+        const floats = monsterFloats(monster);
+        const cell = state.level.requireAt(monster.mx, monster.my);
+        if (cell.typ === STAIRS || cell.typ === LADDER) {
+            const stair = stairwayAt(state, monster.mx, monster.my);
+            if (stair && (stair.up || !floats))
+                selected = { kind: 'stairs', stair };
+        }
+        else {
+            const ignoreBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) === 0
+                || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
+            const spots = [{ x: monster.mx, y: monster.my }];
+            for (let x = monster.mx - 1; x <= monster.mx + 1; x++)
+                for (let y = monster.my - 1; y <= monster.my + 1; y++)
+                    if (isok(x, y) && (x !== monster.mx || y !== monster.my))
+                        spots.push({ x, y });
+            for (const { x, y } of spots) {
+                if (x === state.u.ux && y === state.u.uy)
+                    continue;
+                if (MONSTER_NAME[monster.mnum] === 'grid bug' && x !== monster.mx && y !== monster.my)
+                    continue;
+                const occupant = monsterAtPosition(state.level, x, y);
+                if (occupant && occupant !== monster)
+                    continue;
+                const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+                if (!trap || !ignoreBoulders && state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER)
+                    || monsterIsScaredAt(monster, state, x, y))
+                    continue;
+                if (is_hole(trap.ttyp) && !floats && !monster.isshk && !monster.isgd && !monster.ispriest
+                    && canFallThrough(state.u.uz)) {
+                    selected = { kind: 'trap', trap };
+                    break;
+                }
+                if (trap.ttyp === TELEP_TRAP)
+                    selected = { kind: 'trap', trap };
+            }
+        }
+    }
     if (noHands)
         return selected;
     const bugle = inventory.find(object => object.otyp === BUGLE);
     if (bugle && (MONSTER_FLAGS2[monster.mnum] ?? 0) & M2_MERC
-        && state.level.monsters.some(other => other !== monster
-            && monsterHasMapPosition(other, state) && isok(other.mx, other.my)
-            && Math.abs(other.mx - monster.mx) <= 3 && Math.abs(other.my - monster.my) <= 3
-            && (MONSTER_FLAGS2[other.mnum] ?? 0) & M2_MERC
-            && MONSTER_NAME[other.mnum] !== 'guard'
-            && (other.msleeping || !other.mcanmove)))
+        && m_sees_sleepy_soldier(monster, state))
         selected = { kind: 'bugle', object: bugle };
     if (selected)
         return selected;
@@ -533,66 +553,42 @@ export function findMonsterDefensiveItem(monster, state, { tryEscape = false, ra
     }
     return selected;
 }
-// The stairs/trap-door/teleport-trap scan inside find_defensive().
-function physicalEscape(monster, state, stuck) {
-    if (stuck || !MONSTER_MOVE[monster.mnum] || monster.mtrapped)
-        return null;
-    const floats = monsterFloats(monster);
-    const cell = state.level.requireAt(monster.mx, monster.my);
-    if (cell.typ === STAIRS || cell.typ === LADDER) {
-        const stair = stairAt(state, monster.mx, monster.my);
-        return stair && (stair.up || !floats) ? { kind: 'stairs', stair } : null;
-    }
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    const ignoreBoulders = (MONSTER_SIZE[monster.mnum] ?? 0) === 0
-        || monsterThrowsRocks(monster.mnum) || !!(flags & M1_WALLWALK);
-    const spots = [{ x: monster.mx, y: monster.my }];
-    for (let x = monster.mx - 1; x <= monster.mx + 1; x++)
-        for (let y = monster.my - 1; y <= monster.my + 1; y++)
-            if (isok(x, y) && (x !== monster.mx || y !== monster.my))
-                spots.push({ x, y });
-    let selected = null;
-    for (const { x, y } of spots) {
-        if (x === state.u.ux && y === state.u.uy)
-            continue;
-        if (MONSTER_NAME[monster.mnum] === 'grid bug' && x !== monster.mx && y !== monster.my)
-            continue;
-        const occupant = monsterAtPosition(state.level, x, y);
-        if (occupant && occupant !== monster)
-            continue;
-        const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-        if (!trap || !ignoreBoulders && state.level.objects[x]?.[y]?.some(object => object.otyp === BOULDER)
-            || monsterIsScaredAt(monster, state, x, y))
-            continue;
-        if (is_hole(trap.ttyp) && !floats && !monster.isshk && !monster.isgd && !monster.ispriest
-            && canFallThrough(state.u.uz))
-            return { kind: 'trap', trap };
-        if (trap.ttyp === TELEP_TRAP)
-            selected = { kind: 'trap', trap };
-    }
-    return selected;
-}
-// ---------------------------------------------------------------------------
-// C muse.c:mon_escape()'s m_flee() helper: run away before using an escape
-// item, unless already fleeing or the Wizard.
-// ---------------------------------------------------------------------------
-async function fleeForEscape(monster, options) {
+// muse.c's m_flee(m) macro in use_defensive().
+async function m_flee(monster, options) {
     if (monster.mflee || monster.iswiz)
         return;
     const turns = 33 - Math.trunc(30 * monster.mhp / monster.mhpmax);
     if (turns)
         await makeMonsterFlee(monster, { ...options, turns, announce: false });
 }
-// ---------------------------------------------------------------------------
-// C muse.c:use_defensive(). Consumes the find_defensive() choice.
-// ---------------------------------------------------------------------------
-export async function useMonsterDefensiveItem(monster, choice, options) {
+// C muse.c:mon_escape().
+async function mon_escape(monster, seen, { state, publish = plineWithContinuation }) {
+    if (monsterCarriesSpecialObject(monster, state) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2)
+        return { nativeResult: 0, heroDied: false };
+    if (seen)
+        await publish(`${monsterName(monster, { state, capitalized: true })} escapes the dungeon!`);
+    await removeMonsterFromGame(monster);
+    return { nativeResult: 2, heroDied: !!state.program_state.gameover };
+}
+// C muse.c:reveal_trap().
+async function reveal_trap(trap, visible, state) {
+    const cell = state.level.requireAt(trap.tx, trap.ty);
+    if (cell.typ === SCORR) {
+        cell.typ = CORR;
+        cell.flags = 0;
+        vision_note_blocker_change(trap.tx, trap.ty);
+    }
+    if (visible)
+        await seeTrap(trap, state);
+}
+// C muse.c:use_defensive().
+export async function use_defensive(monster, choice, options) {
     const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     const object = 'object' in choice ? choice.object : null;
     if (object) {
-        const precheck = await prepareMonsterItemUse(monster, object, options);
-        if (precheck)
-            return precheck;
+        const result = await precheck(monster, object, options);
+        if (result)
+            return result;
     }
     const seen = canSeeMonster(monster);
     const subject = () => monsterName(monster, { state, capitalized: true });
@@ -603,7 +599,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                 await publish(choice.object ? `${subject()} uses a unicorn horn!`
                     : `The tip of ${monsterName(monster, { state })}'s horn glows!`);
             if (!monster.mcansee)
-                await cureMonsterBlindness(monster, seen, options);
+                await mcureblindness(monster, seen, options);
             else {
                 monster.mconf = monster.mstun = 0;
                 if (seen)
@@ -611,13 +607,13 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             }
             return spent();
         case 'lizard':
-            await consumeMonsterStoningCure(monster, choice.object, { state, publish, stoning: false });
+            await mon_consume_unstone(monster, choice.object, { state, publish, stoning: false });
             return spent();
         case 'healing':
         case 'extra-healing':
         case 'full-healing': {
             const potion = choice.object;
-            await presentMonsterQuaff(monster, potion, options);
+            await mquaffmsg(monster, potion, options);
             const sign = potion.blessed ? 1 : potion.cursed ? -1 : 0;
             if (choice.kind === 'full-healing') {
                 if (potion.otyp === POT_SICKNESS)
@@ -627,7 +623,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             else
                 healMonster(monster, rollDice(6 + 2 * sign, choice.kind === 'healing' ? 4 : 8), choice.kind === 'healing' ? 1 : potion.blessed ? 5 : 2);
             if (!monster.mcansee && (choice.kind === 'healing' ? !potion.cursed : potion.otyp !== POT_SICKNESS))
-                await cureMonsterBlindness(monster, seen, options);
+                await mcureblindness(monster, seen, options);
             if (seen) {
                 await publish(`${subject()} looks ${choice.kind === 'healing' ? 'better' : choice.kind === 'extra-healing' ? 'much better' : 'completely healed'}.`);
                 learnObjectType(potion.otyp, state);
@@ -650,22 +646,22 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
         case 'teleport-self':
             if (monster.isshk && shopkeeperInOwnShop(monster, state) || monster.isgd || monster.ispriest)
                 return spent();
-            await fleeForEscape(monster, options);
-            await presentMonsterWandUse(monster, choice.object, { ...options, self: true });
-            await teleportForEscape(monster, choice.object.otyp, seen, options);
+            await m_flee(monster, options);
+            await mzapwand(monster, choice.object, { ...options, self: true });
+            await m_tele(monster, choice.object.otyp, seen, options);
             return spent();
         case 'teleport-ray':
         case 'undead-turning':
-            await presentMonsterWandUse(monster, choice.object, options);
+            await mzapwand(monster, choice.object, options);
             state.context.zap_oseen = seen;
-            await resolveMonsterImmediateWand(monster, choice.object, options);
+            await mbhit(monster, choice.object, options);
             if (choice.kind === 'teleport-ray' && monsterTeleportRestricted(monster, state))
                 monsterLearnsTrap(monster, { ttyp: TELEP_TRAP });
             return spent();
         case 'teleport-scroll': {
             if (monster.isshk || monster.isgd || monster.ispriest)
                 return spent();
-            await fleeForEscape(monster, options);
+            await m_flee(monster, options);
             const scroll = choice.object.quan > 1 ? splitObjectStack(choice.object, 1, state) : choice.object;
             if (!scroll)
                 throw new Error('A monster teleport scroll must retain one readable copy');
@@ -679,7 +675,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                     await publish(message);
                 },
             };
-            await presentMonsterScrollRead(monster, scroll, scrollOptions);
+            await mreadmsg(monster, scroll, scrollOptions);
             if (scroll.cursed || monster.mconf) {
                 const destination = randomTeleportDepth(state, random, rollOne);
                 if (hasAmulet(monster) || In_endgame(state.u.uz)) {
@@ -694,7 +690,7 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
                     await migrateMonsterOffLevel(monster, state, { dst: levelAtDepth(destination, { state }) });
             }
             else
-                await teleportForEscape(monster, scroll.otyp, seen, scrollOptions);
+                await m_tele(monster, scroll.otyp, seen, scrollOptions);
             if (scroll.dknown && state._lastPlineKind !== PLNMSG_enum)
                 await tryCallObjectType(scroll, state);
             await deleteObject(scroll, state);
@@ -715,13 +711,13 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             let known = false;
             let zapped = false;
             if (choice.kind === 'create-scroll')
-                await presentMonsterScrollRead(monster, choice.object, options);
+                await mreadmsg(monster, choice.object, options);
             while (count-- > 0) {
                 const point = findNearbyMonsterPosition(placementSpecies, monster.mx, monster.my, { state, random });
                 if (!point)
                     break;
                 if (choice.kind === 'create-wand') {
-                    await presentMonsterWandUse(monster, choice.object, options);
+                    await mzapwand(monster, choice.object, options);
                     zapped = true;
                 }
                 const created = await makemonAt(confused ? 6 : null, point.x, point.y);
@@ -739,14 +735,14 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             return spent();
         }
         case 'digging': {
-            await fleeForEscape(monster, options);
-            await presentMonsterWandUse(monster, choice.object, options);
+            await m_flee(monster, options);
+            await mzapwand(monster, choice.object, options);
             if (seen)
                 learnObjectType(WAN_DIGGING, state);
             const { mx: x, my: y } = monster;
             const cell = state.level.requireAt(x, y);
             if (IS_FURNITURE(cell.typ) || IS_DRAWBRIDGE(cell.typ) || findDrawbridgeAt(x, y, state)
-                || stairAt(state, x, y)) {
+                || stairwayAt(state, x, y)) {
                 await publish('The digging ray is ineffective.');
                 return spent();
             }
@@ -788,17 +784,12 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             return spent();
         }
         case 'stairs': {
-            await fleeForEscape(monster, options);
+            await m_flee(monster, options);
             const stair = choice.stair;
             const branch = stair.tolev.dnum !== state.u.uz.dnum;
             const ladder = stair.isladder && !branch;
             if (ledgerNo(state.u.uz, state) === 1 && (branch || stair.up && !ladder)) {
-                if (monsterCarriesSpecialObject(monster, state) || monster.iswiz && (state.context.no_of_wizards ?? 0) < 2)
-                    return { nativeResult: 0, heroDied: false };
-                if (seen)
-                    await publish(`${subject()} escapes the dungeon!`);
-                await removeMonsterFromGame(monster);
-                return spent();
+                return mon_escape(monster, seen, options);
             }
             let destination = stair.tolev;
             let mode = branch ? MIGR_SSTAIRS
@@ -822,21 +813,14 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             const hole = is_hole(trap.ttyp);
             if (hole && atBottom(state))
                 return { nativeResult: 0, heroDied: false };
-            await fleeForEscape(monster, options);
+            await m_flee(monster, options);
             const visible = cansee(monster.mx, monster.my);
             if (visible) {
                 const name = subject();
                 const verb = verbForSubject(name, monsterLocomotion(monster.mnum, 'jump'));
                 await publish(`${name} ${verb} ${hole ? 'into' : 'onto'} a ${trapName(trap.ttyp, { state })}!`);
             }
-            const cell = state.level.requireAt(trap.tx, trap.ty);
-            if (cell.typ === SCORR) {
-                cell.typ = CORR;
-                cell.flags = 0;
-                vision_note_blocker_change(trap.tx, trap.ty);
-            }
-            if (visible)
-                await seeTrap(trap, state);
+            await reveal_trap(trap, visible, state);
             // C remove_monster() empties the old square before redrawing it, even
             // when the monster was already standing on the trap.
             monster.mstate = (monster.mstate ?? 0) | MON_OFFMAP;
@@ -849,14 +833,12 @@ export async function useMonsterDefensiveItem(monster, choice, options) {
             if (hole)
                 await migrateMonsterOffLevel(monster, state, { dst: { dnum: state.u.uz.dnum, dlevel: state.u.uz.dlevel + 1 } });
             else
-                await teleportForEscape(monster, 0, seen, options, trap);
+                await m_tele(monster, 0, seen, options, trap);
             return spent();
         }
     }
 }
-// ---------------------------------------------------------------------------
-// C muse.c:rnd_defensive_item().
-// ---------------------------------------------------------------------------
+// Common creature exclusions in the three native rnd_*_item() functions.
 function rejectsRandomItem(monster) {
     const mndx = monster.mnum;
     const flags = MONSTER_FLAGS1[mndx] ?? 0;
@@ -865,12 +847,14 @@ function rejectsRandomItem(monster) {
         || (MONSTER_ATTACKS[mndx] || []).some(attack => attack[0] === AT_EXPL)
         || symbol === S_GHOST || monsterIsKop(mndx);
 }
+// which_armor(W_ARMH), including the port's creation-time wornSlot phase.
 function wornHelmet(monster) {
     const inventory = monster?.minvent || monster?.inventory || [];
     return inventory.find(object => ((object.owornmask ?? 0) & W_ARMH) !== 0
         || object.wornSlot === 'helmet') || null;
 }
-export function randomDefensiveMonsterItem(monster) {
+// C muse.c:rnd_defensive_item().
+export function rnd_defensive_item(monster) {
     if (!monster || rejectsRandomItem(monster))
         return 0;
     const mndx = monster.mnum;
@@ -915,11 +899,14 @@ export function randomDefensiveMonsterItem(monster) {
         }
     }
 }
-// ---------------------------------------------------------------------------
-// C muse.c:m_use_undead_turning(): corpses inside carried containers do not
-// count.
-// ---------------------------------------------------------------------------
-function undeadTurningHasCorpse(monster, state) {
+// C muse.c:linedup_chk_corpse().
+function linedup_chk_corpse(x, y, state) {
+    return (state.level.objects[x]?.[y] ?? []).some(object => object.otyp === CORPSE);
+}
+// C muse.c:m_use_undead_turning().
+function m_use_undead_turning(monster, object, state) {
+    if (object.otyp !== WAN_UNDEAD_TURNING || object.spe <= 0)
+        return false;
     if (state.inventory.some(object => object.otyp === CORPSE))
         return true;
     const endX = state.u.ux + Math.sign((monster.mux ?? 0) - monster.mx) * 3;
@@ -934,15 +921,13 @@ function undeadTurningHasCorpse(monster, state) {
         y += Math.sign(dy);
         if (blockingTerrain(state, x, y))
             return false;
-        if ((state.level.objects[x]?.[y] ?? []).some(object => object.otyp === CORPSE))
+        if (linedup_chk_corpse(x, y, state))
             return true;
     } while (x !== endX || y !== endY);
     return false;
 }
-// ---------------------------------------------------------------------------
 // C muse.c:hero_behind_chokepoint().
-// ---------------------------------------------------------------------------
-function heroBehindChokepoint(monster, state) {
+function hero_behind_chokepoint(monster, state) {
     const dx = Math.sign(monster.mx - (monster.mux ?? 0));
     const dy = Math.sign(monster.my - (monster.muy ?? 0));
     const x = (monster.mux ?? 0) + dx, y = (monster.muy ?? 0) + dy;
@@ -952,10 +937,8 @@ function heroBehindChokepoint(monster, state) {
     return (!isok(leftX, leftY) || !isAccessibleAt(leftX, leftY, state))
         && (!isok(rightX, rightY) || !isAccessibleAt(rightX, rightY, state));
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mon_has_friends().
-// ---------------------------------------------------------------------------
-function monsterHasFriends(monster, state) {
+function mon_has_friends(monster, state) {
     if (monster.mtame || monster.mpeaceful)
         return false;
     for (let dx = -1; dx <= 1; dx++) {
@@ -970,10 +953,8 @@ function monsterHasFriends(monster, state) {
     }
     return false;
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mon_likes_objpile_at().
-// ---------------------------------------------------------------------------
-function monsterLikesObjectPileAt(monster, x, y, state) {
+function mon_likes_objpile_at(monster, x, y, state) {
     if (!isok(x, y))
         return false;
     const pile = state.level.objects[x]?.[y] ?? [];
@@ -983,31 +964,17 @@ function monsterLikesObjectPileAt(monster, x, y, state) {
     // The native loop counts three examined stacks, even if no fourth exists.
     return pile.length >= 3;
 }
-// ---------------------------------------------------------------------------
 // C muse.c:find_offensive().
-// ---------------------------------------------------------------------------
-function heroIsNakedAndUnarmed(state) {
-    return !(state.uwep || state.u.uwep || state.uarmu || state.u.uarmu
-        || state.uarm || state.u.uarm || state.uarmh || state.u.uarmh
-        || state.uarms || state.u.uarms || state.uarmg || state.u.uarmg
-        || state.uarmc || state.u.uarmc || state.uarmf || state.u.uarmf);
-}
-function heroStandsOnStairway(state) {
-    for (let stair = state.stairs; stair; stair = stair.next)
-        if (stair.sx === state.u.ux && stair.sy === state.u.uy)
-            return true;
-    return false;
-}
-function sameLevel(left, right) {
-    return !!right && left.dnum === right.dnum && left.dlevel === right.dlevel;
-}
-export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}) {
+export function find_offensive(monster, state, { random = rn2 } = {}) {
     if (monster.mpeaceful || monsterIsAnimal(monster)
         || monsterIsMindless(monster.mnum) || monsterHasNoHands(monster.mnum)
         || state.u.uswallow || inHeroSanctuary(monster, 0, 0, state))
         return null;
     const attacks = MONSTER_ATTACKS[monster.mnum] ?? [];
-    if (attacks.some(([, damage]) => damage === AD_HEAL) && heroIsNakedAndUnarmed(state))
+    if (attacks.some(([, damage]) => damage === AD_HEAL) && !(state.uwep || state.u.uwep || state.uarmu || state.u.uarmu
+        || state.uarm || state.u.uarm || state.uarmh || state.u.uarmh
+        || state.uarms || state.u.uarms || state.uarmg || state.u.uarmg
+        || state.uarmc || state.u.uarmc || state.uarmf || state.u.uarmf))
         return null;
     if (!monsterLinedUpWithHero(monster, state, random))
         return null;
@@ -1059,7 +1026,7 @@ export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}
         }
         if (choice?.object.otyp === WAN_UNDEAD_TURNING)
             continue;
-        if (object.otyp === WAN_UNDEAD_TURNING && charged && undeadTurningHasCorpse(monster, state))
+        if (m_use_undead_turning(monster, object, state))
             choice = { kind: 'immediate-wand', object };
         if (choice?.object.otyp === WAN_STRIKING)
             continue;
@@ -1071,9 +1038,9 @@ export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}
             && (!monsterTeleportRestricted(monster, state)
                 || !((monster.mtrapseen ?? 0) & (1 << (TELEP_TRAP - 1))))
             && (monsterIsScaredAt(monster, state, state.u.ux, state.u.uy)
-                || heroBehindChokepoint(monster, state) && monsterHasFriends(monster, state)
-                || monsterLikesObjectPileAt(monster, state.u.ux, state.u.uy, state)
-                || heroStandsOnStairway(state)))
+                || hero_behind_chokepoint(monster, state) && mon_has_friends(monster, state)
+                || mon_likes_objpile_at(monster, state.u.ux, state.u.uy, state)
+                || !!stairwayAt(state, state.u.ux, state.u.uy)))
             choice = { kind: 'immediate-wand', object };
         if (choice?.object.otyp === POT_PARALYSIS)
             continue;
@@ -1103,8 +1070,8 @@ export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}
                 || monsterIsNoncorporeal(monster) || monsterIsUnsolid(monster) || !random(10))
             && distance <= 2 && monster.mcansee
             && monsterHasEyes(monster.mnum)
-            && !sameLevel(state.u.uz, state.rogue_level)
-            && (state.u.uz.dnum !== state.astral_level?.dnum || sameLevel(state.u.uz, state.earth_level)))
+            && !sameDungeonLevel(state.u.uz, state.rogue_level)
+            && (state.u.uz.dnum !== state.astral_level?.dnum || sameDungeonLevel(state.u.uz, state.earth_level)))
             choice = { kind: 'earth-scroll', object };
         if (choice?.object.otyp === EXPENSIVE_CAMERA)
             continue;
@@ -1116,50 +1083,11 @@ export function selectMonsterOffensiveItem(monster, state, { random = rn2 } = {}
     }
     return choice;
 }
-async function hitHeroWithImmediateWand(context) {
-    const { state, source, wand, seen, rollOne, rollDice, publish } = context;
-    switch (wand.otyp) {
-        case WAN_STRIKING: {
-            let learned = false;
-            if (state.u.antimagic || propertyIsActive('antimagic', state)
-                || heroHasArtifactDefense('magic', state)) {
-                monstersObserveHeroResistance(M_SEEN_MAGR, state);
-                await shieldeff(state.u.ux, state.u.uy, state);
-                await publish('Boing!');
-                learned = true;
-            }
-            else if (rollOne(20) < 10 + state.u.uac && source.mwandexp) {
-                monstersForgetHeroResistance(M_SEEN_MAGR, state);
-                await publish('The wand hits you!');
-                const damage = rollDice(2, 12);
-                if (await loseHeroHp(heroHasHalfSpellDamage(state) ? Math.ceil(damage / 2) : damage, 'wand', { state, publish }))
-                    return;
-                learned = true;
-            }
-            else
-                await publish('The wand misses you.');
-            await stopHeroOccupation(state);
-            endVoluntaryMultiTurn(state);
-            if (learned && seen)
-                learnObjectType(wand.otyp, state);
-            break;
-        }
-        case WAN_TELEPORTATION:
-            await teleportHero({ chooseDestination: askTeleportDestination });
-            if (!state.program_state.gameover && seen)
-                learnObjectType(wand.otyp, state);
-            break;
-        case WAN_UNDEAD_TURNING:
-            await turnHeroWithUndeadMagic(state, { roll: rollOne });
-            if (!state.program_state.gameover && seen)
-                learnObjectType(wand.otyp, state);
-            break;
-    }
-}
-async function hitMonsterWithImmediateWand(target, context) {
-    const { state, wand, seen, rollOne, rollDice, publish } = context;
+// C muse.c:mbhitm(). A null target denotes the hero (C's &youmonst).
+async function mbhitm(target, context) {
+    const { state, source, wand, seen, random, rollOne, rollDice, publish } = context;
     let revealInvisible = false;
-    if (wand.otyp !== WAN_UNDEAD_TURNING) {
+    if (target && wand.otyp !== WAN_UNDEAD_TURNING) {
         target.msleeping = 0;
         if (target.m_ap_type)
             await revealMonsterAppearance(target);
@@ -1168,76 +1096,102 @@ async function hitMonsterWithImmediateWand(target, context) {
         case WAN_STRIKING: {
             revealInvisible = true;
             let learned = false;
-            if (monsterHasMagicResistance(target)) {
+            if (!target) {
+                if (state.u.antimagic || propertyIsActive('antimagic', state) || heroHasArtifactDefense('magic', state)) {
+                    monstersObserveHeroResistance(M_SEEN_MAGR, state);
+                    await shieldeff(state.u.ux, state.u.uy, state);
+                    await publish('Boing!');
+                    learned = true;
+                }
+                else if (rollOne(20) < 10 + state.u.uac && source.mwandexp) {
+                    monstersForgetHeroResistance(M_SEEN_MAGR, state);
+                    await publish('The wand hits you!');
+                    const damage = rollDice(2, 12);
+                    if (await loseHeroHp(heroHasHalfSpellDamage(state) ? Math.ceil(damage / 2) : damage, 'wand', { state, publish }))
+                        return;
+                    learned = true;
+                }
+                else
+                    await publish('The wand misses you.');
+                await stopHeroOccupation(state);
+                endVoluntaryMultiTurn(state);
+            }
+            else if (monsterHasMagicResistance(target)) {
                 await shieldeff(target.mx, target.my, state);
                 await publish('Boing!');
                 learned = true;
             }
             else if (rollOne(20) < 10 + findMonsterArmorClass(target)) {
-                const damage = rollDice(2, 12);
+                let damage = rollDice(2, 12);
                 await publish(rayHitMessage('wand', target, { state, x: target.mx, y: target.my, damage }));
-                await damageMonsterWithWand(target, damage, true, context);
+                if (monsterResistsEffect(target, 12, random)) {
+                    await shieldeff(target.mx, target.my, state);
+                    if (cansee(target.mx, target.my))
+                        await publish(`${monsterName(target, { state, capitalized: true })} resists!`);
+                    damage = Math.ceil(damage / 2);
+                }
+                target.mhp -= damage;
+                if (target.mhp <= 0)
+                    await finishMonsterKilled(target, state, { damageType: AD_RBRE, publish, random, rollDice });
                 learned = true;
             }
             else
                 await publish(rayMissMessage('wand', target, { state, x: target.mx, y: target.my }));
             if (state.program_state.gameover)
                 return;
-            if (learned && seen && cansee(target.mx, target.my))
+            if (learned && seen && (!target || cansee(target.mx, target.my)))
                 learnObjectType(wand.otyp, state);
             break;
         }
         case WAN_TELEPORTATION:
-            if (target.ispriest && roomsAt(state.level, target.mx, target.my, TEMPLE).length) {
+            if (!target) {
+                await teleportHero({ chooseDestination: askTeleportDestination });
+                if (!state.program_state.gameover && seen)
+                    learnObjectType(wand.otyp, state);
+            }
+            else if (target.ispriest && roomsAt(state.level, target.mx, target.my, TEMPLE).length) {
                 if (cansee(target.mx, target.my))
                     await publish(`${monsterName(target, { state, capitalized: true })} resists the magic!`);
             }
             else if (!await reportMonsterTeleportRestriction(target, { state, publish })) {
-                await randomMonsterRelocation(target, {
-                    state, random: context.random, rollOne, flags: RLOC_MSG,
-                });
+                await randomMonsterRelocation(target, { state, random, rollOne, flags: RLOC_MSG });
             }
             break;
-        case WAN_UNDEAD_TURNING: {
-            let wake = await turnCarriedObjects(target.minvent, state) > 0;
-            if (monsterIsUndead(target.mnum) || monsterIsVampireShifter(target)) {
-                wake = revealInvisible = true;
-                state.context.bypasses = true;
-                await damageMonsterWithWand(target, rollOne(8), false, context);
-            }
-            if (state.program_state.gameover)
-                return;
-            if (wake) {
-                if (target.mhp > 0 && !target.dead)
-                    await wakeMonster(target);
-                if (seen)
+        case WAN_UNDEAD_TURNING:
+            if (!target) {
+                await turnHeroWithUndeadMagic(state, { roll: rollOne });
+                if (!state.program_state.gameover && seen)
                     learnObjectType(wand.otyp, state);
             }
+            else {
+                let wake = await turnCarriedObjects(target.minvent, state) > 0;
+                if (monsterIsUndead(target.mnum) || monsterIsVampireShifter(target)) {
+                    wake = revealInvisible = true;
+                    state.context.bypasses = true;
+                    let damage = rollOne(8);
+                    if (monsterResistsEffect(target, 12, random))
+                        damage = Math.ceil(damage / 2);
+                    target.mhp -= damage;
+                    if (target.mhp <= 0)
+                        await finishMonsterKilled(target, state, { damageType: AD_RBRE, publish, random, rollDice });
+                }
+                if (state.program_state.gameover)
+                    return;
+                if (wake) {
+                    if (target.mhp > 0 && !target.dead)
+                        await wakeMonster(target);
+                    if (seen)
+                        learnObjectType(wand.otyp, state);
+                }
+            }
             break;
-        }
     }
-    if (revealInvisible && target.mhp > 0 && !target.dead
+    if (target && revealInvisible && target.mhp > 0 && !target.dead
         && cansee(state.bhitpos.x, state.bhitpos.y) && !canSpotMonster(target))
         await map_invisible(state.bhitpos.x, state.bhitpos.y);
 }
-async function damageMonsterWithWand(target, damage, tell, { state, random, rollDice, publish }) {
-    if (monsterResistsEffect(target, 12, random)) {
-        if (tell) {
-            await shieldeff(target.mx, target.my, state);
-            if (cansee(target.mx, target.my))
-                await publish(`${monsterName(target, { state, capitalized: true })} resists!`);
-        }
-        damage = Math.ceil(damage / 2);
-    }
-    target.mhp -= damage;
-    if (target.mhp <= 0)
-        await finishMonsterKilled(target, state, { damageType: AD_RBRE, publish, random, rollDice });
-}
-// ---------------------------------------------------------------------------
-// C muse.c:fhito_loc() and mbhit(). Immediate rays complete every contact
-// before the item-use owner resumes the monster's turn.
-// ---------------------------------------------------------------------------
-export async function resolveMonsterImmediateWand(source, wand, { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
+// C muse.c:mbhit().
+export async function mbhit(source, wand, { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation, }) {
     if (![WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING].includes(wand.otyp))
         throw new RangeError(`Unsupported monster immediate wand ${wand.otyp}`);
     const context = {
@@ -1254,7 +1208,7 @@ export async function resolveMonsterImmediateWand(source, wand, { state, random 
             break;
         state.bhitpos = { x, y };
         if (x === state.u.ux && y === state.u.uy) {
-            await hitHeroWithImmediateWand(context);
+            await mbhitm(null, context);
             range -= 3;
         }
         else {
@@ -1262,13 +1216,13 @@ export async function resolveMonsterImmediateWand(source, wand, { state, random 
             if (target) {
                 if (cansee(x, y) && !canSpotMonster(target))
                     await map_invisible(x, y);
-                await hitMonsterWithImmediateWand(target, context);
+                await mbhitm(target, context);
                 range -= 3;
             }
         }
         if (state.program_state.gameover)
             return { heroDied: true };
-        if (await hitFloorObjects(context))
+        if (await fhito_loc(context))
             range--;
         if (state.program_state.gameover)
             return { heroDied: true };
@@ -1298,7 +1252,8 @@ export async function resolveMonsterImmediateWand(source, wand, { state, random 
     }
     return { heroDied: false };
 }
-async function hitFloorObjects({ state, wand }) {
+// C muse.c:fhito_loc().
+async function fhito_loc({ state, wand }) {
     const { x, y } = state.bhitpos;
     let affected = false;
     await sweepFloorPile(x, y, state, async (object) => {
@@ -1308,19 +1263,20 @@ async function hitFloorObjects({ state, wand }) {
     });
     return affected;
 }
-// ---------------------------------------------------------------------------
-// C muse.c:use_offensive(). Selection belongs to find_offensive(); each
-// selected object is still carried until its own effect consumes or throws it.
-// ---------------------------------------------------------------------------
-export async function useMonsterOffensiveItem(monster, choice, options) {
+// C muse.c:buzz_force_miss().
+async function buzz_force_miss(type, dice, direction, options) {
+    return castNativeRay(type, dice, direction, { ...options, forceMiss: true });
+}
+// C muse.c:use_offensive().
+export async function use_offensive(monster, choice, options) {
     const { state, random = rn2, rollOne = rnd, rollDice = d, publish = plineWithContinuation } = options;
     requireLiveGame(state);
     const object = choice.object;
-    const forceMiss = !monster.mwandexp;
+    const buzzfn = monster.mwandexp ? castNativeRay : buzz_force_miss;
     if (object.oclass !== 8) {
-        const backfire = await checkMonsterWandBackfire(monster, object, options);
-        if (backfire.exploded)
-            return { nativeResult: backfire.nativeResult, heroDied: backfire.heroDied };
+        const result = await precheck(monster, object, options);
+        if (result)
+            return result;
     }
     const seen = canSeeMonster(monster);
     switch (choice.kind) {
@@ -1331,7 +1287,7 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
             if (choice.kind === 'ray-wand') {
                 if (object.otyp < WAN_MAGIC_MISSILE || object.otyp > WAN_LIGHTNING)
                     throw new RangeError(`Selected offensive wand ${object.otyp} is not a ray wand`);
-                await presentMonsterWandUse(monster, object, options);
+                await mzapwand(monster, object, options);
                 if (seen)
                     learnObjectType(object.otyp, state);
                 rayType = object.otyp - WAN_MAGIC_MISSILE;
@@ -1340,15 +1296,15 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
             else {
                 if (object.otyp !== FIRE_HORN && object.otyp !== FROST_HORN)
                     throw new RangeError(`Selected offensive horn ${object.otyp} cannot emit a ray`);
-                await presentMonsterHornUse(monster, object, options);
+                await mplayhorn(monster, object, options);
                 rayType = object.otyp === FROST_HORN ? 2 : 1;
                 dice = 6 + random(6);
             }
             const direction = aimedDirection(monster);
-            const ray = await castNativeRay(-30 - rayType, dice, direction, {
+            const ray = await buzzfn(-30 - rayType, dice, direction, {
                 state, sourceMonster: monster, sourceObject: object,
                 originX: monster.mx, originY: monster.my,
-                publish, random, rollOne, rollDice, forceMiss,
+                publish, random, rollOne, rollDice,
             });
             if (!ray.heroDied)
                 monster.mwandexp = true;
@@ -1358,8 +1314,8 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
             const previousSeen = state.context.zap_oseen;
             state.context.zap_oseen = seen;
             try {
-                await presentMonsterWandUse(monster, object, options);
-                const result = await resolveMonsterImmediateWand(monster, object, options);
+                await mzapwand(monster, object, options);
+                const result = await mbhit(monster, object, options);
                 if (!result.heroDied && object.otyp === WAN_STRIKING)
                     monster.mwandexp = true;
                 return { nativeResult: 2, heroDied: result.heroDied };
@@ -1371,6 +1327,66 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
                     state.context.zap_oseen = previousSeen;
             }
         }
+        case 'earth-scroll': {
+            const confused = !!monster.mconf;
+            const x = monster.mx, y = monster.my;
+            const cursed = !!object.cursed, blessed = !!object.blessed;
+            await mreadmsg(monster, object, options);
+            if (canSpotMonster(monster)) {
+                await publish(`The ${ceilingName(x, y, state)} rumbles ${blessed ? 'around' : 'above'} ${monsterName(monster, { state })}!`);
+                if (seen)
+                    learnObjectType(object.otyp, state);
+            }
+            else if (cansee(x, y)) {
+                await publish(`The ${ceilingName(x, y, state)} rumbles in the middle of nowhere!`);
+                if (monster.minvis)
+                    await map_invisible(x, y);
+                if (seen)
+                    learnObjectType(object.otyp, state);
+            }
+            // The caster can die under the central boulder. Consume before drops so
+            // its death cannot put the used object back onto the floor.
+            await consumeMonsterItem(monster, object, state);
+            for (let column = x - 1; column <= x + 1; column++) {
+                for (let row = y - 1; row <= y + 1; row++) {
+                    if (!isok(column, row) || column === state.u.ux && row === state.u.uy)
+                        continue;
+                    const location = state.level.at(column, row);
+                    if (!location || IS_OBSTRUCTED(location.typ) || IS_AIR(location.typ)
+                        || location.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED)))
+                        continue;
+                    if (column === x && row === y ? blessed : cursed)
+                        continue;
+                    const drop = await dropBoulderOnMonster(column, row, { state, confused, heroCaused: false });
+                    if (drop.heroDied)
+                        return { nativeResult: 1, heroDied: true };
+                }
+            }
+            if (distmin(x, y, state.u.ux, state.u.uy) === 1 && !cursed) {
+                const drop = await dropBoulderOnHero({ state, confused, helmetProtects: true, heroCaused: false, skipSwallower: true });
+                if (drop.heroDied)
+                    return { nativeResult: 1, heroDied: true };
+            }
+            return { nativeResult: monster.mhp <= 0 || monster.dead ? 1 : 2, heroDied: false };
+        }
+        case 'camera': {
+            if (heroIsHallucinating(state))
+                await publish('"Say cheese!"');
+            else if (!heroIsBlind(state)) {
+                const subject = monsterName(monster, { state, capitalized: true });
+                const name = withIndefiniteArticle(objectCombatName(object, { state }));
+                await publish(`${subject} takes a picture of you with ${name}!`);
+            }
+            if (!heroIsBlind(state) && !heroResistsBlindingLight(state)) {
+                await publish('You are blinded by the flash of light!');
+                await makeBlinded((state.u.blindTurns ?? 0) + rollOne(51), { state, talk: false, publish });
+            }
+            await lightDamage(object, true, 5, { state });
+            if (!state.program_state.gameover)
+                object.spe--;
+            // Native use_offensive returns one here even if the photographer lives.
+            return { nativeResult: 1, heroDied: !!state.program_state.gameover };
+        }
         case 'potion': {
             if (cansee(monster.mx, monster.my)) {
                 observeObject(object, state);
@@ -1379,7 +1395,9 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
                 const name = await inventoryItemDescription({ ...object, quan: 1, quantity: 1 });
                 await publish(`${subject} hurls ${name}!`);
             }
-            const target = aimedPosition(monster);
+            if (monster.mux === undefined || monster.muy === undefined)
+                throw new Error('An offensive item user must have its remembered hero position');
+            const target = { x: monster.mux, y: monster.muy };
             const shot = await throwMonsterProjectile(monster, object, {
                 state, dx: Math.sign(target.x - monster.mx), dy: Math.sign(target.y - monster.my),
                 range: distmin(monster.mx, monster.my, target.x, target.y),
@@ -1387,76 +1405,14 @@ export async function useMonsterOffensiveItem(monster, choice, options) {
             });
             return { nativeResult: 2, heroDied: shot.heroDied };
         }
-        case 'earth-scroll': return await readMonsterEarthScroll(monster, object, seen, options);
-        case 'camera': return await photographHero(monster, object, options);
     }
 }
-// C muse.c:use_offensive() MUSE_SCR_EARTH.
-async function readMonsterEarthScroll(monster, scroll, seen, options) {
-    const { state, publish = plineWithContinuation } = options;
-    const confused = !!monster.mconf;
-    const x = monster.mx, y = monster.my;
-    const cursed = !!scroll.cursed, blessed = !!scroll.blessed;
-    await presentMonsterScrollRead(monster, scroll, options);
-    if (canSpotMonster(monster)) {
-        await publish(`The ${ceilingName(x, y, state)} rumbles ${blessed ? 'around' : 'above'} ${monsterName(monster, { state })}!`);
-        if (seen)
-            learnObjectType(scroll.otyp, state);
-    }
-    else if (cansee(x, y)) {
-        await publish(`The ${ceilingName(x, y, state)} rumbles in the middle of nowhere!`);
-        if (monster.minvis)
-            await map_invisible(x, y);
-        if (seen)
-            learnObjectType(scroll.otyp, state);
-    }
-    // The caster can die under the central boulder. Consume before drops so
-    // its death cannot put the used scroll back onto the floor.
-    await consumeMonsterItem(monster, scroll, state);
-    for (let column = x - 1; column <= x + 1; column++) {
-        for (let row = y - 1; row <= y + 1; row++) {
-            if (!isok(column, row) || column === state.u.ux && row === state.u.uy)
-                continue;
-            const location = state.level.at(column, row);
-            if (!location || IS_OBSTRUCTED(location.typ) || IS_AIR(location.typ)
-                || location.typ === DOOR && !!(location.doormask & (D_CLOSED | D_LOCKED)))
-                continue;
-            if (column === x && row === y ? blessed : cursed)
-                continue;
-            const drop = await dropBoulderOnMonster(column, row, { state, confused, heroCaused: false });
-            if (drop.heroDied)
-                return { nativeResult: 1, heroDied: true };
-        }
-    }
-    if (distmin(x, y, state.u.ux, state.u.uy) === 1 && !cursed) {
-        const drop = await dropBoulderOnHero({ state, confused, helmetProtects: true, heroCaused: false, skipSwallower: true });
-        if (drop.heroDied)
-            return { nativeResult: 1, heroDied: true };
-    }
-    return { nativeResult: monster.mhp <= 0 || monster.dead ? 1 : 2, heroDied: false };
-}
-// C muse.c:use_offensive() MUSE_CAMERA.
-async function photographHero(monster, camera, { state, publish = plineWithContinuation, rollOne = rnd }) {
-    if (heroIsHallucinating(state))
-        await publish('"Say cheese!"');
-    else if (!heroIsBlind(state)) {
-        const subject = monsterName(monster, { state, capitalized: true });
-        const name = withIndefiniteArticle(objectCombatName(camera, { state }));
-        await publish(`${subject} takes a picture of you with ${name}!`);
-    }
-    if (!heroIsBlind(state) && !heroResistsBlindingLight(state)) {
-        await publish('You are blinded by the flash of light!');
-        await makeBlinded((state.u.blindTurns ?? 0) + rollOne(51), { state, talk: false, publish });
-    }
-    await lightDamage(camera, true, 5, { state });
-    if (!state.program_state.gameover)
-        camera.spe--;
-    // Native use_offensive returns one here even if the photographer lives.
-    return { nativeResult: 1, heroDied: !!state.program_state.gameover };
-}
+// This pure sgn expression is also an equivalence-proof entry point.
 // The sgn(mux - mx)/sgn(muy - my) aim of use_offensive()'s rays and throws.
 function aimedDirection(monster) {
-    const target = aimedPosition(monster);
+    if (monster.mux === undefined || monster.muy === undefined)
+        throw new Error('An offensive item user must have its remembered hero position');
+    const target = { x: monster.mux, y: monster.muy };
     const dx = Math.sign(target.x - monster.mx), dy = Math.sign(target.y - monster.my);
     if (dy < 0)
         return dx < 0 ? 'y' : dx > 0 ? 'u' : 'k';
@@ -1464,15 +1420,8 @@ function aimedDirection(monster) {
         return dx < 0 ? 'b' : dx > 0 ? 'n' : 'j';
     return dx < 0 ? 'h' : dx > 0 ? 'l' : '>';
 }
-function aimedPosition(monster) {
-    if (monster.mux === undefined || monster.muy === undefined)
-        throw new Error('An offensive item user must have its remembered hero position');
-    return { x: monster.mux, y: monster.muy };
-}
-// ---------------------------------------------------------------------------
 // C muse.c:rnd_offensive_item().
-// ---------------------------------------------------------------------------
-export function randomOffensiveMonsterItem(monster) {
+export function rnd_offensive_item(monster) {
     if (!monster || rejectsRandomItem(monster))
         return 0;
     const mndx = monster.mnum;
@@ -1513,26 +1462,8 @@ export function randomOffensiveMonsterItem(monster) {
             return WAN_LIGHTNING;
     }
 }
-// ---------------------------------------------------------------------------
-// C muse.c:find_misc()/use_misc(): the discretionary item a monster takes
-// out of its own inventory, and the state half of that use once its leading
-// message has been presented.
-// ---------------------------------------------------------------------------
-async function heroCanReleaseWeapon(object, state) {
-    return !!object && await canLetGo(object, '', state);
-}
-// C muse.c:use_misc() cursed potion of gain level: the drinker rises one
-// level when it can leave through the ceiling from its own square.
-export function monsterGainLevelRiseDestination(monster, state) {
-    if (!canHeroRiseUp(monster.mx, monster.my, { state }))
-        return null;
-    const destination = levelAtDepth(depth(state.u.uz, state.dungeons) - 1, { state });
-    return sameDungeonLevel(destination, state.u.uz) ? null : destination;
-}
-// C muse.c:find_misc().  JavaScript minvent mirrors the C chain
-// head-to-tail.  Scan newest-to-oldest and retain each later viable type,
-// exactly matching C's "last viable item wins" loop.
-export async function useMonsterMiscItem(monster, state, random, calls) {
+// C muse.c:find_misc().
+export async function find_misc(monster, state, random, calls) {
     const flags = MONSTER_FLAGS1[monster?.mnum] ?? 0;
     if (flags & (M1_MINDLESS | M1_ANIMAL) ||
         dist2(monster.mx, monster.my, monster.mux ?? state?.u?.ux ?? monster.mx, monster.muy ?? state?.u?.uy ?? monster.my) > 36)
@@ -1567,7 +1498,7 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
                     continue;
                 const trap = trapAt(state, x, y);
                 if (trap?.ttyp === POLY_TRAP)
-                    return { kind: 'polymorph-trap', trap, deferredEffect: true };
+                    return { kind: 'polymorph-trap', trap };
             }
         }
     }
@@ -1580,15 +1511,12 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
             continue;
         // muse.c:find_misc() lets a temple priest use an uncursed gain-level
         // potion, but rejects a cursed one so the resident cannot leave the
-        // shrine level. Growth remains deferred across both mquaffmsg()
-        // toplines.
+        // shrine level.
         if (object.otyp === POT_GAIN_LEVEL &&
             (!object.cursed || (!monster.isgd && !monster.isshk && !monster.ispriest))) {
             selected = {
                 kind: 'potion-gain-level',
                 object,
-                index,
-                deferredEffect: true,
             };
         }
         if (selected?.kind === 'bullwhip-disarm')
@@ -1605,15 +1533,9 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
                 apparentY === heroY &&
                 distmin(monster.mx, monster.my, heroX, heroY) <= 1 &&
                 !state?.u?.uswallow &&
-                (await heroCanReleaseWeapon(heroWeapon, state) ||
-                    (state?.u?.twoweap && await heroCanReleaseWeapon(heroSwapWeapon, state)))) {
-                selected = {
-                    kind: 'bullwhip-disarm',
-                    object,
-                    index,
-                    heroWeapon,
-                    heroSwapWeapon,
-                };
+                (await canLetGo(heroWeapon, '', state) ||
+                    (state?.u?.twoweap && heroSwapWeapon && await canLetGo(heroSwapWeapon, '', state)))) {
+                selected = { kind: 'bullwhip-disarm', object };
             }
         }
         if (selected?.kind === 'wand-invisibility')
@@ -1621,7 +1543,7 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
         if (object.otyp === WAN_MAKE_INVISIBLE && object.spe > 0 && !monster.minvis
             && !monster.invis_blkd && (!monster.mpeaceful || heroSeesInvisible)
             && (!hasGaze || monster.mcan))
-            selected = { kind: 'wand-invisibility', object, index, deferredEffect: true };
+            selected = { kind: 'wand-invisibility', object };
         if (selected?.kind === 'potion-invisibility')
             continue;
         if (object.otyp === POT_INVISIBILITY &&
@@ -1629,7 +1551,7 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
             !monster.invis_blkd &&
             (!monster.mpeaceful || heroSeesInvisible) &&
             (!hasGaze || monster.mcan)) {
-            selected = { kind: 'potion-invisibility', object, index };
+            selected = { kind: 'potion-invisibility', object };
         }
         if (selected?.kind === 'wand-speed-monster')
             continue;
@@ -1637,79 +1559,33 @@ export async function useMonsterMiscItem(monster, state, random, calls) {
             (object.spe ?? 0) > 0 &&
             monster.mspeed !== MFAST &&
             !monster.isgd) {
-            selected = { kind: 'wand-speed-monster', object, index };
+            selected = { kind: 'wand-speed-monster', object };
         }
         if (selected?.kind === 'potion-speed')
             continue;
         if (object.otyp === POT_SPEED &&
             monster.mspeed !== MFAST &&
             !monster.isgd) {
-            selected = { kind: 'potion-speed', object, index };
+            selected = { kind: 'potion-speed', object };
         }
         if (selected?.kind === 'wand-polymorph')
             continue;
         if (object.otyp === WAN_POLYMORPH && object.spe > 0 && naturalForm && weak)
-            selected = { kind: 'wand-polymorph', object, index, deferredEffect: true };
+            selected = { kind: 'wand-polymorph', object };
         if (selected?.kind === 'potion-polymorph')
             continue;
         if (object.otyp === POT_POLYMORPH && naturalForm && weak)
-            selected = { kind: 'potion-polymorph', object, index, deferredEffect: true };
+            selected = { kind: 'potion-polymorph', object };
         if (selected?.kind === 'container')
             continue;
         if (isContainer(object) && object.otyp !== BAG_OF_TRICKS && !recordRandom(random, calls, 5)
             && !isQuantumBox(object) && !selected && object.contents?.length && !object.olocked && !object.otrapped)
-            selected = { kind: 'container', object, index, deferredEffect: true };
+            selected = { kind: 'container', object };
     }
-    if (!selected)
-        return null;
-    const precheck = await prepareMonsterItemUse(monster, selected.object, { state, random });
-    if (precheck)
-        return { kind: 'item-result', object: selected.object, index: selected.index, ...precheck };
-    if (selected.kind === 'container') {
-        const removed = await lootMonsterContainer(monster, selected.object, { state, random });
-        return { kind: 'item-result', object: selected.object, index: selected.index, nativeResult: removed ? 2 : 0, heroDied: false };
-    }
-    if (selected.kind === 'wand-invisibility'
-        || selected.kind === 'wand-polymorph' || selected.kind === 'potion-polymorph')
-        return selected;
-    if (selected.kind === 'potion-gain-level')
-        return selected;
-    if (selected.kind === 'potion-invisibility') {
-        // mquaffmsg() can suspend on an older topline.  allmain applies the
-        // state change and consumes the potion only after that await resumes.
-        return { ...selected, deferredEffect: true };
-    }
-    if (selected.kind === 'bullwhip-disarm') {
-        // use_misc() chooses the destination before any two-weapon target
-        // selection.  Removal itself follows the urgent wrap message.
-        const whereTo = recordRandom(random, calls, 4);
-        let target = selected.heroWeapon;
-        if (!await heroCanReleaseWeapon(target, state) ||
-            (state?.u?.twoweap &&
-                await heroCanReleaseWeapon(selected.heroSwapWeapon, state) &&
-                recordRandom(random, calls, 2))) {
-            target = selected.heroSwapWeapon;
-        }
-        return {
-            ...selected,
-            target,
-            whereTo,
-            deferredEffect: true,
-        };
-    }
-    const { object } = selected;
-    const wand = object.otyp === WAN_SPEED_MONSTER;
-    return {
-        ...selected,
-        kind: wand ? 'wand-speed-monster' : 'potion-speed',
-        deferredEffect: true,
-    };
+    return selected;
 }
-// ---------------------------------------------------------------------------
-// C muse.c:mloot_container(). Removal precedes the carry check so a carried
-// container's contents are not counted twice against the monster's load.
-// ---------------------------------------------------------------------------
-export async function lootMonsterContainer(monster, container, { state, random = rn2, publish = plineWithContinuation, }) {
+// C muse.c:mloot_container().
+export async function mloot_container(monster, container, { state, random = rn2, publish = plineWithContinuation, }) {
     if (!container.contents?.length || container.olocked || isQuantumBox(container)
         || container.otyp === BAG_OF_HOLDING && container.cursed)
         return false;
@@ -1773,148 +1649,205 @@ export async function lootMonsterContainer(monster, container, { state, random =
     }
     return removed;
 }
-// ---------------------------------------------------------------------------
-// C muse.c:use_misc(MUSE_BULLWHIP). The weapon is detached before the yank
-// announcement, then placed only after that message has returned.
-// ---------------------------------------------------------------------------
-export async function useMonsterBullwhip(monster, target, destination, state) {
+// C muse.c:use_misc().
+export async function use_misc(monster, choice, state, random = rn2, calls = []) {
+    const publish = plineWithContinuation;
+    if (choice.kind !== 'polymorph-trap') {
+        const result = await precheck(monster, choice.object, { state, random });
+        if (result)
+            return { ...result, checkOccupation: false };
+    }
     const seen = canSeeMonster(monster);
-    const whip = seen ? 'The bullwhip' : 'A whip';
-    const weapon = definiteName(objectCombatName(target, { state, includeCorpseSpecies: false }), state);
-    const hand = heroHandName(state);
-    const hands = isBimanualObject(target) ? makePlural(hand) : hand;
-    if (seen)
-        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} flicks a bullwhip towards your ${hands}!`);
-    if (target.otyp === HEAVY_IRON_BALL) {
-        await plineWithContinuation(`${whip} fails to wrap around ${weapon}.`);
-        return;
-    }
-    await plineWithContinuation(`${whip} wraps around ${weapon} you're wielding!`, { urgent: true });
-    if (isWeldedPrimary(target, state)) {
-        // welded() discovers the curse before the native punctuation test.
-        target.bknown = true;
-        await plineWithContinuation(`${objectNameIsPlural(target, state) ? 'They are' : 'It is'} welded to your ${hands}.`);
-        destination = 0;
-    }
-    if (!destination) {
-        await plineWithContinuation('The whip slips free.');
-        return;
-    }
-    if (destination === 3 && monsterHatesSilver(monster) && objectMaterial(target, state) === SILVER)
-        destination = 2;
-    await removeWornHeroItem(target, state);
-    if (state.program_state.gameover)
-        return;
-    unlinkObject(target, state);
-    await finishInventoryRemoval(target, state);
-    if (state.program_state.gameover)
-        return;
-    const subject = monsterName(monster, { state, capitalized: true });
-    if (destination === 1) {
-        await plineWithContinuation(`${subject} yanks ${weapon} from your ${hands}!`);
-        placeObjectSynchronously(target, monster.mx, monster.my, state);
-    }
-    else if (destination === 2) {
-        await plineWithContinuation(`${subject} yanks ${weapon} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
-        await dropObjectAtHero(target, { state });
-    }
-    else {
-        await plineWithContinuation(`${subject} snatches ${weapon}!`);
-        await addObjectToMonsterInventory(monster, target, state);
-    }
-}
-// Complete the state half of a miscellaneous action only after its leading
-// tty message has returned.  This preserves use_misc() suspension boundaries.
-export async function finishDeferredMonsterMiscItem(action, state = requireInitializedGame()) {
-    const monster = action?.monster;
-    const misc = action?.movement?.usedMisc;
-    if (!monster || !misc?.deferredEffect || misc.effectApplied)
-        return misc;
-    if (misc.kind === 'polymorph-trap') {
-        const trapVisible = cansee(misc.trap.tx, misc.trap.ty);
-        if (cansee(monster.mx, monster.my) || trapVisible)
-            await seeTrap(misc.trap, state);
-        if (canSeeMonster(monster) || trapVisible) {
-            const subject = monsterName(monster, { state, capitalized: true, augmentIt: true });
-            const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
-            await plineWithContinuation(`${subject} deliberately ${verb} onto a ${misc.trap.tseen ? trapName(misc.trap.ttyp, { state }) : 'hidden trap'}!`);
+    switch (choice.kind) {
+        case 'potion-gain-level': {
+            const object = choice.object;
+            const sawDrinking = await mquaffmsg(monster, object, { state });
+            if (object.cursed) {
+                let destination = null;
+                if (canHeroRiseUp(monster.mx, monster.my, { state })) {
+                    const above = levelAtDepth(depth(state.u.uz, state.dungeons) - 1, { state });
+                    if (!sameDungeonLevel(above, state.u.uz))
+                        destination = above;
+                }
+                if (sawDrinking) {
+                    await publish(destination
+                        ? `${visibleMonsterSubject(monster)} rises up, through the ${ceilingName(monster.mx, monster.my, state)}!`
+                        : `${visibleMonsterSubject(monster)} looks uneasy.`);
+                    await tryCallObjectType(object, state);
+                }
+                await consumeMonsterItem(monster, object, state);
+                if (destination)
+                    await migrateMonsterOffLevel(monster, state, { dst: destination });
+            }
+            else {
+                if (sawDrinking) {
+                    await publish(`${visibleMonsterSubject(monster)} seems more experienced.`);
+                    learnObjectType(object.otyp, state);
+                }
+                await consumeMonsterItem(monster, object, state);
+                const growth = growMonster(monster, { state, rollOne: rnd, random: rn2, calls });
+                await presentMonsterGrowth(monster, growth);
+            }
+            break;
         }
-        const oldx = monster.mx, oldy = monster.my;
-        // use_misc() removes even a monster already standing on the trap.
-        removeMonsterFromMapAt(oldx, oldy, state);
-        await newsym(oldx, oldy);
-        await placeMonsterOnMap(monster, misc.trap.tx, misc.trap.ty, state);
-        await maybeUnhideAt(monster.mx, monster.my, state);
-        if (monster.wormno)
-            await advanceMonsterWormBody(monster, { state });
-        await newsym(monster.mx, monster.my);
-        await changeMonsterForm(monster, null, state, { showMessage: true });
-        misc.effectApplied = true;
-        return misc;
-    }
-    if (misc.kind === 'wand-polymorph' || misc.kind === 'potion-polymorph') {
-        const seen = canSeeMonster(monster);
-        if (misc.kind === 'wand-polymorph')
-            await presentMonsterWandUse(monster, misc.object, { state, self: true });
-        else {
-            await presentMonsterQuaff(monster, misc.object, { state });
-            await consumeMonsterItem(monster, misc.object, state);
+        case 'wand-invisibility':
+        case 'potion-invisibility': {
+            const object = choice.object;
+            let sawDrinking;
+            if (choice.kind === 'wand-invisibility') {
+                sawDrinking = canSeeMonster(monster);
+                await mzapwand(monster, object, { state, self: true });
+            }
+            else
+                sawDrinking = await mquaffmsg(monster, object, { state });
+            const name = monsterName(monster, { state });
+            setMonsterPermanentInvisibility(monster, !object.cursed);
+            await newsym(monster.mx, monster.my);
+            const stillSeen = canSpotMonster(monster);
+            if (sawDrinking && monster.minvis) {
+                if (stillSeen) {
+                    await publish(`${possessiveName(name).replace(/^./, letter => letter.toUpperCase())} body takes on a ${heroIsHallucinating(state) ? 'normal' : 'strange'} transparency.`);
+                }
+                else {
+                    await publish(`Suddenly you cannot see ${name}.`);
+                    if (cansee(monster.mx, monster.my))
+                        await map_invisible(monster.mx, monster.my);
+                }
+                learnObjectType(object.otyp, state);
+            }
+            else if (sawDrinking && !monster.minvis) {
+                await publish(`${visibleMonsterSubject(monster)} briefly seems to be transparent.`);
+            }
+            if (choice.kind === 'potion-invisibility') {
+                if (object.cursed)
+                    await you_aggravate(monster, state);
+                await consumeMonsterItem(monster, object, state);
+            }
+            break;
+        }
+        case 'wand-speed-monster':
+        case 'potion-speed': {
+            const object = choice.object;
+            const visible = canSeeMonster(monster);
+            if (choice.kind === 'wand-speed-monster')
+                await mzapwand(monster, object, { state, self: true });
+            else
+                await mquaffmsg(monster, object, { state });
+            const speed = adjustMonsterSpeed(monster, 1);
+            if (visible && speed.changed && speed.canDescribe && !state.in_mklev) {
+                await publish(`${visibleMonsterSubject(monster)} is suddenly moving ${speed.much ? 'much ' : ''}faster.`);
+                learnWand(object, { state });
+            }
+            if (choice.kind === 'potion-speed')
+                await consumeMonsterItem(monster, object, state);
+            break;
+        }
+        case 'wand-polymorph':
+        case 'potion-polymorph': {
+            const seen = canSeeMonster(monster);
+            if (choice.kind === 'wand-polymorph')
+                await mzapwand(monster, choice.object, { state, self: true });
+            else {
+                await mquaffmsg(monster, choice.object, { state });
+                await consumeMonsterItem(monster, choice.object, state);
+                if (seen)
+                    await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} suddenly mutates!`);
+            }
+            const target = muse_newcham_mon(monster);
+            await changeMonsterForm(monster, target, state, { showMessage: true, polyspot: choice.kind === 'wand-polymorph' });
             if (seen)
-                await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} suddenly mutates!`);
+                learnObjectType(choice.object.otyp, state);
+            break;
         }
-        const armor = (monster.minvent || []).find(object => !!((object.owornmask ?? 0) & W_ARM));
-        const target = dragonFormForArmor(armor) ?? rndmonstAdj();
-        await changeMonsterForm(monster, target, state, { showMessage: true, polyspot: misc.kind === 'wand-polymorph' });
-        if (seen)
-            learnObjectType(misc.object.otyp, state);
-        misc.effectApplied = true;
-        return misc;
-    }
-    if (misc.kind === 'potion-invisibility' || misc.kind === 'wand-invisibility') {
-        setMonsterPermanentInvisibility(monster, !misc.object.cursed);
-        misc.effectApplied = true;
-        return misc;
-    }
-    if (misc.kind === 'potion-gain-level') {
-        await consumeMonsterItem(monster, misc.object, state);
-        if (misc.object.cursed) {
-            if (misc.riseDestination)
-                await migrateMonsterOffLevel(monster, state, { dst: misc.riseDestination });
-            misc.effectApplied = true;
-            return misc;
+        case 'polymorph-trap': {
+            const trapVisible = cansee(choice.trap.tx, choice.trap.ty);
+            if (cansee(monster.mx, monster.my) || trapVisible)
+                await seeTrap(choice.trap, state);
+            if (canSeeMonster(monster) || trapVisible) {
+                const subject = monsterName(monster, { state, capitalized: true, augmentIt: true });
+                const verb = verbForSubject(subject, monsterLocomotion(monster.mnum, 'jump'));
+                await plineWithContinuation(`${subject} deliberately ${verb} onto a ${choice.trap.tseen ? trapName(choice.trap.ttyp, { state }) : 'hidden trap'}!`);
+            }
+            const oldx = monster.mx, oldy = monster.my;
+            // use_misc() removes even a monster already standing on the trap.
+            removeMonsterFromMapAt(oldx, oldy, state);
+            await newsym(oldx, oldy);
+            await placeMonsterOnMap(monster, choice.trap.tx, choice.trap.ty, state);
+            await maybeUnhideAt(monster.mx, monster.my, state);
+            if (monster.wormno)
+                await advanceMonsterWormBody(monster, { state });
+            await newsym(monster.mx, monster.my);
+            await changeMonsterForm(monster, null, state, { showMessage: true });
+            break;
         }
-        misc.growth = growMonster(monster, {
-            state,
-            rollOne: rnd,
-            random: rn2,
-            calls: action.calls,
-        });
-        if (misc.growth.maxIncrease !== undefined)
-            misc.increase = misc.growth.maxIncrease;
-        misc.effectApplied = true;
-        return misc;
+        case 'container': {
+            const removed = await mloot_container(monster, choice.object, { state, random });
+            return { nativeResult: removed ? 2 : 0, heroDied: false, checkOccupation: false };
+        }
+        case 'bullwhip-disarm': {
+            let destination = recordRandom(random, calls, 4);
+            let target = state.uwep || state.u.uwep || null;
+            const secondary = state.uswapwep || state.u.uswapwep || null;
+            if (!target || !await canLetGo(target, '', state)
+                || state.u.twoweap && secondary && await canLetGo(secondary, '', state) && recordRandom(random, calls, 2))
+                target = secondary;
+            if (!target)
+                break;
+            const whip = seen ? 'The bullwhip' : 'A whip';
+            const weapon = definiteName(objectCombatName(target, { state, includeCorpseSpecies: false }), state);
+            const hand = heroHandName(state);
+            const hands = isBimanualObject(target) ? makePlural(hand) : hand;
+            if (seen)
+                await publish(`${monsterName(monster, { state, capitalized: true })} flicks a bullwhip towards your ${hands}!`);
+            if (target.otyp === HEAVY_IRON_BALL) {
+                await publish(`${whip} fails to wrap around ${weapon}.`);
+                return { nativeResult: 2, heroDied: !!state.program_state.gameover, checkOccupation: true };
+            }
+            await publish(`${whip} wraps around ${weapon} you're wielding!`, { urgent: true });
+            if (isWeldedPrimary(target, state)) {
+                // welded() discovers the curse before the native punctuation test.
+                target.bknown = true;
+                await publish(`${objectNameIsPlural(target, state) ? 'They are' : 'It is'} welded to your ${hands}.`);
+                destination = 0;
+            }
+            if (!destination) {
+                await publish('The whip slips free.');
+                return { nativeResult: 2, heroDied: !!state.program_state.gameover, checkOccupation: true };
+            }
+            if (destination === 3 && monsterHatesSilver(monster) && objectMaterial(target, state) === SILVER)
+                destination = 2;
+            await removeWornHeroItem(target, state);
+            if (state.program_state.gameover)
+                return { nativeResult: 2, heroDied: !!state.program_state.gameover, checkOccupation: true };
+            unlinkObject(target, state);
+            await finishInventoryRemoval(target, state);
+            if (state.program_state.gameover)
+                return { nativeResult: 2, heroDied: !!state.program_state.gameover, checkOccupation: true };
+            const subject = monsterName(monster, { state, capitalized: true });
+            if (destination === 1) {
+                await publish(`${subject} yanks ${weapon} from your ${hands}!`);
+                placeObjectSynchronously(target, monster.mx, monster.my, state);
+            }
+            else if (destination === 2) {
+                await publish(`${subject} yanks ${weapon} to the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
+                await dropObjectAtHero(target, { state });
+            }
+            else {
+                await publish(`${subject} snatches ${weapon}!`);
+                await addObjectToMonsterInventory(monster, target, state);
+            }
+            break;
+        }
     }
-    if (misc.kind === 'wand-speed-monster' || misc.kind === 'potion-speed') {
-        const speed = adjustMonsterSpeed(monster, 1);
-        misc.oldSpeed = speed.oldSpeed;
-        misc.speedChanged = speed.changed && speed.canDescribe && !state.in_mklev;
-        misc.speedMuch = speed.much;
-        misc.effectApplied = true;
-        return misc;
-    }
-    if (misc.kind === 'bullwhip-disarm') {
-        const target = misc.target;
-        if (target)
-            await useMonsterBullwhip(monster, target, misc.whereTo ?? 0, state);
-        misc.effectApplied = true;
-    }
-    return misc;
+    return { nativeResult: 2, heroDied: !!state.program_state.gameover, checkOccupation: true };
 }
-// ---------------------------------------------------------------------------
-// C muse.c:you_aggravate(). The temporary revelation is acknowledged before
-// the potion is consumed or another monster can act.
-// ---------------------------------------------------------------------------
-export async function revealAggravatingMonster(monster, state) {
+// C muse.c:muse_newcham_mon().
+function muse_newcham_mon(monster) {
+    const armor = (monster.minvent || []).find(object => !!((object.owornmask ?? 0) & W_ARM));
+    return dragonFormForArmor(armor) ?? rndmonstAdj();
+}
+// C muse.c:you_aggravate().
+export async function you_aggravate(monster, state) {
     const owner = possessiveName(monsterName(monster, { state, article: 'your', suppressIt: true }));
     await plineWithContinuation(`For some reason, ${owner} presence is known to you.`);
     await cls();
@@ -1932,10 +1865,8 @@ export async function revealAggravatingMonster(monster, state) {
     if (!canSpotMonster(monster))
         await map_invisible(monster.mx, monster.my);
 }
-// ---------------------------------------------------------------------------
 // C muse.c:rnd_misc_item().
-// ---------------------------------------------------------------------------
-export function randomMiscMonsterItem(monster) {
+export function rnd_misc_item(monster) {
     if (!monster || rejectsRandomItem(monster))
         return 0;
     const mndx = monster.mnum;
@@ -1960,12 +1891,8 @@ export function randomMiscMonsterItem(monster) {
             return POT_GAIN_LEVEL;
     }
 }
-// ---------------------------------------------------------------------------
-// C muse.c:searches_for_item(). Wanting an item is separate from
-// can_carry()/can_touch_safely(): callers must still check whether the
-// monster can reach, touch, and carry it.
-// ---------------------------------------------------------------------------
-export function monsterSearchesForItem(monster, object, state) {
+// C muse.c:searches_for_item().
+export function searches_for_item(monster, object, state) {
     if (object.where === 'floor' && object.ox === monster.mx && object.oy === monster.my
         && monsterIsScaredAt(monster, state, object.ox, object.oy))
         return false;
@@ -2013,27 +1940,25 @@ export function monsterSearchesForItem(monster, object, state) {
         case FOOD_CLASS:
             if (type === CORPSE)
                 return (!!((monster.misc_worn_check ?? 0) & W_ARMG) && touchPetrifies(object.corpsenm))
-                    || (!monsterHasStoneResistance(monster) && curesStoning(monster, object, false));
+                    || (!monsterHasStoneResistance(monster) && cures_stoning(monster, object, false));
             if (type === TIN)
-                return monsterCanOpenTin(monster) && !monsterHasStoneResistance(monster)
-                    && curesStoning(monster, object, true);
+                return mcould_eat_tin(monster) && !monsterHasStoneResistance(monster)
+                    && cures_stoning(monster, object, true);
             return type === EGG && object.corpsenm !== undefined && ismnum(object.corpsenm)
                 && touchPetrifies(object.corpsenm);
         default:
             return false;
     }
 }
-// ---------------------------------------------------------------------------
 // C muse.c:mcureblindness().
-// ---------------------------------------------------------------------------
-async function cureMonsterBlindness(monster, seen, options) {
+async function mcureblindness(monster, seen, options) {
     monster.mcansee = 1;
     monster.mblinded = 0;
     if (seen && monsterHasEyes(monster.mnum))
         await (options.publish ?? plineWithContinuation)(`${monsterName(monster, { state: options.state, capitalized: true })} can see again.`);
 }
 // C muse.c:mcould_eat_tin().
-export function monsterCanOpenTin(monster) {
+export function mcould_eat_tin(monster) {
     if (monsterIsAnimal(monster))
         return false;
     const inventory = monster.minvent || monster.inventory || [];
@@ -2045,68 +1970,32 @@ export function monsterCanOpenTin(monster) {
     return inventory.some(opensTin);
 }
 // C muse.c:cures_stoning().
-function corpseCuresStoning(object) {
-    if (object.corpsenm === undefined
-        || !Number.isInteger(object.corpsenm) || object.corpsenm < 0)
-        return false;
-    return object.corpsenm === PM_LIZARD
-        || !!((MONSTER_FLAGS1[object.corpsenm] ?? 0) & M1_ACID);
-}
-export function curesStoning(monster, object, tinCanBeOpened) {
-    if (object?.otyp === POT_ACID)
+export function cures_stoning(monster, object, tinCanBeOpened) {
+    if (object.otyp === POT_ACID)
         return true;
-    if (object?.otyp === GLOB_OF_GREEN_SLIME)
+    if (object.otyp === GLOB_OF_GREEN_SLIME)
         return monsterIsSlimeproof(monster);
-    if (object?.otyp === CORPSE)
-        return corpseCuresStoning(object);
-    return object?.otyp === TIN && tinCanBeOpened
-        && corpseCuresStoning(object);
+    if (object.otyp !== CORPSE && (object.otyp !== TIN || !tinCanBeOpened))
+        return false;
+    if (object.corpsenm === undefined || !Number.isInteger(object.corpsenm) || object.corpsenm < 0)
+        return false;
+    return object.corpsenm === PM_LIZARD || !!((MONSTER_FLAGS1[object.corpsenm] ?? 0) & M1_ACID);
 }
-// C muse.c:mon_consume_unstone()'s m_useup() step.
-async function consumeOneCure(monster, object, state) {
-    const quantity = object.quan ?? object.quantity ?? 1;
-    if (quantity <= 1) {
-        await destroyObjectFromMonsterInventory(monster, object, state);
-        return;
-    }
-    object.quan = object.quantity = quantity - 1;
-    object.owt = objectWeight(object);
-    monster.hasInventory = true;
-}
-// The visible quaff/eat or heard drinking/chewing half of
-// mon_consume_unstone().
-async function describeCure(monster, cure, visible, state, publish) {
-    if (visible) {
-        const tinned = cure.otyp === TIN;
-        const verb = cure.otyp === POT_ACID
-            ? 'quaffs' : tinned ? 'opens and eats the contents of' : 'eats';
-        const subject = monsterName(monster, { state, capitalized: true });
-        const name = await distantObjectName(cure, async (object) => (await inventoryItemDescription({
-            ...object, quan: 1, quantity: 1,
-        })), state);
-        await publish(`${subject} ${verb} ${name}.`);
-    }
-    else if (!heroIsDeaf(state)) {
-        const heard = formatHeardMessage(cure.otyp === POT_ACID ? 'drinking.' : 'chewing.', state);
-        if (heard)
-            await publish(heard);
-    }
-}
-// C muse.c:munstone(). TRUE if the monster ate something.
-export async function useMonsterStoningCure(monster, { byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
+// C muse.c:munstone().
+export async function munstone(monster, { byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     if (monsterHasStoneResistance(monster) || monster.meating || monsterIsHelpless(monster)) {
         return { consumed: false, died: false };
     }
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
-    const tinCanBeOpened = monsterCanOpenTin(monster);
+    const tinCanBeOpened = mcould_eat_tin(monster);
     const inventory = monster.minvent || monster.inventory || [];
-    const cure = inventory.find(object => curesStoning(monster, object, tinCanBeOpened));
+    const cure = inventory.find(object => cures_stoning(monster, object, tinCanBeOpened));
     if (!cure)
         return { consumed: false, died: false };
-    return consumeMonsterStoningCure(monster, cure, { byHero, publish, rollOne, state, stoning: true });
+    return mon_consume_unstone(monster, cure, { byHero, publish, rollOne, state, stoning: true });
 }
 // C muse.c:mon_consume_unstone().
-export async function consumeMonsterStoningCure(monster, cure, { byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, stoning, }) {
+export async function mon_consume_unstone(monster, cure, { byHero = false, publish = plineWithContinuation, rollOne = rnd, state = game, stoning, }) {
     const visible = canSeeMonster(monster);
     const tinned = cure.otyp === TIN;
     const food = cure.otyp === CORPSE || tinned;
@@ -2123,8 +2012,29 @@ export async function consumeMonsterStoningCure(monster, cure, { byHero = false,
                 await publish(speedMessage);
         }
     }
-    await describeCure(monster, cure, visible, state, publish);
-    await consumeOneCure(monster, cure, state);
+    if (visible) {
+        const verb = cure.otyp === POT_ACID
+            ? 'quaffs' : tinned ? 'opens and eats the contents of' : 'eats';
+        const subject = monsterName(monster, { state, capitalized: true });
+        const name = await distantObjectName(cure, async (object) => (await inventoryItemDescription({
+            ...object, quan: 1, quantity: 1,
+        })), state);
+        await publish(`${subject} ${verb} ${name}.`);
+    }
+    else if (!heroIsDeaf(state)) {
+        const heard = formatHeardMessage(cure.otyp === POT_ACID ? 'drinking.' : 'chewing.', state);
+        if (heard)
+            await publish(heard);
+    }
+    const quantity = cure.quan ?? cure.quantity ?? 1;
+    if (quantity <= 1) {
+        await destroyObjectFromMonsterInventory(monster, cure, state);
+    }
+    else {
+        cure.quan = cure.quantity = quantity - 1;
+        cure.owt = objectWeight(cure);
+        monster.hasInventory = true;
+    }
     if (acidic && !tinned && !monsterHasAcidResistance(monster)) {
         monster.mhp -= rollOne(15);
         if (visible) {
@@ -2160,30 +2070,97 @@ export async function consumeMonsterStoningCure(monster, cure, { byHero = false,
     monster.mlstmv = state.moves ?? 0;
     return { consumed: true, cure, died: false };
 }
-// C muse.c:munslime() and muse_unslime(): select the cure, then apply it.
-export async function tryMonsterUnslime(monster, { state = game, byHero = false, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
+// C muse.c:munslime().
+export async function munslime(monster, { state = game, byHero = false, publish = plineWithContinuation, random = rn2, rollDice = d, rollOne = rnd, } = {}) {
     requirePlayingGame(state);
     if (monsterIsSlimeproof(monster) || monster.meating || monsterIsHelpless(monster))
         return { cured: false, heroDied: false };
     monster.mstrategy = (monster.mstrategy ?? 0) & ~STRAT_WAITFORU;
-    const cure = selectSlimeCure(monster, state, random);
-    if (!cure)
-        return { cured: false, heroDied: false };
     const context = { state, byHero, publish, random, rollDice, rollOne };
+    if (!monster.mcan && !monster.mspec_used
+        && MONSTER_ATTACKS[monster.mnum]?.some(([method, damage]) => method === AT_BREA && damage === AD_FIRE))
+        return muse_unslime(monster, { kind: 'breath' }, context);
+    if (monsterIsAnimal(monster) || monsterIsMindless(monster.mnum))
+        return { cured: false, heroDied: false };
+    const object = (monster.minvent || monster.inventory || []).find(candidate => cures_sliming(monster, candidate));
+    if (object)
+        return muse_unslime(monster, { kind: 'item', object }, context);
+    const here = state.level.traps.find(trap => trap.tx === monster.mx && trap.ty === monster.my);
+    if (here?.ttyp === FIRE_TRAP)
+        return muse_unslime(monster, { kind: 'trap', trap: here }, context);
+    if (!MONSTER_MOVE[monster.mnum] || monster.mtrapped)
+        return { cured: false, heroDied: false };
+    const nearby = [];
+    for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
+        for (let y = monster.my - 1; y <= monster.my + 1; y++) {
+            if (isok(x, y) && isAccessibleAt(x, y, state)
+                && !monsterAtPosition(state.level, x, y)
+                && (x !== state.u.ux || y !== state.u.uy))
+                nearby.push({ x, y });
+        }
+    }
+    for (let index = 0; index < nearby.length; index++) {
+        const picked = index + random(nearby.length - index);
+        const point = nearby[picked];
+        const previous = nearby[index];
+        if (!point || !previous)
+            throw new RangeError('Slime-cure trap selection left its candidate range');
+        nearby[index] = point;
+        nearby[picked] = previous;
+        const trap = state.level.traps.find(candidate => candidate.tx === point.x && candidate.ty === point.y);
+        if (trap?.ttyp === FIRE_TRAP)
+            return muse_unslime(monster, { kind: 'trap', trap }, context);
+    }
+    return { cured: false, heroDied: false };
+}
+// C muse.c:muse_unslime().
+async function muse_unslime(monster, cure, context) {
+    const { state, byHero, publish, random, rollDice, rollOne } = context;
     let visible = canSeeMonster(monster);
     if (visible) {
         const subject = monsterName(monster, { state, capitalized: true });
         // C muse.c:green_mon() judges green by the display color;
         // hcolor(NH_GREEN) names the color, hallucination included.
-        const green = !heroIsHallucinating(state)
-            && [CLR_GREEN, CLR_BRIGHT_GREEN].includes(MONSTER_COLOR[monster.mnum] ?? -1);
+        const green = green_mon(monster, state);
         await publish(`${subject} starts turning ${green ? 'into ooze' : displayColorName('green', state)}.`);
     }
     adjustMonsterSpeed(monster, -4);
     let damage = 0;
     let cured = true;
     if (cure.kind === 'trap') {
-        await triggerCureTrap(monster, cure.trap, visible, context);
+        const trap = cure.trap;
+        const name = visible ? monsterName(monster, { state, capitalized: true }) : '';
+        if (monster.mx === trap.tx && monster.my === trap.ty) {
+            if (visible)
+                await publish(`${name} triggers ${trap.tseen ? 'the' : 'a'} fire trap!`);
+        }
+        else {
+            const oldX = monster.mx, oldY = monster.my;
+            await placeMonsterOnMap(monster, trap.tx, trap.ty);
+            await newsym(oldX, oldY);
+            if (monster.wormno)
+                await advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
+            await newsym(monster.mx, monster.my);
+            if (visible) {
+                const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
+                const floats = [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[monster.mnum] ?? -1);
+                let motion = 'moves';
+                if (floats)
+                    motion = 'floats';
+                else if (flags & M1_FLY)
+                    motion = 'flies';
+                else if (flags & M1_SLITHY)
+                    motion = 'slithers';
+                else if (flags & M1_AMORPHOUS)
+                    motion = 'oozes';
+                else if (!MONSTER_MOVE[monster.mnum])
+                    motion = 'wiggles';
+                else if ((flags & M1_NOLIMBS) === M1_NOLIMBS)
+                    motion = 'crawls';
+                await publish(`${name} ${motion} ${floats ? 'over' : 'onto'} ${trap.tseen ? 'the' : 'a'} fire trap!`);
+            }
+        }
+        await mintrap(monster, state, { forcetrap: true, random, rollDice, rollOne, publish });
     }
     else if (cure.kind === 'breath') {
         if (visible) {
@@ -2195,7 +2172,7 @@ export async function tryMonsterUnslime(monster, { state = game, byHero = false,
         damage = await hitMonsterWithRay(monster, byHero ? 21 : -21, 1, context);
     }
     else if (cure.object.otyp === SCR_FIRE) {
-        await presentMonsterScrollRead(monster, cure.object, context);
+        await mreadmsg(monster, cure.object, context);
         if (monster.mconf) {
             if (cansee(monster.mx, monster.my))
                 await publish('Oh, what a pretty fire!');
@@ -2215,7 +2192,9 @@ export async function tryMonsterUnslime(monster, { state = game, byHero = false,
         }
     }
     else if (cure.object.otyp === POT_OIL) {
-        const oil = splitOilPotion(cure.object, state);
+        const oil = cure.object.quan > 1 ? splitObjectStack(cure.object, 1, state) : cure.object;
+        if (!oil)
+            throw new Error('A slime cure must retain its carried oil stack');
         const wasLit = !!oil.lamplit;
         const sawLighting = visible && !wasLit;
         if (sawLighting) {
@@ -2238,9 +2217,9 @@ export async function tryMonsterUnslime(monster, { state = game, byHero = false,
     }
     else {
         if (cure.object.otyp === FIRE_HORN)
-            await presentMonsterHornUse(monster, cure.object, { ...context, self: true });
+            await mplayhorn(monster, cure.object, { ...context, self: true });
         else
-            await presentMonsterWandUse(monster, cure.object, { ...context, self: true });
+            await mzapwand(monster, cure.object, { ...context, self: true });
         damage = await hitMonsterWithRay(monster, byHero ? 1 : -1, 2, context);
     }
     if (state.program_state.gameover)
@@ -2278,46 +2257,8 @@ export async function tryMonsterUnslime(monster, { state = game, byHero = false,
     monster.mlstmv = state.moves;
     return { cured, heroDied: false };
 }
-// The item, breath, and fire-trap scan of munslime().
-function selectSlimeCure(monster, state, random) {
-    if (!monster.mcan && !monster.mspec_used
-        && MONSTER_ATTACKS[monster.mnum]?.some(([method, damage]) => method === AT_BREA && damage === AD_FIRE))
-        return { kind: 'breath' };
-    if (monsterIsAnimal(monster) || monsterIsMindless(monster.mnum))
-        return null;
-    const object = (monster.minvent || monster.inventory || []).find(candidate => itemCuresSliming(monster, candidate));
-    if (object)
-        return { kind: 'item', object };
-    const here = state.level.traps.find(trap => trap.tx === monster.mx && trap.ty === monster.my);
-    if (here?.ttyp === FIRE_TRAP)
-        return { kind: 'trap', trap: here };
-    if (!MONSTER_MOVE[monster.mnum] || monster.mtrapped)
-        return null;
-    const nearby = [];
-    for (let x = monster.mx - 1; x <= monster.mx + 1; x++) {
-        for (let y = monster.my - 1; y <= monster.my + 1; y++) {
-            if (isok(x, y) && isAccessibleAt(x, y, state)
-                && !monsterAtPosition(state.level, x, y)
-                && (x !== state.u.ux || y !== state.u.uy))
-                nearby.push({ x, y });
-        }
-    }
-    for (let index = 0; index < nearby.length; index++) {
-        const picked = index + random(nearby.length - index);
-        const point = nearby[picked];
-        const previous = nearby[index];
-        if (!point || !previous)
-            throw new RangeError('Slime-cure trap selection left its candidate range');
-        nearby[index] = point;
-        nearby[picked] = previous;
-        const trap = state.level.traps.find(candidate => candidate.tx === point.x && candidate.ty === point.y);
-        if (trap?.ttyp === FIRE_TRAP)
-            return { kind: 'trap', trap };
-    }
-    return null;
-}
 // C muse.c:cures_sliming().
-function itemCuresSliming(monster, object) {
+function cures_sliming(monster, object) {
     const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
     if (object.otyp === SCR_FIRE)
         return !(flags & (M1_NOEYES | M1_NOHANDS)) && !!monster.mcansee;
@@ -2326,65 +2267,15 @@ function itemCuresSliming(monster, object) {
     return object.spe > 0 && (object.otyp === WAN_FIRE
         || object.otyp === FIRE_HORN && speciesCanBlow(monster.mnum));
 }
-// The trap branch of muse_unslime().
-async function triggerCureTrap(monster, trap, visible, context) {
-    const { state, publish, random, rollDice, rollOne } = context;
-    const name = visible ? monsterName(monster, { state, capitalized: true }) : '';
-    if (monster.mx === trap.tx && monster.my === trap.ty) {
-        if (visible)
-            await publish(`${name} triggers ${trap.tseen ? 'the' : 'a'} fire trap!`);
-    }
-    else {
-        const oldX = monster.mx, oldY = monster.my;
-        await placeMonsterOnMap(monster, trap.tx, trap.ty);
-        await newsym(oldX, oldY);
-        if (monster.wormno)
-            await advanceMonsterWormBody(monster, { state, random, rollDice, rollOne });
-        await newsym(monster.mx, monster.my);
-        if (visible) {
-            const floats = [S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[monster.mnum] ?? -1);
-            await publish(`${name} ${locomotionThirdPerson(monster)} ${floats ? 'over' : 'onto'} ${trap.tseen ? 'the' : 'a'} fire trap!`);
-        }
-    }
-    await mintrap(monster, state, { forcetrap: true, random, rollDice, rollOne, publish });
+// C muse.c:green_mon().
+function green_mon(monster, state) {
+    return !heroIsHallucinating(state)
+        && [CLR_GREEN, CLR_BRIGHT_GREEN].includes(MONSTER_COLOR[monster.mnum] ?? -1);
 }
-// C muse.c:muse_unslime() composes vtense(fakename[0],
-// locomotion(mon->data, "move")); this is the conjugated third-person form
-// of mondata.c:locomotion() for that one message.
-function locomotionThirdPerson(monster) {
-    const flags = MONSTER_FLAGS1[monster.mnum] ?? 0;
-    if ([S_EYE, S_LIGHT].includes(MONSTER_SYMBOL[monster.mnum] ?? -1))
-        return 'floats';
-    if (flags & M1_FLY)
-        return 'flies';
-    if (flags & M1_SLITHY)
-        return 'slithers';
-    if (flags & M1_AMORPHOUS)
-        return 'oozes';
-    if (!MONSTER_MOVE[monster.mnum])
-        return 'wiggles';
-    return (flags & M1_NOLIMBS) === M1_NOLIMBS ? 'crawls' : 'moves';
-}
-// muse_unslime()'s splitobj(obj, 1L) for a stack of carried oil.
-function splitOilPotion(oil, state) {
-    if (oil.quan <= 1)
-        return oil;
-    const single = splitObjectStack(oil, 1, state);
-    if (!single)
-        throw new Error('A slime cure must retain its carried oil stack');
-    return single;
-}
-// ── moved from src/js/ray.ts ──
-function monsterWornObject(monster, mask) {
-    const inventory = monster?.minvent || monster?.inventory || [];
-    return inventory.find(object => ((object.owornmask ?? 0) & mask) !== 0)
-        || null;
-}
-// C muse.c:ureflects(): finds the reflecting worn item; callers print the
-// "It bounces off your ..." line ureflects() used to print itself, and
-// discoverHeroReflectionSource below performs its makeknown()
-// (discover_object()) for a reflecting shield or amulet.
-export function heroReflectionSource(state = game) {
+// C muse.c:ureflects().
+// Ray and gaze callers use this source in their reflection messages.
+// discoverHeroReflectionSource handles shield and amulet discovery.
+export function ureflects(state = game) {
     if (state.uarms?.otyp === SHIELD_OF_REFLECTION)
         return { object: state.uarms, noun: 'shield' };
     const weapon = state.uwep || state.u?.uwep;
@@ -2404,20 +2295,21 @@ export function heroReflectionSource(state = game) {
 }
 export function heroReflectsRay(state = game) {
     return !!(state.u?.reflection
-        || heroReflectionSource(state));
+        || ureflects(state));
 }
-export function monsterReflectionSource(monster, state = game) {
-    const shield = monsterWornObject(monster, W_ARMS);
+// C muse.c:mon_reflects().
+export function mon_reflects(monster, state = game) {
+    const shield = wornInSlot(monster, W_ARMS);
     if (shield?.otyp === SHIELD_OF_REFLECTION)
         return { noun: 'shield', object: shield };
     const weapon = monsterWieldedWeapon(monster);
     if (weaponReflects(weapon, state)) {
         return { noun: 'weapon', object: weapon };
     }
-    const amulet = monsterWornObject(monster, W_AMUL);
+    const amulet = wornInSlot(monster, W_AMUL);
     if (amulet?.otyp === AMULET_OF_REFLECTION)
         return { noun: 'amulet', object: amulet };
-    const suit = monsterWornObject(monster, W_ARM);
+    const suit = wornInSlot(monster, W_ARM);
     if (suit && [SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL]
         .includes(suit.otyp)) {
         return { noun: 'armor', object: suit };
@@ -2428,20 +2320,14 @@ export function monsterReflectionSource(monster, state = game) {
     return null;
 }
 export function monsterReflectsRay(monster, state = game) {
-    return monsterReflectionSource(monster, state) !== null;
+    return mon_reflects(monster, state) !== null;
 }
-export function discoverHeroReflectionSource(source = heroReflectionSource(), state = game) {
+export function discoverHeroReflectionSource(source = ureflects(), state = game) {
     const object = source?.object;
     if (!object || ![SHIELD_OF_REFLECTION, AMULET_OF_REFLECTION].includes(object.otyp)
         || state._knownObjectTypes?.has(object.otyp))
         return;
     exerciseWisdom(true, state);
     recordObjectKnowledge(object.otyp, state);
-}
-export function discoverReflectingShield(state = game) {
-    const shield = state.uarms;
-    if (!shield || shield.otyp !== SHIELD_OF_REFLECTION)
-        return;
-    discoverHeroReflectionSource({ object: shield, noun: 'shield' }, state);
 }
 //# sourceMappingURL=muse.js.map

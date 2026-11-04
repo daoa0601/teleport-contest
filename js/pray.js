@@ -54,7 +54,7 @@ import { punishHero, unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
 import { paranoidQuery } from './cmd.js';
 import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
-import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay } from './muse.js';
+import { discoverHeroReflectionSource, ureflects, heroReflectsRay } from './muse.js';
 import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { adjustWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './skills.js';
@@ -901,7 +901,7 @@ export async function godZapsHero(alignment, state = game) {
             if (heroIsBlind(state))
                 await pline("For some reason you're unaffected.");
             else {
-                const reflection = heroReflectionSource(state);
+                const reflection = ureflects(state);
                 if (reflection) {
                     await pline(`It reflects from your ${reflection.noun}.`);
                     discoverHeroReflectionSource(reflection, state);

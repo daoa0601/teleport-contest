@@ -21,7 +21,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position, MapLocation, Trap } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
-import type { RandomBelow, RollOne, RollDice, PublishMonsterMessage, MonsterCallLog, AttackTuple, MonsterAttackPaging, MonsterAction, MonsterMovementAction, MonsterMovement, MonsterMovementCapabilities, MonsterMoveCandidate, DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, MonsterMiscItem, MonsterAttackInitiation, MonsterMoveResult, MonsterTurnResult, MonsterDamageOptions, MonsterTrapResumeOptions, MonsterEngulfOptions, MonsterTrapEvent, MonsterRollingBoulderEvent, MonsterDistressEvent } from './monster_action_types.js';
+import type { RandomBelow, RollOne, RollDice, PublishMonsterMessage, MonsterCallLog, AttackTuple, MonsterAttackPaging, MonsterAction, MonsterMovementAction, MonsterMovement, MonsterMovementCapabilities, MonsterMoveCandidate, DochugContext, HeroAttack, HeroContactAttack, HeroAttackSequence, HeroAttackSlot, MonsterAttackInitiation, MonsterMoveResult, MonsterTurnResult, MonsterDamageOptions, MonsterTrapResumeOptions, MonsterEngulfOptions, MonsterTrapEvent, MonsterRollingBoulderEvent, MonsterDistressEvent } from './monster_action_types.js';
 import { veganCorpse } from './food_traits.js';
 import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL } from './monster_attack_types.js';
 import { M_SEEN_REFL, A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit, Is_rogue_level, DISMOUNT_THROWN, LEVEL_TELEP, RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, ACCESSIBLE, DRAWBRIDGE_UP, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, WEB, WT_TOOMUCH_DIAGONAL } from './const.js';
@@ -29,19 +29,18 @@ import { isok } from './cmd.js';
 import { watchDigging, digMonsterTunnel, diggingTimeToHole } from './dig.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { propertyIsActive } from './properties.js';
-import { heroHasHalfSpellDamage, learnWand } from './zap.js';
+import { heroHasHalfSpellDamage } from './zap.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_HAS_WEAPON_ATTACK, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterCanTeleport, monsterHasNoAttacks, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, monsterTypeName, speciesEatsCorpses } from './monster_data.js';
-import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, map_invisible, newsym } from './display.js';
+import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } from './display.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
-import { monsterSearchesForItem, selectMonsterOffensiveItem, useMonsterOffensiveItem, useMonsterBullwhip, lootMonsterContainer, prepareMonsterItemUse, presentMonsterQuaff as publishMonsterQuaff, presentMonsterWandUse, revealAggravatingMonster, finishDeferredMonsterMiscItem, monsterGainLevelRiseDestination, findMonsterDefensiveItem, useMonsterDefensiveItem, useMonsterMiscItem } from './muse.js';
+import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
 import { monsterHasMagicKey, artifactEmitsLight, artifactById } from './artifacts.js';
-import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monsterMayDigLocation, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, presentMonsterGrowth, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
+import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monsterMayDigLocation, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
 import { canTrack, monsterCorrodesBars, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep } from './mondata.js';
-import { adjustMonsterSpeed, setMonsterPermanentInvisibility } from './worn.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './rock_breakage.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
@@ -52,7 +51,6 @@ import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNa
 import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
 import {splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer} from './mkobj.js';
-import { tryCallObjectType } from './do.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
@@ -70,7 +68,7 @@ import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, le
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
-import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero, consumeMonsterItem } from './mthrowu.js';
+import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { swingMonsterWeapon, advanceHeroAttackSequence, beginMonsterHeroAttack, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
 import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
@@ -81,7 +79,7 @@ import { heroIsDisplaced } from './do_wear.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject } from './do_name.js';
-import { possessiveName, depth, dist2, distmin } from './hacklib.js';
+import { depth, dist2, distmin } from './hacklib.js';
 import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { heroGoldObject } from './hero_gold.js';
@@ -97,13 +95,10 @@ import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
 import { touchPetrifies } from './stoning.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
-import { monsterReflectsRay } from './muse.js';
 
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
-import { rndmonstAdj, growMonster } from './makemon.js';
 import { isQuantumBox } from './quantum_cat.js';
-import { ceilingName } from './terrain_name.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
@@ -1169,7 +1164,7 @@ export function monsterWantsFloorObject(
     const material = objectMaterial(object, state);
     if (monsterIsUnicorn(monster.mnum) && material !== GEMSTONE) return false;
     if (!monsterIsMindless(monster.mnum) && !monsterIsAnimal(monster)
-        && loadPercent < 75 && monsterSearchesForItem(monster, object, state)) return true;
+        && loadPercent < 75 && searches_for_item(monster, object, state)) return true;
 
     const flags = MONSTER_FLAGS2[monster.mnum] ?? 0;
     if ((flags & M2_GREEDY) && object.otyp === GOLD_PIECE && loadPercent < 95) return true;
@@ -1720,8 +1715,8 @@ async function moveHostile(
     const allowFlags = monAllowFlags(monster, state, rollOne, calls);
     const candidates = await mfndpos(monster, state, allowFlags);
     if (!candidates.length && !isUnicorn(monster)) {
-        const defense = findMonsterDefensiveItem(monster, state, { tryEscape: true, random });
-        if (defense && (await useMonsterDefensiveItem(monster, defense, { state, random, rollDice, rollOne })).nativeResult) {
+        const defense = find_defensive(monster, state, { tryEscape: true, random });
+        if (defense && (await use_defensive(monster, defense, { state, random, rollDice, rollOne })).nativeResult) {
             return finishMovement(
                 {
                     oldx,
@@ -2001,7 +1996,7 @@ export async function completeMonsterOffensiveAction(
     const previousDeferral = state._deferVisibleMonsterContact;
     state._deferVisibleMonsterContact = true;
     try {
-        const result = await useMonsterOffensiveItem(action.monster, offensive.choice, {
+        const result = await use_offensive(action.monster, offensive.choice, {
             state, random, rollDice, rollOne,
             publish: monsterAttackMessagePublisher(sequence.paging),
         });
@@ -2179,7 +2174,7 @@ export async function finishDochugAfterMovement(
             !range.nearby &&
             (monsterHasAvailableDistanceAttack(monster, limit => recordRandom(random, calls, limit)) ||
                 speciesHasWeaponAttack(dochugContext.entryMnum) ||
-                selectMonsterOffensiveItem(monster, state, {
+                find_offensive(monster, state, {
                     random: limit => recordRandom(random, calls, limit),
                 }));
         if (!canContinue) {
@@ -2658,9 +2653,9 @@ export async function takeMonsterTurn(
                 heroDied: true,
             },
         };
-    const defense = findMonsterDefensiveItem(monster, state, { random });
+    const defense = find_defensive(monster, state, { random });
     if (defense) {
-        const result = await useMonsterDefensiveItem(monster, defense, { state, random, rollDice, rollOne });
+        const result = await use_defensive(monster, defense, { state, random, rollDice, rollOne });
         if (result.nativeResult) return {
             calls, dochugContext,
             movement: {
@@ -2674,18 +2669,14 @@ export async function takeMonsterTurn(
             },
         };
     }
-    const miscItem = defense ? null : await useMonsterMiscItem(monster, state, random, calls);
-    if (miscItem && !(miscItem.kind === 'item-result' && !miscItem.nativeResult)) {
-        return {
-            calls,
-            dochugContext,
+    const miscChoice = defense ? null : await find_misc(monster, state, random, calls);
+    if (miscChoice) {
+        const result = await use_misc(monster, miscChoice, state, random, calls);
+        if (result.nativeResult) return {
+            calls, dochugContext,
             movement: {
-                oldx: monster.mx,
-                oldy: monster.my,
-                x: monster.mx,
-                y: monster.my,
-                moved: false,
-                usedMisc: miscItem,
+                oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my,
+                moved: false, usedMisc: result, heroDied: result.heroDied,
             },
         };
     }
@@ -3171,8 +3162,8 @@ export async function presentMonsterAction(
     if (action.movement.digestedInventory) return 'next-monster';
     // C dochug() returns immediately when item use spends the turn.
     if (action.movement?.usedDefense) return 'next-monster';
-    if (action.movement?.usedMisc?.kind === 'item-result'
-        && action.movement.usedMisc.nativeResult !== 0) return 'next-monster';
+    if (action.movement.usedMisc)
+        return action.movement.usedMisc.checkOccupation ? 'check-occupation' : 'next-monster';
     let { monster, movement } = action;
     // A fleeing teleport spends this actor's turn, even if no destination was found.
     if (movement?.fleeingRelocation || movement?.fleeingTeleportFailed) return 'next-monster';
@@ -3239,90 +3230,6 @@ export async function presentMonsterAction(
     }
 
     movement = action.movement;
-    if (movement?.usedMisc?.kind === 'polymorph-trap'
-        || movement?.usedMisc?.kind === 'wand-polymorph' || movement?.usedMisc?.kind === 'potion-polymorph')
-        await finishDeferredMonsterMiscItem(action, game);
-    if (movement?.usedMisc?.kind === 'potion-gain-level') {
-        const misc = movement.usedMisc;
-        const sawDrinking = await presentMonsterQuaff(monster, misc.object);
-        if (sawDrinking) {
-            if (misc.object.cursed) {
-                const destination = monsterGainLevelRiseDestination(monster, game);
-                if (destination) misc.riseDestination = destination;
-                await plineWithContinuation(destination
-                    ? `${visibleMonsterSubject(monster)} rises up, through the ${ceilingName(monster.mx, monster.my, game)}!`
-                    : `${visibleMonsterSubject(monster)} looks uneasy.`);
-                await tryCallObjectType(misc.object, game);
-            } else {
-                await plineWithContinuation(
-                    `${visibleMonsterSubject(monster)} seems more experienced.`,
-                );
-                learnObjectType(misc.object.otyp);
-            }
-        }
-        if (misc.object.cursed && !sawDrinking) {
-            const destination = monsterGainLevelRiseDestination(monster, game);
-            if (destination) misc.riseDestination = destination;
-        }
-        await finishDeferredMonsterMiscItem(action, game);
-        await presentMonsterGrowth(monster, misc.growth);
-        movement = action.movement;
-    }
-    if (movement?.usedMisc?.kind === 'potion-invisibility' || movement?.usedMisc?.kind === 'wand-invisibility') {
-        const misc = movement.usedMisc;
-        let sawDrinking;
-        if (misc.kind === 'wand-invisibility') {
-            sawDrinking = canSeeMonster(monster);
-            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
-        } else sawDrinking = await presentMonsterQuaff(monster, misc.object);
-        const nameBeforeInvisibility = monsterName(monster, { state: game });
-        await finishDeferredMonsterMiscItem(action, game);
-        await newsym(monster.mx, monster.my);
-        const stillSeen = canSpotMonster(monster);
-        if (sawDrinking && monster.minvis) {
-            if (stillSeen) {
-                await plineWithContinuation(
-                    `${possessiveName(nameBeforeInvisibility).replace(/^./, letter => letter.toUpperCase())} body takes on a ${heroIsHallucinating(game) ? 'normal' : 'strange'} transparency.`,
-                );
-            } else {
-                await plineWithContinuation(
-                    `Suddenly you cannot see ${nameBeforeInvisibility}.`,
-                );
-                if (cansee(monster.mx, monster.my))
-                    await map_invisible(monster.mx, monster.my);
-            }
-            learnObjectType(misc.object.otyp);
-        } else if (sawDrinking && !monster.minvis) {
-            await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} briefly seems to be transparent.`,
-            );
-        }
-        if (misc.kind === 'potion-invisibility') {
-            if (misc.object.cursed) await revealAggravatingMonster(monster, game);
-            await consumeMonsterItem(monster, misc.object, game);
-        }
-    }
-    if (movement?.usedMisc?.kind === 'bullwhip-disarm') {
-        await finishDeferredMonsterMiscItem(action, game);
-        if (game.program_state.gameover) return 'stop';
-    }
-    if (movement?.usedMisc?.kind === 'potion-speed' || movement?.usedMisc?.kind === 'wand-speed-monster') {
-        const misc = movement.usedMisc;
-        const seen = canSeeMonster(monster);
-        if (misc.kind === 'wand-speed-monster')
-            await presentMonsterWandUse(monster, misc.object, { state: game, self: true });
-        else await presentMonsterQuaff(monster, misc.object);
-        await finishDeferredMonsterMiscItem(action, game);
-        if (seen && misc.speedChanged) {
-            await plineWithContinuation(
-                `${visibleMonsterSubject(monster)} is suddenly moving ${
-                    misc.speedMuch ? 'much ' : ''
-                }faster.`,
-            );
-            learnWand(misc.object, { state: game });
-        }
-        if (misc.kind === 'potion-speed') await consumeMonsterItem(monster, misc.object, game);
-    }
     await presentMonsterMoveMessage(action, game);
     return 'check-occupation';
 }
@@ -3342,10 +3249,6 @@ export async function performMonsterTurn(
     }
 }
 
-// C muse.c:mquaffmsg(). Sensing the drinker does not reveal the potion.
-async function presentMonsterQuaff(monster: Monster, object: GameObject): Promise<boolean> {
-    return publishMonsterQuaff(monster, object, { state: requireInitializedGame() });
-}
 async function presentMonsterCuss(action: MonsterAction): Promise<void> {
     await publishMonsterCuss(action.monster, requireInitializedGame(), sides => {
         action.calls.push(`rn2(${sides})`);

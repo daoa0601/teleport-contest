@@ -230,7 +230,7 @@ creation. All were reduced, then traced to a missing loader field, not reported
 as game bugs. At move zero, native `stasis_until == 0` satisfies
 `teleport.c:noteleport_level`'s `stasis_until >= moves` test. The test-room fixture
 left the JS field undefined, changing the reroll in
-`muse.c:rnd_defensive_item` / `muse.js:randomDefensiveMonsterItem`.
+`muse.c:rnd_defensive_item` / `muse.js:rnd_defensive_item`.
 
 One reduced reproducer was:
 

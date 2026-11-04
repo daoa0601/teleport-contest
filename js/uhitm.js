@@ -90,7 +90,7 @@ import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DRDX, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SYMBOL, PM_GREEN_SLIME, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoAttacks, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
-import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
+import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
@@ -105,7 +105,7 @@ import { ghodHitsu } from './priest.js';
 import { hasWornProperty, propertyIsActive } from './properties.js';
 import { paranoidQuery } from './cmd.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { heroReflectionSource, heroReflectsRay } from './muse.js';
+import { ureflects, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, deleteObject, dopay, objectTypeKnown, tendedShop } from './shk.js';
@@ -2951,7 +2951,7 @@ async function slimeDefender(attacker, defender, context) {
         state, visible, publish, random, verbose: false,
     }) || random(4) !== 0 || monsterIsSlimeproof(defender))
         return result;
-    const cure = await tryMonsterUnslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
+    const cure = await munslime(defender, { state, byHero: false, publish, random, rollDice, rollOne });
     if (cure.heroDied)
         return { ...result, done: true, heroDied: true };
     if (!cure.cured && defender.mhp > 0) {
@@ -5080,7 +5080,7 @@ async function applyParalysisPassive({ monster, damage, state, publish, random, 
         // C evaluates ureflects()'s name argument even when nothing reflects.
         const reflectionOwner = possessiveName(displayedMonsterName(monster, { state, capitalized: true }));
         if (heroReflectsRay(state)) {
-            const source = heroReflectionSource(state);
+            const source = ureflects(state);
             await publish(`${reflectionOwner} gaze is reflected by your ${source?.noun || 'body'}.`);
             return { reflected: true, heroDied: false };
         }
@@ -5707,7 +5707,7 @@ export async function applyHeroNaturalSliming(monster, context) {
     if (specialAttackNegated(state.u, monster, { state, random })
         || random(4) !== 0 || monsterIsSlimeproof(monster))
         return normal;
-    const cure = await tryMonsterUnslime(monster, {
+    const cure = await munslime(monster, {
         state, byHero: true, publish, random, rollDice, rollOne,
     });
     if (cure.heroDied)
@@ -5726,7 +5726,7 @@ export async function applyHeroNaturalSliming(monster, context) {
 }
 // C uhitm.c:do_stone_mon(). A cure or life saving ends this hit.
 export async function petrifyMonsterDefender(monster, { publish = plineWithContinuation, visible = canSeeMonster(monster), ...options } = {}) {
-    const cure = await useMonsterStoningCure(monster, { ...options, publish });
+    const cure = await munstone(monster, { ...options, publish });
     if (cure.consumed && cure.heroDied)
         return { heroDied: true };
     if (cure.consumed)

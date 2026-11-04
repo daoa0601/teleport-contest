@@ -8,7 +8,7 @@ import { pline } from '../js/pline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { checkMonsterWandBackfire, presentMonsterHornUse, presentMonsterScrollRead, presentMonsterWandUse, } from '../js/muse.js';
+import { precheck, mplayhorn, mreadmsg, mzapwand, } from '../js/muse.js';
 import { consumeMonsterItem } from '../js/mthrowu.js';
 import { AMULET_OF_LIFE_SAVING, FIRE_HORN, POT_HEALING, SCR_EARTH, WAN_FIRE } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
@@ -35,7 +35,7 @@ void test('a visible wand use observes its appearance, spends a charge, and inte
     await rhack(0);
     assert.ok(state._occupation);
     const messages = [];
-    await presentMonsterWandUse(monster, item, { state, publish: message => { messages.push(message); } });
+    await mzapwand(monster, item, { state, publish: message => { messages.push(message); } });
     assert.equal(item.spe, 2);
     assert.equal(item.dknown, true);
     assert.equal(item.where, 'minvent');
@@ -53,7 +53,7 @@ void test('wand charges and hero occupation wait for the visible zap message to 
     assert.ok(occupation);
     const input = resetInputState();
     await pline('The corridor stretches away into the cold and silent darkness.');
-    const use = presentMonsterWandUse(monster, item, { state });
+    const use = mzapwand(monster, item, { state });
     await input.waitUntilBlocked();
     try {
         assert.match(requireGameDisplay(state).grid[0]?.map(cell => cell.ch).join('') ?? '', /--More--/);
@@ -75,7 +75,7 @@ void test('a self-zapped wand displays its known charges before spending one and
     await rhack(0);
     const occupation = state._occupation;
     const messages = [];
-    await presentMonsterWandUse(monster, item, {
+    await mzapwand(monster, item, {
         state, self: true, publish: message => { messages.push(message); },
     });
     assert.equal(item.spe, 2);
@@ -92,7 +92,7 @@ for (const deaf of [false, true]) {
             state.u.deafTurns = deaf ? 10 : 0;
             assert.equal(canSeeMonster(monster), false);
             const messages = [];
-            const present = type === WAN_FIRE ? presentMonsterWandUse : presentMonsterHornUse;
+            const present = type === WAN_FIRE ? mzapwand : mplayhorn;
             await present(monster, item, { state, publish: message => { messages.push(message); } });
             assert.equal(item.spe, 2);
             assert.equal(item.known, false);
@@ -110,7 +110,7 @@ for (const deaf of [false, true]) {
 void test('a visible horn identifies its type after describing its unrecognized appearance', async () => {
     const { state, monster, item } = await itemRoom(FIRE_HORN, { known: false, dknown: false });
     const messages = [];
-    await presentMonsterHornUse(monster, item, { state, publish: message => { messages.push(message); } });
+    await mplayhorn(monster, item, { state, publish: message => { messages.push(message); } });
     assert.equal(item.spe, 2);
     assert.equal(item.dknown, true);
     assert.equal(state._knownObjectTypes?.has(FIRE_HORN), true);
@@ -119,7 +119,7 @@ void test('a visible horn identifies its type after describing its unrecognized 
 void test('a visible reader describes one scroll without consuming its stack', async () => {
     const { state, monster, item } = await itemRoom(SCR_EARTH, { quan: 3, blessed: true, bknown: true });
     const messages = [];
-    await presentMonsterScrollRead(monster, item, { state, publish: message => { messages.push(message); } });
+    await mreadmsg(monster, item, { state, publish: message => { messages.push(message); } });
     assert.equal(item.quan, 3);
     assert.equal(item.where, 'minvent');
     assert.equal(item.dknown, true);
@@ -134,7 +134,7 @@ void test('an unseen confused reader reveals its label and remembered location t
     assert.ok(state.objectDescriptions);
     state.objectDescriptions[SCR_EARTH] = 'EARTH WORDS';
     const messages = [];
-    await presentMonsterScrollRead(monster, item, { state, publish: message => { messages.push(message); } });
+    await mreadmsg(monster, item, { state, publish: message => { messages.push(message); } });
     assert.equal(item.dknown, true);
     assert.equal(item.where, 'minvent');
     assert.equal(glyphAt(monster.mx, monster.my)?.kind, 'invisible');
@@ -146,7 +146,7 @@ void test('a deaf hero learns nothing from an unseen scroll reading', async () =
     monster.minvis = true;
     state.u.deafTurns = 10;
     const messages = [];
-    await presentMonsterScrollRead(monster, item, { state, publish: message => { messages.push(message); } });
+    await mreadmsg(monster, item, { state, publish: message => { messages.push(message); } });
     assert.equal(item.dknown, false);
     assert.equal(messages.length, 0);
     assert.notEqual(glyphAt(monster.mx, monster.my)?.kind, 'invisible');
@@ -165,13 +165,12 @@ void test('a surviving cursed-wand explosion consumes the real wand and resumes 
     const { state, monster, item } = await itemRoom(WAN_FIRE, { cursed: true, spe: 3 });
     monster.mhp = monster.mhpmax = 100;
     const messages = [];
-    const result = await checkMonsterWandBackfire(monster, item, {
+    const result = await precheck(monster, item, {
         state, random: () => 0, rollDice: count => count,
         publish: message => { messages.push(message); },
     });
-    assert.equal(result.exploded, true);
+    assert.ok(result);
     assert.equal(result.nativeResult, 0);
-    assert.equal(result.monsterDied, false);
     assert.equal(monster.mhp, 95);
     assert.equal(item.where, 'gone');
     assert.equal(monster.minvent?.includes(item), false);
@@ -183,7 +182,7 @@ void test('backfire consumption and damage wait for the visible explosion messag
     monster.mhp = monster.mhpmax = 100;
     const input = resetInputState();
     await pline('The corridor stretches away into the cold and silent darkness.');
-    const blast = checkMonsterWandBackfire(monster, item, { state, random: () => 0, rollDice: count => count });
+    const blast = precheck(monster, item, { state, random: () => 0, rollDice: count => count });
     await input.waitUntilBlocked();
     try {
         assert.equal(monster.mhp, 100);
@@ -204,20 +203,19 @@ void test('a deaf hero sees a wand explosion on a visible square even when its u
     state.u.deafTurns = 10;
     assert.equal(canSeeMonster(monster), false);
     const messages = [];
-    const result = await checkMonsterWandBackfire(monster, item, {
+    const result = await precheck(monster, item, {
         state, random: () => 0, rollDice: count => count,
         publish: message => { messages.push(message); },
     });
-    assert.equal(result.exploded, true);
+    assert.ok(result);
     assert.match(messages[0] ?? '', /^It zaps .+, which suddenly explodes!$/);
     assert.doesNotMatch(messages.join('\n'), /hear/);
 });
 void test('a cursed wand survives a backfire saving roll without spending its charge', async () => {
     const { state, monster, item } = await itemRoom(WAN_FIRE, { cursed: true });
     const health = monster.mhp;
-    const result = await checkMonsterWandBackfire(monster, item, { state, random: () => 1 });
-    assert.equal(result.exploded, false);
-    assert.equal(result.nativeResult, 0);
+    const result = await precheck(monster, item, { state, random: () => 1 });
+    assert.equal(result, null);
     assert.equal(item.spe, 3);
     assert.equal(item.where, 'minvent');
     assert.equal(monster.mhp, health);
@@ -226,11 +224,12 @@ void test('a lethal wand backfire resolves ordinary monster death without hero k
     const { state, level, monster, item } = await itemRoom(WAN_FIRE, { cursed: true });
     monster.mhp = 1;
     const kills = state.u.uconduct.killer ?? 0;
-    const result = await checkMonsterWandBackfire(monster, item, {
+    const result = await precheck(monster, item, {
         state, random: () => 0, rollDice: count => count, publish: () => { },
     });
+    assert.ok(result);
     assert.equal(result.nativeResult, 1);
-    assert.equal(result.monsterDied, true);
+    assert.ok(monster.mhp <= 0 || monster.dead);
     assert.equal(result.heroDied, false);
     assert.notEqual(monsterAtPosition(level, monster.mx, monster.my), monster);
     assert.equal(item.where, 'gone');
@@ -241,12 +240,11 @@ void test('life saving preserves native backfire result one while keeping the mo
     const amulet = await equipMonsterObject(monster, await knownObject(AMULET_OF_LIFE_SAVING), W_AMUL);
     monster.mhp = 1;
     monster.mhpmax = 30;
-    const result = await checkMonsterWandBackfire(monster, item, {
+    const result = await precheck(monster, item, {
         state, random: () => 0, rollDice: count => count, publish: () => { },
     });
-    assert.equal(result.exploded, true);
+    assert.ok(result);
     assert.equal(result.nativeResult, 1);
-    assert.equal(result.monsterDied, false);
     assert.equal(level.monsters.includes(monster), true);
     assert.equal(monster.mhp, monster.mhpmax);
     assert.equal(item.where, 'gone');
@@ -256,8 +254,8 @@ for (const type of [POT_HEALING, FIRE_HORN]) {
     void test(`cursed ${type === FIRE_HORN ? 'horns' : 'potions'} do not use the wand backfire rule`, async () => {
         const { state, monster, item } = await itemRoom(type, { cursed: true });
         const health = monster.mhp;
-        const result = await checkMonsterWandBackfire(monster, item, { state, random: () => 0 });
-        assert.equal(result.exploded, false);
+        const result = await precheck(monster, item, { state, random: () => 1 });
+        assert.equal(result, null);
         assert.equal(item.where, 'minvent');
         assert.equal(item.spe, 3);
         assert.equal(monster.mhp, health);

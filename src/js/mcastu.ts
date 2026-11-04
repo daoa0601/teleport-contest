@@ -23,7 +23,7 @@ import { applyRayFloorFeatures, destroyElectricInventory, destroyFireInventory, 
 import { burnHeroArmorByFire, igniteItems } from './trap.js';
 import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { discoverHeroReflectionSource, heroReflectionSource } from './muse.js';
+import { discoverHeroReflectionSource, ureflects } from './muse.js';
 
 import { flashBurn } from './zap.js';
 
@@ -574,7 +574,7 @@ async function mcastFirePillar(ctx: McastuSpellContext): Promise<McastuSpellOutc
 async function mcastLightning(ctx: McastuSpellContext): Promise<McastuSpellOutcome> {
     const { state } = ctx;
     const effectLineDismissal = await ctx.publish('A bolt of lightning strikes down at you from above!');
-    const reflection = heroReflectionSource(state);
+    const reflection = ureflects(state);
     if (reflection) {
         await ctx.publish(`It bounces off your ${reflection.noun}.`);
         discoverHeroReflectionSource(reflection, state);

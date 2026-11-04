@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { consumeMonsterStoningCure, useMonsterStoningCure } from '../js/muse.js';
+import { mon_consume_unstone, munstone } from '../js/muse.js';
 import { POT_ACID } from '../js/object_data.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -24,7 +24,7 @@ for (const adjacent of [true, false]) {
         game.objectDescriptions[POT_ACID] = 'pink';
         const messages: string[] = [];
 
-        const result = await useMonsterStoningCure(monster, {
+        const result = await munstone(monster, {
             state: game, rollOne: () => 1, publish: message => { messages.push(message); },
         });
 
@@ -48,7 +48,7 @@ for (const species of ['bat', 'giant bat', 'vampire bat']) {
         assert.ok(lizard);
         const messages: string[] = [];
 
-        await consumeMonsterStoningCure(monster, lizard, {
+        await mon_consume_unstone(monster, lizard, {
             state: game, stoning: false, publish: message => { messages.push(message); },
         });
 

@@ -6,7 +6,7 @@ import { A_WIS, G_EXTINCT, NO_MINVENT } from '../js/const.js';
 import { canSpotMonster, canSeeMonster } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { findMonsterDefensiveItem, useMonsterDefensiveItem } from '../js/muse.js';
+import { find_defensive, use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_SPEED } from '../js/object_data.js';
@@ -108,13 +108,13 @@ for (const wisdom of [3, 18]) {
             await addObjectToMonsterInventory(monster, potion);
             game._knownObjectTypes = new Set();
             game.u.acurr.a[A_WIS] = game.u.amax.a[A_WIS] = wisdom;
-            const choice = findMonsterDefensiveItem(monster, game);
+            const choice = find_defensive(monster, game);
             assert.ok(choice);
             assert.equal(choice.kind, 'healing');
             initRng(BigInt(seed));
             pushKeys(' '.repeat(20));
 
-            await useMonsterDefensiveItem(monster, choice, { state: game });
+            await use_defensive(monster, choice, { state: game });
 
             assert.equal(game._knownObjectTypes.has(POT_HEALING), true);
             const exercise = game.u._exercise?.[A_WIS] ?? 0;

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { AIR, HOLE, MM_ANGRY, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { useMonsterDefensiveItem } from '../js/muse.js';
+import { use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { WAN_DIGGING } from '../js/object_data.js';
 import { makeBlinded } from '../js/potion.js';
@@ -26,7 +26,7 @@ void test('a digger on air reports its failed pit like an occupied square', asyn
     assert.ok(wand);
     const messages: string[] = [];
 
-    const result = await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    const result = await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
 
@@ -48,7 +48,7 @@ void test('a digger opens a hole and falls through to the next level', async () 
     assert.ok(wand);
     const messages: string[] = [];
 
-    const result = await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    const result = await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
 
@@ -76,7 +76,7 @@ void test('a blind hero hears an unseen digger crash through the floor', async (
     await vision_recalc(0);
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, { kind: 'digging', object: wand }, {
+    await use_defensive(monster, { kind: 'digging', object: wand }, {
         state: game, publish: message => { messages.push(message); }, rollOne: () => 1,
     });
 

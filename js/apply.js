@@ -93,7 +93,7 @@ import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './read.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery } from './cmd.js';
-import { monsterReflectionSource } from './muse.js';
+import { mon_reflects } from './muse.js';
 import { rayPositionIsOpen } from './zap.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
@@ -1021,7 +1021,7 @@ async function showMonsterReflection(monster, object, mirror, invisible, state) 
             await pline(`${name()} doesn't have a reflection.`);
     }
     else if (able && monster.mnum === MEDUSA) {
-        const reflection = monsterReflectionSource(monster, state);
+        const reflection = mon_reflects(monster, state);
         if (reflection) {
             await pline(`The gaze is reflected away by ${possessiveName(monsterName(monster))} ${reflection.noun}!`);
             if (['shield', 'amulet'].includes(reflection.noun)) {

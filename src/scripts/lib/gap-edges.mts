@@ -340,15 +340,25 @@ export async function compareEdges(root: string, tree: CSourceTree, cacheDir: st
     const unmapped: { file: string; function: string }[] = [];
     for (const [caller, callees] of [...graph.calls].sort((a, b) => a[0].localeCompare(b[0]))) {
         const file = graph.fileOf.get(caller) ?? '?';
-        const byName = [...new Set(portNames(caller).flatMap(name => index.byName.get(name) ?? []))];
+        // Two C files can define names that normalize alike: a port function
+        // whose comment block opens with muse.c's `mbhit()` is not
+        // artifact.c's `Mb_hit()`.
+        const portsCaller = (fn: PortFunction): boolean => {
+            const first = leadingComments(fn)[0];
+            const origin = originCitation(first);
+            const originFile = first === undefined ? undefined : /^\/\/\s*(?:C\s+)?([A-Za-z0-9_]+\.[ch]):/.exec(first)?.[1];
+            return !origin || origin === caller || normalizedName(origin) !== normalizedName(caller) || originFile === file;
+        };
+        const ownName = (index.byName.get(normalizedName(caller)) ?? []).filter(portsCaller);
+        const byName = [...new Set([...ownName,
+            ...(aliases.get(caller) ?? []).flatMap(name => index.byName.get(normalizedName(name)) ?? [])])];
         // A citation counts when the C name itself has no same-named port
         // function; an alias adds counterparts but never hides a citation.
         // `ownOriginOnly` (the owners view) reads only a comment block that
         // opens with the port's own `C file.c:name()` citation, so prose
         // mentions of other C functions cannot claim ownership.
-        const ownName = index.byName.get(normalizedName(caller)) ?? [];
         const counterparts = [...new Set([...byName,
-            ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []))])];
+            ...(ownName.length ? [] : portNames(caller).flatMap(name => citationIndex.get(name) ?? []).filter(portsCaller))])];
         if (!counterparts.length) { unmapped.push({ file, function: caller }); continue; }
         const reached = new Set<string>(), cited = new Set<string>(), rawWords: string[][] = [];
         for (const fn of counterparts) {

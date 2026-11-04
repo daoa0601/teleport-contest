@@ -7,7 +7,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { makeHallucinated } from '../js/potion.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { useMonsterOffensiveItem } from '../js/muse.js';
+import { use_offensive } from '../js/muse.js';
 import { BOULDER, EXPENSIVE_CAMERA, FROST_HORN, POT_CONFUSION, ROCK, SCR_EARTH, WAN_MAGIC_MISSILE, WAN_STRIKING, WAN_TELEPORTATION, } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { heroIsBlind } from '../js/senses.js';
@@ -42,13 +42,13 @@ void test('the first attack-wand shot misses and trains the next charged shot', 
     const hp = state.u.uhp;
     const options = { state, random: () => 0, rollOne: () => 1,
         rollDice: (count, sides) => count * sides, publish: async () => { } };
-    const first = await useMonsterOffensiveItem(orc, { kind: 'ray-wand', object: wand }, options);
+    const first = await use_offensive(orc, { kind: 'ray-wand', object: wand }, options);
     assert.equal(first.nativeResult, 2);
     assert.equal(state.u.uhp, hp);
     assert.equal(wand.spe, 1);
     assert.equal(orc.mwandexp, true);
     assert.equal(state._knownObjectTypes?.has(WAN_MAGIC_MISSILE), true);
-    const second = await useMonsterOffensiveItem(orc, { kind: 'ray-wand', object: wand }, options);
+    const second = await use_offensive(orc, { kind: 'ray-wand', object: wand }, options);
     assert.equal(second.heroDied, false);
     assert.ok(state.u.uhp < hp);
     assert.equal(wand.spe, 0);
@@ -61,7 +61,7 @@ void test('an experienced frost horn uses its rolled ray strength and spends one
     const horn = await knownObject(FROST_HORN, { spe: 2 });
     await addObjectToMonsterInventory(orc, horn);
     const hp = state.u.uhp;
-    const result = await useMonsterOffensiveItem(orc, { kind: 'horn', object: horn }, {
+    const result = await use_offensive(orc, { kind: 'horn', object: horn }, {
         state, random: limit => limit - 1, rollOne: () => 1,
         rollDice: (count, sides) => count * sides, publish: async () => { },
     });
@@ -77,10 +77,10 @@ void test('immediate striking also learns from its first missed shot', async () 
     const hp = state.u.uhp;
     const options = { state, random: () => 0, rollOne: () => 1,
         rollDice: (count, sides) => count * sides, publish: async () => { } };
-    await useMonsterOffensiveItem(orc, { kind: 'immediate-wand', object: wand }, options);
+    await use_offensive(orc, { kind: 'immediate-wand', object: wand }, options);
     assert.equal(state.u.uhp, hp);
     assert.equal(orc.mwandexp, true);
-    await useMonsterOffensiveItem(orc, { kind: 'immediate-wand', object: wand }, options);
+    await use_offensive(orc, { kind: 'immediate-wand', object: wand }, options);
     assert.ok(state.u.uhp < hp);
     assert.equal(wand.spe, 0);
 });
@@ -91,7 +91,7 @@ void test('teleporting at a remembered empty position spends a charge without le
     orc.muy = 8;
     const wand = await knownObject(WAN_TELEPORTATION, { spe: 2 });
     await addObjectToMonsterInventory(orc, wand);
-    const result = await useMonsterOffensiveItem(orc, { kind: 'immediate-wand', object: wand }, {
+    const result = await use_offensive(orc, { kind: 'immediate-wand', object: wand }, {
         state, random: () => 0, publish: async () => { },
     });
     assert.equal(result.nativeResult, 2);
@@ -108,7 +108,7 @@ for (const fatal of [false, true]) {
         const wand = await knownObject(WAN_MAGIC_MISSILE, { spe: 3, cursed: true });
         await addObjectToMonsterInventory(orc, wand);
         const hp = state.u.uhp;
-        const result = await useMonsterOffensiveItem(orc, { kind: 'ray-wand', object: wand }, {
+        const result = await use_offensive(orc, { kind: 'ray-wand', object: wand }, {
             state, random: () => 0, rollDice: (count, sides) => count * sides, publish: async () => { },
         });
         assert.equal(result.nativeResult, fatal ? 1 : 0);
@@ -130,7 +130,7 @@ void test('a thrown potion keeps its remaining stack and hits an intervening mon
     await addObjectToMonsterInventory(orc, potion);
     const hp = state.u.uhp;
     const messages = [];
-    const result = await useMonsterOffensiveItem(orc, { kind: 'potion', object: potion }, {
+    const result = await use_offensive(orc, { kind: 'potion', object: potion }, {
         state, publish: async (message) => { messages.push(message); },
     });
     assert.equal(result.nativeResult, 2);
@@ -152,7 +152,7 @@ for (const [label, blessed, cursed, count] of [
         const hp = orc.mhp;
         const input = resetInputState();
         installPagerInput(input, { expected: /reads|rumbles|boulder|hit|killed/, limit: 12 });
-        const result = await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
+        const result = await use_offensive(orc, { kind: 'earth-scroll', object: scroll }, { state });
         assert.equal(result.nativeResult, 2);
         assert.equal(scroll.quan, 1);
         assert.equal(scroll.where, 'minvent');
@@ -172,7 +172,7 @@ void test('a confused earth reader drops rock stacks instead of boulders', async
     await addObjectToMonsterInventory(orc, scroll);
     const input = resetInputState();
     installPagerInput(input, { expected: /reads|rumbles|confused|rocks|hit|mispronounc/, limit: 12 });
-    await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
+    await use_offensive(orc, { kind: 'earth-scroll', object: scroll }, { state });
     const rocks = floorObjects(state.level).filter(object => object.otyp === ROCK);
     assert.equal(rocks.length, 8);
     assert.ok(rocks.every(object => object.quan >= 2 && object.quan <= 6));
@@ -187,7 +187,7 @@ void test('a blessed earth scroll includes the adjacent hero while sparing its r
     const readerHp = orc.mhp;
     const input = resetInputState();
     installPagerInput(input, { expected: /reads|rumbles|boulder|hit/, limit: 12 });
-    await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
+    await use_offensive(orc, { kind: 'earth-scroll', object: scroll }, { state });
     assert.ok(state.u.uhp < hp);
     assert.equal(orc.mhp, readerHp);
     assert.ok(floorObjectsAt(state.level, state.u.ux, state.u.uy).some(object => object.otyp === BOULDER));
@@ -208,7 +208,7 @@ void test('earth scrolls skip closed doors, solid terrain and air squares', asyn
     await addObjectToMonsterInventory(orc, scroll);
     const input = resetInputState();
     installPagerInput(input, { expected: /reads|rumbles|boulder|hit/, limit: 12 });
-    await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
+    await use_offensive(orc, { kind: 'earth-scroll', object: scroll }, { state });
     for (const y of [9, 10, 11])
         assert.equal(floorObjectsAt(state.level, 11, y).length, 0);
     assert.equal(floorObjects(state.level).filter(object => object.otyp === BOULDER).length, 6);
@@ -222,7 +222,7 @@ void test('a reader killed by its own earth scroll cannot drop the consumed scro
     const experience = state.u.uexp;
     const input = resetInputState();
     installPagerInput(input, { expected: /reads|rumbles|boulder|hit|killed/, limit: 12 });
-    const result = await useMonsterOffensiveItem(orc, { kind: 'earth-scroll', object: scroll }, { state });
+    const result = await use_offensive(orc, { kind: 'earth-scroll', object: scroll }, { state });
     assert.equal(result.nativeResult, 1);
     assert.notEqual(monsterAtPosition(state.level, orc.mx, orc.my), orc);
     assert.equal(scroll.where, 'gone');
@@ -235,7 +235,7 @@ void test('camera charges and blindness wait for the actual picture message page
     const camera = await knownObject(EXPENSIVE_CAMERA, { spe: 3 });
     await addObjectToMonsterInventory(orc, camera);
     const input = resetInputState();
-    const action = useMonsterOffensiveItem(orc, { kind: 'camera', object: camera }, { state, rollOne: () => 12 });
+    const action = use_offensive(orc, { kind: 'camera', object: camera }, { state, rollOne: () => 12 });
     await input.waitUntilBlocked();
     assert.equal(camera.spe, 3);
     assert.equal(heroIsBlind(state), false);
@@ -257,7 +257,7 @@ void test('a camera still hurts a gremlin whose blindness resistance blocks the 
     const orc = await aimedOrc();
     const camera = await knownObject(EXPENSIVE_CAMERA, { spe: 2 });
     await addObjectToMonsterInventory(orc, camera);
-    const result = await useMonsterOffensiveItem(orc, { kind: 'camera', object: camera }, { state, publish: async () => { } });
+    const result = await use_offensive(orc, { kind: 'camera', object: camera }, { state, publish: async () => { } });
     assert.equal(result.nativeResult, 1);
     assert.equal(heroIsBlind(state), false);
     assert.ok(state.u.mh >= 95 && state.u.mh < 100);
@@ -271,7 +271,7 @@ void test('a hallucinating blind hero still hears the photographers native chees
     const camera = await knownObject(EXPENSIVE_CAMERA, { spe: 1 });
     await addObjectToMonsterInventory(orc, camera);
     const messages = [];
-    await useMonsterOffensiveItem(orc, { kind: 'camera', object: camera }, {
+    await use_offensive(orc, { kind: 'camera', object: camera }, {
         state, publish: async (message) => { messages.push(message); },
     });
     assert.deepEqual(messages, ['"Say cheese!"']);

@@ -8,7 +8,7 @@ import { monsterCanCarryObject, monsterCanTouchObject, monsterCarryAmount } from
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { removeObjectFromMonsterInventory } from '../js/monworn.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
-import { monsterSearchesForItem } from '../js/muse.js';
+import { searches_for_item } from '../js/muse.js';
 import { monsterWantsFloorObject } from '../js/monmove.js';
 import { setMonsterSpecies } from '../js/mondata.js';
 import { addObjectToContainer } from '../js/mkobj.js';
@@ -29,7 +29,7 @@ async function interestRoom(species = 'goblin') {
     monster.mpeaceful = false;
     return { monster, state,
         wants: (object) => monsterWantsFloorObject(monster, object, state),
-        searches: (object) => monsterSearchesForItem(monster, object, state) };
+        searches: (object) => searches_for_item(monster, object, state) };
 }
 void test('intelligent monsters seek useful wands and medicine without a general magic-collection trait', async () => {
     const { wants } = await interestRoom();

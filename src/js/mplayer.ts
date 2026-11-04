@@ -23,7 +23,7 @@ import { monsterAtPosition } from './steed.js';
 import type { Monster } from './monster_types.js';
 import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
-import { randomOffensiveMonsterItem, randomDefensiveMonsterItem, randomMiscMonsterItem } from './muse.js';
+import { rnd_offensive_item, rnd_defensive_item, rnd_misc_item } from './muse.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
@@ -77,11 +77,11 @@ export async function createPlayerMonster(
     await givePlayerWeapon(monster, equipment.weapon, special);
     if (special) await equipSpecialPlayer(monster, equipment);
     for (let count = rnd(3); count > 0; count--)
-        await giveMonsterStartingObject(monster, randomOffensiveMonsterItem(monster));
+        await giveMonsterStartingObject(monster, rnd_offensive_item(monster));
     for (let count = rnd(3); count > 0; count--)
-        await giveMonsterStartingObject(monster, randomDefensiveMonsterItem(monster));
+        await giveMonsterStartingObject(monster, rnd_defensive_item(monster));
     for (let count = rnd(3); count > 0; count--)
-        await giveMonsterStartingObject(monster, randomMiscMonsterItem(monster));
+        await giveMonsterStartingObject(monster, rnd_misc_item(monster));
     return monster;
 }
 

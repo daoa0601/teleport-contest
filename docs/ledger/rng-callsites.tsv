@@ -1420,9 +1420,9 @@ src/js/mhitm.ts	applyMonsterContactPassive	random	"[""2""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""3""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""30""]"	constant
 src/js/mhitm.ts	applyMonsterContactPassive	random	"[""6""]"	constant
-src/js/muse.ts	lootMonsterContainer	random	"[""10""]"	constant
-src/js/muse.ts	lootMonsterContainer	random	"[""contents.length + 1""]"	constant
-src/js/muse.ts	lootMonsterContainer	random	"[""contents.length""]"	unproved
+src/js/muse.ts	mloot_container	random	"[""10""]"	constant
+src/js/muse.ts	mloot_container	random	"[""contents.length + 1""]"	constant
+src/js/muse.ts	mloot_container	random	"[""contents.length""]"	unproved
 src/js/ambient_sounds.ts	deathReply	rn2	"[""10""]"	constant
 src/js/ambient_sounds.ts	deathReply	rn2	"[""3""]"	constant
 src/js/ambient_sounds.ts	humanoidReply	rn2	"[""2""]"	constant
@@ -1471,13 +1471,13 @@ src/js/mon.ts	woodGolemMaterial	rn2	"[""3""]"	constant
 src/js/mon.ts	createSteamVortexDeathCloud	random	"[""10""]"	constant
 src/js/uhitm.ts	resolveDeathTouchContact	random	"[""20""]"	constant
 src/js/mcastu.ts	touchHeroWithDeath	rollDice	"[""8"", ""6""]"	constant
-src/js/muse.ts	findMonsterDefensiveItem	random	"[""3""]"	constant
-src/js/muse.ts	findMonsterDefensiveItem	random	"[""3""]"	constant
-src/js/muse.ts	teleportForEscape	random	"[""3""]"	constant
-src/js/muse.ts	useMonsterDefensiveItem	random	"[""4""]"	constant
-src/js/muse.ts	useMonsterDefensiveItem	random	"[""73""]"	constant
-src/js/muse.ts	useMonsterDefensiveItem	rollDice	"[""6 + 2 * sign"", ""choice.kind === 'healing' ? 4 : 8""]"	constant
-src/js/muse.ts	useMonsterDefensiveItem	rollOne	"[""4""]"	constant
+src/js/muse.ts	find_defensive	random	"[""3""]"	constant
+src/js/muse.ts	find_defensive	random	"[""3""]"	constant
+src/js/muse.ts	m_tele	random	"[""3""]"	constant
+src/js/muse.ts	use_defensive	random	"[""4""]"	constant
+src/js/muse.ts	use_defensive	random	"[""73""]"	constant
+src/js/muse.ts	use_defensive	rollDice	"[""6 + 2 * sign"", ""choice.kind === 'healing' ? 4 : 8""]"	constant
+src/js/muse.ts	use_defensive	rollOne	"[""4""]"	constant
 src/js/mhitu.ts	infectHeroWithMonsterDisease	random	"[""currentAttribute(A_CON, state)""]"	invariant
 src/js/mhitm.ts	displaceMonster	random	"[""7""]"	constant
 src/js/monmove.ts	resolveMonsterDoorPassage	random	"[""2""]"	constant
@@ -1536,10 +1536,10 @@ src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""4""]"	unproved
 src/js/makemon.ts	newMonsterHitPoints	d	"[""level"", ""8""]"	unproved
 src/js/makemon.ts	newMonsterHitPoints	rnd	"[""4""]"	constant
 src/js/dothrow.ts	tryUnarmedStagger	rnd	"[""100""]"	constant
-src/js/muse.ts	checkMonsterWandBackfire	random	"[""WAND_BACKFIRE_CHANCE""]"	constant
-src/js/muse.ts	checkMonsterWandBackfire	rollDice	"[""object.spe + 2"", ""6""]"	unproved
-src/js/muse.ts	prepareMonsterItemUse	random	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
-src/js/muse.ts	prepareMonsterItemUse	random	"[""2""]"	constant
+src/js/muse.ts	precheck	random	"[""WAND_BACKFIRE_CHANCE""]"	constant
+src/js/muse.ts	precheck	rollDice	"[""object.spe + 2"", ""6""]"	unproved
+src/js/muse.ts	precheck	random	"[""13 + 2 * (state.mvitals?.[species]?.born ?? 0)""]"	unproved
+src/js/muse.ts	precheck	random	"[""2""]"	constant
 src/js/dokick.ts	abuseKickedPet	rnd	"[""potentialDamage""]"	guarded
 src/js/dokick.ts	levitatingKickMisses	rn2	"[""3""]"	constant
 src/js/dokick.ts	prepareKick	rn2	"[""noDamageRange""]"	constant
@@ -1586,10 +1586,10 @@ src/js/uhitm.ts	resolveNurseContact	rollDice	"[""2 * hero.ulevel"", ""10""]"	inv
 src/js/uhitm.ts	resolveNurseContact	rollDice	"[""3"", ""6""]"	constant
 src/js/uhitm.ts	resolveNurseContact	rollOne	"[""7""]"	constant
 src/js/uhitm.ts	resolveNurseContact	rollOne	"[""7""]"	constant
-src/js/muse.ts	photographHero	rollOne	"[""51""]"	constant
-src/js/muse.ts	useMonsterOffensiveItem	random	"[""6""]"	constant
-src/js/muse.ts	selectMonsterOffensiveItem	random	"[""10""]"	constant
-src/js/muse.ts	selectMonsterOffensiveItem	random	"[""6""]"	constant
+src/js/muse.ts	use_offensive	rollOne	"[""51""]"	constant
+src/js/muse.ts	use_offensive	random	"[""6""]"	constant
+src/js/muse.ts	find_offensive	random	"[""10""]"	constant
+src/js/muse.ts	find_offensive	random	"[""6""]"	constant
 src/js/uhitm.ts	applyHeroContactPassive	random	"[""3""]"	constant
 src/js/uhitm.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/uhitm.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
@@ -1648,7 +1648,7 @@ src/js/mon.ts	mcalcmove	random	"[""NORMAL_SPEED""]"	constant
 src/js/mcastu.ts	summonMonsterInsects	rnd	"[""Math.trunc(level / 2)""]"	guarded
 src/js/makemon.ts	giveMonsterStartingObject	rn2	"[""4""]"	constant
 src/js/mon.ts	createStoneRemains	rn2	"[""2 + Number(frequency > 2)""]"	constant
-src/js/muse.ts	consumeMonsterStoningCure	rollOne	"[""15""]"	constant
+src/js/muse.ts	mon_consume_unstone	rollOne	"[""15""]"	constant
 src/js/dog.ts	tameMonster	rn2	"[""6""]"	constant
 src/js/dog.ts	tameMonster	rnd	"[""10""]"	constant
 src/js/zap.ts	restoreMonsterTraits	rollOne	"[""speciesLevel + 1""]"	invariant
@@ -1657,17 +1657,17 @@ src/js/trap.ts	mintrap	random	"[""40""]"	constant
 src/js/dig.ts	digMonsterTunnel	random	"[""3""]"	constant
 src/js/dig.ts	digMonsterTunnel	random	"[""5""]"	constant
 src/js/dig.ts	digMonsterTunnel	rollOne	"[""12""]"	constant
-src/js/muse.ts	selectSlimeCure	random	"[""nearby.length - index""]"	unproved
-src/js/muse.ts	tryMonsterUnslime	random	"[""10""]"	constant
-src/js/muse.ts	tryMonsterUnslime	random	"[""3""]"	constant
-src/js/muse.ts	tryMonsterUnslime	random	"[""3""]"	constant
-src/js/muse.ts	tryMonsterUnslime	rollDice	"[""3"", ""4""]"	constant
-src/js/muse.ts	hitHeroWithImmediateWand	rollDice	"[""2"", ""12""]"	constant
-src/js/muse.ts	hitHeroWithImmediateWand	rollOne	"[""20""]"	constant
-src/js/muse.ts	hitMonsterWithImmediateWand	rollDice	"[""2"", ""12""]"	constant
-src/js/muse.ts	hitMonsterWithImmediateWand	rollOne	"[""20""]"	constant
-src/js/muse.ts	hitMonsterWithImmediateWand	rollOne	"[""8""]"	constant
-src/js/muse.ts	resolveMonsterImmediateWand	random	"[""8""]"	constant
+src/js/muse.ts	munslime	random	"[""nearby.length - index""]"	unproved
+src/js/muse.ts	muse_unslime	random	"[""10""]"	constant
+src/js/muse.ts	muse_unslime	random	"[""3""]"	constant
+src/js/muse.ts	muse_unslime	random	"[""3""]"	constant
+src/js/muse.ts	muse_unslime	rollDice	"[""3"", ""4""]"	constant
+src/js/muse.ts	mbhitm	rollDice	"[""2"", ""12""]"	constant
+src/js/muse.ts	mbhitm	rollOne	"[""20""]"	constant
+src/js/muse.ts	mbhitm	rollDice	"[""2"", ""12""]"	constant
+src/js/muse.ts	mbhitm	rollOne	"[""20""]"	constant
+src/js/muse.ts	mbhitm	rollOne	"[""8""]"	constant
+src/js/muse.ts	mbhit	random	"[""8""]"	constant
 src/js/uhitm.ts	resolveMonsterWeaponContact	rollOne	"[""-state.u.uac""]"	guarded
 src/js/worm.ts	advanceMonsterWormBody	random	"[""10""]"	constant
 src/js/worm.ts	advanceMonsterWormBody	rollDice	"[""2"", ""2""]"	constant
@@ -1756,18 +1756,18 @@ src/js/mplayer.ts	selectPlayerEquipment	rn2	"[""8""]"	constant
 src/js/mplayer.ts	selectPlayerEquipment	rn2	"[""8""]"	constant
 src/js/mplayer.ts	selectPlayerEquipment	rn2	"[""8""]"	constant
 src/js/mplayer.ts	unusedDeveloperName	rn2	"[""DEVELOPERS.length""]"	constant
-src/js/muse.ts	randomDefensiveMonsterItem	rn2	"[""3""]"	constant
-src/js/muse.ts	randomDefensiveMonsterItem	rn2	"[""3""]"	constant
-src/js/muse.ts	randomDefensiveMonsterItem	rn2	"[""4""]"	constant
-src/js/muse.ts	randomDefensiveMonsterItem	rn2	"[""8 + Number(difficulty > 3) + Number(difficulty > 6) + Number(difficulty > 8)""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""3""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""30""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""40""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""6""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""6""]"	constant
-src/js/muse.ts	randomMiscMonsterItem	rn2	"[""6""]"	constant
-src/js/muse.ts	randomOffensiveMonsterItem	rn2	"[""35""]"	constant
-src/js/muse.ts	randomOffensiveMonsterItem	rn2	"[""9 - Number(difficulty < 4) + 4 * Number(difficulty > 6)""]"	constant
+src/js/muse.ts	rnd_defensive_item	rn2	"[""3""]"	constant
+src/js/muse.ts	rnd_defensive_item	rn2	"[""3""]"	constant
+src/js/muse.ts	rnd_defensive_item	rn2	"[""4""]"	constant
+src/js/muse.ts	rnd_defensive_item	rn2	"[""8 + Number(difficulty > 3) + Number(difficulty > 6) + Number(difficulty > 8)""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""3""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""30""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""40""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""6""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""6""]"	constant
+src/js/muse.ts	rnd_misc_item	rn2	"[""6""]"	constant
+src/js/muse.ts	rnd_offensive_item	rn2	"[""35""]"	constant
+src/js/muse.ts	rnd_offensive_item	rn2	"[""9 - Number(difficulty < 4) + 4 * Number(difficulty > 6)""]"	constant
 src/js/music.ts	announceImprovisation	rn2	"[""2""]"	constant
 src/js/music.ts	announceImprovisation	rn2	"[""2""]"	constant
 src/js/music.ts	improvisedNotes	rn2	"[""noteNames.length""]"	constant

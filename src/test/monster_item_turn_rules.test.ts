@@ -4,7 +4,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { LEVEL_TELEP, MM_ANGRY, MM_NOGRP, MM_NOWAIT, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { lootMonsterContainer, useMonsterDefensiveItem } from '../js/muse.js';
+import { mloot_container, use_defensive } from '../js/muse.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { mintrap } from '../js/trap.js';
@@ -28,7 +28,7 @@ for (const name of ['The Orb of Detection', 'The Heart of Ahriman', 'Excalibur']
         assert.ok(artifact);
         const messages: string[] = [];
 
-        await useMonsterDefensiveItem(monster, { kind: 'stairs', stair: {
+        await use_defensive(monster, { kind: 'stairs', stair: {
             sx: 10, sy: 10, up: true, isladder: false,
             tolev: { dnum: 0, dlevel: 0 }, next: null, u_traversed: false,
         } }, { state: game, publish: message => { messages.push(message); } });
@@ -50,7 +50,7 @@ void test('a bullwhip cannot release a wielded cursed loadstone and reveals its 
 
     const turn = await takeMonsterTurn(monster, game, () => 0, () => 1, () => 1);
 
-    assert.notEqual(turn.movement.usedMisc?.kind, 'bullwhip-disarm');
+    assert.equal(turn.movement.usedMisc, undefined);
     assert.equal(game.uwep, stone);
     assert.equal(stone.where, 'inventory');
     assert.equal(stone.bknown, true);
@@ -90,7 +90,7 @@ for (const adjacent of [true, false]) {
         await addObjectToContainer(bag, potion, game);
         const messages: string[] = [];
 
-        await lootMonsterContainer(monster, bag, { state: game,
+        await mloot_container(monster, bag, { state: game,
             random: limit => limit - 1, publish: message => { messages.push(message); } });
 
         assert.equal(potion.dknown, adjacent);
@@ -107,7 +107,7 @@ void test('watching a soldier play a bugle observes the instrument', async () =>
     assert.ok(bugle);
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, { kind: 'bugle', object: bugle }, {
+    await use_defensive(monster, { kind: 'bugle', object: bugle }, {
         state: game, publish: message => { messages.push(message); },
     });
 
@@ -123,7 +123,7 @@ void test('the mysterious force surrounding a nonhumanoid Amulet carrier refers 
     await addObjectToMonsterInventory(monster, await knownObject(AMULET_OF_YENDOR), game);
     const messages: string[] = [];
 
-    await useMonsterDefensiveItem(monster, { kind: 'stairs', stair: {
+    await use_defensive(monster, { kind: 'stairs', stair: {
         sx: 10, sy: 10, up: true, isladder: false,
         tolev: { dnum: 0, dlevel: 7 }, next: null, u_traversed: false,
     } }, { state: game, random: () => 0, publish: message => { messages.push(message); } });
@@ -143,7 +143,7 @@ void test('hallucination varies the pronoun used for the mysterious force', asyn
         initRng(BigInt(seed));
         const messages: string[] = [];
 
-        await useMonsterDefensiveItem(monster, { kind: 'stairs', stair: {
+        await use_defensive(monster, { kind: 'stairs', stair: {
             sx: 10, sy: 10, up: true, isladder: false,
             tolev: { dnum: 0, dlevel: 7 }, next: null, u_traversed: false,
         } }, { state: game, random: limit => limit === 4 ? 0 : limit - 1,
