@@ -351,17 +351,15 @@ src/js/engrave.ts	wipeEngravingAt	rn2	"[""range""]"	unproved
 src/js/engrave.ts	wipeoutText	rn2	"[""4""]"	constant
 src/js/engrave.ts	wipeoutText	rn2	"[""length""]"	guarded
 src/js/engrave.ts	wipeoutText	rn2	"[""replacements.length""]"	unproved
-src/js/engrave_command.ts	blindEngraving	rn2	"[""BLIND_WRITINGS.length""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""11""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""2""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""25""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""4""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""7""]"	constant
-src/js/engrave_command.ts	doengrave	rn2	"[""WAND_BACKFIRE_CHANCE""]"	constant
-src/js/engrave_command.ts	doengrave	rnd	"[""50""]"	constant
-src/js/engrave_command.ts	doengrave	rnd	"[""94""]"	constant
-src/js/engrave_command.ts	relocateEngraving	rn2	"[""COLNO - 3""]"	constant
-src/js/engrave_command.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
+src/js/engrave.ts	blindEngraving	rn2	"[""BLIND_WRITINGS.length""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""11""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""2""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""25""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""4""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""7""]"	constant
+src/js/engrave.ts	doengrave	rn2	"[""WAND_BACKFIRE_CHANCE""]"	constant
+src/js/engrave.ts	doengrave	rnd	"[""50""]"	constant
+src/js/engrave.ts	doengrave	rnd	"[""94""]"	constant
 src/js/engulf_blindness.ts	gulpBlindnessCheck	d	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/exper.ts	levelEnergyIncrease	rn2	"[""range""]"	unproved
 src/js/exper.ts	levelHpIncrease	rnd	"[""race[random]""]"	unproved

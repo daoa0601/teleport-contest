@@ -56,8 +56,8 @@ import { nhgetch } from './input.js';
 import { flush_screen, newsym, terrain_glyph, canOverwriteTerrain } from './display.js';
 import { pline } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
-import { TRUE_RUMORS, FALSE_RUMORS, RANDOM_ENGRAVINGS, RANDOM_EPITAPHS } from './random_text_data.js';
-import { deleteEngravingAt, makeEngravingAt, restoreEngravings, sanitizeEngravings, wipeEngravingAt, wipeoutText } from './engrave.js';
+import { TRUE_RUMORS, FALSE_RUMORS } from './random_text_data.js';
+import { deleteEngravingAt, makeEngravingAt, make_grave, randomEngraving, make_engr_at, restoreEngravings, sanitizeEngravings, wipeEngravingAt } from './engrave.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { setupElementalBubbles } from './elemental.js';
 import { insideShopRoomAt, addShopDamage, fixShopDamage, deleteObject } from './shk.js';
@@ -665,29 +665,10 @@ export async function runClaimedObjectRotTimer(claimed: DueObjectTimer | null | 
     return { kind, object, where, x, y };
 }
 
-export function make_engr_at(
-    x: number, y: number, text: string, pristine: string | null,
-    epoch: number, engr_type: number,
-    options: { nowipeout?: boolean; guardobjects?: boolean } | undefined = undefined,
-) {
-    return makeEngravingAt(
-        x, y, text, pristine, epoch, engr_type, options,
-    );
-}
-
-export function make_grave(x: number, y: number, text: string | null): void {
-    const loc = game.level?.at(x, y);
-    const trapped = game.level?.traps?.some(trap => trap.tx === x && trap.ty === y);
-    if (!loc || (loc.typ !== ROOM && loc.typ !== GRAVE) || trapped) return;
-    if (!setLevelTerrainType(x, y, GRAVE)) return;
-    const epitaph = text ?? getRandomTextLine(RANDOM_EPITAPHS);
-    make_engr_at(x, y, epitaph, null, 0, HEADSTONE);
-}
-
 // C ref: rumors.c get_rnd_line().  makedefs pads each source line to a
 // minimum of 59 text bytes plus its newline.  Selection deliberately seeks
 // into one line and returns the following line.
-function getRandomTextLine(lines: readonly string[]): string {
+export function getRandomTextLine(lines: readonly string[]): string {
     if (!lines.length) throw new Error('Random text needs at least one source line');
     const sizes = lines.map(line => Math.max(line.length, 59) + 1);
     const fileSize = sizes.reduce((sum, size) => sum + size, 0);
@@ -723,17 +704,6 @@ export function getRumor(excludeCookie: boolean, truth = 0): string {
     if (!excludeCookie && rumor.startsWith('[cookie] '))
         rumor = rumor.slice('[cookie] '.length);
     return rumor;
-}
-
-// C ref: engrave.c random_engraving().
-export function randomEngraving(): { pristine: string; text: string } {
-    let pristine;
-    if (!rn2(4)) pristine = getRandomTextLine(RANDOM_ENGRAVINGS);
-    else pristine = getRumor(true) || getRandomTextLine(RANDOM_ENGRAVINGS);
-    return {
-        pristine,
-        text: wipeoutText(pristine, Math.trunc(pristine.length / 4)),
-    };
 }
 
 // C ref: nhlua.c l_nhcore_init() (defined at nhlua.c:140)

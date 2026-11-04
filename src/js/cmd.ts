@@ -84,7 +84,7 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { dosit } from './sit.js';
-import { continueEngraving, doengrave } from './engrave_command.js';
+import { continueEngraving, doengrave } from './engrave.js';
 import { ledgerNo } from './hacklib.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doquit, finishHeroDeath } from './end.js';

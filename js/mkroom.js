@@ -26,7 +26,8 @@ import { impossible } from './diagnostics.js';
 import { addToContainer } from './sp_lev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
-import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, findMonsterNearPosition, make_grave, topologize, } from './mklev.js';
+import { FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, findMonsterNearPosition, topologize, } from './mklev.js';
+import { make_grave } from './engrave.js';
 import { isRoom } from './map_types.js';
 import { objectWeight } from './mkobj.js';
 // Species constants (normally from monst.js, not in contest template)

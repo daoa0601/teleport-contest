@@ -37,9 +37,10 @@ import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
 import {
     FOOD_CLASS, RANDOM_CLASS, SPBOOK_CLASS, WAND_CLASS, findMonsterNearPosition,
-    make_grave, topologize,
+    topologize,
 } from './mklev.js';
 import type { GameState } from './game_state.js';
+import { make_grave } from './engrave.js';
 import type { Position, Rectangle, Room } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { objectWeight } from './mkobj.js';
