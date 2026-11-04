@@ -1435,27 +1435,19 @@ async function rubRoyalJelly(jelly) {
 // cmd.c:CQ_CANNED.  Selecting an unwielded lamp does not rub it immediately:
 // wield_tool() installs it, consumes one action, and queues dorub plus the
 // inventory letter for the next hero command boundary.
-export async function dorub(cannedInvlet = null) {
+export async function dorub() {
     if (heroHasNoHands(game)) {
         await syncPline("You aren't able to rub anything without hands.");
         game.context.move = 0;
         return;
     }
-    const object = cannedInvlet === null
-        ? await chooseInventoryObject('rub', candidate => rubEligibleObject(candidate) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE)
-        : game.inventory.find(candidate => candidate.invlet === cannedInvlet
-            && rubEligibleObject(candidate));
+    const object = await chooseInventoryObject('rub', candidate => rubEligibleObject(candidate) ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE);
     if (!object) {
         // apply.c:dorub() returns ECMD_CANCEL without an object; the
         // rhack seam clears the queues so ^A cannot replay the rub.
         commandResultCancelled();
         return;
     }
-    // Interactive entry owns a getobj prompt which selection replaces.
-    // Canned re-entry happens before the next physical key and inherits the
-    // wield/scheduler topline, so its result must append to that message.
-    if (cannedInvlet === null)
-        game._pending_message = '';
     if (isGrayStone(object)) {
         const result = await useGrayStone(object);
         game.context.move = result.spentTime ? 1 : 0;
@@ -3266,7 +3258,7 @@ export function applySuggestion(object, state = game) {
     }
     return GETOBJ_EXCLUDE_SELECTABLE;
 }
-export async function doapply(cannedInvlet = null) {
+export async function doapply() {
     // apply.c:doapply() rejects the current body and excessive load before
     // choosing an object through getobj().
     if (heroHasNoHands(game)) {
@@ -3280,10 +3272,7 @@ export async function doapply(cannedInvlet = null) {
         return;
     }
     const underlay = snapshotMenuUnderlay();
-    const item = cannedInvlet === null
-        ? await chooseInventoryObject('use or apply', applySuggestion)
-        : game.inventory.find(object => object.invlet === cannedInvlet
-            && [GETOBJ_SUGGEST, GETOBJ_DOWNPLAY].includes(applySuggestion(object)));
+    const item = await chooseInventoryObject('use or apply', applySuggestion);
     if (!item) {
         commandResultCancelled(); // doapply() returns ECMD_CANCEL without an object.
         return;

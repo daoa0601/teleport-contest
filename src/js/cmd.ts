@@ -3212,10 +3212,9 @@ async function readcharCore(inputState: InputState): Promise<CharacterInput> {
         game._clicklookTarget = click ? { x: click.x, y: click.y } : null;
         const command = click ? game.commandBindings.mouseCommand(click.button) : null;
         if (command?.name) {
-            // C cmd.c:click_to_cmd() queues the mouse button's bound
-            // command (cmd.c:4911-4912); the port reaches this from
-            // readchar() itself because its input layer reports the
-            // click directly instead of through parse().
+            // C readchar_core() calls click_to_cmd() for NUL input
+            // (upstream cmd.c:5264: "click_to_cmd(*x, *y, *mod);").
+            // click_to_cmd() queues the mouse button's bound command.
             cmdq_add_ec(CQ_CANNED, command.handler);
         }
         return { key: 0, click };

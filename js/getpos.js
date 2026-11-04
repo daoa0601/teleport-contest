@@ -662,12 +662,11 @@ export async function selectMapPosition({ start, prompt, goal, describe, afterPa
             if (afterPaint)
                 await afterPaint(cursor, firstPaint);
             firstPaint = false;
-            // C getpos.c:871-878 pops one entry per cursor step; a non-key
-            // entry clears CQ_CANNED and exits with -1. The loop never
-            // pops CQ_CANNED when no do-again replay runs: its entry pop
-            // (takeQueuedAdjacentPosition) leaves that queue empty, and
-            // readcharPoskey() may queue a canned mouse command whose C
-            // counterpart is queued only by parse(), never mid-cursor.
+            // C getpos() uses "lock_mouse_buttons(TRUE);" (upstream
+            // getpos.c:858) and pops the selected queue each cursor step
+            // (871-878). The port still allows readcharPoskey() to queue a
+            // bound mouse command here. Leave that command for rhack()
+            // after positioning, and consume only CQ_REPEAT in this loop.
             const queued = game._inDoAgain ? cmdq_pop() : null;
             if (queued && queued.typ !== CMDQ_KEY) {
                 cmdq_clear(CQ_CANNED);
