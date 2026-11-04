@@ -29,6 +29,10 @@ def ctype(t: dict):
     q = t.get('desugaredQualType', t['qualType']).replace('const ', '').replace('volatile ', '').strip()
     if q in _TYPES:
         return _TYPES[q]
+    if q.startswith('enum '):
+        # Enum constants are ints (C11 6.4.4.3) and every NetHack enum fits
+        # the signed int used for integral contexts like switch labels.
+        return (32, True)
     raise Unsupported(f'C type {q}')
 
 
@@ -386,6 +390,9 @@ class CExec:
         if k == 'BreakStmt':
             path.broken = True
             return [path]
+        if k == 'ContinueStmt':
+            path.continued = True
+            return [path]
         if k == 'ReturnStmt':
             out = []
             if n.get('inner'):
@@ -505,10 +512,16 @@ class CExec:
         if len(n['inner']) != 5 or n['inner'][1]:
             raise Unsupported('C for with a condition declaration or missing clauses')
         init, _, cond, update, body = n['inner']
-        if not all(clause.get('kind') for clause in (init, cond, update, body)):
-            raise Unsupported('C for with a missing clause')
+        if not all(clause.get('kind') for clause in (body,)):
+            raise Unsupported('C for without a body')
+        init = init if init.get('kind') else None
+        update = update if update.get('kind') else None
+        cond = cond if cond.get('kind') else None
         outer = set(path.env)
-        paths = self.exec(path, init)
+        # `for (init;; update)` runs until break/return, and Resists_Elem's
+        # inventory scan is `for (; o; o = o->nobj)`: any outer clause except
+        # the body may be absent.
+        paths = [path] if init is None else self.exec(path, init)
         paths = seq(paths, lambda p: self._loop(p, n, cond, body, update))
         for p in paths:
             for name in set(p.env) - outer:
@@ -519,11 +532,18 @@ class CExec:
         fn_name, _, ordinals = self.stack[-1]
 
         def cond_fn(p):
+            if cond is None:
+                return [(p, z3.BoolVal(True))]
             return [(p2, self.truth(v)) for p2, v in self.eval(p, cond)]
 
         def body_fn(p):
             paths = self.exec(p, body)
-            return paths if update is None else seq(paths, lambda q: [q2 for q2, _ in self.eval(q, update)])
+            if update is None:
+                return paths
+            # A C `continue` jumps to the for-update, which still runs.
+            return ([q for q in paths if q.returned or q.broken]
+                    + [q2 for q in paths if not (q.returned or q.broken)
+                       for q2, _ in self.eval(q, update)])
 
         def view_fn(p):
             return {k: v.v for k, v in p.env.items() if isinstance(v, CVal)}
@@ -536,7 +556,8 @@ class CExec:
             p.pc.append(in_range(v, old.t))
             p.env[name] = CVal(v, old.t)
 
-        modset = _assigned(cond) | _assigned(body) | (_assigned(update) if update is not None else set())
+        modset = (_assigned(cond) if cond is not None else set()) | _assigned(body) \
+            | (_assigned(update) if update is not None else set())
         return self.m.run_loop([path], (fn_name, ordinals[id(n)]), cond_fn, body_fn,
                                lambda: modset, view_fn, havoc_fn, self.where(n))
 
@@ -611,6 +632,15 @@ class CExec:
         if k == 'ArraySubscriptExpr':
             out = []
             for p, (array, index) in self.eval_list(path, n['inner']):
+                if isinstance(array, CPtr) and isinstance(array.key, CSlot) \
+                        and isinstance(index, CVal):
+                    # `mattk[i].aatyp` in mondata.c:noattacks(): subscript a
+                    # pointer decayed from a fixed member array.
+                    slot = array.key
+                    offset = z3.simplify(slot.index + index.v)
+                    self.m.array_bounds(p, offset, len(slot.values), self.where(n))
+                    out.append((p, self._select(slot.values, offset)))
+                    continue
                 if not isinstance(array, CArray) or not isinstance(index, CVal):
                     raise Unsupported('C subscript of a non-array or non-integer index')
                 self.m.array_bounds(p, index.v, len(array.values), self.where(n))
@@ -812,8 +842,19 @@ class CExec:
                 if not isinstance(v, CVal) or not z3.is_true(z3.simplify(v.v == 0)):
                     raise Unsupported('C nonzero integer converted to pointer')
                 out.append((p, CPtr(False)))
+            elif kind == 'ArrayToPointerDecay':
+                # mondata.c:noattacks() initializes `struct attack *mattk =
+                # ptr->mattk;`: decay a fixed member array to its first slot.
+                member = _unwrap(n['inner'][0])
+                bases = self.eval(path, member['inner'][0]) if member['kind'] == 'MemberExpr' else []
+                if (member['kind'] == 'MemberExpr' and len(bases) == 1
+                        and isinstance(bases[0][1], CPtr) and isinstance(v, CArray)):
+                    out.append((p, CPtr(True, CSlot(v.values, z3.IntVal(0),
+                                                     (member['name'], bases[0][1].key)))))
+                else:
+                    out.append((p, v))
             elif kind in ('LValueToRValue', 'NoOp', 'FunctionToPointerDecay', 'BuiltinFnToFnPtr',
-                        'ArrayToPointerDecay', 'BitCast'):
+                        'BitCast'):
                 out.append((p, v))
             elif kind in ('IntegralCast', 'IntegralToBoolean'):
                 t = (1, False) if kind == 'IntegralToBoolean' else ctype(n['type'])

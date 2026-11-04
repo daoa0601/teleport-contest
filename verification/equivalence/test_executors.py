@@ -665,6 +665,99 @@ class ExecutorTests(unittest.TestCase):
             'function example(x) { return [1, 9, 2, 2].findIndex(v => v === x); }',
             params=[('x', INT)], reason='outputs differ')
 
+    def test_find_returns_the_first_matching_element(self):
+        self.equivalent(
+            'int example(int x) {'
+            '  int i, v; for (i = 0; i < 4; i++) { v = (i == 1 || i == 3) ? 9 : 3;'
+            '    if (v == x) return v + 1; }'
+            '  return 0; }',
+            'const vs = [3, 9, 3, 9];'
+            'function example(x) { return (vs.find(v => v === x) ?? -1) + 1; }',
+            params=[('x', INT)])
+        self.rejected(
+            'int example(int x) { return x == 9 ? 9 : 0; }',
+            'const vs = [3, 9, 3, 9];'
+            'function example(x) { return vs.find(v => v === x) ?? 0; }',
+            params=[('x', INT)], reason='outputs differ')
+
+    def test_c_continue_jumps_to_the_for_update(self):
+        self.equivalent(
+            'int example(int x) {'
+            '  int i, s = 0; for (i = 0; i < 6; i++) {'
+            '    if (i == x) continue; s += i; }'
+            '  return s; }',
+            'function example(x) {'
+            '  let s = 0;'
+            '  for (let i = 0; i < 6; i++) {'
+            '    if (i === x) continue; s += i; }'
+            '  return s; }',
+            params=[('x', INT)])
+        self.rejected(
+            'int example(int x) {'
+            '  int i, s = 0; for (i = 0; i < 6; i++) {'
+            '    if (i == x) continue; s += i; }'
+            '  return s; }',
+            'function example(x) {'
+            '  let s = 0;'
+            '  for (let i = 0; i < 6; i++) { if (i === x) continue; s += i + 1; }'
+            '  return s; }',
+            params=[('x', INT)], reason='outputs differ')
+
+    def test_joined_continue_paths_keep_their_own_control_states(self):
+        from jssym import V
+        def configure(world, front, modules):
+            world.join_paths = True
+            world.js_values['game.rows'] = V('array', tuple(
+                V('num', world.params[0][1] + i) for i in range(4)))
+        # Without separating continued paths at join points, the skip arm can
+        # merge into the processing arm and fold to the wrong total.
+        self.equivalent(
+            'int example(int x) {'
+            '  int i, v, s = 0;'
+            '  for (i = 0; i < 4; i++) { v = x + i; if (v == x) continue; s += v; }'
+            '  return s; }',
+            'function example(x) {'
+            '  let s = 0;'
+            '  for (let i = 0; i < game.rows.length; i++) {'
+            '    if (game.rows[i] === x) continue; s += game.rows[i]; }'
+            '  return s; }',
+            params=[('x', INT)],
+            pre=lambda s: [s['x'] >= -10, s['x'] <= 10], configure=configure)
+
+    def test_c_enum_type_switch_is_int_compatible(self):
+        self.equivalent(
+            'enum monnums { PM_ANT, PM_BEE, PM_WASP };'
+            'int example(int x) { enum monnums m = (enum monnums) x;'
+            '  switch (m) { case PM_BEE: return 2; case PM_WASP: return 3;'
+            '    default: break; } return 0; }',
+            'const PM_ANT = 0, PM_BEE = 1, PM_WASP = 2;'
+            'function example(x) { switch (x) { case PM_BEE: return 2;'
+            '  case PM_WASP: return 3; default: break; } return 0; }',
+            params=[('x', INT)])
+        self.rejected(
+            'enum monnums { PM_ANT, PM_BEE, PM_WASP };'
+            'int example(int x) { enum monnums m = (enum monnums) x;'
+            '  switch (m) { case PM_BEE: return 2; default: break; } return 0; }',
+            'const PM_BEE = 1;'
+            'function example(x) { switch (x) { case PM_BEE: return 3; default: break; }'
+            '  return 0; }',
+            params=[('x', INT)], reason='outputs differ')
+
+
+    def test_js_for_ever_loop_runs_until_break(self):
+        self.equivalent(
+            'int example(int x) { int i = 0; for (;;) { if (i == x) return i; i++; } }',
+            'function example(x) { let i = 0; for (;;) { if (i === x) return i; i++; } }',
+            params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] < 12])
+
+    def test_module_initializer_with_calls_resolves_one_definite_value(self):
+        self.equivalent(
+            'int example(int x) { return x + 3; }',
+            'const base = [3, 9]; const OFF = pick(0);'
+            'function pick(i) { return base[i] ?? 0; }'
+            'function example(x) { return x + OFF; }',
+            params=[('x', INT)], pre=lambda s: [s['x'] >= -10, s['x'] <= 10])
+
     def test_initializer_slice_uses_explicit_locals_and_excludes_the_caller(self):
         from jssym import V
         def configure(world, front, modules):

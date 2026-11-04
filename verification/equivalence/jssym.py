@@ -345,6 +345,9 @@ class JSExec:
         if t == 'throw_statement':
             self.m.oblige(path, False, 'JavaScript throw is reachable', self.where(n))
             return []
+        if t == 'continue_statement':
+            path.continued = True
+            return [path]
         if t == 'for_statement':
             return self._for(path, n)
         if t == 'while_statement':
@@ -421,8 +424,15 @@ class JSExec:
                     matches.append(None)
                     continue
                 if label.type not in ('number', 'string'):
-                    raise Unsupported('non-literal JavaScript switch label')
-                [(_, other)] = self.eval(p.fork(), label)
+                    # An identifier label naming one immutable module constant
+                    # (for example the emitted PM_* species indices) resolves
+                    # to a single literal before the switch splits.
+                    if label.type != 'identifier':
+                        raise Unsupported('non-literal JavaScript switch label')
+                results = self.eval(p.fork(), label)
+                if len(results) != 1:
+                    raise Unsupported('branching JavaScript switch label')
+                [(_, other)] = results
                 matches.append(self._equal(value, other))
             out.extend(self.m.switch(p, matches, statements, self.exec))
         return _close_scope(outer, out)
@@ -431,9 +441,16 @@ class JSExec:
         cond = n.child_by_field_name('condition')
         if cond.type == 'expression_statement':
             cond = cond.named_children[0]
+        if cond.type == 'empty_statement':
+            # `for (;;)` runs until break/return, like mondata.js
+            # monsterGrowthFamilyMatch's two fixed-point walks.
+            cond = None
         outer = set(path.env)
         paths = self.exec(path, n.child_by_field_name('initializer'))
-        paths = seq(paths, lambda p: self._loop(p, n, cond, n.child_by_field_name('increment')))
+        increment = n.child_by_field_name('increment')
+        if increment is not None and increment.type == 'empty_statement':
+            increment = None
+        paths = seq(paths, lambda p: self._loop(p, n, cond, increment))
         return _close_scope(outer, paths)
 
     def _loop(self, path, n, cond, update):
@@ -441,13 +458,19 @@ class JSExec:
         fn_name, _, ordinals = self.stack[-1]
 
         def cond_fn(p):
+            if cond is None:
+                return [(p, z3.BoolVal(True))]
             return [(p2, self.truth(v)) for p2, v in self.eval(p, cond)]
+
 
         def body_fn(p):
             paths = self.exec(p, body)
             if update is None:
                 return paths
-            return seq(paths, lambda q: [q2 for q2, _ in self.eval(q, update)])
+            # A JavaScript `continue` jumps to the for-update, which still runs.
+            return ([q for q in paths if q.returned or q.broken]
+                    + [q2 for q in paths if not (q.returned or q.broken)
+                       for q2, _ in self.eval(q, update)])
 
         def view_fn(p):
             return {k: v.v for k, v in p.env.items() if v.kind == 'num'}
@@ -455,7 +478,8 @@ class JSExec:
         def havoc_fn(p, name):
             p.env[name] = V('num', self.m.world.fresh(name))
 
-        modset = _assigned(body) | _assigned(cond) | (_assigned(update) if update is not None else set())
+        modset = _assigned(body) | (_assigned(cond) if cond is not None else set()) \
+            | (_assigned(update) if update is not None else set())
         return self.m.run_loop([path], (fn_name, ordinals[n.id]), cond_fn, body_fn,
                                lambda: modset, view_fn, havoc_fn, self.where(n))
 
@@ -533,7 +557,12 @@ class JSExec:
                 self.local_names.pop()
                 path.frames.pop()
                 self.resolving.remove(key)
-            if len(results) != 1 or results[0][0] is not path:
+            if len(results) != 1:
+                raise Unsupported(f'branching JavaScript module initializer {key}')
+            # A fork that only adds valid conditions (for example the dead
+            # throw arm inside requireMonsterData) still leaves one value.
+            if any(not z3.is_true(z3.simplify(term))
+                   for term in results[0][0].pc[len(path.pc):]):
                 raise Unsupported(f'branching JavaScript module initializer {key}')
             value = results[0][1]
             if not self._constant(value):
@@ -1060,6 +1089,13 @@ class JSExec:
                         raise Unsupported('JavaScript findIndex() on a non-array')
                     out.extend(self._array_find_index(p, array, arg_nodes[0], where))
                 return out
+            if prop == 'find' and len(arg_nodes) == 1:
+                out = []
+                for p, array in self.eval(path, fn.child_by_field_name('object')):
+                    if array.kind != 'array':
+                        raise Unsupported('JavaScript find() on a non-array')
+                    out.extend(self._array_find(p, array, arg_nodes[0], where))
+                return out
             if prop == 'some' and len(arg_nodes) == 1:
                 out = []
                 for p, array in self.eval(path, fn.child_by_field_name('object')):
@@ -1213,6 +1249,12 @@ class JSExec:
         matched, live = self._array_scan(path, array, callback, where, 'findIndex')
         return ([(p, V('num', z3.IntVal(index))) for p, index in matched]
                 + [(p, V('num', z3.IntVal(-1))) for p in live])
+
+    def _array_find(self, path, array, callback, where):
+        """Array.prototype.find: the first matching element, or undefined."""
+        matched, live = self._array_scan(path, array, callback, where, 'find')
+        return ([(p, array.v[index]) for p, index in matched]
+                + [(p, UNDEF) for p in live])
 
     @staticmethod
     def _parameter_names(node):

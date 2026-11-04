@@ -27,4 +27,15 @@ void test('empty-stomach vomiting describes the current monster form anatomy', a
     assert.equal(game._lastPlineMessage, 'Your interior heaves convulsively!');
     assert.equal(ration.where, 'inventory');
 });
+// timeout.c:244: a form that cannot vomit (mondata.c:cantvomit) gags at the
+// countdown-2 stage instead of announcing vomit.
+void test('pony-form nausea gags instead of announcing vomit', async () => {
+    await freshObjectRoom({ gameplaySeed: 71n, hero: { uhunger: 1000 } });
+    requirePlayingGame(game);
+    installPolymorphedHero('pony');
+    resetInputState();
+    startHeroVomiting({ turns: 3 });
+    await advanceHeroVomiting();
+    assert.equal(game._lastPlineMessage, 'You gag uncontrollably.');
+});
 //# sourceMappingURL=eat_vomit_anatomy.test.js.map

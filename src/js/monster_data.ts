@@ -204,11 +204,15 @@ export const MONSTER_CLASS_EXPLAIN: readonly string[] = [
     'human or elf', 'ghost', 'golem', 'major demon', 'sea monster',
     'lizard', 'long worm tail', 'mimic',
 ];
-const MONSTER_HORNS = new Map<number, number>(([
-    ['horned devil', 2], ['minotaur', 2], ['Asmodeus', 2], ['balrog', 2],
-    ['white unicorn', 1], ['gray unicorn', 1], ['black unicorn', 1],
-    ['ki-rin', 1],
-] satisfies readonly (readonly [string, number])[]).map(([name, count]) => [MONSTER_NAME.indexOf(name), count]));
+// C mondata.c:num_horns(): the horned species and their head counts.
+const PM_HORNED_DEVIL = MONSTER_NAME.indexOf('horned devil');
+const PM_MINOTAUR = MONSTER_NAME.indexOf('minotaur');
+const PM_ASMODEUS = MONSTER_NAME.indexOf('Asmodeus');
+const PM_BALROG = MONSTER_NAME.indexOf('balrog');
+const PM_WHITE_UNICORN = MONSTER_NAME.indexOf('white unicorn');
+const PM_GRAY_UNICORN = MONSTER_NAME.indexOf('gray unicorn');
+const PM_BLACK_UNICORN = MONSTER_NAME.indexOf('black unicorn');
+const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');
 const SADDLE_CLASSES = new Set([
     S_QUADRUPED,
     S_UNICORN,
@@ -420,8 +424,23 @@ export function monsterCanBeSaddled(monster: SpeciesReference | null | undefined
         && !(symbol === S_ELEMENTAL && mnum === PM_AIR_ELEMENTAL);
 }
 
+// C mondata.c:num_horns().
 export function monsterHornCount(mnum: number) {
-    return MONSTER_HORNS.get(mnum) ?? 0;
+    switch (mnum) {
+    case PM_HORNED_DEVIL: /* ? "more than one" */
+    case PM_MINOTAUR:
+    case PM_ASMODEUS:
+    case PM_BALROG:
+        return 2;
+    case PM_WHITE_UNICORN:
+    case PM_GRAY_UNICORN:
+    case PM_BLACK_UNICORN:
+    case PM_KI_RIN:
+        return 1;
+    default:
+        break;
+    }
+    return 0;
 }
 
 export function monsterIsAnimal(monster: SpeciesReference | null | undefined) {
@@ -588,8 +607,8 @@ export function monsterHatesLight(monster: SpeciesReference | null | undefined) 
     return monster?.mnum === PM_GREMLIN;
 }
 
-const RIDER_SPECIES = new Set(['Death', 'Famine', 'Pestilence']
-    .map(name => MONSTER_NAME.indexOf(name)));
+const RIDER_SPECIES = new Set([MONSTER_NAME.indexOf('Death'),
+    MONSTER_NAME.indexOf('Famine'), MONSTER_NAME.indexOf('Pestilence')]);
 
 export function monsterIsRider(monster: SpeciesReference) {
     return RIDER_SPECIES.has(monster.mnum);
@@ -614,21 +633,29 @@ export function monsterIsWeirdNonliving(mnum: number) {
 export const MONSTER_GROWTH_TARGET: readonly number[] = [0,1,2,3,4,5,6,7,8,10,10,11,12,13,14,15,18,17,19,19,20,21,24,23,24,26,26,27,28,29,30,31,33,37,34,35,36,37,38,39,40,41,42,43,46,45,47,47,49,49,53,51,52,53,54,55,56,57,58,60,61,61,62,63,65,66,66,67,68,69,70,71,77,77,77,77,76,77,78,79,80,81,82,83,84,85,86,87,89,89,90,91,92,93,96,95,96,97,98,99,104,101,102,103,105,105,106,107,108,109,110,111,114,115,114,115,116,117,118,119,120,121,122,123,124,125,127,127,128,129,130,131,132,143,144,145,146,147,148,149,150,151,152,143,144,145,146,147,148,149,150,151,152,153,154,155,156,157,158,159,160,161,162,163,164,166,168,167,168,169,170,171,172,173,174,175,176,177,178,180,181,182,182,184,185,186,186,187,188,189,190,191,192,193,194,199,200,201,202,199,200,201,202,204,205,205,206,207,208,209,210,211,212,213,214,215,216,217,218,219,220,221,222,223,224,225,227,227,228,229,230,231,232,233,234,235,236,237,238,239,240,241,242,243,244,245,246,247,248,249,250,251,252,253,254,255,256,257,258,259,260,261,262,263,268,268,268,268,269,269,270,271,272,273,274,276,276,278,280,279,281,281,283,283,284,285,286,287,288,289,290,291,292,293,294,295,296,297,298,299,300,301,302,303,304,305,306,307,308,309,310,311,312,313,314,315,316,317,318,319,320,321,322,323,324,328,326,327,328,329,330,331,332,333,334,335,336,337,338,339,340,341,342,343,344,345,346,347,348,349,350,351,352,353,354,355,356,357,358,359,360,361,362,363,364,365,366,367,368,331,370,371,334,335,374,337,376,377,378,379,380,381,343];
 // END GENERATED MONSTER GROWTH DATA
 
+// C mondata.c:little_to_big().  The generated vector stores the direct
+// grownups[] edge for every species, and every other species maps to itself,
+// so one read is the whole scan; out-of-table indices keep their own value.
+export function monsterOlderForm(mnum: number) {
+    return MONSTER_GROWTH_TARGET[mnum] ?? mnum;
+}
+
 // C mondata.c:big_to_little().  The generated vector stores the direct
 // little_to_big edge for every species; grownups[] is ordered by the younger
 // PM index, so the first non-self reverse edge is the source result.
 export function monsterYoungerForm(mnum: number) {
     if (!Number.isInteger(mnum) || mnum < 0
         || mnum >= MONSTER_GROWTH_TARGET.length) return mnum;
-    const younger = MONSTER_GROWTH_TARGET.findIndex(
-        (grown, candidate) => candidate !== mnum && grown === mnum,
-    );
-    return younger >= 0 ? younger : mnum;
+    for (let candidate = 0; candidate < MONSTER_GROWTH_TARGET.length; candidate++) {
+        const grown = MONSTER_GROWTH_TARGET[candidate];
+        if (candidate !== mnum && grown === mnum) return candidate;
+    }
+    return mnum;
 }
 
 // C mondata.c:big_little_match().  The generated vector is deliberately the
 // direct little_to_big() edge; walk both directions at runtime so multi-stage
-// families preserve the source graph and its fixed-point behavior.
+// families (kops, liches, elves) keep the source graph's fixed-point behavior.
 export function monsterGrowthFamilyMatch(left: number, right: number) {
     if (!Number.isInteger(left) || !Number.isInteger(right)
         || left < 0 || right < 0
@@ -637,19 +664,21 @@ export function monsterGrowthFamilyMatch(left: number, right: number) {
     if (left === right) return true;
     if (MONSTER_SYMBOL[left] !== MONSTER_SYMBOL[right]) return false;
 
-    const reaches = (start: number, target: number): boolean => {
-        let current = start;
-        for (let traversed = 0;
-            traversed < MONSTER_GROWTH_TARGET.length;
-            traversed++) {
-            const next = requireMonsterData(MONSTER_GROWTH_TARGET, current);
-            if (next === current) return false;
-            if (next === target) return true;
-            current = next;
-        }
-        return false;
-    };
-    return reaches(left, right) || reaches(right, left);
+    let current = left;
+    for (;;) {
+        const grown = monsterOlderForm(current);
+        if (grown === current) break;
+        if (grown === right) return true;
+        current = grown;
+    }
+    current = right;
+    for (;;) {
+        const grown = monsterOlderForm(current);
+        if (grown === current) break;
+        if (grown === left) return true;
+        current = grown;
+    }
+    return false;
 }
 
 // BEGIN GENERATED MONSTER FOOD DATA
@@ -662,7 +691,8 @@ export const MONSTER_NUTRITION: readonly number[] = MONSTER_BODY_META.map(
 
 // C mondata.c:noattacks(): death explosions are not active attacks.
 export function monsterHasNoAttacks(mnum: number) {
-    return requireMonsterData(MONSTER_ATTACKS, mnum).every(([type]) => type === AT_NONE || type === AT_BOOM);
+    return !requireMonsterData(MONSTER_ATTACKS, mnum)
+        .some(([type]) => type !== AT_NONE && type !== AT_BOOM);
 }
 
 /** Read a required native species field. Invalid species never acquire defaults. */

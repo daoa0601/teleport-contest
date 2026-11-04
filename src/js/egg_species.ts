@@ -3,7 +3,7 @@ import { G_GENOD } from './const.js';
 import { game } from './gstate.js';
 import type { GameState } from './game_state.js';
 import {
-    MONSTER_FLAGS1, MONSTER_GROWTH_TARGET, MONSTER_NAME, monsterYoungerForm,
+    MONSTER_FLAGS1, MONSTER_NAME, monsterOlderForm, monsterYoungerForm,
 } from './monster_data.js';
 import { rn2 } from './rng.js';
 
@@ -18,9 +18,7 @@ const M1_OVIPAROUS = 0x00400000;
 export function hatchableEggSpecies(species: number | null | undefined): number {
     if (species == null) return -1;
     if (species === PM_SCORPIUS) species = PM_SCORPION;
-    const adult = MONSTER_GROWTH_TARGET[species];
-    if (adult === undefined) return -1;
-    species = adult;
+    species = monsterOlderForm(species);
     if (species === PM_KILLER_BEE || species === PM_GARGOYLE) return species;
     if (((MONSTER_FLAGS1[species] ?? 0) & M1_OVIPAROUS)
         && (!rn2(77) || (species !== PM_QUEEN_BEE && species !== PM_WINGED_GARGOYLE)))

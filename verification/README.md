@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 116 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 126 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -225,11 +225,16 @@ over `object_properties.js`: the obj.h macros `is_weptool`, `bimanual`,
 `is_blunt_weapon`, `is_flimsy`, `is_pick`, `is_axe`, `is_blade`,
 `is_wet_towel`, `is_pole`, `is_sword`, `is_graystone` and `is_multigen`,
 the real `dothrow.c:throwing_weapon`, and `artifact.c:permapoisoned`
-(nullable object), and the seven material-predicate claims of
+(nullable object), the seven material-predicate claims of
 fv-equivalence-batch-7: the objclass.h macros `is_organic`,
 `is_metallic`, `is_rustprone`, `is_crackable` and `is_corrodeable`
 (`object_properties.js`) and the real `mkobj.c:is_flammable()`/
-`is_rottable()` (`mkobj.js`). The monster claims check all 383 valid
+`is_rottable()` (`mkobj.js`), and the ten claims of fv-equivalence-batch-8
+over the pure mons[]-table functions of mondata.c and makemon.c:
+`cantvomit`, `noattacks`, `num_horns`, `little_to_big`, `big_to_little`,
+`big_little_match` and `same_race` (two-argument species pairs),
+`can_blow`'s table half, `mbirth_limit` and `max_passive_dmg` with equal
+element-resistance call contracts. The monster claims check all 383 valid
 native species with symbolic state where applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
 entry domain in both logging modes, including state-constructor restrictions.
