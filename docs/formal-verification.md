@@ -182,14 +182,14 @@ split `rnl` row use this batch's complete runs.
 | `isaac64_seed_packing` | Packing loops in `rnd.c:init_isaac64` ↔ `rng.js:initRng` | LP64 unsigned long; any uint64 seed via BigInt, or equal integer Number in 0..2^53-1 | Complete unrolling; checked bound | 0.1 s |
 | `cantvomit:tables` | `mondata.c:cantvomit` ↔ `mondata.js:speciesCannotVomit` | Valid initial species; pointer identity tests (rock mole, woodchuck, horses) vs species indices | 2×4 | 4.9 s |
 | `noattacks:tables` | `mondata.c:noattacks` ↔ `monster_data.js:monsterHasNoAttacks` | Valid initial species; corresponding six-record attack rows; AT_BOOM skipped on both sides | 2×2 | 4.7 s |
-| `num_horns:tables` | `mondata.c:num_horns` ↔ `monster_data.js:monsterHornCount` | Valid initial species; `monsndx(ptr)` pmidx switch vs emitted PM_* case labels | 3×3 | 39.3 s |
-| `little_to_big:tables` | `mondata.c:little_to_big` ↔ `monster_data.js:monsterOlderForm` | `0 <= montype < NUMMONS`; grownups[] scan vs growth vector read | 1×1 | 17.4 s |
-| `big_to_little:tables` | `mondata.c:big_to_little` ↔ `monster_data.js:monsterYoungerForm` | Same domain; first reverse edge of the ordered grownups[] table | 1×1 | 15.8 s |
+| `num_horns:tables` (slow) | `mondata.c:num_horns` ↔ `monster_data.js:monsterHornCount` | Valid initial species; `monsndx(ptr)` pmidx switch vs emitted PM_* case labels | 3×3 | 39.3 s |
+| `little_to_big:tables` (slow) | `mondata.c:little_to_big` ↔ `monster_data.js:monsterOlderForm` | `0 <= montype < NUMMONS`; grownups[] scan vs growth vector read | 1×1 | 17.4 s |
+| `big_to_little:tables` (slow) | `mondata.c:big_to_little` ↔ `monster_data.js:monsterYoungerForm` | Same domain; first reverse edge of the ordered grownups[] table | 1×1 | 15.8 s |
 | `big_little_match:tables` (slow) | `mondata.c:big_little_match` ↔ `monster_data.js:monsterGrowthFamilyMatch` | Both indices valid species; `mons[].mlet` letter test then both growth directions | 1×1 | 85.5 s |
 | `same_race:tables` (slow) | `mondata.c:same_race` ↔ `mondata.js:sameMonsterRace` | Both species valid; the is_* race macros and pointer identities vs flags/symbol reads and module constants | 1×1 | 243.5 s |
 | `can_blow:tables` | `mondata.c:can_blow` ↔ `mondata.js:speciesCanBlow` | Valid species; monster distinct from `&gy.youmonst`, so the hero Strangled re-check stays dead | 2×4 | 9.7 s |
 | `mbirth_limit:tables` | `makemon.c:mbirth_limit` ↔ `makemon.js:monsterBirthLimit` | Any C int species index; PM_NAZGUL/PM_ERINYS and MAXMONNO=120 agree | 3×3 | 1.1 s |
-| `max_passive_dmg:state` | `mondata.c:max_passive_dmg` ↔ `mondata.js:maxPassiveMonsterDamage` | Valid species pair; `|mhp| <= 10^6`; Resists_Elem/monsterHas*Resistance enter as equal 0/1 call contracts (mon_resistancebits covers the masks) | 1×1 | 57.3 s |
+| `max_passive_dmg:state` (slow) | `mondata.c:max_passive_dmg` ↔ `mondata.js:maxPassiveMonsterDamage` | Valid species pair; `|mhp| <= 10^6`; Resists_Elem/monsterHas*Resistance enter as equal 0/1 call contracts (mon_resistancebits covers the masks) | 1×1 | 57.3 s |
 
 **Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
 including **56 domain probes** and **60 mutant checks**, and wrote the ledger
@@ -592,11 +592,14 @@ mstrength_ranged_attk are compiled out under `NH_STATUS_RELEASED`, and
 ranged_attk has no caller in the pinned C and deliberately no port
 (PR 610 dropped an unused port for it in review).
 
-Eight of the ten claims are fast (worst 39.3 s for num_horns; the
-slowest complete max_passive_dmg run is 66.5 s); the two two-species
-growth claims `big_little_match:tables` (85.5 s) and `same_race:tables`
-(243.5 s) are marked slow and join `experience:tables`/`mcalcmove:tables`
-in the nightly `--slow-only` job. Every claim has a concrete failing
+Four of the ten claims stay in the fast job. The two two-species growth
+claims `big_little_match:tables` (85.5 s) and `same_race:tables`
+(243.5 s) are marked slow, and so are `max_passive_dmg:state`,
+`num_horns:tables`, `big_to_little:tables` and `little_to_big:tables`:
+with their probes and mutants they took 312 s, 77 s, 45 s and 41 s on a
+hosted runner, which pushed the fast `equivalence` job past its 30-minute
+timeout. All six join `experience:tables`/`mcalcmove:tables` in the
+nightly `--slow-only` job. Every claim has a concrete failing
 probe and two killed mutants with concrete counterexamples. No port-vs-C
 fidelity bug was found: each rewritten owner was also checked
 exhaustively over all 383 species against its previous implementation,
