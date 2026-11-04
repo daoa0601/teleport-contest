@@ -40,7 +40,7 @@ import { getObjectLocation } from './zap.js';
 import { objectsInTimerGraph, stopObjectTimers } from './timeout.js';
 import { closedDoor, performMonsterTurn } from './monmove.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { beginMonsterHeroAttack } from './mhitu.js';
+import { mattacku } from './mhitu.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
@@ -4456,7 +4456,7 @@ export async function moveShopkeeper(monster, state, random, rollDice, rollOne, 
             return {
                 ...stopped,
                 deferredAfterSpecialAttack: true,
-                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
+                ...await mattacku(monster, state, random, rollOne, rollDice, calls),
             };
         }
         if (eshk.following) {

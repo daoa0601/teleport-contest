@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MM_ANGRY, NO_MINVENT, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { beginMonsterHeroAttack } from '../js/mhitu.js';
+import { mattacku } from '../js/mhitu.js';
 import { CROSSBOW, CROSSBOW_BOLT } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -20,7 +20,7 @@ void test('an archer judges a retreating displaced hero by the apparent target r
     archer.mux = 10;
     archer.muy = 10;
     pushKeys(' '.repeat(8));
-    await beginMonsterHeroAttack(archer, game, bound => 2 % bound, () => 1, (count, sides) => count * sides, []);
+    await mattacku(archer, game, bound => 2 % bound, () => 1, (count, sides) => count * sides, []);
     assert.equal(bolts.quan, 5, 'the archer should chase rather than fire at this range');
     assert.doesNotMatch(game._pending_message, /shoots|throws/);
 });

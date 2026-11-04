@@ -502,8 +502,8 @@ src/js/mhitu.ts	passiveum	random	"[""2""]"	constant
 src/js/mhitu.ts	passiveum	random	"[""3""]"	constant
 src/js/mhitu.ts	passiveum	random	"[""30""]"	constant
 src/js/mhitu.ts	passiveum	random	"[""6""]"	constant
-src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollDice	"[""3"", ""6""]"	constant
-src/js/hero_hider_reveal.ts	revealConcealedHeroToAttacker	rollOne	"[""20""]"	constant
+src/js/mhitu.ts	mattacku	rollDice	"[""3"", ""6""]"	constant
+src/js/mhitu.ts	mattacku	rollOne	"[""20""]"	constant
 src/js/uhitm.ts	finishHeroHitAftermath	random	"[""2""]"	constant
 src/js/dothrow.ts	hitObstacle	rnd	"[""2 + remaining""]"	unproved
 src/js/timeout.ts	advanceHeroSickness	random	"[""100""]"	constant

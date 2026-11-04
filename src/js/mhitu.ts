@@ -4,7 +4,7 @@
 
 import { WEAPON_CLASS, TOOL_CLASS } from './objclass.js';
 import {
-    objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES,
+    objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, EGG, OBJECT_NAMES,
     SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_PROPERTY,
     OBJECT_SPELL_LEVEL, TIN_OPENER, TOWEL, GOLD_PIECE,
 } from './object_data.js';
@@ -17,7 +17,7 @@ import { recordRandom } from './monster_action_types.js';
 import type { HeroAttack, HeroAttackSequence, HeroAttackSlot, HeroContactAttack, MonsterMovementAction, MonsterCallLog, RandomBelow, RollDice, RollOne, AttackTuple, MonsterAttackInitiation, MonsterAttackPaging, MonsterDamageOptions, MonsterEngulfOptions, PublishMonsterMessage } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
@@ -25,11 +25,11 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisi
 import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHider, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
+import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus } from './weapon.js';
 import { isPolearm, isPermanentlyPoisonedObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import type { WeaponView } from './object_properties.js';
@@ -54,7 +54,7 @@ import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByEleme
 import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies } from './polyself.js';
 import type { MonsterAttack } from './data_types.js';
 import { d, rn2, rnd } from './rng.js';
-import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero } from './monmove.js';
+import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, setMonsterApparentHeroPosition } from './monmove.js';
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
 import { castmuSpellEffect, chooseMonsterSpell, MCF_INDIRECT, MONSTER_WIZARD_SPELLS, monsterCurseKind, monsterSpellUseless, resolveMonsterMagicRay } from './mcastu.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -66,7 +66,6 @@ import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker } from './mhitm.js';
-import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
 import { msummon } from './minion.js';
 import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
 import { heroHasProtectionFromShapeChangers } from './polyself.js';
@@ -96,7 +95,11 @@ import { inventoryItemDescription } from './invent.js';
 import { linkObjectToMonsterInventory, unlinkObject } from './mkobj.js';
 import { promptYesNo } from './query.js';
 import { could_seduce } from './seduction_compatibility.js';
-import { randomMonsterRelocation, reportMonsterTeleportRestriction } from './teleport.js';
+import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enexto } from './teleport.js';
+import { advanceMonsterWormBody } from './worm.js';
+import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
+import { findMonsterArmorClass } from './monworn.js';
+import { ceilingName } from './terrain_name.js';
 import { objectTypeKnown } from './shk.js';
 import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -110,6 +113,10 @@ const PM_WOOD_GOLEM = 254;
 const PM_IRON_GOLEM = 259;
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const M1_NOEYES = 0x00001000;
+const S_EEL = 57;
+const S_MIMIC = 13;
+const S_PIERCER = 16;
+const PM_TRAPPER = MONSTER_NAME.indexOf('trapper');
 
 // C mhitu.c:hitmsg(): the attacker's hit line, including the again-verb for
 // consecutive identical attack slots. A missed slot is dispatched to
@@ -935,7 +942,7 @@ export async function performMonsterHeroAttack(
         action = {
             monster, calls, movement: {
                 oldx: monster.mx, oldy: monster.my, x: monster.mx, y: monster.my, moved: false,
-                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
+                ...await mattacku(monster, state, random, rollOne, rollDice, calls),
             },
         };
     } finally {
@@ -1338,8 +1345,11 @@ export async function summonmu(
         : `${makePlural(generic)} appear`;
     await plineWithContinuation(`${appearance.charAt(0).toUpperCase()}${appearance.slice(1)}${deaf ? ' from nowhere' : ''}!`);
 }
+// C mhitu.c:mattacku(): monster attacks you. The head runs here — the
+// per-slot switch lives in beginHeroAttackSlot and the presenter resumes it
+// through advanceHeroAttackSequence.
 // Also C mhitu.c:calc_mattacku_vars(): initial targeting state is inlined here.
-export async function beginMonsterHeroAttack(
+export async function mattacku(
     monster: Monster,
     state: PlayingGameState,
     random: RandomBelow,
@@ -1389,10 +1399,157 @@ export async function beginMonsterHeroAttack(
     }
     // C mattacku(): a concealed hero (hiding or mimicking) is revealed
     // instead of attacked, before the armor-class differential.
-    if (await revealConcealedHeroToAttacker(monster, {
-        state, random, rollOne, rollDice, calls,
-    })) return {};
-    if (await disturbMealMimicry(monster, { state })) return {};
+    const hero = state.u;
+    const apparentDistance = dist2(monster.mx, monster.my, monster.mux ?? hero.ux, monster.muy ?? hero.uy);
+    const attackerLooksAdjacent = apparentDistance < 3
+        && !(apparentDistance === 2 && monster.mnum === PM_GRID_BUG);
+    const foundYou = monster.mux === hero.ux && monster.muy === hero.uy;
+    if (!hero.uswallow && attackerLooksAdjacent && foundYou) {
+        const species = heroSpecies(state);
+
+        const symbol = MONSTER_SYMBOL[species];
+        const attacker = () => monsterName(monster, { state, article: 'none', exact: true });
+        const seenByHero = canSeeMonster(monster);
+        const publish = plineWithContinuation;
+        const formName = () => monsterTypeName(species, state.flags.female);
+
+        if (hero.uundetected) {
+            if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
+            hero.uundetected = 0;
+
+            if (monsterIsHider(species) && species !== PM_TRAPPER) {
+                // ceiling hider drops onto the attacker's square
+                await publish(`You fall from the ${ceilingName(hero.ux, hero.uy, state)}!`);
+                const oldx = monster.mx;
+                const oldy = monster.my;
+                // C remove_monster() takes the attacker off the map before the
+                // search so that its own square — usually the closest free one —
+                // is eligible for the hero; the monster remembers its old spot.
+                monster.mx = 0;
+                monster.my = 0;
+                const spot = enexto(species, hero.ux, hero.uy, {
+                    state, random,
+                });
+                // a fish won't voluntarily swap positions when it's in water
+                // and the hero is over land
+                const eelStays = monsterIsEel(monster.mnum)
+                    && isPoolAt(oldx, oldy, state) && !isPoolAt(hero.ux, hero.uy, state);
+                if (!spot || eelStays) {
+                    await placeMonsterOnMap(monster, oldx, oldy); /* put back */
+                    await newsym(hero.ux, hero.uy);
+                    await publish(`${monsterName(monster, { state, capitalized: true })} draws back as you drop!`);
+                    return {};
+                }
+
+                await newsym(oldx, oldy); /* finish removal; the square is empty now */
+                await placeMonsterOnMap(monster, hero.ux, hero.uy);
+                let landing = spot;
+                if (monster.wormno) {
+                    await advanceMonsterWormBody(monster, { state, random, rollOne, rollDice });
+                    // the tail has not grown, so if it now occupies the landing
+                    // square then one of the worm's original spots is free
+                    if (state.level && monsterAtPosition(state.level, spot.x, spot.y)) {
+                        landing = enexto(species, hero.ux, hero.uy, {
+                            state, random,
+                        }) ?? spot;
+                    }
+                }
+                // C teleds() ends with spoteffects(), so the landing square's
+                // trap and autopickup take effect before the piercer strikes.
+                const { arrival } = await teleds(landing.x, landing.y, state, { allowDrag: true });
+                if (arrival.died || state.program_state?.gameover) return {};
+                setMonsterApparentHeroPosition(monster, state, random, calls);
+                await newsym(hero.ux, hero.uy);
+
+                if (symbol !== S_PIERCER) return {}; /* lurkers don't attack */
+
+                const helmet = (monster.minvent || monster.inventory || [])
+                    .find(object => ((object.owornmask ?? 0) & W_ARMH) !== 0);
+                if (helmet && objectIsHardHelmet(helmet)) {
+                    await publish(`Your blow glances off ${possessiveName(monsterName(monster, { state }))} helm.`);
+                } else {
+                    calls?.push('rnd(20)');
+                    if (3 + findMonsterArmorClass(monster) <= rollOne(20)) {
+                        await publish(`${monsterName(monster, { state, capitalized: true })} is hit by a falling piercer (you)!`);
+                        calls?.push('d(3,6)');
+                        monster.mhp -= rollDice(3, 6);
+                        if (monster.mhp < 1) {
+                            await finishHeroMonsterKill(monster, monster.mx, monster.my, { publish });
+                        }
+                    } else {
+                        await publish(`${monsterName(monster, { state, capitalized: true })} is almost hit by a falling piercer (you)!`);
+                    }
+                }
+            } else {
+                // surface hider
+                if (!seenByHero) {
+                    await publish('It tries to move where you are hiding.');
+                } else {
+                    const cover = state.level?.objects?.[hero.ux]?.[hero.uy]?.[0];
+                    const hiddenSomewhere = !!cover
+                        || species === PM_TRAPPER
+                        || (symbol === S_EEL && isPoolAt(hero.ux, hero.uy, state));
+                    if (!hiddenSomewhere) {
+                        await impossible('hiding under nothing?', { state });
+                    } else {
+                        // C zeroes a covering egg's spe so "laid by you" cannot
+                        // leak into the message, then restores it.
+                        const savedSpe = cover ? cover.spe : 0;
+                        if (cover && cover.otyp === EGG) cover.spe = 0;
+                        if (symbol === S_EEL || species === PM_TRAPPER) {
+                            await publish(`Wait, ${attacker()}!  There's a hidden ${formName()} named ${state.plname} there!`);
+                        } else if (cover) {
+                            observeObjectForNaming(cover, { state });
+                            await publish(`Wait, ${attacker()}!  There's a ${formName()} named ${state.plname} hiding under ${await objectDescription(cover, { state })}!`);
+                        }
+                        if (cover) cover.spe = savedSpe;
+                    }
+                }
+                await newsym(hero.ux, hero.uy);
+            }
+            return {};
+        }
+
+        if (symbol === S_MIMIC && (hero.m_ap_type ?? M_AP_NOTHING) !== M_AP_NOTHING) {
+            const sticky = heroFormSticks(state);
+            if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
+            if (sticky && !seenByHero) {
+                await publish('It gets stuck on you.');
+            } else {
+                await publish(`Wait, ${attacker()}!  That's a ${formName()} named ${state.plname}!`);
+            }
+            if (sticky) setHeroGrip(monster, state);
+            hero.m_ap_type = M_AP_NOTHING;
+            hero.mappearance = 0;
+            await newsym(hero.ux, hero.uy);
+            return {};
+        }
+    }
+
+    // C mattacku(): a non-mimic hero might be mimicking an object after
+    // eating a mimic corpse.
+    if (state._mimicMealMessage && hero.m_ap_type === M_AP_OBJECT && !hero.uswallow
+        && monster.mux === hero.ux && monster.muy === hero.uy
+        && Math.max(Math.abs(monster.mx - hero.ux), Math.abs(monster.my - hero.uy)) <= 1) {
+        if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
+        if (!canSeeMonster(monster)) {
+            const picksUpGold = likes_gold(monster.mnum)
+                && hero.mappearance === GOLD_PIECE;
+            await plineWithContinuation(`Something ${picksUpGold ? 'tries to pick you up' : 'disturbs you'}!`);
+        } else {
+            const name = monsterName(monster, { state, article: 'none', exact: true });
+            const shape = mimicObjectName(hero, state);
+            await plineWithContinuation(`Wait, ${name}!  That ${shape} is really ${
+                withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))
+            } named ${state.plname}!`);
+        }
+        if ((state._helplessTurns ?? 0) > 0) {
+            const shape = Upolyd(hero)
+                ? withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female)) : 'yourself';
+            await finishHeroHelplessness(`You appear to be ${shape} again.`, state);
+        }
+        return {};
+    }
     const threshold = monsterAttackThreshold(monster, state, rollOne, calls);
     // C mhitu.c mattacku() (721-724) — make eels visible the moment they
     // hit or miss us.
@@ -3440,33 +3597,7 @@ export function magic_negation(defender: Hero | Monster, state: GameState = game
     return innateProtection ? Math.max(1, cancellation) : cancellation;
 }
 
-// C mhitu.c:mattacku().
-export async function disturbMealMimicry(monster: Monster, { state = game }: { state?: GameState } = {}): Promise<boolean> {
-    requirePlayingGame(state);
-    const hero = state.u;
-    if (!state._mimicMealMessage || hero.m_ap_type !== M_AP_OBJECT || hero.uswallow
-        || monster.mux !== hero.ux || monster.muy !== hero.uy
-        || Math.max(Math.abs(monster.mx - hero.ux), Math.abs(monster.my - hero.uy)) > 1)
-        return false;
-    if (!canSpotMonster(monster)) await map_invisible(monster.mx, monster.my);
-    if (!canSeeMonster(monster)) {
-        const picksUpGold = likes_gold(monster.mnum)
-            && hero.mappearance === GOLD_PIECE;
-        await plineWithContinuation(`Something ${picksUpGold ? 'tries to pick you up' : 'disturbs you'}!`);
-    } else {
-        const name = monsterName(monster, { state, article: 'none', exact: true });
-        const shape = mimicObjectName(hero, state);
-        await plineWithContinuation(`Wait, ${name}!  That ${shape} is really ${
-            withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female))
-        } named ${state.plname}!`);
-    }
-    if ((state._helplessTurns ?? 0) > 0) {
-        const shape = Upolyd(hero)
-            ? withIndefiniteArticle(monsterTypeName(heroSpecies(state), state.flags.female)) : 'yourself';
-        await finishHeroHelplessness(`You appear to be ${shape} again.`, state);
-    }
-    return true;
-}
+
 // C mhitu.c:mdamageu(). Unlike losehp(), this clamps current HP down to
 // the existing maximum and does not stop running on zero-damage effects.
 export async function mdamageu(monster: Monster, amount: number, {

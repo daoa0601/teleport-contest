@@ -25,7 +25,7 @@ import { A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMO
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
-import { beginMonsterHeroAttack } from './mhitu.js';
+import { mattacku } from './mhitu.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -657,7 +657,7 @@ export async function movePriest(monster, state, random, rollDice, rollOne, call
                 postMoveStatus: MMOVE_NOTHING,
                 movementStage: 'postmov',
                 deferredAfterSpecialAttack: true,
-                ...await beginMonsterHeroAttack(monster, state, random, rollOne, rollDice, calls),
+                ...await mattacku(monster, state, random, rollOne, rollDice, calls),
             };
         }
         if (state.u.urooms.includes(epri.shroom)) {

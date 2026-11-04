@@ -5,7 +5,7 @@ import { canSeeMonster } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { beginMonsterHeroAttack, completeHeroAttackSlot, presentMonsterAttackEffects, } from '../js/mhitu.js';
+import { mattacku, completeHeroAttackSlot, presentMonsterAttackEffects, } from '../js/mhitu.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { precheck, use_defensive, find_misc } from '../js/muse.js';
 import { summonMonsterInsects } from '../js/mcastu.js';
@@ -190,7 +190,7 @@ void test('a successful aggravation spell aimed at a misplaced hero still explai
     const sleeper = await createMonsterAt('orc', 15, 10, NO_MINVENT);
     sleeper.msleeping = 1;
     const calls = [];
-    const initiation = await beginMonsterHeroAttack(caster, game, limit => limit - 1, () => 1, () => 1, calls);
+    const initiation = await mattacku(caster, game, limit => limit - 1, () => 1, () => 1, calls);
     const action = { monster: caster, calls,
         movement: { oldx: 10, oldy: 10, x: 10, y: 10, moved: false, ...initiation } };
     const input = resetInputState();
