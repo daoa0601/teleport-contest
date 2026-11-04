@@ -2601,41 +2601,28 @@ export function poisonAttackNoun(monster: Monster, attackType: AttackMethod): st
 
 const OILSKIN_CLOAK = OBJECT_NAMES.indexOf('oilskin cloak');
 
-// C mhitu.c:u_slip_free(), greased-or-oilskin armor against a grab
-// (mhitm_ad_phys()'s hug branch).
-export async function heroSlipsFree(
-    monster: Monster, state: PlayingGameState,
+// C mhitu.c:u_slip_free(): greased or oilskin clothing protects against a
+// grab (mhitm_ad_phys's hug branch) or a wrap (mhitm_ad_wrap); an engulfing
+// wrap (AT_ENGL) ignores grease entirely. The AD_DRIN greased-helmet variant
+// stays inlined in the mhitm_ad_drin port.
+export async function u_slip_free(
+    monster: Monster, attackType: number, damageType: number,
+    state: PlayingGameState,
     random: (range: number) => number, publish: MessagePublisher,
 ): Promise<boolean> {
+    if (attackType === AT_ENGL) return false;
     const armor = state.uarmc || state.uarm || state.uarmu;
     if (!armor || (!armor.greased && armor.otyp !== OILSKIN_CLOAK)) return false;
     if (armor.cursed && random(3) === 0) return false;
 
     const name = armor.greased || objectTypeKnown(armor, state)
         ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
-    await publish(`${monsterName(monster, { state, capitalized: true })} grabs you, but cannot hold onto your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
+    const subject = monsterName(monster, { state, capitalized: true });
+    await publish(damageType === AD_WRAP
+        ? `${subject} slips off of your ${armor.greased ? 'greased' : 'slippery'} ${name}!`
+        : `${subject} grabs you, but cannot hold onto your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
     // The grease roll and inventory change follow the slip message, which
     // may suspend for a pager while the armor is still greased.
-    if (armor.greased && random(2) === 0) {
-        await publish('The grease wears off.');
-        armor.greased = false;
-    }
-    return true;
-}
-
-// C mhitu.c:u_slip_free(), the wrapping variant (mhitm_ad_wrap()'s hero
-// branch): engulfing wraps ignore grease entirely.
-export async function heroSlipsFromWrapping(
-    monster: Monster, attack: HeroContactAttack, state: PlayingGameState,
-    publish: MessagePublisher, random: typeof rn2,
-): Promise<boolean> {
-    if (attack.attackType === AT_ENGL) return false;
-    const armor = state.uarmc || state.uarm || state.uarmu;
-    if (!armor || (!armor.greased && armor.otyp !== OILSKIN_CLOAK)) return false;
-    if (armor.cursed && random(3) === 0) return false;
-    const name = armor.greased || objectTypeKnown(armor, state)
-        ? objectCombatName(armor, { state }) : armorSimpleName(armor, state);
-    await publish(`${monsterName(monster, { state, capitalized: true })} slips off of your ${armor.greased ? 'greased' : 'slippery'} ${name}!`);
     if (armor.greased && random(2) === 0) {
         await publish('The grease wears off.');
         armor.greased = false;

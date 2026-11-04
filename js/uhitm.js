@@ -51,7 +51,7 @@ import { snuffMonsterInventoryLights } from './light.js';
 import { adjustedMonsterLevel, cloneMonster } from './makemon.js';
 import { touchHeroWithDeath } from './mcastu.js';
 import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit } from './mhitm.js';
-import { damageHeroFromMonster, heroHasRemovableSpeed, heroSlipsFree, heroSlipsFromWrapping, infectHeroWithMonsterDisease, magicNegation, poisonAttackNoun, presentMonsterAttackEffects, resolveHeroSeduction, slowHero } from './mhitu.js';
+import { damageHeroFromMonster, heroHasRemovableSpeed, u_slip_free, infectHeroWithMonsterDisease, magicNegation, poisonAttackNoun, presentMonsterAttackEffects, resolveHeroSeduction, slowHero } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
@@ -3200,7 +3200,7 @@ export async function resolveMonsterWrapping(monster, attack, state, publish, ra
     const symbol = MONSTER_SYMBOL[monster.mnum];
     const coils = monsterIsSlithy(monster.mnum) && (symbol === S_SNAKE || symbol === S_NAGA);
     if (!hero.ustuck && random(10) === 0) {
-        if (await heroSlipsFromWrapping(monster, attack, state, publish, random)) {
+        if (await u_slip_free(monster, attack.attackType, attack.damageType, state, random, publish)) {
             attack.damage = 0;
             return;
         }
@@ -3468,7 +3468,7 @@ export async function mhitm_ad_phys(call) {
             const holder = state.u.ustuck;
             const draw = (limit) => recordRandom(random, calls, limit);
             if (!holder && draw(2)) {
-                if (await heroSlipsFree(monster, state, draw, publish))
+                if (await u_slip_free(monster, attack.attackType, attack.damageType, state, draw, publish))
                     return effectResult(0);
                 setHeroGrip(monster, state);
                 await publish(`${monsterName(monster, { state, capitalized: true })} grabs you!`);
