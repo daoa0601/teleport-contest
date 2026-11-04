@@ -1,7 +1,7 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h and dothrow.c throwing_weapon().
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
-import { objectClassForType, objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
+import { objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
@@ -16,7 +16,7 @@ const MITHRIL = 17;
 const GLASS = 19;
 const WHACK = 4;
 function objectClass(object) {
-    return object?.oclass || objectClassForType(object?.otyp);
+    return object?.oclass ?? 0;
 }
 // C obj.h:is_graystone().
 export function isGrayStone(object) {

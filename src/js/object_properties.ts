@@ -3,7 +3,7 @@
 
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
 import {
-    objectClassForType, objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS,
+    objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS,
     FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN,
     TIN_OPENER, TOWEL,
     ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS,
@@ -34,7 +34,7 @@ const GLASS = 19;
 const WHACK = 4;
 
 function objectClass(object: ObjectCandidate): number {
-    return object?.oclass || objectClassForType(object?.otyp);
+    return object?.oclass ?? 0;
 }
 
 // C obj.h:is_graystone().
