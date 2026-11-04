@@ -25,7 +25,7 @@ import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisi
 import { cansee, couldsee, monsterHasLineOfSightToHero } from './vision.js';
 import { monsterName, monsterName as canonicalMonsterName, visibleMonsterSubject, randomDisplayMonsterSubject, displayLiquidName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsEel, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
+import { monsterObjectPronoun, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterPolymorphsWhenStoned, monsterPossessive, seenResistanceForDamage, monsterPossessive as perceivedPossessivePronoun, is_minion, is_orc, likes_gold, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterHasEyes, monsterHidesUnder, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsHuman, monsterIsSwimmer, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterHasAcidResistance, monsterHasColdResistance, monsterHasFireResistance, monsterHasShockResistance, monsterHasStoneResistance } from './mondata.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
@@ -43,7 +43,7 @@ import { createElementalMonsterExplosion } from './explosion.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster } from './mon.js';
 import type { MonsterDeathOptions, MonsterLiquidDeathContext } from './mon.js';
-import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName } from './objnam.js';
+import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objectCombatName, objectName, ownedObjectName, simpleObjectName, mimicObjectName, makePlural } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
@@ -67,11 +67,13 @@ import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';
 import { attackMonsterWithMonster, monsterAttackStopsAggressor, petrifyMonsterAttacker } from './mhitm.js';
 import { revealConcealedHeroToAttacker } from './hero_hider_reveal.js';
-import { summonMonsterAttackHelp } from './minion.js';
+import { msummon } from './minion.js';
+import { isWereMonster, isHumanWereMonster, transformWereMonster, summonWerePack, counterWereSpecies } from './were.js';
+import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject, sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
 import { heroResistsStoning, touchPetrifies, contactIsProtected } from './stoning.js';
 import type { Hero } from './hero_types.js';
 import { setHeroGrip } from './mon.js';
@@ -1265,6 +1267,70 @@ function possessive(monster: Monster) {
     const name = subject(monster).replace(/^The /u, 'the ');
     return name === 'It' ? 'its' : name.endsWith('s') ? `${name}'` : `${name}'s`;
 }
+
+// C mhitu.c:summonmu(): monsters summon help for their fight against the
+// hero. mattacku()'s caller gate — not cancelled, not a shapechanger,
+// within one square of the hero's perceived position, demon or were —
+// lives in the mattacku port below.
+export async function summonmu(
+    monster: Monster,
+    youseeit: boolean,
+    state: PlayingGameState,
+    random: RandomBelow,
+): Promise<void> {
+    if (monsterIsDemon(monster.mnum)) {
+        if (!['balrog', 'amorous demon'].includes(MONSTER_NAME[monster.mnum] ?? '')) {
+            const inHell = !!state.dungeons?.[state.u.uz.dnum]?.flags?.hellish;
+            if (random(inHell ? 10 : 16) === 0)
+                await msummon(monster);
+        }
+        return; /* no such thing as a demon were creature, so we're done */
+    }
+
+    /* were creature */
+    // if hero has Protection_from_shape_changers, new_were() works in the
+    // critter-to-human direction but is a no-op the other way.
+    const protectedHero = heroHasProtectionFromShapeChangers(state);
+    if (isHumanWereMonster(monster)) {
+        if (!protectedHero && random(sessionIsNight(state.datetime) ? 3 : 5) === 0)
+            await transformWereMonster(monster, state);
+    } else if (protectedHero || random(30) === 0) {
+        await transformWereMonster(monster, state);
+    }
+
+    /* maybe summon compatible critters;
+       not blocked by Protection_from_shape_changers */
+    if (random(10) !== 0) return;
+    if (youseeit)
+        await plineWithContinuation(`${monsterName(monster, { state, capitalized: true })} summons help!`);
+    const helpers = await summonWerePack(monster.mnum, false, state, random);
+    const visible = helpers.filter(helper => canSeeMonster(helper)).length;
+    const hemmedIn = formatFeltMessage('hemmed in.', state);
+    if (youseeit) {
+        if (!helpers.length) {
+            await plineWithContinuation('But none comes.');
+        } else if (!visible) {
+            await plineWithContinuation(hemmedIn);
+        }
+        return;
+    }
+    const deaf = heroIsDeaf(state);
+    if (!deaf)
+        await plineWithContinuation(`Something ${makePlural(monsterGrowlSound(monster))}!`);
+    if (!helpers.length) return; /* no help came; but you didn't know it tried */
+    if (!visible) {
+        await plineWithContinuation(hemmedIn);
+        return;
+    }
+    const beast = counterWereSpecies(monster.mnum);
+    const speciesName = MONSTER_NAME[monster.mnum] ?? '';
+    const form = monsterIsHuman(monster.mnum)
+        ? MONSTER_NAME[beast ?? -1] ?? speciesName : speciesName;
+    const generic = form.replace(/^were/u, '') || 'creature';
+    const appearance = visible === 1 ? `${withIndefiniteArticle(generic)} appears`
+        : `${makePlural(generic)} appear`;
+    await plineWithContinuation(`${appearance.charAt(0).toUpperCase()}${appearance.slice(1)}${deaf ? ' from nowhere' : ''}!`);
+}
 // Also C mhitu.c:calc_mattacku_vars(): initial targeting state is inlined here.
 export async function beginMonsterHeroAttack(
     monster: Monster,
@@ -1327,9 +1393,22 @@ export async function beginMonsterHeroAttack(
         monster.minvis = 0;
         await newsym(monster.mx, monster.my);
     }
-    const alreadyFleeing = !!monster.mflee;
-    await summonMonsterAttackHelp(monster, state, random);
-    if (monster.mflee && !alreadyFleeing) return {};
+    // C mattacku(): when not cancelled and not in current form due to
+    // shapechange, many demons can summon more demons and were creatures
+    // can summon critters; also, were creature might change form.
+    if (monster.mcan || (monster.cham ?? -1) >= 0
+        || (!monsterIsDemon(monster.mnum) && !isWereMonster(monster))) {
+        // not a summoner this turn
+    } else if (monster.mux === undefined || monster.muy === undefined) {
+        throw new Error('Summoning during an attack requires the perceived hero position');
+    } else if (Math.abs(monster.mx - monster.mux) <= 1
+        && Math.abs(monster.my - monster.muy) <= 1) {
+        const alreadyFleeing = !!monster.mflee;
+        await summonmu(monster, canSeeMonster(monster), state, random);
+        // were-creature might have changed to beast form; if that has
+        // caused it to become afraid, don't continue this attack
+        if (monster.mflee && !alreadyFleeing) return {};
+    }
     if (state.u.invulnerable) {
         const apparentDistance = dist2(monster.mx, monster.my, monster.mux ?? 0, monster.muy ?? 0);
         const appearsAdjacent = apparentDistance < 3

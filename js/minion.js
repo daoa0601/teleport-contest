@@ -18,7 +18,6 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { detachHeroGold } from './hero_gold.js';
 import { rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
-import { isWereMonster, summonWereAttackHelp } from './were.js';
 import { heroGoldAmount } from './hack.js';
 import { is_lord, is_minion, monsterIsDemon, is_ndemon, is_dlord, is_dprince, } from './mondata.js';
 const S_DEMON = 56;
@@ -71,28 +70,6 @@ export async function summonMinion(alignment, talk = false) {
     }
     monster.mpeaceful = false;
     return monster;
-}
-// C mhitu.c:summonmu(), before offensive items and attack slots.
-export async function summonMonsterAttackHelp(monster, state = requireInitializedGame(), random = rn2) {
-    if (monster.mcan ||
-        (monster.cham ?? -1) >= 0 ||
-        (!monsterIsDemon(monster.mnum)
-            && !isWereMonster(monster)))
-        return null;
-    if (monster.mux === undefined || monster.muy === undefined)
-        throw new Error('Summoning during an attack requires the perceived hero position');
-    if (Math.abs(monster.mx - monster.mux) > 1 || Math.abs(monster.my - monster.muy) > 1)
-        return null;
-    if (isWereMonster(monster)) {
-        await summonWereAttackHelp(monster, state, random);
-        return null;
-    }
-    if (['balrog', 'amorous demon'].includes(MONSTER_NAME[monster.mnum] ?? ''))
-        return null;
-    const inHell = !!state.dungeons?.[state.u.uz.dnum]?.flags?.hellish;
-    if (random(inHell ? 10 : 16) !== 0)
-        return null;
-    return msummon(monster);
 }
 function monsterIsGone(mnum) {
     return !!((game.mvitals?.[mnum]?.mvflags ?? 0) & G_GONE);

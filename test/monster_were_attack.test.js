@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { resetInputState } from '../js/input.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { vision_recalc } from '../js/vision.js';
-import { summonWereAttackHelp } from '../js/were.js';
+import { summonmu } from '../js/mhitu.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
@@ -75,7 +75,7 @@ for (const condition of ['sleeping', 'fainted', 'paralyzed', 'awake']) {
             expected: /Something|hemmed in/,
             limit: 2,
         });
-        await summonWereAttackHelp(monster, game, () => 0);
+        await summonmu(monster, canSeeMonster(monster), game, () => 0);
         await flush_screen();
         const helpers = level.monsters.filter(other => other !== monster);
         assert.ok(helpers.length > 0);
