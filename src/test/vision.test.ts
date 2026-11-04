@@ -8,7 +8,7 @@ import { plineWithContinuation } from '../js/pline.js';
 import { pushKeys } from '../js/input.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { cansee, couldsee, unset_seenv, visibleCellsFrom, vision_recalc, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 
@@ -54,7 +54,7 @@ void test('forgetting one view of an adjacent wall preserves a view from elsewhe
     await vision_recalc(0);
     const corridorView = wall.seenv;
     assert.notEqual(corridorView, 0);
-    await moveHeroByTeleport(12, 12);
+    await teleds(12, 12);
     await vision_recalc(0);
     assert.notEqual(wall.seenv, corridorView);
 

@@ -89,7 +89,7 @@ import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
 
-import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
 import { intrinsic_possible } from './eat.js';
@@ -2596,7 +2596,7 @@ async function makeKops(origin: Position, state: ShopGameState): Promise<void> {
         if ((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE) continue;
         for (let remaining = rankCount; remaining > 0; remaining--) {
             // Native enexto moves the center even if makemon later fails.
-            const next = findNearbyMonsterPosition(species, position.x, position.y, { state });
+            const next = enexto(species, position.x, position.y, { state });
             if (next) {
                 position = next;
                 await makemonAt(species, position.x, position.y, MM_NOMSG);

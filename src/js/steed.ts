@@ -44,8 +44,7 @@ import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { rn1, rn2, rnd, rnl } from './rng.js';
 import { useHeroSkill } from './skills.js';
-import { moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
+import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
@@ -430,7 +429,7 @@ async function mountSteed(steed: Monster | undefined, force: boolean, [dx, dy]: 
     if (wasStealthy && !hero.stealth)
         await plineWithContinuation("You aren't stealthy anymore.");
     steed.headOnMap = false;
-    await moveHeroByTeleport(steed.mx, steed.my, game, {
+    await teleds(steed.mx, steed.my, game, {
         finishArrival: () => applyHeroLocationEffects(),
     });
     game.context.botl = true;
@@ -632,13 +631,13 @@ async function landingSpot(
         }
         if (selected) return selected;
     }
-    return force ? findNearbyMonsterPosition(
+    return force ? enexto(
         state.u.umonnum, state.u.ux, state.u.uy, { state, random },
     ) : null;
 }
 
 async function moveSteedOffHero(state: PlayingGameState, steed: Monster, random: (range: number) => number) {
-    const point = findNearbyMonsterPosition(
+    const point = enexto(
         steed.mnum, state.u.ux, state.u.uy, { state, random },
     );
     if (!point) return false;
@@ -757,9 +756,9 @@ export async function dismountHero(
     let steedPosition = { x: oldx, y: oldy };
     if (state.level.monsters.some(monster => monsterHasMapPosition(monster, state) && monster !== steed && !monster.dead
         && monster.mx === oldx && monster.my === oldy)) {
-        steedPosition = findNearbyMonsterPosition(steed.mnum, oldx, oldy, { state, random })
-            || findNearbyMonsterPosition(MONSTER_NAME.indexOf('bat'), oldx, oldy, { state, random })
-            || findNearbyMonsterPosition(MONSTER_NAME.indexOf('ghost'), oldx, oldy, { state, random })
+        steedPosition = enexto(steed.mnum, oldx, oldy, { state, random })
+            || enexto(MONSTER_NAME.indexOf('bat'), oldx, oldy, { state, random })
+            || enexto(MONSTER_NAME.indexOf('ghost'), oldx, oldy, { state, random })
             || steedPosition;
     }
     let liquid = null;
@@ -798,7 +797,7 @@ export async function dismountHero(
                 try {
                     // The shared teleds port renders the moved hero, then
                     // runs terrain and liquid effects while dismounting.
-                    const relocation = await moveHeroByTeleport(landing.x, landing.y, state, {
+                    const relocation = await teleds(landing.x, landing.y, state, {
                         allowDrag: true,
                         finishArrival: destination => finishDestinationSpotEffects({
                             oldx: destination.oldx, oldy: destination.oldy,

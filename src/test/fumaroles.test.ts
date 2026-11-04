@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 
 import { runLevelRegions } from '../js/regions.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('natural lava clouds do not blame the hero outside level generation or monster movement', async () => {
@@ -40,7 +40,7 @@ void test('a fumarole leaves damaging gas which hurts a breathing occupant on th
     assert.ok(cell);
     // Test the gas damage on safe ground, rather than landing in lava.
     level.requireAt(cell.x, cell.y).typ = ROOM;
-    await moveHeroByTeleport(cell.x, cell.y);
+    await teleds(cell.x, cell.y);
     assert.ok(game.u.uhp > 0, 'the hero must reach the gas cloud alive');
     const hp = game.u.uhp;
     await runLevelRegions(game, { publish: async () => {} });

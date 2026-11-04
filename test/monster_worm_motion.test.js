@@ -7,7 +7,7 @@ import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { adjustMonsterSpeed } from '../js/worn.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { runMonsterAction } from '../js/monmove.js';
 import { initRng } from '../js/rng.js';
@@ -88,7 +88,7 @@ void test('a peaceful worm shrinks when its only legal square was just kicked', 
     requirePlayingGame(game);
     await runMonsterAction(worm, game);
     initializePet(worm, { state: game });
-    await moveHeroByTeleport(11, 10);
+    await teleds(11, 10);
     resetInputState();
     pushKeys('l' + ' '.repeat(100));
     await rhack(4);
@@ -108,7 +108,7 @@ void test('a head-only worm survives shrinking and still grows on its first late
     initializePet(worm, { state: game });
     worm.mhp = 1;
     game.level.requireAt(15, 10).typ = STONE;
-    await moveHeroByTeleport(12, 10);
+    await teleds(12, 10);
     resetInputState();
     pushKeys('l' + ' '.repeat(100));
     await rhack(4);

@@ -23,7 +23,7 @@ possessions, armor wearing and the saddle probe. It does not isolate the RNG
 or successor state of `m_initweap` and `m_initinv` individually. Native
 `makemon` calls `m_initweap` only for armed species; this caller guard remains.
 The inventory projection also calls `teleport.c:noteleport_level` and emitted
-`teleport_rules.js:monsterTeleportRestricted` to report the created monster's
+`teleport.js:monsterTeleportRestricted` to report the created monster's
 current teleport restriction directly.
 
 ## Run

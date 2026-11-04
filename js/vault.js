@@ -39,8 +39,8 @@ import { publishMonsterYelp } from './ambient_sounds.js';
 import { impossible } from './diagnostics.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object, stack_object } from './mkobj.js';
-import { findNearbyMonsterPosition } from './teleport_rules.js';
 import { currency, freeInventoryObject } from './invent.js';
+import { enexto } from './teleport.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
 const PM_GUARD = 272;
 const VAULT_GUARD_TIME = 30;
@@ -871,7 +871,7 @@ async function pickCorridorGold(guard, x, y, state, random) {
         if (distance(oldx, oldy) > 2 && seen) {
             let best = { x: oldx, y: oldy };
             for (let attempt = 0; attempt < 10; attempt++) {
-                const point = findNearbyMonsterPosition(guard.mnum, x, y, { state, random });
+                const point = enexto(guard.mnum, x, y, { state, random });
                 if (!point)
                     continue;
                 if (distance(point.x, point.y) < distance(best.x, best.y)

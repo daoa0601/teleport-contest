@@ -15,7 +15,7 @@ import { pushKeys } from '../js/input.js';
 import { BOULDER, DIAMOND, RIN_TELEPORT_CONTROL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { races } from '../js/roles.js';
-import { moveHeroByTeleport, teleportHero } from '../js/teleport.js';
+import { teleds, teleportHero } from '../js/teleport.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import {
     installHeroChainedToBuriedBall, installPolymorphedHero,
@@ -38,7 +38,7 @@ void test('relocation refreshes a blind hero warning range before arrival effect
     await flush_screen(1);
     assert.notEqual(requireScreenCell(20, 11).ch, '1');
 
-    await moveHeroByTeleport(12, 10);
+    await teleds(12, 10);
     await flush_screen(1);
 
     assert.equal(requireScreenCell(20, 11).ch, '1');
@@ -50,7 +50,7 @@ void test('teleport unearths a chained ball and carries the restored punishment'
     const ball = await installHeroChainedToBuriedBall();
     pushKeys(' '.repeat(20));
 
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
 
     assert.equal(game.uball, ball);
     assert.ok(game.uchain);
@@ -69,7 +69,7 @@ for (const trapType of [PIT, HOLE] as const) {
         const trap = addTrap(game.level, trapType, 10, 10);
         const boulder = await floorObject(BOULDER, 10, 10);
 
-        await moveHeroByTeleport(14, 10);
+        await teleds(14, 10);
 
         assert.equal(game.level.traps.includes(trap), trapType !== PIT);
         assert.equal(boulder.where === 'gone', trapType === PIT);
@@ -87,7 +87,7 @@ for (const form of ['large mimic', 'cave spider'] as const) {
         await useHeroHide();
         assert.ok(game.u.uundetected || game.u.m_ap_type);
 
-        await moveHeroByTeleport(14, 10);
+        await teleds(14, 10);
 
         assert.equal(game.u.uundetected, 0);
         if (form === 'large mimic') assert.equal(game.u.m_ap_type, M_AP_NOTHING);
@@ -100,7 +100,7 @@ void test('relocation does not wake a sleeping hero or shorten the sleep', async
     await putHeroToSleep(8);
     const sleepingSince = game.u.usleep;
 
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
 
     assert.equal(game._helplessTurns, 8);
     assert.equal(game.u.usleep, sleepingSince);
@@ -119,7 +119,7 @@ for (const condition of ['grounded', 'levitating', 'polymorphed'] as const) {
         if (condition === 'polymorphed') installPolymorphedHero('giant spider');
         pushKeys(' '.repeat(20));
 
-        await moveHeroByTeleport(14, 10);
+        await teleds(14, 10);
 
         if (condition === 'grounded')
             assert.match(game._pending_message, /You sense something below your feet\./);

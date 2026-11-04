@@ -25,8 +25,7 @@ import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { rnd_offensive_item, rnd_defensive_item, rnd_misc_item } from './muse.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { randomMonsterRelocation } from './teleport.js';
-import { goodPosition } from './teleport_rules.js';
+import { randomMonsterRelocation, goodPosition } from './teleport.js';
 import { monsterIsFemale, monsterIsPlayerMonster } from './mondata.js';
 
 const STRANGE_OBJECT = 0;

@@ -98,7 +98,7 @@ import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { applyHeroWereChange, presentWereChange } from './were.js';
-import { reportMonsterTeleportRestriction } from './teleport_rules.js';
+import { reportMonsterTeleportRestriction } from './teleport.js';
 import { clearHeroSliming } from './potion.js';
 import { initTrack, setTrack } from './track.js';
 import { autopickupAtHero } from './pickup.js';

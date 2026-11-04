@@ -36,7 +36,8 @@ import { impossible } from './diagnostics.js';
 import { addToContainer } from './sp_lev.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { specialShrinePriest } from './priest.js';
-import { findMonsterNearPosition, topologize } from './mklev.js';
+import { topologize } from './mklev.js';
+import { enexto } from './teleport.js';
 import type { GameState } from './game_state.js';
 import { make_grave } from './engrave.js';
 import type { Position, Rectangle, Room } from './map_types.js';
@@ -594,7 +595,7 @@ export async function makeUndeadNear(x: number, y: number, { state = game, reviv
     while (count--) {
         const species = morgueMonsterType();
         if (species == null || species < 0) continue;
-        const position = findMonsterNearPosition(species, x, y, { state });
+        const position = enexto(species, x, y, { state });
         if (!position) continue;
         const corpse = reviveCorpses
             ? state.level.objects[position.x]?.[position.y]?.find(object => object.otyp === CORPSE) : undefined;

@@ -14,7 +14,7 @@ import { placeBallAndChain, setBallAndChainFelt } from '../js/ball.js';
 import { pickupAtHero } from '../js/pickup.js';
 import { polymonHero } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { punishHero, unpunishHero } from '../js/read.js';
@@ -65,7 +65,7 @@ void test('a dragging teleport restores felt chain memory before relocating the 
     await rhack('l'.charCodeAt(0));
     await feel_location(11, 10);
     assert.equal(game.u.bc_felt, BC_CHAIN);
-    await moveHeroByTeleport(13, 10, game, { allowDrag: true });
+    await teleds(13, 10, game, { allowDrag: true });
     assert.deepEqual([punishmentAttachment('uball').ox, punishmentAttachment('uball').oy], [11, 10]);
     assert.deepEqual([punishmentAttachment('uchain').ox, punishmentAttachment('uchain').oy], [12, 10]);
     assert.equal(requireGameLevel().requireAt(11, 10).remembered_glyph?.kind, 'terrain');
@@ -75,7 +75,7 @@ void test('a distant blind teleport forgets the old chain and remembers the dest
     await blindPunishedHero();
     requirePlayingGame(game);
     await feel_location(10, 10);
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
     assert.equal(requireGameLevel().requireAt(10, 10).remembered_glyph?.kind, 'terrain');
     assert.equal(game.u.bglyph?.kind, 'terrain');
     assert.equal(game.u.cglyph?.kind, 'terrain');
@@ -193,14 +193,14 @@ void test('an adjacent relocation can drag both attachments without imposing a w
     requirePlayingGame(game);
     await rhack('l'.charCodeAt(0));
     await rhack('l'.charCodeAt(0));
-    await moveHeroByTeleport(13, 10, game, { allowDrag: true });
+    await teleds(13, 10, game, { allowDrag: true });
     assert.deepEqual([punishmentAttachment('uball').ox, punishmentAttachment('uchain').ox, game.u.ux], [11, 12, 13]);
     assert.equal(game._helplessTurns ?? 0, 0);
 });
 void test('a distant relocation carries the pair even when its caller permits dragging', async () => {
     await blindPunishedHero();
     requirePlayingGame(game);
-    await moveHeroByTeleport(14, 10, game, { allowDrag: true });
+    await teleds(14, 10, game, { allowDrag: true });
     assert.deepEqual([punishmentAttachment('uball').ox, punishmentAttachment('uchain').ox, game.u.ux], [14, 14, 14]);
     assert.equal(game._helplessTurns ?? 0, 0);
 });

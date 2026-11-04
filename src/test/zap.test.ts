@@ -32,7 +32,7 @@ import {
 } from '../js/object_data.js';
 import { scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { heroTeleportRestricted } from '../js/teleport_rules.js';
+import { heroTeleportRestricted } from '../js/teleport.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import {
     zapRayWithObject,

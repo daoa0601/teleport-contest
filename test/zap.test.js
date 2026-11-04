@@ -21,7 +21,7 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { AMULET_OF_LIFE_SAVING, APPLE, OIL_LAMP, POT_ACID, SCR_IDENTIFY, WAN_CANCELLATION, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_STASIS, WAN_WISHING, WAN_DEATH, WAN_COLD, } from '../js/object_data.js';
 import { scheduleLevelTimer } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { heroTeleportRestricted } from '../js/teleport_rules.js';
+import { heroTeleportRestricted } from '../js/teleport.js';
 import { vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { zapRayWithObject, } from '../js/zap.js';
 import { applyWandEffect } from '../js/zap.js';

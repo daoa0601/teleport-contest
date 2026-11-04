@@ -20,9 +20,9 @@ import { noticeAllMonsters } from '../js/hack.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { finishTeleportArrival } from '../js/location_effects.js';
+import { finishTeleportArrival } from '../js/teleport.js';
 import { RIN_CONFLICT, SKELETON_KEY } from '../js/object_data.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { runSegment } from '../js/jsmain.js';
 import { gotoLevel } from '../js/level_change.js';
 import { jumpHero } from '../js/apply.js';
@@ -207,7 +207,7 @@ void test('a nested teleport waits for the outer invocation message before notic
     const jackal = await createMonsterAt('jackal', 13, 11, MM_NOGRP | NO_MINVENT);
     jackal.mpeaceful = 0;
     const input = resetInputState();
-    const teleport = moveHeroByTeleport(12, 10, game, { finishArrival: finishTeleportArrival });
+    const teleport = teleds(12, 10, game, { finishArrival: finishTeleportArrival });
     await input.waitUntilBlocked();
     for (let page = 0; page < 10 && !game._pending_message.includes('Where do you want to be teleported?'); page++) {
         input.feed(' ');

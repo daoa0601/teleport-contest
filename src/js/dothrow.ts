@@ -72,7 +72,7 @@ import { throwOrdinaryObject } from './ordinary_throw.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterHasMapPosition , monsterOccupiesPosition } from './steed.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, glyphAt, map_invisible } from './display.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition } from './teleport.js';
 import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrification , petrifyMonsterFromContact, trapName, dotrap } from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';

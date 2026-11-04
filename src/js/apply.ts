@@ -97,12 +97,12 @@ import type { InventoryClassification } from './invent.js';
 import { gotoLevel } from './level_change.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { lightDamage, lightRoom, transformMagicLampToOilLamp } from './light.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { pickLock } from './lock.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
-import { canDigDown, findMonsterNearPosition } from './mklev.js';
+import { canDigDown } from './mklev.js';
 import {mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty} from './mkobj.js';
 import { paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir } from './mon.js';
 import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks } from './mondata.js';
@@ -139,8 +139,7 @@ import { activateStatueTrapAt } from './statue_trap.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
-import { findNearbyMonsterPosition, heroTeleportRestricted, monsterTeleportRestricted } from './teleport_rules.js';
-import { askTeleportDestination, distanceToHero, moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
+import { askTeleportDestination, distanceToHero, enexto, goodPosition, heroTeleportRestricted, monsterTeleportRestricted, teleds, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -798,7 +797,7 @@ async function moveLeashedMonsterNextToHero(monster: Monster, state: GameState, 
     if (distanceToHero(monster, state) <= 1) return;
     const oldx = monster.mx;
     const oldy = monster.my;
-    const destination = findNearbyMonsterPosition(
+    const destination = enexto(
         monster.mnum, state.u.ux, state.u.uy, { state, random },
     );
     if (!destination) return;
@@ -1693,7 +1692,7 @@ export async function jumpHero(magic = 0, { state = game }: { state?: GameState 
             }),
     });
     if (state.program_state.gameover) return jumpResult(true, state);
-    await moveHeroByTeleport(destination.x, destination.y, state);
+    await teleds(destination.x, destination.y, state);
     if (state.program_state.gameover) return jumpResult(true, state);
     nomul(-1, state);
     state._helplessReason = 'jumping around';
@@ -3010,7 +3009,7 @@ export async function useGrapplingHook(hook: GameObject, {
             state.notonhead = target.x !== monster.mx || target.y !== monster.my;
             const tiny = (MONSTER_SIZE[monster.mnum] ?? 2) === 0;
             if (tiny && rn2(4) === 0) {
-                const destination = findMonsterNearPosition(
+                const destination = enexto(
                     null, state.u.ux, state.u.uy, { state },
                 );
                 if (destination) {

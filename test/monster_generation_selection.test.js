@@ -5,7 +5,8 @@ import { G_EXTINCT, G_GENOD, G_GONE, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NOMSG, NO_MIN
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/read.js';
 import { pushKeys } from '../js/input.js';
-import { findMonsterNearPosition, makemonNear } from '../js/mklev.js';
+import { makemonNear } from '../js/mklev.js';
+import { enexto } from '../js/teleport.js';
 import { splitHeroMonsterForm } from '../js/potion.js';
 import { generateMedusaLevel } from '../js/mkmaze.js';
 import { makemonAt } from '../js/makemon.js';
@@ -28,7 +29,7 @@ for (const centerX of [10, 12]) {
         freshGameplayRoom();
         // timeout.c:hatch_egg() chooses a nearby square before asking
         // makemon() to create a hatchling, even when births are disabled.
-        assert.ok(findMonsterNearPosition(NEWT, centerX, 10));
+        assert.ok(enexto(NEWT, centerX, 10));
         const afterPlacement = await makemonAt(NEWT, 0, 0, CREATION_FLAGS);
         assert.ok(afterPlacement);
         freshGameplayRoom();

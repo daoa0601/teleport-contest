@@ -14,7 +14,7 @@ import { heroIsBreathless } from './polyself.js';
 import { heroEyeName, heroLungName } from './body_parts.js';
 import { makePlural } from './objnam.js';
 import { refreshProperty } from './properties.js';
-import { teleportHeroSafely } from './teleport.js';
+import { safe_teleds } from './teleport.js';
 import { validCloudPosition } from './read.js';
 import { MONSTER_ATTACKS, MONSTER_SOUND } from './monster_data.js';
 import { monsterName } from './do_name.js';
@@ -244,7 +244,7 @@ export async function rescueHeroFromRegion(state = game) {
     const clouds = level.regions.filter(region => region.kind === 'gas-cloud' && region.heroInside);
     const cloud = clouds[0];
     if (clouds.length > 1 || cloud && cloud.ttl < 0) {
-        await teleportHeroSafely();
+        await safe_teleds();
         if (heroIsInDangerousRegion(state)) {
             state.u.magicalBreathingTurns = d(4, 4) + 4;
             refreshProperty('magicalBreathing', state);

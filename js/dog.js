@@ -34,8 +34,7 @@ import { heroIsHallucinating } from './senses.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { depth, possessiveName } from './hacklib.js';
 import { dropSpecialMonsterObjects } from './steal.js';
-import { randomMonsterRelocation, relocateMonsterTo } from './teleport.js';
-import { findNearbyMonsterPosition, goodPosition } from './teleport_rules.js';
+import { randomMonsterRelocation, relocateMonsterTo, enexto, goodPosition } from './teleport.js';
 import { somexy } from './mkroom.js';
 import { deliverOrcRaidLoot } from './orc_raid.js';
 import { mintrap } from './trap.js';
@@ -645,7 +644,7 @@ export async function monsterArrive(monster, when, state) {
         if (!heroOccupied && !rn2(denominator))
             await relocateMonsterTo(monster, state.u.ux, state.u.uy, { state, flags: RLOC_NOMSG });
         else {
-            const nearby = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state });
+            const nearby = enexto(monster.mnum, state.u.ux, state.u.uy, { state });
             if (!nearby)
                 return await failArrival(monster, when, state);
             await relocateMonsterTo(monster, nearby.x, nearby.y, { state, flags: RLOC_NOMSG });
@@ -723,7 +722,7 @@ export async function monsterArrive(monster, when, state) {
     if (xlocale) {
         // mnearto() uses the requested square before searching its neighbours.
         const destination = goodPosition(xlocale, ylocale, { kind: 'monster', monster }, { state })
-            ? { x: xlocale, y: ylocale } : findNearbyMonsterPosition(monster.mnum, xlocale, ylocale, { state });
+            ? { x: xlocale, y: ylocale } : enexto(monster.mnum, xlocale, ylocale, { state });
         if (!destination)
             return await failArrival(monster, when, state);
         await relocateMonsterTo(monster, destination.x, destination.y, { state, flags: RLOC_NOMSG });

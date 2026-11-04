@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LEVEL_TELEP, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game, requireGameLevel } from '../js/gstate.js';
-import { teleportMonsterToRandomLevel } from '../js/teleport.js';
+import { mlevel_tele_trap } from '../js/teleport.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
@@ -21,7 +21,7 @@ void test('a luminous monster leaving the level darkens what it lit immediately'
     await vision_recalc(0);
     assert.equal(cansee(14, 10), true, 'The vortex lights the square beyond it.');
     const trap = addTrap(requireGameLevel(), LEVEL_TELEP, 13, 10);
-    const result = await teleportMonsterToRandomLevel(vortex, trap, {
+    const result = await mlevel_tele_trap(vortex, trap, {
         random: () => 1, rollOne: () => 1, publish: async () => { },
     });
     assert.ok(result, 'The vortex leaves the level.');

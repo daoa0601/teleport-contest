@@ -13,7 +13,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { DAGGER, PICK_AXE, SHORT_SWORD, SMALL_SHIELD } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { moveHeroByTeleport } from '../js/teleport.js';
+import { teleds } from '../js/teleport.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { floatHeroDown } from '../js/trap.js';
 async function untilNextInput<T>(gate: InputGate, snapshot: () => T): Promise<T> {
@@ -235,7 +235,7 @@ void test('teleporting during prayer does not cancel its divine protection', asy
     await moveloop_core();
     assert.equal(game.u.invulnerable, true);
 
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
 
     assert.equal(game.u.ux, 14);
     assert.equal(game.u.invulnerable, true);
@@ -254,7 +254,7 @@ void test('relocation cancels a counted application and its queued tool action',
     await moveloop_core();
     assert.equal(game.uwep, pick);
 
-    await moveHeroByTeleport(14, 10);
+    await teleds(14, 10);
     const turn = game.moves;
     gate.feed('h');
     const result = await untilNextInput(gate, () => ({

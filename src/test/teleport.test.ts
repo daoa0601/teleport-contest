@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
-    NO_MINVENT, PIT, ROOM, TELEP_TRAP,
+    NO_MINVENT, PIT, ROOM, STONE, TELEP_TRAP,
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { placeMonsterAt } from '../js/steed.js';
@@ -14,10 +14,11 @@ import { initRng } from '../js/rng.js';
 import { vision_reset } from '../js/vision.js';
 import {
     clearFixedTeleportDestination, heroTeleportTrapBlock,
-    moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, safeTeleportDestination,
+    teleds, randomMonsterRelocation, relocateMonsterTo, safe_teleds,
 } from '../js/teleport.js';
 import { freshGame } from './support/game-state.js';
 import { addTrap } from './support/level-state.js';
+import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -69,15 +70,40 @@ void test('random teleport skips occupied squares, boulders, and traps', async (
     addTrap(state.level, TELEP_TRAP, 7, 5);
     const xs = [5, 6, 7, 8];
 
-    const destination = safeTeleportDestination(
-        state,
-        () => 5,
-        () => { const x = xs.shift(); assert.ok(x !== undefined); return x; },
-    );
+    const landing = await safe_teleds(state, {
+        random: () => 5,
+        rollOne: () => { const x = xs.shift(); assert.ok(x !== undefined); return x; },
+    });
 
-    assert.deepEqual(destination, { x: 8, y: 5 });
+    assert.ok(landing);
+    assert.deepEqual({ x: landing.movement.x, y: landing.movement.y }, { x: 8, y: 5 });
 });
 
+void test('a wall-passing hero falls back to wall squares and never occupied ones', async () => {
+    const state = teleportState();
+    requirePlayingGame(game);
+    for (const x of [10, 11, 12]) state.level.requireAt(x, 10).typ = ROOM;
+    installPolymorphedHero('xorn');
+    state.u.ux = 11;
+    // The hero stands between two dead ends: an orc on stone to the west
+    // and a teleport trap to the east.  Every 40 random tries target the
+    // orc square, so the ring fallback must walk over stone: C always sets
+    // CC_SKIP_MONS and adds CC_SKIP_INACCS only without Passes_walls
+    // (teleport.c:747-749).
+    state.level.requireAt(10, 10).typ = STONE;
+    const orc = await createMonsterAt('orc', 10, 10);
+    addTrap(state.level, TELEP_TRAP, 12, 10);
+
+    const landing = await safe_teleds(state, {
+        random: n => Math.min(10, n - 1), rollOne: () => 10,
+    });
+
+    assert.ok(landing, 'the ring fallback must find a wall square for a xorn');
+    assert.equal(state.level.requireAt(landing.movement.x, landing.movement.y).typ, STONE,
+        'a wall-passing hero may land on stone');
+    assert.notDeepEqual({ x: landing.movement.x, y: landing.movement.y }, { x: orc.mx, y: orc.my },
+        'occupied squares stay out of the candidate rings');
+});
 void test('fixed teleport clears its destination before moving the hero', async () => {
     const state = teleportState();
     requirePlayingGame(game);
@@ -103,7 +129,7 @@ void test('fixed teleport clears its destination before moving the hero', async 
     // A swallowed teleport redraws the ordinary map after release. Build
     // its vision tables after the fixture's room terrain is installed.
     vision_reset();
-    await moveHeroByTeleport(20, 10, state);
+    await teleds(20, 10, state);
 
     assert.deepEqual({ x: state.u.ux, y: state.u.uy }, { x: 20, y: 10 });
     assert.deepEqual({ x: steed.mx, y: steed.my }, { x: 20, y: 10 });

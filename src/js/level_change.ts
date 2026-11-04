@@ -29,7 +29,7 @@ import { mklev, u_on_downstairs, u_on_sstairs, u_on_upstairs } from './mklev.js'
 import { place_lregion, fumaroles } from './mkmaze.js';
 import { oinit } from './o_init.js';
 import { dungeonBuildsUp, initOverviewRecord, level_difficulty, markOverviewUnreachable, recordMappedOverviewState, recordOverviewBranch, specialPrototypeAt, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt } from './dungeon.js';
-import { teleportHeroSafely } from './teleport.js';
+import { safe_teleds } from './teleport.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape } from './mon.js';
@@ -214,7 +214,7 @@ export async function gotoLevel(targetDepth: Partial<DungeonLocation>, {
         await pline('A mysterious force momentarily surrounds you...');
         game.context.mysteryforce = (game.context.mysteryforce ?? 0) + rn2(diff + 2);
         if (destinationDepth.dlevel === oldDepth.dlevel) {
-            await teleportHeroSafely();
+            await safe_teleds();
             await bringLeashedFollowers(game);
             return true;
         }

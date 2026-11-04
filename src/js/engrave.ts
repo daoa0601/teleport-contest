@@ -33,7 +33,7 @@ import { newsym } from './display.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
-import { goodPosition } from './teleport_rules.js';
+import { goodPosition } from './teleport.js';
 import { artifactByName } from './artifacts.js';
 import {
     TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING,

@@ -6,7 +6,7 @@ import { COLNO, IS_STWALL, ROWNO, W_NONDIGGABLE, W_NONPASSWALL } from '../js/con
 import { requireGameLevel, game } from '../js/gstate.js';
 import { mklev } from '../js/mklev.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { goodPosition } from '../js/teleport_rules.js';
+import { goodPosition } from '../js/teleport.js';
 import { freshSpecialLevel } from './support/special-level.js';
 function prepareLevel(prototype, depth) {
     freshSpecialLevel({ prototype, seed: 271, depth });

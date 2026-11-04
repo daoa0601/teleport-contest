@@ -13,7 +13,7 @@ import { currentAttribute, currentStrength, exerciseAttribute, changeHeroLuck } 
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto } from './mon.js';
 import { woundHeroLegs } from './do.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel, scheduleLevelChange } from './level_change.js';
 import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
@@ -41,12 +41,12 @@ import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { canFallThrough, findMonsterNearPosition, stairwayAt } from './mklev.js';
+import { canFallThrough, stairwayAt } from './mklev.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
-import { goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
+import { enexto, goodPosition, monsterTeleportRestricted } from './teleport.js';
 import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
 import { artifactById } from './artifacts.js';
@@ -849,7 +849,7 @@ async function kickTree(x, y, location, responses) {
         let made = 0;
         let position = { x, y };
         for (let count = rnl(4) + 2; count > 0; count--) {
-            const next = findMonsterNearPosition(bee, position.x, position.y);
+            const next = enexto(bee, position.x, position.y);
             if (!next)
                 continue;
             position = next;

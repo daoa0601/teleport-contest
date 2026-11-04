@@ -63,11 +63,10 @@ import { objectNoLongerHeldSynchronously } from './do.js';
 import { unpunishHero } from './read.js';
 import { depth, ledgerNo, maxLedgerNo } from './hacklib.js';
 import { isRoom } from './map_types.js';
-import { findMonsterNearPosition } from './mklev.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
 import { races, roles } from './roles.js';
+import { relocateMonsterTo, enexto } from './teleport.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { relocateMonsterTo } from './teleport.js';
 import type { PropertyName } from './property_types.js';
 import { roomForRoomno } from './hack.js';
 import { likes_gold, likes_gems, likes_objs, likes_magic, monsterHidesUnder, monsterIsUndead } from './mondata.js';
@@ -356,7 +355,7 @@ async function fixupOracle(oracle: Monster): Promise<boolean> {
     if (currentRoom() !== chamber) {
         const x = Math.trunc((chamber.lx + chamber.hx) / 2);
         const y = Math.trunc((chamber.ly + chamber.hy) / 2);
-        const destination = findMonsterNearPosition(oracle.mnum, x, y);
+        const destination = enexto(oracle.mnum, x, y);
         if (destination) await relocateMonsterTo(oracle, destination.x, destination.y, { flags: RLOC_NOMSG });
     }
     if (currentRoom() === chamber) chamber.rtype = DELPHI;

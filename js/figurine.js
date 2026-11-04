@@ -7,7 +7,7 @@ import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { isPoolAt } from './dbridge.js';
 import { game } from './gstate.js';
-import { findMonsterNearPosition, } from './mklev.js';
+import { enexto, } from './teleport.js';
 import { MONSTER_MOVE, MONSTER_SYMBOL } from './monster_data.js';
 import { BOULDER, FIGURINE } from './object_data.js';
 import { unlinkMonsterObject, remove_object } from './mkobj.js';
@@ -186,7 +186,7 @@ export async function runClaimedFigurineTimer(claimed, state = game, currentTurn
     const { carrier } = location;
     const onFloor = carrier === 'floor';
     const position = onFloor ? { x: location.x, y: location.y }
-        : findMonsterNearPosition(figurine.corpsenm, location.x, location.y);
+        : enexto(figurine.corpsenm, location.x, location.y);
     if (!position || !figurineMayTransformAt(figurine, position.x, position.y, state)) {
         return scheduleFigurineRetry(figurine, carrier, currentTurn, state);
     }

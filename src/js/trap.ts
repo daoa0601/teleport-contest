@@ -99,10 +99,10 @@ import {
     monsterObjectPronoun, grounded, passes_rocks,
 } from './mondata.js';
 import {
-    teleportMonsterFromTrap, teleportMonsterThroughHole, teleportMonsterThroughPortal,
-    teleportMonsterToRandomLevel, clearFixedTeleportDestination, heroTeleportDestinationOk,
-    heroTeleportTrapBlock, moveHeroByTeleport, teleportHero, activateMagicPortal, askTeleportDestination,
-    triggerLevelTeleportTrap, relocateObjectRandomly,
+    teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination,
+    heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero,
+    activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap,
+    relocateObjectRandomly,
 } from './teleport.js';
 import { canFallThrough, countLevelFeatures } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName } from './do_name.js';
@@ -164,7 +164,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
 import type { LevitationState, PropertyState } from './property_types.js';
 import { autopickupAtHero } from './pickup.js';
-import { finishTeleportArrival } from './location_effects.js';
+import { finishTeleportArrival } from './teleport.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { encumber_msg } from './pickup.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
@@ -1114,7 +1114,7 @@ async function monsterTrapEffect(
         return null;
     }
     if (trap.ttyp === MAGIC_PORTAL) {
-        const event = await teleportMonsterThroughPortal(monster, trap, {
+        const event = await mlevel_tele_trap(monster, trap, {
             state, random, force: !!movement.forcedTrapLanding, publish,
         });
         if (event) {
@@ -1126,8 +1126,8 @@ async function monsterTrapEffect(
         return event;
     }
     if (trap.ttyp === LEVEL_TELEP) {
-        const event = await teleportMonsterToRandomLevel(monster, trap, {
-            state, random, rollOne, force: !!movement.forcedTrapLanding,
+        const event = await mlevel_tele_trap(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding, publish,
         });
         if (event) {
             movement.trap = event;
@@ -1204,8 +1204,8 @@ async function monsterTrapEffect(
                 await seeTrap(trap, state);
             }
         }
-        const event = await teleportMonsterThroughHole(monster, trap, {
-            state, force: !!movement.forcedTrapLanding, publish,
+        const event = await mlevel_tele_trap(monster, trap, {
+            state, random, rollOne, force: !!movement.forcedTrapLanding, publish,
         });
         if (!event) return null;
         movement.trap = event;
@@ -6110,7 +6110,7 @@ async function triggerTeleportTrap(trap: Trap, finishTeleport: HeroTrapOptions['
             await teleportHero({ chooseDestination: askTeleportDestination });
             return true;
         }
-        await moveHeroByTeleport(destination.x, destination.y, game, { finishArrival: finishTeleport });
+        await teleds(destination.x, destination.y, game, { finishArrival: finishTeleport });
         return true;
     } finally {
         game._inTeleportTrap = false;
