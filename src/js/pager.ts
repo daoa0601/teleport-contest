@@ -2,7 +2,7 @@
 // C refs: pager.c dowhatis()/doquickwhatis()/do_look()/checkfile()/dohelp().
 
 import {
-    A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, COLNO, CORR, CQ_CANNED, CQ_REPEAT, D_BROKEN, D_TRAPPED,
+    A_NONE, ALTAR, AM_SANCTUM, Amask2align, BEAR_TRAP, BOLT_LIM, BUFSZ, CMDQ_KEY, CMDQ_USER_INPUT, COLNO, CORR, CQ_CANNED, CQ_REPEAT, D_BROKEN, D_TRAPPED,
     def_warnsyms, DOOR, DRAWBRIDGE_UP, GRAVE, HOLE, ICE, In_hell, Is_airlevel, Is_astralevel, Is_rogue_level, Is_waterlevel,
     is_hole, is_pit, LEVEL_TIMER_KIND, LOOK_ONCE, LOOK_QUICK, LOOK_VERBOSE, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
     M_AP_TYPE, MONSEEN_DETECT, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_TELEPAT,
@@ -422,12 +422,16 @@ export async function whatDoesCommand(): Promise<void> {
         game._whatdoesShown = true;
     }
     const readKey = async (prompt: string) => {
-        // C pager.c:dowhatdoes() asks through yn_function(..., TRUE), so
-        // one cmdq_pop() answers from the queue (cmd.c:5496-5509).
+        // C pager.c:dowhatdoes() asks through yn_function(..., TRUE)
+        // (pager.c:2676): one cmdq_pop() (cmd.c:5496-5509) answers from
+        // the queue — a key answers, the user-input placeholder asks
+        // live, and every other entry clears CQ_CANNED and answers
+        // Escape.
         const cmdq = cmdq_pop();
-        if (cmdq) {
-            if (cmdq.typ !== CMDQ_KEY) cmdq_clear(CQ_CANNED);
-            return cmdq.typ === CMDQ_KEY ? cmdq.key : 27;
+        if (cmdq && cmdq.typ === CMDQ_KEY) return cmdq.key;
+        if (cmdq && cmdq.typ !== CMDQ_USER_INPUT) {
+            cmdq_clear(CQ_CANNED);
+            return 27;
         }
         await flushPendingTopline();
         const key = await promptKey(prompt, 0, { canned: false });

@@ -408,17 +408,16 @@ export async function rhack(key) {
         // C cmd.c:rhack() records the command for do-again (cmd.c:3727-
         // 3739): a fresh command replaces CQ_REPEAT, a prefix appends
         // behind it, and do_repeat (returned above) plus the doextcmd
-        // editor never enter the queue. The doextcmd selection is added
-        // post-execution and shifted first (cmd.c:3752-3759), so answers
-        // recorded while it ran stay queued behind it.
+        // editor never enter the queue — the '#' dispatch above cleared
+        // CQ_REPEAT the way C's func == doextcmd branch does, and the
+        // command it selected is recorded here like any other, so answers
+        // its prompts push while it runs land behind it. That is the same
+        // final order as C's post-execution add and shift (cmd.c:3752-
+        // 3759).
         if (!game._inDoAgain && selected.handler !== 'doextcmd') {
             if (!prefix)
                 cmdq_clear(CQ_REPEAT);
             cmdq_add_ec(CQ_REPEAT, selected.handler);
-        }
-        else if (selected.handler === 'doextcmd') {
-            cmdq_add_ec(CQ_REPEAT, selected.handler);
-            cmdq_shift(CQ_REPEAT);
         }
         if (selected.flags & NATIVE_COMMAND_FLAGS.PREFIXCMD) {
             if (!await applyMovementPrefix(selected, movement)) {
