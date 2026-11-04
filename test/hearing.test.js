@@ -54,8 +54,11 @@ void test('a rust trap announces water hitting a monster seen through infravisio
     assert.equal(canSeeMonster(monster), true);
     const trap = addTrap(level, RUST_TRAP, 15, 10);
     const messages = [];
-    const event = await beginMonsterRustTrap(monster, trap, game, { random: () => 0 });
-    await finishMonsterRustTrap(monster, event, game, { publish: async (message) => { messages.push(message); } });
+    const event = await beginMonsterRustTrap(monster, trap, game);
+    await finishMonsterRustTrap(monster, event, game, {
+        random: () => 0,
+        publish: async (message) => { messages.push(message); },
+    });
     assert.equal(trap.tseen, true);
     assert.equal(messages[0], 'A gush of water hits the minotaur on the head!');
 });

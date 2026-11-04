@@ -51,8 +51,11 @@ for (const [target, message] of [
         });
         setMonsterGivenName(monster, 'Sirius');
         const messages = [];
-        const event = await beginMonsterRustTrap(monster, trap, game, { random: () => target });
-        await finishMonsterRustTrap(monster, event, game, { publish: text => { messages.push(text); } });
+        const event = await beginMonsterRustTrap(monster, trap, game);
+        await finishMonsterRustTrap(monster, event, game, {
+            random: () => target,
+            publish: text => { messages.push(text); },
+        });
         assert.equal(messages[0], message);
     });
 }

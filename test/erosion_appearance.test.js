@@ -129,8 +129,9 @@ for (const arm of [1, 2]) {
         const weapon = await uninitializedObject(OBJECT_NAMES.indexOf('ranseur'), { typeKnown: false });
         await equipMonsterObject(monster, weapon, W_WEP);
         const messages = [];
-        const event = await beginMonsterRustTrap(monster, trap, game, { random: () => arm });
+        const event = await beginMonsterRustTrap(monster, trap, game);
         await finishMonsterRustTrap(monster, event, game, {
+            random: () => arm,
             publish: async (message) => { messages.push(message); },
         });
         assert.equal(weapon.oeroded, 1);

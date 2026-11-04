@@ -155,8 +155,9 @@ for (const arm of [1, 2]) {
         await equipMonsterObject(monster, weapon, W_WEP);
         const messages: string[] = [];
 
-        const event = await beginMonsterRustTrap(monster, trap, game, { random: () => arm });
+        const event = await beginMonsterRustTrap(monster, trap, game);
         await finishMonsterRustTrap(monster, event, game, {
+            random: () => arm,
             publish: async message => { messages.push(message); },
         });
 

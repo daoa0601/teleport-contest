@@ -148,7 +148,6 @@ export async function feelTrap(trap, state = game) {
     }
 }
 const PM_IRON_GOLEM = 259;
-const M1_HUMANOID = 0x00020000;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
 const SPBOOK_CLASS = 10;
@@ -371,29 +370,6 @@ export async function splashLitObject(object, publish, state = game) {
     }
     return true;
 }
-function rustMetalObject(object, description, luckRoll) {
-    if (!object || !objectIsRustprone(object))
-        return { outcome: 'nothing' };
-    const proof = !!object.oerodeproof;
-    if (proof && object.rknown)
-        return { outcome: 'nothing' };
-    if (proof) {
-        object.rknown = true;
-        return {
-            outcome: 'nothing', kind: 'rustproof', object, description,
-        };
-    }
-    if (object.blessed && luckRoll(4) === 0)
-        return { outcome: 'nothing' };
-    const oldErosion = object.oeroded ?? 0;
-    if (oldErosion >= 3)
-        return { outcome: 'nothing' };
-    object.oeroded = oldErosion + 1;
-    return {
-        outcome: 'damaged', kind: 'rusted', object, description,
-        erosion: object.oeroded,
-    };
-}
 export async function waterDamageObject(object, messages = [], state = game, { force = false, description = null, random = rn2, luckRoll = rnl, rollOne = rnd, publish, mentionWater, acidContext, position } = {}) {
     if (!object)
         return 'nothing';
@@ -566,37 +542,6 @@ async function damageWaterChain(objects, messages, state, options) {
         context.knownExplosions = context.unknownExplosions = 0;
     }
 }
-function extinguishLitObject(object, monster, state) {
-    if (!object?.lamplit)
-        return null;
-    const humanoid = !!((MONSTER_FLAGS1[monster.mnum] ?? 0) & M1_HUMANOID);
-    if (object.otyp === BRASS_LANTERN && humanoid) {
-        return { kind: 'lantern-flickers', object };
-    }
-    if (!endObjectBurn(object, state, state.moves ?? 0))
-        object.lamplit = false;
-    return { kind: 'extinguished', object };
-}
-function rustObject(object, description, monster, state, roll, luckRoll) {
-    if (!object)
-        return { outcome: 'nothing' };
-    const lightEffect = extinguishLitObject(object, monster, state);
-    if (lightEffect)
-        return { outcome: 'damaged', ...lightEffect };
-    if (object.greased) {
-        const greaseWashedOff = roll(2) === 0;
-        if (greaseWashedOff)
-            object.greased = false;
-        // C water_damage(): monster-carried grease washes off without feedback.
-        return { outcome: 'greased' };
-    }
-    return rustMetalObject(object, description, luckRoll);
-}
-function addWaterEffect(event, effect) {
-    if (effect?.kind)
-        event.effects.push(effect);
-    return effect?.outcome || 'nothing';
-}
 function armorAt(monster, state, mask) {
     if (monster)
         return wornObject(monster, mask);
@@ -680,57 +625,65 @@ export async function burnArmorByFire(victim, state, emitMessage, calls = [], ra
 export function burnHeroArmorByFire(state, emitMessage, calls = [], random = rn2) {
     return burnArmorByFire(state.u, state, emitMessage, calls, random);
 }
-export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRoll = rnl, } = {}) {
+// C trap.c:trapeffect_rust_trap(), monster branch.
+export async function applyMonsterRustTrap(monster, state, { roll = rn2, luckRoll = rnl, publish = plineWithContinuation, } = {}) {
+    const { inSight } = monsterTrapVisibility(monster, state);
     const targetRoll = roll(5);
-    const event = {
-        kind: 'rust-trap', target: 'body', effects: [],
-        damage: 0, killed: false,
-    };
-    if (targetRoll === 0) {
-        event.target = 'head';
-        const helmet = wornObject(monster, W_ARMH);
-        addWaterEffect(event, rustObject(helmet, helmet ? armorSimpleName(helmet, state) : 'helm', monster, state, roll, luckRoll));
+    if (inSight) {
+        const name = monsterName(monster, { state });
+        const arm = monsterArmName(monster.mnum);
+        const hit = targetRoll === 0
+            ? `A gush of water hits ${name} on the ${monsterHeadName(monster.mnum)}!`
+            : targetRoll === 1
+                ? `A gush of water hits ${name}'s left ${arm}!`
+                : targetRoll === 2
+                    ? `A gush of water hits ${name}'s right ${arm}!`
+                    : `A gush of water hits ${name}!`;
+        await publish(hit);
     }
-    else if (targetRoll === 1) {
-        event.target = 'left-arm';
-        const shield = wornObject(monster, W_ARMS);
-        const shieldResult = addWaterEffect(event, rustObject(shield, 'shield', monster, state, roll, luckRoll));
-        if (shieldResult === 'nothing') {
+    const wet = (object, description = null) => waterDamageObject(object, [], state, {
+        force: true, description, random: roll, luckRoll, publish,
+    });
+    if (targetRoll === 0) {
+        const helmet = wornObject(monster, W_ARMH);
+        await wet(helmet, helmet ? armorSimpleName(helmet, state) : 'helmet');
+    }
+    else if (targetRoll === 1 || targetRoll === 2) {
+        const reachesHand = targetRoll === 2
+            || await wet(wornObject(monster, W_ARMS), 'shield') === 'nothing';
+        if (reachesHand) {
             const weapon = monsterWieldedWeapon(monster);
-            if (weapon && isBimanualObject(weapon)) {
-                addWaterEffect(event, rustObject(weapon, objectCombatName(weapon, { state }), monster, state, roll, luckRoll));
-            }
+            if (targetRoll === 2 || isBimanualObject(weapon))
+                await wet(weapon ?? null);
             const gloves = wornObject(monster, W_ARMG);
-            addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
+            await wet(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves');
         }
     }
-    else if (targetRoll === 2) {
-        event.target = 'right-arm';
-        const weapon = monsterWieldedWeapon(monster);
-        addWaterEffect(event, rustObject(weapon, weapon ? objectCombatName(weapon, { state }) : 'weapon', monster, state, roll, luckRoll));
-        const gloves = wornObject(monster, W_ARMG);
-        addWaterEffect(event, rustObject(gloves, gloves ? armorSimpleName(gloves, state) : 'gloves', monster, state, roll, luckRoll));
-    }
     else {
-        event.target = 'body';
         for (const object of inventoryOf(monster)) {
-            if (!object.lamplit
-                || ((object.owornmask ?? 0) & (W_WEP | W_SWAPWEP))) {
-                continue;
-            }
-            const effect = extinguishLitObject(object, monster, state);
-            if (effect)
-                event.effects.push(effect);
+            if (object.lamplit && ((object.owornmask ?? 0) & (W_WEP | W_SWAPWEP)) === 0)
+                await splashLitObject(object, publish, state);
         }
         const torso = wornObject(monster, W_ARMC)
             || wornObject(monster, W_ARM)
             || wornObject(monster, W_ARMU);
-        addWaterEffect(event, rustObject(torso, torso ? armorSimpleName(torso, state) : 'suit', monster, state, roll, luckRoll));
+        await wet(torso, torso ? armorSimpleName(torso, state) : 'shirt');
     }
-    // A gremlin's split_mon() follows the gush report (finishMonsterRustTrap).
-    if (monster.mnum === PM_IRON_GOLEM)
-        event.completelyRusted = true;
-    return event;
+    if (monster.mnum === PM_IRON_GOLEM) {
+        if (inSight) {
+            const action = wornMonsterLifeSaver(monster) ? 'starts to fall' : 'falls';
+            await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
+        }
+        monster.mhp = 0;
+        return finishMonsterKilled(monster, state, {
+            damageType: AD_RUST, cause: null, random: roll, publish,
+        });
+    }
+    // C trap.c:trapeffect_rust_trap(): "else if (mptr == &mons[PM_GREMLIN] && rn2(3))"
+    // follows all water_damage() calls and their messages.
+    if (monster.mnum === PM_GREMLIN && roll(3) !== 0)
+        await splitMonster(monster, state, { monsterMoving: true, publish });
+    return null;
 }
 // ---------------------------------------------------------------------------
 // C trap.c:mintrap() and the monster trap-effect completions it defers.
@@ -871,9 +824,7 @@ export async function triggerMonsterTrap(monster, state, movement, random, rollD
         return event;
     }
     if (trap.ttyp === RUST_TRAP) {
-        const event = await beginMonsterRustTrap(monster, trap, state, {
-            random: (range) => recordRandom(random, calls, range),
-        });
+        const event = await beginMonsterRustTrap(monster, trap, state);
         movement.trap = event;
         movement.deferredAfterMonsterTrap = true;
         return event;
@@ -3132,80 +3083,19 @@ export async function finishMonsterSleepGasTrap(monster, event, { state = game, 
     event.finished = true;
     return event;
 }
-async function presentRustTrap(monster, event, state, publish) {
-    if (!event.inSight)
-        return;
-    const name = monsterName(monster, { state });
-    const arm = monsterArmName(monster.mnum);
-    const hit = event.target === 'head'
-        ? `A gush of water hits ${name} on the ${monsterHeadName(monster.mnum)}!`
-        : event.target === 'left-arm'
-            ? `A gush of water hits ${name}'s left ${arm}!`
-            : event.target === 'right-arm'
-                ? `A gush of water hits ${name}'s right ${arm}!`
-                : `A gush of water hits ${name}!`;
-    await publish(hit);
-    for (const effect of event.effects) {
-        const objectName = effect.description ||
-            OBJECT_NAMES[effect.object?.otyp] ||
-            effect.object?.name ||
-            'object';
-        const owner = possessiveName(monsterName(monster, {
-            state, capitalized: effect.kind !== 'rustproof',
-        }));
-        if (effect.kind === 'rustproof') {
-            await publish(`Somehow, ${owner} ${objectName} is not affected by the oxidation.`);
-        }
-        else if (effect.kind === 'rusted') {
-            const adverb = effect.erosion === 3 ? ' completely' : effect.erosion > 1 ? ' further' : '';
-            await publish(`${owner} ${objectName} rusts${adverb}!`);
-        }
-        else if (effect.kind === 'lantern-flickers') {
-            await publish(`${owner} ${objectName} crackles and flickers.`);
-        }
-        else if (effect.kind === 'extinguished') {
-            await publish(`${owner} ${objectName} goes out!`);
-        }
-    }
-    if (event.completelyRusted) {
-        const action = event.startsToFall ? 'starts to fall' : 'falls';
-        await publish(`${monsterName(monster, { state, capitalized: true })} ${action} to pieces!`);
-    }
-}
-// C trap.c:trapeffect_rust_trap(): the monster branch — the rust or water
-// jet over the monster's armor, or the iron-golem victim's fall.
-export async function beginMonsterRustTrap(monster, trap, state = game, { random = rn2 } = {}) {
-    const event = {
-        ...await applyMonsterRustTrap(monster, state, { roll: random }),
-        ...monsterTrapVisibility(monster, state),
-        trap,
-        finished: false,
-    };
-    // C trapeffect_rust_trap(): seetrap() redraws the square, showing the
-    // monster on its new spot before the gush message.
-    if (event.inSight)
+export async function beginMonsterRustTrap(monster, trap, state = game) {
+    const visibility = monsterTrapVisibility(monster, state);
+    if (visibility.inSight)
         await seeTrap(trap, state);
-    if (event.completelyRusted) {
-        event.startsToFall = !!wornMonsterLifeSaver(monster);
-        monster.mhp = 0;
-    }
-    return event;
+    return {
+        kind: 'rust-trap', trap, ...visibility, finished: false, killed: false,
+    };
 }
 export async function finishMonsterRustTrap(monster, event, state = game, { publish = plineWithContinuation, random = rn2, } = {}) {
     if (!event || event.finished)
         return event;
-    await presentRustTrap(monster, event, state, publish);
-    // C trapeffect_rust_trap() rolls and splits a gremlin only after the
-    // gush and erosion messages.
-    if (!event.completelyRusted && monster.mnum === PM_GREMLIN && random(3) !== 0)
-        await splitMonster(monster, state, { monsterMoving: true, publish });
-    if (event.completelyRusted) {
-        const death = await finishMonsterKilled(monster, state, {
-            damageType: AD_RUST,
-            cause: null,
-            random,
-            publish,
-        });
+    const death = await applyMonsterRustTrap(monster, state, { roll: random, publish });
+    if (death) {
         event.death = death;
         event.killed = !death.survived;
     }
