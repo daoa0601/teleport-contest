@@ -29,7 +29,7 @@ import { singularObjectName } from './objnam.js';
 import { warningSymbols } from './warning_symbols.js';
 import { BOULDER } from './object_data.js';
 import { okToQuest, onQuestStart } from './quest.js';
-import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
+import { CmapSymbol, cmapToGlyph, glyphIsCmapC, glyphIsCmapZap, glyphToWarning } from './glyph_numbers.js';
 import { displayLiquidName, distantMonsterName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { dist2 } from './hacklib.js';
 import { heroIsPunished } from './ball.js';
@@ -614,9 +614,9 @@ export function mapFeatureDescription(x, y, glyph) {
     if (glyph.kind === 'engraving')
         return 'engraving';
     if (glyph.kind === 'effect' && glyph.glyph !== undefined) {
-        if (glyph.glyph >= GlyphOffset.zap && glyph.glyph < GlyphOffset.cmapC)
+        if (glyphIsCmapZap(glyph.glyph))
             return '';
-        if (glyph.glyph >= GlyphOffset.cmapC && glyph.glyph < GlyphOffset.swallow) {
+        if (glyphIsCmapC(glyph.glyph)) {
             if (glyph.glyph === cmapToGlyph(CmapSymbol.poisoncloud))
                 return 'poison cloud';
             if (glyph.glyph === cmapToGlyph(CmapSymbol.goodpos))
@@ -788,7 +788,8 @@ export function screenDescription(x, y, description) {
             name = Is_waterlevel(game.u.uz) ? 'limitless water' : 'wall of water';
         else if (index === CmapSymbol.lava)
             name = 'lava';
-        const liquid = [CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice].includes(index);
+        const liquids = [CmapSymbol.pool, CmapSymbol.water, CmapSymbol.lava, CmapSymbol.lavawall, CmapSymbol.ice];
+        const liquid = liquids.includes(index);
         const article = name.includes(' of a room') ? `the ${name}`
             : liquid || index === CmapSymbol.stone || name === 'air' ? name : withIndefiniteArticle(name);
         append(!count && trap && trapType !== VIBRATING_SQUARE ? 'a trap' : article, name);
@@ -854,7 +855,7 @@ export async function farlookLocationDescription(x, y) {
         return 'unexplored area';
     }
     if (glyph?.kind === 'warning') {
-        const index = glyph.glyph === undefined ? -1 : glyph.glyph - GlyphOffset.warning;
+        const index = glyph.glyph === undefined ? -1 : glyphToWarning(glyph.glyph);
         const warning = def_warnsyms[index];
         if (!warning)
             throw new RangeError(`Unknown warning glyph ${glyph.glyph}`);
@@ -984,7 +985,7 @@ async function* lookListEntries(kind, nearby, mode, describeHero) {
                 else if (glyph.kind === 'invisible')
                     description = 'remembered, unseen, creature';
                 else if (glyph.kind === 'warning') {
-                    const warning = def_warnsyms[(glyph.glyph ?? -1) - GlyphOffset.warning];
+                    const warning = def_warnsyms[glyph.glyph === undefined ? -1 : glyphToWarning(glyph.glyph)];
                     if (warning)
                         description = warning.desc;
                 }

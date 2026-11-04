@@ -10,7 +10,7 @@ import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph } from './glyph_numbers.js';
+import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsBody, glyphIsCmapA, glyphIsCmapAltar, glyphIsCmapB, glyphIsCmapMain, glyphIsCmapSokoban, glyphIsExplosion, glyphIsMonster, glyphIsNormalMaleMonster, monnumToGlyph, objnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph, zapdirToGlyph, } from './glyph_numbers.js';
 import { cmapToRogueColor } from './glyph_customizations.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -21,7 +21,7 @@ import { artifactWarningFeedback } from './artifacts.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
-import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
+import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_NODOOR, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
@@ -231,7 +231,7 @@ function warningProjection(monster) {
     // The map reads showsyms[SYM_OFF_W+n], which symset loading initializes
     // from def_warnsyms; WARNINGS=/warnings: only retarget the pager lookup.
     const warning = def_warnsyms[level];
-    return warning ? { ...warning, glyph: GlyphOffset.warning + level } : null;
+    return warning ? { ...warning, glyph: warningToGlyph(level) } : null;
 }
 export function objectUsesGenericGlyph(object) {
     if (!object || object.dknown)
@@ -483,23 +483,11 @@ export function reglyphBoulderSymbols() {
     }
 }
 // glyphs.c:glyph_to_cmap() restricted to the terrain memory can hold; trap,
-// beam, and effect glyphs keep set-independent characters.
+// beam, and effect glyphs keep set-independent characters, so everything at
+// or past the first trap symbol (and every non-terrain glyph) decodes null.
 function rememberedTerrainIndex(glyph) {
-    if (glyph === GlyphOffset.cmapStone)
-        return CmapSymbol.stone;
-    if (glyph >= GlyphOffset.cmapMain && glyph < GlyphOffset.cmapA)
-        return (glyph - GlyphOffset.cmapMain) % (CmapSymbol.trwall - CmapSymbol.vwall + 1) + CmapSymbol.vwall;
-    if (glyph >= GlyphOffset.cmapA && glyph < GlyphOffset.altar)
-        return glyph - GlyphOffset.cmapA + CmapSymbol.ndoor;
-    if (glyph >= GlyphOffset.altar && glyph < GlyphOffset.cmapB)
-        return CmapSymbol.altar;
-    if (glyph >= GlyphOffset.cmapB && glyph < GlyphOffset.zap) {
-        const index = glyph - GlyphOffset.cmapB + CmapSymbol.grave;
-        // The range continues into trap glyphs, which have no
-        // dungeon-symbol table entry and set-independent characters.
-        return index < CmapSymbol.arrowTrap ? index : null;
-    }
-    return null;
+    const symbol = glyphToCmapSymbol(glyph);
+    return symbol !== null && symbol < CmapSymbol.arrowTrap ? symbol : null;
 }
 function roomMemoryGlyph(dark, dec) {
     return {
@@ -1044,10 +1032,11 @@ function displayMonsterGlyph(mnum, female = false, monsterState = 'normal') {
     };
 }
 function monsterGlyphNumber(mnum, female, state) {
-    const offset = state === 'pet' ? GlyphOffset.petMale
-        : state === 'detected' ? GlyphOffset.detectMale
-            : state === 'ridden' ? GlyphOffset.riddenMale : GlyphOffset.monMale;
-    return offset + mnum + (female ? MONSTER_COLOR.length : 0);
+    const gender = female ? FEMALE : MALE;
+    return state === 'pet' ? petnumToGlyph(mnum, gender)
+        : state === 'detected' ? detectedMonnumToGlyph(mnum, gender)
+            : state === 'ridden' ? riddenMonnumToGlyph(mnum, gender)
+                : monnumToGlyph(mnum, gender);
 }
 function heroDisplayGlyph() {
     if (game.u?.m_ap_type === M_AP_OBJECT)
@@ -1368,7 +1357,7 @@ function randomHallucinatedObjectGlyph() {
         // generated compile-time color table here.
         color: game.objectColors?.[otyp] ?? OBJECT_COLOR[otyp] ?? CLR_GRAY,
         decgfx: false, kind: 'object', otyp, piletop: false,
-        glyph: GlyphOffset.object + otyp,
+        glyph: objnumToGlyph(otyp),
     };
 }
 function objectGlyph(object) {
@@ -1430,20 +1419,21 @@ export function transientMonsterGlyph(monster, monsterState = 'normal') {
 }
 // Native zapdir_to_glyph() and reset_glyphmap(): direction selects one of
 // four symbols; the beam type retains a separate glyph even for equal colors.
+// The symbol index is the glyph's low two bits (display.c packs type << 2 | dir).
 export function zapdir_to_glyph(dx, dy, beamType) {
+    const glyph = zapdirToGlyph(dx, dy, beamType);
     const type = beamType >= 8 ? 0 : beamType;
-    const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
-    const appearance = cmapSymbolAppearance(CmapSymbol.vbeam + direction);
     const color = [CLR_BRIGHT_BLUE, CLR_ORANGE, CLR_WHITE, CLR_BRIGHT_BLUE,
         CLR_BLACK, CLR_WHITE, CLR_GREEN, CLR_YELLOW][type];
     if (color === undefined)
         throw new RangeError(`Unknown beam type ${beamType}`);
+    const appearance = cmapSymbolAppearance(CmapSymbol.vbeam + (glyph - GlyphOffset.zap & 3));
     return { ch: appearance.ch, color, decgfx: appearance.dec,
-        kind: 'effect', glyph: GlyphOffset.zap + type * 4 + direction };
+        kind: 'effect', glyph };
 }
-// Native explosion_to_glyph(): rows run from top left to bottom right.
+// Native explosion_to_glyph(): rows run from top left to bottom right, and
+// every style but the six named ones, including dark, defaults to fiery.
 export function explosionGlyph(style, dx, dy) {
-    // Native explosion_to_glyph() defaults every other style, including dark, to fiery.
     const type = [EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS]
         .includes(style) ? style : EXPL_FIERY;
     const index = (dy + 1) * 3 + dx + 1;
@@ -1453,7 +1443,7 @@ export function explosionGlyph(style, dx, dy) {
         throw new RangeError(`Unknown explosion glyph ${style} at offset ${dx},${dy}`);
     const appearance = cmapSymbolAppearance(CmapSymbol.explosionTopLeft + index);
     return { ch: appearance.ch, color, decgfx: appearance.dec,
-        kind: 'effect', glyph: GlyphOffset.explodeDark + type * 9 + index };
+        kind: 'effect', glyph: explosionToGlyph(style, CmapSymbol.explosionTopLeft + index) };
 }
 export function shieldGlyph(character) {
     const index = ['0', '#', '@', '*'].indexOf(character);
@@ -1499,7 +1489,7 @@ function apparentObjectGlyph(monster) {
     return {
         ch: activeObjectSymbols()[oclass] || '?',
         color: objectColor({ otyp, oclass, dknown: true }),
-        decgfx: false, kind: 'object', otyp, glyph: GlyphOffset.object + otyp,
+        decgfx: false, kind: 'object', otyp, glyph: objnumToGlyph(otyp),
     };
 }
 // C refs: display.c map_background(), map_object(), and map_trap().  These
@@ -1741,7 +1731,7 @@ export async function feel_location(x, y) {
         else if (IS_ROOM(loc.typ) || IS_POOL(loc.typ)) {
             const glyph = loc.remembered_glyph;
             // Native touch clears the ordinary boulder glyph, retaining pile memory.
-            const forgottenBoulder = glyph?.glyph === GlyphOffset.object + BOULDER
+            const forgottenBoulder = glyph?.glyph === objnumToGlyph(BOULDER)
                 || glyph?.kind === 'invisible';
             if (forgottenBoulder && loc.typ !== ROOM)
                 await map_background(x, y, true);
@@ -1826,8 +1816,7 @@ function isRogueShowraceHeroGlyph(glyph, x, y) {
         return false;
     if (glyph?.kind !== 'monster' || x !== game.u.ux || y !== game.u.uy)
         return false;
-    const heroGlyphNumber = GlyphOffset.monMale + game.urace.mnum
-        + (game.flags.female ? MONSTER_COLOR.length : 0);
+    const heroGlyphNumber = monnumToGlyph(game.urace.mnum, game.flags.female ? FEMALE : MALE);
     return glyph.glyph === heroGlyphNumber;
 }
 // HAS_ROGUE_IBM_GRAPHICS with nocolor cleared (only RogueEpyx declares
@@ -1859,36 +1848,34 @@ function rogueLevelGlyphColor(glyph, x, y) {
         // map_glyphinfo() yellows the hero's own glyph whatever its sex,
         // while a steed's glyph (not hero_glyph) keeps the ridden branch.
         if (x === game.u?.ux && y === game.u?.uy && !Upolyd(game.u)) {
-            const heroNumber = GlyphOffset.monMale
-                + ((game.flags.showrace ? game.urace?.mnum : game.u.umonnum) ?? 0)
-                + (game.flags.female ? MONSTER_COLOR.length : 0);
+            const heroNumber = monnumToGlyph((game.flags.showrace ? game.urace?.mnum : game.u.umonnum) ?? 0, game.flags.female ? FEMALE : MALE);
             if (glyphNumber === heroNumber)
                 return CLR_YELLOW;
         }
         // Ordinary male monsters are yellow; pets, detected, ridden and
         // female monsters keep no color.
-        return glyphNumber >= GlyphOffset.monMale && glyphNumber < GlyphOffset.monFemale
+        return glyphIsNormalMaleMonster(glyphNumber)
             ? CLR_YELLOW : NO_COLOR;
     }
     if (typeof glyphNumber !== 'number')
         return NO_COLOR;
     // reset_glyphmap() leaves explosions to explode_color() and the branch
     // wall ranges to wall_color() even with rogue color on.
-    if (glyphNumber >= GlyphOffset.explodeDark && glyphNumber < GlyphOffset.warning)
+    if (glyphIsExplosion(glyphNumber))
         return null;
-    if (glyphNumber >= GlyphOffset.cmapSokoban && glyphNumber < GlyphOffset.cmapA)
+    if (glyphIsCmapSokoban(glyphNumber))
         return null;
     // The main wall range colors through cmap_to_roguecolor(); the branch
     // ranges above keep their wall color, and no Rogue level sits in one.
     if (glyphNumber === GlyphOffset.cmapStone)
         return NO_COLOR;
-    if (glyphNumber >= GlyphOffset.cmapMain && glyphNumber < GlyphOffset.cmapMines)
+    if (glyphIsCmapMain(glyphNumber))
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapMain + CmapSymbol.vwall);
-    if (glyphNumber >= GlyphOffset.cmapA && glyphNumber < GlyphOffset.altar)
+    if (glyphIsCmapA(glyphNumber))
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapA + CmapSymbol.ndoor);
-    if (glyphNumber >= GlyphOffset.altar && glyphNumber < GlyphOffset.cmapB)
+    if (glyphIsCmapAltar(glyphNumber))
         return cmapToRogueColor(CmapSymbol.altar);
-    if (glyphNumber >= GlyphOffset.cmapB && glyphNumber < GlyphOffset.zap)
+    if (glyphIsCmapB(glyphNumber))
         return cmapToRogueColor(glyphNumber - GlyphOffset.cmapB + CmapSymbol.grave);
     return NO_COLOR;
 }
@@ -1989,12 +1976,8 @@ function shouldMentionGlyphChange(x, y, location, next) {
         return false;
     return x !== game.u.ux || y !== game.u.uy;
 }
-// display.h: glyph_is_monster() excludes bodies and statues.
-function glyphIsMonster(glyph) {
-    return glyph >= GlyphOffset.monMale && glyph < GlyphOffset.invisible
-        || glyph >= GlyphOffset.detectMale && glyph < GlyphOffset.body
-        || glyph >= GlyphOffset.riddenMale && glyph < GlyphOffset.object;
-}
+// display.h:glyph_is_monster() (the shared owner in glyph_numbers.ts)
+// excludes bodies and statues.
 // flush_screen() prints queued glyphs in row order. tty_print_glyph() leaves
 // the cursor one column after the last printed cell, even when it was restored
 // to the glyph already on the terminal before the flush.
@@ -2410,7 +2393,15 @@ let lastSwallowedY = 0;
 // When hallucinating, every stomach cell independently chooses a display-only
 // monster color.
 // C display.c:swallow_to_glyph(): each border cell is monster<<3 | position,
-// with the hallucinated species picked here instead of through what_mon().
+// with display.h:what_mon resolving a hallucinated species through the
+// display RNG.  The stomach color reads the same resolved species back out
+// of the glyph number's top bits.
+export function swallowToGlyph(mnum, loc) {
+    const shown = heroIsHallucinating() ? rn2Display(MONSTER_COLOR.length) : mnum;
+    const position = loc < CmapSymbol.swallowTopLeft || CmapSymbol.swallowBottomRight < loc
+        ? CmapSymbol.swallowBottomRight : loc;
+    return ((shown << 3) | (position - CmapSymbol.swallowTopLeft)) + GlyphOffset.swallow;
+}
 export async function swallowed(first = false) {
     if (!game.level || !game.u?.uswallow || !game.u?.ustuck)
         return;
@@ -2429,15 +2420,14 @@ export async function swallowed(first = false) {
     const positions = [
         [-1, -1], [0, -1], [1, -1], [-1, 0], [1, 0], [-1, 1], [0, 1], [1, 1],
     ];
-    const hallucinating = heroIsHallucinating(game);
     for (const [index, [dx, dy]] of positions.entries()) {
         if (index === 4)
             await displaySelf();
         const sx = x + dx, sy = y + dy;
         if (sx <= 0 || sx >= COLNO || sy < 0 || sy >= ROWNO)
             continue;
-        const mnum = hallucinating
-            ? rn2Display(MONSTER_COLOR.length) : game.u.ustuck.mnum;
+        const glyphNumber = swallowToGlyph(game.u.ustuck.mnum, CmapSymbol.swallowTopLeft + index);
+        const mnum = (glyphNumber - GlyphOffset.swallow) >> 3;
         let color = MONSTER_COLOR[mnum] ?? NO_COLOR;
         // tty has no hilite for ordinary gray; black is dark gray (use_darkgray).
         if (color === CLR_GRAY)
@@ -2447,7 +2437,7 @@ export async function swallowed(first = false) {
             ch: appearance.ch,
             color,
             decgfx: appearance.dec, kind: 'effect',
-            glyph: GlyphOffset.swallow + mnum * 8 + index,
+            glyph: glyphNumber,
         };
         await show_glyph_cell(sx, sy, glyph.ch, color, glyph.decgfx, 0, glyph);
     }

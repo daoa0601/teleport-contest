@@ -12,7 +12,7 @@ import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick
 import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, triggerHeroTrapAt } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, wizardTeleportCommand } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
-import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM } from './const.js';
+import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, FEMALE, MALE } from './const.js';
 import { queueCommandResponses, clearCommandKeys, nhgetch, queueCommandKeys, takeCommandResponse, MAP_CLICK_KEY, inputGate } from './input.js';
 import { showSeenVectors, showTerrainCodeLegend, showTerrainCodes, showVisionFlags, showWallModes, wizCustom, wizDetect, wizFlipLevel, wizFuzzer, wizGenesis, wizIdentify, wizIntrinsic, wizKill, wizLevelChange, wizLevelTeleport, wizMigrateMonsters, wizMakeMap, wizMap, wizPanic, wizPolyself, wizRumorCheck, wizShowNhuuid, wizSmell, wizTelekinesis, wizWhere, wizWish } from './wizcmds.js';
 import { wizBury, continueHeroDigging } from './dig.js';
@@ -82,7 +82,7 @@ import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
 import { heroCanReachFloor } from './engrave.js';
-import { CmapSymbol, GlyphOffset } from './glyph_numbers.js';
+import { CmapSymbol, GlyphOffset, monnumToGlyph, objnumToGlyph } from './glyph_numbers.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
 import { selection_floodfill, selection_getbounds, selection_getpoint, selection_new, selection_size_description } from './selvar.js';
 import { floorObjectDescription } from './floor_object_display.js';
@@ -1436,7 +1436,7 @@ function adjacentEntries(add, x, y, click) {
             add('untrap', 'Attempt to disarm trap');
         add('move', 'Move on the trap');
     }
-    if (location.remembered_glyph?.glyph === GlyphOffset.object + BOULDER)
+    if (location.remembered_glyph?.glyph === objnumToGlyph(BOULDER))
         add('move', 'Push the boulder');
     const occupant = monsterAtPosition(level, x, y);
     const monster = occupant && canSpotMonster(occupant) ? occupant : null;
@@ -1464,7 +1464,7 @@ function unusualHeroGlyph() {
     const species = game.flags.showrace ? game.urace?.mnum : hero.umonnum;
     if (species === undefined)
         throw new Error('A contextual hero menu requires an initialized species');
-    const glyph = (game.flags.female ? GlyphOffset.monFemale : GlyphOffset.monMale) + species;
+    const glyph = monnumToGlyph(species, game.flags.female ? FEMALE : MALE);
     return glyphAt(hero.ux, hero.uy)?.glyph !== glyph;
 }
 // ── #lookaround (C cmd.c:dolookaround() and its selection helpers) ─────

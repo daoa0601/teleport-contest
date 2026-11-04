@@ -190,6 +190,38 @@ split `rnl` row use this batch's complete runs.
 | `can_blow:tables` | `mondata.c:can_blow` ↔ `mondata.js:speciesCanBlow` | Valid species; monster distinct from `&gy.youmonst`, so the hero Strangled re-check stays dead | 2×4 | 9.7 s |
 | `mbirth_limit:tables` | `makemon.c:mbirth_limit` ↔ `makemon.js:monsterBirthLimit` | Any C int species index; PM_NAZGUL/PM_ERINYS and MAXMONNO=120 agree | 3×3 | 1.1 s |
 | `max_passive_dmg:state` (slow) | `mondata.c:max_passive_dmg` ↔ `mondata.js:maxPassiveMonsterDamage` | Valid species pair; `|mhp| <= 10^6`; Resists_Elem/monsterHas*Resistance enter as equal 0/1 call contracts (mon_resistancebits covers the masks) | 1×1 | 57.3 s |
+| `warning_to_glyph` | `display.h:warning_to_glyph` ↔ `glyph_numbers.js:warningToGlyph` | `|mwarnlev| <= 2^30` | 1×1 | 2.1 s |
+| `monnum_to_glyph` | `display.h:monnum_to_glyph` ↔ `glyph_numbers.js:monnumToGlyph` | `|mnum| <= 2^30`, any int32 gender | 2×2 | 1.8 s |
+| `petnum_to_glyph` | `display.h:petnum_to_glyph` ↔ `glyph_numbers.js:petnumToGlyph` | Same domain | 2×2 | 1.6 s |
+| `detected_monnum_to_glyph` | `display.h:detected_monnum_to_glyph` ↔ `glyph_numbers.js:detectedMonnumToGlyph` | Same domain | 2×2 | 1.7 s |
+| `ridden_monnum_to_glyph` | `display.h:ridden_monnum_to_glyph` ↔ `glyph_numbers.js:riddenMonnumToGlyph` | Same domain | 2×2 | 1.6 s |
+| `objnum_to_glyph` | `display.h:objnum_to_glyph` ↔ `glyph_numbers.js:objnumToGlyph` | `|onum| <= 2^30` | 1×1 | 1.4 s |
+| `explosion_to_glyph` | `display.h:explosion_to_glyph` ↔ `glyph_numbers.js:explosionToGlyph` | expltyp int32; `|idx| <= 2^30` | 6×6 | 3.1 s |
+| `altar_to_glyph` | `display.h:altar_to_glyph` ↔ `glyph_numbers.js:altarToGlyph` | Any int32 altar mask | 5×5 | 3.6 s |
+| `cmap_to_glyph` | `display.h:cmap_to_glyph` ↔ `glyph_numbers.js:cmapToGlyph` | `|cmap_idx| <= 2^30`; modeled u.uz/dungeon_topology branch state; In_mines/on_level real, In_hell an equal 0/1 contract; port wallOffset = the selected base | 10×7 | 5.4 s |
+| `zapdir_to_glyph` | `display.c:zapdir_to_glyph` ↔ `glyph_numbers.js:zapdirToGlyph` | dx/dy int32; beam_type 0..NUM_ZAP-1 (callers pass sgn() deltas and zap colors) | 1×1 | 4.6 s |
+| `swallow_to_glyph` | `display.c:swallow_to_glyph` ↔ `display.js:swallowToGlyph` | mnum 0..2^27, loc S_sw_tl..S_sw_br; HHallucination clear (what_mon's sober arm) | 1×1 | 2.8 s |
+| `glyph_is_monster` | `display.h:glyph_is_monster` ↔ `glyph_numbers.js:glyphIsMonster` | Every int32 glyph | 3×9 | 9.2 s |
+| `glyph_is_pet` | `display.h:glyph_is_pet` ↔ `glyph_numbers.js:glyphIsPet` | Same domain | 3×3 | 2.4 s |
+| `glyph_is_invisible` | `display.h:glyph_is_invisible` ↔ `glyph_numbers.js:glyphIsInvisible` | Same domain | 1×1 | 1.4 s |
+| `glyph_is_detected_monster` | `display.h:glyph_is_detected_monster` ↔ `glyph_numbers.js:glyphIsDetectedMonster` | Same domain | 3×3 | 2.4 s |
+| `glyph_is_ridden_monster` | `display.h:glyph_is_ridden_monster` ↔ `glyph_numbers.js:glyphIsRiddenMonster` | Same domain | 3×3 | 3.3 s |
+| `glyph_is_body` | `display.h:glyph_is_body` ↔ `glyph_numbers.js:glyphIsBody` | Same domain | 3×3 | 2.8 s |
+| `glyph_is_statue` | `display.h:glyph_is_statue` ↔ `glyph_numbers.js:glyphIsStatue` | Same domain | 3×5 | 5.4 s |
+| `glyph_is_object` (slow) | `display.h:glyph_is_object` ↔ `glyph_numbers.js:glyphIsObject` | Same domain | 3×13 | 19.9 s |
+| `glyph_is_trap` | `display.h:glyph_is_trap` ↔ `glyph_numbers.js:glyphIsTrap` | Same domain | 2×2 | 1.7 s |
+| `glyph_is_cmap` | `display.h:glyph_is_cmap` ↔ `glyph_numbers.js:glyphIsCmap` | Same domain | 2×2 | 2.0 s |
+| `glyph_is_swallow` | `display.h:glyph_is_swallow` ↔ `glyph_numbers.js:glyphIsSwallow` | Same domain | 2×2 | 1.9 s |
+| `glyph_is_warning` | `display.h:glyph_is_warning` ↔ `glyph_numbers.js:glyphIsWarning` | Same domain | 2×2 | 1.9 s |
+| `glyph_is_explosion` | `display.h:glyph_is_explosion` ↔ `glyph_numbers.js:glyphIsExplosion` | Same domain | 2×2 | 1.9 s |
+| `glyph_is_cmap_zap` | `display.h:glyph_is_cmap_zap` ↔ `glyph_numbers.js:glyphIsCmapZap` | Same domain | 2×2 | 2.2 s |
+| `glyph_to_mon` | `display.h:glyph_to_mon` ↔ `glyph_numbers.js:glyphToMon` | Every int32 glyph | 9×9 | 12.7 s |
+| `glyph_to_obj` (slow) | `display.h:glyph_to_obj` ↔ `glyph_numbers.js:glyphToObj` | Same domain | 5×5 | 26.3 s |
+| `glyph_to_swallow` | `display.h:glyph_to_swallow` ↔ `glyph_numbers.js:glyphToSwallow` | Same domain | 2×2 | 2.5 s |
+| `glyph_to_warning` | `display.h:glyph_to_warning` ↔ `glyph_numbers.js:glyphToWarning` | Same domain | 2×2 | 2.4 s |
+| `glyph_to_explosion` | `display.h:glyph_to_explosion` ↔ `glyph_numbers.js:glyphToExplosion` | Same domain | 2×2 | 2.5 s |
+| `glyph_to_trap` | `display.h:glyph_to_trap` ↔ `glyph_numbers.js:glyphToTrap` | Same domain | 2×2 | 2.8 s |
+| `glyph_to_cmap` | `glyphs.c:glyph_to_cmap` ↔ `getpos.js:glyphToCmapSymbol` | Terrain span GLYPH_CMAP_STONE_OFF..GLYPH_SWALLOW_OFF; port is null outside it | 10×7 | 8.0 s |
 
 **Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
 including **56 domain probes** and **60 mutant checks**, and wrote the ledger
@@ -621,6 +653,63 @@ domain change. The focused executor/query/selection suite is now
 **86 passing tests**, and the **36 ledger CLI tests** passed. `npm run
 compile` and `npm run check` passed. No game source, session corpus, or
 frozen file was changed.
+
+**Glyph-number encoding batch (fv-equivalence-batch-9).** Thirty-two more
+claims give the display.h glyph-number encoding exactly one proved owner per
+C definition. `glyph_numbers.ts` is the encoding's owner module: its
+`GlyphOffset`/`CmapSymbol` enumerations became `as const` object literals
+whose members chain exactly as `enum glyph_offsets` does, so clang and the
+emitted module each evaluate the whole offset table from their own sources
+(NUMMONS, NUM_OBJECTS, the defsym.h indices, WARNCOUNT, MAXEXPCHARS,
+MAXTCHARS) and no claim re-types an offset. The encoders
+(`warning_to_glyph`, `monnum`/`petnum`/`detected_monnum`/
+`ridden_monnum_to_glyph`, `objnum_to_glyph`, `explosion_to_glyph`,
+`altar_to_glyph`) expand through a new `harness/glyph_encoding.c`; display.c's
+real `zapdir_to_glyph` and `swallow_to_glyph` bodies execute for real over
+every int in their caller domains. The fourteen `glyph_is_*` predicates and
+the six display.h decoders (`glyph_to_mon/obj/swallow/warning/explosion/
+trap`) are proved over the whole int32 glyph axis, and glyphs.c's real
+`glyph_to_cmap` pairs with `getpos.js:glyphToCmapSymbol` over the terrain
+span only: the port decodes terrain into `null` where C returns MAXPCHARS or
+a swallow/explosion symbol, and the claim's probe pins that boundary.
+
+`cmap_to_glyph` needed the branch state behind `cmap_walls_to_glyph`:
+dungeon.c's `In_mines` and `on_level` execute for real over the modeled
+`u.uz` and `svd.dungeon_topology` state, dungeon.h's `In_sokoban`/`Lcheck`
+expand inline over the same keys, and dungeon.c:1942 `In_hell` — which reads
+`svd.dungeons[u.uz.dnum].flags.hellish`, an array the executor cannot model
+— enters as an equal 0/1 call contract. The port's `wallOffset` argument is
+related to exactly the base that selector picks, mirroring how
+`display.ts:currentWallGlyphOffset` supplies it at runtime.
+`swallow_to_glyph` pins `HHallucination` clear through the same property
+array model the experience claim uses, so display.h:what_mon returns its
+monster unchanged and the macro's indirect display-RNG call stays on the
+dead arm; the hallucinating path is the separately proved
+`rn2_on_display_rng` draw, and its per-call species choice through the
+function pointer remains outside the claims. The scattered inline
+re-derivations at call sites now call their owners: `display.ts`'s private
+`glyphIsMonster`, its duplicated `glyph_to_cmap` terrain decode, the
+`monnum_to_glyph`-shaped hero-glyph arithmetic, the zap/explosion/swallow
+glyph-number packing, and `objnum_to_glyph(BOULDER)` checks in `cmd.ts`,
+plus the swallow-range test in `do_name.ts` and the zap/warning decodes in
+`pager.ts`.
+
+Two claims are slow (`glyph_is_object` 19.6 s, `glyph_to_obj` 25.9 s) and
+join the nightly job; the other thirty are fast (worst `glyph_to_mon` at
+12.6 s). The port fidelity bug found — a fresh
+`glyphToTrap` owner that subtracted `S_arrow_trap` twice — was caught by the
+module's own round-trip smoke before proving and fixed; no pre-existing
+port behavior changed.
+
+The complete 158-claim run exited 0 in **2421.7 s**, including **166 domain
+probes** and **175 mutant checks** (32 claims, 32 probes and 32 mutants
+new), and wrote the reviewed 158-row ledger only after every claim, probe
+and mutant passed. The CI-parity `--skip-slow --check-ledger` run passes
+against the rewritten ledger.
+
+The focused verifier suites pass unchanged with the new claims loaded:
+**95 executor**, **4 query** and **9 selection tests**, plus the **36
+ledger CLI tests**. `npm run compile` and `npm run check` passed.
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
 that followed took 1037.68 s), including **77 domain probes** and **83

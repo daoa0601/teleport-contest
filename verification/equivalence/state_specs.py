@@ -1,7 +1,7 @@
 """Claims over explicit hero, monster and read-only call correspondences."""
 import z3
 
-from csym import CElement, CPtr, CVal
+from csym import CArray, CElement, CPtr, CState, CVal, convert
 from jssym import V
 from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
                    INT_MAX, LONG, SCHAR, Spec, ULEVEL, UnrelatedState,
@@ -33,14 +33,15 @@ HERO = ATTRIBUTES + HUMAN_FORM + ITEM_FIELDS
 
 STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
                  'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c', 'objnam.c',
-                 'dothrow.c')
+                 'dothrow.c', 'display.c', 'glyphs.c')
 STATE_JS_FILES = (
     'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
     'js/cmd.js', 'js/skills.js', 'js/mondata.js', 'js/objnam.js', 'js/o_init.js',
-    'js/object_properties.js',
+    'js/object_properties.js', 'js/glyph_numbers.js', 'js/getpos.js',
+    'js/display.js', 'js/senses.js',
 )
 
 
@@ -1565,4 +1566,390 @@ STATE_SPECS += [
                   ('js/mondata.js',
                    '![AD_PHYS, AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)',
                    '![AD_FIRE, AD_COLD, AD_ELEC, AD_ACID].includes(damageType)')]),
+]
+
+
+# ---- fv-equivalence-batch-9: the display.h glyph-number encoding ----
+
+# display.h packs every glyph into one int through enum glyph_offsets and the
+# macros over it; glyph_numbers.ts is the port owner of that encoding, with
+# display.c's zapdir_to_glyph/swallow_to_glyph beside the display layer and
+# glyphs.c's glyph_to_cmap decoder in getpos.ts.  Both sides read their own
+# tables (clang evaluates the C enum/macros over NUMMONS, NUM_OBJECTS, the
+# defsym.h indices, WARNCOUNT, MAXEXPCHARS and MAXTCHARS; the emitted module
+# computes the same offsets from MONSTER_COLOR.length, OBJECT_COLOR.length and
+# the const.js constants), so the claims never re-type a table value: any
+# table drift between the two sides fails the proofs outright.
+GLYPH_FILE = 'js/glyph_numbers.js'
+GETPOS_FILE = 'js/getpos.js'
+DISPLAY_FILE = 'js/display.js'
+
+# The port's terrain decoder is null outside the cmap span (display.ts and
+# getpos.ts callers treat null as "no dungeon symbol"), where C returns
+# MAXPCHARS or a swallow/explosion symbol.  The two bounds are the display.h
+# GLYPH_CMAP_STONE_OFF/GLYPH_SWALLOW_OFF values the claim's own tables carry;
+# they are restated here only because a domain bound must be droppable by the
+# probe, which cannot weaken a configure-time constraint.
+GLYPH_CMAP_STONE_BOUND, GLYPH_SWALLOW_BOUND = 3929, 4093
+
+GLYPH_ASSUMPTIONS = (
+    'display.h:enum glyph_offsets drives both sides through their own tables: clang evaluates the C enumerators over NUMMONS, NUM_OBJECTS, the defsym.h indices, WARNCOUNT, MAXEXPCHARS and MAXTCHARS, and the emitted glyph_numbers.js computes the same offsets from MONSTER_COLOR.length, OBJECT_COLOR.length, MAXEXPCHARS, MAXTCHARS and WARNCOUNT; no offset is re-typed in the spec',
+    'glyph numbers are native ints and every C caller stays inside int32; the +-2^30 input bounds below only keep C additions defined (callers pass species indices, cmap indices, warning levels or explosion characters far inside them)',
+)
+
+
+def glyph_range(s, name, bound=2 ** 30):
+    return [s[name] >= -bound, s[name] <= bound]
+
+
+def narrow(name, value):
+    """A domain probe pinned to one concrete narrowing input."""
+    return (f'{name} narrows to C int', lambda s: [s[name] == value])
+
+
+STATE_SPECS += [
+    Spec('warning_to_glyph', 'verification_warning_to_glyph', 'warningToGlyph',
+         [('mwarnlev', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.c:643 display_warning() passes the warning level in 0..WARNCOUNT-1',
+         ), require_counterexamples=True, pre=lambda s: glyph_range(s, 'mwarnlev'),
+         probes=[narrow('mwarnlev', 2 ** 32)],
+         mutants=[(GLYPH_FILE, 'return mwarnlev + GlyphOffset.warning;',
+                   'return mwarnlev + GlyphOffset.warning + 1;')]),
+    Spec('monnum_to_glyph', 'verification_monnum_to_glyph', 'monnumToGlyph',
+         [('mnum', LONG), ('gnd', INT)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:monnum_to_glyph selects the female range for every gender but MALE, NEUTER included; display_self() passes monsndx species and Ugender',
+         ), require_counterexamples=True,
+         pre=lambda s: glyph_range(s, 'mnum') + int_argument(s, 'gnd'),
+         probes=[narrow('mnum', 2 ** 32 + 5, )],
+         mutants=[(GLYPH_FILE,
+                   'return mnum + (gender === MALE ? GlyphOffset.monMale : GlyphOffset.monFemale);',
+                   'return mnum + (gender === MALE ? GlyphOffset.monFemale : GlyphOffset.monMale);')]),
+    Spec('petnum_to_glyph', 'verification_petnum_to_glyph', 'petnumToGlyph',
+         [('mnum', LONG), ('gnd', INT)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:petnum_to_glyph selects the female pet range for every gender but MALE',
+         ), require_counterexamples=True,
+         pre=lambda s: glyph_range(s, 'mnum') + int_argument(s, 'gnd'),
+         probes=[narrow('mnum', 2 ** 32 + 5)],
+         mutants=[(GLYPH_FILE,
+                   'return mnum + (gender === MALE ? GlyphOffset.petMale : GlyphOffset.petFemale);',
+                   'return mnum + (gender === MALE ? GlyphOffset.detectMale : GlyphOffset.petFemale);')]),
+    Spec('detected_monnum_to_glyph', 'verification_detected_monnum_to_glyph',
+         'detectedMonnumToGlyph', [('mnum', LONG), ('gnd', INT)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:detected_monnum_to_glyph selects the female detected range for every gender but MALE',
+         ), require_counterexamples=True,
+         pre=lambda s: glyph_range(s, 'mnum') + int_argument(s, 'gnd'),
+         probes=[narrow('mnum', 2 ** 32 + 5)],
+         mutants=[(GLYPH_FILE,
+                   'return mnum + (gender === MALE ? GlyphOffset.detectMale : GlyphOffset.detectFemale);',
+                   'return mnum + (gender === MALE ? GlyphOffset.riddenMale : GlyphOffset.detectFemale);')]),
+    Spec('ridden_monnum_to_glyph', 'verification_ridden_monnum_to_glyph',
+         'riddenMonnumToGlyph', [('mnum', LONG), ('gnd', INT)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:ridden_monnum_to_glyph selects the female ridden range for every gender but MALE; display.h:maybe_display_usteed passes the steed',
+         ), require_counterexamples=True,
+         pre=lambda s: glyph_range(s, 'mnum') + int_argument(s, 'gnd'),
+         probes=[narrow('mnum', 2 ** 32 + 5)],
+         mutants=[(GLYPH_FILE,
+                   'return mnum + (gender === MALE ? GlyphOffset.riddenMale : GlyphOffset.riddenFemale);',
+                   'return mnum + (gender === MALE ? GlyphOffset.riddenMale : GlyphOffset.riddenMale);')]),
+    Spec('objnum_to_glyph', 'verification_objnum_to_glyph', 'objnumToGlyph',
+         [('onum', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:objnum_to_glyph adds the object number; botl.c and cmd.c pass otyp values and display_self() the hero disguise',
+         ), require_counterexamples=True, pre=lambda s: glyph_range(s, 'onum'),
+         probes=[narrow('onum', 2 ** 32 + 9)],
+         mutants=[(GLYPH_FILE, 'return onum + GlyphOffset.object;',
+                   'return onum + GlyphOffset.objectPiletop;')]),
+    Spec('explosion_to_glyph', 'verification_explosion_to_glyph', 'explosionToGlyph',
+         [('expltyp', INT), ('idx', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:explosion_to_glyph defaults every type but the six named ones, EXPL_DARK included, to the fiery range; explode.c passes S_expl_tl..S_expl_br indices',
+         ), require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'expltyp') + glyph_range(s, 'idx'),
+         probes=[narrow('idx', 2 ** 32 + 97)],
+         mutants=[(GLYPH_FILE, ': GlyphOffset.explodeFiery);', ': GlyphOffset.explodeFrosty);')]),
+    Spec('altar_to_glyph', 'verification_altar_to_glyph', 'altarToGlyph',
+         [('amsk', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:altar_to_glyph tests AM_SANCTUM first and then the three-bit alignment mask; every undefined mask value stays unaligned, and JS int32 bitwise coercion matches the C int conversions for every exact-integer input',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'amsk'),
+         probes=[('mask outside the exact JS integer range',
+                  lambda s: [s['amsk'] == 2 ** 53 + 1])],
+         mutants=[(GLYPH_FILE, 'return GlyphOffset.altar + 3;', 'return GlyphOffset.altar + 1;')]),
+    Spec('zapdir_to_glyph', 'zapdir_to_glyph', 'zapdirToGlyph',
+         [('dx', LONG), ('dy', LONG), ('beam_type', INT)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.c:zapdir_to_glyph callers pass sgn() deltas and a zap-colors enum value below NUM_ZAP, so the impossible() arm stays unreachable; display.c:1132 passes (sgn(tdx), sgn(tdy), 2)',
+         ), require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'dx') + int_argument(s, 'dy') + int_argument(s, 'beam_type'),
+         configure=lambda world, front, modules: world.pre.extend(
+             [world.params[2][1] >= 0,
+              world.params[2][1] < front.enum_value('verification_num_zap')]),
+         probes=[('dx narrows to C int', lambda s: [s['dx'] == 2 ** 32 + 1, s['dy'] == 1,
+                                                    s['beam_type'] == 0])],
+         mutants=[(GLYPH_FILE, 'const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;',
+                   'const direction = dx === dy ? 3 : dx && dy ? 3 : dx ? 1 : 0;')]),
+    Spec('glyph_is_monster', 'verification_glyph_is_monster', 'glyphIsMonster',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_monster() is exactly the normal, pet, detected and ridden ranges; bodies, statues and the invisible placeholder are not monsters',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 5)],
+         mutants=[(GLYPH_FILE, 'glyphIsNormalMonster(glyph) || glyphIsPet(glyph)',
+                   'glyphIsNormalMonster(glyph)')]),
+    Spec('glyph_is_pet', 'verification_glyph_is_pet', 'glyphIsPet',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS, require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 2 * 383)],
+         mutants=[(GLYPH_FILE, 'return glyphIsMalePet(glyph) || glyphIsFemalePet(glyph);',
+                   'return glyphIsMalePet(glyph);')]),
+    Spec('glyph_is_invisible', 'verification_glyph_is_invisible', 'glyphIsInvisible',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS, require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4 * 383)],
+         mutants=[(GLYPH_FILE, 'return glyph === GlyphOffset.invisible;',
+                   'return glyph !== GlyphOffset.invisible;')]),
+    Spec('glyph_is_detected_monster', 'verification_glyph_is_detected_monster',
+         'glyphIsDetectedMonster', [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS, require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4 * 383 + 1)],
+         mutants=[(GLYPH_FILE, 'glyphIsDetectedMaleMonster(glyph) || glyphIsDetectedFemaleMonster(glyph);',
+                   'glyphIsDetectedMaleMonster(glyph) || glyphIsRiddenFemaleMonster(glyph);')]),
+    Spec('glyph_is_ridden_monster', 'verification_glyph_is_ridden_monster',
+         'glyphIsRiddenMonster', [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS, require_counterexamples=True,
+         pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 2682)],
+         mutants=[(GLYPH_FILE, 'glyphIsRiddenMaleMonster(glyph) || glyphIsRiddenFemaleMonster(glyph);',
+                   'glyphIsRiddenMaleMonster(glyph) || glyphIsDetectedFemaleMonster(glyph);')]),
+    Spec('glyph_is_body', 'verification_glyph_is_body', 'glyphIsBody',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_body() spans the plain and piletop corpse ranges',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 2299)],
+         mutants=[(GLYPH_FILE, 'glyph >= GlyphOffset.body && glyph < GlyphOffset.body + NUMMONS',
+                   'glyph >= GlyphOffset.body && glyph < GlyphOffset.body + NUMMONS + 1')]),
+    Spec('glyph_is_statue', 'verification_glyph_is_statue', 'glyphIsStatue',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_statue() spans the male and female plain and piletop statue ranges',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 7226)],
+         mutants=[(GLYPH_FILE, 'return glyphIsMaleStatue(glyph) || glyphIsFemStatue(glyph);',
+                   'return glyphIsMaleStatue(glyph);')]),
+    Spec('glyph_is_object', 'verification_glyph_is_object', 'glyphIsObject',
+         [('glyph', LONG)], js_file=GLYPH_FILE, slow=True,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_object() is the normal, generic, statue and body ranges; the generic rows run from the strange object to the first real object (FIRST_OBJECT == ARROW)',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 3448)],
+         mutants=[(GLYPH_FILE, 'glyphIsStatue(glyph) || glyphIsBody(glyph)',
+                   'glyphIsBody(glyph)')]),
+    Spec('glyph_is_trap', 'verification_glyph_is_trap', 'glyphIsTrap',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:GLYPH_TRAP_OFF is the tail of cmap range B and glyph_is_trap() spans MAXTCHARS glyphs',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4011 + 15)],
+         mutants=[(GLYPH_FILE, 'return glyph >= offset && glyph < offset + MAXTCHARS;',
+                   'return glyph >= offset && glyph <= offset + MAXTCHARS;')]),
+    Spec('glyph_is_cmap', 'verification_glyph_is_cmap', 'glyphIsCmap',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_cmap() spans stone through the end of cmap range C',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 3929)],
+         mutants=[(GLYPH_FILE, 'glyph < GlyphOffset.cmapC + (CmapSymbol.goodpos - CmapSymbol.digbeam + 1);',
+                   'glyph < GlyphOffset.cmapC + (CmapSymbol.goodpos - CmapSymbol.digbeam + 2);')]),
+    Spec('glyph_is_swallow', 'verification_glyph_is_swallow', 'glyphIsSwallow',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_swallow() spans the NUMMONS<<3 swallow cells',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4093)],
+         mutants=[(GLYPH_FILE, 'glyph < GlyphOffset.swallow + (NUMMONS << 3);',
+                   'glyph < GlyphOffset.swallow + (NUMMONS << 4);')]),
+    Spec('glyph_is_warning', 'verification_glyph_is_warning', 'glyphIsWarning',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_warning() spans the WARNCOUNT warning glyphs',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 7220)],
+         mutants=[(GLYPH_FILE, 'glyph < GlyphOffset.warning + WARNCOUNT;',
+                   'glyph < GlyphOffset.warning + WARNCOUNT + 1;')]),
+    Spec('glyph_is_explosion', 'verification_glyph_is_explosion', 'glyphIsExplosion',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_explosion() spans the seven MAXEXPCHARS explosion ranges',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 7157)],
+         mutants=[(GLYPH_FILE, 'glyph < MAXEXPCHARS + GlyphOffset.explodeFrosty;',
+                   'glyph < MAXEXPCHARS + GlyphOffset.explodeFrosty + 1;')]),
+    Spec('glyph_is_cmap_zap', 'verification_glyph_is_cmap_zap', 'glyphIsCmapZap',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_is_cmap_zap() spans the NUM_ZAP<<2 beam glyphs',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4051)],
+         mutants=[(GLYPH_FILE, 'glyph < (NUM_ZAP << 2) + GlyphOffset.zap;',
+                   'glyph < (NUM_ZAP << 3) + GlyphOffset.zap;')]),
+    Spec('glyph_to_mon', 'verification_glyph_to_mon', 'glyphToMon',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_mon() decodes every monster range to its species and returns the fencepost NUMMONS elsewhere',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 383)],
+         mutants=[(GLYPH_FILE, 'glyphIsNormalFemaleMonster(glyph) ? glyph - GlyphOffset.monFemale',
+                   'glyphIsNormalFemaleMonster(glyph) ? glyph - GlyphOffset.detectFemale')]),
+    Spec('glyph_to_obj', 'verification_glyph_to_obj', 'glyphToObj',
+         [('glyph', LONG)], js_file=GLYPH_FILE, slow=True,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_obj() maps bodies to CORPSE and statues to STATUE, decodes generic glyphs to their class marker, and returns the fencepost NUM_OBJECTS elsewhere',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 3448)],
+         mutants=[(GLYPH_FILE, 'glyphIsBody(glyph) ? CORPSE', 'glyphIsBody(glyph) ? STATUE')]),
+    Spec('glyph_to_swallow', 'verification_glyph_to_swallow', 'glyphToSwallow',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_swallow() masks the low three bits and returns zero outside the range',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4093 + 5 * 8 + 3)],
+         mutants=[(GLYPH_FILE, '(glyph - GlyphOffset.swallow) & 0x7 : 0;',
+                   '(glyph - GlyphOffset.swallow) & 0x3 : 0;')]),
+    Spec('glyph_to_warning', 'verification_glyph_to_warning', 'glyphToWarning',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_warning() returns the level inside the warning range and zero outside',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 7220 + 2)],
+         mutants=[(GLYPH_FILE, 'glyph - GlyphOffset.warning : 0;', 'glyph - GlyphOffset.warning : 1;')]),
+    Spec('glyph_to_explosion', 'verification_glyph_to_explosion', 'glyphToExplosion',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_explosion() reduces to one of the nine explosion characters and returns zero outside the range',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 7157 + 9 + 4)],
+         mutants=[(GLYPH_FILE, '% (CmapSymbol.explosionBottomRight - CmapSymbol.explosionTopLeft + 1)',
+                   '% (CmapSymbol.explosionBottomRight - CmapSymbol.explosionTopLeft + 2)')]),
+    Spec('glyph_to_trap', 'verification_glyph_to_trap', 'glyphToTrap',
+         [('glyph', LONG)], js_file=GLYPH_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:glyph_to_trap() decodes through rm.h:defsym_to_trap and returns NO_GLYPH (== MAX_GLYPH) elsewhere',
+         ), require_counterexamples=True, pre=lambda s: int_argument(s, 'glyph'),
+         probes=[narrow('glyph', 2 ** 32 + 4011 + 15 + 3)],
+         mutants=[(GLYPH_FILE, '? glyph - glyphTrapOffset() + 1', '? glyph - glyphTrapOffset() + 2')]),
+]
+
+
+def swallow_state(world, front, modules):
+    """display.c:swallow_to_glyph stays on what_mon's sober arm: the hero's
+    HALLUC property intrinsic (youprop.h:HHallucination) is pinned clear, so
+    display.h:what_mon returns its monster unchanged and the macro's indirect
+    display-RNG call never runs.  The port resolves hallucination through
+    senses.js:heroIsHallucinating reading game.u, so the same fact is pinned
+    on its side; the hallucinating path is the display-RNG draw shared with
+    the separately proved rn2_on_display_rng, but its per-call species choice
+    through a function pointer stays outside this claim."""
+    size = front.enum_value('LAST_PROP') + 1
+    world.c_globals['u.uprops'] = CArray(tuple(CState(f'u.uprops[{i}]') for i in range(size)))
+    world.c_globals[f'u.uprops[{front.enum_value("HALLUC")}].intrinsic'] = CVal(z3.IntVal(0), LONG)
+    resistance = z3.Int('u.uprops[HALLUC_RES].intrinsic')
+    world.c_globals[f'u.uprops[{front.enum_value("HALLUC_RES")}].intrinsic'] = CVal(resistance, LONG)
+    world.pre.extend([resistance >= 0, resistance <= 1])
+    world.js_state['game.u.hallucinationTurns'] = z3.IntVal(0)
+    js_resistance = z3.Int('js:game.u.hallucinationResistance')
+    world.js_state['game.u.hallucinationResistance'] = js_resistance
+    world.pre.extend([js_resistance >= 0, js_resistance <= 1])
+    loc = world.params[1][1]
+    world.pre.extend([loc >= front.enum_value('S_sw_tl'), loc <= front.enum_value('S_sw_br')])
+
+
+STATE_SPECS += [
+    Spec('swallow_to_glyph', 'swallow_to_glyph', 'swallowToGlyph',
+         [('mnum', LONG), ('loc', LONG)], js_file=DISPLAY_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.c:swallow_to_glyph callers (display.c:swallowed) pass monsndx(u.ustuck->data) and one of the eight S_sw_* positions, so the impossible() clamp arm stays unreachable',
+             'the hallucinating path resolves its species through display.h:what_mon and the display RNG on both sides; this claim pins HHallucination clear (dungeon-independent property state) so the indirect rng call stays on the dead arm, and the port shares the same sober arm through senses.js:heroIsHallucinating',
+         ), require_counterexamples=True, configure=swallow_state,
+         pre=lambda s: [s['mnum'] >= 0, s['mnum'] < 2 ** 27] + int_argument(s, 'loc'),
+         probes=[('negative species is a C left-shift UB', lambda s: [s['mnum'] == -1])],
+         mutants=[(DISPLAY_FILE,
+                   'return ((shown << 3) | (position - CmapSymbol.swallowTopLeft)) + GlyphOffset.swallow;',
+                   'return ((shown << 3) | (position - CmapSymbol.swallowTopLeft)) + GlyphOffset.swallow + 1;')]),
+]
+
+
+def cmap_branch_state(world, front, modules):
+    """display.h:cmap_walls_to_glyph picks its wall base from four branch
+    tests.  dungeon.c:In_mines and on_level execute for real over the modeled
+    u.uz and dungeon_topology state; dungeon.c:1942 In_hell reads
+    svd.dungeons[u.uz.dnum].flags.hellish, an array this claim cannot model,
+    so it enters as an equal 0/1 call contract named for that field."""
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    world.c_calls['In_hell'] = [([CPtr(True, 'u.uz')],
+                                 CVal(symbols['svd.dungeons.flags.hellish'], (32, True)))]
+
+
+def cmap_to_glyph_arguments(world, front):
+    """The port's wallOffset argument is the base display.h:cmap_walls_to_glyph
+    selects: In_mines, then In_hell, then Is_knox (dungeon.h:Lcheck over
+    on_level and Lassigned), then In_sokoban, else the main walls."""
+    symbols = {name: value for name, (value, _) in world.c_state.items()}
+    cmap_idx = world.params[0][1]
+    knox = symbols['svd.dungeon_topology.d_knox_level.dnum']
+    knox_level = symbols['svd.dungeon_topology.d_knox_level.dlevel']
+    assigned = z3.Or(knox_level != 0, knox != 0)
+    on_knox = z3.And(symbols['u.uz.dnum'] == knox, symbols['u.uz.dlevel'] == knox_level)
+    base = z3.If(symbols['u.uz.dnum'] == symbols['svd.dungeon_topology.d_mines_dnum'],
+                 z3.IntVal(front.enum_value('GLYPH_CMAP_MINES_OFF')),
+                 z3.If(symbols['svd.dungeons.flags.hellish'] != 0,
+                       z3.IntVal(front.enum_value('GLYPH_CMAP_GEH_OFF')),
+                       z3.If(z3.And(assigned, on_knox),
+                             z3.IntVal(front.enum_value('GLYPH_CMAP_KNOX_OFF')),
+                             z3.If(symbols['u.uz.dnum'] == symbols['svd.dungeon_topology.d_sokoban_dnum'],
+                                   z3.IntVal(front.enum_value('GLYPH_CMAP_SOKO_OFF')),
+                                   z3.IntVal(front.enum_value('GLYPH_CMAP_MAIN_OFF'))))))
+    return ([CVal(convert(cmap_idx, LONG, (32, True)), (32, True))],
+            [V('num', cmap_idx), V('num', base)])
+
+
+STATE_SPECS += [
+    Spec('cmap_to_glyph', 'verification_cmap_to_glyph', 'cmapToGlyph',
+         [('cmap_idx', LONG)], js_file=GLYPH_FILE,
+         state=[('u.uz.dnum', (16, True), None),
+                ('u.uz.dlevel', (16, True), None),
+                ('svd.dungeon_topology.d_mines_dnum', (16, True), None),
+                ('svd.dungeon_topology.d_sokoban_dnum', (16, True), None),
+                ('svd.dungeon_topology.d_knox_level.dnum', (16, True), None),
+                ('svd.dungeon_topology.d_knox_level.dlevel', (16, True), None),
+                ('svd.dungeons.flags.hellish', (32, True), None)],
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'display.h:cmap_to_glyph dispatches stone, the branch wall ranges, cmap A, the neutral altar, cmap B (traps included) and cmap C, and returns NO_GLYPH past S_goodpos; callers pass cmap symbol indices 0..MAXPCHARS',
+             'the wall base is an entry relation: the port caller (display.ts currentWallGlyphOffset) derives its wallOffset from the game branch state, and this claim supplies exactly the base display.h:cmap_walls_to_glyph selects from the same modeled u.uz/dungeon_topology state; dungeon.c:In_mines and on_level execute for real, and dungeon.c:1942 In_hell enters as an equal 0/1 contract for svd.dungeons[u.uz.dnum].flags.hellish, whose array the executor cannot model',
+         ), require_counterexamples=True, configure=cmap_branch_state,
+         arguments=cmap_to_glyph_arguments,
+         pre=lambda s: glyph_range(s, 'cmap_idx'),
+         probes=[narrow('cmap_idx', 2 ** 32 + 3)],
+         mutants=[(GLYPH_FILE, 'return symbol - CmapSymbol.vwall + wallOffset;',
+                   'return symbol - CmapSymbol.vwall + wallOffset + 1;')]),
+    Spec('glyph_to_cmap', 'glyph_to_cmap', 'glyphToCmapSymbol',
+         [('glyph', LONG)], js_file=GETPOS_FILE,
+         assumptions=GLYPH_ASSUMPTIONS + (
+             'glyphs.c:glyph_to_cmap decodes every terrain glyph: the five wall ranges map back onto S_vwall..S_trwall, cmap A onto S_ndoor.., the altar range onto S_altar, cmap B onto S_grave.., the zap beams modulo four and cmap C onto S_digbeam..',
+             'the port decodes terrain only: it returns null where C returns MAXPCHARS or a swallow/explosion symbol, and its callers (getpos feature search, display terrain memory) treat null as no dungeon symbol; the domain is the cmap span GLYPH_CMAP_STONE_OFF..GLYPH_SWALLOW_OFF, restated numerically above because the probe must be able to leave it',
+         ), require_counterexamples=True,
+         pre=lambda s: [s['glyph'] >= GLYPH_CMAP_STONE_BOUND,
+                        s['glyph'] < GLYPH_SWALLOW_BOUND],
+         probes=[('swallow glyphs are terrain to C and null to the port',
+                  lambda s: [s['glyph'] == GLYPH_SWALLOW_BOUND])],
+         mutants=[(GETPOS_FILE, 'return (glyph - GlyphOffset.zap) % 4 + 74;',
+                   'return (glyph - GlyphOffset.zap) % 4 + 75;')]),
 ]

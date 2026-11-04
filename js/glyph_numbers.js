@@ -1,124 +1,82 @@
-import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, MAXEXPCHARS, MAXTCHARS, WARNCOUNT, } from './const.js';
+import { AM_CHAOTIC, AM_LAWFUL, AM_MASK, AM_NEUTRAL, AM_SANCTUM, FEMALE, MALE, MAXEXPCHARS, MAXTCHARS, WARNCOUNT, } from './const.js';
 import { MONSTER_COLOR } from './monster_data.js';
-import { OBJECT_COLOR } from './object_data.js';
+import { ARROW as FIRST_OBJECT, CORPSE, OBJECT_COLOR, STATUE } from './object_data.js';
 // Pinned defsym.h indices. These select glyphs, independently of tty symbols.
-export var CmapSymbol;
-(function (CmapSymbol) {
-    CmapSymbol[CmapSymbol["stone"] = 0] = "stone";
-    CmapSymbol[CmapSymbol["vwall"] = 1] = "vwall";
-    CmapSymbol[CmapSymbol["hwall"] = 2] = "hwall";
-    CmapSymbol[CmapSymbol["tlcorn"] = 3] = "tlcorn";
-    CmapSymbol[CmapSymbol["trcorn"] = 4] = "trcorn";
-    CmapSymbol[CmapSymbol["blcorn"] = 5] = "blcorn";
-    CmapSymbol[CmapSymbol["brcorn"] = 6] = "brcorn";
-    CmapSymbol[CmapSymbol["crwall"] = 7] = "crwall";
-    CmapSymbol[CmapSymbol["tuwall"] = 8] = "tuwall";
-    CmapSymbol[CmapSymbol["tdwall"] = 9] = "tdwall";
-    CmapSymbol[CmapSymbol["tlwall"] = 10] = "tlwall";
-    CmapSymbol[CmapSymbol["trwall"] = 11] = "trwall";
-    CmapSymbol[CmapSymbol["ndoor"] = 12] = "ndoor";
-    CmapSymbol[CmapSymbol["vodoor"] = 13] = "vodoor";
-    CmapSymbol[CmapSymbol["hodoor"] = 14] = "hodoor";
-    CmapSymbol[CmapSymbol["vcdoor"] = 15] = "vcdoor";
-    CmapSymbol[CmapSymbol["hcdoor"] = 16] = "hcdoor";
-    CmapSymbol[CmapSymbol["bars"] = 17] = "bars";
-    CmapSymbol[CmapSymbol["tree"] = 18] = "tree";
-    CmapSymbol[CmapSymbol["room"] = 19] = "room";
-    CmapSymbol[CmapSymbol["darkroom"] = 20] = "darkroom";
-    CmapSymbol[CmapSymbol["engroom"] = 21] = "engroom";
-    CmapSymbol[CmapSymbol["corr"] = 22] = "corr";
-    CmapSymbol[CmapSymbol["litcorr"] = 23] = "litcorr";
-    CmapSymbol[CmapSymbol["engrcorr"] = 24] = "engrcorr";
-    CmapSymbol[CmapSymbol["upstair"] = 25] = "upstair";
-    CmapSymbol[CmapSymbol["dnstair"] = 26] = "dnstair";
-    CmapSymbol[CmapSymbol["upladder"] = 27] = "upladder";
-    CmapSymbol[CmapSymbol["dnladder"] = 28] = "dnladder";
-    CmapSymbol[CmapSymbol["brupstair"] = 29] = "brupstair";
-    CmapSymbol[CmapSymbol["brdnstair"] = 30] = "brdnstair";
-    CmapSymbol[CmapSymbol["brupladder"] = 31] = "brupladder";
-    CmapSymbol[CmapSymbol["brdnladder"] = 32] = "brdnladder";
-    CmapSymbol[CmapSymbol["altar"] = 33] = "altar";
-    CmapSymbol[CmapSymbol["grave"] = 34] = "grave";
-    CmapSymbol[CmapSymbol["throne"] = 35] = "throne";
-    CmapSymbol[CmapSymbol["sink"] = 36] = "sink";
-    CmapSymbol[CmapSymbol["fountain"] = 37] = "fountain";
-    CmapSymbol[CmapSymbol["pool"] = 38] = "pool";
-    CmapSymbol[CmapSymbol["ice"] = 39] = "ice";
-    CmapSymbol[CmapSymbol["lava"] = 40] = "lava";
-    CmapSymbol[CmapSymbol["lavawall"] = 41] = "lavawall";
-    CmapSymbol[CmapSymbol["vodbridge"] = 42] = "vodbridge";
-    CmapSymbol[CmapSymbol["hodbridge"] = 43] = "hodbridge";
-    CmapSymbol[CmapSymbol["vcdbridge"] = 44] = "vcdbridge";
-    CmapSymbol[CmapSymbol["hcdbridge"] = 45] = "hcdbridge";
-    CmapSymbol[CmapSymbol["air"] = 46] = "air";
-    CmapSymbol[CmapSymbol["cloud"] = 47] = "cloud";
-    CmapSymbol[CmapSymbol["water"] = 48] = "water";
-    CmapSymbol[CmapSymbol["arrowTrap"] = 49] = "arrowTrap";
-    CmapSymbol[CmapSymbol["web"] = 66] = "web";
-    CmapSymbol[CmapSymbol["vbeam"] = 74] = "vbeam";
-    CmapSymbol[CmapSymbol["hbeam"] = 75] = "hbeam";
-    CmapSymbol[CmapSymbol["lslant"] = 76] = "lslant";
-    CmapSymbol[CmapSymbol["rslant"] = 77] = "rslant";
-    CmapSymbol[CmapSymbol["digbeam"] = 78] = "digbeam";
-    CmapSymbol[CmapSymbol["flashbeam"] = 79] = "flashbeam";
-    CmapSymbol[CmapSymbol["boomleft"] = 80] = "boomleft";
-    CmapSymbol[CmapSymbol["boomright"] = 81] = "boomright";
-    CmapSymbol[CmapSymbol["shieldFirst"] = 82] = "shieldFirst";
-    CmapSymbol[CmapSymbol["poisoncloud"] = 86] = "poisoncloud";
-    CmapSymbol[CmapSymbol["goodpos"] = 87] = "goodpos";
-    CmapSymbol[CmapSymbol["swallowTopLeft"] = 88] = "swallowTopLeft";
-    CmapSymbol[CmapSymbol["swallowBottomRight"] = 95] = "swallowBottomRight";
-    CmapSymbol[CmapSymbol["explosionTopLeft"] = 96] = "explosionTopLeft";
-    CmapSymbol[CmapSymbol["explosionBottomRight"] = 104] = "explosionBottomRight";
-})(CmapSymbol || (CmapSymbol = {}));
+export const CmapSymbol = {
+    stone: 0, vwall: 1, hwall: 2, tlcorn: 3, trcorn: 4,
+    blcorn: 5, brcorn: 6, crwall: 7, tuwall: 8, tdwall: 9,
+    tlwall: 10, trwall: 11, ndoor: 12, vodoor: 13, hodoor: 14,
+    vcdoor: 15, hcdoor: 16, bars: 17, tree: 18, room: 19,
+    darkroom: 20, engroom: 21, corr: 22, litcorr: 23, engrcorr: 24,
+    upstair: 25, dnstair: 26, upladder: 27, dnladder: 28,
+    brupstair: 29, brdnstair: 30, brupladder: 31, brdnladder: 32,
+    altar: 33, grave: 34, throne: 35, sink: 36, fountain: 37,
+    pool: 38, ice: 39, lava: 40, lavawall: 41,
+    vodbridge: 42, hodbridge: 43, vcdbridge: 44, hcdbridge: 45,
+    air: 46, cloud: 47, water: 48, arrowTrap: 49, web: 66,
+    vbeam: 74, hbeam: 75, lslant: 76, rslant: 77,
+    digbeam: 78, flashbeam: 79, boomleft: 80, boomright: 81,
+    shieldFirst: 82, poisoncloud: 86, goodpos: 87,
+    swallowTopLeft: 88, swallowBottomRight: 95,
+    explosionTopLeft: 96, explosionBottomRight: 104,
+};
 const NUMMONS = MONSTER_COLOR.length;
 const NUM_OBJECTS = OBJECT_COLOR.length;
 const WALL_GLYPHS = CmapSymbol.trwall - CmapSymbol.vwall + 1;
+const NUM_ZAP = 8;
 // display.h:enum glyph_offsets. Keep every range in native order.
-export var GlyphOffset;
-(function (GlyphOffset) {
-    GlyphOffset[GlyphOffset["monMale"] = 0] = "monMale";
-    GlyphOffset[GlyphOffset["monFemale"] = NUMMONS + GlyphOffset.monMale] = "monFemale";
-    GlyphOffset[GlyphOffset["petMale"] = NUMMONS + GlyphOffset.monFemale] = "petMale";
-    GlyphOffset[GlyphOffset["petFemale"] = NUMMONS + GlyphOffset.petMale] = "petFemale";
-    GlyphOffset[GlyphOffset["invisible"] = NUMMONS + GlyphOffset.petFemale] = "invisible";
-    GlyphOffset[GlyphOffset["detectMale"] = 1 + GlyphOffset.invisible] = "detectMale";
-    GlyphOffset[GlyphOffset["detectFemale"] = NUMMONS + GlyphOffset.detectMale] = "detectFemale";
-    GlyphOffset[GlyphOffset["body"] = NUMMONS + GlyphOffset.detectFemale] = "body";
-    GlyphOffset[GlyphOffset["riddenMale"] = NUMMONS + GlyphOffset.body] = "riddenMale";
-    GlyphOffset[GlyphOffset["riddenFemale"] = NUMMONS + GlyphOffset.riddenMale] = "riddenFemale";
-    GlyphOffset[GlyphOffset["object"] = NUMMONS + GlyphOffset.riddenFemale] = "object";
-    GlyphOffset[GlyphOffset["cmapStone"] = NUM_OBJECTS + GlyphOffset.object] = "cmapStone";
-    GlyphOffset[GlyphOffset["cmapMain"] = 1 + GlyphOffset.cmapStone] = "cmapMain";
-    GlyphOffset[GlyphOffset["cmapMines"] = WALL_GLYPHS + GlyphOffset.cmapMain] = "cmapMines";
-    GlyphOffset[GlyphOffset["cmapGehennom"] = WALL_GLYPHS + GlyphOffset.cmapMines] = "cmapGehennom";
-    GlyphOffset[GlyphOffset["cmapKnox"] = WALL_GLYPHS + GlyphOffset.cmapGehennom] = "cmapKnox";
-    GlyphOffset[GlyphOffset["cmapSokoban"] = WALL_GLYPHS + GlyphOffset.cmapKnox] = "cmapSokoban";
-    GlyphOffset[GlyphOffset["cmapA"] = WALL_GLYPHS + GlyphOffset.cmapSokoban] = "cmapA";
-    GlyphOffset[GlyphOffset["altar"] = CmapSymbol.brdnladder - CmapSymbol.ndoor + 1 + GlyphOffset.cmapA] = "altar";
-    GlyphOffset[GlyphOffset["cmapB"] = 5 + GlyphOffset.altar] = "cmapB";
-    GlyphOffset[GlyphOffset["zap"] = CmapSymbol.arrowTrap + MAXTCHARS - CmapSymbol.grave + GlyphOffset.cmapB] = "zap";
-    GlyphOffset[GlyphOffset["cmapC"] = (8 << 2) + GlyphOffset.zap] = "cmapC";
-    GlyphOffset[GlyphOffset["swallow"] = CmapSymbol.goodpos - CmapSymbol.digbeam + 1 + GlyphOffset.cmapC] = "swallow";
-    GlyphOffset[GlyphOffset["explodeDark"] = (NUMMONS << 3) + GlyphOffset.swallow] = "explodeDark";
-    GlyphOffset[GlyphOffset["explodeNoxious"] = MAXEXPCHARS + GlyphOffset.explodeDark] = "explodeNoxious";
-    GlyphOffset[GlyphOffset["explodeMuddy"] = MAXEXPCHARS + GlyphOffset.explodeNoxious] = "explodeMuddy";
-    GlyphOffset[GlyphOffset["explodeWet"] = MAXEXPCHARS + GlyphOffset.explodeMuddy] = "explodeWet";
-    GlyphOffset[GlyphOffset["explodeMagical"] = MAXEXPCHARS + GlyphOffset.explodeWet] = "explodeMagical";
-    GlyphOffset[GlyphOffset["explodeFiery"] = MAXEXPCHARS + GlyphOffset.explodeMagical] = "explodeFiery";
-    GlyphOffset[GlyphOffset["explodeFrosty"] = MAXEXPCHARS + GlyphOffset.explodeFiery] = "explodeFrosty";
-    GlyphOffset[GlyphOffset["warning"] = MAXEXPCHARS + GlyphOffset.explodeFrosty] = "warning";
-    GlyphOffset[GlyphOffset["statueMale"] = WARNCOUNT + GlyphOffset.warning] = "statueMale";
-    GlyphOffset[GlyphOffset["statueFemale"] = NUMMONS + GlyphOffset.statueMale] = "statueFemale";
-    GlyphOffset[GlyphOffset["objectPiletop"] = NUMMONS + GlyphOffset.statueFemale] = "objectPiletop";
-    GlyphOffset[GlyphOffset["bodyPiletop"] = NUM_OBJECTS + GlyphOffset.objectPiletop] = "bodyPiletop";
-    GlyphOffset[GlyphOffset["statueMalePiletop"] = NUMMONS + GlyphOffset.bodyPiletop] = "statueMalePiletop";
-    GlyphOffset[GlyphOffset["statueFemalePiletop"] = NUMMONS + GlyphOffset.statueMalePiletop] = "statueFemalePiletop";
-    GlyphOffset[GlyphOffset["unexplored"] = NUMMONS + GlyphOffset.statueFemalePiletop] = "unexplored";
-    GlyphOffset[GlyphOffset["nothing"] = GlyphOffset.unexplored + 1] = "nothing";
-    GlyphOffset[GlyphOffset["max"] = GlyphOffset.nothing + 1] = "max";
-})(GlyphOffset || (GlyphOffset = {}));
-// display.h:cmap_to_glyph(), with the caller selecting its branch's wall range.
+const monMale = 0;
+const monFemale = NUMMONS + monMale;
+const petMale = NUMMONS + monFemale;
+const petFemale = NUMMONS + petMale;
+const invisible = NUMMONS + petFemale;
+const detectMale = 1 + invisible;
+const detectFemale = NUMMONS + detectMale;
+const body = NUMMONS + detectFemale;
+const riddenMale = NUMMONS + body;
+const riddenFemale = NUMMONS + riddenMale;
+const object = NUMMONS + riddenFemale;
+const cmapStone = NUM_OBJECTS + object;
+const cmapMain = 1 + cmapStone;
+const cmapMines = WALL_GLYPHS + cmapMain;
+const cmapGehennom = WALL_GLYPHS + cmapMines;
+const cmapKnox = WALL_GLYPHS + cmapGehennom;
+const cmapSokoban = WALL_GLYPHS + cmapKnox;
+const cmapA = WALL_GLYPHS + cmapSokoban;
+const altar = CmapSymbol.brdnladder - CmapSymbol.ndoor + 1 + cmapA;
+const cmapB = 5 + altar;
+const zap = CmapSymbol.arrowTrap + MAXTCHARS - CmapSymbol.grave + cmapB;
+const cmapC = (NUM_ZAP << 2) + zap;
+const swallow = CmapSymbol.goodpos - CmapSymbol.digbeam + 1 + cmapC;
+const explodeDark = (NUMMONS << 3) + swallow;
+const explodeNoxious = MAXEXPCHARS + explodeDark;
+const explodeMuddy = MAXEXPCHARS + explodeNoxious;
+const explodeWet = MAXEXPCHARS + explodeMuddy;
+const explodeMagical = MAXEXPCHARS + explodeWet;
+const explodeFiery = MAXEXPCHARS + explodeMagical;
+const explodeFrosty = MAXEXPCHARS + explodeFiery;
+const warning = MAXEXPCHARS + explodeFrosty;
+const statueMale = WARNCOUNT + warning;
+const statueFemale = NUMMONS + statueMale;
+const objectPiletop = NUMMONS + statueFemale;
+const bodyPiletop = NUM_OBJECTS + objectPiletop;
+const statueMalePiletop = NUMMONS + bodyPiletop;
+const statueFemalePiletop = NUMMONS + statueMalePiletop;
+const unexplored = NUMMONS + statueFemalePiletop;
+const nothing = unexplored + 1;
+const max = nothing + 1;
+export const GlyphOffset = {
+    monMale, monFemale, petMale, petFemale, invisible, detectMale, detectFemale,
+    body, riddenMale, riddenFemale, object, cmapStone, cmapMain, cmapMines,
+    cmapGehennom, cmapKnox, cmapSokoban, cmapA, altar, cmapB, zap, cmapC,
+    swallow, explodeDark, explodeNoxious, explodeMuddy, explodeWet,
+    explodeMagical, explodeFiery, explodeFrosty, warning, statueMale,
+    statueFemale, objectPiletop, bodyPiletop, statueMalePiletop,
+    statueFemalePiletop, unexplored, nothing, max,
+};
+// display.h:cmap_to_glyph(), with the caller selecting its branch's wall range
+// (display.h:cmap_walls_to_glyph reads the hero's dungeon branch, which the
+// caller derives from the current level).
 export function cmapToGlyph(symbol, wallOffset = GlyphOffset.cmapMain) {
     if (symbol === CmapSymbol.stone)
         return GlyphOffset.cmapStone;
@@ -134,7 +92,9 @@ export function cmapToGlyph(symbol, wallOffset = GlyphOffset.cmapMain) {
         return symbol - CmapSymbol.digbeam + GlyphOffset.cmapC;
     return GlyphOffset.max;
 }
-// Shrine status does not select another glyph; sanctum status does.
+// C display.h:altar_to_glyph(): shrine status does not select another glyph;
+// sanctum status does.  Alignment uses 3 bits; every undefined value falls
+// back to the unaligned altar, exactly as the macro chain does.
 export function altarToGlyph(mask) {
     if (mask & AM_SANCTUM)
         return GlyphOffset.altar + 4;
@@ -146,5 +106,280 @@ export function altarToGlyph(mask) {
     if (alignment === AM_CHAOTIC)
         return GlyphOffset.altar + 1;
     return GlyphOffset.altar;
+}
+// C display.h:warning_to_glyph()
+export function warningToGlyph(mwarnlev) {
+    return mwarnlev + GlyphOffset.warning;
+}
+// C display.h:monnum_to_glyph(): every gender other than MALE (including
+// NEUTER) shares the female range, as the macro's == MALE test decides.
+export function monnumToGlyph(mnum, gender) {
+    return mnum + (gender === MALE ? GlyphOffset.monMale : GlyphOffset.monFemale);
+}
+// C display.h:petnum_to_glyph()
+export function petnumToGlyph(mnum, gender) {
+    return mnum + (gender === MALE ? GlyphOffset.petMale : GlyphOffset.petFemale);
+}
+// C display.h:detected_monnum_to_glyph()
+export function detectedMonnumToGlyph(mnum, gender) {
+    return mnum + (gender === MALE ? GlyphOffset.detectMale : GlyphOffset.detectFemale);
+}
+// C display.h:ridden_monnum_to_glyph()
+export function riddenMonnumToGlyph(mnum, gender) {
+    return mnum + (gender === MALE ? GlyphOffset.riddenMale : GlyphOffset.riddenFemale);
+}
+// C display.h:objnum_to_glyph()
+export function objnumToGlyph(onum) {
+    return onum + GlyphOffset.object;
+}
+// C display.h:explosion_to_glyph(): every type but the six named ones,
+// including EXPL_DARK, defaults to the fiery range.
+export function explosionToGlyph(expltyp, idx) {
+    return idx - CmapSymbol.explosionTopLeft
+        + (expltyp === 6 ? GlyphOffset.explodeFrosty // EXPL_FROSTY
+            : expltyp === 4 ? GlyphOffset.explodeMagical // EXPL_MAGICAL
+                : expltyp === 3 ? GlyphOffset.explodeWet // EXPL_WET
+                    : expltyp === 2 ? GlyphOffset.explodeMuddy // EXPL_MUDDY
+                        : expltyp === 1 ? GlyphOffset.explodeNoxious // EXPL_NOXIOUS
+                            : GlyphOffset.explodeFiery);
+}
+// C display.c:zapdir_to_glyph(): the direction collapses to one of the four
+// beam symbols and the beam type keeps its own glyph even for equal colors.
+export function zapdirToGlyph(dx, dy, beamType) {
+    const type = beamType >= NUM_ZAP ? 0 : beamType;
+    const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
+    return ((type << 2) | direction) + GlyphOffset.zap;
+}
+// display.c:swallow_to_glyph() lives in display.ts beside swallowed(): its
+// display.h:what_mon hallucination draw reaches the hero-sense and RNG
+// modules, and keeping glyph_numbers.ts import-light preserves the module
+// initialization order.
+// C display.h:glyph_is_normal_male_monster() and the female/pet/detected/
+// ridden ranges beside it.
+export function glyphIsNormalMaleMonster(glyph) {
+    return glyph >= GlyphOffset.monMale && glyph < GlyphOffset.monMale + NUMMONS;
+}
+export function glyphIsNormalFemaleMonster(glyph) {
+    return glyph >= GlyphOffset.monFemale && glyph < GlyphOffset.monFemale + NUMMONS;
+}
+export function glyphIsNormalMonster(glyph) {
+    return glyphIsNormalMaleMonster(glyph) || glyphIsNormalFemaleMonster(glyph);
+}
+export function glyphIsMalePet(glyph) {
+    return glyph >= GlyphOffset.petMale && glyph < GlyphOffset.petMale + NUMMONS;
+}
+export function glyphIsFemalePet(glyph) {
+    return glyph >= GlyphOffset.petFemale && glyph < GlyphOffset.petFemale + NUMMONS;
+}
+// C display.h:glyph_is_pet()
+export function glyphIsPet(glyph) {
+    return glyphIsMalePet(glyph) || glyphIsFemalePet(glyph);
+}
+export function glyphIsDetectedMaleMonster(glyph) {
+    return glyph >= GlyphOffset.detectMale && glyph < GlyphOffset.detectMale + NUMMONS;
+}
+export function glyphIsDetectedFemaleMonster(glyph) {
+    return glyph >= GlyphOffset.detectFemale && glyph < GlyphOffset.detectFemale + NUMMONS;
+}
+// C display.h:glyph_is_detected_monster()
+export function glyphIsDetectedMonster(glyph) {
+    return glyphIsDetectedMaleMonster(glyph) || glyphIsDetectedFemaleMonster(glyph);
+}
+export function glyphIsRiddenMaleMonster(glyph) {
+    return glyph >= GlyphOffset.riddenMale && glyph < GlyphOffset.riddenMale + NUMMONS;
+}
+export function glyphIsRiddenFemaleMonster(glyph) {
+    return glyph >= GlyphOffset.riddenFemale && glyph < GlyphOffset.riddenFemale + NUMMONS;
+}
+// C display.h:glyph_is_ridden_monster()
+export function glyphIsRiddenMonster(glyph) {
+    return glyphIsRiddenMaleMonster(glyph) || glyphIsRiddenFemaleMonster(glyph);
+}
+// C display.h:glyph_is_monster(): bodies and statues are objects, not monsters.
+export function glyphIsMonster(glyph) {
+    return glyphIsNormalMonster(glyph) || glyphIsPet(glyph)
+        || glyphIsRiddenMonster(glyph) || glyphIsDetectedMonster(glyph);
+}
+// C display.h:glyph_is_invisible()
+export function glyphIsInvisible(glyph) {
+    return glyph === GlyphOffset.invisible;
+}
+// C display.h:glyph_is_body_piletop() / glyph_is_body()
+function glyphIsBodyPiletop(glyph) {
+    return glyph >= GlyphOffset.bodyPiletop && glyph < GlyphOffset.bodyPiletop + NUMMONS;
+}
+export function glyphIsBody(glyph) {
+    return glyph >= GlyphOffset.body && glyph < GlyphOffset.body + NUMMONS
+        || glyphIsBodyPiletop(glyph);
+}
+// C display.h:glyph_is_{fe,male}_statue{_piletop}() / glyph_is_statue()
+function glyphIsFemStatuePiletop(glyph) {
+    return glyph >= GlyphOffset.statueFemalePiletop
+        && glyph < GlyphOffset.statueFemalePiletop + NUMMONS;
+}
+function glyphIsMaleStatuePiletop(glyph) {
+    return glyph >= GlyphOffset.statueMalePiletop
+        && glyph < GlyphOffset.statueMalePiletop + NUMMONS;
+}
+export function glyphIsFemStatue(glyph) {
+    return glyph >= GlyphOffset.statueFemale && glyph < GlyphOffset.statueFemale + NUMMONS
+        || glyphIsFemStatuePiletop(glyph);
+}
+export function glyphIsMaleStatue(glyph) {
+    return glyph >= GlyphOffset.statueMale && glyph < GlyphOffset.statueMale + NUMMONS
+        || glyphIsMaleStatuePiletop(glyph);
+}
+export function glyphIsStatue(glyph) {
+    return glyphIsMaleStatue(glyph) || glyphIsFemStatue(glyph);
+}
+// C display.h:glyph_is_normal_generic_obj() / glyph_is_piletop_generic_obj()
+// / glyph_is_generic_object().  Generic glyphs run from the strange object's
+// class marker up to (excluding) the first real object.
+function glyphIsNormalGenericObj(glyph) {
+    return glyph > GlyphOffset.object && glyph < GlyphOffset.object + FIRST_OBJECT - 1;
+}
+function glyphIsPiletopGenericObj(glyph) {
+    return glyph > GlyphOffset.objectPiletop
+        && glyph < GlyphOffset.objectPiletop + FIRST_OBJECT - 1;
+}
+export function glyphIsGenericObject(glyph) {
+    return glyphIsNormalGenericObj(glyph) || glyphIsPiletopGenericObj(glyph);
+}
+// C display.h:glyph_is_normal_piletop_obj() / glyph_is_normal_object()
+function glyphIsNormalPiletopObj(glyph) {
+    return glyph === GlyphOffset.objectPiletop
+        || glyph > GlyphOffset.objectPiletop + FIRST_OBJECT - 1
+            && glyph < GlyphOffset.objectPiletop + NUM_OBJECTS;
+}
+export function glyphIsNormalObject(glyph) {
+    return glyph === GlyphOffset.object
+        || glyph >= GlyphOffset.object + FIRST_OBJECT - 1
+            && glyph < GlyphOffset.object + NUM_OBJECTS
+        || glyphIsNormalPiletopObj(glyph);
+}
+// C display.h:glyph_is_object(): bodies are objects too.
+export function glyphIsObject(glyph) {
+    return glyphIsNormalObject(glyph) || glyphIsGenericObject(glyph)
+        || glyphIsStatue(glyph) || glyphIsBody(glyph);
+}
+// C display.h:GLYPH_TRAP_OFF and glyph_is_trap(): the trap glyphs are the
+// tail of cmap range B, one per trap type character.
+function glyphTrapOffset() {
+    return GlyphOffset.cmapB + (CmapSymbol.arrowTrap - CmapSymbol.grave);
+}
+// C display.h:glyph_is_trap()
+export function glyphIsTrap(glyph) {
+    const offset = glyphTrapOffset();
+    return glyph >= offset && glyph < offset + MAXTCHARS;
+}
+// C display.h:glyph_is_warning()
+export function glyphIsWarning(glyph) {
+    return glyph >= GlyphOffset.warning && glyph < GlyphOffset.warning + WARNCOUNT;
+}
+// C display.h:glyph_is_swallow()
+export function glyphIsSwallow(glyph) {
+    return glyph >= GlyphOffset.swallow && glyph < GlyphOffset.swallow + (NUMMONS << 3);
+}
+// C display.h:glyph_is_explosion()
+export function glyphIsExplosion(glyph) {
+    return glyph >= GlyphOffset.explodeDark
+        && glyph < MAXEXPCHARS + GlyphOffset.explodeFrosty;
+}
+// C display.h:glyph_is_cmap(): the whole terrain span, stone through cmap C.
+export function glyphIsCmap(glyph) {
+    return glyph >= GlyphOffset.cmapStone
+        && glyph < GlyphOffset.cmapC + (CmapSymbol.goodpos - CmapSymbol.digbeam + 1);
+}
+// C display.h:glyph_is_cmap_main() through glyph_is_cmap_c(): the individual
+// terrain ranges, including the five per-branch wall ranges and the zap beams.
+export function glyphIsCmapMain(glyph) {
+    return glyph >= GlyphOffset.cmapMain
+        && glyph < WALL_GLYPHS + GlyphOffset.cmapMain;
+}
+export function glyphIsCmapMines(glyph) {
+    return glyph >= GlyphOffset.cmapMines
+        && glyph < WALL_GLYPHS + GlyphOffset.cmapMines;
+}
+export function glyphIsCmapGehennom(glyph) {
+    return glyph >= GlyphOffset.cmapGehennom
+        && glyph < WALL_GLYPHS + GlyphOffset.cmapGehennom;
+}
+export function glyphIsCmapKnox(glyph) {
+    return glyph >= GlyphOffset.cmapKnox
+        && glyph < WALL_GLYPHS + GlyphOffset.cmapKnox;
+}
+export function glyphIsCmapSokoban(glyph) {
+    return glyph >= GlyphOffset.cmapSokoban
+        && glyph < WALL_GLYPHS + GlyphOffset.cmapSokoban;
+}
+export function glyphIsCmapA(glyph) {
+    return glyph >= GlyphOffset.cmapA
+        && glyph < CmapSymbol.brdnladder - CmapSymbol.ndoor + 1 + GlyphOffset.cmapA;
+}
+export function glyphIsCmapAltar(glyph) {
+    return glyph >= GlyphOffset.altar && glyph < 5 + GlyphOffset.altar;
+}
+export function glyphIsCmapB(glyph) {
+    return glyph >= GlyphOffset.cmapB
+        && glyph < CmapSymbol.arrowTrap + MAXTCHARS - CmapSymbol.grave + GlyphOffset.cmapB;
+}
+// C display.h:glyph_is_cmap_zap()
+export function glyphIsCmapZap(glyph) {
+    return glyph >= GlyphOffset.zap && glyph < (NUM_ZAP << 2) + GlyphOffset.zap;
+}
+export function glyphIsCmapC(glyph) {
+    return glyph >= GlyphOffset.cmapC
+        && glyph < CmapSymbol.goodpos - CmapSymbol.digbeam + 1 + GlyphOffset.cmapC;
+}
+// C display.h:glyph_to_mon(): pets, detected and ridden monsters all decode
+// to their species; anything else is the fencepost species NUMMONS.
+export function glyphToMon(glyph) {
+    return glyphIsNormalFemaleMonster(glyph) ? glyph - GlyphOffset.monFemale
+        : glyphIsNormalMaleMonster(glyph) ? glyph - GlyphOffset.monMale
+            : glyphIsFemalePet(glyph) ? glyph - GlyphOffset.petFemale
+                : glyphIsMalePet(glyph) ? glyph - GlyphOffset.petMale
+                    : glyphIsDetectedFemaleMonster(glyph) ? glyph - GlyphOffset.detectFemale
+                        : glyphIsDetectedMaleMonster(glyph) ? glyph - GlyphOffset.detectMale
+                            : glyphIsRiddenFemaleMonster(glyph) ? glyph - GlyphOffset.riddenFemale
+                                : glyphIsRiddenMaleMonster(glyph) ? glyph - GlyphOffset.riddenMale
+                                    : NUMMONS;
+}
+// C display.h:glyph_to_obj(): bodies are the generic CORPSE, statues the
+// generic STATUE, generic glyphs their class marker, and anything else the
+// fencepost object NUM_OBJECTS.
+export function glyphToObj(glyph) {
+    return glyphIsBody(glyph) ? CORPSE
+        : glyphIsStatue(glyph) ? STATUE
+            : glyphIsGenericObject(glyph)
+                ? glyph - (glyphIsPiletopGenericObj(glyph)
+                    ? GlyphOffset.objectPiletop : GlyphOffset.object)
+                : glyphIsNormalObject(glyph)
+                    ? glyph - (glyphIsNormalPiletopObj(glyph)
+                        ? GlyphOffset.objectPiletop : GlyphOffset.object)
+                    : NUM_OBJECTS;
+}
+// C display.h:glyph_to_swallow(): the swallow position in the low three bits;
+// zero outside the range for lack of anything better.
+export function glyphToSwallow(glyph) {
+    return glyphIsSwallow(glyph) ? (glyph - GlyphOffset.swallow) & 0x7 : 0;
+}
+// C display.h:glyph_to_warning()
+export function glyphToWarning(glyph) {
+    return glyphIsWarning(glyph) ? glyph - GlyphOffset.warning : 0;
+}
+// C display.h:glyph_to_explosion(): the position within one explosion's nine
+// characters; zero outside the range.
+export function glyphToExplosion(glyph) {
+    return glyphIsExplosion(glyph)
+        ? (glyph - GlyphOffset.explodeDark)
+            % (CmapSymbol.explosionBottomRight - CmapSymbol.explosionTopLeft + 1)
+        : 0;
+}
+// C display.h:glyph_to_trap(): the trap glyph's tail of cmap range B decodes
+// through rm.h:defsym_to_trap; anything else is NO_GLYPH (== MAX_GLYPH).
+export function glyphToTrap(glyph) {
+    return glyphIsTrap(glyph)
+        ? glyph - glyphTrapOffset() + 1
+        : GlyphOffset.max;
 }
 //# sourceMappingURL=glyph_numbers.js.map
