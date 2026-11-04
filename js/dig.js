@@ -2139,7 +2139,7 @@ export async function applyPickAxeDirection(tool, { state = game, attackMonster,
         const seenTrap = trap?.tseen ? trap : null;
         const pitEdge = seenTrap && is_pit(seenTrap.ttyp) && !(hero.utrap && hero.utraptype === TT_PIT);
         if (seenTrap && (pitEdge || is_hole(seenTrap.ttyp))) {
-            const result = await triggerHeroTrap(seenTrap, { forceBungle: true, gotoLevel });
+            const result = await dotrap(seenTrap, { forceBungle: true, gotoLevel });
             if (result.died)
                 return { spentTime: false, died: true };
             if (!hero.utrap)

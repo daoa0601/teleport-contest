@@ -2335,7 +2335,7 @@ export async function applyPickAxeDirection(
         const pitEdge =
             seenTrap && is_pit(seenTrap.ttyp) && !(hero.utrap && hero.utraptype === TT_PIT);
         if (seenTrap && (pitEdge || is_hole(seenTrap.ttyp))) {
-            const result = await triggerHeroTrap(seenTrap, { forceBungle: true, gotoLevel });
+            const result = await dotrap(seenTrap, { forceBungle: true, gotoLevel });
             if (result.died) return { spentTime: false, died: true };
             if (!hero.utrap) await plineWithContinuation("You can't reach the bottom of the pit.");
         } else if (!isPick(tool) && trap?.ttyp !== LANDMINE && trap?.ttyp !== BEAR_TRAP) {
