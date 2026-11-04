@@ -577,6 +577,8 @@ export async function do_attack(monster: Monster, x: number, y: number, {
         if ((blocked || inShop) && monster.isshk
             && !game.context.travel && !game.context.run) {
             await dopay();
+            // C forces ECMD_TIME even when dopay() buys nothing.
+            game.context.move = 1;
             return true;
         }
         if ((blocked || inShop) && tame) {
