@@ -51,7 +51,7 @@ import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHe
 import { finishHeroHelplessness } from './allmain.js';
 import { setMimicBlocking } from './hero_seeing.js';
 import { makeBlinded, setSlipperyHands } from './potion.js';
-import { monsterName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { surfaceName } from './terrain_name.js';
 import { updateHeroHunger } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -987,7 +987,7 @@ async function escapeTrapsAfterFormChange() {
         }
         clearHeroTrap();
     } else if (heroLikesLava() && hero.utrap && hero.utraptype === TT_LAVA) {
-        await plineWithContinuation('The lava now feels soothing.');
+        await plineWithContinuation(`The ${displayLiquidName('lava')} now feels soothing.`);
         await resetHeroTrap(true);
     }
 

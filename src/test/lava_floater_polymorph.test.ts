@@ -35,3 +35,31 @@ void test('a hero stuck in lava who becomes a floater strains upward but stays s
         messages.join(' | '));
     assert.equal(game.u.utraptype, TT_LAVA);
 });
+
+for (const hallucinating of [false, true]) {
+    void test(`becoming a salamander releases the hero from ${hallucinating ? 'hallucinated liquid' : 'lava'}`, async () => {
+        const level = await freshObjectRoom({
+            gameplaySeed: 1n,
+            hero: { hallucinationTurns: hallucinating ? 20 : 0 },
+            flags: { verbose: false },
+        });
+        level.requireAt(10, 10).typ = LAVAPOOL;
+        game.u.utrap = 1 << 8;
+        game.u.utraptype = TT_LAVA;
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            messages.push(game._pending_message);
+            input.feed(' ');
+        };
+
+        await polymonHero(MONSTER_NAME.indexOf('salamander'));
+
+        messages.push(game._pending_message);
+        const soothing = messages.join(' | ').match(/The (.+?) now feels soothing\./);
+        assert.ok(soothing, messages.join(' | '));
+        if (hallucinating) assert.notEqual(soothing[1], 'lava');
+        else assert.equal(soothing[1], 'lava');
+        assert.equal(game.u.utrap, 0);
+    });
+}

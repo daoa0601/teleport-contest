@@ -4,30 +4,22 @@ import { heroHasWaterWalking } from './do_wear.js';
 import { ALTAR, D_ISOPEN, DOOR, FOUNTAIN, GRAVE, HOLE, P_BASIC, P_RIDING, SINK, STAIRS, THRONE, TRAPDOOR, is_pit } from './const.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { game } from './gstate.js';
-import { MONSTER_SYMBOL, monsterDigests } from './monster_data.js';
-import { monsterName } from './do_name.js';
+import { monsterDigests, monsterIsBreathless, monsterIsFloater } from './monster_data.js';
+import { displayLiquidName, monsterName } from './do_name.js';
+import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { possessiveName } from './hacklib.js';
-import { heroFormClings, heroFormFlags, heroIsFlying, heroMonsterForm } from './polyself.js';
+import { heroFormClings, heroIsFlying, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './terrain_name.js';
 import { riderCannotReachMessage } from './steed.js';
 import { floorReachProblem } from './engrave.js';
 import { heroTeetersAtPit } from './trap.js';
-const M1_BREATHLESS = 0x00000400;
-const S_EYE = 5;
-const S_LIGHT = 25;
-const PM_FIRE_ELEMENTAL = 155;
-const PM_SALAMANDER = 329;
-// C hack.c:3796: s_suffix(mon_nam(u.ustuck)) names the swallower whose
-// empty stomach the hero gropes; monster_name.ts owns both ports.
 function heroStaysAboveLiquid(state) {
     const hero = state.u || {};
     const form = heroMonsterForm(state);
-    const flags = heroFormFlags(state);
-    const symbol = form == null ? null : MONSTER_SYMBOL[form];
-    const floater = symbol === S_EYE || symbol === S_LIGHT;
+    const floater = form !== null && monsterIsFloater(form);
     const flying = heroIsFlying(state);
-    const breathless = hero.breathless || !!(flags & M1_BREATHLESS);
+    const breathless = hero.breathless || (form !== null && monsterIsBreathless(form));
     return heroHasWaterWalking(state) || floater || heroFormClings(state)
         || (flying && !breathless);
 }
@@ -35,7 +27,7 @@ function heroLikesLava(state) {
     const form = heroMonsterForm(state);
     return form === PM_FIRE_ELEMENTAL || form === PM_SALAMANDER;
 }
-function emptyFloorMessage(location) {
+function emptyFloorMessage(location, state) {
     if (location?.typ === THRONE)
         return `It must weigh${location.looted ? ' almost' : ''} a ton!`;
     if (location?.typ === SINK)
@@ -43,7 +35,7 @@ function emptyFloorMessage(location) {
     if (location?.typ === GRAVE)
         return "You don't need a gravestone.  Yet.";
     if (location?.typ === FOUNTAIN)
-        return 'You could drink the water...';
+        return `You could drink the ${displayLiquidName('water', state)}...`;
     if (location?.typ === DOOR && location.doormask === D_ISOPEN)
         return "It won't come off the hinges.";
     if (location?.typ === ALTAR)
@@ -92,7 +84,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
     if (isPoolAt(state.u.ux, state.u.uy, state)) {
         if (heroStaysAboveLiquid(state)) {
             return {
-                messages: ['You cannot dive into the water to pick things up.'],
+                messages: [`You cannot dive into the ${displayLiquidName('water', state)} to pick things up.`],
                 spendsTurn: false,
             };
         }
@@ -123,7 +115,7 @@ export function pickupLocationProblem({ state = game, objects, monster = null, }
     }
     if (!objects.length) {
         return {
-            messages: [emptyFloorMessage(location)],
+            messages: [emptyFloorMessage(location, state)],
             spendsTurn: false,
         };
     }
