@@ -58,7 +58,6 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { endVoluntaryMultiTurn, heroMayDisplaceMonster, nomul, shouldShowGetposTip, showGetposTip, loseHeroHp, checkHeroAttackOverexertion, heroIsOnStairs, isInvocationPosition, finishDestinationSpotEffects, roomsAt, exceedsActionCapacity, nearCapacity } from './hack.js';
-import { runSafepetDisplacement } from './uhitm.js';
 import { possessiveName } from './hacklib.js';
 import { applyCaitiffPenalty } from './uhitm.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
@@ -74,7 +73,7 @@ import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting }
 import { freeInventoryObject, useUpInventoryStack } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 
-import { attackHostileMonster } from './uhitm.js';
+import { do_attack } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { retouchHeroObject } from './hero_retouch.js';
@@ -2658,8 +2657,8 @@ async function applyPickAxe(item: GameObject): Promise<void> {
         ),
         readDirection: pickAxeDirection,
         payShopkeeper: dopay,
-        attackMonster: (monster: Monster, struckAt: Position) => attackHostileMonster(
-            monster, struckAt.x, struckAt.y,
+        attackMonster: (monster, struckAt, permission) => do_attack(
+            monster, struckAt.x, struckAt.y, { permission },
         ),
     });
     if ('died' in result && result.died) return;
@@ -3459,22 +3458,14 @@ export async function applyTool(
             // struck with forcefight forced on, while a pet keeps
             // do_attack()'s safepet displacement block.
             attackMonster: async (monster, x, y) => {
-                if (monster.mtame && !game.context.forcefight
-                    && heroMayDisplaceMonster(monster)
-                    && artifactById(game.uwep?.oartifact, game)?.name
-                        !== 'Stormbringer') {
-                    return await runSafepetDisplacement(monster) !== 'evaded';
-                }
+                const safeMonster = !!monster.mtame && !game.context.forcefight
+                    && heroMayDisplaceMonster(monster);
                 const savedForcefight = game.context.forcefight ?? false;
                 if (!monster.mtame) game.context.forcefight = true;
                 try {
-                    const verdict = await prepareAppliedWeaponAttack(
-                        monster, game.uwep ?? null,
-                        { state: game, struckAt: { x, y } });
-                    if (!verdict.proceed) return verdict.spentTime;
-                    return await attackHostileMonster(monster, x, y, {
-                        confirmationOverridden: verdict.confirmationOverridden ?? false,
-                    });
+                    // force_attack() answers C's boolean: a declined
+                    // attack stopped the monster, so the whip does not snap.
+                    return (await do_attack(monster, x, y, { safeMonster })) !== false;
                 } finally {
                     game.context.forcefight = savedForcefight;
                 }

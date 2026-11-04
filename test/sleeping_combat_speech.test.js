@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { heroIsUnaware } from '../js/senses.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { pushKeys } from '../js/input.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { poisonHero } from '../js/poison.js';
 import { applyMonsterStoningAttack } from '../js/uhitm.js';
@@ -31,7 +31,7 @@ void test('a hero awakened by combat staggers aloud when the next blow knocks th
     });
     assert.equal(game._helplessTurns, 1, 'The jackal hit must shorten sleep before knockback');
     const messages = [];
-    await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+    await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
         random: () => 0,
         publish: message => { messages.push(message); },
     });

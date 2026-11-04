@@ -24,7 +24,7 @@ import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
 import { surfaceName } from './terrain_name.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
-import { attackHostileMonster } from './uhitm.js';
+import { do_attack } from './uhitm.js';
 import { monsterAtPosition, doride, stuckSteed, monsterSaddle } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
 import { descendFromLevitation } from './levitation_commands.js';
@@ -1022,7 +1022,7 @@ export async function travelStairs(up) {
         if (!up && game.flags.autodig && !game.context.nopick && pick && isPick(pick)) {
             const result = await applyPickAxeDirection(pick, {
                 state: game,
-                attackMonster: (target, struckAt) => attackHostileMonster(target, struckAt.x, struckAt.y),
+                attackMonster: (target, struckAt, permission) => do_attack(target, struckAt.x, struckAt.y, { permission }),
                 payShopkeeper: dopay,
             });
             game.context.move = result.spentTime ? 1 : 0;

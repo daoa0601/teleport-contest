@@ -166,9 +166,9 @@ src/js/lock.ts	doopen	rnl	"[""20""]"	constant
 src/js/apply.ts	dorub	rn2	"[""2""]"	constant
 src/js/apply.ts	dorub	rn2	"[""3""]"	constant
 src/js/apply.ts	dorub	rn2	"[""500""]"	constant
-src/js/hack.ts	runSafepetDisplacement	rn2	"[""6""]"	constant
-src/js/hack.ts	runSafepetDisplacement	rn2	"[""7""]"	constant
-src/js/hack.ts	runSafepetDisplacement	rnd	"[""6""]"	constant
+src/js/uhitm.ts	do_attack	rn2	"[""6""]"	constant
+src/js/uhitm.ts	do_attack	rn2	"[""7""]"	constant
+src/js/uhitm.ts	do_attack	rnd	"[""6""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""100""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""2""]"	constant
 src/js/apply.ts	flipCoin	rn2	"[""dexterity""]"	invariant
@@ -518,7 +518,7 @@ src/js/trap.ts	triggerHeroMagicTrapEffect	rn1	"[""5"", ""10""]"	constant
 src/js/trap.ts	triggerHeroMagicTrapEffect	rn1	"[""5"", ""15""]"	constant
 src/js/trap.ts	triggerHeroMagicTrapEffect	rnd	"[""20""]"	constant
 src/js/trap.ts	triggerHeroMagicTrapEffect	rnd	"[""4""]"	constant
-src/js/uhitm.ts	attackHostileMonster	rn2	"[""7""]"	constant
+src/js/uhitm.ts	do_attack	rn2	"[""7""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
@@ -533,7 +533,7 @@ src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
 src/js/hack.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
-src/js/uhitm.ts	applyHeroNaturalBrain	random	"[""8""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""10""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""30""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""4""]"	constant
@@ -703,12 +703,12 @@ src/js/dokick.ts	kickTree	rn2	"[""6""]"	constant
 src/js/dokick.ts	kickTree	rn2	"[""fruits.length""]"	constant
 src/js/dokick.ts	kickTree	rnl	"[""4""]"	constant
 src/js/dokick.ts	kickTree	rnl	"[""7""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""2""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""2""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""3""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""4""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""4""]"	constant
-src/js/uhitm.ts	tryKnockback	random	"[""chance""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""2""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""2""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitm_knockback	random	"[""chance""]"	constant
 src/js/trap.ts	beginMonsterLandMine	random	"[""3""]"	constant
 src/js/trap.ts	beginMonsterLandMine	random	"[""Math.max(1, bodyWeight + 1)""]"	constant
 src/js/trap.ts	beginMonsterLandMine	rollOne	"[""16""]"	constant
@@ -752,7 +752,7 @@ src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[0])""]"	unpro
 src/js/lua/lifecycle.ts	bindingsFor/random	rn2	"[""luaInteger(args[1])""]"	unproved
 src/js/lua/lifecycle.ts	bindingsFor/rn2	rn2	"[""luaInteger(args[0])""]"	unproved
 src/js/detect.ts	detectedCoins	rnd	"[""10""]"	constant
-src/js/uhitm.ts	specialAttackNegated	random	"[""10""]"	constant
+src/js/uhitm.ts	mhitm_mgc_atk_negated	random	"[""10""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""10""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
 src/js/makemon.ts	chooseMimicAppearance	rn2	"[""2""]"	constant
@@ -1376,7 +1376,7 @@ src/js/mon.ts	reactPeacefulBystanders	rn2	"[""6""]"	constant
 src/js/monmove.ts	breakMonsterBoulder	random	"[""20""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""10""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""60""]"	constant
-src/js/uhitm.ts	resolveMonsterBrainAttack	random	"[""8""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
 src/js/mon.ts	monsterCarryAmount	random	"[""LARGEST_INT - 20000 + 1""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
 src/js/makemon.ts	cloneMonster	random	"[""attitudeRange""]"	constant
@@ -1514,13 +1514,13 @@ src/js/do_name.ts	roguePlayerName	rn2	"[""3""]"	constant
 src/js/steal.ts	someGold	random	"[""gold - minimum + 1""]"	guarded
 src/js/steal.ts	stealHeroGold	random	"[""5""]"	constant
 src/js/steal.ts	stealHeroGold	random	"[""5""]"	constant
-src/js/uhitm.ts	drainHeroBrain	random	"[""2""]"	constant
-src/js/uhitm.ts	drainHeroBrain	random	"[""3""]"	constant
-src/js/uhitm.ts	drainHeroBrain	random	"[""5""]"	constant
-src/js/uhitm.ts	drainHeroBrain	random	"[""5""]"	constant
-src/js/uhitm.ts	drainHeroBrain	random	"[""8""]"	constant
-src/js/uhitm.ts	drainHeroBrain	rollOne	"[""2""]"	constant
-src/js/uhitm.ts	drainHeroBrain	rollOne	"[""2""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""2""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""3""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""5""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""5""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	rollOne	"[""2""]"	constant
+src/js/uhitm.ts	mhitm_ad_drin	rollOne	"[""2""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""10""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""60""]"	constant
 src/js/mon.ts	attemptMonsterRestrap	random	"[""3""]"	constant
@@ -1591,7 +1591,7 @@ src/js/uhitm.ts	applyHeroContactPassive	random	"[""3""]"	constant
 src/js/uhitm.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/uhitm.ts	applyMonsterPassiveToObject	random	"[""6""]"	constant
 src/js/uhitm.ts	objectTouchedByEnchantment	random	"[""2""]"	constant
-src/js/uhitm.ts	resolveMonsterPhysicalDamage	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitm_ad_phys	random	"[""4""]"	constant
 src/js/mon.ts	pickUpMonsterFloorObject	random	"[""25""]"	constant
 src/js/trap.ts	trapeffectPit	rollOne	"[""event.damageSides""]"	unproved
 src/js/uhitm.ts	poisonHeroFromMonster	random	"[""chance""]"	guarded
@@ -1665,7 +1665,7 @@ src/js/muse.ts	mbhitm	rollDice	"[""2"", ""12""]"	constant
 src/js/muse.ts	mbhitm	rollOne	"[""20""]"	constant
 src/js/muse.ts	mbhitm	rollOne	"[""8""]"	constant
 src/js/muse.ts	mbhit	random	"[""8""]"	constant
-src/js/uhitm.ts	resolveMonsterWeaponContact	rollOne	"[""-state.u.uac""]"	guarded
+src/js/uhitm.ts	mhitm_ad_phys	rollOne	"[""-state.u.uac""]"	guarded
 src/js/worm.ts	advanceMonsterWormBody	random	"[""10""]"	constant
 src/js/worm.ts	advanceMonsterWormBody	rollDice	"[""2"", ""2""]"	constant
 src/js/worm.ts	advanceMonsterWormBody	rollOne	"[""5""]"	constant
@@ -2413,7 +2413,7 @@ src/js/engrave.ts	relocateEngraving	rn2	"[""ROWNO""]"	constant
 src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/zap.ts	zapEngraving	d	"[""2"", ""4""]"	constant
 src/js/dothrow.ts	rangedTargetHitBonus	random	"[""10""]"	constant
-src/js/uhitm.ts	monsterWeaponStrengthBonus	random	"[""4""]"	constant
+src/js/uhitm.ts	mhitm_ad_phys	random	"[""4""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""4""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollDice	"[""2"", ""6""]"	constant
 src/js/weapon.ts	rollPhysicalWeaponDamage	rollOne	"[""4""]"	constant
@@ -2478,3 +2478,4 @@ src/js/zap.ts	itemDamage	rollOne	"[""10""]"	constant
 src/js/zap.ts	itemDamage	rollOne	"[""4""]"	constant
 src/js/zap.ts	itemDamage	rollOne	"[""6""]"	constant
 src/js/zap.ts	startMeltIceTimer	random	"[""2000 - delay + 50""]"	unproved
+src/js/uhitm.ts	mhitm_ad_phys	random	"[""4""]"	constant

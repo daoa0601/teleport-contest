@@ -16,7 +16,7 @@ import { runExtendedCommand } from './support/commands.js';
 import { installPagerInput } from './support/pager-input.js';
 import { hurtleMonster } from '../js/dothrow.js';
 import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function freshGiantFight() {
@@ -110,7 +110,7 @@ void test('a cursed saddle makes the mount and rider move together when struck',
     pony.saddle.cursed = true;
     const titan = await createMonsterAt('titan', 10, 10, NO_MINVENT);
     pushKeys(' '.repeat(40));
-    await tryKnockback(titan, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0 });
+    await mhitm_knockback(titan, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0 });
     assert.equal(game.u.usteed, pony);
     assert.equal(game.u.ux, 13);
     assert.equal(pony.mx, game.u.ux);
@@ -124,7 +124,7 @@ void test('a blow aimed toward an occupied square says back and leaves the hero 
     await createMonsterAt('kitten', 9, 10, NO_MINVENT);
     const messages = [];
     pushKeys(' '.repeat(8));
-    const result = await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
         random: () => 0,
         publish: message => { messages.push(message); },
     });
@@ -142,7 +142,7 @@ void test('a boulder behind the hero does not prevent a knockback blow', async (
     const messages = [];
     pushKeys(' '.repeat(8));
     // hack.c test_move(TEST_MOVE) assumes a boulder can be pushed.
-    const result = await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
         random: () => 0,
         publish: message => { messages.push(message); },
     });
@@ -197,7 +197,7 @@ for (const doorway of [false, true]) {
             door.doormask = D_ISOPEN;
         }
         const rat = await createMonsterAt('sewer rat', 11, 10, NO_MINVENT);
-        const result = await tryKnockback(game.u, rat, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0, publish: async () => { } });
+        const result = await mhitm_knockback(game.u, rat, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0, publish: async () => { } });
         assert.equal(result.knocked, !doorway);
         assert.equal(rat.mx === 11, doorway);
     });
@@ -211,7 +211,7 @@ for (const form of ['rock mole', 'kobold']) {
         const messages = [];
         pushKeys(' '.repeat(8));
         // hack.c test_move(TEST_MOVE) lets a pickless tunneler eat the rock.
-        const result = await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+        const result = await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
             random: () => 0,
             publish: message => { messages.push(message); },
         });
@@ -233,7 +233,7 @@ void test('a giant knocks a rock-eating hero diagonally toward a closed door', a
     const messages = [];
     pushKeys(' '.repeat(8));
     // test_move() skips the doorway entry check when the door is eaten.
-    const result = await tryKnockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
+    const result = await mhitm_knockback(giant, game.u, { attackType: AT_WEAP, damageType: AD_PHYS }, {
         random: () => 0,
         publish: message => { messages.push(message); },
     });
@@ -248,7 +248,7 @@ void test("a hero's blow cannot knock a monster out of a Rogue-level doorway", a
     door.typ = DOOR;
     door.doormask = D_NODOOR;
     const rat = await createMonsterAt('sewer rat', 11, 10, NO_MINVENT);
-    const result = await tryKnockback(game.u, rat, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0, publish: async () => { } });
+    const result = await mhitm_knockback(game.u, rat, { attackType: AT_WEAP, damageType: AD_PHYS }, { random: () => 0, publish: async () => { } });
     assert.equal(result.knocked, false);
     assert.equal(rat.mx, 11);
     assert.equal(rat.my, 10);

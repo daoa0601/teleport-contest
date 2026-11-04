@@ -1992,7 +1992,7 @@ async function attackWithTool(tool, monster, attackMonster, payShopkeeper, state
     }
     const verdict = await prepareAppliedWeaponAttack(monster, tool, { state, struckAt });
     if (verdict.proceed)
-        await attackMonster(monster, struckAt);
+        await attackMonster(monster, struckAt, verdict);
     return true;
 }
 async function hurtHero(amount, killer, state) {

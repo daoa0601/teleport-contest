@@ -89,6 +89,7 @@ import { canSpotMonster } from './display.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroCanReachFloor } from './engrave.js';
 import { prepareAppliedWeaponAttack } from './uhitm.js';
+import type { AppliedWeaponAttackPermission } from './uhitm.js';
 import { MONSTER_MOVE } from './monster_data.js';
 import { OBJECT_NAMES } from './object_data.js';
 import { confusePromptDirection } from './cmd.js';
@@ -2027,7 +2028,7 @@ export interface PickAxeResult {
 
 interface PickAxeDirectionOptions {
     state?: GameState;
-    attackMonster: (monster: Monster, struckAt: Position) => void | Promise<unknown>;
+    attackMonster: (monster: Monster, struckAt: Position, permission: AppliedWeaponAttackPermission) => void | Promise<unknown>;
     payShopkeeper: () => void | Promise<unknown>;
 }
 
@@ -2161,7 +2162,7 @@ async function attackWithTool(
     }
     const verdict = await prepareAppliedWeaponAttack(
         monster, tool, { state, struckAt });
-    if (verdict.proceed) await attackMonster(monster, struckAt);
+    if (verdict.proceed) await attackMonster(monster, struckAt, verdict);
     return true;
 }
 

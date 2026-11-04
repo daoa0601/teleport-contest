@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { tryKnockback } from '../js/uhitm.js';
+import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -27,7 +27,7 @@ void test('knocking an eel back consumes goodpos eel draws around the message', 
     // asserted below. mhurtle() stuns the defender regardless of that
     // (dothrow.c:1137), so mstun proves nothing here.
     const random = scriptedRandom([1, 0, 1, 0, 1, 0, 0]);
-    const outcome = await tryKnockback(giant, eel, { attackType: AT_CLAW, damageType: AD_PHYS }, {
+    const outcome = await mhitm_knockback(giant, eel, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         state: game, random, publish: message => { messages.push(message); },
     });
     assert.equal(outcome.knocked, true);
@@ -40,7 +40,7 @@ void test('a non-eel defender draws no eel roll in its knockback', async () => {
     const orc = await createMonsterAt('orc', 12, 10, NO_MINVENT);
     const messages = [];
     const random = scriptedRandom([1, 0, 0, 1, 0]);
-    const outcome = await tryKnockback(giant, orc, { attackType: AT_CLAW, damageType: AD_PHYS }, {
+    const outcome = await mhitm_knockback(giant, orc, { attackType: AT_CLAW, damageType: AD_PHYS }, {
         state: game, random, publish: message => { messages.push(message); },
     });
     assert.equal(outcome.knocked, true);

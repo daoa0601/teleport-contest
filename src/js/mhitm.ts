@@ -72,9 +72,9 @@ import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import {
     applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect,
     applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
-    mhitmAdEnch, mhitmAdLegs, mhitmAdStun, monsterCombatAttackNegated, passiveAttack, passiveDamage,
-    petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, resolveMonsterBrainAttack,
-    resolveMonsterPhysicalDamage, tryKnockback, applyMonsterCombatEffect, physicalEffect, effectResult,
+    mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage,
+    petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact,
+    mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
 
@@ -1117,7 +1117,7 @@ export async function resolveMonsterCombatDamage(
     const context: MonsterCombatEffectContext = {
         state, attack, damage, visible, notOnHead,
         dieRoll, weapon, random, rollOne, rollDice, publish, finishDeath, growAttacker,
-        applyPhysical: () => physicalEffect(attacker, defender, context),
+        applyPhysical: () => mhitm_ad_phys({ attacker, defender, context }),
         killDefender: async (options = {}) => {
             const outcome = await finishMonsterKilled(defender, state, {
                 damageType: options.damageType ?? attack[1], random, rollDice, publish,
@@ -1151,7 +1151,7 @@ export async function resolveMonsterCombatDamage(
     const effect = await applyMonsterCombatEffect(attacker, defender, context);
     if (effect.heroDied) return result(effect);
     // Even an effect that set done or zero damage reaches native knockback.
-    const knockback = await tryKnockback(attacker, defender,
+    const knockback = await mhitm_knockback(attacker, defender,
         { attackType: attack[0], damageType: attack[1] }, {
             state, random, publish, weaponUsed: !!monsterWieldedWeapon(attacker),
             finishMonsterDeath: finishDeath,
