@@ -10,7 +10,7 @@ import {
 import {
     objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER,
     OBJECT_BASES, OBJECT_COLOR,
-    objectBaseColor,
+    oc_color,
 } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
@@ -364,7 +364,7 @@ export function objectColor(object: ObjectGlyphSource): number {
     // hero has observed it closely enough. Generic class rows are indexed by
     // oclass and deliberately use the ordinary gray tty foreground.
     if (objectUsesGenericGlyph(object))
-        return objectBaseColor(object.oclass);
+        return oc_color(object.oclass);
     // C obj_to_glyph(): a corpse keeps the depicted monster's color; it is
     // not colored as a generic food-class object.
     if (object?.otyp === CORPSE && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm))

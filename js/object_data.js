@@ -456,6 +456,10 @@ export function objectMagic(otyp) {
 export function objectCharged(otyp) {
     return requireObjectData(OBJECT_CHARGED, otyp);
 }
+// C objclass.h: objects[otyp].oc_armcat, the armor alias of oc_subtyp.
+export function oc_armcat(otyp) {
+    return requireObjectData(OBJECT_SUBTYPE, otyp);
+}
 // C objclass.h:OBJ_NAME(): obj_descr[objects[otyp].oc_name_idx].oc_name.
 // o_init.c:init_objects sets oc_name_idx = otyp for every row and nothing
 // changes it (options.c's SLIME_MOLD rewrite assigns the same index), so the
@@ -489,13 +493,13 @@ export function oc_nutrition(otyp) {
 // C objclass.h: objects[otyp].oc_prob before per-game initialization.
 // o_init.c:setgemprobs rewrites the GEM_CLASS rows per level; o_init.ts's
 // objectProb owns the live column.
-export function objectBaseProb(otyp) {
+export function oc_prob(otyp) {
     return requireObjectData(OBJECT_PROB, otyp);
 }
 // C objclass.h: objects[otyp].oc_color before per-game initialization.
 // o_init.c:shuffle permutes colors within unidentified classes; o_init.ts's
 // objectColor owns the live column.
-export function objectBaseColor(otyp) {
+export function oc_color(otyp) {
     return requireObjectData(OBJECT_COLOR, otyp);
 }
 // C objclass.h: objects[otyp].oc_nowish before per-game initialization.

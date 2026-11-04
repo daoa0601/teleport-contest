@@ -34,3 +34,7 @@ int verification_object_class_outside(int otyp)
 /* Index mapping after init_objects has assigned oc_name_idx/oc_descr_idx. */
 const char *verification_OBJ_NAME(int otyp) { return OBJ_NAME(objects[otyp]); }
 const char *verification_OBJ_DESCR(int otyp) { return OBJ_DESCR(objects[otyp]); }
+
+int verification_object_armcat(int otyp) { return objects[otyp].oc_armcat; }
+int verification_object_armor_ac(int otyp) { return objects[otyp].a_ac; }
+int verification_object_armor_can(int otyp) { return objects[otyp].a_can; }

@@ -1,7 +1,7 @@
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, MAXOCLASSES, } from './objclass.js';
-import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, objectBaseColor, } from './object_data.js';
+import { objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR, oc_color, } from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt, heroCanReachFloor } from './engrave.js';
 import { flushPendingTopline } from './tty_topline.js';
@@ -295,7 +295,7 @@ export function objectColor(object) {
     // hero has observed it closely enough. Generic class rows are indexed by
     // oclass and deliberately use the ordinary gray tty foreground.
     if (objectUsesGenericGlyph(object))
-        return objectBaseColor(object.oclass);
+        return oc_color(object.oclass);
     // C obj_to_glyph(): a corpse keeps the depicted monster's color; it is
     // not colored as a generic food-class object.
     if (object?.otyp === CORPSE && typeof object.corpsenm === 'number' && Number.isInteger(object.corpsenm))

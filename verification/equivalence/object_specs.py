@@ -52,10 +52,13 @@ OBJECT_FIELDS = (
     ('unique', 'objectUnique', 'OBJECT_UNIQUE', 213),
     ('magic', 'objectMagic', 'OBJECT_MAGIC', 173),
     ('charged', 'objectCharged', 'OBJECT_CHARGED', 18),
+    ('armcat', 'oc_armcat', 'OBJECT_SUBTYPE', 150),
+    ('armor_ac', 'a_ac', 'OBJECT_HIT_BONUS', 121),
+    ('armor_can', 'a_can', 'OBJECT_SPELL_LEVEL', 121),
     ('level', 'oc_level', 'OBJECT_SPELL_LEVEL', 366),
     ('nutrition', 'oc_nutrition', 'OBJECT_NUTRITION', 293),
-    ('color', 'objectBaseColor', 'OBJECT_COLOR', 18),
-    ('prob', 'objectBaseProb', 'OBJECT_PROB', 18),
+    ('color', 'oc_color', 'OBJECT_COLOR', 18),
+    ('prob', 'oc_prob', 'OBJECT_PROB', 18),
     ('nowish', 'oc_nowish', 'OBJECT_NOWISH', 1),
     ('hitbon', 'oc_hitbon', 'OBJECT_HIT_BONUS', 34),
     ('wsdam', 'oc_wsdam', 'OBJECT_SMALL_DAMAGE', 34),
@@ -66,6 +69,12 @@ OBJECT_FIELDS = (
 def object_field_spec(field, function, table, row):
     lookup = (f'{table}[otyp] ?? 0' if field == 'class'
               else f'requireObjectData({table}, otyp)')
+    anchor = f'return {lookup};'
+    replacement = f'return ({lookup}) + 1;'
+    if field in ('skill', 'armcat', 'hitbon', 'armor_ac', 'level', 'armor_can'):
+        prefix = f'export function {function}(otyp) {{\n    '
+        anchor = prefix + anchor
+        replacement = prefix + replacement
     return Spec(
         f'object_{field}:tables', f'verification_object_{field}', function, [],
         # Keep the added fast-job cost below its two-minute CI allowance.
@@ -76,7 +85,7 @@ def object_field_spec(field, function, table, row):
         probes=[('index correspondence omitted (two pinned rows)', UnrelatedState(
             lambda s: [s['otyp'] == 0, z3.Int('js:otyp') == row], ('otyp',)))],
         mutant_pre=lambda s: [s['otyp'] == row],
-        mutants=[(OBJECT_DATA, f'return {lookup};', f'return ({lookup}) + 1;')],
+        mutants=[(OBJECT_DATA, anchor, replacement)],
     )
 
 

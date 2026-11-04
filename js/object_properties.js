@@ -1,7 +1,7 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h and dothrow.c throwing_weapon().
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
-import { objectClassForType, objectBaseDirection, objectSkill, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
+import { objectClassForType, objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS, FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS, ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE, } from './object_data.js';
 import { artifactById } from './artifacts.js';
 import { objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD, P_SHURIKEN, P_SPEAR, } from './const.js';
@@ -30,7 +30,7 @@ export function isWeaponTool(object) {
         return false;
     return objectClass(object) === TOOL_CLASS && objectSkill(object.otyp) !== 0;
 }
-// C include/obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
+// C obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
 // heavy armor also sets, so the weapon-or-tool class guard is what keeps
 // wielded armor from counting as a two-handed weapon.
 export function isBimanualObject(object) {
@@ -211,49 +211,49 @@ export function is_shield(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SHIELD;
+        && oc_armcat(object.otyp) === ARM_SHIELD;
 }
 // C obj.h:is_helmet().
 export function is_helmet(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_HELM;
+        && oc_armcat(object.otyp) === ARM_HELM;
 }
 // C obj.h:is_boots().
 export function is_boots(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_BOOTS;
+        && oc_armcat(object.otyp) === ARM_BOOTS;
 }
 // C obj.h:is_gloves().
 export function is_gloves(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_GLOVES;
+        && oc_armcat(object.otyp) === ARM_GLOVES;
 }
 // C obj.h:is_cloak().
 export function is_cloak(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_CLOAK;
+        && oc_armcat(object.otyp) === ARM_CLOAK;
 }
 // C obj.h:is_shirt().
 export function is_shirt(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SHIRT;
+        && oc_armcat(object.otyp) === ARM_SHIRT;
 }
 // C obj.h:is_suit().
 export function is_suit(object) {
     if (!object)
         return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SUIT;
+        && oc_armcat(object.otyp) === ARM_SUIT;
 }
 // C obj.h:is_elven_armor().
 export function is_elven_armor(object) {

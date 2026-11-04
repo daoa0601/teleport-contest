@@ -188,3 +188,8 @@ int verification_pair_of(struct obj *o)
 {
     return pair_of(o);
 }
+
+int verification_matching_launcher(struct obj *ammo, struct obj *launcher)
+{
+    return matching_launcher(ammo, launcher);
+}

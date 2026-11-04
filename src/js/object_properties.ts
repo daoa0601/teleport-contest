@@ -3,7 +3,7 @@
 
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, WAND_CLASS, GEM_CLASS, ARM_SHIELD, ARM_HELM, ARM_BOOTS, ARM_GLOVES, ARM_CLOAK, ARM_SHIRT, ARM_SUIT } from './objclass.js';
 import {
-    objectClassForType, objectBaseDirection, objectSkill, objectBimanual, objectCharged, AKLYS,
+    objectClassForType, objectBaseDirection, objectSkill, oc_armcat, objectBimanual, objectCharged, AKLYS,
     FLINT, LOADSTONE, LUCKSTONE, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN,
     TIN_OPENER, TOWEL,
     ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS,
@@ -49,7 +49,7 @@ export function isWeaponTool(object: ObjectCandidate): boolean {
     return objectClass(object) === TOOL_CLASS && objectSkill(object.otyp) !== 0;
 }
 
-// C include/obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
+// C obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
 // heavy armor also sets, so the weapon-or-tool class guard is what keeps
 // wielded armor from counting as a two-handed weapon.
 export function isBimanualObject(object: ObjectCandidate): boolean {
@@ -255,49 +255,49 @@ export function is_spear(object: WeaponCandidate): boolean {
 export function is_shield(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SHIELD;
+        && oc_armcat(object.otyp) === ARM_SHIELD;
 }
 
 // C obj.h:is_helmet().
 export function is_helmet(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_HELM;
+        && oc_armcat(object.otyp) === ARM_HELM;
 }
 
 // C obj.h:is_boots().
 export function is_boots(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_BOOTS;
+        && oc_armcat(object.otyp) === ARM_BOOTS;
 }
 
 // C obj.h:is_gloves().
 export function is_gloves(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_GLOVES;
+        && oc_armcat(object.otyp) === ARM_GLOVES;
 }
 
 // C obj.h:is_cloak().
 export function is_cloak(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_CLOAK;
+        && oc_armcat(object.otyp) === ARM_CLOAK;
 }
 
 // C obj.h:is_shirt().
 export function is_shirt(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SHIRT;
+        && oc_armcat(object.otyp) === ARM_SHIRT;
 }
 
 // C obj.h:is_suit().
 export function is_suit(object: WeaponCandidate): boolean {
     if (!object) return false;
     return object.oclass === ARMOR_CLASS
-        && objectSkill(object.otyp) === ARM_SUIT;
+        && oc_armcat(object.otyp) === ARM_SUIT;
 }
 
 // C obj.h:is_elven_armor().

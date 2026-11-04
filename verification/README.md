@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 245 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 249 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -245,9 +245,9 @@ and glyphs.c's real `glyph_to_cmap` over the terrain span, the fifteen
 object-field claims of fv-equivalence-batch-10 (all fourteen initial objects[]
 columns read by the shared `object_data.js` owners over every otyp, and the
 port-only zero class outside the valid int32 table range), and the twenty-two
-claims of fv-equivalence-batch-12: twelve remaining obj.h predicates,
-eight initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
-oc_hitbon, oc_wsdam, oc_wldam), and OBJ_NAME/OBJ_DESCR index mapping.
+claims of fv-equivalence-batch-12: thirteen remaining obj.h predicates,
+eleven initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
+oc_hitbon, oc_wsdam, oc_wldam, oc_armcat, a_ac, a_can), and OBJ_NAME/OBJ_DESCR index mapping.
 The name claims execute the real macros over every obj_descr_init row and
 compare nullable string contents. Their index correspondence assumes
 init_objects has assigned the indices; shuffling preservation is separate.

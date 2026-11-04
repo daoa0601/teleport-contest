@@ -6,7 +6,7 @@ from jssym import V
 from specs import (ATTRIBUTES, ATTRIB, HIT_BONUS, HUMAN_FORM, INT,
                    INT_MAX, LONG, SCHAR, Spec, ULEVEL, UnrelatedState,
                    WEAPON_DAMAGE, int_argument)
-from state_world import (AT_ENGL, AT_WEAP,
+from state_world import (native_objects, AT_ENGL, AT_WEAP,
                          capacity_state, direction_arguments, direction_state,
                          experience_arguments,
                          experience_state, hero_state, hit_bonus_state,
@@ -17,7 +17,7 @@ from state_world import (AT_ENGL, AT_WEAP,
                          capacity_arguments, sign_state, sign_arguments,
                          weight_arguments, weight_domain, weight_state)
 from core import select_int
-from state_world import (_objects_member, _property_masks, erosion_matters_guard,
+from state_world import (native_objects, _objects_member, _property_masks, erosion_matters_guard,
                          monster_state, native_monsters,
                          object_predicate_arguments,
                          object_predicate_state, present_monster_arguments,
@@ -1228,26 +1228,26 @@ STATE_SPECS += [
          mutants=[(OBJ_FILE, 'return object.oclass === WEAPON_CLASS\n        && objectSkill(object.otyp) === P_SPEAR;',
                    'return object.oclass === WEAPON_CLASS\n        && objectSkill(object.otyp) === P_LANCE;')]),
     armor_cat_spec('is_shield:tables', 'verification_is_shield', 'is_shield',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIELD;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;'), 150),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SHIELD;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_HELM;'), 150),
     armor_cat_spec('is_helmet:tables', 'verification_is_helmet', 'is_helmet',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_BOOTS;'), 97),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_HELM;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_BOOTS;'), 97),
     armor_cat_spec('is_boots:tables', 'verification_is_boots', 'is_boots',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_BOOTS;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_HELM;'), 163),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_BOOTS;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_HELM;'), 163),
     armor_cat_spec('is_gloves:tables', 'verification_is_gloves', 'is_gloves',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_GLOVES;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;'), 159),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_GLOVES;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SHIRT;'), 159),
     armor_cat_spec('is_cloak:tables', 'verification_is_cloak', 'is_cloak',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_CLOAK;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SUIT;'), 138),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_CLOAK;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SUIT;'), 138),
     armor_cat_spec('is_shirt:tables', 'verification_is_shirt', 'is_shirt',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_CLOAK;'), 136),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SHIRT;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_CLOAK;'), 136),
     armor_cat_spec('is_suit:tables', 'verification_is_suit', 'is_suit',
-                   ('return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SUIT;',
-                    'return object.oclass === ARMOR_CLASS\n        && objectSkill(object.otyp) === ARM_SHIRT;'), 121),
+                   ('return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SUIT;',
+                    'return object.oclass === ARMOR_CLASS\n        && oc_armcat(object.otyp) === ARM_SHIRT;'), 121),
     Spec('is_elven_armor:tables', 'verification_is_elven_armor', 'is_elven_armor', [],
          slow=True, js_file=OBJ_FILE,
          state=[('obj.otyp', (16, True), 'obj.otyp')],
@@ -1282,6 +1282,38 @@ STATE_SPECS += [
          mutant_pre=lambda s: [s['obj.otyp'] == 163],
          mutants=[(OBJ_FILE, 'return object.otyp === LENSES || is_gloves(object) || is_boots(object);',
                    'return object.otyp === LENSES || is_gloves(object);')]),
+]
+
+def matching_launcher_state(world, front, modules):
+    world.join_paths = True
+    world.c_globals['objects'] = native_objects(world, front)
+    count = front.enum_value('NUM_OBJECTS')
+    for prefix in ('ammo', 'launcher'):
+        value = world.c_state[f'{prefix}.otyp'][0]
+        port = world.js_state[f'{prefix}.otyp']
+        world.c_globals[f'{prefix}.otyp'] = CVal(value, (16, True))
+        world.pre.extend([value >= 0, value < count, port >= 0, port < count])
+
+
+STATE_SPECS += [
+    Spec('matching_launcher:tables', 'verification_matching_launcher',
+         'matching_launcher', [('launcher_present', INT)],
+         slow=True, js_file=OBJ_FILE,
+         state=[('ammo.otyp', (16, True), 'ammo.otyp'),
+                ('launcher.otyp', (16, True), 'launcher.otyp')],
+         configure=matching_launcher_state, arguments=ammo_launcher_arguments,
+         pre=lambda s: [s['launcher_present'] >= 0, s['launcher_present'] <= 1],
+         assumptions=(
+             'every ammo and launcher otyp in 0..NUM_OBJECTS-1 over independently executed initial object tables; oclass is unread; ammo is non-null and launcher may be null',
+         ), require_counterexamples=True,
+         probes=[('launcher index correspondence omitted (arrow and bow)', unrelated(
+             lambda s: [s['launcher_present'] == 1, s['ammo.otyp'] == 18,
+                        s['launcher.otyp'] == 83, z3.Int('js:launcher.otyp') == 87],
+             'launcher.otyp'))],
+         mutant_pre=lambda s: [s['launcher_present'] == 1, s['ammo.otyp'] == 18,
+                               s['launcher.otyp'] == 83],
+         mutants=[(OBJ_FILE, '=== -objectSkill(launcher.otyp);',
+                   '=== objectSkill(launcher.otyp);')]),
 ]
 
 # ---- fv-equivalence-batch-5: the named mondata.h/mondata.c predicates ----

@@ -929,8 +929,8 @@ absent locally.
 | `object_charged:tables` | 1.70 s | slow |
 | `object_class:outside` | 1.60 s | fast |
 
-**Object-macro owner batch (fv-equivalence-batch-12).** Twenty-two added
-claims cover twelve obj.h predicates, eight initial objects[] fields, and
+**Object-macro owner batch (fv-equivalence-batch-12).** Twenty-six added
+claims cover thirteen obj.h predicates, eleven initial objects[] fields, and
 OBJ_NAME/OBJ_DESCR index mapping. Every new predicate keeps its C macro name;
 existing exported owners keep their names. Armor categories use oc_armcat
 with the ARMOR_CLASS guard. The generic armor marker consequently has a
