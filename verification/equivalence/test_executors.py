@@ -758,6 +758,75 @@ class ExecutorTests(unittest.TestCase):
             'function example(x) { return x + OFF; }',
             params=[('x', INT)], pre=lambda s: [s['x'] >= -10, s['x'] <= 10])
 
+    def test_continue_inside_a_switch_continues_the_enclosing_loop(self):
+        self.equivalent(
+            'int example(int x) {'
+            '  int i, s = 0;'
+            '  for (i = 0; i < 3; i++) {'
+            '    switch (i) { case 1: continue; default: break; } s++; }'
+            '  return s; }',
+            'function example(x) {'
+            '  let s = 0;'
+            '  for (let i = 0; i < 3; i++) {'
+            '    switch (i) { case 1: continue; default: break; } s++; }'
+            '  return s; }',
+            params=[('x', INT)])
+        self.rejected(
+            'int example(int x) {'
+            '  int i, s = 0;'
+            '  for (i = 0; i < 3; i++) {'
+            '    switch (i) { case 1: continue; default: break; } s++; }'
+            '  return s; }',
+            'function example(x) {'
+            '  let s = 0;'
+            '  for (let i = 0; i < 3; i++) {'
+            '    switch (i) { case 1: break; default: break; } s++; }'
+            '  return s; }',
+            params=[('x', INT)], reason='outputs differ')
+
+    def test_c_enum_compatible_type_is_clangs_choice(self):
+        # All-nonnegative enumerators make clang pick unsigned int, so
+        # (enum monnums)-1 converts to 4294967295, not -1.
+        self.equivalent(
+            'enum monnums { PM_ANT, PM_BEE, PM_WASP };'
+            'int example(int x) { enum monnums m = (enum monnums) x;'
+            '  return (long) m > 0; }',
+            'function example(x) { return (x >>> 0) > 0 ? 1 : 0; }',
+            params=[('x', INT)])
+        # A negative enumerator keeps the signed int compatible type.
+        self.equivalent(
+            'enum negs { N_A = -5, N_B };'
+            'int example(int x) { enum negs m = (enum negs) x; return (long) m > 0; }',
+            'function example(x) { return x > 0 ? 1 : 0; }',
+            params=[('x', INT)])
+        self.rejected(
+            'enum monnums { PM_ANT, PM_BEE, PM_WASP };'
+            'int example(int x) { enum monnums m = (enum monnums) x; return (long) m > 0; }',
+            'function example(x) { return x > 0 ? 1 : 0; }',
+            params=[('x', INT)], reason='outputs differ')
+
+    def test_member_array_decay_uses_the_owner_once(self):
+        from csym import CArray, CPtr, CVal
+        def configure(world, front, modules):
+            world.c_globals['rec'] = CPtr(True, 'rec')
+            world.c_globals['rec.items'] = CArray((
+                CVal(z3.IntVal(3), (32, True)), CVal(z3.IntVal(5), (32, True))))
+        self.equivalent(
+            'struct own { int items[2]; }; extern struct own *rec;'
+            'int example(int x) { int *q = rec->items; return q[x]; }',
+            'function example(x) { return [3, 5][x]; }',
+            params=[('x', INT)],
+            pre=lambda s: [s['x'] >= 0, s['x'] <= 1], configure=configure)
+        # `(x++, rec)->items` must not evaluate the owner twice: the decay
+        # of a member array on a side-effecting owner is rejected instead.
+        self.rejected(
+            'struct own { int items[2]; }; extern struct own *rec;'
+            'int example(int x) { int *q = (x++, rec)->items; return q[0] + x; }',
+            'function example(x) { return 3 + x + 1; }',
+            params=[('x', INT)],
+            pre=lambda s: [s['x'] >= 0, s['x'] <= 9], configure=configure,
+            reason='side-effecting owner')
+
     def test_initializer_slice_uses_explicit_locals_and_excludes_the_caller(self):
         from jssym import V
         def configure(world, front, modules):

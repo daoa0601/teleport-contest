@@ -253,8 +253,9 @@ class Machine:
                 for statement in group:
                     paths = seq(paths, lambda q, s=statement: execute(q, s))
             for q in paths:
+                # A break belongs to this switch; a continue executed inside
+                # the arms still belongs to the enclosing loop.
                 q.broken = False
-                q.continued = False
             out.extend(paths)
         return out
 
