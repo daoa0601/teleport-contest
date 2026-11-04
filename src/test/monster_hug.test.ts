@@ -8,7 +8,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { releaseHold } from '../js/zap.js';
 
-import { setHeroGrip } from '../js/hero_grip.js';
+import { setHeroGrip } from '../js/mon.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { CLOAK_OF_PROTECTION, LEATHER_ARMOR, OBJECT_NAMES } from '../js/object_data.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MM_ANGRY, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setTopline } from '../js/pline.js';
-import { lifeSaveMonster } from '../js/mondeath.js';
+import { lifeSaveMonster } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { makeBlinded } from '../js/potion.js';

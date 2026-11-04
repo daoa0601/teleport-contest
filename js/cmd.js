@@ -74,7 +74,7 @@ import { ledgerNo } from './hacklib.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { doquit, finishHeroDeath } from './end.js';
 import { doborn } from './insight.js';
-import { applyPickAxeDirection } from './pick_axe.js';
+import { applyPickAxeDirection } from './dig.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './skills.js';
 import { objectTypeKnown, dopay } from './shk.js';

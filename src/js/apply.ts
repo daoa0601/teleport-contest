@@ -48,7 +48,7 @@ import { prepareAppliedWeaponAttack } from './uhitm.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './zap.js';
 
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded } from './potion.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero, hurtleJumpTo } from './dothrow.js';
@@ -70,7 +70,7 @@ import { triggerHeroTrap, fillPitWithBoulderAt, deleteTrap, feelTrap, finishImme
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
 import { beginImmediateZap, finishImmediateZap, hitFloorPileWithWand } from './zap.js';
-import { hitMonsterWithWand } from './immediate_monster_magic.js';
+import { hitMonsterWithWand } from './zap.js';
 
 import { monsterStatusLine } from './insight.js';
 
@@ -101,7 +101,7 @@ import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel } fro
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, withIndefiniteArticle } from './objnam.js';
 import { walkPathCells } from './path_walk.js';
-import { usePickAxe } from './pick_axe.js';
+import { usePickAxe } from './dig.js';
 import { pickupFloorObject } from './pickup.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -124,7 +124,8 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
 import { feelPetrifyingCorpse, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, willFeelPetrifyingCorpse } from './stoning.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, monsterTeleportRestricted } from './teleport_rules.js';
-import { askTeleportDestination, distanceToHero, moveHeroByTeleport, moveMonsterNextToHero, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
+import { askTeleportDestination, distanceToHero, moveHeroByTeleport, randomMonsterRelocation, relocateMonsterTo, teleportHeroToRandomPet } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { ceilingName, surfaceName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { objectTimers, stopLevelTimer, stopObjectTimer } from './timeout.js';

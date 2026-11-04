@@ -1,6 +1,7 @@
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { moveMonsterNextToHero, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt } from './hack.js';
 import { launchRollingBoulder } from './trap.js';
 import { impossible, panic } from './diagnostics.js';
@@ -41,7 +42,8 @@ import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHa
 import { SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG, CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH, MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES, OBJECT_BIMANUAL, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH } from './object_data.js';
 import { plineWithContinuation } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
-import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
+import { releaseMonsterHold } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';
 import { hasShopkeeperData } from './shop_types.js';

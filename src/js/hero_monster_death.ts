@@ -32,7 +32,7 @@ import { mkobj } from './mkobj.js';
 import { isQuestLeader } from './quest.js';
 import { questMonsterAlignment, questMonsterSound } from './role_monsters.js';
 import { delobj } from './invent.js';
-import { preventMonsterDeath } from './mondeath.js';
+import { preventMonsterDeath } from './mon.js';
 import { monsterDeathCount } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { BOULDER, FIGURINE, OBJECT_BIMANUAL } from './object_data.js';

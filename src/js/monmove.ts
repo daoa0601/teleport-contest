@@ -1,6 +1,7 @@
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { moveMonsterNextToHero, teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { teleportMonsterThroughHole, teleportMonsterThroughPortal, teleportMonsterToRandomLevel, relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt } from './hack.js';
 import { launchRollingBoulder } from './trap.js';
 import type { Monster } from './monster_types.js';
@@ -49,7 +50,8 @@ import { SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA,
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
-import { releaseHeroFromMonster, releaseMonsterHold } from './hero_expulsion.js';
+import { releaseMonsterHold } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { placeHeroOnLevel } from './hero_location.js';

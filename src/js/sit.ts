@@ -1,3 +1,4 @@
+import { eggTypeFromParent } from './mon.js';
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
 
@@ -41,10 +42,7 @@ const M1_SLITHY = 0x00080000;
 const M1_OVIPAROUS = 0x00400000;
 const S_DRAGON = 30;
 const S_EEL = 57;
-const PM_QUEEN_BEE = 5;
 const PM_GREMLIN = 40;
-const PM_GARGOYLE = 41;
-const PM_WINGED_GARGOYLE = 42;
 const PM_TRAPPER = 99;
 const PM_FIRE_ELEMENTAL = 155;
 const PM_GIANT_EEL = 319;
@@ -66,13 +64,6 @@ function waterEggLayer() {
         && (heroFormFlags(game) & (M1_OVIPAROUS | M1_SWIM))
             === (M1_OVIPAROUS | M1_SWIM)
         && monsterIsEel(form);
-}
-
-function eggTypeFromParent(parent: number): number {
-    if (rn2(77) === 0) return parent;
-    if (parent === PM_QUEEN_BEE) return 1;
-    if (parent === PM_WINGED_GARGOYLE) return PM_GARGOYLE;
-    return parent;
 }
 
 // C sit.c:lay_an_egg().

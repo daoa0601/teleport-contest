@@ -37,7 +37,7 @@ import { fruitName } from './fruit.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { depth, dist2, ledgerNo, possessiveName } from './hacklib.js';
-import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hurtleHero } from './dothrow.js';

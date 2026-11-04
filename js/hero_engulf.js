@@ -1,6 +1,6 @@
 // Monster-versus-hero engulf admission, capture, and per-slot effects.
 // C mhitm.c:engulf_target() and mhitu.c:gulpmu().
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { A_CON, A_STR, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, TT_WEB, is_pit } from './const.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

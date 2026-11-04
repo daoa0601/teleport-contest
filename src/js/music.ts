@@ -27,7 +27,7 @@ import { displayRayName } from './ray_name.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';
-import { releaseHeroFromMonster } from './hero_expulsion.js';
+import { releaseHeroFromMonster } from './mon.js';
 
 import { makeMonsterFlee, monsterIsScaredAt } from './monmove.js';
 import {

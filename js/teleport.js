@@ -1,4 +1,4 @@
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
@@ -21,21 +21,20 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, docrt, newsym, see_mons
 import { vision_recalc, couldsee } from './vision.js';
 import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } from './apply.js';
 import { rn2, rnd } from './rng.js';
-import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, Is_astralevel, MON_ENDGAME_MIGR, MON_OBLITERATE, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
+import { GP_CHECKSCARY, COLNO, ROWNO, LEVEL_TELEP, TELEP_TRAP, VAULT, VIBRATING_SQUARE, M_AP_NOTHING, MON_FLOOR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, RLOC_ERR, STRAT_APPEARMSG, BOLT_LIM, TT_BURIEDBALL, HOLE, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, Upolyd, ZAP_POS, is_hole, is_pit, A_STR, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, SHOPBASE } from './const.js';
 import { isok } from './cmd.js';
-import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './monster_data.js';
-import { AMULET_OF_YENDOR, LEASH, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
+import { MONSTER_SYMBOL, monsterCanTeleport, monsterControlsTeleport, monsterIsRider, monsterPassesWalls } from './monster_data.js';
+import { AMULET_OF_YENDOR, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SPE_TELEPORT_AWAY, WAN_TELEPORTATION, CORPSE } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { priestIsInOwnTemple, templeRoomAt } from './priest.js';
 import { costlySpot, shopkeeperInOwnShop, findObjectOwner, onBillEntry, stolenValue, makeAngryShopkeeper, addShopObjectToBill, costlyAdjacent, removeObjectAndContentsFromBill } from './shk.js';
-import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { maybeUnhideAt, migrateMonsterToLevel, removeMonsterFromGame, sendMonsterToLimbo } from './mon.js';
+import { releaseHeroFromMonster } from './mon.js';
+import { maybeUnhideAt, sendMonsterToLimbo } from './mon.js';
 import { interruptOccupationForMonster, setMonsterApparentHeroPosition } from './monmove.js';
 import { monsterName } from './do_name.js';
 import { findNearbyMonsterPosition, heroTeleportRestricted, goodPosition, monsterTeleportRestricted } from './teleport_rules.js';
-import { heroIsUnaware } from './senses.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
@@ -51,7 +50,7 @@ import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
-function requireLevel(state) {
+export function requireLevel(state) {
     if (!state.level)
         throw new Error('Teleportation requires a dungeon level.');
 }
@@ -649,99 +648,6 @@ export async function relocateMonsterTo(monster, x, y, { state = game, random = 
         });
     }
     return relocation;
-}
-// C mon.c:mnexto(). The old square remains occupied during enexto().
-export async function moveMonsterNextToHero(monster, state = game, { flags = RLOC_NONE, random = rn2, } = {}) {
-    requireLiveGame(state);
-    requireLevel(state);
-    if (monster === state.u.usteed) {
-        const oldx = monster.mx, oldy = monster.my;
-        monster.mx = state.u.ux;
-        monster.my = state.u.uy;
-        return { oldx, oldy, x: monster.mx, y: monster.my, moved: false };
-    }
-    let destination = findNearbyMonsterPosition(monster.mnum, state.u.ux, state.u.uy, { state, random });
-    if (!destination) {
-        await dealWithMonsterOvercrowding(monster, state);
-        return null;
-    }
-    const controlled = await controlMonsterTeleport(monster, destination, {
-        state, mode: 'near', flags, random,
-    });
-    destination = controlled || destination;
-    return await relocateMonsterTo(monster, destination.x, destination.y, {
-        state, random, flags,
-    });
-}
-// C mon.c:deal_with_overcrowding()/elemental_clog().
-export async function dealWithMonsterOvercrowding(monster, state = game) {
-    requirePlayingGame(state);
-    requireLiveGame(state);
-    requireLevel(state);
-    if (!In_endgame(state.u.uz)) {
-        await sendMonsterToLimbo(monster, state);
-        return;
-    }
-    const previous = state._elementalClogMessageMove || 0;
-    if (!previous || state.moves - previous > 200) {
-        if (!previous || rn2(2))
-            await plineWithContinuation(formatFeltMessage('besieged.', state));
-        state._elementalClogMessageMove = state.moves;
-    }
-    const victim = overcrowdingVictim(monster, state);
-    if (victim) {
-        const x = victim.mx, y = victim.my;
-        victim.mstate = (victim.mstate ?? 0) | MON_OBLITERATE;
-        await removeMonsterFromGame(victim);
-        await relocateMonsterTo(monster, x, y, { state, flags: RLOC_NONE });
-    }
-    else if (!Is_astralevel(state.u.uz)) {
-        monster.mstate = (monster.mstate ?? 0) | MON_ENDGAME_MIGR;
-        await migrateMonsterToLevel(monster, {
-            ...state.u.uz, dlevel: state.u.uz.dlevel - 1,
-        }, state);
-    }
-}
-// The victim scan of C mon.c:elemental_clog(): prefer a foreign elemental,
-// then a home one, weakest, other, pet. C mon.c:ok_to_obliterate() keeps
-// the Wizard, riders, temple/shop/vault keepers, the hero's anchor and
-// steed, and amulet carriers off the list.
-function overcrowdingVictim(arriving, state) {
-    let foreignElemental = null, homeElemental = null;
-    let weakest = null, other = null, pet = null;
-    let lowestLevel = 0;
-    for (const monster of [...state.level.monsters].reverse()) {
-        if (monster.mhp <= 0 || monster === arriving || !monster.mx)
-            continue;
-        const name = MONSTER_NAME[monster.mnum];
-        if ((name !== undefined && ['Wizard of Yendor', 'Death', 'Pestilence', 'Famine'].includes(name))
-            || monster.isminion || monster.emin || monster.mextra?.emin
-            || monster.epri || monster.mextra?.epri
-            || monster.eshk || monster.mextra?.eshk
-            || monster === state.u.ustuck || monster === state.u.usteed
-            || monster.minvent?.some(object => object.otyp === AMULET_OF_YENDOR))
-            continue;
-        if (MONSTER_SYMBOL[monster.mnum] === 31) {
-            if (isHomeElemental(monster.mnum))
-                homeElemental ||= monster;
-            else
-                foreignElemental ||= monster;
-        }
-        else if (!monster.mtame) {
-            if (!lowestLevel || monster.m_lev < lowestLevel) {
-                lowestLevel = monster.m_lev;
-                weakest = monster;
-            }
-            else {
-                other ||= monster;
-            }
-        }
-        else {
-            pet = monster;
-            break;
-        }
-    }
-    return foreignElemental || homeElemental || weakest || other || pet;
 }
 // C teleport.c:tele_to_rnd_pet(). Each pet gets reservoir-sampling odds;
 // the chosen pet supplies exactly one candidate square, with no fallback.

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { setHeroGrip } from '../js/hero_grip.js';
+import { setHeroGrip } from '../js/mon.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
 // C pickup.c:loot_mon() calls pickup() directly over the engulfer's stomach;

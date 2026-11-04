@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { hitFloorPileWithWand, hitObjectWithWand } from '../js/zap.js';
-import { hitMonsterWithWand } from '../js/immediate_monster_magic.js';
+import { hitMonsterWithWand } from '../js/zap.js';
 
 import { cancelObjectMagic } from '../js/zap.js';
 import {

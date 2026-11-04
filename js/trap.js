@@ -86,7 +86,7 @@ import { autopickupAtHero } from './pickup.js';
 import { finishTeleportArrival } from './location_effects.js';
 import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { reportHeroEncumbrance } from './pickup.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { heroIsSliming } from './potion.js';
@@ -128,7 +128,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus } from './dothrow.js';
-import { wornMonsterLifeSaver } from './mondeath.js';
+import { wornMonsterLifeSaver } from './mon.js';
 import { fractureRock } from './rock_breakage.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 // C trap.c:seetrap(). Reveal a new trap and redraw its square.

@@ -5,7 +5,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { initializePet, makePetWary } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { preventMonsterDeath } from '../js/mondeath.js';
+import { preventMonsterDeath } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

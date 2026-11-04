@@ -2,6 +2,7 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
+import { mimicHitMessage } from './mon.js';
 import { objectMaterial, learnObjectType, observeObject, objectClassForType } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
@@ -37,7 +38,7 @@ import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, objectNameIsPlural, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
 import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile } from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsWhirly, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
@@ -75,7 +76,7 @@ import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { bot } from './botl.js';
 import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } from './object_properties.js';
-import { hatchableEggSpecies, eggSpeciesIsDead } from './egg_species.js';
+import { hatchableEggSpecies, eggSpeciesIsDead } from './mon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
 import { fractureRock } from './rock_breakage.js';
@@ -106,8 +107,8 @@ import { hitFloorObjectWithForce } from './force_bolt.js';
 import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
 import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, burnAwayHeroSlime, endVoluntaryMultiTurn } from './hack.js';
-import { releaseHeroFromMonster } from './hero_expulsion.js';
-import { setHeroGrip } from './hero_grip.js';
+import { releaseHeroFromMonster } from './mon.js';
+import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
@@ -118,10 +119,10 @@ import { putMonsterToSleep } from './mhitm.js';
 import { heroHasRemovableSpeed, slowHero } from './mhitu.js';
 import { finishMonsterKilled, finishMonsterLiquidDeath, healMonster, resolveMonsterLiquid } from './mon.js';
 import { monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance, monsterHasPoisonResistance, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage } from './mondata.js';
-import { wornMonsterLifeSaver } from './mondeath.js';
+import { wornMonsterLifeSaver } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
-import { MONSTER_ATTACKS, MONSTER_FLAGS2, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
+import { MONSTER_ATTACKS, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource, monsterReflectsRay } from './muse.js';
 import { BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING } from './object_data.js';
@@ -145,7 +146,24 @@ import { flushPendingTopline } from './tty_topline.js';
 import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { showTextWindow } from './windows.js';
-import { hitMonsterWithWand } from './immediate_monster_magic.js';
+import { M_AP_FURNITURE, M_AP_OBJECT, W_SADDLE } from './const.js';
+import { adjustHeroAlignment } from './alignment.js';
+import { abusePet } from './dog.js';
+import { checkExperienceLevel } from './exper.js';
+import { flashHitsMonster } from './flash.js';
+import { hitMonsterWithForce } from './force_bolt.js';
+import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { isSteadfast } from './uhitm.js';
+import { MAP_SYMBOLS } from './map_symbols.js';
+import { revealMimicIdentity } from './uhitm.js';
+import { respondToImmediateMagic, wakeAttackedMonster } from './mon.js';
+import { MONSTER_SIZE, monsterHasEyes, monsterIsMindless } from './monster_data.js';
+import { hurtleMonster } from './dothrow.js';
+import { teleportMonsterByHero } from './teleport.js';
+import { removeObjectFromMonsterInventory } from './monworn.js';
+import { setMimicAppearance } from './makemon.js';
+import { landFloorObject } from './floor_effects.js';
+import { monsterHasDrainResistance } from './mondata.js';
 const RING_CLASS = 4;
 const POTION_CLASS = 8;
 const SCROLL_CLASS = 9;
@@ -4662,5 +4680,306 @@ function wishDropMessage(object) {
     if (airLevel || Is_waterlevel(hero.uz) || terrain !== undefined && (terrain < IRONBARS || terrain >= ICE))
         return `Oops!  ${action} away from you!`;
     return dangerous ? `Careful! ${action} on the floor!` : `Oops!  ${action} to the floor!`;
+}
+// C zap.c:bhitm(). Direction and range belong to the caller.
+export async function hitMonsterWithWand(monster, wand, { state = game, x = monster.mx, y = monster.my, } = {}) {
+    requirePlayingGame(state);
+    const source = wand.oclass === 10 ? 'spell' : 'wand';
+    const attackLevel = source === 'wand' ? 12 : state.u.ulevel;
+    const onHead = monster.mx === x && monster.my === y;
+    state.notonhead = !onHead;
+    let wake = true, alreadyWoke = false, reveal = false, learned = false, result = 0;
+    const options = { random: rn2, roll: rnd, rollDice: d, finishMonsterKill: finishHeroMonsterKill };
+    switch (wand.otyp) {
+        case WAN_STRIKING:
+        case SPE_FORCE_BOLT:
+            learned = await hitMonsterWithForce(monster, source, state, { ...options, x, y });
+            alreadyWoke = true;
+            reveal = true;
+            break;
+        case WAN_SLOW_MONSTER:
+        case SPE_SLOW_MONSTER:
+        case WAN_SPEED_MONSTER:
+            learned = await affectMonsterSpeed(monster, wand.otyp === WAN_SPEED_MONSTER ? 'speed' : 'slow', source, state, options);
+            alreadyWoke = true;
+            break;
+        case WAN_UNDEAD_TURNING:
+        case SPE_TURN_UNDEAD:
+            if (monsterIsUndead(monster.mnum) || monsterIsVampireShifter(monster)) {
+                await turnMonsterWithUndeadMagic(monster, source, state, {
+                    ...options, wakeMonster: wakeAttackedMonster,
+                });
+                alreadyWoke = true;
+                reveal = true;
+            }
+            else {
+                wake = !!await turnCarriedObjects(monster.minvent || monster.inventory || [], state);
+            }
+            break;
+        case WAN_POLYMORPH:
+        case SPE_POLYMORPH:
+        case POT_POLYMORPH: {
+            const spotted = canSeeMonster(monster);
+            const giveMessage = !heroIsHallucinating(state)
+                && (spotted || state.u.uswallow && state.u.ustuck === monster);
+            const change = await polymorphMonsterFromMagic(monster, {
+                state, targetSpotted: spotted,
+                attackLevel: wand.otyp === POT_POLYMORPH ? 6 : attackLevel,
+                polyspot: wand.otyp !== POT_POLYMORPH,
+                publish: plineWithContinuation,
+                showShield: target => shieldMonster(target, state),
+                finishDeath: (target, death) => finishHeroMonsterKillOutcome(target, target.mx, target.my, death),
+            });
+            learned = !!(change.systemShock && spotted
+                || change.changed && giveMessage && (canSpotMonster(monster) || state.u.ustuck === monster));
+            break;
+        }
+        case WAN_CANCELLATION:
+        case SPE_CANCELLATION:
+            await revealMonsterAppearance(monster);
+            await cancelMonster(monster, { state, attackLevel });
+            break;
+        case WAN_TELEPORTATION:
+        case SPE_TELEPORT_AWAY:
+            await revealMonsterAppearance(monster);
+            reveal = !await teleportMonsterByHero(monster, { state });
+            learned = canSpotMonster(monster);
+            break;
+        case WAN_MAKE_INVISIBLE:
+            learned = await makeMonsterInvisible(monster);
+            reveal = learned;
+            alreadyWoke = true;
+            break;
+        case WAN_LOCKING:
+        case SPE_WIZARD_LOCK: {
+            await revealLockMimic(monster, state);
+            const trap = await closeHoldingTrap(monster, { state });
+            wake = trap.changed;
+            learned = trap.noticed;
+            break;
+        }
+        case WAN_PROBING:
+            wake = false;
+            reveal = learned = true;
+            await probeMonster(monster, { state, onHead, x, y });
+            break;
+        case WAN_OPENING:
+        case SPE_KNOCK: {
+            await revealLockMimic(monster, state);
+            wake = false;
+            if (monster === state.u.ustuck) {
+                await releaseHold(state);
+                learned = true;
+                break;
+            }
+            const held = await openHoldingTrap(monster, { state });
+            learned = held.noticed;
+            if (held.changed)
+                break;
+            const falling = await openFallingTrap(monster, { state, trapdoorOnly: true });
+            learned ||= falling.noticed;
+            if (falling.changed)
+                break;
+            if (wand.otyp === SPE_KNOCK) {
+                wake = true;
+                result = 1;
+                if ((MONSTER_SIZE[monster.mnum] ?? 0) < 2 && !isSteadfast(monster, state)) {
+                    if (canSeeMonster(monster))
+                        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} is knocked back!`);
+                    await hurtleMonster(monster, monster.mx - state.u.ux, monster.my - state.u.uy, rnd(2), { state });
+                }
+                else if (canSeeMonster(monster))
+                    await plineWithContinuation(`${monsterName(monster, { capitalized: true })} doesn't budge.`);
+                if (alive(monster)) {
+                    await wakeMonster(monster, { attacked: !monsterIsMindless(monster.mnum) });
+                    await abusePet(monster, state);
+                }
+            }
+            else
+                await dropSaddle(monster, state);
+            break;
+        }
+        case SPE_HEALING:
+        case SPE_EXTRA_HEALING:
+            reveal = true;
+            wake = await healMonsterWithMagic(monster, wand, state);
+            break;
+        case WAN_LIGHT: {
+            const flashed = await flashHitsMonster(monster, wand, { state, onHead });
+            learned = reveal = flashed.observed;
+            break;
+        }
+        case WAN_SLEEP:
+            reveal = true;
+            await sleepMonsterWithMagic(monster, d(1 + wand.spe, 12), state);
+            learned = !heroIsBlind(state);
+            break;
+        case SPE_STONE_TO_FLESH:
+            wake = await fleshMonster(monster, state);
+            break;
+        case SPE_DRAIN_LIFE:
+            await revealMonsterAppearance(monster);
+            await drainMonster(monster, attackLevel, state);
+            break;
+        case WAN_NOTHING:
+            wake = false;
+            break;
+        default:
+            await impossible(`What an interesting effect (${wand.otyp})`, { state });
+            break;
+    }
+    if (state.program_state?.gameover)
+        return result;
+    if (wake && alive(monster)) {
+        if (!alreadyWoke)
+            await wakeAttackedMonster(monster);
+        if (!state.program_state?.gameover)
+            await respondToImmediateMagic(monster, state);
+        if (monster.isshk && !state.u.ushops?.length)
+            hotPursuitShopkeeper(monster, state);
+    }
+    if (reveal && alive(monster) && cansee(x, y) && !canSpotMonster(monster))
+        await map_invisible(x, y);
+    if (learned)
+        learnWand(wand, { state });
+    return result;
+}
+function alive(monster) {
+    return !monster.dead && monster.mhp > 0;
+}
+async function revealLockMimic(monster, state) {
+    if (M_AP_TYPE(monster) === M_AP_OBJECT && [CHEST, LARGE_BOX].includes(monster.mappearance ?? -1)
+        || M_AP_TYPE(monster) === M_AP_FURNITURE
+            && (monster.mappearance ?? -1) >= 13 && (monster.mappearance ?? -1) <= 16)
+        await revealMimicIdentity(monster, { state });
+}
+async function sleepMonsterWithMagic(monster, duration, state) {
+    if (!monster.msleeping && !monster.mfrozen && [M_AP_FURNITURE, M_AP_OBJECT].includes(M_AP_TYPE(monster)))
+        await revealMonsterAppearance(monster);
+    if (monsterResistsSleep(monster) || monsterResistsEffect(monster, 12)) {
+        await shieldeff(monster.mx, monster.my, state);
+        return;
+    }
+    if (!await putMonsterToSleep(monster, duration))
+        return;
+    await finishMonsterEating(monster, state);
+    if (monster === state.u.ustuck && !state.u.uswallow && !heroFormSticks(state)) {
+        await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} grip relaxes.`);
+        await releaseHeroFromMonster(monster, { state });
+    }
+}
+async function dropSaddle(monster, state) {
+    const saddle = (monster.minvent || monster.inventory || []).find(object => (object.owornmask ?? 0) & W_SADDLE);
+    if (!saddle)
+        return;
+    if (cansee(monster.mx, monster.my))
+        await plineWithContinuation(`${canSpotMonster(monster) ? possessiveName(monsterName(monster, { capitalized: true })) : 'A'} saddle falls to the ${surfaceName(monster.mx, monster.my, state)}.`);
+    else if (canSpotMonster(monster))
+        await plineWithContinuation(`${possessiveName(monsterName(monster, { capitalized: true }))} saddle falls off.`);
+    await removeObjectFromMonsterInventory(monster, saddle, state);
+    await landFloorObject(saddle, monster.mx, monster.my, { state });
+}
+// C zap.c:bhitm() healing and extra-healing branch.
+async function healMonsterWithMagic(monster, spell, state) {
+    const extra = spell.otyp === SPE_EXTRA_HEALING;
+    const amount = d(6, extra ? 8 : 4);
+    if (MONSTER_NAME[monster.mnum] === 'Pestilence') {
+        await damageMonster(monster, Math.trunc(amount / 2), state.u.ulevel, true, state);
+        return true;
+    }
+    const deficit = monster.mhpmax - monster.mhp;
+    healMonster(monster, amount);
+    if ((spell.blessed || extra) && !monster.mcansee) {
+        monster.mcansee = 1;
+        monster.mblinded = 0;
+        if (canSeeMonster(monster) && monsterHasEyes(monster.mnum))
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} can see again.`);
+    }
+    if (canSeeMonster(monster)) {
+        if (M_AP_TYPE(monster) === M_AP_OBJECT && monster.mappearance === 0) {
+            await setMimicAppearance(monster);
+            await newsym(monster.mx, monster.my);
+        }
+        else if (M_AP_TYPE(monster) === M_AP_OBJECT) {
+            await mimicHitMessage(monster, state);
+        }
+        else if (!M_AP_TYPE(monster)) {
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} looks${extra ? ' much' : ''} better.`);
+        }
+    }
+    if (monster.mtame && state.urole.key === 'healer' && deficit > 0) {
+        addExperience(Math.min(deficit, amount), 0, state);
+        await checkExperienceLevel();
+    }
+    if (monster.mtame || monster.mpeaceful)
+        adjustHeroAlignment(state.urole.key === 'healer' ? 1 : Math.sign(state.u.ualign.type), state);
+    return false;
+}
+async function damageMonster(monster, damage, attackLevel, tell, state) {
+    const resisted = monsterResistsEffect(monster, attackLevel);
+    if (resisted) {
+        damage = Math.ceil(damage / 2);
+        if (tell) {
+            await shieldMonster(monster, state);
+        }
+    }
+    monster.mhp -= damage;
+    if (!alive(monster))
+        await finishHeroMonsterKill(monster, monster.mx, monster.my);
+    return resisted;
+}
+async function drainMonster(monster, attackLevel, state) {
+    let damage = monsterHitPointsPerLevel(monster);
+    if (state.urole.key === 'knight' && state.u.uhave?.questart)
+        damage *= 2;
+    damage = adjustSpellDamage(damage, state);
+    if (monsterHasDrainResistance(monster)) {
+        await shieldMonster(monster, state);
+        return;
+    }
+    if (await damageMonster(monster, damage, attackLevel, false, state) || !alive(monster))
+        return;
+    monster.mhp -= damage;
+    monster.mhpmax -= damage;
+    if (monster.mhp <= 0 || monster.mhpmax <= 0 || monster.m_lev < 1)
+        await finishHeroMonsterKill(monster, monster.mx, monster.my);
+    else {
+        monster.m_lev--;
+        if (canSeeMonster(monster))
+            await plineWithContinuation(`${monsterName(monster, { capitalized: true })} suddenly seems weaker!`);
+    }
+}
+async function shieldMonster(monster, state) {
+    await shieldeff(monster.mx, monster.my, state);
+    if (cansee(monster.mx, monster.my))
+        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
+}
+// C zap.c stone-to-flesh on a monster: mkobj.c stone_object_type() and
+// stone_furniture_type() decide which mimicked shapes revert to a mimic.
+async function fleshMonster(monster, state) {
+    if (monsterIsGolem(monster.mnum)) {
+        const name = monsterName(monster, { capitalized: true });
+        let message = 'looks rather fleshy for a moment.';
+        if (MONSTER_NAME[monster.mnum] === 'stone golem'
+            && await changeMonsterForm(monster, MONSTER_NAME.indexOf('flesh golem'), state))
+            message = 'turns to flesh!';
+        else if (MONSTER_NAME[monster.mnum] === 'flesh golem')
+            message = 'seems fleshier...';
+        if (canSeeMonster(monster))
+            await plineWithContinuation(`${name} ${message}`);
+        return true;
+    }
+    const stoneObject = M_AP_TYPE(monster) === M_AP_OBJECT
+        && [BOULDER, STATUE, FIGURINE].includes(monster.mappearance ?? -1);
+    const stoneFurniture = M_AP_TYPE(monster) === M_AP_FURNITURE
+        && ['wall', 'staircase up', 'staircase down', 'branch staircase up',
+            'branch staircase down', 'altar', 'opulent throne', 'sink']
+            .includes(MAP_SYMBOLS[monster.mappearance ?? -1]?.name ?? '');
+    if (stoneObject || stoneFurniture) {
+        if (cansee(monster.mx, monster.my))
+            await revealMimicIdentity(monster, { state, omitWait: true });
+        return true;
+    }
+    return false;
 }
 //# sourceMappingURL=zap.js.map

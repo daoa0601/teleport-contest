@@ -16,7 +16,7 @@ import { impossible } from './diagnostics.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
 import { dist2, possessiveName } from './hacklib.js';
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies } from './polyself.js';
 import type { MonsterCallLog, RandomBelow, RollDice, RollOne } from './monster_action_types.js';

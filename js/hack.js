@@ -1,6 +1,6 @@
 // Hero movement, travel, and terrain effects.
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
-import { setHeroGrip } from './hero_grip.js';
+import { setHeroGrip } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -38,7 +38,8 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
 import { waterbodyName, surfaceName, ceilingName } from './terrain_name.js';
 import { attackHostileMonster } from './uhitm.js';
-import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, moveMonsterNextToHero, relocateMonsterTo, askTeleportDestination } from './teleport.js';
+import { heroCanTeleport, heroControlsTeleport, moveHeroByTeleport, safeTeleportDestination, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination } from './teleport.js';
+import { moveMonsterNextToHero } from './mon.js';
 import { goodPosition, heroTeleportRestricted, findNearbyMonsterPosition } from './teleport_rules.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
@@ -67,7 +68,7 @@ import { confusePromptDirection } from './cmd.js';
 import { resolveHeroCombatExplosion } from './uhitm.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
-import { applyPickAxeDirection } from './pick_axe.js';
+import { applyPickAxeDirection } from './dig.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
 import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
 import { runSafepetDisplacement } from './uhitm.js';
