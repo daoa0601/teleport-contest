@@ -4140,13 +4140,16 @@ async function domoveCore(dx: number, dy: number): Promise<boolean | 'opened-doo
             return rejectHeroMove();
         }
         await doopen(newx, newy);
-        // test_move() preserves a counted walk after opening, or when an
-        // untimed open has queued dokick as the next canned command
-        // (hack.c:1101-1106).
-        const queuedKick = game.context.move === 0 && (() => {
-            const cq = cmdq_peek(CQ_CANNED);
-            return cq?.typ === CMDQ_EXTCMD && cq.ecEntry.handler === 'dokick';
-        })();
+        // C hack.c:1098-1111: an autounlock kick queued behind the open
+        // fakes door_opened so the walk continues into the canned kick;
+        // otherwise the door must actually have opened, or domove_core()
+        // stops the hero with context.move = 0 and nomul(0)
+        // (hack.c:2841-2847).
+        const kick = cmdq_peek(CQ_CANNED);
+        const queuedKick = game.context.move === 0
+            && kick?.typ === CMDQ_EXTCMD && kick.ecEntry.handler === 'dokick';
+        const opened = !(loc.doormask & (D_CLOSED | D_LOCKED));
+        if (!opened && !queuedKick) return rejectHeroMove();
         game.context.move = 0;
         return 'opened-door';
     }
