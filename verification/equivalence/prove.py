@@ -463,6 +463,7 @@ def main() -> int:
                     verdict = 'NO COUNTEREXAMPLE'
                 print(f'  {verdict} mutant {old!r} -> {new!r}: {first}')
                 failures += proved != equivalent or invalid_kill
+        print(f'  total {spec.name}: {time.monotonic() - start:.2f}s (proof, probes, mutants)')
     if not args.slow_only:
         failures += prove_isaac64(recorder, REPO, args.only, not args.no_probes, not args.no_mutants)
         failures += prove_seed_packing(front, REPO, args.only, not args.no_probes, not args.no_mutants)

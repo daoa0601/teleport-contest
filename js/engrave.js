@@ -22,7 +22,7 @@ import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport_rules.js';
 import { AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
 import { artifactById } from './artifacts.js';
-import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, } from './object_data.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL } from './object_data.js';
 import { isBimanualObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';

@@ -1,3 +1,7 @@
+import {
+    objectBaseCost, CANDELABRUM_OF_INVOCATION, DART, FOOD_RATION, MAGIC_LAMP, OIL_LAMP, POT_OIL,
+    ROCK, CORPSE, LOADSTONE, TALLOW_CANDLE, WAX_CANDLE,
+} from '../js/object_data.js';
 import { installPagerInput } from './support/pager-input.js';
 import { inventoryLetter } from './support/commands.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
@@ -28,20 +32,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { holdAnotherObject } from '../js/hero_hold_object.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { VIBRATING_SQUARE } from '../js/const.js';
-import {
-    CANDELABRUM_OF_INVOCATION,
-    DART,
-    FOOD_RATION,
-    MAGIC_LAMP,
-    OIL_LAMP,
-    OBJECT_COST,
-    POT_OIL,
-    ROCK,
-    CORPSE,
-    LOADSTONE,
-    TALLOW_CANDLE,
-    WAX_CANDLE,
-} from '../js/object_data.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';
 import {
     addInventoryObject,
@@ -98,7 +88,7 @@ async function freshLight({ dark = false, ...options }: ObjectRoomOptions & { da
     return input;
 }
 async function billed(object: GameObject, quantity = objectQuantity(object)) {
-    const price = OBJECT_COST[object.otyp];
+    const price = objectBaseCost(object.otyp);
     assert.ok(price !== undefined);
     const { shopkeeper } = await createStaffedShop({
         keeperX: 14,
@@ -718,7 +708,7 @@ void test('holding a rejecting artifact uses its real blast and leaves it on the
 });
 
 function candleCost(): number {
-    const cost = OBJECT_COST[TALLOW_CANDLE];
+    const cost = objectBaseCost(TALLOW_CANDLE);
     assert.ok(cost !== undefined);
     return cost;
 }

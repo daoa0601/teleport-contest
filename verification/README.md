@@ -203,7 +203,7 @@ locally and exceeded the 120 s solver timeout on a loaded CI runner.
 `--only isaac64` selects all eight generator/seed-packing claims; selecting
 one composed generator claim also proves its dependencies first.
 
-There are 158 scoped claims: the original 20 plus all-attribute `acurr`,
+There are 173 scoped claims: the original 20 plus all-attribute `acurr`,
 human/polymorphed `dbon` and `abon`, initial-table monster experience,
 initialized monster movement, eight geometry/species predicates, eight
 ISAAC64/seed-packing claims, eleven bounded-state/inline claims, the
@@ -241,7 +241,10 @@ encoders (`warning/monnum/petnum/detected_monnum/ridden_monnum/
 objnum/explosion/altar/cmap_to_glyph`), display.c's real
 `zapdir_to_glyph`/`swallow_to_glyph`, the fourteen glyph_is_* predicates,
 the display.h decoders (`glyph_to_mon/obj/swallow/warning/explosion/trap`)
-and glyphs.c's real `glyph_to_cmap` over the terrain span. The monster
+and glyphs.c's real `glyph_to_cmap` over the terrain span, plus the fifteen
+object-field claims of fv-equivalence-batch-10: all fourteen initial objects[]
+columns read by the shared `object_data.js` owners over every otyp, and the
+port-only zero class outside the valid int32 table range. The monster
 claims check all 383 valid native species with symbolic state where
 applicable; movement uses
 arbitrary random streams. Every declared partition must have a satisfiable
@@ -253,10 +256,13 @@ one species, and passes after it.
 covers monsters with no inventory. Live table mutations and preservation of
 entry relations by initialization/equipment updates remain unproved.
 
-`specs.py`, `state_specs.py` and `state_world.py` declare the domains and
+`specs.py`, `state_specs.py`, `object_specs.py` and `state_world.py` declare the domains and
 correspondences; `docs/formal-verification.md` gives their native sources.
-The new claims require both a concrete failing domain probe and a concrete
-killed mutant. No game code or corpora were changed.
+Every object-field claim requires a concrete failing domain probe and a
+concrete killed mutant. Each negative check pins concrete rows. The class
+lookup also has behavior coverage for generic names, type 0 and invalid input.
+The other thirteen field claims use the nightly slow job; the class lookup and
+its outside-domain contract remain fast. No corpora were recorded.
 
 The added geometry claims pair `cmd.c:isok` with `hacklib.js:isok` and
 `hacklib.c:online2` with `hacklib.js:pointsOnline`, over every signed-16-bit
@@ -408,6 +414,7 @@ combining it with `--check-ledger` preserves the existing baseline on a mismatch
 | `core.py` | paths, abstract random streams, loop rules, and the shared bit-vector operations used by both executors |
 | `specs.py` | common spec declarations, original function pairs, probes, mutants and the loop invariant/variant |
 | `state_specs.py`, `state_world.py` | stateful leaf domains, pointer/API correspondences and the explicit difficulty contract |
+| `object_specs.py`, `harness/object_fields.c` | initial objects[] field readers and the explicit port-only class guard |
 | `queries.py` | incremental per-domain solvers with isolated path conditions, and bounded reuse of complete UNSAT queries |
 | `prove.py` | builds the Z3 queries and reports |
 | `harness/rn1.c` | wrapper so clang expands the `rn1()` macro from `hack.h` |

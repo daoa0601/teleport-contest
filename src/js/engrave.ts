@@ -43,15 +43,7 @@ import {
     P_WHIP,
 } from './const.js';
 import { artifactById } from './artifacts.js';
-import {
-    AKLYS,
-    HEAVY_IRON_BALL,
-    IRON_CHAIN,
-    OBJECT_DIR,
-    OBJECT_SUBTYPE,
-    TIN_OPENER,
-    TOWEL,
-} from './object_data.js';
+import { AKLYS, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL } from './object_data.js';
 import { isBimanualObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { willWeld } from './wield.js';
 import type { GameObject } from './object_types.js';

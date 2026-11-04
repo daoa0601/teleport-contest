@@ -1,5 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
+import { objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { recorderLocalEpochSeconds, recorderLocalHour } from './calendar.js';
 import { adjustAttribute, currentAttribute } from './attrib.js';
@@ -36,14 +37,13 @@ import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
-import { objectClassForType, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './hacklib.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
-import { AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_COST, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE } from './object_data.js';
 import { canMakeBones, createBonesFromDeath } from './bones.js';
 import { restoreLaunchedObjectForBones } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -1104,7 +1104,7 @@ export async function finishLivingGame(outcome) {
     game.context.move = 0;
 }
 function objectBaseValue(type) {
-    const value = OBJECT_COST[type];
+    const value = objectBaseCost(type);
     if (value === undefined)
         throw new RangeError(`No base value for object type ${type}`);
     return value;

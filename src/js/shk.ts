@@ -6,8 +6,14 @@
 // (shknam.ts); this module owns the live relationship among room, resident,
 // customer, and hero.
 
-
-
+import {
+    objectBaseWeight, objectBaseCost, objectMagic, objectCharged, BAG_OF_TRICKS, BRASS_LANTERN,
+    CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY,
+    LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP,
+    OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK,
+    MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER,
+    ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE,
+} from './object_data.js';
 import { impossible } from './diagnostics.js';
 import { objectMaterial } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -51,7 +57,6 @@ import { isok } from './cmd.js';
 
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 
-import { BAG_OF_TRICKS, BRASS_LANTERN, CAN_OF_GREASE, CORPSE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, HORN_OF_PLENTY, LARGE_BOX, MAGIC_FLUTE, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_COST, OBJECT_NAMES, OBJECT_INITIAL_KNOWN, DUNCE_CAP, OIL_LAMP, POT_OIL, TINNING_KIT, WORTHLESS_PIECE_OF_WHITE_GLASS, PICK_AXE, DWARVISH_MATTOCK, OBJECT_MAGIC, MIRROR, POT_WATER, WAX_CANDLE, TALLOW_CANDLE, OBJECT_WEIGHT, TIN, EGG, CANDELABRUM_OF_INVOCATION, BOULDER, ROCK, LAND_MINE, BEARTRAP, LEASH, GOLD_PIECE } from './object_data.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { paymentObjectDescription, objectDescription } from './objnam.js';
 import { dropObjectAtHero } from './do.js';
@@ -367,7 +372,7 @@ export function shopObjectUnitCost(object: GameObject, resident: Monster | null 
                 object.otyp - WORTHLESS_PIECE_OF_WHITE_GLASS
             ];
             const imitation = imitations?.[pseudorand ? 0 : 1];
-            const imitationCost = imitation === undefined ? undefined : OBJECT_COST[imitation];
+            const imitationCost = imitation === undefined ? undefined : objectBaseCost(imitation);
             if (imitationCost === undefined)
                 throw new Error(`Glass gem ${object.otyp} has no shop imitation price`);
             cost = imitationCost;
@@ -411,8 +416,7 @@ function shopUsageCost(object: GameObject, resident: Shopkeeper, alternate: bool
     let cost = shopObjectUnitCost(object, resident, state);
     const type = object.otyp;
     if (type === MAGIC_LAMP) {
-        const oilLampCost = OBJECT_COST[OIL_LAMP];
-        if (oilLampCost === undefined) throw new Error('Oil lamp shop price is missing');
+        const oilLampCost = objectBaseCost(OIL_LAMP);
         return alternate ? cost + Math.trunc(cost / 3) : oilLampCost;
     }
     if (type === MAGIC_MARKER) return Math.trunc(cost / 2);
@@ -435,7 +439,7 @@ export async function chargeUnpaidUsage(object: GameObject, {
     state = game, alternate = false,
 }: { state?: GameState; alternate?: boolean } = {}) {
     if (!object.unpaid || !state.u.ushops?.length
-        || object.spe <= 0 && OBJECT_CHARGED[object.otyp]) return null;
+        || object.spe <= 0 && objectCharged(object.otyp)) return null;
     const resident = shopkeeperForHero(state);
     if (!resident) return null;
     const amount = shopUsageCost(object, resident, alternate, state);
@@ -2872,7 +2876,7 @@ export async function nameShopTransaction(keeper: Shopkeeper, object: GameObject
     { publish, state }: { publish: MessagePublisher; state: GameState }): Promise<void> {
     let wasUnknown = !object.dknown;
     observeObject(object, state);
-    if (!OBJECT_MAGIC[object.otyp] && shopStocksObject(keeper.eshk.shoptype, object)
+    if (!objectMagic(object.otyp) && shopStocksObject(keeper.eshk.shoptype, object)
         && ([WEAPON_CLASS, ARMOR_CLASS, SCROLL_CLASS, SPBOOK_CLASS].includes(object.oclass) || object.otyp === MIRROR)) {
         wasUnknown ||= !objectTypeKnown(object, state);
         learnObjectType(object.otyp, state);
@@ -2935,7 +2939,7 @@ function embellish(object: GameObject, cost: number): string {
         case 4:
             if (cost < 10) break;
             if (object.oclass === 7) return ", gourmets' delight!";
-            if (objectTypeKnown(object) ? OBJECT_MAGIC[object.otyp]
+            if (objectTypeKnown(object) ? objectMagic(object.otyp)
                 : [4, 5, 8, 9, 10, 11].includes(object.oclass))
                 return ', painstakingly developed!';
             return ', superb craftsmanship!';
@@ -3122,7 +3126,7 @@ async function checkShopCredit(value: number, resident: Shopkeeper, publish: Mes
 export function objectPricingUnits(object: GameObject): number {
     let units = objectQuan(object);
     if (object.globby) {
-        const unitWeight = OBJECT_WEIGHT[object.otyp] ?? 0;
+        const unitWeight = objectBaseWeight(object.otyp);
         if (unitWeight) {
             const weight = object.owt > 0 ? object.owt : objectWeight(object);
             units = Math.trunc((weight + unitWeight - 1) / unitWeight);
@@ -3140,7 +3144,7 @@ export function objectIsCandle(object: GameObject): boolean {
 function artifactCost(object: GameObject, state: GameState): number {
     const artifact = artifactById(object.oartifact, state);
     if (artifact?.cost) return artifact.cost;
-    return 100 * (OBJECT_COST[object.otyp] ?? 0);
+    return 100 * objectBaseCost(object.otyp);
 }
 
 // C shk.c:4280 corpsenm_price_adj().
@@ -3180,7 +3184,7 @@ function corpsenmPriceAdj(object: GameObject): number {
 
 // C shk.c:4319 getprice(): one price owner for buying and selling.
 export function shopGetPrice(object: GameObject, shkBuying: boolean, state: GameState = game): number {
-    let tmp = OBJECT_COST[object.otyp] ?? 0;
+    let tmp = objectBaseCost(object.otyp);
     if (object.oartifact) {
         tmp = artifactCost(object, state);
         if (shkBuying) tmp = Math.trunc(tmp / 4);
@@ -3201,7 +3205,7 @@ export function shopGetPrice(object: GameObject, shkBuying: boolean, state: Game
         if ((object.spe ?? 0) > 0) tmp += 10 * object.spe;
     } else if (object.oclass === 6 /* TOOL_CLASS */) {
         if (objectIsCandle(object)
-            && (object.age ?? 0) < 20 * (OBJECT_COST[object.otyp] ?? 0)) {
+            && (object.age ?? 0) < 20 * objectBaseCost(object.otyp)) {
             tmp = Math.trunc(tmp / 2);
         }
     }
@@ -4162,7 +4166,7 @@ function containedSellCost(object: GameObject, resident: Shopkeeper, state: Game
             && !(content.oclass === FOOD_CLASS && content.oeaten)
             && !(objectIsCandle(content)
                 && (content.age ?? 0)
-                < 20 * (OBJECT_COST[content.otyp] ?? 0))) {
+                < 20 * objectBaseCost(content.otyp))) {
             price += shopOfferForObject(content, resident, state);
         }
         if (content.contents?.length) {
@@ -4469,7 +4473,7 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
         || offer === 0
         || (object.oclass === FOOD_CLASS && object.oeaten)
         || (objectIsCandle(object)
-            && (object.age ?? 0) < 20 * (OBJECT_COST[object.otyp] ?? 0))) {
+            && (object.age ?? 0) < 20 * objectBaseCost(object.otyp))) {
         await publish(`${shopkeeperName(resident)} seems uninterested${
             cgold ? ' in the rest' : ''}.`);
         if (container) droppedContainerContents(object, resident, false);

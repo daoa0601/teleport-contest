@@ -4,6 +4,7 @@
 // The live init_objects() boundary owns per-game knowledge reset and the
 // Fisher-Yates description/color shuffles.  Other startup owners remain
 // partial; the implementation below is the source of truth.
+import { objectClassForType, objectBaseMaterial, objectUsesKnown, objectUnique, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, } from './object_data.js';
 import { game } from './gstate.js';
 import { artifactById, artifactInfoLines } from './artifacts.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
@@ -23,7 +24,6 @@ import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import { repriceDiscoveredGems } from './shk.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, OBJECT_USES_KNOWN, OBJECT_UNIQUE, requireObjectData, ARROW as FIRST_OBJECT, OBJECT_BASES } from './object_data.js';
 import { japaneseItemName, simpleObjectTypeName } from './objnam.js';
 const DISCOVERY_ORDERS = {
     o: 'by order of discovery within each class',
@@ -163,7 +163,7 @@ function gemStoneGrammar(otyp, name) {
     // objnam.c:GemStone() appends the class noun to flint and to the
     // non-precious GEMSTONE-material objects.  Their generated metadata keeps
     // just the base object name, so reproduce obj_typename() at this boundary.
-    const needsStone = otyp === FLINT || (OBJECT_MATERIAL[otyp] === 20 && !PLAIN_GEMSTONE_NAMES.has(name));
+    const needsStone = otyp === FLINT || (objectBaseMaterial(otyp) === 20 && !PLAIN_GEMSTONE_NAMES.has(name));
     return needsStone ? `${name} stone` : name;
 }
 function discoveryBaseName(otyp, known, actualName, appearance) {
@@ -181,14 +181,14 @@ function discoveryBaseName(otyp, known, actualName, appearance) {
         case 10:
             if (otyp === SPE_NOVEL)
                 return known ? 'novel' : 'book';
-            if (known && OBJECT_UNIQUE[otyp])
+            if (known && objectUnique(otyp))
                 return actualName;
             return known ? `spellbook of ${actualName}` : 'spellbook';
         case 11:
             return known ? `wand of ${actualName}` : 'wand';
         case 13:
             return known ? gemStoneGrammar(otyp, actualName)
-                : `${appearance || actualName} ${OBJECT_MATERIAL[otyp] === 21 ? 'stone' : 'gem'}`;
+                : `${appearance || actualName} ${objectBaseMaterial(otyp) === 21 ? 'stone' : 'gem'}`;
         default:
             return known ? actualName : appearance || actualName;
     }
@@ -260,7 +260,7 @@ export async function renameDiscoveredType() {
         const sample = {
             otyp: type, oclass: objectClassForType(type), o_id: 0, ox: 0, oy: 0,
             quan: 1, where: 'free', age: 0, owt: 0, spe: 0, recharged: 0,
-            dknown: true, known: !OBJECT_USES_KNOWN[type], blessed: false,
+            dknown: true, known: !objectUsesKnown(type), blessed: false,
             cursed: false, olocked: false, artifact: false,
         };
         await callObjectType(sample);
@@ -502,27 +502,12 @@ export function objectMaterial(objectOrType, state = game) {
         ? objectOrType : objectOrType?.otyp;
     if (type === undefined)
         return 0;
-    return state.objectMaterials?.[type] ?? OBJECT_MATERIAL[type] ?? 0;
+    return state.objectMaterials?.[type] ?? objectBaseMaterial(type);
 }
 // ---------------------------------------------------------------------------
 // Object discovery order and encounters. C refs: o_init.c observe_object(),
 // discover_object() (the makeknown() macro).
 // ---------------------------------------------------------------------------
-export function objectClassForType(otyp) {
-    if (typeof otyp !== 'number' || !Number.isInteger(otyp) || otyp < 1)
-        return 0;
-    // objects.h slots [1]..[MAXOCLASSES-1] hold the GENERIC entries indexed
-    // by class (GENERIC("potion", POTION_CLASS, GENERIC_POTION)), so
-    // objects[otyp].oc_class == otyp below FIRST_OBJECT.
-    if (otyp < FIRST_OBJECT)
-        return otyp;
-    for (let oclass = OBJECT_BASES.length - 1; oclass >= 2; oclass--) {
-        const first = OBJECT_BASES[oclass];
-        if (first && otyp >= first)
-            return oclass;
-    }
-    return 0;
-}
 export function rememberType(otyp, state = game) {
     if (!Number.isInteger(otyp) || otyp < FIRST_OBJECT)
         return;

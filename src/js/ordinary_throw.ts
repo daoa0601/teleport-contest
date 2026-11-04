@@ -1,6 +1,9 @@
 // Hero throws which do not have a class-specific effect.
 // C refs: dothrow.c throwit() and thitmonst(), zap.c bhit().
 
+import {
+    objectSkill, AKLYS, BOOMERANG,
+} from './object_data.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { A_DEX, AKLYS_LIM, Is_airlevel, W_QUIVER, W_SWAPWEP, W_WEP } from './const.js';
 import { exerciseAttribute } from './attrib.js';
@@ -24,9 +27,6 @@ import { tossObjectUp } from './dothrow.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { rejoinObjectStack } from './mkobj.js';
-
-import { AKLYS, BOOMERANG, OBJECT_SUBTYPE } from './object_data.js';
-
 
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
@@ -128,7 +128,7 @@ export async function throwOrdinaryObject({
         const trajectory = heroThrowTrajectory(thrown, state, state.uwep);
         if (isLauncherAmmunition(thrown) && thrown.oclass !== 13
             && !launcherMatchesAmmo(thrown, state.uwep)) {
-            const skill = Math.abs(OBJECT_SUBTYPE[thrown.otyp] ?? 0);
+            const skill = Math.abs(objectSkill(thrown.otyp));
             await plineWithContinuation(`You aren't wielding ${
                 withIndefiniteArticle(skillName(skill, state))}, so you throw your ${
                 weaponDescription(thrown)} by ${heroHandName(state)}.`);

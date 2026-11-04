@@ -2,6 +2,12 @@
 // and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
 // sacrifice (pure move, no behavior change).
 
+import {
+    objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE,
+    FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT,
+    LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY,
+    SPE_BLANK_PAPER, STATUE, getObjectClassBounds,
+} from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName } from './do_wear.js';
@@ -46,7 +52,6 @@ import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICUL
 import { displayColorName, monsterName } from './do_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
-import { AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SUBTYPE, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, requireObjectData } from './object_data.js';
 import type { GameObject } from './object_types.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
 import { isBimanualObject } from './object_properties.js';
@@ -1254,14 +1259,14 @@ async function crownHero(): Promise<void> {
         object.oeroded = object.oeroded2 = 0;
         object.oerodeproof = object.bknown = object.rknown = true;
         object.spe = Math.max(1, object.spe);
-        unrestrictHeroSkill(Math.abs(requireObjectData(OBJECT_SUBTYPE, object.otyp)));
+        unrestrictHeroSkill(Math.abs(objectSkill(object.otyp)));
     } else if (!classGift) await pline(formatFeltMessage('unworthy.'));
     await adjustWeaponSkillSlots(1);
 }
 
 function isWeapon(object: GameObject | null | undefined): object is GameObject {
     return !!object && (object.oclass === WEAPON_CLASS
-        || object.oclass === TOOL_CLASS && requireObjectData(OBJECT_SUBTYPE, object.otyp) !== 0);
+        || object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
 }
 
 // ---------------------------------------------------------------------------
@@ -1674,7 +1679,7 @@ async function bestowArtifact(value: number): Promise<boolean> {
     await exerciseAttribute(A_WIS, true);
     recordGameLogEvent(`was bestowed with ${artifact.name} by ${deityName(hero.ualign.type)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT });
     const skillType = [2, 6, 13].includes(object.oclass ?? 0)
-        ? Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) : 0;
+        ? Math.abs(objectSkill(object.otyp)) : 0;
     unrestrictHeroSkill(skillType);
     if (!hallucinating && !blind) {
         object.dknown = true;

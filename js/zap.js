@@ -2,8 +2,9 @@
 // C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
 // learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
 // zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
+import { objectClassForType, objectSkill, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
-import { objectMaterial, learnObjectType, observeObject, objectClassForType } from './o_init.js';
+import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
@@ -11,7 +12,6 @@ import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject } from './invent.js';
 import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
-import { objectDirection, OBJECT_SUBTYPE, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_MAGIC, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, OBJECT_CHARGED, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, OBJECT_MERGE, TIN } from './object_data.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
 import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
@@ -125,7 +125,6 @@ import { AD_RBRE, AT_BREA } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, monsterDigests, monsterHasNoHands, monsterIsNonliving, monsterIsUndead, monsterIsVampireShifter, monsterTypeName, monsterYoungerForm } from './monster_data.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { discoverHeroReflectionSource, heroReflectionSource, heroReflectsRay, monsterReflectionSource, monsterReflectsRay } from './muse.js';
-import { BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING } from './object_data.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import { poisonHero } from './poison.js';
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
@@ -1320,7 +1319,7 @@ async function destroyChosenItem(object, damageType, { state, publish, random, r
         && object.oclass === RING_CLASS) {
         if (glovesBlockRingShock(object, state))
             return unharmed;
-        if (OBJECT_CHARGED[object.otyp] && random(3) !== 0)
+        if (objectCharged(object.otyp) && random(3) !== 0)
             return rechargeRing(object, 0, state, { publish, random, rollOne, die });
     }
     const resistant = heroResists(state, damageType);
@@ -1471,7 +1470,7 @@ export async function destroyMonsterInventoryByElement(monster, damageType, sour
         // still spares the ring and skips its destruction roll.
         if (damageType === INVENTORY_DAMAGE.ELECTRIC
             && object.oclass === RING_CLASS
-            && OBJECT_CHARGED[object.otyp] && random(3) !== 0)
+            && objectCharged(object.otyp) && random(3) !== 0)
             continue;
         const resistsItemDamage = damageType === INVENTORY_DAMAGE.ELECTRIC
             ? object.oclass !== RING_CLASS && monsterHasShockResistance(monster)
@@ -1585,8 +1584,8 @@ const POTION_ATTACK_LEVEL = 6;
 export async function drainObjectEnchantment(object, { random = rn2, byHero = false, state = game, } = {}) {
     if (!object || !(object.spe > 0))
         return false;
-    const weaponTool = object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
-    if (!OBJECT_CHARGED[object.otyp]
+    const weaponTool = object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0;
+    if (!objectCharged(object.otyp)
         && ![WEAPON_CLASS, ARMOR_CLASS].includes(object.oclass) && !weaponTool)
         return false;
     const artifact = artifactById(object.oartifact);
@@ -2087,7 +2086,7 @@ export async function cancelObjectMagic(object, { state = game } = {}) {
     removeWornBonuses(object, state);
     const enchanted = !!object.spe
         && ([2, 3].includes(objectClass) || isWeaponTool(object));
-    if (OBJECT_MAGIC[originalType] || enchanted
+    if (objectMagic(originalType) || enchanted
         || originalType === POT_ACID || originalType === POT_SICKNESS
         || (originalType === POT_WATER && (object.blessed || object.cursed))
         || originalType === SPE_NOVEL) {
@@ -2295,9 +2294,9 @@ async function createReplacement(object, id, state) {
     let replacement;
     if (id === STRANGE_OBJECT) {
         const magic = object.otyp === UNICORN_HORN && object.degraded_horn
-            ? 0 : OBJECT_MAGIC[object.otyp];
+            ? 0 : objectMagic(object.otyp);
         replacement = await mkobj(object.oclass, false);
-        for (let attempt = 1; attempt < 3 && OBJECT_MAGIC[replacement.otyp] !== magic; attempt++) {
+        for (let attempt = 1; attempt < 3 && objectMagic(replacement.otyp) !== magic; attempt++) {
             await delobj(replacement, state);
             replacement = await mkobj(object.oclass, false);
         }
@@ -2378,7 +2377,7 @@ function copyErosion(source, target, state) {
         target.oerodeproof = !!source.oerodeproof;
 }
 function finishReplacementType(source, target, id, state) {
-    if (target.quan > 1 && (!OBJECT_MERGE[target.otyp]
+    if (target.quan > 1 && (!objectMerge(target.otyp)
         || (id === STRANGE_OBJECT && target.quan > rn2(1000))))
         target.quan = target.quantity = 1;
     switch (target.oclass) {

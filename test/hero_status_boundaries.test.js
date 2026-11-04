@@ -1,10 +1,10 @@
+import { objectSkill, CANDELABRUM_OF_INVOCATION, HELMET, } from '../js/object_data.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { MM_NOGRP, MM_NOMSG, NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { CANDELABRUM_OF_INVOCATION, HELMET, OBJECT_SUBTYPE } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -23,7 +23,7 @@ for (const name of ['gnome queen', 'ogre king']) {
             // Throwing stacks from m_initthrow() retain their raw enchantment.
             const weapons = (prince.minvent ?? []).filter(object => object.oclass === 2
                 && object.quan === 1
-                && (OBJECT_SUBTYPE[object.otyp] ?? 0) >= 0);
+                && objectSkill(object.otyp) >= 0);
             if (weapons.length)
                 armedBirths++;
             for (const weapon of weapons)

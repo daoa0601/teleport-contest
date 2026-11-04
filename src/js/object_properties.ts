@@ -1,22 +1,21 @@
 // Predicates derived from NetHack's object table.
 // C refs: include/obj.h and dothrow.c throwing_weapon().
 
+import {
+    objectClassForType, objectBaseDirection, objectSkill, objectBimanual, objectCharged, AKLYS,
+    FLINT, LOADSTONE, LUCKSTONE, OBJECT_NAMES, TOUCHSTONE, WAR_HAMMER, HEAVY_IRON_BALL, IRON_CHAIN,
+    TIN_OPENER, TOWEL,
+} from './object_data.js';
 import { artifactById } from './artifacts.js';
 import {
     P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD,
     P_SHURIKEN, P_SPEAR,
 } from './const.js';
-import {
-    AKLYS, FLINT, LOADSTONE, LUCKSTONE, OBJECT_BIMANUAL, OBJECT_CHARGED,
-    OBJECT_DIR, OBJECT_NAMES, OBJECT_SUBTYPE, TOUCHSTONE, WAR_HAMMER,
-} from './object_data.js';
-import { objectClassForType } from './o_init.js';
 
 import { objectMaterial } from './o_init.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import { AKLYS_LIM, P_AXE, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_WHIP } from './const.js';
-import { HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL } from './object_data.js';
 import { rn2 } from './rng.js';
 
 type ObjectKind = Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass' | 'oartifact'>>;
@@ -48,7 +47,7 @@ export function isGrayStone(object: ObjectCandidate): boolean {
 // C obj.h:is_weptool().
 export function isWeaponTool(object: ObjectCandidate): boolean {
     if (!object) return false;
-    return objectClass(object) === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0;
+    return objectClass(object) === TOOL_CLASS && objectSkill(object.otyp) !== 0;
 }
 
 // C include/obj.h:bimanual(). The oc_bimanual field aliases oc_big, which
@@ -58,7 +57,7 @@ export function isBimanualObject(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
     return (kind === WEAPON_CLASS || kind === TOOL_CLASS)
-        && !!OBJECT_BIMANUAL[object.otyp];
+        && !!objectBimanual(object.otyp);
 }
 
 // C objnam.c:doname() displays charges for wands and charged non-weapon tools.
@@ -66,14 +65,14 @@ export function objectUsesCharges(object: ObjectCandidate): boolean {
     if (!object) return false;
     return objectClass(object) === WAND_CLASS
         || (objectClass(object) === TOOL_CLASS && !isWeaponTool(object)
-            && !!OBJECT_CHARGED[object.otyp]);
+            && !!objectCharged(object.otyp));
 }
 
 // C obj.h:is_missile().
 export function isMissileObject(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return (kind === WEAPON_CLASS || kind === TOOL_CLASS)
         && skill >= -P_BOOMERANG && skill <= -P_DART;
 }
@@ -82,7 +81,7 @@ export function isMissileObject(object: ObjectCandidate): boolean {
 export function isLauncherAmmunition(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return (kind === WEAPON_CLASS || kind === GEM_CLASS)
         && skill >= -P_CROSSBOW && skill <= -P_BOW;
 }
@@ -91,18 +90,18 @@ export function isLauncherAmmunition(object: ObjectCandidate): boolean {
 export function launcherMatchesAmmo(ammunition: ObjectCandidate, launcher: ObjectCandidate): boolean {
     if (!ammunition || !launcher) return false;
     return isLauncherAmmunition(ammunition)
-        && OBJECT_SUBTYPE[ammunition.otyp]
-            === -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);
+        && objectSkill(ammunition.otyp)
+            === -objectSkill(launcher.otyp);
 }
 
 // C dothrow.c:throwing_weapon().
 export function isThrowingWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     const piercingDaggerOrKnife = kind === WEAPON_CLASS
         && skill >= P_DAGGER && skill < P_SHORT_SWORD
-        && ((OBJECT_DIR[object.otyp] ?? 0) & 1) !== 0;
+        && (objectBaseDirection(object.otyp) & 1) !== 0;
     return isMissileObject(object)
         || (kind === WEAPON_CLASS && skill === P_SPEAR)
         || piercingDaggerOrKnife
@@ -113,7 +112,7 @@ export function isThrowingWeapon(object: ObjectCandidate): boolean {
 // C obj.h:is_multigen().
 export function isMultiGeneratedWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return object.oclass === WEAPON_CLASS
         && skill >= -P_SHURIKEN && skill <= -P_BOW;
 }
@@ -136,8 +135,8 @@ export function isBluntWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;
     const kind = objectClass(object);
     const weaponOrTool = kind === WEAPON_CLASS
-        || (kind === TOOL_CLASS && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
-    return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & WHACK);
+        || (kind === TOOL_CLASS && objectSkill(object.otyp) !== 0);
+    return weaponOrTool && !!(objectBaseDirection(object.otyp) & WHACK);
 }
 
 // C obj.h:is_flimsy().
@@ -196,19 +195,19 @@ export type WeaponCandidate = WeaponView | null | undefined;
 // C obj.h:is_pick().
 export function isPick(object: WeaponCandidate): boolean {
     return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
-        && OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;
+        && objectSkill(object.otyp) === P_PICK_AXE;
 }
 
 // C obj.h:is_axe().
 export function isAxe(object: WeaponCandidate): boolean {
     return (object?.oclass === WEAPON_CLASS || object?.oclass === TOOL_CLASS)
-        && OBJECT_SUBTYPE[object.otyp] === P_AXE;
+        && objectSkill(object.otyp) === P_AXE;
 }
 
 // C obj.h:is_blade().
 export function isBlade(object: WeaponCandidate): boolean {
     if (!object) return false;
-    const skill = OBJECT_SUBTYPE[object.otyp] || 0;
+    const skill = objectSkill(object.otyp);
     return object?.oclass === WEAPON_CLASS
         && skill >= P_DAGGER && skill <= P_SABER;
 }
@@ -221,12 +220,12 @@ export function isWetTowel(object: WeaponCandidate): boolean {
 // Snickersnee has the same reach as a polearm despite being a katana.
 export function isPolearm(object: WeaponCandidate): boolean {
     if (object?.oclass !== WEAPON_CLASS && object?.oclass !== TOOL_CLASS) return false;
-    const skill = OBJECT_SUBTYPE[object.otyp];
+    const skill = objectSkill(object.otyp);
     return skill === P_POLEARMS || skill === P_LANCE
         || artifactById(object.oartifact)?.name === 'Snickersnee';
 }
 // C obj.h:is_sword().
 export function isSword(object: GameObject): boolean {
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return object.oclass === WEAPON_CLASS && skill >= P_SHORT_SWORD && skill <= P_SABER;
 }

@@ -1,5 +1,14 @@
 // Hero eating and nutrition. Ports from eat.c.
 
+import {
+    objectDelay, objectCharged, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR,
+    CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF,
+    FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE,
+    LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, OBJECT_NUTRITION,
+    OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION,
+    SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION,
+    requireObjectData,
+} from './object_data.js';
 import { heroCannotVomit, sameMonsterRace } from './mondata.js';
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands } from './potion.js';
 import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
@@ -68,7 +77,6 @@ import { AD_BLND, AD_HALU, AD_POLY, AD_STUN, AT_ENGL, AT_MAGC } from './monster_
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_CONVEYS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_SYMBOL, monsterHasProperName, monsterIsGiant, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, monsterTypeName, requireMonsterData } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge } from './o_init.js';
-import { AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_CHARGED, OBJECT_DELAY, OBJECT_NAMES, OBJECT_NUTRITION, OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, requireObjectData } from './object_data.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -2414,7 +2422,7 @@ export async function doeat() {
             if (incrementConduct('unvegan', state) && !logged)
                 recordGameLogEvent(`consumed animal products (${name}) for the first time`, { state, flags: LL_CONDUCT });
         }
-        meal.reqtime = requireObjectData(OBJECT_DELAY, food.otyp);
+        meal.reqtime = objectDelay(food.otyp);
         if (food.otyp !== FORTUNE_COOKIE && (food.cursed
             || ![LEMBAS_WAFER, CRAM_RATION].includes(food.otyp)
                 && state.moves - food.age > (food.blessed ? 50 : 30)
@@ -2569,7 +2577,7 @@ export async function gethungry({ invulnerable = false } = {}) {
                     const soleProtection = !sources?.invoked && !sources?.carried?.length
                         && (!others.length || others.length === 1 && others[0]?.slot === 'uright'
                             && game.uright?.otyp === RIN_PROTECTION && !(game.uright.spe || 0));
-                    if ((ring.spe || 0) !== 0 || !OBJECT_CHARGED[ring.otyp]
+                    if ((ring.spe || 0) !== 0 || !objectCharged(ring.otyp)
                         || ring.otyp === RIN_PROTECTION && soleProtection)
                         u.uhunger--;
                 }
@@ -2587,7 +2595,7 @@ export async function gethungry({ invulnerable = false } = {}) {
                     const others = (sources?.worn || []).filter(source => source.slot !== 'uright');
                     const soleProtection = !sources?.invoked && !sources?.carried?.length
                         && (!others.length);
-                    if ((ring.spe || 0) !== 0 || !OBJECT_CHARGED[ring.otyp]
+                    if ((ring.spe || 0) !== 0 || !objectCharged(ring.otyp)
                         || ring.otyp === RIN_PROTECTION && soleProtection)
                         u.uhunger--;
                 }

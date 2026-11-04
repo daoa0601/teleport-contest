@@ -768,7 +768,7 @@ OBJECT_MACRO_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS + (
 )
 
 CLASS_INVARIANT_ASSUMPTION = (
-    'mkobj.c keeps oclass equal to objects[otyp].oc_class on every struct obj and no initial row carries class 0, so the port\'s objectClass fallback (o_init.js:objectClassForType and its OBJECT_BASES loop) never fires inside these entry domains',
+    'mkobj.c keeps oclass equal to objects[otyp].oc_class on every struct obj and no initial row carries class 0, so the port\'s objectClass fallback (object_data.js:objectClassForType and its OBJECT_CLASS table) never fires inside these entry domains',
 )
 
 ARTIFACT_OBJECT_ASSUMPTIONS = (
@@ -788,9 +788,6 @@ def classed_object_state(prefix):
         classes = _objects_member(world, front, 'oc_class')
         world.pre.append(symbols[f'{prefix}.oclass']
                          == select_int(classes, symbols[f'{prefix}.otyp']))
-        # Only the domain probes reach objectClass's fallback branch, whose
-        # objectClassForType scans the whole OBJECT_BASES array (17 exits).
-        world.unroll = 20
     return state
 
 
@@ -883,8 +880,8 @@ STATE_SPECS += [
          arguments=object_predicate_arguments('obj'),
          probes=[('oclass correspondence omitted (pinned pick-axe)',
                   unrelated(lambda s: [s['obj.otyp'] == 259], 'obj.oclass'))],
-         mutants=[(OBJ_FILE, '&& OBJECT_SUBTYPE[object.otyp] !== 0;',
-                   '&& OBJECT_SUBTYPE[object.otyp] === 0;')]),
+         mutants=[(OBJ_FILE, '&& objectSkill(object.otyp) !== 0;',
+                   '&& objectSkill(object.otyp) === 0;')]),
     Spec('bimanual:tables', 'verification_bimanual', 'isBimanualObject', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION + (
@@ -893,8 +890,8 @@ STATE_SPECS += [
          arguments=object_predicate_arguments('obj'),
          probes=[('oclass correspondence omitted (pinned two-handed sword)',
                   unrelated(lambda s: [s['obj.otyp'] == 55], 'obj.oclass'))],
-         mutants=[(OBJ_FILE, '&& !!OBJECT_BIMANUAL[object.otyp];',
-                   '&& !OBJECT_BIMANUAL[object.otyp];')]),
+         mutants=[(OBJ_FILE, '&& !!objectBimanual(object.otyp);',
+                   '&& !objectBimanual(object.otyp);')]),
     Spec('is_missile:tables', 'verification_is_missile', 'isMissileObject', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + CLASS_INVARIANT_ASSUMPTION,
@@ -928,8 +925,8 @@ STATE_SPECS += [
          probes=[('launcher otyp correspondence omitted (pinned arrow)',
                   unrelated(lambda s: [s['launcher_present'] == 1,
                                        s['ammo.otyp'] == 18], 'launcher.otyp'))],
-         mutants=[(OBJ_FILE, '=== -(OBJECT_SUBTYPE[launcher.otyp] ?? 0);',
-                   '=== (OBJECT_SUBTYPE[launcher.otyp] ?? 0);')]),
+         mutants=[(OBJ_FILE, '=== -objectSkill(launcher.otyp);',
+                   '=== objectSkill(launcher.otyp);')]),
     Spec('is_poisonable:tables', 'verification_is_poisonable', 'isPoisonableObject', [],
          js_file=OBJ_FILE,
          state=OBJECT_STATE + [('obj.oartifact', SCHAR, 'obj.oartifact')],
@@ -962,8 +959,8 @@ STATE_SPECS += [
          arguments=object_predicate_arguments('obj'),
          probes=[('oclass correspondence omitted (pinned mace)',
                   unrelated(lambda s: [s['obj.otyp'] == 73], 'obj.oclass'))],
-         mutants=[(OBJ_FILE, 'return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & WHACK);',
-                   'return weaponOrTool && !!((OBJECT_DIR[object.otyp] ?? 0) & 2);')]),
+         mutants=[(OBJ_FILE, 'return weaponOrTool && !!(objectBaseDirection(object.otyp) & WHACK);',
+                   'return weaponOrTool && !!(objectBaseDirection(object.otyp) & 2);')]),
     Spec('is_flimsy:tables', 'verification_is_flimsy', 'isFlimsyObject', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + (
@@ -983,8 +980,8 @@ STATE_SPECS += [
          arguments=object_predicate_arguments('obj'),
          probes=[('otyp correspondence omitted (pinned pick-axe)',
                   unrelated(lambda s: [s['obj.otyp'] == 259], 'obj.otyp'))],
-         mutants=[(OBJ_FILE, 'OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;',
-                   'OBJECT_SUBTYPE[object.otyp] === P_AXE;')]),
+         mutants=[(OBJ_FILE, 'objectSkill(object.otyp) === P_PICK_AXE;',
+                   'objectSkill(object.otyp) === P_AXE;')]),
     Spec('is_axe:tables', 'verification_is_axe', 'isAxe', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS,
@@ -992,8 +989,8 @@ STATE_SPECS += [
          arguments=object_predicate_arguments('obj'),
          probes=[('otyp correspondence omitted (pinned axe)',
                   unrelated(lambda s: [s['obj.otyp'] == 44], 'obj.otyp'))],
-         mutants=[(OBJ_FILE, 'OBJECT_SUBTYPE[object.otyp] === P_AXE;',
-                   'OBJECT_SUBTYPE[object.otyp] === P_PICK_AXE;')]),
+         mutants=[(OBJ_FILE, 'objectSkill(object.otyp) === P_AXE;',
+                   'objectSkill(object.otyp) === P_PICK_AXE;')]),
     Spec('is_blade:tables', 'verification_is_blade', 'isBlade', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS,

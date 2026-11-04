@@ -1,4 +1,5 @@
 // C dothrow.c:thitmonst()'s special-object handoff, before the attack roll.
+import { objectUnique, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, } from './object_data.js';
 import { deityName } from './alignment.js';
 import { reportHeroEncumbrance } from './pickup.js';
 import { STRAT_WAITMASK } from './const.js';
@@ -9,7 +10,6 @@ import { MONSTER_NAME } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, OBJECT_UNIQUE } from './object_data.js';
 import { definiteName, objectCombatName } from './objnam.js';
 import { finishQuest, isQuestArtifact, isQuestLeader } from './quest.js';
 import { heroIsDeaf } from './senses.js';
@@ -19,7 +19,7 @@ import { addInventoryItem } from './invent.js';
 // Null leaves ordinary hit admission to the caller. False means the leader
 // could not catch the item, so it falls without an attack roll.
 export async function catchQuestObject(monster, object, state) {
-    const unique = !!OBJECT_UNIQUE[object.otyp];
+    const unique = !!objectUnique(object.otyp);
     if (!(isQuestArtifact(object, state) || unique
         || object.otyp === FAKE_AMULET_OF_YENDOR && !object.known)
         || !isQuestLeader(monster, state))

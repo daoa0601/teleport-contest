@@ -1,13 +1,13 @@
 // dothrow.js — Throw and fire command front ends.
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
+import { objectClassForType, objectSkill, objectMagic, AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OBJECT_NAMES, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE, } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute, changeHeroLuck } from './attrib.js';
-import { AKLYS, BOOMERANG, BOULDER, BULLWHIP, CORPSE, EGG, OBJECT_SUBTYPE, SLING, ACID_VENOM, BLINDING_VENOM, CREAM_PIE, EXPENSIVE_CAMERA, CRYSTAL_BALL, LENSES, MELON, MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, OBJECT_HIT_BONUS, TRIDENT, WAN_STRIKING, BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES, KELP_FROND, OBJECT_COST, OBJECT_MAGIC, OBJECT_NAMES, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE } from './object_data.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, monsterHatesBlessings, monsterIsBig, monsterThrowsRocks, MONSTER_BODY_META, MONSTER_NAME, monsterDigests, monsterIsWhirly, monsterTypeName } from './monster_data.js';
 import { artifactById, artifactToHitBonus } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero } from './polyself.js';
@@ -20,7 +20,7 @@ import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
-import { objectClassForType, objectMaterial } from './o_init.js';
+import { objectMaterial } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './windows.js';
@@ -289,7 +289,7 @@ async function throwCommand(selectedItem = null, capabilityChecked = false, supp
     // valid even when downplayed.
     const launcher = game.uwep;
     const wieldingSling = !!launcher
-        && OBJECT_SUBTYPE[launcher.otyp] === OBJECT_SUBTYPE[SLING];
+        && objectSkill(launcher.otyp) === objectSkill(SLING);
     // C getobj() sorts its candidates independently of the carried chain.
     const throwClassification = (item) => {
         const objectClass = item.oclass || objectClassForType(item.otyp);
@@ -910,7 +910,7 @@ export function rangedTargetHitBonus(object, defender, { state = game, defenderN
         bonus += 6;
     }
     else if (object.oclass === WEAPON_CLASS || object.oclass === GEM_CLASS
-        || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0)) {
+        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0)) {
         bonus += weaponHitBonus(object, defender, { state, random, rollOne });
     }
     return bonus;
@@ -1566,7 +1566,7 @@ export function harmlessMissile(object, state = game) {
     }
 }
 export function projectileKind(object) {
-    const subtype = object ? OBJECT_SUBTYPE[object.otyp] ?? 0 : 0;
+    const subtype = object ? objectSkill(object.otyp) : 0;
     if (subtype >= -P_CROSSBOW && subtype <= -P_BOW)
         return 'ammunition';
     if (subtype >= -P_BOOMERANG && subtype <= -P_DART)
@@ -1585,7 +1585,7 @@ export function destroyMulchedProjectile(object) {
 export function shouldMulchMissile(object, { monsterMoving = false } = {}) {
     if (!object || !projectileKind(object)
         || OBJECT_NAMES[object.otyp] === 'boomerang'
-        || OBJECT_MAGIC[object.otyp])
+        || objectMagic(object.otyp))
         return false;
     const erosion = Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);
     const enchantment = object.spe ?? object.enchantment ?? 0;

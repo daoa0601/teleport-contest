@@ -1,4 +1,13 @@
 // C mplayer.c: player opponents, their equipment, and developer names.
+import {
+    objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL,
+    CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER,
+    ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR, GAUNTLETS_OF_POWER,
+    GRAY_DRAGON_SCALE_MAIL, JADE, KATANA, LEATHER_GLOVES, LEVITATION_BOOTS, LOADSTONE, LONG_SWORD,
+    LUCKSTONE, MACE, OBJECT_NAMES, ORCISH_DAGGER, QUARTERSTAFF, ROBE, SCALPEL, SHIELD_OF_REFLECTION,
+    SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN, WAR_HAMMER,
+    YELLOW_DRAGON_SCALE_MAIL,
+} from './object_data.js';
 import { artifactById, createRandomArtifact } from './artifacts.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -15,14 +24,6 @@ import type { Monster } from './monster_types.js';
 import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
 import { randomOffensiveMonsterItem, randomDefensiveMonsterItem, randomMiscMonsterItem } from './muse.js';
-import {
-    BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE,
-    CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR,
-    GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALE_MAIL, JADE, KATANA, LEATHER_GLOVES, LEVITATION_BOOTS, LOADSTONE,
-    LONG_SWORD, LUCKSTONE, MACE, OBJECT_MERGE, OBJECT_SUBTYPE, OBJECT_NAMES, ORCISH_DAGGER, QUARTERSTAFF, ROBE,
-    SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN,
-    WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL,
-} from './object_data.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { goodPosition } from './teleport_rules.js';
@@ -176,8 +177,8 @@ async function givePlayerWeapon(monster: Monster, type: number, special: boolean
     if (!rn2(3)) object.oerodeproof = true;
     else if (!rn2(2)) object.greased = true;
     if (special && rn2(2)) createRandomArtifact(object, { maximumValue: 99, adjustEnchantment: false });
-    if (OBJECT_MERGE[object.otyp] && !object.oartifact && monsterMightThrowWeapon(object)) {
-        object.quan += rn2(OBJECT_SUBTYPE[object.otyp] === P_SPEAR ? 4 : 8);
+    if (objectMerge(object.otyp) && !object.oartifact && monsterMightThrowWeapon(object)) {
+        object.quan += rn2(objectSkill(object.otyp) === P_SPEAR ? 4 : 8);
         object.quantity = object.quan;
     }
     object.owt = objectWeight(object);

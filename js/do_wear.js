@@ -10,13 +10,13 @@
 // hard_helmet(), adj_abon(), destroy_arm()/disintegrate_arm(),
 // obj_erode_type(), and the Armor_off()/off_msg() completion shared with
 // allmain.c.
+import { objectDelay, objectSkill, objectCharged, GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AKLYS, TOWEL, BLINDFOLD, BATTLE_AXE, } from './object_data.js';
 import { game, requireLiveGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './cmd.js';
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { monsterIsHumanoid, MONSTER_NAME, MONSTER_SIZE, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
-import { GRAY_DRAGON_SCALES, HELM_OF_OPPOSITE_ALIGNMENT, LENSES, MEAT_RING, OBJECT_DELAY, AMULET_OF_GUARDING, ALCHEMY_SMOCK, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, CORPSE, CORNUTHAUM, DUNCE_CAP, ELVEN_BOOTS, ELVEN_CLOAK, GAUNTLETS_OF_FUMBLING, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, FEDORA, FUMBLE_BOOTS, LEVITATION_BOOTS, RIN_FREE_ACTION, RIN_PROTECTION, GRAY_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, SHIELD_OF_DRAIN_RESISTANCE, SHIELD_OF_REFLECTION, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_PROPERTY, WATER_WALKING_BOOTS, AMULET_OF_CHANGE, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, OBJECT_CHARGED, AKLYS, TOWEL, BLINDFOLD, OBJECT_SUBTYPE, BATTLE_AXE } from './object_data.js';
 import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
 import { isBimanualObject, isSword, isFlimsyObject, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
 import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
@@ -283,7 +283,7 @@ export async function removeWornItem(action, itemAction = false) {
         game.context.move = 1;
         return;
     }
-    const delay = OBJECT_DELAY[object.otyp] ?? 0;
+    const delay = objectDelay(object.otyp);
     const isArmor = object.class === 'Armor' || object.oclass === 3;
     if (isArmor && delay > 0) {
         nomul(-delay);
@@ -428,7 +428,7 @@ async function putOnArmorObject(object) {
     // not run find_ac() until the command's monster/global time has passed.
     // Mark that once-per-input boundary; identification and Armor_on()
     // extrinsics remain later afternmv effects.
-    const delay = OBJECT_DELAY[object.otyp] ?? 0;
+    const delay = objectDelay(object.otyp);
     game._armorClassDirty = true;
     game._afterMove = { kind: 'wear', object };
     if (delay > 0) {
@@ -614,13 +614,13 @@ export async function continueBulkTakeoff(state = game) {
 function removalDelay(slot, state) {
     const object = takeoffSlotObject(slot, state);
     const armor = ['uarm', 'uarmc', 'uarmh', 'uarmg', 'uarms', 'uarmu', 'uarmf'].includes(slot);
-    let delay = armor && object ? OBJECT_DELAY[object.otyp] ?? 0 : 1;
+    let delay = armor && object ? objectDelay(object.otyp) : 1;
     const cloak = takeoffSlotObject('uarmc', state);
     const suit = takeoffSlotObject('uarm', state);
     if ((slot === 'uarm' || slot === 'uarmu') && cloak)
-        delay += 2 * (OBJECT_DELAY[cloak.otyp] ?? 0) + 1;
+        delay += 2 * objectDelay(cloak.otyp) + 1;
     if (slot === 'uarmu' && suit)
-        delay += 2 * (OBJECT_DELAY[suit.otyp] ?? 0);
+        delay += 2 * objectDelay(suit.otyp);
     return delay;
 }
 async function removeSelectedSlot(slot, state) {
@@ -765,7 +765,7 @@ async function betterNotTakeThatOff(object, state = game) {
     return !await paranoidQuery(true, `Take off your ${armorSimpleName(object)} despite carrying a dead ${objectMonsterName(corpse)}?`);
 }
 function weaponNoun(object) {
-    const skill = object ? OBJECT_SUBTYPE[object.otyp] : undefined;
+    const skill = object ? objectSkill(object.otyp) : undefined;
     return skill !== undefined && [P_SHORT_SWORD, P_BROAD_SWORD, P_LONG_SWORD, P_TWO_HANDED_SWORD, P_SABER].includes(skill)
         ? 'sword' : object?.otyp === BATTLE_AXE ? 'axe' : 'weapon';
 }
@@ -2568,7 +2568,7 @@ function learnRing(ring, observable, state) {
             learnObjectType(ring.otyp, state);
         }
     }
-    if (ring.dknown && objectTypeKnown(ring, state) && OBJECT_CHARGED[ring.otyp])
+    if (ring.dknown && objectTypeKnown(ring, state) && objectCharged(ring.otyp))
         ring.known = true;
 }
 function currentEyewear() {

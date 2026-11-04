@@ -1,3 +1,4 @@
+import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LEATHER_GLOVES, LONG_SWORD, MAGIC_LAMP, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION, POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROBE, ROCK, SCR_BLANK_PAPER, SPEAR, STATUE, TALLOW_CANDLE, TWO_HANDED_SWORD, WAX_CANDLE, } from '../js/object_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { requireScreenRow } from './support/screen.js';
 import test from 'node:test';
@@ -12,7 +13,6 @@ import { inventoryItemDescription } from '../js/invent.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { linkObjectToMonsterInventory } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { ACID_VENOM, AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, ARROW, BOOMERANG, BOW, CLOVE_OF_GARLIC, CREAM_PIE, DAGGER, DART, EGG, FIGURINE, LEATHER_GLOVES, LONG_SWORD, MAGIC_LAMP, OBJECT_SUBTYPE, OIL_LAMP, PICK_AXE, POT_FRUIT_JUICE, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HEALING, POT_LEVITATION, POT_MONSTER_DETECTION, POT_INVISIBILITY, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_RESTORE_ABILITY, POT_SICKNESS, POT_SLEEPING, POT_WATER, ROBE, ROCK, SCR_BLANK_PAPER, SPEAR, STATUE, TALLOW_CANDLE, TWO_HANDED_SWORD, WAX_CANDLE, } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryItem } from '../js/invent.js';
@@ -66,7 +66,7 @@ async function installLowCapacityRockBurden(quantity) {
     });
 }
 function setBasicWeaponSkill(object) {
-    const skill = Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0);
+    const skill = Math.abs(objectSkill(object.otyp));
     installHeroWeaponSkills({ [skill]: P_BASIC });
     return skill;
 }

@@ -3,6 +3,7 @@
 // include/artilist.h.  Keep artifact identity separate from the base object:
 // readobjnam() first resolves the artifact to an object type, mksobj() builds
 // that ordinary object, and oname() then commits the named artifact.
+import { objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
 import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ARTI } from './const.js';
 import { isok } from './cmd.js';
@@ -14,10 +15,9 @@ import { insideShopRoomAt, objectTypeKnown } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer } from './mkobj.js';
 import { ensureHeroSkills } from './skills.js';
 import { races, roles } from './roles.js';
-import { objectClassForType, recordObjectEncounter, objectMaterial } from './o_init.js';
+import { recordObjectEncounter, objectMaterial } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
-import { GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_UNIQUE, requireObjectData, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL } from './object_data.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
@@ -325,7 +325,7 @@ export function discoverArtifact(id, state = game) {
 }
 // C mk_artifact() without an alignment: convert an existing object.
 export function createRandomArtifact(object, { maximumValue = 99, adjustEnchantment = true, state = game, } = {}) {
-    if (OBJECT_UNIQUE[object.otyp])
+    if (objectUnique(object.otyp))
         return object;
     const candidates = artifactList(state).filter((artifact) => artifact.baseType === object.otyp &&
         !artifact.noGeneration &&
@@ -371,7 +371,7 @@ export async function createArtifactGift(alignment, maximumValue, state = game) 
             break;
         }
         const weapon = objectClassForType(artifact.baseType) === 2;
-        const skill = Math.abs(requireObjectData(OBJECT_SUBTYPE, artifact.baseType));
+        const skill = Math.abs(objectSkill(artifact.baseType));
         const compatibility = weapon ? (skills?.[skill]?.maxSkill ?? 0) : P_SKILLED;
         if ((artifact.alignment !== null || (state.u.ugifts ?? 0) > 0 || !rn2(3)) &&
             (!rn2(4) || compatibility >= P_SKILLED || (compatibility >= P_BASIC && rn2(2)))) {
@@ -1662,7 +1662,7 @@ export async function deactivateArtifactProperty(object, artifact, { state = gam
 // still consumes a turn after retouching, but its only effect is the ordinary
 // "Nothing happens." line.
 export async function doinvoke() {
-    const object = await chooseInventoryObject('invoke', candidate => candidate.oartifact || OBJECT_UNIQUE[candidate.otyp] || candidate.otyp === CRYSTAL_BALL
+    const object = await chooseInventoryObject('invoke', candidate => candidate.oartifact || objectUnique(candidate.otyp) || candidate.otyp === CRYSTAL_BALL
         || candidate.otyp === FAKE_AMULET_OF_YENDOR && !candidate.known
         ? GETOBJ_SUGGEST : GETOBJ_EXCLUDE, { forcePrompt: true });
     if (!object) {

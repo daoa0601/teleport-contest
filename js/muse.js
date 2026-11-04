@@ -6,6 +6,7 @@
 // you_aggravate), searches_for_item, and the stoning/sliming self-cures
 // (munstone/mon_consume_unstone/cures_stoning/mcould_eat_tin/munslime/
 // muse_unslime/cures_sliming).
+import { objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL, } from './object_data.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, loseHeroHp, roomsAt } from './hack.js';
@@ -19,7 +20,6 @@ import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
 import { MONSTER_ATTACKS, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasEyes, monsterHasNoHands, monsterHatesLight, monsterHatesSilver, monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls, monsterThrowsRocks } from './monster_data.js';
 import { AD_FIRE, AD_HEAL, AD_RBRE, AT_BREA, AT_EXPL, AT_GAZE } from './monster_attack_types.js';
 import { isBimanualObject } from './object_properties.js';
-import { AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP, CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL, ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_SUBTYPE, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER, SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING } from './object_data.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { dragonFormForArmor, heroSpecies } from './polyself.js';
 import { findNearbyMonsterPosition, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport_rules.js';
@@ -87,7 +87,6 @@ import { weaponReflects } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
 import { W_AMUL, W_ARMS } from './const.js';
 import { recordObjectKnowledge } from './o_init.js';
-import { SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALES, SILVER_DRAGON_SCALE_MAIL } from './object_data.js';
 import { castNativeRay, hitMonsterWithRay } from './zap.js';
 import { hitObjectWithWand } from './zap.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
@@ -1989,7 +1988,7 @@ export function monsterSearchesForItem(monster, object, state) {
                 return MONSTER_SYMBOL[monster.mnum] !== S_EYE && MONSTER_SYMBOL[monster.mnum] !== S_LIGHT;
             if (type === WAN_POLYMORPH)
                 return (MONSTER_DIFFICULTY[monster.mnum] ?? 0) < 6;
-            return OBJECT_DIR[type] === RAY || type === WAN_STRIKING || type === WAN_UNDEAD_TURNING
+            return objectBaseDirection(type) === RAY || type === WAN_STRIKING || type === WAN_UNDEAD_TURNING
                 || type === WAN_TELEPORTATION || type === WAN_CREATE_MONSTER;
         case POTION_CLASS:
             return [POT_HEALING, POT_EXTRA_HEALING, POT_FULL_HEALING, POT_POLYMORPH, POT_GAIN_LEVEL,
@@ -2042,7 +2041,7 @@ export function monsterCanOpenTin(monster) {
     const inventory = monster.minvent || monster.inventory || [];
     const wielded = monsterWieldedWeapon(monster);
     const opensTin = (object) => object.otyp === TIN_OPENER
-        || (object.oclass === 2 && [P_DAGGER, P_KNIFE].includes(OBJECT_SUBTYPE[object.otyp] ?? 0));
+        || (object.oclass === 2 && [P_DAGGER, P_KNIFE].includes(objectSkill(object.otyp)));
     if (wielded && ((wielded.owornmask ?? 0) & W_WEP) && willWeld(wielded))
         return inventory.includes(wielded) && opensTin(wielded);
     return inventory.some(opensTin);

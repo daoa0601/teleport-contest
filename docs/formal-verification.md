@@ -6,7 +6,7 @@ A proof that the whole port is equivalent to C is not feasible: about 250k
 lines of C, 17k lines of Lua, and 209k lines of TypeScript with 2,600 async
 functions. Machine-checked equivalence of individual functions is feasible and
 cheap for the arithmetic and RNG layer. A working prototype in
-`verification/equivalence/` now proves 109 scoped C/JavaScript
+`verification/equivalence/` now proves 173 scoped C/JavaScript
 claims. Use it as a CI check on leaf functions, add function-level
 differential fuzzing for stateful code, and keep whole-game equivalence
 empirical: session replay, ledgers, and the state oracle.
@@ -42,8 +42,8 @@ over rank 4.
 ## The proof of concept
 
 `cd verification/equivalence && uv run prove.py` (clang and uv).
-`--skip-slow` excludes the two slow table claims and their negative checks, with
-an explicit `SKIPPED` line for each. The default includes all 52 claims.
+`--skip-slow` excludes claims marked slow and their negative checks, with
+an explicit `SKIPPED` line for each. The default includes every claim in the ledger.
 In a worktree, set `NETHACK_RECORDER` to the main checkout's pinned recorder.
 
 **Claim.** For every input in the domain, every random sequence (core and
@@ -222,6 +222,22 @@ split `rnl` row use this batch's complete runs.
 | `glyph_to_explosion` | `display.h:glyph_to_explosion` ↔ `glyph_numbers.js:glyphToExplosion` | Same domain | 2×2 | 2.5 s |
 | `glyph_to_trap` | `display.h:glyph_to_trap` ↔ `glyph_numbers.js:glyphToTrap` | Same domain | 2×2 | 2.8 s |
 | `glyph_to_cmap` | `glyphs.c:glyph_to_cmap` ↔ `getpos.js:glyphToCmapSymbol` | Terrain span GLYPH_CMAP_STONE_OFF..GLYPH_SWALLOW_OFF; port is null outside it | 10×7 | 8.0 s |
+
+| `object_class:tables` | `objects.h:oc_class` ↔ `object_data.js:objectClassForType` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_material:tables` (slow) | `objects.h:oc_material` ↔ `object_data.js:objectBaseMaterial` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_weight:tables` (slow) | `objects.h:oc_weight` ↔ `object_data.js:objectBaseWeight` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_cost:tables` (slow) | `objects.h:oc_cost` ↔ `object_data.js:objectBaseCost` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_delay:tables` (slow) | `objects.h:oc_delay` ↔ `object_data.js:objectDelay` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_property:tables` (slow) | `objects.h:oc_oprop` ↔ `object_data.js:objectPropertyId` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_direction:tables` (slow) | `objects.h:oc_dir` ↔ `object_data.js:objectBaseDirection` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.3 s |
+| `object_skill:tables` (slow) | `objects.h:oc_skill` ↔ `object_data.js:objectSkill` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_bimanual:tables` (slow) | `objects.h:oc_bimanual` ↔ `object_data.js:objectBimanual` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_merge:tables` (slow) | `objects.h:oc_merge` ↔ `object_data.js:objectMerge` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.7 s |
+| `object_uses_known:tables` (slow) | `objects.h:oc_uses_known` ↔ `object_data.js:objectUsesKnown` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_unique:tables` (slow) | `objects.h:oc_unique` ↔ `object_data.js:objectUnique` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_magic:tables` (slow) | `objects.h:oc_magic` ↔ `object_data.js:objectMagic` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_charged:tables` (slow) | `objects.h:oc_charged` ↔ `object_data.js:objectCharged` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.4 s |
+| `object_class:outside` | Explicit port-only guarded C harness ↔ `object_data.js:objectClassForType` | Every int32 index outside 0..NUM_OBJECTS-1; result 0 | 1×1 | 1.4 s |
 
 **Bounded-state batch.** The complete 52-claim run passed in **772.20 s**,
 including **56 domain probes** and **60 mutant checks**, and wrote the ledger
@@ -716,6 +732,77 @@ against the rewritten ledger.
 The focused verifier suites pass unchanged with the new claims loaded:
 **95 executor**, **4 query** and **9 selection tests**, plus the **36
 ledger CLI tests**. `npm run compile` and `npm run check` passed.
+
+**Object-field lookup batch (fv-equivalence-batch-10).** Fifteen claims pair
+fourteen field readers in `object_data.ts` with real reads of the pinned
+`objects.c:obj_init` initializer through `harness/object_fields.c`. No table
+equality is assumed: clang interprets objects.h and the JS executor reads each
+emitted column independently, with a symbolic index spanning every one of the
+481 object types. This includes the strange object and all generic class
+markers. `oc_skill` retains the signed `oc_subtyp` values, and `oc_bimanual`
+retains `oc_big` on armor as well as weapons. Material and direction claims
+cover the base columns; per-game shuffling and the wand-of-nothing direction
+remain with `o_init.ts:objectMaterial` and `object_data.ts:objectDirection`.
+Discovery state is outside these claims.
+
+`objectClassForType` now owns the class lookup for initialization, display,
+detection, naming and Lua. The former four standalone copies and the class
+range loop in `getObjectDefinition` are gone. The class column comes from the
+same objects.h initializer as the other metadata, rather than from class
+ranges. C assigns class 1 to type 0 and each generic row its own class. The Lua
+name lookup previously rejected a class-filtered generic potion; the added
+behavior test failed before the consolidation and passes afterward. The type-0
+class and missing/invalid input behavior also have focused tests. Callers that
+accept absent objects continue to receive class 0 for null or undefined.
+
+The Lua metadata report also read the initial wand-of-nothing direction after
+`o_init.c:init_objects` had selected its direction for the current game. It now
+uses the existing `objectDirection` owner, as `nhlobj.c:l_obj_objects_to_table`
+reads the live `oc_dir` field. A second failing-first Lua behavior test covers
+both direction choices. The table proof continues to describe the initial
+column, without claiming to prove startup's RNG draw or state initialization.
+
+The outside-domain claim proves the port's explicit zero result for all int32
+indices outside its table. Its C harness deliberately adds a guard; this is a
+port contract, not a claim about native out-of-bounds reads. Non-integers, NaN,
+infinities, null and undefined are covered by behavior tests, outside the
+integer executor. Each table probe drops only index correspondence and pins
+both sides to concrete valid rows; each result mutant uses one concrete row.
+The outside-domain probe pins a C-int narrowing case and its mutant pins -1.
+
+Only the class and outside-domain claims are fast. The other thirteen claims
+are slow to reserve the existing CI budget even though each is below 5 seconds
+in the local pilot. The runner reports per-claim totals including probes and
+mutants so the CI split can be reviewed against total cost. Local totals are
+recorded below for the successful complete run, including both logging
+modes, probes and mutants. These are local measurements, not hosted-runner times.
+The fifteen new claims cost **25.73 s** in total; the two fast claims cost
+**3.36 s**, leaving margin under the two-minute allowance even at 7× that cost.
+The complete run passed **173 claims, 181 probes and 192 mutant checks** and
+wrote the ledger after success. The subsequent fast ledger check passed all
+139 fast claims and checked the complete ledger metadata, with 34 slow claims
+explicitly skipped. Compilation, 208 focused behavior tests,
+110 verifier tests, 36 ledger tests and the static ledgers pass. Large game
+corpora remain for CI; the requested fresh12041–fresh12050 directories were
+absent locally.
+
+| Claim | Local total | Runtime |
+|---|---:|---|
+| `object_class:tables` | 1.76 s | fast |
+| `object_material:tables` | 1.75 s | slow |
+| `object_weight:tables` | 1.74 s | slow |
+| `object_cost:tables` | 1.74 s | slow |
+| `object_delay:tables` | 1.69 s | slow |
+| `object_property:tables` | 1.70 s | slow |
+| `object_direction:tables` | 1.65 s | slow |
+| `object_skill:tables` | 1.67 s | slow |
+| `object_bimanual:tables` | 1.68 s | slow |
+| `object_merge:tables` | 1.96 s | slow |
+| `object_uses_known:tables` | 1.71 s | slow |
+| `object_unique:tables` | 1.69 s | slow |
+| `object_magic:tables` | 1.69 s | slow |
+| `object_charged:tables` | 1.70 s | slow |
+| `object_class:outside` | 1.60 s | fast |
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
 that followed took 1037.68 s), including **77 domain probes** and **83

@@ -3,6 +3,10 @@
 // stealamulet(), maybe_absorb_item(), mdrop_obj(), mdrop_special_objs(),
 // relobj().
 
+import {
+    objectDelay, BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL,
+    BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
+} from './object_data.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -27,12 +31,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monste
 import { makePlural } from './objnam.js';
 
 import { AD_SITM } from './monster_attack_types.js';
-import {
-    BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES,
-    AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION,
-    FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD,
-} from './object_data.js';
-import { OBJECT_DELAY } from './object_data.js';
+
 import {
     definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming,
     observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName,
@@ -314,7 +313,7 @@ export async function stealFromHero(
     let removalMessage = null;
     let charmed = false;
     if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
-        const delay = OBJECT_DELAY[object.otyp] ?? 0;
+        const delay = objectDelay(object.otyp);
         const helplessReason = game._helplessReason;
         const reason = typeof helplessReason === 'string' ? helplessReason : helplessReason?.text;
         const unresponsive = heroIsUnaware(game) || (heroHasInvoluntaryDelay(game)

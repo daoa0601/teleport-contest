@@ -1,4 +1,5 @@
 // C pickup.c: command pickup, automatic pickup, floor inspection,
+import { objectClassForType, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE, } from './object_data.js';
 import { commandResultCancelled, cmdq_add_ec, setMulti } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
 import { monsterStagger } from './mondata.js';
@@ -15,7 +16,7 @@ import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, sel
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, updateContainerWeights, restoreRejectedSplit, startGlobTimeout } from './mkobj.js';
 import { hitFloorWithObject } from './dothrow.js';
-import { learnObjectType, objectClassForType, observeObject } from './o_init.js';
+import { learnObjectType, observeObject } from './o_init.js';
 import { OBJECT_CLASS_SYMBOLS, consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, newsym_force } from './display.js';
 import { floorObjectDescription, pricedFloorObjectDescription, lookHere, readFloorEngraving, dungeonFeatureAt } from './invent.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -32,7 +33,6 @@ import { addShopObjectToBill, billedPickupQuote, chargeUnpaidUsage, costlySpot, 
 import { pickupLocationProblem } from './pickup_location.js';
 import { finishGhostlyPickup } from './bones_object.js';
 import { touchArtifactByHero } from './artifacts.js';
-import { AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BELL_OF_OPENING, BOULDER, BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CHEST, CORPSE, CRAM_RATION, FOOD_RATION, GOLD_PIECE, HORN_OF_PLENTY, ICE_BOX, LARGE_BOX, LEASH, LEMBAS_WAFER, LOADSTONE, MAGIC_LAMP, OIL_LAMP, OILSKIN_SACK, POT_OIL, SACK, SCR_SCARE_MONSTER, SPE_BOOK_OF_THE_DEAD, SPE_WIZARD_LOCK, STATUE, TALLOW_CANDLE, WAN_CANCELLATION, WAX_CANDLE } from './object_data.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { triggerChestTrap } from './chest_trap.js';

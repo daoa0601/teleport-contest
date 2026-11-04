@@ -2,10 +2,10 @@
 // C ref: extralev.c — makeroguerooms(), roguecorr(), roguejoin(), miniwalk()
 // (a modified mkmaze.c walkfrom), corr() and makerogueghost(). Regular room
 // and corridor generation lives in mklev.ts (mklev.c).
+import { objectBaseWeight, ARROW, BOW, FAKE_AMULET_OF_YENDOR, FOOD_RATION, MACE, RING_MAIL, TWO_HANDED_SWORD, } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { rn2, rn1, rnd } from './rng.js';
 import { CORR, D_NODOOR, OROOM, SCORR, XL_DOWN, XL_LEFT, XL_RIGHT, XL_UP, } from './const.js';
-import { ARROW, BOW, FAKE_AMULET_OF_YENDOR, FOOD_RATION, MACE, OBJECT_WEIGHT, RING_MAIL, TWO_HANDED_SWORD, } from './object_data.js';
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { makemon } from './makemon.js';
 import { mksobj_at, curseObjectState } from './mkobj.js';
@@ -232,7 +232,7 @@ export async function makerogueghost() {
         ghostobj = await mksobj_at(FOOD_RATION, x, y, false, false);
         ghostobj.quan = rnd(7);
         ghostobj.quantity = ghostobj.quan;
-        ghostobj.owt = (OBJECT_WEIGHT[FOOD_RATION] ?? 1) * ghostobj.quan;
+        ghostobj.owt = objectBaseWeight(FOOD_RATION) * ghostobj.quan;
     }
     if (rn2(2)) {
         ghostobj = await mksobj_at(MACE, x, y, false, false);
@@ -254,7 +254,7 @@ export async function makerogueghost() {
     ghostobj.spe = 0;
     ghostobj.quan = rn1(10, 25);
     ghostobj.quantity = ghostobj.quan;
-    ghostobj.owt = (OBJECT_WEIGHT[ARROW] ?? 1) * ghostobj.quan;
+    ghostobj.owt = objectBaseWeight(ARROW) * ghostobj.quan;
     if (rn2(4))
         curseObjectState(ghostobj);
     if (rn2(2)) {

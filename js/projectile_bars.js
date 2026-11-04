@@ -1,4 +1,5 @@
 // Shared missile contact with iron bars. C mthrowu.c:hits_bars()/hit_bars().
+import { objectSkill, BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, } from './object_data.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { currentStrength } from './attrib.js';
 import { CORR, DOOR, P_BOW, P_CROSSBOW, P_DART, P_KNIFE, P_SHURIKEN, P_SPEAR, ROOM, W_NONDIGGABLE, WT_IRON_BALL_INCR, } from './const.js';
@@ -9,7 +10,6 @@ import { game, requireGameLevel } from './gstate.js';
 import { MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { breakFloorObject, breakObjectAtLocation } from './dothrow.js';
-import { BOULDER, CORPSE, CREDIT_CARD, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, OBJECT_SUBTYPE, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { harmlessMissile } from './dothrow.js';
 import { rn2 } from './rng.js';
@@ -96,9 +96,9 @@ export async function hitIronBars(object, attack, { x, y, barsX, barsY, state = 
 function objectHitsBars(object) {
     switch (object.oclass) {
         case WEAPON_CLASS:
-            return !SMALL_WEAPON_SKILLS.has(requireObjectData(OBJECT_SUBTYPE, object.otyp));
+            return !SMALL_WEAPON_SKILLS.has(objectSkill(object.otyp));
         case ARMOR_CLASS:
-            return requireObjectData(OBJECT_SUBTYPE, object.otyp) !== ARM_GLOVES;
+            return objectSkill(object.otyp) !== ARM_GLOVES;
         case TOOL_CLASS:
             return !SMALL_TOOLS.has(object.otyp);
         case ROCK_CLASS:

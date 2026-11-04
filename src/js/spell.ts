@@ -1,3 +1,17 @@
+import {
+    objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING,
+    CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN,
+    OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, QUARTERSTAFF, requireObjectData, ROBE,
+    SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR,
+    SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER,
+    SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD,
+    SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE,
+    SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF,
+    SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT,
+    SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION,
+    SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH,
+    SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK,
+} from './object_data.js';
 import type { GameState, PlayingGameState, MemorizedSpell, SpellbookContext } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -98,22 +112,6 @@ import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';
 import { applyWandEffect } from './zap.js';
-import {
-    BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, OBJECT_DELAY,
-    OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_INITIAL_KNOWN, OBJECT_NAMES,
-    OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT,
-    QUARTERSTAFF, requireObjectData, ROBE, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD,
-    SPE_CANCELLATION, SPE_CAUSE_FEAR, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER,
-    SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR,
-    SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD,
-    SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG,
-    SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL,
-    SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY,
-    SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING,
-    SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE,
-    SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH,
-    SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK,
-} from './object_data.js';
 import {
     loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition,
     shouldShowGetposTip,
@@ -550,7 +548,7 @@ function studyState(state: GameState): SpellbookContext {
 
 function readingDelay(type: number): number | null {
     const level = requireObjectData(OBJECT_SPELL_LEVEL, type);
-    const delay = requireObjectData(OBJECT_DELAY, type);
+    const delay = objectDelay(type);
     if (level >= 1 && level <= 2) return -delay;
     if (level <= 4 && level >= 3) return -(level - 1) * delay;
     if (level <= 6 && level >= 5) return -level * delay;
@@ -692,7 +690,7 @@ async function applySpellEffect(source: GameObject, skill: number, atSelf: boole
 
 async function applyDirectedSpell(source: GameObject, atSelf: boolean, state: PlayingGameState) {
     const hero = state.u;
-    if (OBJECT_DIR[source.otyp] !== 1) {
+    if (objectBaseDirection(source.otyp) !== 1) {
         if (atSelf) hero.dx = hero.dy = hero.dz = 0;
         else if (!await promptDirection()) {
             // Native cancellation releases the spell in the retained direction.
@@ -860,7 +858,7 @@ export function percentSuccess(spell: SpellReference, state: GameState = game): 
     else chance += Math.min(20, Math.trunc(15 * -difficulty / level));
     chance = Math.max(0, Math.min(120, chance));
     const shield = wornObject('uarms', state);
-    if (shield && objectWeight(shield) > (OBJECT_WEIGHT[SMALL_SHIELD] ?? 0))
+    if (shield && objectWeight(shield) > objectBaseWeight(SMALL_SHIELD))
         chance = Math.trunc(chance / (OBJECT_NAMES[type] === role.special ? 2 : 4));
     chance = Math.trunc(chance * (20 - castingPenalty) / 15) - castingPenalty;
     return Math.max(0, Math.min(100, chance));
@@ -1454,8 +1452,7 @@ export async function applyPotionSpell(source: GameObject, { state = game }: { s
 // role.c:role_init() (role.c:2088), carried by startup.ts.
 export function spellSkillType(otyp: number, state: GameState = game): number {
     if (roleInitClericLightSchool(otyp, state)) return P_CLERIC_SPELL;
-    const subtype = OBJECT_SUBTYPE[otyp];
-    if (subtype === undefined) throw new RangeError(`Unknown spell object type ${otyp}`);
+    const subtype = objectSkill(otyp);
     return subtype;
 }
 

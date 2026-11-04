@@ -2,8 +2,21 @@ import { guardianGenus } from './mon.js';
 // objnam.js — Object wish-name parsing, weighted lookup, and visible naming.
 // C refs: objnam.c readobjnam(), rnd_otyp_by_namedesc(), xname(), doname_base().
 
+import {
+    objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown,
+    objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK,
+    TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM,
+    BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR,
+    FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY,
+    SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING,
+    SPE_NOVEL, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_NOWISH,
+    OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING,
+    GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH,
+    MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN,
+    HORN_OF_PLENTY, POT_OIL,
+} from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
-import { objectProb, objectMaterial, objectClassForType, observeObject } from './o_init.js';
+import { objectProb, objectMaterial, observeObject } from './o_init.js';
 import type { GameState, Fruit } from './game_state.js';
 import type { GameObject, ObjectBlessing } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -27,7 +40,6 @@ import { tin_variety_txt, set_tin_variety, tin_details, consume_oeaten, obj_nutr
 import { isBimanualObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isWeaponTool, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind } from './senses.js';
-import { CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, OBJECT_BASES, requireObjectData, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_MERGE, OBJECT_NOWISH, OBJECT_CHARGED, OBJECT_MAGIC, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, OBJECT_WEIGHT, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, OBJECT_COST, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL } from './object_data.js';
 import { isBeingTakenOff, pendingArmorAction, armorSimpleName } from './do_wear.js';
 import { equipmentLightDescription } from './light.js';
 import { beginObjectBurn } from './timeout.js';
@@ -106,7 +118,7 @@ export function observeObjectForNaming(object: GameObject, {
     source?: Pick<GameObject, 'where' | 'ox' | 'oy'>;
     state?: GameState;
 } = {}): void {
-    if (OBJECT_UNIQUE[object.otyp] && OBJECT_USES_KNOWN[object.otyp]
+    if (objectUnique(object.otyp) && objectUsesKnown(object.otyp)
         && !objectTypeKnown(object, state)) object.known = false;
     if (!distant && !heroIsBlind(state)) observeObject(object, state);
     observeBucForNaming(object, state);
@@ -192,7 +204,7 @@ export function objectName(
         ? `ring called ${callName}` : `${appearance || 'unknown'} ring`;
     else if (oclass === POTION_CLASS) noun = callName
         ? `potion called ${callName}` : `${appearance || 'unknown'} potion`;
-    else if (oclass === SCROLL_CLASS) noun = callName ? `scroll called ${callName}` : OBJECT_MAGIC[object.otyp]
+    else if (oclass === SCROLL_CLASS) noun = callName ? `scroll called ${callName}` : objectMagic(object.otyp)
         ? `scroll labeled ${appearance || 'unknown'}` : `${appearance || trueName} scroll`;
     else if (oclass === SPBOOK_CLASS) noun = callName
         ? `${ordinaryName === 'novel' ? 'novel' : 'spellbook'} called ${callName}`
@@ -283,7 +295,7 @@ export function killerObjectName(object: GameObject, state: GameState = game): s
     }
     // A possessive unique monster name already supplies its own article.
     if (quantity !== 1 || /(?:'s |s' )/i.test(name)) return name;
-    return OBJECT_UNIQUE[object.otyp] ? definiteName(name, state)
+    return objectUnique(object.otyp) ? definiteName(name, state)
         : withIndefiniteArticle(name);
 }
 
@@ -349,7 +361,7 @@ function physicalObjectNoun(object: ObjectNameView, noun: string, state: GameSta
         return `${historic ? 'historic ' : ''}statue of ${monster}`;
     }
     if (object.otyp === HEAVY_IRON_BALL)
-        return `${(object.owt ?? 0) > requireObjectData(OBJECT_WEIGHT, object.otyp) ? 'very ' : ''}heavy iron ball`;
+        return `${(object.owt ?? 0) > objectBaseWeight(object.otyp) ? 'very ' : ''}heavy iron ball`;
     if (object.otyp === BOULDER && object.corpsenm === 1) {
         object.corpsenm = 0;
         return 'next boulder';
@@ -441,7 +453,7 @@ export function simpleObjectTypeName(otyp: number, state: GameState = game): str
     }
     if (className) {
         if (!known) return className;
-        return OBJECT_UNIQUE[otyp] ? actual : `${className} of ${actual}`;
+        return objectUnique(otyp) ? actual : `${className} of ${actual}`;
     }
 
     const appearance = state.urole?.key === 'samurai'
@@ -488,7 +500,7 @@ export function minimalObjectName(object: ObjectNameView, state: GameState = gam
         oclass: object.oclass,
         dknown: !!object.dknown,
         known: object.oclass === AMULET_CLASS
-            ? !!object.known : !OBJECT_USES_KNOWN[object.otyp],
+            ? !!object.known : !objectUsesKnown(object.otyp),
         quan: 1,
         corpsenm: object.otyp === BOULDER ? 0 : -1,
         spe: object.otyp === SLIME_MOLD ? object.spe ?? 0 : 0,
@@ -557,7 +569,7 @@ export function objectLooksUnique(object: ObjectNameView, state: GameState = gam
     if (!object.dknown && !override) return false;
     const known = object.known || override;
     if (object.otyp === FAKE_AMULET_OF_YENDOR && !known) return true;
-    return !!OBJECT_UNIQUE[object.otyp] && (!!known || object.otyp === AMULET_OF_YENDOR);
+    return !!objectUnique(object.otyp) && (!!known || object.otyp === AMULET_OF_YENDOR);
 }
 
 // C ansimpleoname(): add an article to singular simple names.
@@ -566,7 +578,7 @@ export function simpleObjectNameWithArticle(object: ObjectNameView, state: GameS
     const quantity = object.quan ?? object.quantity ?? 1;
     if (quantity !== 1) return noun;
     const uniqueType = object.otyp === FAKE_AMULET_OF_YENDOR ? AMULET_OF_YENDOR : object.otyp;
-    if (OBJECT_UNIQUE[uniqueType] && noun === OBJECT_NAMES[uniqueType])
+    if (objectUnique(uniqueType) && noun === OBJECT_NAMES[uniqueType])
         return definiteName(noun, state);
     return withIndefiniteArticle(noun);
 }
@@ -807,17 +819,6 @@ const CLASS_PRESENTATION: Readonly<Partial<Record<number, string>>> = {
     [ROCK_CLASS]: 'Boulders',
 };
 
-function objectClass(otyp: number): number {
-    for (let cls = 2; cls < OBJECT_BASES.length - 1; cls++) {
-        const first = OBJECT_BASES[cls];
-        const last = OBJECT_BASES[cls + 1];
-        if (first === undefined || last === undefined)
-            throw new RangeError(`Missing object class bounds for class ${cls}`);
-        if (otyp >= first && otyp < last) return cls;
-    }
-    return 1;
-}
-
 // C objnam.c:xname_flags(): several shuffled-description classes collapse to
 // their class noun when this particular object has not been seen.  Global
 // type knowledge does not override `dknown` here; a blind hero can know which
@@ -855,7 +856,7 @@ function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
     if ([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS]
         .includes(object.oclass)) return true;
     return object.oclass === TOOL_CLASS
-        && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0;
+        && objectSkill(object.otyp) !== 0;
 }
 
 function objectIsDamageable(object: Pick<GameObject, 'otyp' | 'oclass'>): boolean {
@@ -1018,7 +1019,7 @@ function applyWishEnchantment(
         : Math.min(SPE_LIM, Math.abs(requested));
     if (requested !== null && !wizardWish) {
         const enchantable = object.oclass === ARMOR_CLASS || object.oclass === WEAPON_CLASS
-            || isWeaponTool(object) || (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]);
+            || isWeaponTool(object) || (object.oclass === RING_CLASS && objectCharged(object.otyp));
         if (enchantable) {
             if (value > rnd(5) && value > object.spe) value = 0;
             if (value > 2 && luck < 0) sign = -1;
@@ -1093,7 +1094,7 @@ async function applyWishQuantity(
         }
         return;
     }
-    if (count <= 0 || !OBJECT_MERGE[object.otyp]) return;
+    if (count <= 0 || !objectMerge(object.otyp)) return;
     // The random allowance is checked even when a later ammunition or
     // candle exception grants the whole request.
     const allowed = wizardWish || count < rnd(6)
@@ -1139,7 +1140,7 @@ function gemPresentationName(
 
 export function wishedObjectPresentation(object: GameObject) {
     const otyp = object.otyp;
-    const cls = objectClass(otyp);
+    const cls = objectClassForType(otyp);
     const realName = requireObjectName(otyp);
     // xname() consults o_init.c's class knowledge independently of the
     // individual object's charge/enchantment `known` bit.  Keep the wished
@@ -1884,7 +1885,7 @@ export function randomTypeByDescription(name: string | null, oclass = 0, extraPr
 
 function randomWeaponBySkill(skill: number): number | null {
     const matches = objects.OBJECT_NAMES.flatMap((name, type) => name
-        && objectClassForType(type) === WEAPON_CLASS && objects.OBJECT_SUBTYPE[type] === skill ? [type] : []);
+        && objectClassForType(type) === WEAPON_CLASS && objects.objectSkill(type) === skill ? [type] : []);
     return matches.length ? matches[rn2(matches.length)] ?? null : null;
 }
 
@@ -2711,12 +2712,12 @@ async function describeTool(
     }
     const candle = item.otyp === TALLOW_CANDLE || item.otyp === WAX_CANDLE;
     if (candle || [OIL_LAMP, MAGIC_LAMP, BRASS_LANTERN].includes(item.otyp)) {
-        if (candle && remainingCandleFuel(item, state) < 20 * requireObjectData(OBJECT_COST, item.otyp))
+        if (candle && remainingCandleFuel(item, state) < 20 * objectBaseCost(item.otyp))
             details.prefix.push('partly used');
         if (item.lamplit) details.suffix = ' (lit)';
         return;
     }
-    if (known && OBJECT_CHARGED[item.otyp]) details.suffix = chargeDescription(item);
+    if (known && objectCharged(item.otyp)) details.suffix = chargeDescription(item);
 }
 
 function remainingCandleFuel(item: GameObject, state: GameState): number {
@@ -2873,7 +2874,7 @@ function quiverDescription(item: GameObject): string {
     switch (item.oclass) {
     case WEAPON_CLASS:
         return !isLauncherAmmunition(item) ? 'at the ready'
-            : OBJECT_SUBTYPE[item.otyp] === -P_BOW ? 'in quiver' : 'in quiver pouch';
+            : objectSkill(item.otyp) === -P_BOW ? 'in quiver' : 'in quiver pouch';
     case RING_CLASS:
     case AMULET_CLASS:
     case WAND_CLASS:
@@ -2959,7 +2960,7 @@ export async function objectDescription(object: GameObject, {
         || isWeaponTool(object))) prefix.push('poisoned');
     prefix.push(...erosionDescription(object, state));
     if (known && (object.oclass === WEAPON_CLASS || object.oclass === ARMOR_CLASS || isWeaponTool(object)
-        || object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]))
+        || object.oclass === RING_CLASS && objectCharged(object.otyp)))
         prefix.push(`${object.spe >= 0 ? '+' : ''}${object.spe}`);
     const details = await objectClassDescription(object, state);
     prefix.push(...details.prefix);
@@ -3008,7 +3009,7 @@ export function objectBlessingDescription(object: GameObject, state: GameState =
     if (object.cursed) return 'cursed';
     if (object.blessed) return 'blessed';
     const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
-    const retainsUncursed = (!(object.known || override) || !OBJECT_CHARGED[object.otyp]
+    const retainsUncursed = (!(object.known || override) || !objectCharged(object.otyp)
         || object.oclass === ARMOR_CLASS || object.oclass === RING_CLASS)
         && object.otyp !== SCROLL_OF_MAIL
         && object.otyp !== FAKE_AMULET_OF_YENDOR && object.otyp !== AMULET_OF_YENDOR
@@ -3020,7 +3021,7 @@ function uniqueObject(object: GameObject, state: GameState): boolean {
     const override = state.iflags.override_ID || object.overrideIdentified;
     if (!object.dknown && !override) return false;
     if (object.otyp === FAKE_AMULET_OF_YENDOR && !object.known && !override) return true;
-    return !!OBJECT_UNIQUE[object.otyp]
+    return !!objectUnique(object.otyp)
         && (object.known || !!override || object.otyp === AMULET_OF_YENDOR);
 }
 

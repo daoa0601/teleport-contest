@@ -1,4 +1,5 @@
 // Lua object handles and operations. C nhlobj.c.
+import { objectClassForType, objectBaseWeight, objectBaseCost, objectDelay, objectPropertyId, objectDirection, objectBimanual, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, ARROW, CORPSE, EGG, FIGURINE, STATUE, TIN, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_INITIAL_KNOWN, OBJECT_LARGE_DAMAGE, OBJECT_MATERIAL_NAMES, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_NUTRITION, OBJECT_PROB, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, } from '../object_data.js';
 import { CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, OBJECT_TIMER_KIND } from '../const.js';
 import { isok } from '../cmd.js';
 import { buryObject } from '../dig.js';
@@ -9,9 +10,8 @@ import { finishInventoryRemoval } from '../invent.js';
 import { cleanupObjectBurn } from '../timeout.js';
 import { mkobj, mksobj, addObjectToContainer, unlinkObject } from '../mkobj.js';
 import { MONSTER_NAME } from '../monster_data.js';
-import { ARROW, CORPSE, EGG, FIGURINE, STATUE, TIN, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_COLOR, OBJECT_COST, OBJECT_DELAY, OBJECT_DESCRIPTIONS, OBJECT_DIR, OBJECT_INITIAL_KNOWN, OBJECT_LARGE_DAMAGE, OBJECT_MAGIC, OBJECT_MATERIAL, OBJECT_MATERIAL_NAMES, OBJECT_MERGE, OBJECT_NAMES, OBJECT_NOWISH, OBJECT_NUTRITION, OBJECT_PROB, OBJECT_PROPERTY_ID, OBJECT_SMALL_DAMAGE, OBJECT_TOUGH, OBJECT_UNIQUE, OBJECT_USES_KNOWN, OBJECT_WEIGHT, } from '../object_data.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
-import { objectClassForType } from '../o_init.js';
+import { objectMaterial } from '../o_init.js';
 import { isPoisonableObject } from '../object_properties.js';
 import { readObjectName } from '../objnam.js';
 import { addInventoryItem } from '../invent.js';
@@ -354,24 +354,22 @@ function objectTable(item, state) {
 function classTable(type, state) {
     if (typeof type !== 'number' || !Number.isInteger(type) || type < 0 || type >= OBJECT_NAMES.length)
         throw new TypeError('obj.class requires an object or object type');
-    const material = state.objectMaterials?.[type] ?? OBJECT_MATERIAL[type];
-    if (material === undefined)
-        throw new Error(`Missing object material for type ${type}`);
+    const material = objectMaterial(type, state);
     return objectToLuaTable({
         name: OBJECT_NAMES[type],
         descr: state.objectDescriptions?.[type] ?? OBJECT_DESCRIPTIONS[type],
         uname: state._objectCallNames?.[type],
         name_known: Number(!!OBJECT_INITIAL_KNOWN[type] || !!state._knownObjectTypes?.has(type)),
         encountered: Number(!!state._encounteredObjectTypes?.has(type)),
-        merge: OBJECT_MERGE[type], uses_known: OBJECT_USES_KNOWN[type],
-        magic: OBJECT_MAGIC[type], charged: OBJECT_CHARGED[type],
-        unique: OBJECT_UNIQUE[type], nowish: OBJECT_NOWISH[type],
-        big: OBJECT_BIMANUAL[type], tough: state.objectToughness?.[type] ?? OBJECT_TOUGH[type],
-        dir: OBJECT_DIR[type],
+        merge: objectMerge(type), uses_known: objectUsesKnown(type),
+        magic: objectMagic(type), charged: objectCharged(type),
+        unique: objectUnique(type), nowish: OBJECT_NOWISH[type],
+        big: objectBimanual(type), tough: state.objectToughness?.[type] ?? OBJECT_TOUGH[type],
+        dir: objectDirection(type, state),
         material: OBJECT_MATERIAL_NAMES[material],
-        oprop: OBJECT_PROPERTY_ID[type], class: OBJECT_CLASS_SYMBOLS[objectClassForType(type)],
-        delay: OBJECT_DELAY[type], color: state.objectColors?.[type] ?? OBJECT_COLOR[type],
-        prob: OBJECT_PROB[type], weight: OBJECT_WEIGHT[type], cost: OBJECT_COST[type],
+        oprop: objectPropertyId(type), class: OBJECT_CLASS_SYMBOLS[objectClassForType(type)],
+        delay: objectDelay(type), color: state.objectColors?.[type] ?? OBJECT_COLOR[type],
+        prob: OBJECT_PROB[type], weight: objectBaseWeight(type), cost: objectBaseCost(type),
         damage_small: OBJECT_SMALL_DAMAGE[type], damage_large: OBJECT_LARGE_DAMAGE[type],
         nutrition: OBJECT_NUTRITION[type],
     });

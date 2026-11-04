@@ -3,6 +3,7 @@
 // monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
 // return_from_mtoss(), thrwmm(), spitmm()/spitmu(), breamm(), thrwmu(),
 // breamu(), blocking_terrain(), linedup() and m_lined_up().
+import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { applyArtifactHit } from './artifacts.js';
@@ -50,7 +51,6 @@ import { monsterSentenceSubject } from './ambient_sounds.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon, } from './weapon.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
-import { ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, OBJECT_SUBTYPE, WAN_STRIKING, } from './object_data.js';
 import { dropObjectAtHero } from './do.js';
 import { makePlural, withIndefiniteArticle, verbForSubject } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
@@ -112,7 +112,7 @@ async function hitHeroWithProjectile(shot, context) {
     }
     let damage = zeroDamage ? 0 : rollPhysicalWeaponDamageAgainstHero(object, state, { rollOne, rollDice });
     let accuracy = Math.max(-4, 3 - distmin(hero.ux, hero.uy, source.mx, source.my));
-    if (((MONSTER_FLAGS2[source.mnum] ?? 0) & M2_ELF) && OBJECT_SUBTYPE[object.otyp] === -P_BOW) {
+    if (((MONSTER_FLAGS2[source.mnum] ?? 0) & M2_ELF) && objectSkill(object.otyp) === -P_BOW) {
         accuracy++;
         if (monsterWieldedWeapon(source)?.otyp === ELVEN_BOW)
             accuracy++;
@@ -187,7 +187,7 @@ async function dropMonsterProjectile(shot, hit, point, context) {
 // C mthrowu.c:monmulti(). Role and launcher multipliers decide how many
 // missiles leave the source's hands in one volley.
 function monsterClassVolleyBonus(monster, missile, launcher) {
-    const skill = OBJECT_SUBTYPE[missile.otyp] ?? 0;
+    const skill = objectSkill(missile.otyp);
     if (monster.mnum === PM_CAVE_DWELLER)
         return skill === -P_SLING || skill === P_SPEAR ? 1 : 0;
     if (monster.mnum === PM_MONK)

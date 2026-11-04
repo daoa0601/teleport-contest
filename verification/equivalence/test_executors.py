@@ -1103,5 +1103,31 @@ class ExecutorTests(unittest.TestCase):
                         'function example(i) { return REC[names[i]] ?? 0; }',
                         **domain)
 
+    def test_guarded_table_lookup_covers_indices_outside_the_native_table(self):
+        c = ('static const int classes[3] = {1, 1, 2}; '
+             'int example(int i) { return i < 0 || i >= 3 ? 0 : classes[i]; }')
+        js = ('const classes = [1, 1, 2]; function example(i) { '
+              'if (i < 0 || i >= classes.length) return 0; return classes[i]; }')
+        self.equivalent(c, js, params=[('i', INT)])
+        self.rejected(c, js.replace('i >= classes.length', 'i > classes.length'),
+                      params=[('i', INT)], reason='array index outside')
+
+    def test_initial_object_columns_keep_enum_values_and_bitfield_aliases(self):
+        c = ('enum classes { ILLEGAL = 1, WEAPON }; '
+             'struct item { unsigned big:1; char oclass; signed char skill; }; '
+             '#define oc_bimanual big\n'
+             'static const struct item items[3] = '
+             '{{0, ILLEGAL, 0}, {0, WEAPON, 0}, {1, WEAPON, -20}}; '
+             'int example(int i) { return items[i].oclass '
+             '+ 10 * items[i].oc_bimanual + items[i].skill; }')
+        # A preprocessor directive needs to open a line.
+        c = c.replace('#define', '\n#define')
+        js = ('const classes = [1, 2, 2], big = [0, 0, 1], skill = [0, 0, -20]; '
+              'function example(i) { return classes[i] + 10 * big[i] + skill[i]; }')
+        domain = dict(params=[('i', INT)], pre=lambda s: [s['i'] >= 0, s['i'] < 3])
+        self.equivalent(c, js, **domain)
+        self.rejected(c, js.replace('classes = [1, 2, 2]', 'classes = [0, 2, 2]'),
+                      **domain, reason='outputs differ')
+
 if __name__ == '__main__':
     unittest.main()

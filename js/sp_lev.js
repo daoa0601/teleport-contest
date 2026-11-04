@@ -4,6 +4,7 @@
 // fill_special_room, check_room, create_room, create_subroom,
 // dig_corridor, wallify_map, and themed-room map placement.  The des.*
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
+import { objectMerge, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { mksobj_at, mkobj_at, mkgold, set_corpsenm, rndmonnum, unlinkMonsterObject, blessObjectState, curseObjectState, unblessObjectState, uncurseObjectState, addCreatedObjectToContainer, addObjectToContainer, objectWeight, remove_object, stack_object } from './mkobj.js';
 import { isRoom } from './map_types.js';
@@ -31,7 +32,6 @@ import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, getLocation, getLocationCoord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { OBJECT_MERGE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE } from './object_data.js';
 import { terrain_glyph } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
@@ -2063,7 +2063,7 @@ export async function createLuaObject(context, options, parentContainer, parentM
             throw new Error('Unknown montype');
     }
     const quantity = options.quantity ?? 1;
-    const count = options.objectType !== null && !OBJECT_MERGE[options.objectType]
+    const count = options.objectType !== null && !objectMerge(options.objectType)
         ? Math.max(1, quantity) : 1;
     let object = null;
     for (let index = 0; index < count; index++) {
@@ -2179,7 +2179,7 @@ async function createLuaObjectPiece(context, options, corpseSpecies, parentConta
             lookupNovelTitle(options.name, object);
     }
     if (options.quantity !== undefined && Number.isInteger(options.quantity) && options.quantity > 0
-        && OBJECT_MERGE[object.otyp]) {
+        && objectMerge(object.otyp)) {
         object.quan = object.quantity = options.quantity;
         object.owt = objectWeight(object);
     }

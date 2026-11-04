@@ -1,18 +1,18 @@
 // wield.js — Wield, quiver, and weapon-swap commands.
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), and finish_splitting().
+import { objectClassForType, objectSkill, LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
 import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, SPE_LIM, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, AKLYS_LIM, P_AXE, P_BOW, P_CROSSBOW, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, W_QUIVER, W_SWAPWEP, W_WEAPONS, W_WEP } from './const.js';
-import { LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData } from './object_data.js';
 import { monsterIsHumanoid, MONSTER_ATTACKS, MONSTER_FLAGS1, requireMonsterData } from './monster_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroHandName } from './body_parts.js';
 import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
-import { learnObjectType, objectClassForType } from './o_init.js';
+import { learnObjectType } from './o_init.js';
 import { inventoryItemDescription } from './invent.js';
 import { getobj } from './invent.js';
 import { freeInventoryObject, useUpInventoryStack } from './invent.js';
@@ -413,7 +413,7 @@ export async function doquiverCore(verb) {
 export function isTwoWeaponObject(object) {
     if (object?.oclass !== WEAPON_CLASS)
         return isWeaponTool(object);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return !(skill >= P_BOW && skill <= P_CROSSBOW)
         && !isLauncherAmmunition(object) && !isMissileObject(object);
 }
@@ -423,7 +423,7 @@ export function weaponNeedsBashingMessage(object, state) {
         return true;
     if (object.oclass !== WEAPON_CLASS)
         return !isWeaponTool(object) && !isWetTowel(object);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     const launcher = skill >= P_BOW && skill <= P_CROSSBOW;
     const groundedPolearm = isPolearm(object) && !state.u.usteed
         && artifactById(object.oartifact)?.name !== 'Snickersnee';
@@ -433,7 +433,7 @@ export function weaponNeedsBashingMessage(object, state) {
 export function willWeld(object) {
     if (!object?.cursed)
         return false;
-    const weaponTool = object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0;
+    const weaponTool = object.oclass === 6 && objectSkill(object.otyp) !== 0;
     return object.oclass === WEAPON_CLASS || weaponTool
         || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
 }
@@ -512,7 +512,7 @@ async function readySelectedWeapon(weapon, state) {
         return 'time';
     }
     if ((state.uarms || state.u.uarms) && isBimanualObject(weapon)) {
-        const skill = OBJECT_SUBTYPE[weapon.otyp] ?? 0;
+        const skill = objectSkill(weapon.otyp);
         const kind = weapon.oclass === 2 && skill >= P_SHORT_SWORD && skill <= P_SABER
             ? 'sword' : weapon.otyp === BATTLE_AXE ? 'axe' : 'weapon';
         await plineWithContinuation(`You cannot wield a two-handed ${kind} while wearing a shield.`);

@@ -1,3 +1,6 @@
+import {
+    objectBaseMaterial, getObjectClassBounds,
+} from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { wearHeroAccessory } from '../js/do_wear.js';
@@ -11,7 +14,6 @@ import { heroGrabMisses, showHeroSilverContact } from '../js/hero_form_contact.j
 import { resetInputState } from '../js/input.js';
 import { AD_WRAP, AT_TUCH } from '../js/monster_attack_types.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import { getObjectClassBounds, OBJECT_MATERIAL } from '../js/object_data.js';
 import { objectMaterial } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -34,7 +36,7 @@ void test('a known ring shuffled to silver sears with its current material name'
     installPolymorphedHero('minotaur');
     const { first, last } = getObjectClassBounds(4);
     const ringType = Array.from({ length: last - first + 1 }, (_, index) => first + index)
-        .find(type => objectMaterial(type, game) === SILVER && OBJECT_MATERIAL[type] !== SILVER);
+        .find(type => objectMaterial(type, game) === SILVER && objectBaseMaterial(type) !== SILVER);
     assert.ok(ringType !== undefined, 'The initialized ring appearances must include a ring newly made of silver');
     const imp = await createMonsterAt('imp', 11, 10, BIRTH_FLAGS);
     installPagerInput(resetInputState(), { expected: /ring|feel|imp/, limit: 4 });

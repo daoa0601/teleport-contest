@@ -1,6 +1,10 @@
 // Hero ranged hit admission. Native dothrow.c:thitmonst() owns accuracy,
 // exercise, worm cutting, missile destruction, and object passive effects.
 // Damage, messages, and death share uhitm.c:hmon() with melee.
+import {
+    objectClassForType, objectSkill, BOOMERANG, BOULDER, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
+    GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, YUMI,
+} from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { artifactToHitBonus } from './artifacts.js';
 import { A_DEX, A_STR, Luck, P_BOW, Upolyd } from './const.js';
@@ -13,11 +17,6 @@ import { MONSTER_FLAGS2, MONSTER_LEVEL } from './monster_data.js';
 import { applyMonsterPassiveToObject } from './uhitm.js';
 import { cutWorm } from './worm.js';
 import { findMonsterArmorClass } from './monworn.js';
-import {
-    BOOMERANG, BOULDER, ELVEN_BOW, GAUNTLETS_OF_FUMBLING,
-    GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, OBJECT_SUBTYPE, YUMI,
-} from './object_data.js';
-import { objectClassForType } from './o_init.js';
 
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { destroyMulchedProjectile, shouldMulchMissile } from './dothrow.js';
@@ -78,7 +77,7 @@ function heroStillHasTheirRace(state: PlayingGameState) {
 }
 
 function bowGlovePenalty(state: PlayingGameState) {
-    if (!state.uwep || OBJECT_SUBTYPE[state.uwep.otyp] !== P_BOW) return 0;
+    if (!state.uwep || objectSkill(state.uwep.otyp) !== P_BOW) return 0;
     const gloves = state.uarmg || state.u?.uarmg;
     if (gloves?.otyp === GAUNTLETS_OF_POWER) return -2;
     if (gloves?.otyp === GAUNTLETS_OF_FUMBLING) return -3;
@@ -86,7 +85,7 @@ function bowGlovePenalty(state: PlayingGameState) {
 }
 
 function bowTrainingHitBonus(state: PlayingGameState, launcher: GameObject) {
-    if (OBJECT_SUBTYPE[launcher?.otyp] !== P_BOW
+    if (objectSkill(launcher?.otyp) !== P_BOW
         || !heroStillHasTheirRace(state)) return 0;
     const elf = state.urace.name === 'elf';
     const samurai = state.urole?.key === 'samurai';
@@ -152,7 +151,7 @@ function throwingHitBonus(monster: Monster, weapon: GameObject, state: PlayingGa
 
 function rangedObjectUsesWeaponHit(object: GameObject) {
     const objectClass = object.oclass ?? objectClassForType(object.otyp);
-    const skill = OBJECT_SUBTYPE[object.otyp] ?? 0;
+    const skill = objectSkill(object.otyp);
     return objectClass === WEAPON_CLASS || objectClass === GEM_CLASS
         || (objectClass === TOOL_CLASS && skill !== 0);
 }
