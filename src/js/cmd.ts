@@ -44,7 +44,7 @@ import {isContainer} from './mkobj.js';
 
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import type { CommandDefinition } from './command_data.js';
-import type { CommandBindings } from './command_bindings.js';
+import { extFuncTabFromFunc, type CommandBindings } from './command_bindings.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resetBulkTakeoff, dowear, doputon, removeWornItem, continueBulkTakeoff, takeOffAll } from './do_wear.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
@@ -152,23 +152,6 @@ export function xyToDirection(dx: number, dy: number): number {
     return direction < 8 ? direction : -1;
 }
 
-// C cmd.c:dotravel_target() initializes travel before calling domove().
-function startTravel(targetX: number, targetY: number, g: GameState = game): TravelRunState {
-    g._runState = {
-        mode: 8,
-        targetX,
-        targetY,
-    };
-    g.lastStrTurn = 0;
-    g._travelTarget = { x: targetX, y: targetY };
-    if (!g.multi) g.multi = Math.max(COLNO, ROWNO);
-    g.context.run = 8;
-    g.context.mv = true;
-    g.context.travel = true;
-    g.context.travel1 = true;
-    g.context.nopick = true;
-    return g._runState;
-}
 
 // C refs: cmd.c set_occupation()/timed_occupation() and
 // allmain.c:moveloop_core().  A count-prefixed search executes once in
@@ -450,7 +433,31 @@ export async function rhack(key: number): Promise<void> {
             await dispatchMovement(binding, movement);
             return;
         }
-        await executeCommandAction(binding);
+        beginCommandResult();
+        await runCommandHandler(binding);
+        if (game.program_state.gameover) return;
+        // C cmd.c:rhack() result seam (cmd.c:3810-3826) after
+        // res = (*func)(): ECMD_CANCEL and ECMD_FAIL reset both command
+        // queues, a time-taking result keeps them, and an ECMD_OK result
+        // resets them only under an involuntary delay. C's moveloop
+        // presets context.move before rhack(); JS handlers set it, so the
+        // TIME precedence over a cancellation reads the recorded result
+        // bits, not the possibly stale context.move.
+        const result = game._commandResult ?? ECMD_OK;
+        if (result & (ECMD_CANCEL | ECMD_FAIL)) {
+            resetCommandVariables(true);
+            if (result & ECMD_TIME) game.context.move = 1;
+        } else if (!game.context.move) {
+            resetCommandVariables(game.multi < 0);
+        }
+        // C cmd.c:rhack() clears kickedloc after an elapsed non-kick action
+        // (cmd.c:3822-3826). doextcmd's selected action, not the outer
+        // # editor, owns that result.
+        if (game.context.move
+            && selected.handler !== 'dokick'
+            && selected.handler !== 'doextcmd') {
+            game._kickedLoc = null;
+        }
         return;
     }
 }
@@ -556,31 +563,6 @@ async function dispatchMovement(binding: CommandBinding, prefixes: MovementAttem
     game.iflags.menu_requested = false;
 }
 
-// C cmd.c:rhack() clears kickedloc after an elapsed non-kick action.
-// doextcmd's selected action, not the outer # editor, owns that result.
-async function executeCommandAction(binding: CommandBinding): Promise<void> {
-    beginCommandResult();
-    await runCommandHandler(binding);
-    if (game.program_state.gameover) return;
-    // C cmd.c:rhack() result seam (3810-3826): ECMD_CANCEL and ECMD_FAIL
-    // reset both command queues, a time-taking result keeps them, and an
-    // ECMD_OK result resets them only under an involuntary delay. C's
-    // moveloop presets context.move before rhack(); JS handlers set it, so
-    // the TIME precedence over a cancellation reads the recorded result
-    // bits, not the possibly stale context.move.
-    const result = game._commandResult ?? ECMD_OK;
-    if (result & (ECMD_CANCEL | ECMD_FAIL)) {
-        resetCommandVariables(true);
-        if (result & ECMD_TIME) game.context.move = 1;
-    } else if (!game.context.move) {
-        resetCommandVariables(game.multi < 0);
-    }
-    if (game.context.move
-        && binding.command?.handler !== 'dokick'
-        && binding.command?.handler !== 'doextcmd') {
-        game._kickedLoc = null;
-    }
-}
 
 // C cmd.c:dotoggleoption(): without a binding parameter the command only
 // points the player at the options menu; with one it is
@@ -1919,9 +1901,9 @@ async function editExtendedCommand(): Promise<NativeCommand | null> {
 // ── Extended-command list and autocomplete (C cmd.c:doextlist(),
 //    extcmd_via_menu(), parseautocomplete(), handler_change_autocompletions()) ──
 
-// C cmd.c:parseautocomplete() flips the AUTOCOMPLETE flag on individual
-// extcmdlist entries at runtime. The generated command table is immutable,
-// so configuration adjustments live in this overlay.
+// Runtime AUTOCOMPLETE overlay: parseAutocomplete() flips the flag on
+// individual extcmdlist entries at runtime, and the generated command
+// table here is immutable, so the adjustments live in this overlay.
 const autocompleteOverrides = new Map<string, boolean>();
 
 export function setCommandAutocomplete(name: string, enabled: boolean): void {
@@ -2171,7 +2153,19 @@ async function dotravelTarget(): Promise<void> {
         return;
     }
     game.iflags.getloc_travelmode = false;
-    const state = startTravel(target.x, target.y);
+    // C cmd.c:dotravel_target(): context.travel = travel1 = 1, run = 8,
+    // nopick = 1, the DOMOVE_RUSH repeat ration when multi is zero,
+    // last_str_turn = 0, context.mv = TRUE. _runState is the port's
+    // DOMOVE_RUSH mirror and _travelTarget holds iflags.travelcc.
+    game.context.travel = true;
+    game.context.travel1 = true;
+    game.context.run = 8;
+    game.context.nopick = true;
+    game._runState = { mode: 8, targetX: target.x, targetY: target.y };
+    if (!game.multi) game.multi = Math.max(COLNO, ROWNO);
+    game.lastStrTurn = 0;
+    game.context.mv = true;
+    game._travelTarget = { x: target.x, y: target.y };
     const outcome = await domove(game.u.dx ?? 0, game.u.dy ?? 0);
     const moved = outcome === 'time';
     if (game.program_state.gameover) return;
@@ -2183,7 +2177,7 @@ async function dotravelTarget(): Promise<void> {
     // The target-selection command itself is time-consuming.  A blocked
     // first step stops travel but still reaches the monster/global turn.
     game.context.move = 1;
-    const arrived = game.u.ux === state.targetX && game.u.uy === state.targetY;
+    const arrived = game.u.ux === target.x && game.u.uy === target.y;
     if (arrived) game._travelTarget = null;
     if (!moved && outcome !== 'opened-door') stopRun();
     // Only findtravelpath()'s own nomul(0)-then-run=8 paths (the adjacent
@@ -2404,11 +2398,11 @@ export async function handlerRebindKeys(): Promise<void> {
 // C cmd.c:parseautocomplete(): splits on the first comma, else the first
 // colon, processes the remainder first, then requires an exact (case
 // sensitive) extended-command name.
-export function parseAutocompleteStatement(value: string, addRawError: (message: string) => void): void {
+export function parseAutocomplete(value: string, addRawError: (message: string) => void): void {
     let separator = value.indexOf(',');
     if (separator < 0) separator = value.indexOf(':');
     if (separator >= 0) {
-        parseAutocompleteStatement(value.slice(separator + 1), addRawError);
+        parseAutocomplete(value.slice(separator + 1), addRawError);
         value = value.slice(0, separator);
     }
     value = value.replace(/^[ \t]+/, '').replace(/[ \t]+$/, '');
@@ -2514,13 +2508,6 @@ export function resetOccupations(state: GameState = game): void {
 // do-again. cmdq_pop() picks CQ_REPEAT while a do-again replay runs, exactly
 // like gi.in_doagain does in C (cmd.c:412).
 
-// C cmd.c:ext_func_tab_from_func(): the first command table entry whose
-// handler is this C function. Aliases such as #name resolve to #call.
-function extFuncTabFromFunc(handler: string): NativeCommand {
-    const command = NATIVE_COMMANDS.find(candidate => candidate.handler === handler);
-    if (!command) throw new Error(`No command table entry for handler ${handler}`);
-    return command;
-}
 
 // C cmd.c:cmdq_add_ec()
 export function cmdq_add_ec(q: CmdQueueId, handler: string, state: GameState = game): void {
@@ -2644,71 +2631,88 @@ export async function readCommandInput(): Promise<CommandInput> {
     return result;
 }
 
-async function readCommandCount(): Promise<CommandInput> {
-    let count = 0;
+// C include/hack.h: get_count() control flags.
+export const GC_NOFLAGS = 0;
+export const GC_SAVEHIST = 1; /* save "Count: 123" in message history */
+export const GC_CONDHIST = 2; /* save it unless the count equals the first digit */
+export const GC_ECHOFIRST = 4; /* echo "Count: 1" even when there's only one digit */
+
+// C cmd.c:get_count(): gather typed digits into a count and return the next
+// non-digit key (allowchars is Null at every C call site, so any key
+// accepts). Backspace edits the count, Escape breaks with a zero count,
+// and counts above nine are echoed. The bigint count models C's long:
+// AppendLongDigit() overflow past the native maximum resets it to zero.
+export async function getCount(
+    inkey: number,
+    maxcount: bigint,
+    gcFlags: number,
+    inputState: InputState = 'other',
+): Promise<{ key: number; count: bigint }> {
+    const historicmsg = (gcFlags & GC_SAVEHIST) !== 0;
+    const conditionalmsg = (gcFlags & GC_CONDHIST) !== 0;
+    const echoalways = (gcFlags & GC_ECHOFIRST) !== 0;
+    const first = inkey ? BigInt(inkey - 48) : 0n;
+    let key = 0;
+    let count = 0n;
+    let accepted = 0n;
     let backspaced = false;
+    let showzero = false;
     for (;;) {
-        const key = await readchar('command');
-        let showZero = false;
-        if (key >= 48 && key <= 57) {
-            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT,
-                count * 10 + key - 48);
-            showZero = key === 48;
-        } else if (key === 8 || key === 127) {
-            if (!count) return { key, count: 0 };
-            count = Math.trunc(count / 10);
-            backspaced = true;
+        if (inkey) {
+            key = inkey;
+            inkey = 0;
         } else {
-            return { key, count: key === 27 ? 0 : count };
+            key = await readchar(inputState);
         }
-        if (count > 9 || backspaced) {
-            const text = backspaced && !count && !showZero
-                ? 'Count: ' : `Count: ${count}`;
-            if (count || showZero) backspaced = false;
-            clearMessageWindow();
-            await setTopline(text);
-            await flush_screen(0);
-            game.nhDisplay?.setCursor(text.length, 0);
-        }
-    }
-}
-
-
-// C cmd.c:get_count(): only a positive typed count is passed on by getobj.
-// Backspace edits the count; counts above nine are echoed.
-export async function readInventoryCount(firstKey: number): Promise<{ key: number; count: number }> {
-    let count = 0, key = firstKey, backspaced = false;
-    for (;;) {
-        let showZero = false;
         if (key >= 48 && key <= 57) {
-            count = Math.min(NATIVE_COMMAND_CONSTANTS.LARGEST_INT, count * 10 + key - 48);
-            showZero = key === 48;
+            const next = count * 10n + BigInt(key - 48);
+            count = next > 9223372036854775807n ? 0n : next;
+            if (maxcount > 0n && count > maxcount) count = maxcount;
+            /* if we've backed up to nothing, then typed 0, show that 0 */
+            showzero = key === 48;
         } else if (key === 8 || key === 127) {
-            if (!count) {
-                putMessageHistory(`Count: ${count} ${keyText(key)}`);
-                return { key, count: 0 };
+            if (!count && !echoalways) break;
+            showzero = false;
+            count /= 10n;
+            backspaced = true;
+        } else if (key === 27) {
+            break;
+        } else {
+            accepted = count;
+            break;
+        }
+        if (count > 9n || backspaced || echoalways) {
+            clearMessageWindow();
+            let text: string;
+            if (backspaced && !count && !showzero) {
+                text = 'Count: ';
+            } else {
+                text = `Count: ${count}`;
+                backspaced = false;
             }
-            count = Math.trunc(count / 10);
-            backspaced = true;
-        } else {
-            const finalCount = key === 27 ? 0 : count;
-            // C get_count(GC_SAVEHIST): the final count and the accepting
-            // key join the recall history; Escape breaks with a zero count.
-            putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
-            return { key, count: finalCount };
-        }
-        if (count > 9 || backspaced) {
-            const text = backspaced && !count && !showZero ? 'Count: ' : `Count: ${count}`;
-            if (count || showZero) backspaced = false;
-            clearMessageWindow();
             // The echo itself is custompline(SUPPRESS_HISTORY).
             await setTopline(text);
             await flush_screen(0);
             game.nhDisplay?.setCursor(text.length, 0);
         }
-        key = await readchar();
     }
+    // C get_count() files "Count: N <key>" after the loop: always under
+    // GC_SAVEHIST, and under GC_CONDHIST only when the final count differs
+    // from the first digit passed in via inkey.
+    if (historicmsg || (conditionalmsg && accepted !== first))
+        putMessageHistory(`Count: ${accepted} ${keyText(key)}`);
+    return { key, count: accepted };
 }
+
+// C parse() collects the repeat count through get_count((char *) 0, '\0',
+// LARGEST_INT, &gc.command_count, GC_NOFLAGS) in command input state.
+async function readCommandCount(): Promise<CommandInput> {
+    const { key, count } = await getCount(
+        0, BigInt(NATIVE_COMMAND_CONSTANTS.LARGEST_INT), GC_NOFLAGS, 'command',
+    );
+    return { key, count: Number(count) };
+}
+
 
 // ── Named command keys (C cmd.c:cmd_from_ecname(), cmd_from_func()) ──────
 
@@ -2811,10 +2815,12 @@ const impairedDirections = [
     [-1, -1], [1, -1], [1, 1], [-1, 1],
 ] as const;
 
-// C cmd.c:yn_function(query, (char *) 0, def, TRUE) for a response-free
-// single-key question: cmdq_pop() answers from CQ_REPEAT during do-again
-// without drawing anything, and a live answer is recorded back into
-// CQ_REPEAT for the next do-again.
+// C ref: cmd.c:yn_function(query, (char *) 0, def, TRUE) — the response-free
+// single-key call form used by getobj() prompts and invent.c:adjust_split().
+// Its queue handling is yn_function()'s (below); the live question renders
+// through promptKey() rather than the response-list menu path. cmdq_pop()
+// answers from CQ_REPEAT during do-again without drawing anything, and a
+// live answer is recorded back into CQ_REPEAT for the next do-again.
 export async function ynSingleKey(message: string, cursorOffset = 0): Promise<number> {
     // C cmd.c:yn_function(): one cmdq_pop() (cmd.c:5496) — CQ_REPEAT
     // during do-again, CQ_CANNED otherwise — sets addcmdq FALSE when it
@@ -3233,14 +3239,14 @@ function nativeChar(key: number): number {
     return NATIVE_COMMAND_PROFILE.signedChar ? (key << 24) >> 24 : key & 255;
 }
 
-// C cmd.c:randomkey()'s function statics: the extcmdlist index and the
-// repeat key survive prompts. C keeps them for the whole process; the port
-// scopes them to one game — bindInputGate() and resetInputState() reset
-// both, so every newly started game begins the table from its head.
-let fuzzerCommandIndex = 0;
-let lastFuzzerCommand = 0;
+// C cmd.c:randomkey(). Its function statics — the extcmdlist index and
+// the repeat key — survive prompts; C keeps them for the whole process,
+// while the port scopes them to one game: bindInputGate() and
+// resetInputState() reset both, so every newly started game begins the
+// table from its head.
+let fuzzerCommandIndex = 0; /* static unsigned i: extcmdlist index */
+let lastFuzzerCommand = 0; /* static char last_c: repeat key */
 
-// C cmd.c:randomkey(). The table index and repeat key survive prompts.
 export function randomKey(inputState: InputState): number {
     if (inputState === 'command' && (lastFuzzerCommand === 1 || lastFuzzerCommand === 16)
         && rn2(5)) return lastFuzzerCommand;

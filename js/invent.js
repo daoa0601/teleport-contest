@@ -10,11 +10,11 @@ import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, docrt, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { bot, formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu, renderKeyPrompt } from './tty_topline.js';
-import { pline, plineWithContinuation, setTopline } from './pline.js';
+import { pline, plineWithContinuation } from './pline.js';
 import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
 import { windowOrigin } from './tty_menu.js';
 import { nhgetch } from './input.js';
-import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, readInventoryCount, ynSingleKey, keyText, yn_function } from './cmd.js';
+import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
 import { ingSuffix, possessiveName } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
 import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, MV_KNOWS_EGG, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR } from './const.js';
@@ -886,10 +886,10 @@ async function chooseGetobjLetter(word, prompt, classify, { allowCount, allowNon
                 await pline('No count allowed with this command.');
                 continue;
             }
-            const counted = await readInventoryCount(key);
+            const counted = await getCount(key, BigInt(NATIVE_COMMAND_CONSTANTS.LARGEST_INT), GC_SAVEHIST);
             key = counted.key;
             if (counted.count)
-                count = counted.count;
+                count = Number(counted.count);
         }
         if (QUITCHARS.includes(key)) {
             // C getobj(): a silent cancellation leaves the question painted.
@@ -2626,7 +2626,26 @@ export async function adjustSplit() {
         commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
         return;
     }
-    const amount = object.quan === 2 ? 1 : await readInventorySplitCount();
+    let amount;
+    if (object.quan === 2) {
+        amount = 1;
+    }
+    else {
+        // C adjust_split(): "get first digit; doesn't wait for <return>".
+        await flushPendingTopline();
+        const dig = await ynSingleKey('Split off how many? ');
+        if (dig < 48 || dig > 57) {
+            amount = null;
+        }
+        else {
+            const { key, count } = await getCount(dig, 0n, GC_ECHOFIRST | GC_CONDHIST);
+            clearMessageWindow();
+            // C adjust_split(): quitchars[] accepts only space, \n and \r;
+            // Escape (checked separately in C) and every other key cancel
+            // with the count discarded.
+            amount = key === 32 || key === 10 || key === 13 ? Number(count) : null;
+        }
+    }
     if (amount === null) {
         await pline('Never mind.');
         commandResultCancelled(); // adjust_split() quit answer ECMD_CANCEL.
@@ -2642,48 +2661,6 @@ export async function adjustSplit() {
     if (!split)
         throw new Error('An admitted inventory stack could not be split');
     await doadjust(split, object);
-}
-// C cmd.c:get_count(GC_ECHOFIRST | GC_CONDHIST) behind doorganize's split:
-// the yn answer names the first digit, each "Count: N" echo is
-// custompline(SUPPRESS_HISTORY), and only a final count differing from the
-// first digit is filed for recall, with Escape leaving a count of zero.
-async function readInventorySplitCount() {
-    await flushPendingTopline();
-    let key = await ynSingleKey('Split off how many? ');
-    if (key < 48 || key > 57)
-        return null;
-    const firstDigit = key - 48;
-    let count = BigInt(key - 48);
-    let showCount = true;
-    for (;;) {
-        const text = `Count: ${showCount ? count : ''}`;
-        clearMessageWindow();
-        await setTopline(text);
-        await flush_screen(0);
-        game.nhDisplay?.setCursor(text.length, 0);
-        key = await readchar();
-        if (key >= 48 && key <= 57) {
-            const nextCount = count * 10n + BigInt(key - 48);
-            // AppendLongDigit() reports native long overflow; get_count()
-            // clears that count so subsequent digits can start another.
-            count = nextCount > 9223372036854775807n ? 0n : nextCount;
-            showCount = true;
-        }
-        else if (key === 8 || key === 127) {
-            count /= 10n;
-            showCount = count > 0n;
-        }
-        else {
-            clearMessageWindow();
-            // GC_CONDHIST: "Count: N <key>" joins the recall history only
-            // when the final count differs from its first digit; Escape
-            // breaks with a count of zero.
-            const finalCount = key === 27 ? 0n : count;
-            if (finalCount !== BigInt(firstDigit))
-                putMessageHistory(`Count: ${finalCount} ${keyText(key)}`);
-            return key === 32 || key === 10 || key === 13 ? Number(count) : null;
-        }
-    }
 }
 // C ref: invent.c:doorganize()/doorganize_core().
 // C invent.c:adjust_ok()/adjust_gold_ok(): the getobj filters that make

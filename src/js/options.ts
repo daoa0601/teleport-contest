@@ -44,7 +44,7 @@ import { chooseDiscoverySort, discoverySortDescription } from './o_init.js';
 import { ATR_INVERSE, restoreMenuUnderlay, showInventoryWindow, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
 import { NO_COLOR } from './terminal.js';
 import { AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_KICK, AUTOUNLOCK_UNTRAP } from './const.js';
-import { parseAutocompleteStatement } from './cmd.js';
+import { parseAutocomplete } from './cmd.js';
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 
 import { DISCLOSURE_CATEGORIES, parseDisclosureSettings } from './end.js';
@@ -1029,7 +1029,7 @@ function handleConfigStatement(
         }
         break;
     case 'AUTOCOMPLETE':
-        parseAutocompleteStatement(parsed.valueText, addRawError);
+        parseAutocomplete(parsed.valueText, addRawError);
         break;
     case 'AUTOPICKUP_EXCEPTION': {
         // ga.apelist is prepended, so the newest rule matches first.
