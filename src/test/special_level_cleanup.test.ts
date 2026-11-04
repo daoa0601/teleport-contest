@@ -4,7 +4,7 @@ import { ARROW_TRAP, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, HEADSTONE, LAVAPOOL, LAVAWA
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { BOULDER, DAGGER } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { cleanupSpecialLevelMap } from '../js/special_level_cleanup.js';
+import { map_cleanup } from '../js/special_level_cleanup.js';
 import { freshGame } from './support/game-state.js';
 import { floorObject } from './support/game-objects.js';
 import { maketrap } from '../js/trap.js';
@@ -26,7 +26,7 @@ for (const [name, terrain] of [
         makeEngravingAt(12, 8, 'A submerged memorial', null, 0, HEADSTONE);
         location.typ = terrain;
 
-        await cleanupSpecialLevelMap(state);
+        await map_cleanup(state);
 
         assert.equal(first.where, 'gone');
         assert.equal(second.where, 'gone');
@@ -52,7 +52,7 @@ for (const [name, trapType] of [['magic portal', MAGIC_PORTAL], ['vibrating squa
         assert.ok(trap);
         location.typ = LAVAPOOL;
 
-        await cleanupSpecialLevelMap(state);
+        await map_cleanup(state);
 
         assert.equal(state.level.traps.includes(trap), true);
     });
@@ -72,7 +72,7 @@ for (const [name, terrain] of [['floor', ROOM], ['lowered drawbridge', DRAWBRIDG
         assert.ok(engraving);
         location.typ = terrain;
 
-        await cleanupSpecialLevelMap(state);
+        await map_cleanup(state);
 
         assert.equal(boulder.where, 'floor');
         assert.equal(state.level.traps.includes(trap), true);

@@ -7,9 +7,9 @@ import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
 import { luaInteger } from './arguments.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
-const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
+export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',
     ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ', '@', ' ', "'", '&', ';', ':', '~', ']'];
-const TRAP_TYPES = new Map([
+export const TRAP_TYPES = new Map([
     ['arrow', ARROW_TRAP],
     ['dart', DART_TRAP],
     ['falling rock', ROCKTRAP],
@@ -34,12 +34,8 @@ const TRAP_TYPES = new Map([
     ['polymorph', POLY_TRAP],
     ['vibrating square', VIBRATING_SQUARE],
 ]);
-// The generic des.* option reader.
-// C sp_lev.c:get_table_region(): the four-entry region and exclude arrays;
-// get_table_coords_or_region(): the x1..y2 keys with the region array as
-// fallback; get_table_int_or_random(): a "random" spe or quantity falls
-// back to the creator's default.
-function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false) {
+// Shared Lua boundary validation for des.* tables. Each binding owns its defaults and feature creation.
+export function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false) {
     if (!(value instanceof LuaTable))
         throw new TypeError('des operation expects a table');
     const options = {};
@@ -101,7 +97,7 @@ function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false)
         const entry = value.get(key);
         if (entry == null)
             continue;
-        const location = point(luaArgument(entry));
+        const location = get_coord(luaArgument(entry));
         if (!location)
             throw new TypeError(`des.${key} must be a coordinate`);
         options[key] = Array.isArray(luaArgument(entry))
@@ -112,19 +108,9 @@ function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false)
             && [options.x1, options.y1, options.x2, options.y2]
                 .some(axis => axis !== undefined && axis !== -1))
             continue;
-        const entry = value.get(key);
-        if (entry == null)
-            continue;
-        const coordinates = luaArgument(entry);
-        if (!Array.isArray(coordinates) || coordinates.length !== 4
-            || !coordinates.every(value => typeof value === 'number'))
-            throw new TypeError(`des.${key} must contain four coordinates`);
-        const [lx, ly, hx, hy] = coordinates;
-        if (typeof lx !== 'number' || typeof ly !== 'number'
-            || typeof hx !== 'number' || typeof hy !== 'number'
-            || ![lx, ly, hx, hy].every(Number.isInteger))
-            throw new TypeError(`des.${key} must contain four coordinates`);
-        options[key] = [lx, ly, hx, hy];
+        const region = get_table_region(value, key);
+        if (region)
+            options[key] = region;
     }
     for (const key of ['contents', 'inventory', 'selection']) {
         const entry = value.get(key);
@@ -133,10 +119,11 @@ function tableOptions(value, lighting = 'terrain', preferExplicitRegion = false)
     }
     return options;
 }
-function luaArgument(value) {
+export function luaArgument(value) {
     return value instanceof LuaTable ? luaValueToJs(value) : value;
 }
-function point(value, y = null) {
+// C sp_lev.c:get_coord(). Read the pair form or the named x/y form.
+export function get_coord(value, y = null) {
     if (typeof value === 'number' && typeof y === 'number'
         && Number.isInteger(value) && Number.isInteger(y))
         return { x: value, y };
@@ -154,12 +141,12 @@ function point(value, y = null) {
 }
 // C sp_lev.c:get_table_xy_or_coord(): the x/y fields, or the coord table
 // when both axes are absent.
-export function tablePoint(options) {
+export function get_table_xy_or_coord(options) {
     const x = options.x ?? -1;
     const y = options.y ?? -1;
-    return x === -1 && y === -1 ? point(options.coord) : { x, y };
+    return x === -1 && y === -1 ? get_coord(options.coord) : { x, y };
 }
-function objectClassForSymbol(symbol) {
+export function objectClassForSymbol(symbol) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
     if (objectClass < ILLOBJ_CLASS)
         throw new Error(`unknown Lua object class ${symbol}`);
@@ -167,7 +154,7 @@ function objectClassForSymbol(symbol) {
 }
 // C sp_lev.c:find_objtype(): resolve an object by name, honoring the class
 // symbol and the "ring of "-style prefixes, then by description.
-export function objectTypeForName(name, classSymbol = null, state = game) {
+export function find_objtype(name, classSymbol = null, state = game) {
     const prefixes = [
         ['ring of ', RING_CLASS],
         ['potion of ', POTION_CLASS],
@@ -201,55 +188,9 @@ export function objectTypeForName(name, classSymbol = null, state = game) {
     }
     throw new Error(`unknown Lua object ${name}`);
 }
-// C sp_lev.c:lspo_object(): the object() arguments — id or class, montype,
-// corpse flags, and placement.
-function objectOptions(id, x, y) {
-    const options = id instanceof LuaTable
-        ? tableOptions(id) : {};
-    if (typeof id === 'string') {
-        if (id.length === 1)
-            options.class = id;
-        else
-            options.id = id;
-    }
-    const location = tablePoint(options)
-        ?? point(luaArgument(x), luaArgument(y));
-    const corpseMonster = options.montype == null
-        ? null : String(options.montype);
-    const objectType = options.id ? objectTypeForName(options.id, options.class) : null;
-    const speciesObject = objectType !== null && [STATUE, CORPSE, EGG, TIN, FIGURINE].includes(objectType);
-    const spinachTin = objectType === TIN
-        && corpseMonster?.toLowerCase() === 'spinach';
-    const noSpecies = spinachTin || (objectType === TIN || objectType === EGG)
-        && corpseMonster?.toLowerCase() === 'empty';
-    const corpseMonsterClass = speciesObject && corpseMonster?.length === 1
-        ? MONSTER_CLASS_SYMBOLS.indexOf(corpseMonster) : null;
-    if (speciesObject && corpseMonster?.length === 1 && (corpseMonsterClass == null || corpseMonsterClass < 1))
-        throw new Error(`unknown Lua monster class ${corpseMonster}`);
-    if (objectType === STATUE || objectType === CORPSE) {
-        options.spe = (options.historic ? CORPSTAT_HISTORIC : 0)
-            | (options.male ? CORPSTAT_MALE : 0) | (options.female ? CORPSTAT_FEMALE : 0);
-    }
-    else if (objectType === EGG) {
-        options.spe = options.laid_by_you ? 1 : 0;
-    }
-    else if (objectType === TIN || objectType === FIGURINE) {
-        options.spe = spinachTin ? 1 : 0;
-    }
-    return {
-        ...options,
-        point: location,
-        objectClass: options.class
-            ? objectClassForSymbol(options.class) : null,
-        objectType,
-        monsterType: speciesObject && corpseMonster && corpseMonster.length > 1 && !noSpecies
-            ? monsterTypeForName(corpseMonster).type : null,
-        monsterClass: corpseMonsterClass,
-    };
-}
 // C sp_lev.c:find_montype(): resolve a monster name, including its male and
 // female spellings, with the gender it implies.
-function monsterTypeForName(name) {
+export function find_montype(name) {
     const target = String(name).toLowerCase();
     for (let type = 0; type < MONSTER_NAME.length; type++) {
         const neutral = MONSTER_NAME[type]?.toLowerCase();
@@ -264,277 +205,45 @@ function monsterTypeForName(name) {
     }
     throw new Error(`unknown Lua monster ${name}`);
 }
-// C sp_lev.c:lspo_monster(): the monster() arguments — id (get_table_montype())
-// or a class letter (get_table_monclass()), appear_as, placement and state.
-function monsterOptions(id, x, y) {
-    const options = id instanceof LuaTable
-        ? tableOptions(id) : {};
-    if (typeof id === 'string') {
-        if (id.length === 1)
-            options.class = id;
-        else
-            options.id = id;
-    }
-    const monsterClass = options.class
-        ? MONSTER_CLASS_SYMBOLS.indexOf(options.class) : null;
-    if (options.class && (monsterClass == null || monsterClass < 1))
-        throw new Error(`unknown Lua monster class ${options.class}`);
-    const namedMonster = options.id ? monsterTypeForName(options.id) : null;
-    let appearance = null;
-    if (typeof options.appear_as === 'string') {
-        const separator = options.appear_as.indexOf(':');
-        if (separator < 1)
-            throw new Error(`unknown Lua monster appearance ${options.appear_as}`);
-        const kind = options.appear_as.slice(0, separator);
-        const name = options.appear_as.slice(separator + 1);
-        if (kind === 'obj') {
-            appearance = { kind: 'object', type: objectTypeForName(name) };
-        }
-        else if (kind === 'mon') {
-            appearance = { kind: 'monster', type: monsterTypeForName(name).type };
-        }
-        else if (kind === 'ter') {
-            appearance = { kind: 'terrain', name };
-        }
-        else {
-            throw new Error(`unknown Lua monster appearance ${options.appear_as}`);
-        }
-    }
-    return {
-        ...options,
-        point: tablePoint(options)
-            ?? point(luaArgument(x), luaArgument(y)),
-        monsterClass,
-        monsterType: namedMonster?.type ?? null,
-        nameFemale: namedMonster?.female ?? null,
-        appearance,
-    };
-}
-// C sp_lev.c:lspo_trap(): the trap() arguments — a type name resolved
-// through get_traptype_byname() or get_table_traptype_opt(), placement, and
-// the construction flags.
-function trapOptions(type, x, y) {
-    const options = type instanceof LuaTable
-        ? tableOptions(type) : type == null ? {} : { type: String(type) };
-    const name = options.type === 'random' ? null : options.type;
-    const trapType = name == null ? null : TRAP_TYPES.get(String(name)) ?? null;
-    if (name != null && trapType == null)
-        throw new Error(`unknown Lua trap ${name}`);
-    return {
-        ...options,
-        point: tablePoint(options)
-            ?? point(luaArgument(x), luaArgument(y)),
-        trapType,
-    };
-}
-// C sp_lev.c:lspo_door(): the door() arguments — state and placement, or a
-// wall and position for a room door.
-function doorOptions(state, x, y) {
-    if (state instanceof LuaTable) {
-        const options = tableOptions(state);
-        return {
-            ...options,
-            state: String(options.state ?? 'random'),
-            point: tablePoint(options),
-        };
-    }
-    return {
-        state: String(state),
-        point: point(luaArgument(x), luaArgument(y)),
-    };
-}
-// C sp_lev.c:lspo_stair() and lspo_ladder(): direction and placement.
-function stairOptions(direction, x, y) {
-    if (direction instanceof LuaTable) {
-        const options = tableOptions(direction);
-        return {
-            direction: String(options.dir ?? 'down'),
-            point: tablePoint(options),
-        };
-    }
-    return {
-        direction: String(direction),
-        point: point(luaArgument(x), luaArgument(y)),
-    };
-}
-// C sp_lev.c:lspo_mazewalk(): the walk origin, terrain, direction and
-// stocking flag.
-function mazeWalkOptions(value, y, direction) {
-    if (!(value instanceof LuaTable)) {
-        return {
-            x: luaInteger(value),
-            y: luaInteger(y),
-            dir: String(direction ?? 'random'),
-            stocked: true,
-        };
-    }
-    const options = tableOptions(value);
-    const location = tablePoint(options);
-    return {
-        ...options,
-        ...(location ? { x: location.x, y: location.y } : {}),
-        dir: String(options.dir ?? 'random'),
-        stocked: options.stocked !== false && options.stocked !== 0,
-    };
-}
-// C sp_lev.c:lspo_engraving(): the engraving type, text and placement.
-function engravingOptions(value, type, text) {
-    if (type != null) {
-        return {
-            point: point(luaArgument(value)),
-            type: String(type),
-            text: String(text),
-            degrade: true,
-            guardobjects: false,
-        };
-    }
-    const options = tableOptions(value);
-    return {
-        ...options,
-        point: tablePoint(options),
-        type: String(options.type ?? 'engrave'),
-        text: String(options.text),
-    };
-}
-// C sp_lev.c:lspo_gold(): the amount and placement.
-function goldOptions(value, x, y) {
-    if (value instanceof LuaTable) {
-        const options = tableOptions(value);
-        return {
-            ...options,
-            point: tablePoint(options),
-        };
-    }
-    return {
-        amount: typeof value === 'number' && Number.isInteger(value) ? value : -1,
-        point: point(luaArgument(x), luaArgument(y)),
-    };
-}
-// C sp_lev.c:lspo_terrain(): terrain at a coordinate or over a selection,
-// with an optional lighting state.
-function callTerrain(operations, args) {
-    if (args.length === 3)
-        return operations.terrainAt(luaInteger(args[0]), luaInteger(args[1]), String(args[2]));
-    if (args[0] instanceof LuaTable) {
-        const options = tableOptions(args[0]);
-        const location = tablePoint(options)
-            ?? point(luaArgument(args[0]));
-        const type = args.length === 1 ? options.typ : args[1];
-        if (location && type != null)
-            return operations.terrainAt(location.x, location.y, String(type), options.lit);
-        if (options.selection != null && type != null) {
-            return operations.terrain(unwrapSelection(options.selection), String(type), options.lit);
-        }
-    }
-    return operations.terrain(unwrapSelection(args[0]), String(args[1]));
-}
-export function mapOrigin(options, width, height, levelInitialized) {
-    const coordinate = tablePoint(options);
-    if (coordinate && coordinate.x >= 0 && coordinate.y >= 0) {
-        return {
-            xstart: coordinate.x, ystart: coordinate.y, width, height,
-        };
-    }
-    const mazeMaxX = (COLNO - 1) & ~1;
-    const mazeMaxY = (ROWNO - 1) & ~1;
-    const horizontal = {
-        left: levelInitialized ? 1 : 3,
-        'half-left': 2 + Math.trunc((mazeMaxX - 2 - width) / 4),
-        center: 2 + Math.trunc((mazeMaxX - 2 - width) / 2),
-        'half-right': 2 + Math.trunc((mazeMaxX - 2 - width) * 3 / 4),
-        right: mazeMaxX - width - 1,
-    };
-    const vertical = {
-        top: 3,
-        center: 2 + Math.trunc((mazeMaxY - 2 - height) / 2),
-        bottom: mazeMaxY - height - 1,
-    };
-    let xstart = horizontal[options.halign ?? ''];
-    let ystart = vertical[options.valign ?? ''];
-    if (xstart === undefined || ystart === undefined
-        || !Number.isInteger(xstart) || !Number.isInteger(ystart))
-        throw new Error('Lua map needs coordinates or horizontal and vertical alignment');
-    if (!(xstart % 2))
-        xstart++;
-    if (!(ystart % 2))
-        ystart++;
-    if (ystart < 0 || ystart + height > ROWNO) {
-        ystart += ystart > 0 ? -2 : 2;
-        if (height === ROWNO)
-            ystart = 0;
-        if (ystart < 0 || ystart + height > ROWNO)
-            ystart = 0;
-    }
-    return { xstart, ystart, width, height };
-}
-export function createDesBindings(operations, wrapSelection) {
+// C sp_lev.c:l_register_des(). Register the native des entrypoints and their Lua return contracts.
+export function l_register_des(operations, wrapSelection) {
     const commands = {
-        level_init: (options) => operations.levelInit(tableOptions(options, 'boolean')),
+        level_init: operations.levelInit,
         level_flags: (...flags) => operations.levelFlags(flags),
-        mineralize: (value) => operations.mineralize(value === undefined ? {} : tableOptions(value)),
-        message: (value) => operations.message(String(value)),
-        terrain: (...args) => callTerrain(operations, args),
-        replace_terrain: (value) => {
-            const options = tableOptions(value, 'terrain', true);
-            return operations.replaceTerrain({
-                ...options,
-                selection: options.selection == null
-                    ? null : unwrapSelection(options.selection),
-            });
-        },
+        mineralize: operations.mineralize,
+        message: value => operations.message(String(value)),
+        terrain: operations.terrain,
+        replace_terrain: operations.replaceTerrain,
+        room: operations.room,
+        stair: operations.stair,
+        ladder: operations.ladder,
+        door: operations.door,
+        drawbridge: operations.drawbridge,
+        engraving: operations.engraving,
+        gold: operations.gold,
+        grave: operations.grave,
+        feature: operations.feature,
+        altar: operations.altar,
+        non_diggable: selection => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
+        non_passwall: selection => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),
+        wall_property: operations.wallProperty,
+        wallify: operations.wallify,
+        teleport_region: operations.teleportRegion,
+        levregion: operations.levelRegion,
+        exclusion: operations.exclusion,
+        gas_cloud: operations.gasCloud,
+        random_corridors: operations.randomCorridors,
+        corridor: operations.corridor,
+        mazewalk: operations.mazeWalk,
+        trap: operations.trap,
+        monster: operations.monster,
         region: (selection, lighting) => selection instanceof LuaTable
-            ? operations.roomRegion(tableOptions(selection, 'integer', true))
+            ? operations.roomRegion(selection)
             : operations.region(unwrapSelection(selection), String(lighting)),
-        room: (value) => operations.room(tableOptions(value, 'integer')),
-        stair: (direction, x, y) => operations.stair(stairOptions(direction, x, y)),
-        ladder: (direction, x, y) => operations.ladder(stairOptions(direction, x, y)),
-        door: (state, x, y) => operations.door(doorOptions(state, x, y)),
-        drawbridge: (value) => operations.drawbridge(tableOptions(value)),
-        engraving: (value, type, text) => operations.engraving(engravingOptions(value, type, text)),
-        gold: (value, x, y) => operations.gold(goldOptions(value, x, y)),
-        grave: (value, y, text) => {
-            const options = value instanceof LuaTable ? tableOptions(value) : {};
-            return operations.grave({
-                ...options,
-                ...(text == null ? {} : { text: String(text) }),
-                point: tablePoint(options)
-                    ?? point(luaArgument(value), luaArgument(y)),
-            });
-        },
-        feature: (type, x, y) => {
-            const options = type instanceof LuaTable ? tableOptions(type) : {};
-            return operations.feature({
-                ...options,
-                type: options.type ?? String(type),
-                point: tablePoint(options)
-                    ?? point(luaArgument(x), luaArgument(y)),
-            });
-        },
-        altar: (value) => operations.altar(tableOptions(value)),
-        non_diggable: (selection) => operations.nonDiggable(selection == null ? null : unwrapSelection(selection)),
-        non_passwall: (selection) => operations.nonPasswall(selection == null ? null : unwrapSelection(selection)),
-        wall_property: (value) => operations.wallProperty(tableOptions(value, 'terrain', true)),
-        wallify: (value) => operations.wallify(value == null ? null : tableOptions(value)),
-        teleport_region: (value) => operations.teleportRegion(tableOptions(value)),
-        levregion: (value) => operations.levelRegion(tableOptions(value)),
-        exclusion: (value) => operations.exclusion(tableOptions(value)),
-        gas_cloud: (value) => {
-            const options = tableOptions(value);
-            return operations.gasCloud({
-                ...options,
-                point: tablePoint(options),
-                selection: options.selection == null ? null : unwrapSelection(options.selection),
-            });
-        },
-        random_corridors: () => operations.randomCorridors(),
-        corridor: (value) => operations.corridor(tableOptions(value)),
-        mazewalk: (value, y, direction) => operations.mazeWalk(mazeWalkOptions(value, y, direction)),
-        trap: (type, x, y) => operations.trap(trapOptions(type, x, y)),
-        monster: (id, x, y) => operations.monster(monsterOptions(id, x, y)),
     };
     const bindings = {
-        map: async (value) => wrapSelection(await operations.map(value instanceof LuaTable ? tableOptions(value, 'boolean') : String(value))),
-        object: (id, x, y) => operations.object(objectOptions(id, x, y)),
+        map: async (value) => wrapSelection(await operations.map(value)),
+        object: (id, x, y) => operations.object(id, x, y),
     };
     // C's des callbacks return no Lua values except map and object. Internal
     // game functions may return an entity to their other callers.
@@ -547,5 +256,21 @@ export function createDesBindings(operations, wrapSelection) {
         };
     }
     return bindings;
+}
+// C sp_lev.c:get_table_region(). Read the four-entry region or exclusion array.
+function get_table_region(table, key) {
+    const entry = table.get(key);
+    if (entry == null)
+        return null;
+    const coordinates = luaArgument(entry);
+    if (!Array.isArray(coordinates) || coordinates.length !== 4
+        || !coordinates.every(value => typeof value === 'number'))
+        throw new TypeError(`des.${key} must contain four coordinates`);
+    const [lx, ly, hx, hy] = coordinates;
+    if (typeof lx !== 'number' || typeof ly !== 'number'
+        || typeof hx !== 'number' || typeof hy !== 'number'
+        || ![lx, ly, hx, hy].every(Number.isInteger))
+        throw new TypeError(`des.${key} must contain four coordinates`);
+    return [lx, ly, hx, hy];
 }
 //# sourceMappingURL=des.js.map

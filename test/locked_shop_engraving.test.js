@@ -4,7 +4,7 @@ import { CORR, DOOR, DUST, D_LOCKED, FILL_NORMAL, ROOMOFFSET, SHOPBASE } from '.
 import { map_location } from '../js/display.js';
 import { engravingAt } from '../js/engrave.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { fillSpecialRoom } from '../js/sp_lev.js';
+import { fill_special_room } from '../js/sp_lev.js';
 import { ATR_INVERSE, CLR_BRIGHT_BLUE } from '../js/terminal.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('stocking a locked shop writes its inventory notice on the floor outside the entrance', async () => {
@@ -24,7 +24,7 @@ void test('stocking a locked shop writes its inventory notice on the floor outsi
     const door = level.requireAt(11, 10);
     door.typ = DOOR;
     door.doormask = D_LOCKED;
-    await fillSpecialRoom(shop);
+    await fill_special_room(shop);
     const notice = engravingAt(10, 10);
     assert.ok(notice, 'The locked entrance needs a notice on its outside square');
     assert.equal(notice.text, 'Closed for inventory');

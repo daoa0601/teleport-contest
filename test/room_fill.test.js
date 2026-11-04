@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { ALTAR, BEEHIVE, FILL_NORMAL, FOUNTAIN, GRAVE, HWALL, MAXNROFROOMS, OROOM, ROOM, ROOMOFFSET, SHARED, SINK, VWALL, } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { fill_ordinary_room } from '../js/mklev.js';
-import { fillSpecialRoom } from '../js/sp_lev.js';
+import { fill_special_room } from '../js/sp_lev.js';
 import { mksobj } from '../js/mkobj.js';
 import { level_difficulty } from '../js/dungeon.js';
 import { CHEST, DART, LARGE_BOX, LUMP_OF_ROYAL_JELLY, } from '../js/object_data.js';
@@ -80,7 +80,7 @@ void test('an irregular beehive stocks its own floor and keeps the queen inside 
     const boundary = level.requireAt(13, 6);
     boundary.roomno = ROOMOFFSET;
     boundary.edge = true;
-    await fillSpecialRoom(room);
+    await fill_special_room(room);
     assert.equal(level.monsters.length, floor.length);
     assert.ok(level.monsters.every(monster => floor.some(point => point.x === monster.mx && point.y === monster.my)));
     assert.equal(level.monsters.filter(monster => monster.mnum === MONSTER_NAME.indexOf('queen bee')).length, 1);
@@ -125,7 +125,7 @@ void test('a beehive subroom stocks around its nested child and relocates the qu
             loc.roomno = loc.edge ? SHARED : child.roomnoidx + ROOMOFFSET;
         }
     }
-    await fillSpecialRoom(parent);
+    await fill_special_room(parent);
     assert.equal(level.monsters.length, 55, 'each hive square outside the child receives a bee');
     for (const bee of level.monsters) {
         const loc = level.requireAt(bee.mx, bee.my);

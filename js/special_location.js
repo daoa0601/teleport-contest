@@ -14,24 +14,25 @@ export const SOLID = 0x08;
 export const ANY_LOC = 0x10;
 export const NO_LOC_WARN = 0x20;
 export const SPACELOC = 0x40;
-export async function getLocationCoord(context, coordinate, humidity, filter) {
+// C sp_lev.c:get_location_coord(). Resolve a packed coordinate, retrying random placement if needed.
+export async function get_location_coord(context, coordinate, humidity, filter) {
     // sp_lev.h packs explicit axes as unsigned bytes; only (-1, -1)
     // denotes a random coordinate at the Lua boundary.
     if (coordinate && (coordinate.x !== -1 || coordinate.y !== -1))
         return await getPackedLocationCoord(context, coordinate, humidity, filter);
     const input = { x: -1, y: -1 };
-    const point = await getLocation(context, input, humidity | NO_LOC_WARN, filter);
+    const point = await get_location(context, input, humidity | NO_LOC_WARN, filter);
     if (point.x === -1 && point.y === -1)
-        return await getLocation(context, point, humidity, filter);
+        return await get_location(context, point, humidity, filter);
     return point;
 }
-// Callers which always use SP_COORD_PACK do not recognize the random sentinel.
-// C sp_lev.c:get_unpacked_coord(): the packed axes unpack here; the random
-// bit becomes the (-1,-1) sentinel getLocationCoord() handles above.
+// Shared packed-coordinate form: sp_lev.h SP_COORD_PACK/SP_COORD_X/SP_COORD_Y.
+// Unlike get_location_coord(), it never recognizes the random sentinel.
 export async function getPackedLocationCoord(context, coordinate, humidity, filter) {
-    return await getLocation(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
+    return await get_location(context, { x: coordinate.x & 0xff, y: coordinate.y & 0xff }, humidity, filter);
 }
-export async function getLocation(context, coordinate, humidity, filter) {
+// C sp_lev.c:get_location(). Resolve room/map coordinates and apply humidity constraints.
+export async function get_location(context, coordinate, humidity, filter) {
     const room = context._room;
     const mx = room ? room.lx : context.xstart;
     const my = room ? room.ly : context.ystart;
@@ -49,7 +50,7 @@ export async function getLocation(context, coordinate, humidity, filter) {
                 somexy(room, point);
             else
                 point = { x: mx + rn2(sx), y: my + rn2(sy) };
-            if (isOkLocation(point.x, point.y, humidity, filter)) {
+            if (is_ok_location(point.x, point.y, humidity, filter)) {
                 found = true;
                 break;
             }
@@ -58,7 +59,7 @@ export async function getLocation(context, coordinate, humidity, filter) {
             for (let x = 0; x < sx && !found; x++)
                 for (let y = 0; y < sy; y++) {
                     point = { x: mx + x, y: my + y };
-                    if (isOkLocation(point.x, point.y, humidity, filter)) {
+                    if (is_ok_location(point.x, point.y, humidity, filter)) {
                         found = true;
                         break;
                     }
@@ -76,10 +77,8 @@ export async function getLocation(context, coordinate, humidity, filter) {
             : { x: (COLNO - 1) & ~1, y: (ROWNO - 1) & ~1 };
     return point;
 }
-// C sp_lev.c:set_ok_location_func() with good_stair_loc(): the optional
-// filter parameter replaces the humidity tests; createLuaStair()'s random
-// draw passes one that accepts only room, corridor or ice.
-export function isOkLocation(x, y, humidity, filter) {
+// C sp_lev.c:is_ok_location(). The filter argument represents set_ok_location_func().
+export function is_ok_location(x, y, humidity, filter) {
     if (Is_waterlevel(game.u.uz))
         return true;
     const level = requireGameLevel();

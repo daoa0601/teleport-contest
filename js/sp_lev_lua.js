@@ -3,32 +3,23 @@
 // create_des_coder(), load_special(), and the themed-room Lua sessions
 // that mklev.c makerooms() drives.
 import { game, requireGameLevel } from './gstate.js';
-import { discardMonsterInventory } from './mkobj.js';
-import { dropSpecialMonsterObjects } from './steal.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { impossible } from './diagnostics.js';
 import { PanicTermination } from './panic_termination.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
-import { createDesBindings, mapOrigin } from './lua/des.js';
+import { l_register_des } from './lua/des.js';
 import { luaToInteger, luaNumberValue } from './lua/arguments.js';
 import { createSelectionApi } from './lua/selection.js';
 import { LuaArgumentError, NethackLuaError } from './lua/errors.js';
 import { nameToMonster } from './mondata.js';
-import { luaTableToArray, objectToLuaTable, LuaTable, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
-import { rn2 } from './rng.js';
+import { luaTableToArray, LuaTable, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
 import { level_difficulty } from './dungeon.js';
-import { ANY_LOC, DRY, getLocationCoord, getPackedLocationCoord } from './special_location.js';
-import { cleanupSpecialLevelMap, removeSpecialLevelBoundaries } from './special_level_cleanup.js';
-import { COLNO, ROWNO, GRAVE, IS_LAVA, W_NONPASSWALL, A_NONE, G_GENOD, LEVEL_TIMER_KIND } from './const.js';
+import { COLNO, ROWNO, G_GENOD, LEVEL_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';
-import { initializeMonsterArmor } from './monworn.js';
-import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { scheduleLevelTimer, stopLevelTimer } from './timeout.js';
-import { SpecialSelection, mapCharacterType } from './selvar.js';
-import { countLevelFeatures, makecorridors, mineralize } from './mklev.js';
-import { make_grave } from './engrave.js';
-import { wallification } from './mkmaze.js';
-import { addDoorsToSpecialRoom, buildSpecialRoom, centeredSpecialMap, createLuaAltar, createLuaCorridor, createLuaDoor, createLuaDrawbridge, createLuaEngraving, createLuaExclusion, createLuaFeature, createLuaGold, createLuaMonster, createLuaObject, createLuaRoomRegion, createLuaStair, createLuaTrap, createLuaWallProperty, ensureWaysOut, fillEmptySpecialMaze, fillSpecialLevel, flipLuaRegions, flipSpecialLevelRandom, levelRegionCoordinates, linkSpecialLevelDoors, loadSpecialAsciiMap, luaRoomSpec, luaRoomTable, luaSelectionCoordinates, markSpecialSelectionWallProperty, placeThemedMap, replaceLuaTerrain, setLuaLevelFlags, setSpecialTerrain, solidifyLuaMap, specialMapRows, specialMapSelection, specialMazeWalk, specialNonDiggable, specialRoomContext, specialSelectionNonDiggable, specialSelectionTerrain, wallifyMap } from './sp_lev.js';
+import { SpecialSelection } from './selvar.js';
+import { mineralize } from './mklev.js';
+import { lspo_message, lspo_grave, lspo_gas_cloud, lspo_mineralize, lspo_random_corridors, lspo_corridor, lspo_level_init, lspo_teleport_region, lspo_levregion, lspo_map, lspo_altar, lspo_door, lspo_drawbridge, lspo_engraving, lspo_exclusion, lspo_feature, lspo_gold, lspo_monster, lspo_object, lspo_region, lspo_stair, lspo_ladder, lspo_trap, lspo_wall_property, lspo_finalize_level, lspo_room, lspo_replace_terrain, lspo_level_flags, lspo_terrain, lspo_mazewalk, lspo_non_diggable, lspo_non_passwall, lspo_wallify, } from './sp_lev.js';
 // nhlua.c:nhl_get_timertype() takes luaL_checkoption over timeout_funcs'
 // timer names, in timeout.h order; timer_is_pos() admits only melt-ice.
 const LEVEL_TIMER_TYPE_NAMES = [
@@ -69,31 +60,17 @@ function luaTimerArrayEntry(table, entry) {
         throw new NethackLuaError(`Array entry #1 is ${luaType(value)}, expected number`);
     return luaToInteger(converted);
 }
-// C sp_lev.c:create_des_coder(): this session owns the per-level coder
-// state — SpLev_Map becomes mappedCells, the nested room and container
-// stacks become the context and containers arrays, update_croom() the
-// context switch after each room operation, spo_endroom() the context
-// restore in those finally blocks, spo_pop_container() the containers.pop()
-// in invokeObjectContents(), spo_end_moninvent() the initializeMonsterArmor()
-// after a monster inventory callback, and l_push_wid_hei_table() the
-// width/height table given to a map contents callback. The operation
-// properties below port the matching lspo_* callbacks: message
-// (lspo_message()), region's selection form (lspo_region() with
-// sel_set_lit()), grave (lspo_grave()), gas_cloud (lspo_gas_cloud()),
-// teleport_region (lspo_teleport_region()), levregion (lspo_levregion()),
-// random_corridors (lspo_random_corridors()), mineralize
-// (lspo_mineralize()) and wallify (lspo_wallify()).
-function createLuaLevelSession() {
+// C sp_lev.c:sp_level_coder_init(). Create the per-level room, inventory, and map state.
+function sp_level_coder_init() {
     const wholeLevel = {
         xstart: 1, ystart: 0, width: COLNO - 1, height: ROWNO,
     };
     let active = null;
-    let context = wholeLevel;
+    const roomScope = { context: wholeLevel, roomFailed: false };
     let luaState = null;
     const containers = [];
     const monsterInventories = [];
     let mappedCells = new SpecialSelection();
-    let roomFailed = false;
     const currentLevel = () => {
         if (!active)
             throw new Error('Lua level generation has not started');
@@ -114,257 +91,48 @@ function createLuaLevelSession() {
         }
     };
     const operations = {
-        levelInit: async (options) => await fillSpecialLevel(options, currentLevel()),
-        levelFlags: flags => setLuaLevelFlags(currentLevel(), flags),
-        message: value => {
-            const messages = currentLevel().specialMessages ??= [];
-            const originalAlignment = game.u?.ualignbase?.[0]
-                ?? game.u?.ualign?.type ?? A_NONE;
-            const godKey = originalAlignment > 0 ? 'lawful'
-                : originalAlignment < 0 ? 'chaotic' : 'neutral';
-            const deity = game.urole?.gods?.[godKey] || 'your god';
-            messages.push(String(value).replaceAll('%d', deity));
-        },
-        map: async (value) => {
-            const source = typeof value === 'string' ? value : value.map;
-            if (source === undefined)
-                throw new TypeError('des.map requires map text');
-            // lspo_map() defaults to unlit in both forms, independently of
-            // the lighting des.level_init() gave the underlying level.
-            const lit = typeof value !== 'string' && !!value.lit;
-            const rows = specialMapRows(source);
-            const width = Math.max(...rows.map(row => row.length));
-            const unplacedThemedMap = currentLevel().prototype === 'themerms'
-                && typeof value !== 'string'
-                && value.x == null && value.y == null
-                && value.coord == null
-                && value.halign == null && value.valign == null;
-            let mapContext;
-            if (unplacedThemedMap) {
-                mapContext = placeThemedMap(rows, lit);
-                if (!mapContext) {
-                    roomFailed = true;
-                    return new SpecialSelection();
-                }
-            }
-            else {
-                const origin = typeof value === 'string'
-                    ? centeredSpecialMap(width, rows.length)
-                    : mapOrigin(value, width, rows.length, !!currentLevel().levelInitialized);
-                mapContext = loadSpecialAsciiMap(rows, lit, origin);
-            }
-            const mapSelection = specialMapSelection(mapContext, rows);
-            mappedCells = mappedCells.union(mapSelection);
-            context = mapContext;
-            currentLevel().context = context;
-            if (typeof value !== 'string' && value.contents) {
-                try {
-                    await currentState().callValueAsync(value.contents, [
-                        objectToLuaTable({
-                            width: context.width, height: context.height,
-                        }),
-                    ]);
-                }
-                finally {
-                    context = wholeLevel;
-                    currentLevel().context = context;
-                }
-            }
-            return mapSelection;
-        },
-        terrain: (selection, character, lit = -2) => {
-            const type = mapCharacterType(character);
-            if (type === undefined)
-                throw new Error(`unknown Lua terrain ${character}`);
-            specialSelectionTerrain(selection, type, lit ?? -2);
-        },
-        terrainAt: async (x, y, character, lit = -2) => {
-            const type = mapCharacterType(character);
-            if (type === undefined)
-                throw new Error(`unknown Lua terrain ${character}`);
-            const point = await getPackedLocationCoord(context, { x, y }, ANY_LOC);
-            if (!isok(point.x, point.y))
-                throw new TypeError('terrain coord not ok');
-            setSpecialTerrain(point.x, point.y, type, lit ?? -2);
-        },
-        replaceTerrain: options => replaceLuaTerrain(context, options),
-        region: (selection, lighting) => {
-            const lit = lighting === 'lit';
-            const area = lit ? selection.grow() : selection;
-            area.forEachXMajor((x, y) => {
-                const loc = requireGameLevel().at(x, y);
-                // sp_lev.c:sel_set_lit() preserves lava's own light even
-                // when the selected region is explicitly darkened.
-                if (loc)
-                    loc.lit = IS_LAVA(loc.typ) || lit;
-            });
-        },
-        roomRegion: async (options) => {
-            const room = await createLuaRoomRegion(currentLevel().context ?? wholeLevel, options);
-            if (!room || !options.contents)
-                return room;
-            const parent = context;
-            context = specialRoomContext(room);
-            try {
-                await currentState().callValueAsync(options.contents, [
-                    luaRoomTable(room),
-                ]);
-            }
-            finally {
-                context = parent;
-            }
-            addDoorsToSpecialRoom(room);
-            return room;
-        },
-        room: async (options) => {
-            if (roomFailed)
-                return null;
-            const parent = context;
-            const room = await buildSpecialRoom(luaRoomSpec(options), context._room ?? null, options.contents ? async (builtRoom) => {
-                context = specialRoomContext(builtRoom);
-                try {
-                    await currentState().callValueAsync(options.contents, [
-                        luaRoomTable(builtRoom),
-                    ]);
-                }
-                finally {
-                    context = parent;
-                }
-            } : null);
-            if (!room && currentLevel().prototype === 'themerms')
-                roomFailed = true;
-            context = parent;
-            return room;
-        },
-        stair: async (options) => {
-            const point = await createLuaStair(context, options);
-            mappedCells.add(point.x, point.y);
-        },
-        ladder: async (options) => {
-            const point = await createLuaStair(context, options, true);
-            mappedCells.add(point.x, point.y);
-        },
-        door: async (options) => {
-            const point = await createLuaDoor(context, options);
+        levelInit: value => lspo_level_init(value, currentLevel()),
+        levelFlags: flags => lspo_level_flags(currentLevel(), flags),
+        message: value => lspo_message(currentLevel(), value),
+        map: value => lspo_map(roomScope, currentLevel(), currentState(), wholeLevel, mappedCells, value),
+        terrain: (...args) => lspo_terrain(roomScope.context, args),
+        replaceTerrain: options => lspo_replace_terrain(roomScope.context, options),
+        region: (selection, lighting) => lspo_region(roomScope, currentLevel().context ?? wholeLevel, currentState(), selection, lighting),
+        roomRegion: options => lspo_region(roomScope, currentLevel().context ?? wholeLevel, currentState(), options),
+        room: options => lspo_room(roomScope, currentLevel(), currentState(), options),
+        stair: (direction, x, y) => lspo_stair(roomScope.context, mappedCells, direction, x, y),
+        ladder: (direction, x, y) => lspo_ladder(roomScope.context, mappedCells, direction, x, y),
+        door: async (state, x, y) => {
+            const point = await lspo_door(roomScope.context, state, x, y);
             if (point)
                 mappedCells.add(point.x, point.y);
         },
         drawbridge: async (options) => {
-            const point = await createLuaDrawbridge(context, options);
+            const point = await lspo_drawbridge(roomScope.context, options);
             mappedCells.add(point.x, point.y);
         },
-        engraving: options => createLuaEngraving(context, options),
-        gold: async (options) => await createLuaGold(context, options),
-        grave: async (options) => {
-            const point = await getLocationCoord(context, options.point, DRY);
-            const level = requireGameLevel();
-            if (!isok(point.x, point.y)
-                || level.traps.some(trap => trap.tx === point.x && trap.ty === point.y))
-                return;
-            level.requireAt(point.x, point.y).typ = GRAVE;
-            make_grave(point.x, point.y, options.text ?? null);
-        },
-        feature: options => createLuaFeature(context, options),
-        altar: options => createLuaAltar(context, options),
-        nonDiggable: selection => selection
-            ? specialSelectionNonDiggable(selection)
-            : specialNonDiggable(),
-        nonPasswall: selection => markSpecialSelectionWallProperty(selection ?? new SpecialSelection().negate(), W_NONPASSWALL),
-        wallProperty: options => createLuaWallProperty(currentLevel().context ?? wholeLevel, options),
-        wallify: options => {
-            const map = currentLevel().context ?? wholeLevel;
-            const x1 = options?.x1 ?? -1, y1 = options?.y1 ?? -1;
-            const x2 = options?.x2 ?? -1, y2 = options?.y2 ?? -1;
-            wallifyMap(x1 < 0 ? map.xstart - 1 : x1, y1 < 0 ? map.ystart - 1 : y1, x2 < 0 ? map.xstart + map.width + 1 : x2, y2 < 0 ? map.ystart + map.height + 1 : y2);
-        },
-        teleportRegion: async (options) => {
-            const { region, exclude } = await levelRegionCoordinates(currentLevel().context ?? wholeLevel, options);
-            if (options.dir === 'up') {
-                currentLevel().upTeleportRegion = region;
-                currentLevel().upTeleportExclude = exclude;
-            }
-            else if (options.dir === 'down') {
-                currentLevel().downTeleportRegion = region;
-                currentLevel().downTeleportExclude = exclude;
-            }
-            else {
-                currentLevel().upTeleportRegion = { ...region };
-                currentLevel().downTeleportRegion = { ...region };
-                currentLevel().upTeleportExclude = exclude ? { ...exclude } : null;
-                currentLevel().downTeleportExclude = exclude ? { ...exclude } : null;
-            }
-        },
-        levelRegion: async (options) => {
-            const { region, exclude } = await levelRegionCoordinates(currentLevel().context ?? wholeLevel, options);
-            const type = options.type;
-            if (type !== 'stair-up' && type !== 'stair-down' && type !== 'branch' && type !== 'portal')
-                throw new Error(`unsupported Lua level region ${type}`);
-            const active = currentLevel();
-            active.levelRegions ??= [];
-            active.levelRegions.push({ type, area: region, exclude,
-                ...(options.name === undefined ? {} : { destination: options.name }),
-            });
-        },
-        exclusion: options => createLuaExclusion(context, options),
-        gasCloud: async (options) => {
-            const coordinate = options.point;
-            const point = coordinate?.x === -1 && coordinate.y === -1 ? null : coordinate;
-            const damage = options.damage ?? 0;
-            const cloud = point
-                ? await createPoisonGasCloud(game, point.x, point.y, 1, damage)
-                : options.selection ? await createGasCloudSelection(game, luaSelectionCoordinates(options.selection), -1, damage) : null;
-            if (!cloud)
-                throw new TypeError('des.gas_cloud requires a coordinate or selection');
-            cloud.heroFault = !game.in_mklev && !game.context.mon_moving;
-            if (options.ttl !== undefined && options.ttl > -2)
-                cloud.ttl = options.ttl;
-            return cloud;
-        },
-        randomCorridors: async () => await makecorridors(),
-        corridor: createLuaCorridor,
-        mineralize: options => mineralize(options.kelp_pool ?? -1, options.kelp_moat ?? -1, options.gold_prob ?? -1, options.gem_prob ?? -1, true),
-        mazeWalk: async (options) => {
-            const point = await getPackedLocationCoord(context, { x: options.x ?? -1, y: options.y ?? -1 }, ANY_LOC);
-            if (!isok(point.x, point.y))
-                throw new TypeError('mazewalk coord not ok');
-            const directions = ['north', 'south', 'east', 'west'];
-            const direction = options.dir === 'random'
-                ? directions[rn2(directions.length)] : options.dir;
-            if (direction !== 'north' && direction !== 'south'
-                && direction !== 'east' && direction !== 'west')
-                throw new TypeError(`Unknown maze direction: ${direction}`);
-            const terrain = mapCharacterType(options.typ ?? '.');
-            if (terrain === undefined)
-                throw new TypeError('Unknown maze terrain');
-            specialMazeWalk(context, point.x - context.xstart, point.y - context.ystart, direction, terrain);
-            if (options.stocked)
-                await fillEmptySpecialMaze(mappedCells);
-        },
-        object: async (options) => currentState().objects.wrap(await createLuaObject(context, options, containers.at(-1) ?? null, monsterInventories.at(-1) ?? null, invokeObjectContents)),
-        trap: options => createLuaTrap(context, options),
-        monster: async (options) => {
-            const monster = await createLuaMonster(context, options);
-            if (monster && (options.inventory
-                || options.keep_default_invent === false)
-                && options.keep_default_invent !== true) {
-                await dropSpecialMonsterObjects(monster);
-                await discardMonsterInventory(monster, true);
-            }
-            if (options.inventory) {
-                monsterInventories.push(monster);
-                try {
-                    await currentState().callValueAsync(options.inventory, []);
-                }
-                finally {
-                    monsterInventories.pop();
-                }
-                if (monster)
-                    await initializeMonsterArmor(monster);
-            }
-            return monster;
-        },
+        engraving: (value, type, text) => lspo_engraving(roomScope.context, value, type, text),
+        gold: (value, x, y) => lspo_gold(roomScope.context, value, x, y),
+        grave: (value, y, text) => lspo_grave(roomScope.context, value, y, text),
+        feature: (value, x, y) => lspo_feature(roomScope.context, value, x, y),
+        altar: options => lspo_altar(roomScope.context, options),
+        nonDiggable: lspo_non_diggable,
+        nonPasswall: lspo_non_passwall,
+        wallProperty: options => lspo_wall_property(currentLevel().context ?? wholeLevel, options),
+        wallify: options => lspo_wallify(currentLevel().context ?? wholeLevel, options),
+        teleportRegion: value => lspo_teleport_region(currentLevel().context ?? wholeLevel, currentLevel(), value),
+        levelRegion: value => lspo_levregion(currentLevel().context ?? wholeLevel, currentLevel(), value),
+        exclusion: options => lspo_exclusion(roomScope.context, options),
+        gasCloud: lspo_gas_cloud,
+        randomCorridors: lspo_random_corridors,
+        corridor: lspo_corridor,
+        mineralize: lspo_mineralize,
+        mazeWalk: (value, y, direction) => lspo_mazewalk(roomScope.context, mappedCells, value, y, direction),
+        object: async (id, x, y) => currentState().objects.wrap(await lspo_object(roomScope.context, containers.at(-1) ?? null, monsterInventories.at(-1) ?? null, invokeObjectContents, id, x, y)),
+        trap: (type, x, y) => lspo_trap(roomScope.context, type, x, y),
+        monster: (id, x, y) => lspo_monster(roomScope.context, currentState(), monsterInventories, id, x, y),
     };
-    const selectionApi = createSelectionApi(() => context, async (callable, args) => {
+    const selectionApi = createSelectionApi(() => roomScope.context, async (callable, args) => {
         const state = currentState();
         try {
             await state.callValueAsync(callable, args);
@@ -425,8 +193,8 @@ function createLuaLevelSession() {
                 // Lua integers retain their low bits, then narrow the sum.
                 const relativeX = (point.x << 16) >> 16;
                 const relativeY = (point.y << 16) >> 16;
-                const timerX = ((context.xstart + relativeX) << 16) >> 16;
-                const timerY = ((context.ystart + relativeY) << 16) >> 16;
+                const timerX = ((roomScope.context.xstart + relativeX) << 16) >> 16;
+                const timerY = ((roomScope.context.ystart + relativeY) << 16) >> 16;
                 if (!isok(timerX, timerY))
                     return;
                 const deadline = (game.moves ?? 0) + when;
@@ -434,22 +202,23 @@ function createLuaLevelSession() {
                 scheduleLevelTimer(timerX, timerY, LEVEL_TIMER_KIND.MELT_ICE_AWAY, deadline, game);
             },
         },
-        des: createDesBindings(operations, selectionApi.wrap),
+        des: l_register_des(operations, selectionApi.wrap),
         selection: selectionApi.bindings,
     };
     return {
         bindings,
-        // C sp_lev.c:sp_level_coder_init(): fresh flip flags, an empty
+        // Reset the flip flags, mapped cells, room scope, and level flags.
+        // An empty
         // SpLev_Map, and the level's base flags; reset_xystart_size() is
         // the wholeLevel rectangle.
         beginLevel(nextActive, { special = true } = {}) {
             active = nextActive;
-            context = wholeLevel;
-            active.context = context;
+            roomScope.context = wholeLevel;
+            active.context = roomScope.context;
             containers.length = 0;
             monsterInventories.length = 0;
             mappedCells = new SpecialSelection();
-            roomFailed = false;
+            roomScope.roomFailed = false;
             currentLevel().allowFlips = 3;
             if (!special)
                 return;
@@ -461,7 +230,7 @@ function createLuaLevelSession() {
         bindState(state) {
             luaState = state;
             state.objects.toAbsolute = (x, y) => ({
-                x: x + context.xstart, y: y + context.ystart,
+                x: x + roomScope.context.xstart, y: y + roomScope.context.ystart,
             });
             currentLevel().align = luaTableToArray(state.getGlobal('align')).map(value => {
                 if (value !== 'law' && value !== 'neutral' && value !== 'chaos')
@@ -470,38 +239,18 @@ function createLuaLevelSession() {
             });
         },
         beginRoom() {
-            roomFailed = false;
-            context = wholeLevel;
+            roomScope.roomFailed = false;
+            roomScope.context = wholeLevel;
         },
         roomFailed() {
-            return roomFailed;
+            return roomScope.roomFailed;
         },
-        // C sp_lev.c:lspo_finalize_level(): door linking, boundary removal,
-        // way-out checks, map cleanup, wallification, random flips, the
-        // feature census and solidification — load_special()'s tail shares
-        // this sequence.
-        async finishSpecialLevel() {
-            linkSpecialLevelDoors();
-            removeSpecialLevelBoundaries(mappedCells);
-            if (currentLevel().checkInaccessibles)
-                await ensureWaysOut();
-            await cleanupSpecialLevelMap();
-            if (!requireGameLevel().flags.corrmaze)
-                wallification(1, 0, COLNO - 1, ROWNO - 1);
-            const allowedFlips = currentLevel().allowFlips;
-            if (allowedFlips === undefined)
-                throw new Error('Lua level flip flags are uninitialized');
-            await flipSpecialLevelRandom(allowedFlips);
-            countLevelFeatures();
-            if (currentLevel().solidify)
-                solidifyLuaMap(mappedCells);
-            flipLuaRegions(currentLevel());
-        },
+        finishSpecialLevel: () => lspo_finalize_level(currentLevel(), mappedCells),
     };
 }
 // C sp_lev.c:load_special(): run the level's Lua script, then finalize.
-export async function generateLuaSpecialLevel(active) {
-    const session = createLuaLevelSession();
+export async function load_special(active) {
+    const session = sp_level_coder_init();
     session.beginLevel(active);
     await currentLuaLifecycle().executeSpecial(game, active.file, session.bindings, state => session.bindState(state));
     await session.finishSpecialLevel();
@@ -522,7 +271,7 @@ export async function beginLuaThemerooms() {
     if (!session) {
         if (!filename)
             throw new Error('Themed room initialization requires a source file.');
-        const createdSession = createLuaLevelSession();
+        const createdSession = sp_level_coder_init();
         session = createdSession;
         createdSession.beginLevel(active, { special: false });
         let loadingStateId;

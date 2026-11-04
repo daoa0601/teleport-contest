@@ -4,7 +4,7 @@ import { COLNO, HWALL, MAXNROFROOMS, OROOM, ROOM, ROWNO, STONE, VWALL } from '..
 import { game } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { init_rect } from '../js/rect.js';
-import { check_room, create_room, wallifyMap } from '../js/sp_lev.js';
+import { check_room, create_room, wallify_map } from '../js/sp_lev.js';
 import { freshObjectRoom } from './support/object-room.js';
 // C sp_lev.c:check_room() pulls an out-of-range origin back onto the
 // playable map before scanning: lowx below 3 becomes 3 and lowy below 2
@@ -27,7 +27,7 @@ void test('wallify_map draws straight walls around room terrain', async () => {
     level.requireAt(31, 9).typ = ROOM;
     assert.equal(level.at(29, 9)?.typ, STONE);
     assert.equal(level.at(30, 8)?.typ, STONE);
-    wallifyMap(1, 0, COLNO - 1, ROWNO - 1);
+    wallify_map(1, 0, COLNO - 1, ROWNO - 1);
     // Same-row neighbour: a vertical wall segment.
     assert.equal(level.at(29, 9)?.typ, VWALL);
     // Row above the floor: a horizontal wall segment.
