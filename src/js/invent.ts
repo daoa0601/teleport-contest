@@ -85,8 +85,11 @@ import { maybeUnhideAt } from './mon.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
 import {objectWeight, isContainer, announceGlobMerge} from './mkobj.js';
-// invent.js — Inventory display and look-here commands.
-// C ref: invent.c — ddoinv(), display_inventory(), dolook().
+// invent.js — the invent.c owner: inventory admission (addinv/freeinv/
+// assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
+// views, look_here()/dolook(), doorganize/#adjust, and stack merging.
+// C ref: invent.c — addinv(), getobj(), ddoinv(), display_inventory(),
+// look_here(), doorganize(), dolook().
 
 
 export interface InventoryObjectMenuOptions {
