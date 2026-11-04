@@ -30,6 +30,12 @@
 // actor arms, explum(), gulpum()/start_engulf()/end_engulf(), hmonas(),
 // that_is_a_mimic()/stumble_onto_mimic(), and nohandglow().
 
+import {
+    objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER,
+    CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA,
+    GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR,
+    OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, TOWEL, YA, YUMI,
+} from './object_data.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
@@ -109,8 +115,7 @@ import type { Monster } from './monster_types.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
 import { tryMonsterUnslime, useMonsterStoningCure } from './muse.js';
 import type { MonsterStoningCureOptions } from './muse.js';
-import { objectClassForType, objectMaterial, observeObject } from './o_init.js';
-import { ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_DESCRIPTIONS, OBJECT_LARGE_DAMAGE, OBJECT_NAMES, OBJECT_SMALL_DAMAGE, OBJECT_SUBTYPE, OBJECT_WEIGHT, TOWEL, YA, YUMI } from './object_data.js';
+import { objectMaterial, observeObject } from './o_init.js';
 import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
@@ -959,7 +964,7 @@ export async function prepareHeroWeaponContact(
     const handToHand = mode === 'melee'
         || (mode === 'applied' && isPolearm(state.uwep || state.u.uwep));
     if (state.urole.key === 'healer' && handToHand && weapon.oclass === WEAPON_CLASS
-        && OBJECT_SUBTYPE[weapon.otyp] === P_KNIFE) {
+        && objectSkill(weapon.otyp) === P_KNIFE) {
         const vital = state.mvitals?.[monster.mnum];
         if (!vital) throw new Error(`Healer anatomy requires initialized vitals for species ${monster.mnum}.`);
         result.damage += Math.min(3, Math.trunc(vital.died / 6));
@@ -996,7 +1001,7 @@ export async function prepareHeroWeaponContact(
 }
 
 function isImprovisedContact(weapon: GameObject, mode: HeroPhysicalAttackMode, state: PlayingGameState): boolean {
-    const skill = OBJECT_SUBTYPE[weapon.otyp] ?? P_NONE;
+    const skill = objectSkill(weapon.otyp) ?? P_NONE;
     const launcher = weapon.oclass === WEAPON_CLASS && skill >= P_BOW && skill <= P_CROSSBOW;
     return launcher
         || (mode === 'melee' && (isMissileObject(weapon) || isLauncherAmmunition(weapon)))
@@ -1047,7 +1052,7 @@ function shatterCandidate(
     const samuraiKatana = state.urole.key === 'samurai' && weapon.otyp === KATANA
         && !(state.uarms || state.u.uarms);
     if (!isBimanualObject(weapon) && !samuraiKatana) return null;
-    const skill = Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? P_NONE);
+    const skill = Math.abs(objectSkill(weapon.otyp) ?? P_NONE);
     if (skill === P_NONE) return null;
     const proficiency = ensureHeroSkills(state)?.[skill];
     if (!proficiency) throw new Error(`Weapon shattering requires initialized skill ${skill}.`);
@@ -1421,7 +1426,7 @@ export function rollHeroJoust(
     const secondary = state.uswapwep || hero.uswapwep;
     if (weapon !== primary && (weapon !== secondary || !hero.twoweap)) return 0;
     const skills = ensureHeroSkills(state);
-    let rating = skills?.[Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0)]?.skill ?? P_ISRESTRICTED;
+    let rating = skills?.[Math.abs(objectSkill(weapon.otyp))]?.skill ?? P_ISRESTRICTED;
     if (hero.twoweap)
         rating = Math.min(rating, skills?.[P_TWO_WEAPON_COMBAT]?.skill ?? P_ISRESTRICTED);
     if (rating === P_ISRESTRICTED) rating = P_UNSKILLED;
@@ -1597,7 +1602,7 @@ export async function showHeroPhysicalHit(monster: Monster, object: GameObject |
         await publish('You hit it.');
     } else {
         const verb = object && (armorSlotFor(object.otyp) === 'uarms' || object.otyp === HEAVY_IRON_BALL)
-            ? 'bash' : object && (OBJECT_SUBTYPE[object.otyp] === P_WHIP || object.otyp === TOWEL && object.spe > 0)
+            ? 'bash' : object && (objectSkill(object.otyp) === P_WHIP || object.otyp === TOWEL && object.spe > 0)
                 ? 'lash' : state.urole?.key === 'barbarian' ? 'smite' : 'hit';
         const punctuation = canSeeMonster(monster) ? damagePunctuation(damage) : '.';
         await publish(`You ${verb} ${monsterName(monster, { state })}${punctuation}`);
@@ -1954,7 +1959,7 @@ async function preparePhysicalContact(
     if (weapon.useWeaponSkill) {
         strike.lightContact = artifactEmitsLight(object) && !!object.lamplit && monsterHatesLight(monster);
         if (state.u.usteed && mode === 'melee' && strike.damage > 0
-            && Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) === P_LANCE && monster !== state.u.ustuck) {
+            && Math.abs(objectSkill(object.otyp)) === P_LANCE && monster !== state.u.ustuck) {
             strike.joust = rollHeroJoust(monster, object, { state });
             if (strike.joust) strike.trainWeaponSkill = true;
         }

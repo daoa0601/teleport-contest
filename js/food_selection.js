@@ -1,4 +1,5 @@
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
+import { objectUnique, BEARTRAP, CORPSE, EGG, GOLD_PIECE, } from './object_data.js';
 import { BEAR_TRAP, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, IRONBARS, TT_BEARTRAP, W_NONDIGGABLE } from './const.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { veganCorpse } from './food_traits.js';
@@ -11,7 +12,6 @@ import { inventoryItemDescription } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, requireMonsterData } from './monster_data.js';
-import { BEARTRAP, CORPSE, EGG, GOLD_PIECE, OBJECT_UNIQUE } from './object_data.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
@@ -32,7 +32,7 @@ export function heroEatsMetal(state = game) {
     return !!(requireMonsterData(MONSTER_FLAGS1, heroSpecies(state)) & METALLIVORE);
 }
 export function isEdibleFood(object, state = game) {
-    if (!object || OBJECT_UNIQUE[object.otyp])
+    if (!object || objectUnique(object.otyp))
         return false;
     const form = heroSpecies(state);
     if (form === FIRE_ELEMENTAL && objectIsFlammable(object, state))

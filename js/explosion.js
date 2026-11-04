@@ -1,4 +1,5 @@
 // C explode.c:explode(). Floor and monster effects precede damage to the hero.
+import { objectBaseDirection, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP, } from './object_data.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
@@ -18,7 +19,6 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_NAME, monsterIsDemon, monsterI
 import { monsterName, randomDisplayMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterAtPosition } from './steed.js';
-import { OBJECT_DIR, POT_OIL, SCR_FIRE, WAN_DIGGING, WAN_MAGIC_MISSILE, WAN_SLEEP } from './object_data.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -258,7 +258,7 @@ async function explosionSource(type, damage, objectClass, state) {
     if (objectClass === WAND_CLASS) {
         if (type < 0) {
             explodingObject = -type;
-            type = OBJECT_DIR[explodingObject] === RAY && ![WAN_DIGGING, WAN_SLEEP].includes(explodingObject)
+            type = objectBaseDirection(explodingObject) === RAY && ![WAN_DIGGING, WAN_SLEEP].includes(explodingObject)
                 ? explodingObject - WAN_MAGIC_MISSILE : 0;
             if (type < 0 || type > 9) {
                 await impossible(`explode: wand has bad zap type (${type}).`);

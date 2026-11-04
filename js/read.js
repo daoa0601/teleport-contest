@@ -5,6 +5,7 @@
 // drop_boulder_on_monster(), do_class_genocide(), do_genocide(), punish(),
 // unpunish(), cant_revive(), create_particular() and its parse/creation
 // halves. Effects own their exceptions to scroll disposal.
+import { objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection, requireObjectData, } from './object_data.js';
 import { exerciseAttribute, exerciseWisdom, exerciseAttribute as exerciseAttributeNamed } from './attrib.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, someHeroArmor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
@@ -32,7 +33,6 @@ import { monsterAtPosition, monsterSaddle, putSaddleOnMonster } from './steed.js
 import { makePlural, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
 import { tryCallObjectType } from './do.js';
-import { BAG_OF_TRICKS, BELL_OF_OPENING, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_CHARGED, OBJECT_INITIAL_KNOWN, OBJECT_MAGIC, OBJECT_MERGE, OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection, requireObjectData } from './object_data.js';
 import { blessObjectState, curseObject, curseObjectState, mkobj, objectWeight, uncurseObjectState } from './mkobj.js';
 import { askTeleportDestination, teleportHero } from './teleport.js';
 import { levelTeleport } from './level_teleport.js';
@@ -205,7 +205,7 @@ function chargingChoice(object, state) {
     if (object.oclass === WAND_CLASS)
         return GETOBJ_SUGGEST;
     const discovered = object.dknown && objectTypeKnown(object, state);
-    if (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]
+    if (object.oclass === RING_CLASS && objectCharged(object.otyp)
         && discovered)
         return GETOBJ_SUGGEST;
     if (isWeaponTool(object))
@@ -217,7 +217,7 @@ function chargingChoice(object, state) {
     if (object.otyp === OIL_LAMP || object.otyp === BRASS_LANTERN
         || object.otyp === MAGIC_LAMP && !objectTypeKnown(object, state))
         return GETOBJ_SUGGEST;
-    if (OBJECT_CHARGED[object.otyp])
+    if (objectCharged(object.otyp))
         return discovered ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY;
     return GETOBJ_EXCLUDE;
 }
@@ -230,7 +230,7 @@ export async function rechargeObject(object, blessing, state = game) {
     if (object.oclass === WAND_CLASS) {
         await rechargeWand(object, blessing, state);
     }
-    else if (object.oclass === RING_CLASS && OBJECT_CHARGED[object.otyp]) {
+    else if (object.oclass === RING_CLASS && objectCharged(object.otyp)) {
         return rechargeRing(object, blessing, state);
     }
     else if (object.oclass === TOOL_CLASS) {
@@ -317,7 +317,7 @@ export async function rechargeRing(ring, blessing, state = game, { publish = pli
 }
 async function rechargeTool(tool, blessing, state) {
     const previous = tool.recharged;
-    if (OBJECT_CHARGED[tool.otyp] && previous < 7)
+    if (objectCharged(tool.otyp) && previous < 7)
         tool.recharged++;
     switch (tool.otyp) {
         case BELL_OF_OPENING:
@@ -538,7 +538,7 @@ async function enchantArmor(source, state) {
         return {};
     }
     power = Math.trunc((4 - Math.max(power, -100)) / 2)
-        + Number(special) + Number(!OBJECT_MAGIC[armor.otyp]) + Number(!!source.blessed);
+        + Number(special) + Number(!objectMagic(armor.otyp)) + Number(!!source.blessed);
     let amount = power <= 0
         ? (armor.spe > 0 && rn2(armor.spe) === 0 ? 1 : 0)
         : rnd(power);
@@ -876,7 +876,7 @@ function removeCurseWornMask(object, state) {
     }
     else if (object === quiver) {
         if (object.oclass === WEAPON_CLASS) {
-            if (!OBJECT_MERGE[object.otyp])
+            if (!objectMerge(object.otyp))
                 mask = 0;
         }
         else if (object.oclass === GEM_CLASS) {
@@ -1439,7 +1439,7 @@ export async function applyScrollEffects(source, { state = game, gotoLevel, fini
     };
 }
 async function exerciseScrollWisdom(otyp, state) {
-    if (OBJECT_MAGIC[otyp])
+    if (objectMagic(otyp))
         await exerciseAttribute(A_WIS, true, state);
 }
 // C read.c:seffect_blank_paper().

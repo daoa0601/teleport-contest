@@ -1,6 +1,9 @@
 // Hero-credited monster death.
 // C refs: mon.c xkilled(), corpse_chance(), and explode.c explode().
 
+import {
+    objectBimanual, BOULDER, FIGURINE,
+} from './object_data.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { adjustHeroAlignment } from './alignment.js';
 import { changeHeroLuck } from './attrib.js';
@@ -35,7 +38,6 @@ import { delobj } from './invent.js';
 import { preventMonsterDeath } from './mon.js';
 import { monsterDeathCount } from './mon.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { BOULDER, FIGURINE, OBJECT_BIMANUAL } from './object_data.js';
 import { removeIntrinsicProperty } from './properties.js';
 import { priestIsCoaligned } from './priest.js';
 import { rn2 } from './rng.js';
@@ -302,7 +304,7 @@ export async function finishHeroMonsterKillOutcome(monster: Monster, x: number, 
                 && ((extra.owt ?? 1) > 30
                     // C mon.c:3607 reads objects[otyp].oc_big raw; the
                     // comment there notes it is also oc_bimanual and oc_bulky.
-                    || OBJECT_BIMANUAL[extra.otyp]);
+                    || objectBimanual(extra.otyp));
             const disposableFood = extra.oclass === FOOD_CLASS && !collectsFood
                 && !extra.oartifact;
             if (disposableFood) {

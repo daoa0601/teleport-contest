@@ -4,13 +4,13 @@
 // reset_pick()/maybe_reset_pick(), u_have_forceable_weapon(),
 // stumble_on_door_mimic(), doopen()/doopen_indir(), obstructed(), doclose(),
 // boxlock(), doorlock().
+import { objectSkill, BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT, } from './object_data.js';
 import { currency } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { CQ_CANNED, A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
 import { isok } from './cmd.js';
 import { commandResultCancelled, cmdq_add_dir, cmdq_add_ec } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { BAG_OF_TRICKS, CHEST, LARGE_BOX, OBJECT_LARGE_DAMAGE, OBJECT_SUBTYPE, CORPSE, ICE_BOX, CREDIT_CARD, LOCK_PICK, SKELETON_KEY, WAN_OPENING, WAN_LOCKING, WAN_STRIKING, SPE_KNOCK, SPE_WIZARD_LOCK, SPE_FORCE_BOLT } from './object_data.js';
 import { doloot } from './pickup.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMonster, map_invisible } from './display.js';
@@ -202,14 +202,14 @@ export function isForceableWeapon(weapon) {
         return false;
     const weaponTool = isWeaponTool(weapon);
     if (weapon.oclass === WEAPON_CLASS || weaponTool) {
-        const skill = OBJECT_SUBTYPE[weapon.otyp] || 0;
+        const skill = objectSkill(weapon.otyp);
         return skill >= P_DAGGER && skill <= P_LANCE && skill !== P_FLAIL;
     }
     return weapon.oclass === ROCK_CLASS;
 }
 function isPick(weapon) {
     return (weapon?.oclass === WEAPON_CLASS || weapon?.oclass === TOOL_CLASS)
-        && OBJECT_SUBTYPE[weapon.otyp] === P_PICK_AXE;
+        && objectSkill(weapon.otyp) === P_PICK_AXE;
 }
 function forceWeaponFailure(weapon) {
     if (!weapon)

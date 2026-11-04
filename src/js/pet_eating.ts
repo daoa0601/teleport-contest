@@ -1,3 +1,6 @@
+import {
+    objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_NUTRITION,
+} from './object_data.js';
 import { currency } from './invent.js';
 // A pet's meal, from nutritional recovery through the observable eating
 // message to consumption. C refs: dogmove.c dog_nutrition() and dog_eat().
@@ -15,7 +18,6 @@ import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from '.
 import { consumeMonsterObject } from './mon.js';
 import { feedBeeRoyalJelly } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_DELAY, OBJECT_NUTRITION } from './object_data.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { splitObjectStack } from './mkobj.js';
 
@@ -54,7 +56,7 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
             delay = 3 + (body[0] >> 6);
             nutrition = body[1];
         } else {
-            delay = OBJECT_DELAY[object.otyp] ?? 0;
+            delay = objectDelay(object.otyp);
             nutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
         }
         const fullNutrition = obj_nutrition(object);

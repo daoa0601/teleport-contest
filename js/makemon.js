@@ -1,6 +1,7 @@
 // Monster creation: species selection, birth, and starting inventory.
 // C ref: makemon.c — mkclass, rndmonst, peace_minded, makemon, m_initweap,
 // m_initinv, set_mimic_sym, create_critters.
+import { objectBaseWeight, objectSkill, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { armorBonus } from './do_wear.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, BLCORNER, COLNO, CROSSWALL, DELPHI, GP_AVOID_MONPOS, GP_CHECKSCARY, G_GENOD, G_GONE, G_NOCORPSE, HWALL, IS_DOOR, IS_WALL, In_V_tower, In_endgame, In_hell, In_mines, In_quest, In_sokoban, Is_airlevel, Is_astralevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, MM_ADJACENTOK, MM_ANGRY, MM_ASLEEP, MM_EDOG, MM_EGD, MM_EMIN, MM_EPRI, MM_ESHK, MM_FEMALE, MM_IGNOREWATER, MM_MALE, MM_MINVIS, MM_NOCOUNTBIRTH, MM_NOGRP, MM_NONAME, MM_NOTAIL, MM_NOWAIT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, NO_MINVENT, ROOMOFFSET, ROWNO, SCORR, SDOOR, SHOPBASE, STRAT_APPEARMSG, STRAT_CLOSE, STRAT_WAITFORU, TDWALL, TEMPLE, TLCORNER, TRWALL, TUWALL, VAULT, ZOO, G_EXTINCT, MGIVENNAME, P_SABER, P_SHORT_SWORD, BOLT_LIM, MM_NOEXCLAM, MM_NOMSG, OBJECT_TIMER_KIND } from './const.js';
@@ -29,7 +30,6 @@ import { MONSTER_ALIGNMENT, MONSTER_CLASS_SYMBOLS, MONSTER_COLOR, MONSTER_DIFFIC
 import { monsterDeathCount } from './mon.js';
 import { monsterName, randomGhostName, setMonsterGivenName } from './do_name.js';
 import { monsterSubjectPronoun, setMonsterSpecies } from './mondata.js';
-import { OBJECT_SUBTYPE, SPE_BOOK_OF_THE_DEAD, AXE, BOULDER, BULLWHIP, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, CORPSE, CREAM_PIE, CRYSTAL_BALL, DAGGER, DART, DILITHIUM_CRYSTAL, DWARVISH_CLOAK, DWARVISH_IRON_HELM, DWARVISH_MATTOCK, DWARVISH_MITHRIL_COAT, DWARVISH_ROUNDSHIELD, DWARVISH_SHORT_SWORD, DWARVISH_SPEAR, EGG, ELVEN_ARROW, ELVEN_BOOTS, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_CLOAK, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, ELVEN_SHORT_SWORD, ELVEN_SPEAR, FIGURINE, GOLD_PIECE, HELMET, IRON_SHOES, LARGE_BOX, LEATHER_ARMOR, LEATHER_CLOAK, LEATHER_GLOVES, LEATHER_JACKET, LUCKSTONE, LUMP_OF_ROYAL_JELLY, MACE, MIRROR, OBJECT_WEIGHT, ORCISH_ARROW, ORCISH_BOW, ORCISH_CHAIN_MAIL, ORCISH_CLOAK, ORCISH_DAGGER, ORCISH_HELM, ORCISH_SHIELD, ORCISH_SHORT_SWORD, PICK_AXE, POT_OBJECT_DETECTION, POT_SICKNESS, QUARTERSTAFF, RING_MAIL, RIN_INVISIBILITY, ROBE, ROCK, SCIMITAR, SLIME_MOLD, SLING, SMALL_SHIELD, SPEAR, SPE_DIG, SPLINT_MAIL, STATUE, TALLOW_CANDLE, TIN, URUK_HAI_SHIELD, WAX_CANDLE, } from './object_data.js';
 import { hideMonsterUnder, initialShapechangedBirth } from './mon.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { setMonsterPermanentInvisibility } from './worn.js';
@@ -949,7 +949,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
         const object = await mksobj(otyp, true, false);
         object.quan = 3 + rn2(oquan);
         object.quantity = object.quan;
-        object.owt = (OBJECT_WEIGHT[otyp] ?? 1) * object.quan;
+        object.owt = objectBaseWeight(otyp) * object.quan;
         if (otyp === ORCISH_ARROW)
             object.opoisoned = true;
         await addCreatedObjectToMonsterInventory(pendingMonster, object, game);
@@ -1568,7 +1568,7 @@ export async function makemon(mdat, x, y, mmflags, requestedByHero = false) {
             const gem = await mksobj(rndClass(DILITHIUM_CRYSTAL, LUCKSTONE - 1), false, false);
             gem.quan = rn1(2, 3);
             gem.quantity = gem.quan;
-            gem.owt = (OBJECT_WEIGHT[gem.otyp] ?? 1) * gem.quan;
+            gem.owt = objectBaseWeight(gem.otyp) * gem.quan;
             await addCreatedObjectToMonsterInventory(pendingMonster, gem, game);
             hasMonsterInventory = true;
         }
@@ -1990,8 +1990,8 @@ export async function giveMonsterStartingObject(monster, type) {
         object.orotten = object.odiluted = object.norevive = false;
     }
     else if (monsterIsPlayerMonster(monster.mnum) && object.oclass === 2
-        && (OBJECT_SUBTYPE[type] ?? 0) >= P_SHORT_SWORD
-        && (OBJECT_SUBTYPE[type] ?? 0) <= P_SABER) {
+        && objectSkill(type) >= P_SHORT_SWORD
+        && objectSkill(type) <= P_SABER) {
         object.spe = 3 + rn2(4);
     }
     if (type === CANDELABRUM_OF_INVOCATION) {

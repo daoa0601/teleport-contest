@@ -9,21 +9,21 @@
 // lookup_novel().  The category menu is naming_categories.ts.
 
 import {
+    objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR,
+    FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, OBJECT_DESCRIPTIONS, STATUE, TIN, TOWEL,
+    CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS,
+    OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS,
+} from './object_data.js';
+import {
     GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER,
     M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE,
 } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition } from './cmd.js';
 import { CMDQ_KEY, CQ_CANNED } from './const.js';
 import { chooseNamingCategory } from './naming_categories.js';
-import { renameDiscoveredType, recordObjectEncounter, rememberType, objectClassForType } from './o_init.js';
+import { renameDiscoveredType, recordObjectEncounter, rememberType } from './o_init.js';
 import { queryLevelAnnotation } from './dungeon.js';
 import { chooseInventoryObject } from './invent.js';
-import {
-    SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL,
-    OBJECT_DESCRIPTIONS, OBJECT_WEIGHT, STATUE, TIN, TOWEL,
-    CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS,
-    OBJECT_BASES, OBJECT_MAGIC, OBJECT_NAMES, OBJECT_UNIQUE, POT_WATER, SPEED_BOOTS,
-} from './object_data.js';
 import {
     canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible,
     randomBogusMonsterIdentity, seeMonsterWithInfrared, type MonsterIdentity,
@@ -819,7 +819,7 @@ function appearanceRange(object: GameObject): readonly [number, number] {
     else if ([5, 9, 10].includes(object.oclass)) {
         high = low;
         while (objectClassForType(high) === object.oclass
-            && !OBJECT_UNIQUE[high] && OBJECT_MAGIC[high]) high++;
+            && !objectUnique(high) && objectMagic(high)) high++;
         high--;
     } else if (![4, 11, 17].includes(object.oclass)) {
         low = high = type;
@@ -872,7 +872,7 @@ export async function callObjectType(object: GameObject, state: GameState = game
     else if (sample.otyp === TOWEL || sample.otyp === STATUE) sample.spe = 0;
     else if (sample.otyp === TIN) sample.known = false;
     else if (sample.otyp === FIGURINE) sample.corpsenm = -1;
-    else if (sample.otyp === HEAVY_IRON_BALL) sample.owt = OBJECT_WEIGHT[HEAVY_IRON_BALL] ?? sample.owt;
+    else if (sample.otyp === HEAVY_IRON_BALL) sample.owt = objectBaseWeight(HEAVY_IRON_BALL) ?? sample.owt;
     else if (sample.oclass === 7 && sample.globby) sample.owt = 120;
     let prompt: string;
     if (object.oclass === 8 && object.fromsink) {

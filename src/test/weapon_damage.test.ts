@@ -1,12 +1,11 @@
+import {
+    objectBaseMaterial, objectBaseWeight, ACID_VENOM, AXE, BULLWHIP, CREAM_PIE, DAGGER,
+    HEAVY_IRON_BALL, DWARVISH_MATTOCK, OBJECT_NAMES, TWO_HANDED_SWORD, WAN_LIGHT, WAN_LIGHTNING,
+} from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-    ACID_VENOM, AXE, BULLWHIP, CREAM_PIE, DAGGER, HEAVY_IRON_BALL,
-    DWARVISH_MATTOCK, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_WEIGHT,
-    TWO_HANDED_SWORD, WAN_LIGHT, WAN_LIGHTNING,
-} from '../js/object_data.js';
 import {
     rollPhysicalWeaponDamage,
     rollPhysicalWeaponDamageAgainstHero,
@@ -87,7 +86,7 @@ void test('an axe gets its extra die against a wood golem', async () => {
 });
 
 void test('an overweight iron ball gains damage up to the source cap', async () => {
-    const weight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
+    const weight = objectBaseWeight(HEAVY_IRON_BALL);
     assert.ok(weight !== undefined);
     const ball = await uninitializedObject(HEAVY_IRON_BALL, {
         owt: weight + 320,
@@ -121,7 +120,7 @@ void test('shade contact recognizes a silver wand after its material has been sh
     assert.ok(game.objectMaterials);
     const type = game.objectMaterials.findIndex((material, otyp) =>
         otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
-        && material === 14 && OBJECT_MATERIAL[otyp] !== 14);
+        && material === 14 && objectBaseMaterial(otyp) !== 14);
     assert.ok(type >= WAN_LIGHT, 'The shuffled wand class needs a silver wand whose original material differed');
     const wand = await uninitializedObject(type);
 
@@ -133,7 +132,7 @@ void test('a wand which lost its silver material passes through a shade', async 
     assert.ok(game.objectMaterials);
     const type = game.objectMaterials.findIndex((material, otyp) =>
         otyp >= WAN_LIGHT && otyp <= WAN_LIGHTNING
-        && material !== 14 && OBJECT_MATERIAL[otyp] === 14);
+        && material !== 14 && objectBaseMaterial(otyp) === 14);
     assert.ok(type >= WAN_LIGHT, 'The shuffled wand class needs a former silver type with a different material');
     const wand = await uninitializedObject(type);
 

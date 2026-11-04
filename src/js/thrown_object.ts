@@ -2,6 +2,10 @@
 // C refs: dothrow.c throw_obj(), invent.c freeinv(), mkobj.c splitobj(),
 // and zap.c bhit().
 
+import {
+    objectClassForType, objectSkill, BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, ROCK,
+    TALLOW_CANDLE, WAX_CANDLE,
+} from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
@@ -37,11 +41,7 @@ import { distantObjectName, objectName, ownedObjectName } from './objnam.js';
 import { isPick } from './object_properties.js';
 import { MONSTER_FLAGS1, MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { breakObjectAtLocation, objectBreaksOnImpact } from './dothrow.js';
-import {
-    BOULDER, CANDELABRUM_OF_INVOCATION, HEAVY_IRON_BALL, 
-    OBJECT_SUBTYPE, ROCK, TALLOW_CANDLE, WAX_CANDLE,
-} from './object_data.js';
-import { objectClassForType } from './o_init.js';
+
 import { splitObjectStack } from './mkobj.js';
 import { withIndefiniteArticle } from './objnam.js';
 
@@ -174,7 +174,7 @@ export function heroThrowTrajectory(
 ): ThrowTrajectory {
     const launched = launcherMatchesAmmo(object, launcher);
     const crossbowing = launched && launcher !== null && launcher !== undefined
-        && OBJECT_SUBTYPE[launcher.otyp] === P_CROSSBOW;
+        && objectSkill(launcher.otyp) === P_CROSSBOW;
     const unweightedRange = Math.trunc(
         (crossbowing ? 18 : heroThrowStrength(state)) / 2,
     );

@@ -1,6 +1,10 @@
 // display.js — Map rendering and terminal output.
 // C ref: display.c — newsym, show_glyph, docrt, cls, flush_screen.
 
+import {
+    objectClassForType, LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER,
+    OBJECT_BASES, OBJECT_COLOR,
+} from './object_data.js';
 import { pline_xy } from './pline.js';
 import { engravingAt } from './engrave.js';
 import { flushPendingTopline } from './tty_topline.js';
@@ -26,7 +30,6 @@ import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
 import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
-import { LARGE_BOX, CHEST, GOLD_PIECE, FOOD_RATION, CORPSE, TOWEL, STATUE, BOULDER, OBJECT_BASES, OBJECT_COLOR } from './object_data.js';
 import { MONSTER_COLOR, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_FLAGS3, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
 import { BOGUS_MONSTERS, BOGUS_MONSTER_FILE_SIZE } from './random_text_data.js';
@@ -1342,20 +1345,6 @@ export function canSpotHeroSelf() {
     const sensesSelf = hasWornProperty('telepathy') || hasCarriedProperty('telepathy')
         || heroDetectsMonsters();
     return canSeeSelf || sensesSelf;
-}
-
-export function objectClassForType(otyp: number) {
-    // objects.h slots 1..17 have matching classes; slot 0 is a strange object.
-    const firstRealObject = OBJECT_BASES[2];
-    if (firstRealObject !== undefined && otyp > 0 && otyp < firstRealObject)
-        return otyp;
-    for (let cls = 2; cls < OBJECT_BASES.length - 1; cls++) {
-        const first = OBJECT_BASES[cls];
-        const next = OBJECT_BASES[cls + 1];
-        if (first !== undefined && next !== undefined && otyp >= first && otyp < next)
-            return cls;
-    }
-    return 1;
 }
 
 // display.h:random_obj_to_glyph().  Generic object slots 0..17 are excluded;

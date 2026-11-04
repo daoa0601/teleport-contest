@@ -1,3 +1,7 @@
+import {
+    objectBaseCost, CORPSE, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, OBJECT_NAMES, POT_FRUIT_JUICE,
+    SACK, TIN,
+} from '../js/object_data.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, { type TestContext } from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -7,10 +11,6 @@ import assert from 'node:assert/strict';
 import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
-import {
-    CORPSE, DAGGER, EGG, FOOD_RATION, GOLD_PIECE, OBJECT_COST, OBJECT_NAMES,
-    POT_FRUIT_JUICE, SACK, TIN,
-} from '../js/object_data.js';
 import { HUNGRY, WEAK } from '../js/const.js';
 import { resetInputState } from '../js/input.js';
 import { shopStocksObject } from '../js/shknam.js';
@@ -265,13 +265,13 @@ void test('species-priced corpses, tins and eggs follow the C terms', async t =>
     const expectedJackal = Math.max(1, (monsterLevel(jackal) - 1) * 2)
         + Math.max(1, Math.trunc((MONSTER_NUTRITION[jackal] ?? 0) / 30));
     assert.equal(shopGetPrice(corpse, true),
-        (OBJECT_COST[CORPSE] ?? 0) + expectedJackal);
+        objectBaseCost(CORPSE) + expectedJackal);
 
     // A telepathic species adds the TELEPAT intrinsic cost (x6 multiplier).
     const eyeTin = await knownObject(TIN, { dknown: true, corpsenm: eye });
     const expectedEye = Math.max(1, (monsterLevel(eye) - 1) * 2) * 6;
     assert.equal(shopGetPrice(eyeTin, true),
-        (OBJECT_COST[TIN] ?? 0) + expectedEye);
+        objectBaseCost(TIN) + expectedEye);
 
     // A conveying species: the fire resistance cost enters through
     // MONSTER_CONVEYS, and only the corpse adds nutrition.
@@ -279,11 +279,11 @@ void test('species-priced corpses, tins and eggs follow the C terms', async t =>
     const expectedDragonEgg = (Math.max(1, (monsterLevel(dragon) - 1) * 2))
         * (1 + 2); // fire
     assert.equal(shopGetPrice(dragonEgg, true),
-        (OBJECT_COST[EGG] ?? 0) + expectedDragonEgg);
+        objectBaseCost(EGG) + expectedDragonEgg);
     const dragonCorpse = await knownObject(CORPSE,
         { dknown: true, corpsenm: dragon });
     assert.equal(shopGetPrice(dragonCorpse, true),
-        (OBJECT_COST[CORPSE] ?? 0) + expectedDragonEgg
+        objectBaseCost(CORPSE) + expectedDragonEgg
         + Math.max(1, Math.trunc((MONSTER_NUTRITION[dragon] ?? 0) / 30)) * 3);
     assert.ok((MONSTER_CONVEYS[dragon] ?? 0) & 0x01);
 
@@ -335,10 +335,10 @@ void test('candelabra are not candles for pricing, tallow candles are', async t 
         OBJECT_NAMES.indexOf('tallow candle'), { dknown: true, age: 0 });
     // A fresh candelabrum does not take the half-price worn-candle cut.
     assert.equal(shopGetPrice(candelabrum, true),
-        OBJECT_COST[OBJECT_NAMES.indexOf('Candelabrum of Invocation')]);
+        objectBaseCost(OBJECT_NAMES.indexOf('Candelabrum of Invocation')));
     // A nearly-burned tallow candle does.
     assert.equal(shopGetPrice(tallow, true),
-        Math.trunc((OBJECT_COST[OBJECT_NAMES.indexOf('tallow candle')] ?? 0) / 2));
+        Math.trunc((objectBaseCost(OBJECT_NAMES.indexOf('tallow candle')) ?? 0) / 2));
 });
 
 void test('spinach tins and ghost corpses stock in the health food shop', async t => {

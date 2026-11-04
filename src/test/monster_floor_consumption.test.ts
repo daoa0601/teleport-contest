@@ -1,3 +1,8 @@
+import {
+    objectBaseWeight, AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, BOULDER, CORPSE, DAGGER, EGG,
+    FOOD_RATION, GLOB_OF_GREEN_SLIME, GOLD_PIECE, RIN_SLOW_DIGESTION, ROCK, SACK, SCR_IDENTIFY,
+    SCR_SCARE_MONSTER, STATUE, TIN,
+} from '../js/object_data.js';
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,12 +14,6 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { changeMonsterForm, consumeMonsterFloorObjects } from '../js/mon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import {
-    AMULET_OF_LIFE_SAVING, AMULET_OF_STRANGULATION, BOULDER, CORPSE,
-    DAGGER, EGG, FOOD_RATION, GLOB_OF_GREEN_SLIME, GOLD_PIECE,
-    OBJECT_WEIGHT, RIN_SLOW_DIGESTION, ROCK, SACK, SCR_IDENTIFY,
-    SCR_SCARE_MONSTER, STATUE, TIN,
-} from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';
 import { floorObject, knownObject } from './support/game-objects.js';
@@ -71,7 +70,7 @@ void test('a metal eater consumes a whole stack, heals by the item type weight, 
 
     assert.equal(result.nativeResult, 1);
     assert.equal(daggers.where, 'gone');
-    assert.equal(monster.mhp, 1 + (OBJECT_WEIGHT[DAGGER] ?? 0));
+    assert.equal(monster.mhp, 1 + objectBaseWeight(DAGGER));
     assert.equal(monster.meating, Math.trunc(weight / 2) + 1);
     assert.equal(floorObjectsAt(state.level, 11, 10).length, 0);
 });

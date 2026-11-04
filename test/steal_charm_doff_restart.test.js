@@ -4,6 +4,7 @@
 // doff therefore restarts the item's full oc_delay instead of resuming the
 // turns that were left, and the hero stays charmed for those whole turns
 // before stealarm() takes the armor.
+import { objectDelay, RING_MAIL, } from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
@@ -12,7 +13,6 @@ import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { OBJECT_DELAY, RING_MAIL } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshTurnRoom } from './support/playable-room.js';
@@ -25,7 +25,7 @@ void test('a seduction interrupting an armor doff restarts the full removal dela
     nymph.mux = game.u.ux;
     nymph.muy = game.u.uy;
     // Without movement she cannot act while the doff spends its first turns.
-    const removalDelay = OBJECT_DELAY[RING_MAIL] ?? 0;
+    const removalDelay = objectDelay(RING_MAIL);
     const seen = [];
     let answeredCommandInput = false;
     input.beforeRead = () => { seen.push(game._pending_message); };

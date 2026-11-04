@@ -1,3 +1,7 @@
+import {
+    objectBaseMaterial, CORPSE, EGG, ENORMOUS_MEATBALL, MEATBALL, MEAT_RING, MEAT_STICK, TIN,
+    TRIPE_RATION,
+} from '../js/object_data.js';
 import { isRoom } from '../js/map_types.js';
 import { createSpecialLevel } from './support/topology.js';
 import { requirePlayingGame } from '../js/gstate.js';
@@ -8,10 +12,6 @@ import { SHOPBASE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { mklev } from '../js/mklev.js';
-import {
-    CORPSE, EGG, ENORMOUS_MEATBALL, MEATBALL, MEAT_RING, MEAT_STICK,
-    OBJECT_MATERIAL, TIN, TRIPE_RATION,
-} from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { floorObjects } from './support/level-state.js';
 import { freshSpecialLevel } from './support/special-level.js';
@@ -48,7 +48,7 @@ void test('Lua-generated health food shops stock actual vegetarian food', async 
             && object.oy >= room.ly && object.oy <= room.hy));
     assert.ok(stock.length > 10, 'health food shelves must contain real food objects');
     assert.ok(stock.some(object => ![CORPSE, EGG, TIN].includes(object.otyp)
-        && OBJECT_MATERIAL[object.otyp] === 3)); // VEGGY
+        && objectBaseMaterial(object.otyp) === 3)); // VEGGY
     assert.ok(stock.every(object => ![
         TRIPE_RATION, MEATBALL, MEAT_STICK, ENORMOUS_MEATBALL, MEAT_RING,
     ].includes(object.otyp)), 'health food shops must not stock meat products');

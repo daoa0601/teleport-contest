@@ -1,6 +1,7 @@
 // Monster attacks against the hero: the mattacku() attack sequence, its
 // hitmu()/mdamageu() damage and resume machinery, and slot presentation.
 // C ref: mhitu.c.
+import { objectBaseDirection, objectSkill, AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, TIN_OPENER, TOWEL, GOLD_PIECE, } from './object_data.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
@@ -53,7 +54,6 @@ import { summonMonsterAttackHelp } from './minion.js';
 import { selectMonsterOffensiveItem } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { AMULET_OF_REFLECTION, CORPSE, OBJECT_NAMES, SHIELD_OF_REFLECTION, AKLYS, AMULET_OF_GUARDING, HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_BIMANUAL, OBJECT_DIR, OBJECT_PROPERTY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE, TIN_OPENER, TOWEL, GOLD_PIECE } from './object_data.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { setHeroGrip } from './mon.js';
@@ -3067,9 +3067,9 @@ export async function resolveMonsterGaze(monster, attack, { state = game, publis
 }
 // C mhitu.c:mswings_verb(). The mixed-strike roll occurs even when bashing.
 export function monsterWeaponSwingVerb(object, bash = false, random = rn2) {
-    const direction = OBJECT_DIR[object.otyp] ?? 0;
+    const direction = objectBaseDirection(object.otyp);
     const thrust = (direction & 1) && (!(direction & ~1) || random(2) === 0);
-    const lash = OBJECT_SUBTYPE[object.otyp] === P_WHIP
+    const lash = objectSkill(object.otyp) === P_WHIP
         || (object.otyp === TOWEL && (object.spe ?? 0) > 0);
     return bash ? 'bashes with' : lash ? 'lashes' : thrust ? 'thrusts' : 'swings';
 }
@@ -3096,7 +3096,7 @@ export function magicNegation(defender, state = game) {
         }
         if (!protection) {
             const weapon = object.oclass === WEAPON_CLASS
-                || (object.oclass === TOOL_CLASS && OBJECT_SUBTYPE[object.otyp] !== 0);
+                || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
             const worn = !!((object.owornmask ?? 0)
                 & (W_ARMOR | W_ACCESSORY | (weapon ? W_WEP : 0)));
             const artifact = artifactById(object.oartifact, state);

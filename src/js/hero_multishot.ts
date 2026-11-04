@@ -1,6 +1,9 @@
 // How many objects the hero throws or shoots with one command.
 // C refs: dothrow.c multishot_class_bonus() and throw_obj().
 
+import {
+    objectClassForType, objectSkill, ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI,
+} from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { plineWithContinuation } from './pline.js';
 import {
@@ -12,11 +15,6 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import type { RoleKey, RaceName } from './roles.js';
-import {
-    ELVEN_ARROW, ELVEN_BOW, OBJECT_SUBTYPE, ORCISH_ARROW, ORCISH_BOW,
-    YA, YUMI,
-} from './object_data.js';
-import { objectClassForType } from './o_init.js';
 
 import {
     isLauncherAmmunition, launcherMatchesAmmo,
@@ -81,7 +79,7 @@ export function chooseHeroVolleyCount(item: GameObject, {
         && !state.u?.stunned && !((state.u.stunnedTurns ?? 0) > 0);
     if (!canVolley) return 1;
 
-    const skill = OBJECT_SUBTYPE[item.otyp] ?? 0;
+    const skill = objectSkill(item.otyp);
     const skillLevel = ensureHeroSkills(state)?.[Math.abs(skill)]?.skill ?? 0;
     const role = state.urole.key;
     const race = state.urace.name;

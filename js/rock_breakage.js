@@ -1,5 +1,6 @@
 // Shared statue/boulder fracture owner.
 // C refs: zap.c fracture_rock() and break_statue(), trap.c sokoban_guilt().
+import { objectUsesKnown, BOULDER, ROCK, STATUE, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { CORPSTAT_HISTORIC } from './const.js';
 import { shopkeeperName } from './shknam.js';
@@ -12,7 +13,6 @@ import { costlySpot, shopClaimsObject } from './shk.js';
 import { breakObjectAtLocation } from './dothrow.js';
 import { getObjectLocation } from './zap.js';
 import { objectName } from './objnam.js';
-import { BOULDER, OBJECT_USES_KNOWN, ROCK, STATUE } from './object_data.js';
 import { rn2 } from './rng.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { cansee, visionCellBlocksLight, vision_note_blocker_change, vision_recalc } from './vision.js';
@@ -50,7 +50,7 @@ export async function fractureRock(object, x, y, { state = game, random = rn2, p
     object.oclass = GEM_CLASS;
     object.quan = object.quantity = 7 + random(60);
     object.dknown = object.bknown = object.rknown = false;
-    object.known = !OBJECT_USES_KNOWN[ROCK];
+    object.known = !objectUsesKnown(ROCK);
     delete object.oextra;
     delete object.oname;
     delete object.name;

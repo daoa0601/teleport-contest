@@ -1,6 +1,11 @@
 // Hero movement, travel, and terrain effects.
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 
+import {
+    objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE,
+    DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL,
+    CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE,
+} from './object_data.js';
 import { setHeroGrip } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
@@ -31,7 +36,6 @@ import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
 import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsFlyer, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks, requireMonsterData } from './monster_data.js';
-import { AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, OBJECT_MATERIAL, PICK_AXE, DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, OBJECT_SUBTYPE, OBJECT_WEIGHT, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE, requireObjectData } from './object_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, triggerImmediateMonsterTrap, finishImmediateMonsterTrap, emergencyDisrobe, announceTerrainRescue, resetHeroTrap, floatHeroUp, floatHeroDown, clearHeroTrap, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, triggerHeroTrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
@@ -608,7 +612,7 @@ export async function continueChewingTerrain(x: number, y: number, state: Playin
         location.typ = ROOM;
     } else if (bars) {
         if (eatsMetal)
-            await morehungry(-requireObjectData(OBJECT_WEIGHT, HEAVY_IRON_BALL), { state });
+            await morehungry(-objectBaseWeight(HEAVY_IRON_BALL), { state });
         await dissolveBars(x, y, state);
         message = state.u.ux === x && state.u.uy === y
             ? 'You devour the iron bars.' : 'You eat through the bars.';
@@ -4763,7 +4767,7 @@ function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
 
 function isWeaponOrWeaponTool(object: GameObject): boolean {
     return object.oclass === 2
-        || (object.oclass === 6 && OBJECT_SUBTYPE[object.otyp] !== 0);
+        || (object.oclass === 6 && objectSkill(object.otyp) !== 0);
 }
 
 export async function fallIntoSink(

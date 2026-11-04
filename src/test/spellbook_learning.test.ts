@@ -1,3 +1,7 @@
+import {
+    objectDelay, SPE_LIGHT, SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_BLANK_PAPER, LENSES, GOLD_PIECE,
+    SACK,
+} from '../js/object_data.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test, { type TestContext } from 'node:test';
 import { planInput } from './support/planned-input.js';
@@ -13,8 +17,6 @@ import { curseObject, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { cancelObjectMagic } from '../js/zap.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { wearEyewear } from '../js/do_wear.js';
-import { SPE_LIGHT, SPE_FIREBALL, SPE_FINGER_OF_DEATH, SPE_BLANK_PAPER, LENSES,
-    GOLD_PIECE, SACK, OBJECT_DELAY } from '../js/object_data.js';
 import { forceLearnSpell } from '../js/spell.js';
 import { currentSpellKnowledge } from '../js/spell.js';
 import { studyBook, continueSpellbookStudy, cursedBook } from '../js/spell.js';
@@ -78,7 +80,7 @@ void test('learning installs the native delay and completes only after the final
     assert.ok(game.context.spbook != null, 'Expected game.context.spbook to be initialized');
     assert.equal(game.context.spbook.book, source);
     assert.equal(game.context.spbook.o_id, source.o_id);
-    const delay = OBJECT_DELAY[SPE_LIGHT];
+    const delay = objectDelay(SPE_LIGHT);
     assert.ok(delay !== undefined);
     assert.equal(game.context.spbook.delay, -delay);
     assert.equal(source.in_use, false);
@@ -473,7 +475,7 @@ void test('confused first reading tears the real book only after its warning is 
     assert.equal(result.spentTime, true);
     assert.equal(source.where, 'gone');
     assert.ok(!game._occupation);
-    assert.equal(game._helplessTurns, OBJECT_DELAY[SPE_LIGHT]);
+    assert.equal(game._helplessTurns, objectDelay(SPE_LIGHT));
     assert.equal((game.spells || []).length, 0);
 });
 

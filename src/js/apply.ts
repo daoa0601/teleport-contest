@@ -4,6 +4,20 @@
 // bullwhip.ts; the candle snuff/splash/catch helpers stay in light.ts with
 // the burning-object owners.
 
+import {
+    objectClassForType, objectBaseCost, objectSkill, objectMagic, AMULET_OF_YENDOR, BAG_OF_TRICKS,
+    BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP,
+    CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG,
+    EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH,
+    LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR,
+    OBJECT_COLOR, OBJECT_DESCRIPTIONS, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD,
+    SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE,
+    TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN,
+    WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT,
+    WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING,
+    WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING,
+    WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE,
+} from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
 import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear } from './do_wear.js';
 import { artifactById, speakArtifact } from './artifacts.js';
@@ -95,8 +109,7 @@ import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { learnObjectType, objectClassForType, objectMaterial } from './o_init.js';
-import { AMULET_OF_YENDOR, BAG_OF_TRICKS, BANANA, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BOULDER, BRASS_LANTERN, BULLWHIP, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR, OBJECT_COLOR, OBJECT_COST, OBJECT_DESCRIPTIONS, OBJECT_MAGIC, OBJECT_SUBTYPE, OIL_LAMP, POT_OIL, requireObjectData, SADDLE, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE, TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE } from './object_data.js';
+import { learnObjectType, objectMaterial } from './o_init.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, withIndefiniteArticle } from './objnam.js';
@@ -1225,7 +1238,7 @@ export async function useLamp(object: GameObject, { state = game }: { state?: Ga
         const owner = ownedObjectName(object, state);
         await plineWithContinuation(`${owner}${owner.endsWith('s') ? "'" : "'s"} flame${objectQuantity(object) > 1 ? 's burn' : ' burns'}${heroIsBlind(state) ? '.' : ' brightly!'}`);
         if (object.unpaid && costlySpot(state.u.ux, state.u.uy, state)
-            && object.age === 20 * requireObjectData(OBJECT_COST, object.otyp)) {
+            && object.age === 20 * objectBaseCost(object.otyp)) {
             const pronoun = objectQuantity(object) > 1 ? 'them' : 'it';
             await announcePurchase(`You burn ${pronoun}, you bought ${pronoun}!`);
             await billDummyObject(object, state);
@@ -2377,7 +2390,7 @@ function weaponSkillType(weapon: GameObject | null | undefined, state: GameState
         weapon.oclass !== GEM_CLASS
     )
         return 0;
-    return Math.abs(OBJECT_SUBTYPE[weapon.otyp] ?? 0);
+    return Math.abs(objectSkill(weapon.otyp));
 }
 
 function calcPoleRange(weapon: GameObject, { state = game } = {}) {
@@ -2856,7 +2869,7 @@ const M2_STRONG = 0x04000000;
 
 function hookSkill(hook: GameObject, state: GameState) {
     const skillType = state.u.twoweap
-        ? P_TWO_WEAPON_COMBAT : Math.abs(OBJECT_SUBTYPE[hook.otyp] ?? 0);
+        ? P_TWO_WEAPON_COMBAT : Math.abs(objectSkill(hook.otyp));
     return ensureHeroSkills(state)?.[skillType]?.skill ?? 0;
 }
 
@@ -3623,7 +3636,7 @@ export async function flipThroughBook(book: GameObject, { state = game }: { stat
         const studies = Math.min(book.spestudied ?? 0, 3);
         const fading = FADED_INK[studies];
         if (fading === undefined) throw new Error(`Spellbook ${book.o_id} has invalid study count ${studies}`);
-        const ink = OBJECT_MAGIC[book.otyp] ? 'magical ink' : 'ink';
+        const ink = objectMagic(book.otyp) ? 'magical ink' : 'ink';
         await plineWithContinuation(`The ${ink} in this spellbook is ${fading}.`);
     }
     return { spentTime: true, heroDied: false };

@@ -1,3 +1,4 @@
+// C objects.c:objects_globals_init() and objects.h: initial object definitions.
 import type { SpellCategory } from './data_types.js';
 import type { PropertyName } from './property_types.js';
 
@@ -30,6 +31,9 @@ export const OBJECT_SMALL_DAMAGE: readonly number[] = [0,0,0,0,0,0,0,0,0,0,0,0,0
 export const OBJECT_LARGE_DAMAGE: readonly number[] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,6,6,6,7,6,2,6,9,8,8,8,8,8,6,4,3,3,3,3,3,3,2,2,2,10,4,6,8,8,8,8,8,8,6,6,12,6,12,8,6,6,4,6,10,6,4,4,8,8,10,6,6,8,8,6,6,6,4,3,3,6,3,4,1,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,6,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,6,3,20,20,25,4,0,6];
 export const OBJECT_HIT_BONUS: readonly number[] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,2,0,0,0,0,0,0,0,0,2,2,2,2,2,2,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,0,0,0,0,0,0,0,0,-1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,2,0,0,0,1,1,1,1,1,1,9,9,9,9,9,9,9,9,9,9,3,3,3,3,3,3,3,3,3,3,7,7,6,6,6,6,5,5,4,4,3,3,2,2,1,0,0,0,1,0,0,1,2,1,1,3,1,1,1,1,1,1,2,1,1,2,2,2,1,1,1,1,1,2,2,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,4,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 // END GENERATED OBJECT NAME DATA
+
+// The oc_class column of objects.c:obj_init, including STRANGE_OBJECT and GENERIC rows.
+export const OBJECT_CLASS: readonly number[] = [1,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,3,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,4,5,5,5,5,5,5,5,5,5,5,5,5,5,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,9,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,11,12,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,14,14,15,16,17,17];
 
 export const OBJECT_BASES: readonly number[] = [0,0,18,89,173,201,214,264,297,323,366,410,438,439,475,477,478,479,481];
 export const OBJECT_PROB: readonly number[] = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,55,20,20,12,15,55,60,35,15,50,10,13,12,2,10,8,30,10,12,3,0,0,20,5,0,0,40,10,8,2,3,2,15,6,8,4,50,22,4,0,0,5,5,5,8,8,4,4,6,6,4,5,4,13,4,40,2,12,15,12,0,11,8,40,2,24,12,12,0,40,45,6,6,6,0,5,5,2,6,10,6,10,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,40,10,23,57,66,10,15,66,19,66,66,66,19,75,11,8,2,0,8,8,8,8,6,11,8,11,12,6,12,6,12,12,2,2,2,4,3,7,15,8,8,8,23,7,14,12,12,12,12,12,12,12,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,120,75,115,115,115,115,60,75,75,75,60,0,0,40,35,5,35,5,20,20,80,60,15,20,5,30,45,15,15,45,15,5,50,50,5,65,25,15,35,15,25,15,0,0,100,30,4,2,5,2,2,2,4,2,2,4,4,2,20,5,0,0,0,140,0,85,0,0,0,0,0,0,0,0,0,3,15,10,10,10,10,15,7,7,75,0,25,13,55,25,20,20,380,0,0,75,40,40,40,30,40,40,40,30,40,40,115,45,20,20,40,40,40,40,10,10,40,40,40,10,30,80,63,45,53,35,65,80,45,15,15,90,55,33,25,180,45,35,30,18,15,15,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,20,45,20,10,30,5,45,43,40,25,30,49,25,10,30,25,35,30,25,15,32,20,33,20,20,27,25,20,20,25,18,20,16,10,15,10,15,18,20,15,25,18,1,0,95,50,15,50,5,45,25,30,45,50,50,50,45,45,45,30,30,30,40,50,40,40,50,5,40,0,0,0,1000,2,3,4,3,4,3,5,6,4,6,8,10,6,12,8,12,14,15,15,9,12,10,77,77,77,77,76,77,76,77,77,10,10,8,10,100,100,900,1000,1000,500,500];
@@ -398,6 +402,79 @@ export function requireObjectData<T>(table: readonly T[], otyp: number): T {
     return value;
 }
 
+// C objects.h:OBJECT(): objects[otyp].oc_class, including the generic slots.
+// Missing or invalid port indices have no class (RANDOM_CLASS).
+export function objectClassForType(otyp: number | null | undefined): number {
+    if (typeof otyp !== 'number' || !Number.isInteger(otyp)
+        || otyp < 0 || otyp >= OBJECT_CLASS.length) return 0;
+    return OBJECT_CLASS[otyp] ?? 0;
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_material before per-game initialization.
+export function objectBaseMaterial(otyp: number): number {
+    return requireObjectData(OBJECT_MATERIAL, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_weight before per-game initialization.
+export function objectBaseWeight(otyp: number): number {
+    return requireObjectData(OBJECT_WEIGHT, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_cost before per-game initialization.
+export function objectBaseCost(otyp: number): number {
+    return requireObjectData(OBJECT_COST, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_delay before per-game initialization.
+export function objectDelay(otyp: number): number {
+    return requireObjectData(OBJECT_DELAY, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_oprop before per-game initialization.
+export function objectPropertyId(otyp: number): number {
+    return requireObjectData(OBJECT_PROPERTY_ID, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_dir before per-game initialization.
+export function objectBaseDirection(otyp: number): number {
+    return requireObjectData(OBJECT_DIR, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_skill before per-game initialization.
+export function objectSkill(otyp: number): number {
+    return requireObjectData(OBJECT_SUBTYPE, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_bimanual before per-game initialization.
+export function objectBimanual(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_BIMANUAL, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_merge before per-game initialization.
+export function objectMerge(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_MERGE, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_uses_known before per-game initialization.
+export function objectUsesKnown(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_USES_KNOWN, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_unique before per-game initialization.
+export function objectUnique(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_UNIQUE, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_magic before per-game initialization.
+export function objectMagic(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_MAGIC, otyp);
+}
+
+// C objects.h:OBJECT(): objects[otyp].oc_charged before per-game initialization.
+export function objectCharged(otyp: number): 0 | 1 {
+    return requireObjectData(OBJECT_CHARGED, otyp);
+}
+
 export interface ObjectClassBounds {
     readonly first: number;
     readonly last: number;
@@ -424,27 +501,14 @@ export interface ObjectDefinition {
 
 export function getObjectDefinition(otyp: number): ObjectDefinition {
     requireObjectData(OBJECT_NAMES, otyp);
-    // objects.h GENERIC() fills slots [1..MAXOCLASSES-1], indexed by class;
-    // each placeholder carries its own oc_class (GENERIC("spellbook",
-    // SPBOOK_CLASS, GENERIC_SPBOOK) and friends), so a generic slot's
-    // class is its own number, not the illegal class.
-    const firstRealObject = OBJECT_BASES[2] ?? Number.POSITIVE_INFINITY;
-    let oclass = otyp >= 1 && otyp < firstRealObject ? otyp : 1;
-    for (let candidate = 2; candidate < OBJECT_BASES.length - 1; candidate++) {
-        const { first, last } = getObjectClassBounds(candidate);
-        if (otyp >= first && otyp <= last) {
-            oclass = candidate;
-            break;
-        }
-    }
     return {
-        oclass,
-        weight: requireObjectData(OBJECT_WEIGHT, otyp),
-        material: requireObjectData(OBJECT_MATERIAL, otyp),
-        usesKnown: requireObjectData(OBJECT_USES_KNOWN, otyp) !== 0,
-        merge: requireObjectData(OBJECT_MERGE, otyp) !== 0,
-        charged: requireObjectData(OBJECT_CHARGED, otyp) !== 0,
-        subtype: requireObjectData(OBJECT_SUBTYPE, otyp),
+        oclass: objectClassForType(otyp),
+        weight: objectBaseWeight(otyp),
+        material: objectBaseMaterial(otyp),
+        usesKnown: objectUsesKnown(otyp) !== 0,
+        merge: objectMerge(otyp) !== 0,
+        charged: objectCharged(otyp) !== 0,
+        subtype: objectSkill(otyp),
     };
 }
 
@@ -455,5 +519,5 @@ const NODIR = 1, IMMEDIATE = 2;
 export function objectDirection(otyp: number, state: { readonly wandNothingDirection?: number }): number {
     if (otyp === WAN_NOTHING && state.wandNothingDirection !== undefined)
         return state.wandNothingDirection ? NODIR : IMMEDIATE;
-    return requireObjectData(OBJECT_DIR, otyp);
+    return objectBaseDirection(otyp);
 }

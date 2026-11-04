@@ -1,10 +1,9 @@
 // Automatic quiver candidate classification and slot ownership.
 // C refs: dothrow.c:autoquiver()/throwing_weapon(), obj.h ammo predicates,
 // wield.c:ready_ok()/setuqwep().  Command prompts remain in cmd.js.
+import { objectClassForType, objectSkill, AKLYS, FLINT, ROCK, } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { P_BOW, P_CROSSBOW, P_DAGGER, P_SLING, } from './const.js';
-import { AKLYS, FLINT, OBJECT_SUBTYPE, ROCK, } from './object_data.js';
-import { objectClassForType } from './o_init.js';
 import { objectTypeKnown } from './shk.js';
 import { isLauncherAmmunition, isMissileObject, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 function quiverObjectClass(item) {
@@ -19,7 +18,7 @@ export function autoquiverCandidate(state) {
     let missile = null;
     let alternateAmmo = null;
     let miscellaneous = null;
-    const currentSling = !!state.uwep && OBJECT_SUBTYPE[state.uwep.otyp] === P_SLING;
+    const currentSling = !!state.uwep && objectSkill(state.uwep.otyp) === P_SLING;
     for (const item of state.inventory || []) {
         if (item.owornmask || item.worn || item.wielded
             || item.alternate || item.ready
@@ -56,7 +55,7 @@ export function autoquiverCandidate(state) {
             missile = item;
         }
         else if (objectClass === 2 && isThrowingWeapon(item)) {
-            if (OBJECT_SUBTYPE[item.otyp] === P_DAGGER && !missile)
+            if (objectSkill(item.otyp) === P_DAGGER && !missile)
                 missile = item;
             else if (item.otyp !== AKLYS)
                 miscellaneous = item;
@@ -74,7 +73,7 @@ export function readySuggestion(item, state) {
         return launcherMatchesAmmo(item, state.uwep)
             || launcherMatchesAmmo(item, state.uswapwep);
     }
-    const skill = OBJECT_SUBTYPE[item.otyp] ?? 0;
+    const skill = objectSkill(item.otyp);
     if (quiverObjectClass(item) === 2
         && skill >= P_BOW && skill <= P_CROSSBOW)
         return false;

@@ -6,7 +6,7 @@ import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { beginObjectBurn } from '../js/timeout.js';
-import { BELL_OF_OPENING, CHEST, FOOD_RATION, GOLD_PIECE, LOADSTONE, OIL_LAMP, ROCK, SPE_LIGHT } from '../js/object_data.js';
+import { BELL_OF_OPENING, CHEST, FOOD_RATION, GOLD_PIECE, LOADSTONE, OIL_LAMP, ROCK, SPE_LIGHT, WAN_NOTHING } from '../js/object_data.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -23,6 +23,18 @@ void test('Lua creates a blessed food ration and places it on the live map', asy
     assert.ok(ration);
     assert.equal(ration.blessed, true);
     assert.equal(ration.cursed, false);
+});
+// C nhlobj.c:l_obj_objects_to_table() reads the live oc_dir field, which
+// o_init.c:init_objects() sets to NODIR or IMMEDIATE for each new game.
+void test('Lua reports the current wand-of-nothing direction', async (t) => {
+    await freshObjectRoom();
+    const core = await startLuaCore(t);
+    game.wandNothingDirection = 1;
+    await core.executeAsync(`direction = obj.class(${WAN_NOTHING}).dir`);
+    assert.equal(core.getGlobal('direction'), 1);
+    game.wandNothingDirection = 0;
+    await core.executeAsync(`direction = obj.class(${WAN_NOTHING}).dir`);
+    assert.equal(core.getGlobal('direction'), 2);
 });
 void test('Lua moves a container into inventory without breaking its contents or their handles', async (t) => {
     await freshObjectRoom();

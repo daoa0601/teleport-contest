@@ -1,7 +1,7 @@
 // skills.js - Hero weapon/fighting/spell skill state and commands.
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
+import { objectSkill, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, OBJECT_SUBTYPE } from './object_data.js';
 import { MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { flushPendingTopline } from './tty_topline.js';
@@ -205,9 +205,7 @@ export function weaponSkillType(weapon) {
         return P_BARE_HANDED_COMBAT;
     if (![2, 6, 13].includes(weapon.oclass))
         return P_NONE;
-    const skill = OBJECT_SUBTYPE[weapon.otyp];
-    if (skill === undefined)
-        throw new RangeError(`Weapon ${weapon.otyp} has no skill type`);
+    const skill = objectSkill(weapon.otyp);
     return Math.abs(skill);
 }
 function attackSkillType(weapon, state) {
@@ -289,8 +287,8 @@ export function ensureHeroSkills(game) {
             continue;
         if (![2, 6, 13].includes(item.oclass))
             continue;
-        const subtype = OBJECT_SUBTYPE[item.otyp];
-        if (subtype === undefined || !Number.isInteger(subtype) || subtype === 0)
+        const subtype = objectSkill(item.otyp);
+        if (!Number.isInteger(subtype) || subtype === 0)
             continue;
         const skill = Math.abs(subtype);
         if (subtype < 0 && skill >= 20 && skill <= 22)

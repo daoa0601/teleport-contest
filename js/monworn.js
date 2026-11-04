@@ -1,6 +1,7 @@
 // Monster armor.
 // C refs: makemon.c:makemon(), mon.c:check_gear_next_turn() and
 // movemon_singlemon(), worn.c:m_dowear()/m_dowear_type().
+import { objectDelay, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_PROPERTY, SADDLE, requireObjectData, } from './object_data.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { armorBonus, armorSimpleName, armorSlotFor } from './do_wear.js';
@@ -23,7 +24,6 @@ import { touchPetrifies } from './stoning.js';
 import { rnl } from './rng.js';
 import { game, requireLiveGame } from './gstate.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_FLAGS1, MONSTER_SIZE, MONSTER_NAME, MONSTER_SYMBOL, monsterBreaksArmor, monsterCanBeSaddled, monsterHasNoHands, monsterIsCentaur, monsterIsWhirly, monsterTypeName, monsterHornCount, monsterIsSlithy, monsterIsVerySmall, monsterSlipsArmor, monsterWrappingAllowed } from './monster_data.js';
-import { ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, GOLD_DRAGON_SCALES, MUMMY_WRAPPING, OBJECT_DELAY, OBJECT_PROPERTY, SADDLE, requireObjectData } from './object_data.js';
 import { isBimanualObject } from './object_properties.js';
 import { AC_MAX, DISMOUNT_FELL, I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SADDLE, W_WEP } from './const.js';
 import { objectNoLongerHeld } from './do.js';
@@ -280,7 +280,7 @@ async function wearSlot(monster, slot, creation, state, publish) {
         && ((monster.misc_worn_check ?? 0) & W_ARMC))
         delay += 2;
     if (old) {
-        delay += OBJECT_DELAY[old.otyp] ?? 0;
+        delay += objectDelay(old.otyp);
         old.owornmask = 0;
         old.worn = false;
     }
@@ -302,7 +302,7 @@ async function wearSlot(monster, slot, creation, state, publish) {
                 await publish(`${owner} ${simpleObjectName(best, state)} ${glow} ${displayColorName('black', state)} for a moment.`);
             }
         }
-        delay += OBJECT_DELAY[best.otyp] ?? 0;
+        delay += objectDelay(best.otyp);
         monster.mfrozen = delay;
         if (delay)
             monster.mcanmove = 0;

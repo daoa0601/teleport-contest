@@ -1,3 +1,4 @@
+import { objectClassForType, objectMerge, BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_NAMES, getObjectClassBounds, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame, requireGameLevel } from './gstate.js';
 // detect.js — Searching and detection.
@@ -13,9 +14,8 @@ import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE } from './const.js';
 import { isok } from './cmd.js';
-import { BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_MERGE, OBJECT_NAMES } from './object_data.js';
 import { OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS } from './display.js';
-import { objectClassForType, observeObject } from './o_init.js';
+import { observeObject } from './o_init.js';
 import { withIndefiniteArticle, makePlural } from './objnam.js';
 import { objectMaterial } from './o_init.js';
 import { strangeFeelingMessage } from './potion.js';
@@ -41,7 +41,6 @@ import { expelHero } from './hero_expulsion.js';
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './invent.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { getObjectClassBounds } from './object_data.js';
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { triggerBoobyTrap } from './booby_trap.js';
@@ -374,7 +373,7 @@ async function senseDetectedTrap(trap) {
     if (firstObject === undefined)
         throw new Error('Object class table has no weapon offset.');
     const type = firstObject + rn2(OBJECT_NAMES.length - firstObject);
-    const quantity = type === GOLD_PIECE ? rnd(10) : OBJECT_MERGE[type] ? rnd(2) : 1;
+    const quantity = type === GOLD_PIECE ? rnd(10) : objectMerge(type) ? rnd(2) : 1;
     const species = rn2(MONSTER_SYMBOL.length);
     const image = { otyp: type, oclass: objectClassForType(type), quantity, quan: quantity,
         corpsenm: species, ox: trap.tx, oy: trap.ty };
@@ -678,7 +677,7 @@ async function senseTrap(trap, shown, cursed, state) {
     const firstObject = getObjectClassBounds(2).first;
     const otyp = hallucinating
         ? rn2(OBJECT_NAMES.length - firstObject) + firstObject : GOLD_PIECE;
-    const quantity = otyp === GOLD_PIECE ? rnd(10) : OBJECT_MERGE[otyp] ? rnd(2) : 1;
+    const quantity = otyp === GOLD_PIECE ? rnd(10) : objectMerge(otyp) ? rnd(2) : 1;
     // Native fake objects draw a species even when their type is not a corpse.
     const object = { otyp, oclass: objectClassForType(otyp), ox: trap.tx, oy: trap.ty,
         quan: quantity, quantity, corpsenm: rn2(MONSTER_NAME.length) };

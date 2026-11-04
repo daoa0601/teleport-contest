@@ -2,6 +2,7 @@
 // C ref: steal.c — steal(), stealarm(), worn_item_removal(), mpickobj(),
 // stealamulet(), maybe_absorb_item(), mdrop_obj(), mdrop_special_objs(),
 // relobj().
+import { objectDelay, BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
@@ -13,8 +14,6 @@ import { possessiveName } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_SYMBOL, monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, monsterTypeName } from './monster_data.js';
 import { makePlural } from './objnam.js';
 import { AD_SITM } from './monster_attack_types.js';
-import { BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, SPE_BOOK_OF_THE_DEAD, } from './object_data.js';
-import { OBJECT_DELAY } from './object_data.js';
 import { definiteName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, simpleObjectName, } from './objnam.js';
 import { isBimanualObject } from './object_properties.js';
 import { inventoryItemDescription } from './invent.js';
@@ -259,7 +258,7 @@ export async function stealFromHero(monster, random, calls) {
     let removalMessage = null;
     let charmed = false;
     if (equipmentSlots.some(slot => slot.startsWith('uarm') && game[slot] === object)) {
-        const delay = OBJECT_DELAY[object.otyp] ?? 0;
+        const delay = objectDelay(object.otyp);
         const helplessReason = game._helplessReason;
         const reason = typeof helplessReason === 'string' ? helplessReason : helplessReason?.text;
         const unresponsive = heroIsUnaware(game) || (heroHasInvoluntaryDelay(game)

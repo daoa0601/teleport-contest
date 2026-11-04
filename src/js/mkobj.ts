@@ -1,13 +1,27 @@
 // Object creation and species-dependent initialization.
 // C ref: mkobj.c.
 
+import {
+    objectBaseWeight, objectBaseCost, objectMerge, objectUsesKnown, objectMagic,
+    getObjectClassBounds, getObjectDefinition, requireObjectData, WORM_TOOTH, UNICORN_HORN,
+    HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS,
+    AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX,
+    CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE,
+    BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE,
+    FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP,
+    DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING,
+    KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE,
+    LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
+    objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION,
+    BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA,
+    EUCALYPTUS_LEAF, ORANGE, PEAR, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION,
+    OBJECT_PROPERTY, WAN_FIRE,
+} from './object_data.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind } from './object_types.js';
 import type { Position } from './map_types.js';
 import type { DueObjectTimer } from './timeout.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { GameState } from './game_state.js';
-import { getObjectClassBounds, getObjectDefinition, requireObjectData, OBJECT_COST, WORM_TOOTH, UNICORN_HORN, HELM_OF_OPPOSITE_ALIGNMENT, GAUNTLETS_OF_FUMBLING, FUMBLE_BOOTS, LEVITATION_BOOTS, AMULET_OF_STRANGULATION, AMULET_OF_RESTFUL_SLEEP, AMULET_OF_CHANGE, AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, SACK, OILSKIN_SACK, BAG_OF_HOLDING, BAG_OF_TRICKS, TALLOW_CANDLE, WAX_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, EXPENSIVE_CAMERA, CRYSTAL_BALL, TINNING_KIT, CAN_OF_GREASE, FIGURINE, MAGIC_MARKER, MAGIC_FLUTE, FROST_HORN, FIRE_HORN, HORN_OF_PLENTY, MAGIC_HARP, DRUM_OF_EARTHQUAKE, CORPSE, EGG, MEAT_RING, GLOB_OF_GRAY_OOZE, GLOB_OF_BLACK_PUDDING, KELP_FROND, SLIME_MOLD, CANDY_BAR, TIN, GOLD_PIECE, SPE_NOVEL, DILITHIUM_CRYSTAL, LUCKSTONE, LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING, objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, OBJECT_MERGE, OBJECT_USES_KNOWN, ORCISH_SHIELD, SHIELD_OF_REFLECTION, BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, OBJECT_MAGIC, POT_BOOZE, POT_SICKNESS, POT_WATER } from './object_data.js';
-import { APPLE, BANANA, EUCALYPTUS_LEAF, ORANGE, PEAR } from './object_data.js';
 import type { ObjectDefinition } from './object_data.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { novelTitle } from './do_name.js';
@@ -31,12 +45,10 @@ import { forgetTempleEntry } from './priest.js';
 import { copyPetData, copyShopkeeperData, maybeUnhideAt, undeadToCorpse } from './mon.js';
 import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
-import { OBJECT_WEIGHT, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION } from './object_data.js';
 import { LARGEST_INT } from './const.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';
 import { learnObjectType, objectMaterial, objectProb } from './o_init.js';
-import { OBJECT_PROPERTY, WAN_FIRE } from './object_data.js';
 import { nameObjectFromTopten } from './topten.js';
 import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
 import { attachEggHatchTimer } from './egg.js';
@@ -442,7 +454,7 @@ async function initTool(otmp: GameObject): Promise<void> {
     const otyp = otmp.otyp;
     if (otyp === TALLOW_CANDLE || otyp === WAX_CANDLE) {
         otmp.spe = 1;
-        otmp.age = 20 * requireObjectData(OBJECT_COST, otyp);
+        otmp.age = 20 * objectBaseCost(otyp);
         otmp.lamplit = false;
         otmp.quan = 1 + (rn2(2) ? rn2(7) : 0);
         blessorcurse(otmp, 5);
@@ -881,7 +893,7 @@ export function clearDescriptionKnowledge(object: GameObject): void {
     const descriptionNeedsObservation = DESCRIPTION_UNKNOWN_CLASSES.has(object.oclass)
         || (object.otyp >= ELVEN_SHIELD && object.otyp <= ORCISH_SHIELD)
         || object.otyp === SHIELD_OF_REFLECTION
-        || !!OBJECT_MERGE[object.otyp];
+        || !!objectMerge(object.otyp);
     object.dknown = isGlob || !descriptionNeedsObservation;
 }
 
@@ -894,7 +906,7 @@ export function forgetObjectKnowledge(object: GameObject): void {
     object.cknown = false;
     object.lknown = false;
     object.tknown = false;
-    object.known = !OBJECT_USES_KNOWN[object.otyp];
+    object.known = !objectUsesKnown(object.otyp);
 }
 
 // ---------------------------------------------------------------------------
@@ -1485,7 +1497,7 @@ export async function useHornOfPlenty(horn: GameObject, {
     let what: string;
     if (!rn2(13)) {
         object = await mkobj(8, false);
-        if (OBJECT_MAGIC[object.otyp]) {
+        if (objectMagic(object.otyp)) {
             do { object.otyp = rndClass(POT_BOOZE, POT_WATER); } while (object.otyp === POT_SICKNESS);
             if (object.otyp === POT_OIL) object.age = MAX_OIL_IN_FLASK;
         }
@@ -2132,7 +2144,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     // C stores a stack's complete weight in owt.  Several early JS object
     // constructors still leave owt at the one-item metadata value after
     // changing quan, so reconstruct ordinary stack weight from the table.
-    const base = requireObjectData(OBJECT_WEIGHT, object.otyp);
+    const base = objectBaseWeight(object.otyp);
     const count = quantity(object);
     if (count < 1) return 0;
     const species = object.corpsenm;
@@ -2192,7 +2204,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     if (object.otyp === HEAVY_IRON_BALL && object.owt)
         return object.owt;
     if (object.otyp === CANDELABRUM_OF_INVOCATION && object.spe)
-        return (base || 0) + object.spe * (OBJECT_WEIGHT[TALLOW_CANDLE] || 0);
+        return (base || 0) + object.spe * objectBaseWeight(TALLOW_CANDLE);
     if (base > 0) return base * quantity(object);
     return Math.trunc((count + 1) / 2);
 }

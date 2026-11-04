@@ -1,6 +1,7 @@
 // Thrown-object contact while the hero is engulfed.
 // C refs: dothrow.c throw_obj(), throwit(), thitmonst(), swallowit();
 // steal.c mpickobj().
+import { objectSkill, AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, } from './object_data.js';
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { flush_screen } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -16,7 +17,6 @@ import { W_WEP } from './const.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
 import { petrifyMonsterImmediately } from './trap.js';
 import { delobj } from './invent.js';
-import { AKLYS, BOULDER, CORPSE, HEAVY_IRON_BALL, OBJECT_SUBTYPE } from './object_data.js';
 import { MONSTER_SYMBOL, monsterDigests, monsterIsAnimal, monsterIsWhirly } from './monster_data.js';
 import { isThrowingWeapon, launcherMatchesAmmo } from './object_properties.js';
 import { rnd } from './rng.js';
@@ -34,7 +34,7 @@ function swallowedWeaponTarget(state, item, objectClass) {
     const engulfer = state.u?.uswallow ? state.u?.ustuck : null;
     if (!engulfer)
         return null;
-    const subtype = OBJECT_SUBTYPE[item.otyp] ?? 0;
+    const subtype = objectSkill(item.otyp);
     // thitmonst() groups weapons, weptools, and gems into its weapon
     // branch, and gives heavy iron balls and boulders the same hmon()
     // contact with Strength exercised around the guaranteed hit.
@@ -63,7 +63,7 @@ function genericSwallowedEligibility(state, item, objectClass) {
         || item.otyp === BOULDER
         || item === state.uball || item === state.u?.uball)
         return null;
-    if (objectClass === 6 && (OBJECT_SUBTYPE[item.otyp] ?? 0) !== 0)
+    if (objectClass === 6 && objectSkill(item.otyp) !== 0)
         return null; // is_weptool()
     return engulfer;
 }

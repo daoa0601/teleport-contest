@@ -1,3 +1,4 @@
+import { objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_NUTRITION, } from './object_data.js';
 import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, monsterVisible, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
@@ -8,7 +9,6 @@ import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SIZE } from '.
 import { consumeMonsterObject } from './mon.js';
 import { feedBeeRoyalJelly } from './monmove.js';
 import { monsterName } from './do_name.js';
-import { CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_DELAY, OBJECT_NUTRITION } from './object_data.js';
 import { objectName, observeDistantObjectForNaming } from './objnam.js';
 import { splitObjectStack } from './mkobj.js';
 import { DOGFOOD, dogFood } from './pet_food.js';
@@ -37,7 +37,7 @@ export function petFoodNutrition(monster, object) {
             nutrition = body[1];
         }
         else {
-            delay = OBJECT_DELAY[object.otyp] ?? 0;
+            delay = objectDelay(object.otyp);
             nutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
         }
         const fullNutrition = obj_nutrition(object);

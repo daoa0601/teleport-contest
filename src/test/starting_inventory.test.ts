@@ -1,11 +1,10 @@
+import {
+    objectCharged, LUCKSTONE, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, POT_POLYMORPH,
+    RIN_POLYMORPH, RIN_POLYMORPH_CONTROL, RIN_POISON_RESISTANCE, SPE_CONFUSE_MONSTER,
+    SPE_FORCE_BOLT, SPE_POLYMORPH, WAN_NOTHING, WAN_POLYMORPH,
+} from '../js/object_data.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import {
-    LUCKSTONE, OBJECT_CHARGED, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL,
-    POT_POLYMORPH, RIN_POLYMORPH, RIN_POLYMORPH_CONTROL,
-    RIN_POISON_RESISTANCE, SPE_CONFUSE_MONSTER, SPE_FORCE_BOLT, SPE_POLYMORPH, WAN_NOTHING,
-    WAN_POLYMORPH,
-} from '../js/object_data.js';
 import { heroGoldObject } from '../js/hero_gold.js';
 import { mksobj } from '../js/mkobj.js';
 import { addCreatedInventoryItem } from '../js/invent.js';
@@ -47,7 +46,7 @@ void test('random Wizard gear excludes unusable items and controlled polymorph c
         assert.equal(rings.length, 2, context);
         assert.notEqual(rings[0]?.otyp, rings[1]?.otyp, context);
         for (const ring of rings) {
-            if (OBJECT_CHARGED[ring.otyp]) assert.ok((ring.spe ?? 0) > 0, context);
+            if (objectCharged(ring.otyp)) assert.ok((ring.spe ?? 0) > 0, context);
         }
         const books = state.inventory.filter(item => item.oclass === 10);
         assert.equal(books.length, 2, context);

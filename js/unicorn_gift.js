@@ -1,11 +1,11 @@
 // C dothrow.c:thitmonst()'s unicorn catch and gem_accept().
+import { objectSkill, } from './object_data.js';
 import { P_SLING, RLOC_MSG } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { reportHeroThrownMiss } from './dothrow.js';
 import { MONSTER_ALIGNMENT, monsterIsUnicorn } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { monsterName } from './do_name.js';
-import { OBJECT_SUBTYPE } from './object_data.js';
 import { objectMaterial } from './o_init.js';
 import { definiteName, objectName } from './objnam.js';
 import { rn2 } from './rng.js';
@@ -21,7 +21,7 @@ const MINERAL = 21;
 export async function offerUnicornGem(monster, object, state) {
     if (object.oclass !== GEM_CLASS || !monsterIsUnicorn(monster.mnum)
         || objectMaterial(object, state) === MINERAL
-        || state.uwep && OBJECT_SUBTYPE[state.uwep.otyp] === P_SLING)
+        || state.uwep && objectSkill(state.uwep.otyp) === P_SLING)
         return null;
     if (!monster.mcanmove || monster.msleeping) {
         await reportHeroThrownMiss(monster, object, { state });

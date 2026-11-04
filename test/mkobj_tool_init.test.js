@@ -1,6 +1,6 @@
+import { objectBaseCost, BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, MAGIC_FLUTE, MAGIC_HARP, MAGIC_MARKER, OIL_LAMP, OBJECT_NAMES, TALLOW_CANDLE, TINNING_KIT, WAX_CANDLE, FIGURINE, } from '../js/object_data.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { BAG_OF_TRICKS, BELL_OF_OPENING, BRASS_LANTERN, CAN_OF_GREASE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, HORN_OF_PLENTY, MAGIC_FLUTE, MAGIC_HARP, MAGIC_MARKER, OIL_LAMP, OBJECT_COST, OBJECT_NAMES, TALLOW_CANDLE, TINNING_KIT, WAX_CANDLE, FIGURINE, } from '../js/object_data.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_FLAGS2, MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -13,7 +13,7 @@ void test('candles are unlit single-wick stacks with cost-derived fuel', async (
         for (let i = 0; i < 150; i++) {
             const candle = await mksobj(typ, true, false);
             assert.equal(candle.spe, 1);
-            assert.equal(candle.age, 20 * (OBJECT_COST[typ] ?? 0), 'a candle holds twenty times its price in fuel');
+            assert.equal(candle.age, 20 * objectBaseCost(typ), 'a candle holds twenty times its price in fuel');
             assert.equal(candle.lamplit, false, 'generated candles start dark');
             assert.ok(candle.quan >= 1 && candle.quan <= 7, `candle quantity ${candle.quan} outside 1..7`);
         }

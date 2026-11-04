@@ -1,6 +1,7 @@
 // Monster weapon selection and wielded state.
 // C refs: weapon.c select_hwep(), oselect(), setmnotwielded(),
 // mwepgone(), and possibly_unwield().
+import { objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE, OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, TOWEL, GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_HIT_BONUS, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE, } from './object_data.js';
 import { bypassObject } from './worn.js';
 import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, } from './const.js';
 import { definiteObjectAction, objectName, objectCombatName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, } from './objnam.js';
@@ -19,9 +20,7 @@ import { unlinkMonsterObject, placeObject, stack_object } from './mkobj.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive as perceivedPossessivePronoun } from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE, OBJECT_BIMANUAL, OBJECT_NAMES, OBJECT_SUBTYPE, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData, } from './object_data.js';
 import { makePlural, makeSingular } from './objnam.js';
-import { objectClassForType } from './o_init.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind } from './senses.js';
 import { isBimanualObject } from './object_properties.js';
@@ -33,13 +32,11 @@ import { monsterWeaponSwingVerb } from './mhitu.js';
 import { willWeld } from './wield.js';
 import { monsterHasStoneResistance } from './mondata.js';
 import { AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, } from './const.js';
-import { HEAVY_IRON_BALL, IRON_CHAIN, OBJECT_DIR, TIN_OPENER, TOWEL } from './object_data.js';
 import { isMissileObject, isWeaponTool } from './object_properties.js';
 import { artifactDamageBonus, artifactStrikesShade } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { A_STR, Upolyd, WT_IRON_BALL_INCR } from './const.js';
 import { heroSpecies } from './polyself.js';
-import { GAUNTLETS_OF_POWER, OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_WEIGHT, } from './object_data.js';
 import { MONSTER_SIZE, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterIsShade, monsterIsThickSkinned, monsterIsWooden, monsterSpeciesHatesSilver, } from './monster_data.js';
 import { objectMaterial } from './o_init.js';
 import { d, rnd } from './rng.js';
@@ -48,9 +45,7 @@ import { artifactToHitBonus } from './artifacts.js';
 import { P_SPEAR } from './const.js';
 import { requireInitializedHero } from './hero_types.js';
 import { MONSTER_MOVE } from './monster_data.js';
-import { OBJECT_HIT_BONUS, TRIDENT } from './object_data.js';
 import { P_FLAIL } from './const.js';
-import { FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE } from './object_data.js';
 import { SKILL_NAMES } from './skills.js';
 import { isLauncherAmmunition } from './object_properties.js';
 const M2_GIANT = 0x00002000;
@@ -111,7 +106,7 @@ export function selectMonsterRangedWeapon(monster, state = game) {
         for (const type of POLEARM_PREFERENCE) {
             // C weapon.c:574 reads objects[pwep[i]].oc_bimanual raw on the
             // otyp table; the class guard does not apply to table entries.
-            if (OBJECT_BIMANUAL[type] && !twoHands)
+            if (objectBimanual(type) && !twoHands)
                 continue;
             const polearm = selectMonsterWeaponOfType(monster, type, state);
             if (polearm && (polearm === current || !cannotSwitch))
@@ -135,7 +130,7 @@ export function selectMonsterRangedWeapon(monster, state = game) {
                     return { weapon: gem, launcher: sling };
             }
         }
-        const skill = requireObjectData(OBJECT_SUBTYPE, type);
+        const skill = objectSkill(type);
         const launcher = selectMissileLauncher(monster, skill, state);
         const needsLauncher = skill >= -P_CROSSBOW && skill <= -P_BOW;
         if (needsLauncher && !launcher)
@@ -197,7 +192,7 @@ export function selectHandToHandWeapon(monster, state = game) {
             && monsterCanTouchArtifact(monster, object, state)
             // C weapon.c:717 reads oc_bimanual raw for the artifact (already
             // restricted to WEAPON_CLASS by the loop guard above).
-            && (canUseBothHands || !OBJECT_BIMANUAL[object.otyp]))
+            && (canUseBothHands || !objectBimanual(object.otyp)))
             return object;
     }
     let favorite = null;
@@ -212,7 +207,7 @@ export function selectHandToHandWeapon(monster, state = game) {
     }
     for (const type of HAND_TO_HAND_WEAPONS) {
         // C weapon.c:733 reads objects[hwep[i]].oc_bimanual raw on the table.
-        if (OBJECT_BIMANUAL[type] && !canUseBothHands)
+        if (objectBimanual(type) && !canUseBothHands)
             continue;
         if (type === CORPSE && !((monster.misc_worn_check ?? 0) & W_ARMG)
             && !monsterHasStoneResistance(monster))
@@ -451,7 +446,7 @@ function addWeaponEnchantment(object, damage) {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     const weaponLike = objectClass === WEAPON_CLASS
         || (objectClass === TOOL_CLASS
-            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0);
+            && objectSkill(object.otyp) !== 0);
     if (!weaponLike)
         return damage;
     damage += enchantment(object);
@@ -461,7 +456,7 @@ function canHaveTargetDamageBonus(object) {
     const objectClass = object.oclass || objectClassForType(object.otyp);
     return objectClass === WEAPON_CLASS
         || (objectClass === TOOL_CLASS
-            && (OBJECT_SUBTYPE[object.otyp] ?? 0) !== 0)
+            && objectSkill(object.otyp) !== 0)
         || objectClass === GEM_CLASS
         || objectClass === BALL_CLASS
         || objectClass === CHAIN_CLASS;
@@ -478,9 +473,7 @@ function applyTargetBaseRules(object, monster, damage, rollOne, state) {
     if (shadeBlocksWeaponBaseDamage(object, monster, state))
         damage = 0;
     if (object.otyp === HEAVY_IRON_BALL && damage > 0) {
-        const baseWeight = OBJECT_WEIGHT[HEAVY_IRON_BALL];
-        if (baseWeight === undefined)
-            throw new Error('The heavy iron ball has no base weight');
+        const baseWeight = objectBaseWeight(HEAVY_IRON_BALL);
         const extraWeight = Math.max(0, (object.owt ?? baseWeight) - baseWeight);
         const increments = Math.trunc(extraWeight / WT_IRON_BALL_INCR);
         if (increments > 0) {
@@ -496,7 +489,7 @@ function targetDamageBonus(object, monster, { hatesBlessings, hatesSilver, hero 
     let bonus = 0;
     if (object.blessed && hatesBlessings)
         bonus += rollOne(4);
-    if (Math.abs(OBJECT_SUBTYPE[object.otyp] ?? 0) === P_AXE
+    if (Math.abs(objectSkill(object.otyp)) === P_AXE
         && monsterIsWooden(monster))
         bonus += rollOne(4);
     if (objectMaterial(object, state) === SILVER && hatesSilver)
@@ -587,13 +580,13 @@ export function weaponHitBonus(object, defender, { state = game, random = rn2, r
     }
     else
         target = defender;
-    const skill = OBJECT_SUBTYPE[object.otyp];
+    const skill = objectSkill(object.otyp);
     const weapon = object.oclass === WEAPON_CLASS
         || (object.oclass === TOOL_CLASS && skill !== 0);
     const symbol = MONSTER_SYMBOL[target.mnum];
     const flags = MONSTER_FLAGS1[target.mnum];
     let bonus = OBJECT_HIT_BONUS[object.otyp];
-    if (bonus === undefined || skill === undefined)
+    if (bonus === undefined)
         throw new RangeError(`Unknown weapon type ${object.otyp}`);
     if (symbol === undefined || flags === undefined)
         throw new RangeError(`Unknown weapon defender species ${target.mnum}`);
@@ -632,7 +625,7 @@ const CLASS_NAMES = [
 ];
 export function weaponDescription(object) {
     const skill = [2, 6, 13].includes(object.oclass)
-        ? Math.abs(requireObjectData(OBJECT_SUBTYPE, object.otyp)) : 0;
+        ? Math.abs(objectSkill(object.otyp)) : 0;
     let description = SKILL_NAMES[skill];
     if (skill === 0) {
         if ([CORPSE, TIN, EGG, STATUE, BOULDER, TOWEL, TIN_OPENER].includes(object.otyp))

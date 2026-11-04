@@ -1,5 +1,5 @@
+import { objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
-import { CORPSE, EGG, FIGURINE, OBJECT_BASES, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
 import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
@@ -157,17 +157,6 @@ export function tablePoint(options) {
     const x = options.x ?? -1;
     const y = options.y ?? -1;
     return x === -1 && y === -1 ? point(options.coord) : { x, y };
-}
-function objectClassForType(type) {
-    for (let objectClass = 2; objectClass < OBJECT_BASES.length - 1; objectClass++) {
-        const first = OBJECT_BASES[objectClass];
-        const afterLast = OBJECT_BASES[objectClass + 1];
-        if (first === undefined || afterLast === undefined)
-            throw new Error(`Missing object class boundary ${objectClass}`);
-        if (type >= first && type < afterLast)
-            return objectClass;
-    }
-    return 1;
 }
 function objectClassForSymbol(symbol) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);

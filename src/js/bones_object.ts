@@ -1,16 +1,14 @@
+import {
+    objectUsesKnown, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW,
+    CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW, FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL,
+    ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN, WAX_CANDLE, YUMI,
+} from './object_data.js';
 import { artifactById, nameArtifact } from './artifacts.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { ROOMOFFSET, SHOPBASE, OBJECT_TIMER_KIND } from './const.js';
 import { game } from './gstate.js';
 import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
-import {
-    AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BOOMERANG, BOW,
-    CANDELABRUM_OF_INVOCATION, CORPSE, EGG, ELVEN_BOW,
-    FAKE_AMULET_OF_YENDOR, SCR_MAIL, SPE_NOVEL, OBJECT_USES_KNOWN,
-    ORCISH_BOW, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, TIN,
-    WAX_CANDLE, YUMI,
-} from './object_data.js';
 import { MONSTER_GENO, SPECIAL_PM } from './monster_data.js';
 import { set_corpsenm, curseObjectState } from './mkobj.js';
 
@@ -54,7 +52,7 @@ function discardUnsafeMonsterTraits(object: GameObject) {
 
 export function prepareBonesObjectForSave<T extends GameObject | null | undefined>(object: T): T {
     if (!object) return object;
-    if (OBJECT_USES_KNOWN[object.otyp]) {
+    if (objectUsesKnown(object.otyp)) {
         object.known = false;
     }
     for (const key of ['dknown', 'bknown', 'rknown', 'lknown', 'cknown', 'tknown'] as const)
