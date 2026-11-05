@@ -44,7 +44,7 @@ import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';
 import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom, isHeroThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hitMonsterWithThrownObject } from './hero_ranged_attack.js';
-import { flyBoomerang } from './boomerang.js';
+import { flyBoomerang } from './zap.js';
 import { skillName, weaponDescription } from './weapon.js';
 import { exerciseAttribute } from './attrib.js';
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterAtPosition } from './steed.js';
