@@ -37,7 +37,7 @@ import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './do
 import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
-import { breakStatue, fractureRock } from './rock_breakage.js';
+import { breakStatue, fractureRock } from './zap.js';
 import { capitalizedDefiniteName, rayHitMessage, rayMissMessage } from './ray_hit_message.js';
 import { rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 const GLASS = 19;

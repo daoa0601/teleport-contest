@@ -1,9 +1,5 @@
-// Ray attacks, terrain changes, and elemental item damage.
-// C ref: zap.c dobuzz(), zap_over_floor(), zhitm(), zhitu(), destroy_items(),
-// learnwand(), zappable(), zapnodir(), backfire(), dozap(), zap_steed(),
-// zap_updown(), weffects(), zap_map(), and bhit()'s ZAPPED_WAND branch.
-import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, objectPropertyName, } from './object_data.js';
+import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
+import { objectClassForType, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, objectPropertyName } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
@@ -41,8 +37,8 @@ import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
-import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject, isContainer, remove_object, sweepFloorPile } from './mkobj.js';
-import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
+import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, placeObject, isContainer, remove_object, sweepFloorPile, } from './mkobj.js';
+import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData, } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
 import { heroHasNoHands, heroFormHidesUnderObjects } from './polyself.js';
@@ -81,7 +77,6 @@ import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } 
 import { hatchableEggSpecies, eggSpeciesIsDead } from './mon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
-import { fractureRock } from './rock_breakage.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { animateStatue } from './statue_trap.js';
 import { vegetarianCorpse } from './food_traits.js';
@@ -162,6 +157,12 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { setMimicAppearance } from './makemon.js';
 import { landFloorObject } from './floor_effects.js';
 import { monsterHasDrainResistance } from './mondata.js';
+import { objectUsesKnown } from './object_data.js';
+import { CORPSTAT_HISTORIC } from './const.js';
+import { shopClaimsObject } from './shk.js';
+import { breakObjectAtLocation } from './dothrow.js';
+import { visionCellBlocksLight } from './vision.js';
+import { placeObjectSynchronously } from './mkobj.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -4976,5 +4977,72 @@ async function fleshMonster(monster, state) {
         return true;
     }
     return false;
+}
+// C zap.c:fracture_rock().
+export async function fractureRock(object, x, y, { state = game, random = rn2, publish = pline } = {}) {
+    // "no texts here!" beyond the shop-billing
+    // message.  Callers own any "shatters"/"falls apart" prose.
+    const byYou = !state.context?.mon_moving;
+    const location = getObjectLocation(object, state);
+    if (byYou && location) {
+        const spot = costlySpot(location.x, location.y, state);
+        if (spot && shopClaimsObject(object, spot.resident, false, state)) {
+            await publish(`You fracture ${shopkeeperName(spot.resident)}'s ${objectName(object, state)}.`);
+            await breakObjectAtLocation(object, {
+                x: location.x, y: location.y, state, publish,
+                heroCaused: true, showBreakMessage: false,
+            });
+        }
+    }
+    if (byYou && object.otyp === BOULDER)
+        sokobanGuilt(state);
+    object.otyp = ROCK;
+    object.oclass = GEM_CLASS;
+    object.quan = object.quantity = 7 + random(60);
+    object.dknown = object.bknown = object.rknown = false;
+    object.known = !objectUsesKnown(ROCK);
+    delete object.oextra;
+    delete object.oname;
+    delete object.name;
+    delete object.plural;
+    delete object.corpsenm;
+    object.owt = objectWeight(object);
+    if (object.where === 'floor') {
+        // obj_extract_self() + place_object() move the rock stack back on
+        // top of the pile, then the open square gets an immediate unblock.
+        // A rock stack has no nested contents, so the synchronous placement
+        // preserves the raw C extract+place shape (no movobj unhide pass).
+        remove_object(object, state);
+        placeObjectSynchronously(object, x, y, state);
+        const level = state.level;
+        if (!level)
+            throw new Error('Floor fracture requires a level.');
+        if (!visionCellBlocksLight(level, x, y)) {
+            vision_note_blocker_change(x, y);
+            await vision_recalc(0);
+        }
+        if (cansee(x, y))
+            await newsym(x, y);
+    }
+}
+// C zap.c:break_statue().
+export async function breakStatue(statue, x, y, { state = game, random = rn2, publish = pline } = {}) {
+    const byYou = !state.context?.mon_moving;
+    // A statue trap animates the statue instead of letting it break.
+    const monster = await activateStatueTrapAt(x, y, { state, shatter: true });
+    if (monster)
+        return false;
+    for (const object of statue.contents || []) {
+        object.where = 'free';
+        await placeObject(object, x, y, state);
+    }
+    statue.contents = [];
+    if (byYou && state.urole?.key === 'archeologist' && (statue.spe ?? 0) & CORPSTAT_HISTORIC) {
+        await publish(formatFeltMessage('guilty about damaging such a historic statue.', state));
+        adjustHeroAlignment(-1, state);
+    }
+    statue.spe = 0;
+    await fractureRock(statue, x, y, { state, random, publish });
+    return true;
 }
 //# sourceMappingURL=zap.js.map

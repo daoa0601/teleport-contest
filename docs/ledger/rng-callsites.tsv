@@ -2089,7 +2089,7 @@ src/js/do.ts	polymorphSink	rn2	"[""3""]"	constant
 src/js/do.ts	polymorphSink	rn2	"[""4""]"	constant
 src/js/do.ts	teleportSink	rn2	"[""ROWNO - 2""]"	constant
 src/js/do.ts	teleportSink	rnd	"[""(COLNO - 1) - 2""]"	constant
-src/js/rock_breakage.ts	fractureRock	random	"[""60""]"	constant
+src/js/zap.ts	fractureRock	random	"[""60""]"	constant
 src/js/trap.ts	trapeffectRocktrap	random	"[""15""]"	constant
 src/js/trap.ts	trapeffectRocktrap	rollDice	"[""2"", ""6""]"	constant
 src/js/trap.ts	launchRollingBoulder	random	"[""10""]"	constant

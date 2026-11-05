@@ -11,7 +11,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { breakFloorObject } from './dothrow.js';
 import { BOULDER, STATUE } from './object_data.js';
 import { rayHitMessage, rayMissMessage } from './ray_hit_message.js';
-import { breakStatue, fractureRock } from './rock_breakage.js';
+import { breakStatue, fractureRock } from './zap.js';
 import { d, rn2 } from './rng.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { adjustSpellDamage } from './zap.js';
