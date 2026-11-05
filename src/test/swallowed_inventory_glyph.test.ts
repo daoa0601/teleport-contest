@@ -8,7 +8,7 @@ import { monsterName } from '../js/do_name.js';
 import { redrawMap, transientMonsterGlyph, transientObjectGlyph } from '../js/display.js';
 import { heroSpecies } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
-import { lookInsideSwallower } from '../js/swallowed_inventory.js';
+import { lookHere } from '../js/invent.js';
 import { knownObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
@@ -37,11 +37,11 @@ void test('inspecting a hallucinated swallowed hero changes the next perceived s
     initRng(142n);
     const input = resetInputState();
 
-    await answerPrompts(lookInsideSwallower(swallower), input, [
+    await answerPrompts(lookHere(0), input, [
         { prompt: /look around[\s\S]*--More--/, keys: ' ' },
         { prompt: /Swallowed Creatures/, keys: ' ' },
     ]);
-    await answerPrompts(lookInsideSwallower(swallower), input, [
+    await answerPrompts(lookHere(0), input, [
         { prompt: /look around[\s\S]*--More--/, keys: ' ' },
         { prompt: new RegExp(`Contents of ${nextName}`), keys: ' ' },
     ]);

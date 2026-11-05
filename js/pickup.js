@@ -48,7 +48,6 @@ import { isRider } from './corpse_species.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsUnaware } from './senses.js';
-import { lookInsideSwallower } from './swallowed_inventory.js';
 import { heroEscapedShaft, heroTeetersAtPit, backOnGroundMessage } from './trap.js';
 import { clearMessageWindow, displayMessageWindow } from './tty_topline.js';
 import { containerContents } from './end.js';
@@ -298,7 +297,7 @@ async function choosePickupObjects(source, objects, count, { autoSelect = true, 
             // query_objlist() names preceding entries before reverting to look_here().
             if (feelCockatrice && willFeelPetrifyingCorpse(object)) {
                 if (source.monster)
-                    await lookInsideSwallower(source.monster);
+                    await lookHere(0);
                 else
                     await dolook();
                 return [];

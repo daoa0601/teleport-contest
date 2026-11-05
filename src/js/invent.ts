@@ -16,7 +16,7 @@ import {
     placeObject, objectWeight, isContainer, announceGlobMerge,
 } from './mkobj.js';
 import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
-import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
+import { consumeHallucinatedMenuObjectGlyph, transientMonsterGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { showMessageMenu } from './wintty.js';
@@ -39,7 +39,7 @@ import {
     DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE,
     TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT,
     SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC,
-    W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR,
+    W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME,
 } from './const.js';
 import type { GameFlags } from './flags.js';
 import { MONSTER_NAME } from './monster_data.js';
@@ -53,7 +53,7 @@ import { getLine, promptYesNoAllQuit } from './query.js';
 import { isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed } from './polyself.js';
-import { heroFingerName, heroHandName } from './body_parts.js';
+import { heroFingerName, heroHandName, monsterStomachName } from './body_parts.js';
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
@@ -69,8 +69,7 @@ import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
 import { heroResistsStoning, touchPetrifies, feelPetrifyingCorpse, willFeelPetrifyingCorpse, formCanBecomeStoneGolem } from './stoning.js';
-import { iceDescriptionAt } from './pager.js';
-import { lookInsideSwallower } from './swallowed_inventory.js';
+import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { impossible, panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import {
@@ -86,9 +85,10 @@ import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
-import { displayLiquidName } from './do_name.js';
+import { displayLiquidName, monsterName } from './do_name.js';
 import { usedUpBill, showBill } from './inventory_reports.js';
 import { NO_COLOR } from './terminal.js';
+import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPossessions } from './hero_types.js';
@@ -97,7 +97,7 @@ import { maybeUnhideAt, hideHeroUnder } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
-import { monsterIsHumanoid } from './mondata.js';
+import { monsterIsHumanoid, monsterDigests } from './mondata.js';
 
 // invent.js — the invent.c owner: inventory admission (addinv/freeinv/
 // assigninvlet/reorder), getobj selection, the 'I' reports and unpaid
@@ -2111,21 +2111,13 @@ export async function selectInventoryObject({
 export async function dolook() {
     hideUnhideMessageTypes(true, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
     try {
-        await inspectHere();
+        const { tookTime } = await lookHere(0);
+        game.context.move = tookTime ? 1 : 0;
     } finally {
         hideUnhideMessageTypes(false, MSGTYP_MASK_REP_SHOW, game.iflags.messageTypes);
     }
 }
 
-async function inspectHere(): Promise<void> {
-    if (game.u.uswallow && game.u.ustuck) {
-        await lookInsideSwallower(game.u.ustuck);
-        game.context.move = heroIsBlind() ? 1 : 0;
-        return;
-    }
-    const { tookTime } = await lookHere(0);
-    game.context.move = tookTime ? 1 : 0;
-}
 // C invent.c:count_contents(container, nested, quantity, everything, FALSE):
 // shk.c:stolen_value() sizes a broken container's shop-owned contents.
 export function countContents(container: GameObject, { quantity = false, everything = false } = {},
@@ -2601,15 +2593,31 @@ export async function readFloorEngraving(x: number, y: number): Promise<void> {
     if (read && (game.context.run ?? 0) > 0) nomul(0);
 }
 
-// C invent.c:look_here() outside an engulfer. A positive objectCount is
+// C invent.c:look_here(). A positive objectCount is
 // autopickup's count, which summarizes a pile at pile_limit; skipFeature
 // means describe_decor() already showed the terrain.
 export async function lookHere(
     objectCount = 0, { pickedSome = false, skipFeature = false } = {},
 ): Promise<{ died: boolean; tookTime: boolean }> {
+    const blind = heroIsBlind();
+    if (game.u.uswallow && game.u.ustuck) {
+        const monster = game.u.ustuck;
+        const location = `${possessiveName(monsterName(monster))} ${monsterStomachName(monster.mnum)}`;
+        await plineWithContinuation(`You ${blind ? 'try' : 'look around'} to ${blind ? 'feel' : 'see'} what is lying in ${location}.`);
+        const objects = monster.minvent ?? monster.inventory ?? [];
+        if (!objects.length) {
+            await plineWithContinuation(`You ${blind ? 'feel' : 'see'} no objects here.`);
+            return { died: false, tookTime: blind };
+        }
+        for (const object of objects) {
+            const contact = await feelPetrifyingCorpse(object);
+            if (contact.died) return { died: true, tookTime: blind };
+        }
+        await displayMonsterInventory(monster, objects, location, blind);
+        return { died: false, tookTime: blind };
+    }
     const { ux: x, uy: y } = game.u;
     const level = requireGameLevel();
-    const blind = heroIsBlind();
     const limit = configuredPileLimit();
     const skipObjects = limit > 0 && objectCount >= limit;
     const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
@@ -3533,6 +3541,40 @@ export async function mergeObjectStacks(
     }
     await deleteObject(incoming, state, { mergeInto: survivor });
     return survivor;
+}
+
+// C invent.c:display_minventory(). The swallowed inventory view includes the hero.
+async function displayMonsterInventory(
+    monster: Monster, objects: readonly GameObject[], location: string, blind: boolean,
+): Promise<void> {
+    // display_minventory() builds its default title even when look_here()
+    // supplies another title, so the perceived owner still changes.
+    monsterName(monster, { article: 'your', suppressIt: true, capitalized: true,
+        suppressSaddle: !!MGIVENNAME(monster) });
+    const ordered = sortObjects(objects, { mode: lootSortMode() });
+    const sections: InventorySection<GameObject>[] = [];
+    let first = true;
+    for (const oclass of [...inventoryClassOrder(), VENOM_CLASS, RANDOM_CLASS]) {
+        const objects = ordered.filter(object => object.oclass === oclass);
+        if (!objects.length) continue;
+        const items = [];
+        for (const object of objects) {
+            observeObjectForNaming(object);
+            consumeHallucinatedMenuObjectGlyph(object);
+            const firstGold = first && object.otyp === GOLD_PIECE;
+            first = false;
+            items.push({ ...(firstGold ? { key: '$' } : {}),
+                text: await inventoryItemDescription(object), value: object });
+        }
+        sections.push({ heading: objectClassHeading(oclass), items });
+    }
+    // query_objlist() attaches a monster glyph even though tty only shows text.
+    transientMonsterGlyph({ mnum: heroSpecies(game),
+        female: !!(heroIsPolymorphed(game) ? game.u.mfemale : game.flags.female) });
+    sections.push({ heading: `${monsterDigests(monster) ? 'Swallowed' : 'Engulfed'} Creatures`,
+        items: [{ key: CONTAINED_SYM, text: withIndefiniteArticle(swallowedHeroDescription()) }] });
+    await showInventoryWindow(sections, { title: blind ? 'You feel:'
+        : `Contents of ${location}:` });
 }
 
 // C invent.c:cinv_doname(): the probing contents menu names the box with
