@@ -1,3 +1,6 @@
+// Monster movement-ration state, movement, and combat.
+// C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
+// monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().
 import { stack_object } from './invent.js';
 import {
     WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS,
@@ -134,9 +137,6 @@ import { wereChange, setHeroLycanthropy } from './were.js';
 import { stopHeroOccupation } from './occupation.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
 import { migrateMonsterOffLevel } from './dog.js';
-// Monster movement-ration state, movement, and combat.
-// C refs: allmain.c moveloop_core(), mon.c mcalcmove()/movemon()/mfndpos(),
-// monmove.c m_move()/dochug(), and dogmove.c dog_goal()/dog_move().
 
 export const NORMAL_SPEED = 12;
 export const MSLOW = 1;

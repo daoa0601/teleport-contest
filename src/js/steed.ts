@@ -1,3 +1,5 @@
+// steed.js — Saddling, mounting, riding, and dismounting.
+// C ref: steed.c.
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
@@ -54,8 +56,6 @@ import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';
 import { describeLevel } from './botl.js';
 
-// steed.js — Saddling, mounting, riding, and dismounting.
-// C ref: steed.c.
 
 export type DismountReason = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
