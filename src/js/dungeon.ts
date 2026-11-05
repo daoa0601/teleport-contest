@@ -259,6 +259,59 @@ export function level_difficulty(): number {
     return difficulty;
 }
 
+// C dungeon.c:find_mapseen_by_str(): the overview record whose custom
+// annotation matches the given text, in ledger (dungeon, level) order.
+function findMapseenByStr(name: string, state: GameState): DungeonLocation | undefined {
+    const annotations = [...state._levelAnnotations || []].map(([key, annotation]) => {
+        const [dnum, dlevel] = key.split(':').map(Number);
+        if (dnum === undefined || dlevel === undefined
+            || !Number.isInteger(dnum) || !Number.isInteger(dlevel))
+            throw new Error(`Invalid level annotation identity ${key}`);
+        return { annotation, location: { dnum, dlevel } };
+    }).sort((left, right) => left.location.dnum - right.location.dnum
+        || left.location.dlevel - right.location.dlevel);
+    return annotations.find(entry => entry.annotation.toLowerCase() === name)?.location;
+}
+
+// C dungeon.c:find_branch() with a null proto_dungeon: the live branch to
+// the named dungeon, for level teleport by name.
+function findBranchByDungeonName(name: string, state: GameState): DungeonBranch | undefined {
+    return state.branches.find(candidate => {
+        const dungeonName = state.dungeons[candidate.end2.dnum]?.dname.toLowerCase();
+        return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
+    });
+}
+
+// C dungeon.c:lev_by_name(): names require an actually visited level and
+// can address only this branch or the main-dungeon/Gehennom connection.
+export function levelDepthByName(input: string, state: GameState = game): number {
+    requirePlayingGame(state);
+    let name = input.toLowerCase();
+    let target: DungeonLocation | undefined;
+    target = findMapseenByStr(name, state);
+    if (!target) {
+        name = name.replace(/^the /, '').replace(/ level$/, '');
+        if (name === 'hell' || name === 'gehennom')
+            name = state.u.uz.dnum === state.tower_dnum ? " to vlad's tower" : 'valley';
+        if (name === 'delphi') name = 'oracle';
+        for (const [key, special] of state.specialLevels || []) {
+            if (specialDisplayName(key, state).toLowerCase() === name) { target = special; break; }
+        }
+    }
+    const visited = (level: DungeonLocation) => state.flags.debug || sameDungeonLevel(level, state.u.uz)
+        || state._levelCache?.has(`${level.dnum}:${level.dlevel}`);
+    const inBranch = (level: DungeonLocation) => level.dnum === state.u.uz.dnum
+        || (state.u.uz.dnum === state.valley_level?.dnum && level.dnum === state.medusa_level?.dnum)
+        || (state.u.uz.dnum === state.medusa_level?.dnum && level.dnum === state.valley_level?.dnum);
+    if (target) return inBranch(target) && visited(target) ? depth(target, state.dungeons) : 0;
+    const branch = findBranchByDungeonName(name, state)
+        || (name.includes(' to ')
+            ? findBranchByDungeonName(name.slice(name.indexOf(' to ') + 4), state) : null);
+    if (!branch || !visited(branch.end1) || !visited(branch.end2)) return 0;
+    target = branch.end1.dnum === state.u.uz.dnum ? branch.end1 : branch.end2;
+    return inBranch(target) ? depth(target, state.dungeons) : 0;
+}
+
 // C dungeon.c:init_mapseen(): generating a level for the first time
 // creates its overview record before the hero learns anything about it.
 // mklev() owns the call in C; the JS level-transition owners call this at
