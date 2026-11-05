@@ -9,7 +9,7 @@ import { selectMapPosition } from './getpos.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { currentAttribute, exerciseWisdom } from './attrib.js';
 import { castSpell, createMemorizedSpell, knownSpell } from './spell.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { randomTeleportDepth, levelTeleport } from './level_teleport.js';
 import { dist2, distmin } from './hacklib.js';
 import { clampHoleDestination, deleteTrap, seeTrap, mintrap, fillPitWithBoulderAt, resetUtrap, heroIsUnconscious } from './trap.js';

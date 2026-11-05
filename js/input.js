@@ -128,7 +128,6 @@ export function pushKeys(keys) {
     activeInputGate.feed(keys);
 }
 // C wintty.c:tty_nhgetch()
-// Also C wintty.c:tty_nh_poskey(): the Unix tty path reads a key through this same entry point.
 export async function nhgetch(inputState = 'other') {
     // tty_nhgetch() clears WIN_STOP before reading any key, including a
     // target selection made by an action resumed from the command queue.
@@ -144,6 +143,13 @@ export async function nhgetch(inputState = 'other') {
     }
     // tty_nhgetch() treats NUL as Escape, including a typed Ctrl-@.
     return key === 0 ? 27 : key;
+}
+// C wintty.c:tty_nh_poskey()
+// The Unix tty path just reads a key through tty_nhgetch(); the browser
+// gate delivers map clicks through the same entry, and callers that need
+// the click coordinates take them from the gate.
+export async function nh_poskey(inputState = 'other') {
+    return await nhgetch(inputState);
 }
 export function resetInputState() {
     activeInputGate = new InputGate();

@@ -16,14 +16,14 @@ import { rawPrint } from './pline.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,
-} from './tty_menu.js';
+} from './wintty.js';
 import type { GameState, QuestStatus } from './game_state.js';
 import { ensureQuestStatus } from './quest.js';
 import type { Monster } from './monster_types.js';
 import { is_male, is_neuter, monsterIsFemale } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { SPE_LIGHT } from './object_data.js';
-import type { TtyMenuWindow } from './tty_menu.js';
+import type { TtyMenuWindow } from './wintty.js';
 
 export type RoleKey =
     | 'archeologist' | 'barbarian' | 'caveman' | 'healer' | 'knight'

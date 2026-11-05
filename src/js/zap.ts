@@ -187,7 +187,7 @@ import { relocateObjectRandomly } from './teleport.js';
 
 import { putHeroToSleep } from './timeout.js';
 import { burnArmorByFire, burnHeroArmorByFire, damageObjectWithAcid, erodeArmor, fillPitWithBoulderAt } from './trap.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterWieldedWeapon } from './weapon.js';

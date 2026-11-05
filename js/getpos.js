@@ -13,7 +13,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { cansee } from './vision.js';
 import { coordinateDescription, farlookLocationDescription, screenDescription } from './pager.js';
 import { isValidTravelTarget } from './hack.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './wintty.js';
 import { visibleCommandKey } from './cmd.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { showDisclosureOverlay } from './windows.js';

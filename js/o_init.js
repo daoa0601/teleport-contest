@@ -20,7 +20,7 @@ import { OBJECT_CLASS_LABELS, classifyLoot, inventoryClassOrder } from './invent
 import { OBJECT_CLASS_SYMBOLS } from './display.js';
 import { priceQuoteSuffix } from './shk.js';
 import { armorPresentationName } from './objnam.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { exerciseWisdom } from './attrib.js';
 import { repriceDiscoveredGems } from './shk.js';

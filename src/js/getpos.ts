@@ -23,7 +23,7 @@ import { isValidTravelTarget } from './hack.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
     tty_select_menu, tty_start_menu,
-} from './tty_menu.js';
+} from './wintty.js';
 import type { GameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import { visibleCommandKey } from './cmd.js';

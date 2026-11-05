@@ -2,7 +2,7 @@
 import { rawPrint, rawPrintf } from './pline.js';
 import { truncatePlineMessage } from './pline_text.js';
 import { game } from './gstate.js';
-import { nhgetch } from './input.js';
+import { getret } from './wintty.js';
 import { NO_COLOR } from './terminal.js';
 
 export interface ConfigurationError {
@@ -31,26 +31,14 @@ export interface ConfigurationErrorReport {
 // or creating the game windows. It does not use the gameplay message pager.
 // Keep earlier sources visible until the caller leaves configuration startup.
 export async function displayConfigurationErrors(reports: readonly ConfigurationErrorReport[]): Promise<void> {
-    const display = game.nhDisplay;
-    if (!display) return;
-    // C wintty.c:getret(): one more newline, then the prompt (cbreak is off
-    // before init_nhwindows(), so it asks for "return"), then xwaitforspace().
-    const awaitStartupReturn = async (): Promise<void> => {
-        rawPrint('');
-        const prompt = 'Hit return to continue: ';
-        display.putstr(0, display.cursorRow, prompt, NO_COLOR, 0);
-        display.setCursor(prompt.length, display.cursorRow);
-        display.flush();
-        let key;
-        do key = await nhgetch();
-        while (key !== 10 && key !== 13);
-    };
+    // getret() writes its prompt to the terminal; nothing to do without one.
+    if (!game.nhDisplay) return;
     for (const report of reports) {
         let previousLine: number | null = null;
         for (const error of report.errors) {
             if (error.raw) {
                 rawPrintf(error.message);
-                if (error.pause !== false) await awaitStartupReturn();
+                if (error.pause !== false) await getret();
                 continue;
             }
             if (error.lineNumber !== previousLine) rawConfigurationMessage(`\n${error.sourceLine}`);
@@ -64,7 +52,7 @@ export async function displayConfigurationErrors(reports: readonly Configuration
         // least one config_error_add() fired; raw diagnostics never count.
         if (!count) continue;
         rawConfigurationMessage(`\n${count} error${count === 1 ? '' : 's'} in ${report.source}.\n`);
-        await awaitStartupReturn();
+        await getret();
     }
 }
 

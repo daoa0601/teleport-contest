@@ -10,7 +10,6 @@ src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c
 src/js/color_query.ts	coloratt.c
-src/js/config_errors.ts	wintty.c
 src/js/crystal_ball.ts	detect.c
 src/js/dbridge.ts	dbridge.c
 src/js/detect.ts	detect.c

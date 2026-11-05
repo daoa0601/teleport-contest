@@ -32,7 +32,8 @@ import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from '
 import { setBallAndChainFelt } from './ball.js';
 import { gulp_blnd_check } from './mhitu.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
-import { restoreMenuUnderlay, showMultiSelectWindow, snapshotMenuUnderlay } from './windows.js';
+import { showMultiSelectWindow } from './windows.js';
+import { restoreMenuUnderlay, snapshotMenuUnderlay } from './wintty.js';
 import { yn_function } from './cmd.js';
 import { objectOwnershipPrefix } from './shk.js';
 import { formatFeltMessage } from './hero_speech.js';

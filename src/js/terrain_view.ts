@@ -26,7 +26,7 @@ import { showTerrainCodeLegend, showTerrainCodes } from './wizcmds.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow,
     tty_end_menu, tty_select_menu, tty_start_menu,
-} from './tty_menu.js';
+} from './wintty.js';
 
 
 export async function revealTerrain(subset: number): Promise<void> {

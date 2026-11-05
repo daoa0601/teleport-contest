@@ -18,11 +18,13 @@ import {
 import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu, renderKeyPrompt } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
+import { showMessageMenu } from './wintty.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay, snapshotMenuUnderlay, restoreMenuUnderlay } from './windows.js';
+import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
+import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';
 import type { InventoryMenuItem, InventorySection, InventorySelection, MenuLabel, MultiSelectSection, PageLocalMultiSelectSection } from './windows.js';
-import { windowOrigin } from './tty_menu.js';
+import { windowOrigin } from './wintty.js';
 import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
 import { ingSuffix, possessiveName } from './hacklib.js';
