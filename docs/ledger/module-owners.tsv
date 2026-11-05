@@ -22,6 +22,7 @@ src/js/dungeon.ts	dungeon.c
 src/js/earthquake.ts	music.c
 src/js/eat.ts	eat.c
 src/js/engrave.ts	engrave.c
+src/js/exper.ts	exper.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
@@ -65,7 +66,6 @@ src/js/muse.ts	muse.c
 src/js/music.ts	music.c
 src/js/o_init.ts	o_init.c
 src/js/occupation.ts	allmain.c
-src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c

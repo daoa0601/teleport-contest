@@ -11,7 +11,7 @@ import { rndClass } from './objnam.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
-import { monsterRank } from './botl.js';
+import { rankOf } from './botl.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterMightThrowWeapon } from './weapon.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -244,7 +244,7 @@ function namePlayerMonster(monster) {
     const name = developer === null ? (femaleKind ? 'Eve' : 'Adam')
         : femaleKind && developer !== 'Janet' ? (rn2(2) ? 'Maud' : 'Eve') : developer;
     monster.female = femaleKind || name === 'Janet';
-    setMonsterGivenName(monster, `${name} the ${monsterRank(monster)}`);
+    setMonsterGivenName(monster, `${name} the ${rankOf(monster.m_lev, monster.mnum, !!monster.female)}`);
 }
 // C mplayer.c:dev_name()
 function unusedDeveloperName() {

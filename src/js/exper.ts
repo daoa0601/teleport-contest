@@ -20,6 +20,7 @@ import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
 import type { RoleKey } from './roles.js';
 import { heroResistsLifeDrain } from './mondata.js';
+import { experienceRankIndex } from './botl.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
 
 interface ExperienceOptions {
@@ -86,12 +87,6 @@ export async function checkExperienceLevel({ publish = plineWithContinuation }: 
     if (hero.ulevel < MAXULEV && hero.uexp >= newExperienceThreshold(hero.ulevel))
         await gainExperienceLevel({ incremental: true, publish });
 }
-
-// C botl.c:xlev_to_rank().
-export function experienceRankIndex(level: number) {
-    return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-}
-
 
 // C exper.c:enermod().
 function energyModifier(energy: number, role: RoleKey) {

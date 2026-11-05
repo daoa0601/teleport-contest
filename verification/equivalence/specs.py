@@ -151,7 +151,7 @@ HACKLIB = 'js/hacklib.js'
 CMD = 'js/cmd.js'
 
 C_FILES = ('rnd.c', 'hacklib.c', 'exper.c', 'botl.c', 'attrib.c', 'weapon.c', 'hack.c', 'cmd.c')
-JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/attrib.js', 'js/weapon.js',
+JS_FILES = (RNG, HACKLIB, 'js/exper.js', 'js/botl.js', 'js/attrib.js', 'js/weapon.js',
             'js/uhitm.js', 'js/const.js', 'js/polyself.js', 'js/object_data.js', 'js/hack.js',
             CMD)
 
@@ -239,6 +239,7 @@ ATTRIBUTES = [(f'u.{field}.a[{i}]', SCHAR, f'game.u.{field}.a[{i}]')
 NO_GAUNTLETS = [('uarmg', ('game.uarmg', 'game.u.uarmg'))]
 ATTRIB = 'js/attrib.js'
 EXPER = 'js/exper.js'
+BOTL = 'js/botl.js'
 CONST = 'js/const.js'
 WEAPON_DAMAGE = 'js/weapon.js'
 POLYSELF = 'js/polyself.js'
@@ -274,9 +275,9 @@ SPECS += [
          probes=[('any int level', lambda s: [])],
          mutants=[(EXPER, 'return 10 * (2 ** level);', 'return 11 * (2 ** level);')]),
     Spec('xlev_to_rank', 'xlev_to_rank', 'experienceRankIndex', [('xlev', LONG)],
-         js_file=EXPER, pre=lambda s: int_argument(s, 'xlev'),
+         js_file=BOTL, pre=lambda s: int_argument(s, 'xlev'),
          probes=[('level outside C int', lambda s: [s['xlev'] == 2 ** 32 + 1])],
-         mutants=[(EXPER, 'Math.trunc((level + 2) / 4)', 'Math.trunc((level + 1) / 4)')]),
+         mutants=[(BOTL, 'Math.trunc((level + 2) / 4)', 'Math.trunc((level + 1) / 4)')]),
     Spec('rounddiv', 'rounddiv', 'roundDiv', [('x', LONG), ('y', INT)],
          js_file=HACK,
          pre=lambda s: [s['x'] >= -10 ** 8, s['x'] <= 10 ** 8, s['y'] >= 1, s['y'] <= 10 ** 6],

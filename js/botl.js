@@ -8,10 +8,10 @@ import { currentHungerState } from './eat.js';
 import { renderStatusLine2, writeStatusLines, hitpointBar, conditionStyle } from './wintty.js';
 import { statusVersion } from './version.js';
 import { criticallyLowHp } from './pray.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BL_AC, BL_ALIGN, BL_ARMOR, BL_ATTCLR_MAX, BL_CAP, BL_CH, BL_CHARACTERISTICS, BL_CONDITION, BL_CO, BL_DX, BL_ENE, BL_ENEMAX, BL_EXP, BL_FLUSH, BL_GOLD, BL_HP, BL_HD, BL_HPMAX, BL_HUNGER, BL_IN, BL_LEVELDESC, BL_WI, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF, BL_MASK_DEAF, BL_MASK_ELF_IRON, BL_MASK_FLY, BL_MASK_FOODPOIS, BL_MASK_GLOWHANDS, BL_MASK_GRAB, BL_MASK_HALLU, BL_MASK_HELD, BL_MASK_HOLDING, BL_MASK_ICY, BL_MASK_INLAVA, BL_MASK_LEV, BL_MASK_PARLYZ, BL_MASK_RIDE, BL_MASK_SLEEPING, BL_MASK_SLIME, BL_MASK_SLIPPERY, BL_MASK_STONE, BL_MASK_STRNGL, BL_MASK_STUN, BL_MASK_SUBMERGED, BL_MASK_TERMILL, BL_MASK_TETHERED, BL_MASK_TRAPPED, BL_MASK_UNCONSC, BL_MASK_WOUNDEDL, BL_SCORE, BL_STR, BL_TH_ALWAYS_HILITE, BL_TH_CONDITION, BL_TH_CRITICALHP, BL_TH_NONE, BL_TH_TEXTMATCH, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TIME, BL_TITLE, BL_VERS, BL_WEAPON, BL_TERRAIN, BL_XP, CLR_MAX, COLNO, EQ_VALUE, GE_VALUE, GT_VALUE, HL_ATTCLR_BLINK, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_INVERSE, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, ICE, In_endgame, In_quest, Is_knox_level, LARGEST_INT, LE_VALUE, LT_VALUE, MAXBLSTATS, NO_LTEQGT, P_LANCE, P_MORNING_STAR, P_POLEARMS, P_QUARTERSTAFF, P_SABER, P_SHORT_SWORD, P_UNICORN_HORN, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_LAVA, TXT_VALUE, Upolyd, MAX_TYPE } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, BL_AC, BL_ALIGN, BL_ARMOR, BL_ATTCLR_MAX, BL_CAP, BL_CH, BL_CHARACTERISTICS, BL_CONDITION, BL_CO, BL_DX, BL_ENE, BL_ENEMAX, BL_EXP, BL_FLUSH, BL_GOLD, BL_HP, BL_HD, BL_HPMAX, BL_HUNGER, BL_IN, BL_LEVELDESC, BL_WI, BL_MASK_BAREH, BL_MASK_BLIND, BL_MASK_BUSY, BL_MASK_CONF, BL_MASK_DEAF, BL_MASK_ELF_IRON, BL_MASK_FLY, BL_MASK_FOODPOIS, BL_MASK_GLOWHANDS, BL_MASK_GRAB, BL_MASK_HALLU, BL_MASK_HELD, BL_MASK_HOLDING, BL_MASK_ICY, BL_MASK_INLAVA, BL_MASK_LEV, BL_MASK_PARLYZ, BL_MASK_RIDE, BL_MASK_SLEEPING, BL_MASK_SLIME, BL_MASK_SLIPPERY, BL_MASK_STONE, BL_MASK_STRNGL, BL_MASK_STUN, BL_MASK_SUBMERGED, BL_MASK_TERMILL, BL_MASK_TETHERED, BL_MASK_TRAPPED, BL_MASK_UNCONSC, BL_MASK_WOUNDEDL, BL_SCORE, BL_STR, BL_TH_ALWAYS_HILITE, BL_TH_CONDITION, BL_TH_CRITICALHP, BL_TH_NONE, BL_TH_TEXTMATCH, BL_TH_UPDOWN, BL_TH_VAL_ABSOLUTE, BL_TH_VAL_PERCENTAGE, BL_TIME, BL_TITLE, BL_VERS, BL_WEAPON, BL_TERRAIN, BL_XP, CLR_MAX, COLNO, EQ_VALUE, GE_VALUE, GT_VALUE, HL_ATTCLR_BLINK, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_INVERSE, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_BLINK, HL_BOLD, HL_DIM, HL_INVERSE, HL_ITALIC, HL_NONE, HL_ULINE, ICE, In_endgame, In_quest, Is_knox_level, LARGEST_INT, LE_VALUE, LT_VALUE, MAXBLSTATS, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, NO_LTEQGT, P_LANCE, P_MORNING_STAR, P_POLEARMS, P_QUARTERSTAFF, P_SABER, P_SHORT_SWORD, P_UNICORN_HORN, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_LAVA, TXT_VALUE, Upolyd, MAX_TYPE } from './const.js';
 import { MONSTER_LEVEL, SPECIAL_PM, monsterClassSymbol, monsterTypeName } from './monster_data.js';
 import { roles } from './roles.js';
-import { depth as dungeonDepth, endgameLevelName } from './dungeon.js';
+import { depth, endgameLevelName } from './dungeon.js';
 import { activeObjectSymbols, objectClassSymbol } from './display.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsSick, heroIsSliming } from './potion.js';
@@ -23,7 +23,7 @@ import { heroIsPetrifying } from './stoning.js';
 import { artifactById } from './artifacts.js';
 import { isBimanualObject } from './object_properties.js';
 import { weaponDescription } from './weapon.js';
-import { experienceRankIndex, newExperienceThreshold } from './exper.js';
+import { newExperienceThreshold } from './exper.js';
 import { pline } from './pline.js';
 import { getLine } from './query.js';
 import { showMultiSelectWindow, showTextWindow } from './windows.js';
@@ -84,19 +84,15 @@ export function _statusLine2() {
     const fields = statusLine2Fields(nearCapacity(game));
     return fields ? renderStatusLine2(fields, game.nhDisplay?.cols ?? COLNO).text : '';
 }
-// C botl.c:do_statusline2() gathers the second line's fields; the
-// location label follows botl.c:describe_level().
+// The second status line's fields, gathered for the windowport evaluation;
+// do_statusline2() above shows the same values as one string. The location
+// label comes from describeLevel() below, with the trailing blanks that
+// wintty.c's status update suppresses for BL_LEVELDESC already trimmed.
 function statusLine2Fields(capacity) {
     const u = game.u;
     if (!u)
         return null;
-    const dungeonName = game.dungeons?.[u.uz?.dnum ?? 0]?.dname;
-    const endgameLocation = endgameLevelName(u.uz)
-        .replace(/^Plane of /, '');
-    const location = Is_knox_level(u.uz) ? dungeonName ?? ''
-        : In_quest(u.uz) ? `Home ${u.uz?.dlevel ?? 1}`
-            : In_endgame(u.uz) ? endgameLocation
-                : `${game._tutorialActive ? 'Tutorial' : 'Dlvl'}:${dungeonDepth(u.uz)}`;
+    const location = describeLevel(1, game).trimEnd();
     const polymorphed = Upolyd(u);
     // botl.c bounds the printed numbers without changing combat state.
     const currentHp = (polymorphed ? u.mh : u.uhp) ?? 0;
@@ -225,49 +221,49 @@ export function timebot() {
     display.statusVisible = true;
     writeStatusLines(display, display.statusLines);
 }
-// C botl.c:rank_of(). The level picks the rank slot; a female hero reads
-// the female title when the table has one.
-export function rankOf(level, g) {
-    const titles = g.urole?.title ?? [];
+// C botl.c:xlev_to_rank(). Conversion is precise but only partially
+// reversible (C botl.c:298).
+export function experienceRankIndex(level) {
+    return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
+}
+// C include/you.h Role_switch (gu.urole.mnum): the hero's role as a player
+// monster species number. Roles store the 0-based mnum, so the species
+// number is SPECIAL_PM + 1 + mnum, as u_init.ts computes for u.umonster.
+export function roleSwitch(state) {
+    return state.urole ? SPECIAL_PM + 1 + state.urole.mnum : -1;
+}
+// C botl.c:rank_of(). The monster number selects the role table: a player
+// monster passes its own species number, the hero passes Role_switch
+// (see roleSwitch below), and a number that matches no role falls back to
+// the hero's role as C does. The level picks the rank slot; a female reads
+// the female title when the table has one; mon_nam() lowercases the result
+// for "the roguish Brigitte".
+export function rankOf(level, monnum, female, state = game) {
+    const role = roles.find(candidate => monnum === SPECIAL_PM + 1 + candidate.mnum)
+        ?? state.urole;
     for (let index = experienceRankIndex(level); index >= 0; index--) {
-        const title = titles[index];
+        const title = role?.title[index];
         if (!title)
             continue;
-        if (g.flags?.female && title.f)
+        if (female && title.f)
             return title.f;
         if (title.m)
             return title.m;
     }
-    if (g.flags?.female && g.urole?.name.f)
-        return g.urole.name.f;
-    return g.urole?.name.m ?? 'Player';
-}
-// C botl.c:rank_of(). A player monster's title from its level; mon_nam()
-// lowercase it for "the roguish Brigitte".
-export function monsterRank(monster, state = game) {
-    const role = roles.find(candidate => SPECIAL_PM + 1 + candidate.mnum === monster.mnum) || state.urole;
-    if (!role)
-        throw new Error('Naming a player monster requires an initialized hero role.');
-    const level = monster.m_lev;
-    const rank = level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
-    for (let index = rank; index >= 0; index--) {
-        const title = role.title[index];
-        if (monster.female && title?.f)
-            return title.f;
-        if (title?.m)
-            return title.m;
-    }
-    return monster.female && role.name.f || role.name.m || 'Player';
+    if (female && role?.name.f)
+        return role.name.f;
+    return role?.name.m || 'Player';
 }
 // C botl.c:bot_via_windowport(): BL_TITLE, the full rank before tty cuts it.
-// Also C botl.c:rank(): inlined here when choosing the current hero's title.
+// Also C botl.c:rank(): the hero's own rank reads rank_of(u.ulevel,
+// Role_switch, flags.female) through rankOf below.
 export function statusTitle(state) {
     let name = state.plname || state.displayName || 'Hero';
     name = name.charAt(0).toUpperCase() + name.slice(1);
     const role = Upolyd(state.u)
         ? monsterTypeName(state.u.umonnum ?? -1, state.u.mfemale)
             .replace(/(^| )[a-z]/g, letter => letter.toUpperCase())
-        : rankOf(state.u.ulevel ?? 1, state);
+        : rankOf(state.u.ulevel ?? 1, roleSwitch(state), !!state.flags?.female, state);
     if (name.length + 5 + role.length > 30)
         name = name.slice(0, Math.max(16, 30 - 5 - role.length));
     return `${name} the ${role}`;
@@ -389,6 +385,89 @@ function conditionApplies(name, state, enabled) {
         case 'woundedlegs': return (hero._woundedLegTurns ?? 0) > 0 || !!hero._woundedLegSide;
         case 'holding': return holding;
     }
+}
+// C botl.c:cond_menu(): the toggle-all menu with the sort-order switch;
+// options.c opens it through the "status_conditions" option
+// (option_editors.ts). C botl.c:menualpha_cmp() supplies the alphabetical
+// comparison, inlined in the sort call.
+export async function condMenu() {
+    for (;;) {
+        const byRank = game.iflags.conditionMenuByRank ?? false;
+        const current = byRank ? 'by ranking' : 'alphabetically';
+        const next = byRank ? 'alphabetically' : 'by ranking';
+        const choices = statusConditionOptions(game).sort((left, right) => (byRank ? left.rank - right.rank : 0)
+            || (left.name.toLowerCase() < right.name.toLowerCase() ? -1 : 1));
+        const selected = await showMultiSelectWindow({
+            title: 'Choose status conditions to toggle', omitHeadings: true,
+            pageLocalKeys: true, signalEscape: true,
+            sections: [{ items: [
+                        { key: 'S', value: 'sort', text: `change sort order from "${current}" to "${next}"`,
+                            itemFlags: MENU_ITEMFLAGS_SKIPINVERT },
+                        { selectable: false, text: `sorted ${current}`, attr: 1,
+                            itemFlags: MENU_ITEMFLAGS_SKIPMENUCOLORS },
+                        ...choices.map(option => ({ value: option.bit, text: `cond_${option.name.padEnd(14)}`,
+                            itemFlags: option.enabled ? MENU_ITEMFLAGS_SELECTED : 0 })),
+                    ] }],
+        });
+        if (selected === null)
+            return;
+        if (selected.includes('sort')) {
+            game.iflags.conditionMenuByRank = !byRank;
+            continue;
+        }
+        game.flags.statusConditionMask = selected.reduce((mask, bit) => typeof bit === 'number' ? mask | bit : mask, 0);
+        return;
+    }
+}
+// C botl.c:title_to_mon(). The rank-title pass of monster-name
+// resolution: the first matching rank prefix in role order wins the role's
+// player monster, and the match deliberately accepts an attached suffix.
+// C mondata.c:name_to_monplus() is the caller (mondata.ts keeps it).
+export function titleToMon(name) {
+    for (const role of roles) {
+        for (const title of role.title || []) {
+            for (const value of [title.m, title.f]) {
+                const candidate = value?.toLowerCase();
+                if (candidate && name.startsWith(candidate))
+                    return { length: candidate.length, mnum: SPECIAL_PM + 1 + role.mnum };
+            }
+        }
+    }
+    return null;
+}
+// C botl.c:describe_level(). dflgs bit 1 appends a trailing space; bit 2
+// asks for the branch name ("level N, the <branch>") instead of the status
+// label. Knox and the endgame planes keep their full names; the ordinary
+// depth is left-justified into two columns, so a single-digit "Dlvl:n"
+// carries a trailing blank that wintty.c's status update trims away.
+export function describeLevel(dflgs, state = game) {
+    const location = state.u.uz;
+    let addbranch = (dflgs & 2) !== 0;
+    let description;
+    if (Is_knox_level(location)) {
+        description = state.dungeons?.[location?.dnum ?? 0]?.dname ?? '';
+        addbranch = false;
+    }
+    else if (In_quest(location)) {
+        description = `Home ${location?.dlevel ?? 1}`;
+    }
+    else if (In_endgame(location)) {
+        description = endgameLevelName(location);
+        if (!addbranch)
+            description = description.replace('Plane of ', '');
+        addbranch = false;
+    }
+    else if (addbranch) {
+        description = `level ${depth(location, state.dungeons)}`;
+    }
+    else {
+        description = `${state._tutorialActive ? 'Tutorial' : 'Dlvl'}:${String(depth(location, state.dungeons)).padEnd(2)}`;
+    }
+    if (addbranch)
+        description += `, ${state.dungeons?.[location?.dnum ?? 0]?.dname ?? ''}`.replace('The ', 'the ');
+    if ((dflgs & 1) !== 0)
+        description += ' ';
+    return description;
 }
 // ── botl.c:weapon_status() and armor_status() ──
 export function weaponStatus(state) {
@@ -1733,6 +1812,18 @@ const FIELD_ALIASES = [
     ['xp', BL_EXP], ['exp', BL_EXP],
     ['flags', BL_CONDITION],
 ];
+// C botl.c:repad_with_dashes(): a buffer padded with trailing spaces has
+// its trailing space pairs replaced by space+dash pairs. Used when
+// rendering the hitpoint bar for a critically wounded hero (wintty.ts
+// hitpointBar).
+export function repadWithDashes(text) {
+    let end = text.length;
+    while (end >= 2 && text.slice(end - 2, end) === '  ') {
+        text = text.slice(0, end - 1) + '-' + text.slice(end);
+        end -= 2;
+    }
+    return text;
+}
 // botl.c fldname_to_bl_indx().
 function fieldNameToIndex(name) {
     const table = statusFieldTable();

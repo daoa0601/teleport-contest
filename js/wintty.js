@@ -21,7 +21,7 @@ import { plineWithContinuation, rawPrint } from './pline.js';
 import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC, BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS, CLR_MAX, HL_ATTCLR_BOLD, HL_ATTCLR_DIM, HL_ATTCLR_ITALIC, HL_ATTCLR_ULINE, HL_ATTCLR_BLINK, HL_ATTCLR_INVERSE } from './const.js';
 import { NO_COLOR, ATR_INVERSE, ATR_BOLD, ATR_UNDERLINE, CLR_GRAY, DEC_TO_UNICODE } from './terminal.js';
 import { ATR_BLINK, TERMINAL_DIM, TERMINAL_ITALIC } from './terminal_attributes.js';
-import { statusConditionBit, bot } from './botl.js';
+import { statusConditionBit, bot, repadWithDashes } from './botl.js';
 import { docrt, flush_screen, row_refresh, ROGUE_SYMSETS, shownSymbolSet } from './display.js';
 import { getMenuColoring, menuitem_invert_test } from './menu_coloring.js';
 import { nhgetch } from './input.js';
@@ -1030,18 +1030,10 @@ export function renderStatusLine2(fields, columns, capacityBlank = false, levelP
 // colour and attribute from the title cell's stored style
 // (StatusHighlights.barStyle), so this builds only the bracketed text;
 // wintty.c:5212-5213 repads a critical title's trailing space pairs with
-// dashes.
-// C botl.c:repad_with_dashes().
+// dashes through botl.c:repad_with_dashes() (botl.ts).
 export function hitpointBar(title, critical) {
-    let text = title.slice(0, 30).padEnd(30);
-    if (critical) {
-        // repad_with_dashes() changes only trailing pairs of spaces.
-        let end = text.length;
-        while (end >= 2 && text.slice(end - 2, end) === '  ') {
-            text = text.slice(0, end - 1) + '-' + text.slice(end);
-            end -= 2;
-        }
-    }
+    const text = critical ? repadWithDashes(title.slice(0, 30).padEnd(30))
+        : title.slice(0, 30).padEnd(30);
     return `[${text}]`;
 }
 // ── wintty.c:condattr()/condcolor() ──
