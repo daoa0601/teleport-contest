@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // Monster body and terrain rules.
 // C ref: mon.c.
 
@@ -105,7 +104,7 @@ import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 
 import type { GameMap } from './game.js';
-import { inventoryItemDescription, delobj } from './invent.js';
+import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { getLine } from './query.js';

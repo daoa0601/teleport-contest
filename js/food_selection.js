@@ -1,4 +1,3 @@
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // C eat.c:is_edible(), eat_ok(), and floorfood() for the eat command.
 import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import { objectUnique, BEARTRAP, CORPSE, EGG, GOLD_PIECE, } from './object_data.js';
@@ -10,7 +9,7 @@ import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroFormClings, heroIsFlying, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroIsStrangled } from './do_wear.js';
 import { deleteTrap, resetUtrap } from './trap.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { mksobj, objectQuantity, objectIsFlammable } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';

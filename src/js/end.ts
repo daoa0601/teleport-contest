@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
@@ -39,7 +38,7 @@ import { vision_recalc } from './vision.js';
 import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOnExit, deleteObject } from './shk.js';
 import type { ShopExitOutcome } from './shk.js';
 import { plineWithContinuation } from './pline.js';
-import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects, currency } from './invent.js';
+import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects, currency, stack_object } from './invent.js';
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';

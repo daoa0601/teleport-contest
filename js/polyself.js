@@ -1,10 +1,10 @@
-import { stack_object } from './invent.js';
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), set_uasmon(), polysense(),
 // newman(), break_armor(), drop_weapon(), the #monster abilities
 // (dobreathe, dospit, doremove, dospinweb, dosummon, dogaze, dopoly,
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
+import { stack_object } from './invent.js';
 import { WEAPON_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';

@@ -1,4 +1,3 @@
-import { carryingStoningCorpse, takingOff } from './invent.js';
 // do_wear.js — Wearing and removing armor and accessories.
 // C refs: do_wear.c — dowear()/doputon()/accessory_or_armor_on(),
 // armor_or_accessory_off(), dotakeoff()/doremring()/ia_dotakeoff(),
@@ -26,7 +25,7 @@ import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGe
 import { retouchHeroObject } from './artifacts.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
-import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
+import { inventoryItemDescription, consumeInventoryItem, selectInventoryObject, inventoryClassOrder, inventorySortMode, objectClassHeading, sortObjects, carryingStoningCorpse, takingOff } from './invent.js';
 import { chooseInventoryObject, compactInventoryLetters } from './invent.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { setworn, bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';

@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), set_uasmon(), polysense(),
 // newman(), break_armor(), drop_weapon(), the #monster abilities
@@ -6,6 +5,7 @@ import { stack_object } from './invent.js';
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
 
+import { stack_object } from './invent.js';
 import { WEAPON_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {

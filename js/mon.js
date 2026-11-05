@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // Monster body and terrain rules.
 // C ref: mon.c.
 import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
@@ -79,7 +78,7 @@ import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
-import { inventoryItemDescription, delobj } from './invent.js';
+import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { getLine } from './query.js';

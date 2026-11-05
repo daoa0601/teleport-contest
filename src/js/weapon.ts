@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // weapon.js — weapon.c: hero weapon skills and the #enhance command,
 // weapon to-hit/damage bonuses, monster weapon selection and wielding,
 // and towel wetness. One TS owner per weapon.c function, in C order.
@@ -37,7 +36,7 @@ import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireLiveGame } from './gstate.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, stack_object } from './invent.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';

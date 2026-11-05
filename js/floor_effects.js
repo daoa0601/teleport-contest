@@ -1,6 +1,6 @@
-import { stack_object } from './invent.js';
 // What happens when a free object lands on a dungeon square.
 // C ref: do.c flooreffects() object landing branches.
+import { stack_object } from './invent.js';
 import { POTION_CLASS } from './objclass.js';
 import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';

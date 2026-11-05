@@ -1,4 +1,3 @@
-import { feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
 // and the use_*() tool functions this file owns. use_whip() stays in
@@ -54,7 +53,7 @@ import { explode } from './explosion.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import { doBlindingRay } from './flash.js';
-import { useUpFloorObject } from './invent.js';
+import { useUpFloorObject, feelPetrifyingCorpse, willFeelPetrifyingCorpse } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';

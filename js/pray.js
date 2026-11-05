@@ -1,4 +1,3 @@
-import { feelPetrifyingCorpse } from './invent.js';
 // pray.c owner: prayer trouble detection and repair, divine wrath and gifts,
 // and altar sacrifice.  Folded from prayer_trouble/divine_wrath/divine_gifts/
 // sacrifice (pure move, no behavior change).
@@ -20,7 +19,7 @@ import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { landFloorObject } from './floor_effects.js';
-import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription } from './invent.js';
+import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
 import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';

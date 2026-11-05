@@ -1,10 +1,10 @@
-import { stack_object } from './invent.js';
 // sp_lev.js — Special-level construction from level descriptions.
 // C ref: sp_lev.c — map placement and terrain selections, room / object /
 // monster / trap construction from des operations, live level flipping,
 // fill_special_room, check_room, create_room, create_subroom,
 // dig_corridor, wallify_map, and themed-room map placement.  The des.*
 // binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
+import { stack_object } from './invent.js';
 import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';

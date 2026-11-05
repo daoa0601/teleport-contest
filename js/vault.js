@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // vault.js — Vault residence, guard lifecycle, escort, and exit accounting.
 // C refs: vault.c — clear_fcorr(), blackout(), parkguard(), grddead(),
 // in_fcorridor(), findgd(), uleftvault(), find_guard_dest(), gd_move(),
@@ -39,7 +38,7 @@ import { publishMonsterYelp } from './ambient_sounds.js';
 import { impossible } from './diagnostics.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';
-import { currency, freeInventoryObject } from './invent.js';
+import { currency, freeInventoryObject, stack_object } from './invent.js';
 import { enexto } from './teleport.js';
 import { heroGoldAmount, roomForRoomno, roomsAt } from './hack.js';
 const PM_GUARD = 272;

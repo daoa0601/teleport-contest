@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // Hero eating and nutrition. Ports from eat.c.
 
 import {
@@ -44,7 +43,7 @@ import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { addExperience, checkExperienceLevel, gainExperienceLevel } from './exper.js';
 import { explode } from './explosion.js';
-import { useUpFloorObject } from './invent.js';
+import { useUpFloorObject, stack_object } from './invent.js';
 import { heroCanReachFloor } from './engrave.js';
 import { isEdibleFood, selectFoodToEat } from './food_selection.js';
 import type { FoodSelection } from './food_selection.js';

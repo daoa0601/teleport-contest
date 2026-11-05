@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // dothrow.js — Throw and fire command front ends.
 // C refs: dothrow.c ok_to_throw(), dothrow(), dofire(), and throw_obj()'s
 // per-missile handoff to the flight owners.
@@ -47,7 +46,7 @@ import { weaponHitValue, dryTowel , rollPhysicalWeaponDamageAgainstHero, ensureH
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { quiverObjectClass } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle, definiteObjectAction, definiteName } from './objnam.js';
-import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore } from './invent.js';
+import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject, addInventoryItemBefore, stack_object } from './invent.js';
 import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously } from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';

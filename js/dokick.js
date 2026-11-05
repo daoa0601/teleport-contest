@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // The kick command and its damage helpers.
 // C refs: dokick.c dokick()/kick_monster()/kickdmg()/kick_ouch()/kick_dumb()
 //     /kick_door()/kick_nondoor().
@@ -56,7 +55,7 @@ import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeig
 import { breakChestLock, maybeResetPick } from './lock.js';
 import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject, hurtleHero } from './dothrow.js';
-import { inventoryItemDescription, delobj, currency } from './invent.js';
+import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { activateStatueTrapAt } from './statue_trap.js';

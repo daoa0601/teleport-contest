@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // do.js — the do.c owner: drop commands and floor landings, sink rings,
 // level-arrival strays, stair travel, goto_level and its deferred
 // scheduling, wait/wipe, and wounded legs.
@@ -60,7 +59,7 @@ import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
-import { useUpFloorObject } from './invent.js';
+import { useUpFloorObject, stack_object } from './invent.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { impossible } from './diagnostics.js';

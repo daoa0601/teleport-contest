@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // Applying a bullwhip.
 // C ref: apply.c use_whip().
 import { monsterAtPosition, strikeSteed } from './steed.js';
@@ -13,7 +12,7 @@ import { stumbleOntoMimic } from './uhitm.js';
 import { objectNoLongerHeld, dropInventoryObjectAtHero } from './do.js';
 import { pickupFloorObject } from './pickup.js';
 import { game } from './gstate.js';
-import { inventoryItemDescription } from './invent.js';
+import { inventoryItemDescription, stack_object } from './invent.js';
 import { monsterTypeName } from './monster_data.js';
 import { heroSpecies } from './polyself.js';
 import { unlinkMonsterObject, placeObject, remove_object } from './mkobj.js';

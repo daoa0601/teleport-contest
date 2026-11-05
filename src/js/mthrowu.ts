@@ -1,4 +1,3 @@
-import { stack_object } from './invent.js';
 // mthrowu.js — the mthrowu.c owner: missiles and rays a monster launches at
 // the hero or at another monster. thitu(), drop_throw(), monmulti(),
 // monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
@@ -43,7 +42,7 @@ import {
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
-import { holdAnotherObject } from './invent.js';
+import { holdAnotherObject, stack_object } from './invent.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
