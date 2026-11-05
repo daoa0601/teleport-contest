@@ -4,7 +4,7 @@ import { level_difficulty } from './dungeon.js';
 import { enexto } from './teleport.js';
 import { morgueMonsterType } from './mkroom.js';
 import { makemonAt } from './makemon.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 import { CORPSE } from './object_data.js';
 import { rnd } from './rng.js';
 export async function summonUndead(center, { reviveCorpses = false, flags = 0, state = game, } = {}) {

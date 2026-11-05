@@ -9,7 +9,7 @@ import { useTowel } from '../js/apply.js';
 import { flashHitsMonster } from '../js/uhitm.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { lightDamage } from '../js/light.js';
+import { lightDamage } from '../js/zap.js';
 import { EXPENSIVE_CAMERA, TOWEL, BLINDFOLD, LENSES, TWO_HANDED_SWORD, LEATHER_GLOVES, BOULDER, WAN_LIGHT, } from '../js/object_data.js';
 import { seeMonsterCloseup } from '../js/mon.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';

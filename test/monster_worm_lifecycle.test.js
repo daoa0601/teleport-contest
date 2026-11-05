@@ -3,7 +3,7 @@ import { assertWormBody } from './support/worms.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { COLNO, DB_MOAT, DB_NORTH, DBWALL, DRAWBRIDGE_UP, MM_ANGRY, MM_NOTAIL, NO_MINVENT, ROOM, ROWNO, STONE, W_AMUL, TELEP_TRAP, } from '../js/const.js';
-import { reviveCorpseByMagic } from '../js/corpse_revival.js';
+import { reviveCorpseByMagic } from '../js/zap.js';
 import { openDrawbridge } from '../js/dbridge.js';
 import { initializePet, migrateMonsterOffLevel } from '../js/dog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

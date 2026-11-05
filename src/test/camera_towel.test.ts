@@ -11,7 +11,7 @@ import { useTowel } from '../js/apply.js';
 import { flashHitsMonster } from '../js/uhitm.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { lightDamage } from '../js/light.js';
+import { lightDamage } from '../js/zap.js';
 import {
     EXPENSIVE_CAMERA,
     TOWEL,

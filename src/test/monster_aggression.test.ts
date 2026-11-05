@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
+import { runClaimedCorpseRevivalTimer } from '../js/do.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

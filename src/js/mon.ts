@@ -101,7 +101,7 @@ import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 
 import type { GameMap } from './game.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';

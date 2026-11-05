@@ -236,9 +236,9 @@ src/js/eat.ts	eatcorpse	rnd	"[""15""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""15""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""4""]"	constant
 src/js/eat.ts	eatcorpse	rnd	"[""8""]"	constant
-src/js/corpse_revival.ts	containerBlocksRevival	rn2	"[""40""]"	constant
-src/js/corpse_revival.ts	retryRevival	d	"[""5"", ""50""]"	constant
-src/js/corpse_revival.ts	retryRevival	rn2	"[""99""]"	constant
+src/js/zap.ts	revive	rn2	"[""40""]"	constant
+src/js/do.ts	reviveMon	d	"[""5"", ""50""]"	constant
+src/js/do.ts	reviveMon	rn2	"[""99""]"	constant
 src/js/apply.ts	useCreamPie	rnd	"[""25""]"	constant
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""100 - 3 * intelligence""]"	unproved
 src/js/crystal_ball.ts	crystalBallMishap	rnd	"[""30""]"	constant
@@ -760,8 +760,8 @@ src/js/potion.ts	applyLevitationPotion	rn1	"[""140"", ""10""]"	constant
 src/js/potion.ts	applyLevitationPotion	rn1	"[""50"", ""250""]"	constant
 src/js/potion.ts	applyLevitationPotion	rnd	"[""!helmet ? 10 : !objectIsHardHelmet(helmet) ? 6 : 3""]"	constant
 src/js/read.ts	createConfusedLightPets	rn2	"[""2""]"	constant
-src/js/light.ts	lightDamage	rnd	"[""amount""]"	unproved
-src/js/light.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
+src/js/zap.ts	lightDamage	rnd	"[""amount""]"	unproved
+src/js/zap.ts	lightDamage	rnd	"[""damage - 10""]"	unproved
 src/js/light.ts	lightRoom	rnd	"[""5""]"	constant
 src/js/hack.ts	finishDestinationSpotEffects	rn2	"[""2""]"	constant
 src/js/lock.ts	bladeBreaks	rn2	"[""1000 - enchantment""]"	unproved

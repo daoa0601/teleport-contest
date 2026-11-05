@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { reviveCorpseForHero } from '../js/corpse_revival.js';
+import { reviveCorpseForHero } from '../js/zap.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';

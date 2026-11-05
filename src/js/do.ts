@@ -11,6 +11,9 @@
 //         deferred_goto(), danger_uprops(), cmd_safety_prevention(),
 //         donull(), wipeoff(), dowipe(), set_wounded_legs(), heal_legs().
 
+import { maketrap } from './trap.js';
+import { revive, requireCorpseSpecies, isContainerLocation } from './zap.js';
+import type { CorpseObject, CorpseRevivalResult, CorpseRevived, CorpseRevivalFailure } from './zap.js';
 import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -26,10 +29,10 @@ import {
     A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR,
     IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM,
     SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK,
-    THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell,
-    Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level,
-    UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL,
-    PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS,
+    THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley,
+    Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED,
+    UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT,
+    VIBRATING_SQUARE, STAIRS,
 } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
@@ -48,12 +51,15 @@ import { applyFloorEffects } from './floor_effects.js';
 import type { FloorEffectResult } from './floor_effects.js';
 import type { Trap } from './map_types.js';
 import { buryFloorObjectsAt, addBuriedObject, buriedBallToPunishment, applyPickAxeDirection } from './dig.js';
-import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet } from './display.js';
+import {
+    canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object,
+    flush_screen, reglyphSymbolSet,
+} from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import {
-    finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm,
-    healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount,
-    killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape,
+    finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster,
+    sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters,
+    purgeDeadMonsters, restoreMonsterShape,
 } from './mon.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from './polyself.js';
@@ -109,28 +115,42 @@ import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireSh
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
-import { runDueTimers, restoreLevelTimers } from './timeout.js';
+import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer } from './timeout.js';
 import { restoreLevelChains } from './level_restore.js';
-import { restoreLevelPetHistory, restoreObjectPetHistory, restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads } from './save.js';
+import {
+    restoreLevelPetHistory, restoreObjectPetHistory, restoreMonsterCover, hideMonsterOnRestore,
+    restoreMonsterWormHeads,
+} from './save.js';
 import { restoreLevelLightSources } from './light.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { bot, checkGoldSymbol } from './botl.js';
 import { restoreLevelRegions, updateHeroRegions } from './regions.js';
 import { fumaroles, movebubbles, restore_waterlevel } from './mkmaze.js';
-import { LL_ACHIEVE, LL_DEBUG, recordGameLogEvent } from './gamelog.js';
+import { recordGameLogEvent } from './gamelog.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';
-import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest } from './quest.js';
+import {
+    displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest,
+} from './quest.js';
 import { resurrectWizard } from './wizard.js';
-import { deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers } from './dog.js';
+import {
+    deliverMigratingMonsters, discardMigrations, updateMonsterLastMove, catchUpMonster, collectLevelFollowers,
+} from './dog.js';
 import { deliverSpecialLevelMessages } from './level_change.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { descendFromLevitation } from './levitation_commands.js';
 import { do_attack } from './uhitm.js';
-import { monsterSpeciesHidesOnCeiling } from './mondata.js';
-
+import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';
+import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
+import { rotCorpse } from './corpse_rot.js';
+import { isRider, zombieForm } from './corpse_species.js';
+import { canSeeMonster } from './display.js';
+import { riderRevivalTime, set_corpsenm } from './mkobj.js';
+import { corpseName as corpseObjectName, capitalizedDefiniteName } from './objnam.js';
+import type { ObjectTimerKind } from './object_types.js';
+import type { DueObjectTimer } from './timeout.js';
 // Also C invent.c:any_obj_ok(): inlined as the drop chooser's
 // GETOBJ_SUGGEST callback below.
 export async function dodrop(): Promise<void> {
@@ -2384,3 +2404,196 @@ export async function applyBoulderPitEffects(boulder: GameObject, trap: Trap, x:
 function ignoresFallingBoulder(mnum: number): boolean {
     return monsterPassesWalls(mnum) || monsterThrowsRocks(mnum);
 }
+
+
+export interface CorpseRevivalRetry {
+    kind: ObjectTimerKind;
+    delay: number;
+}
+
+
+export interface CorpseRevivalTimerFailure extends Omit<CorpseRevivalFailure, 'kind'> {
+    kind: 'failed';
+    corpse: GameObject;
+    retry: CorpseRevivalRetry;
+    buried?: never;
+}
+
+
+export interface CorpseRotted {
+    kind: 'rotted';
+    corpse: GameObject;
+    monster: null;
+    messages: string[];
+    buried?: never;
+}
+
+export type CorpseRevivalTimerEvent = CorpseRevived | CorpseRevivalTimerFailure | CorpseRotted;
+
+
+// C do.c:revive_corpse().
+export async function reviveCorpseImmediately(corpse: GameObject | null | undefined, state: GameState = game, { announce = true } = {}): Promise<CorpseRevivalResult | null> {
+    if (!corpse) return null;
+    const wasWielded = state.uwep === corpse;
+    const event = await revive(corpse, state);
+    if (event.kind === 'revived' && announce) {
+        requireCorpseSpecies(event.corpse);
+        const corpse = event.corpse, monster = event.monster, location = event.location;
+        let message: string | null = null;
+        switch (event.originalWhere) {
+        case 'inventory':
+            message = wasWielded
+                ? `The ${corpseObjectName(corpse, { singular: true,
+                    adjective: corpse.oeaten ? 'bite-covered' : '' })} writhes out of your grasp!`
+                : 'You feel squirming in your backpack!';
+            break;
+        case 'floor': {
+            if (!cansee(location.x, location.y) && !canSeeMonster(monster)) break;
+            if (!canSeeMonster(monster)) {
+                message = `${capitalizedDefiniteName(corpseObjectName(corpse, { singular: true,
+                    adjective: corpse.oeaten ? 'bite-covered' : '' }), state)} disappears!`;
+                break;
+            }
+            const effects = new Map([
+                [311, ' in a whirl of spectral skulls'],
+                [312, ' in a churning pillar of flies'],
+                [313, ' in a ring of withered crops'],
+            ]);
+            const subject = monsterName(monster, { state, capitalized: true,
+                adjective: corpse.oeaten ? 'bite-covered' : '' });
+            message = `${subject} rises from the dead${effects.get(monster.mnum) || ''}!`;
+            break;
+        }
+        case 'minvent': {
+            if (!cansee(monster.mx, monster.my)) break;
+            const carrier = location.monsterCarrier;
+            if (carrier && canSeeMonster(carrier)) {
+                const result = canSpotMonster(monster) ? 'revives' : 'disappears';
+                message = `Startled, ${monsterName(carrier, { state })} drops ${
+                    withIndefiniteArticle(corpseObjectName(corpse, { singular: true,
+                        adjective: corpse.oeaten ? 'bite-covered' : '' }))
+                } as it ${result}!`;
+            } else if (canSpotMonster(monster)) {
+                message = `${monsterName(monster, { state, capitalized: true,
+                    adjective: corpse.oeaten ? 'bite-covered' : '' })} suddenly appears!`;
+            }
+            break;
+        }
+        case 'contained': {
+            if (!isContainerLocation(location)) break;
+            const container = location.directContainer, outer = location.outer;
+            const revived = canSpotMonster(monster)
+                ? monsterName(monster, { state, article: 'a', capitalized: true }) : 'Something';
+            if (location.monsterCarrier && canSeeMonster(location.monsterCarrier)) {
+                message = `${revived} writhes out of ${ownedObjectName(container, state, { capitalized: false })}!`;
+            } else if (outer.where === 'inventory') {
+                const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
+                message = `${revived} writhes out of ${description} in your pack!`;
+            } else if (outer.where === 'floor' && cansee(location.x, location.y)) {
+                const description = withIndefiniteArticle(objectCombatName(container, { state, includeCorpseSpecies: false }));
+                message = `${revived} escapes from ${description}!`;
+            }
+            break;
+        }
+        case 'buried':
+        case 'free':
+        case 'gone':
+        case 'migrating':
+        case 'onbill':
+            break;
+        }
+        if (message) event.messages.push(message);
+    }
+    await finishBuriedRevival(event, state);
+    return event;
+}
+
+
+// Claimed timers have already been removed from the object timer chain.
+export async function runClaimedCorpseRevivalTimer(
+    claimed: DueObjectTimer | null | undefined, state: GameState = game, currentTurn = state.moves ?? 0,
+): Promise<CorpseRevivalTimerEvent | null> {
+    const corpse = claimed?.object;
+    const timerKind = claimed?.timer?.kind;
+    if (!corpse || (timerKind !== OBJECT_TIMER_KIND.REVIVE_MON
+        && timerKind !== OBJECT_TIMER_KIND.ZOMBIFY_MON)) return null;
+    requireCorpseSpecies(corpse);
+    return timerKind === OBJECT_TIMER_KIND.ZOMBIFY_MON
+        ? zombifyMon(corpse, state, currentTurn) : reviveMon(corpse, state, currentTurn);
+}
+
+// C do.c:revive_mon().
+async function reviveMon(corpse: CorpseObject, state: GameState, currentTurn: number): Promise<CorpseRevivalTimerEvent> {
+    if (monsterIsDisplacer(corpse.corpsenm) && corpse.where === 'floor') {
+        const level = requireGameLevel(state);
+        if ((level.flags.stasis_until ?? 0) < currentTurn) {
+            const occupant = monsterAtPosition(level, corpse.ox, corpse.oy);
+            if (occupant) {
+                const wasVisible = canSeeMonster(occupant);
+                const name = monsterName(occupant, { capitalized: true, state });
+                if (await randomMonsterRelocation(occupant, { state, flags: RLOC_NOMSG })) {
+                    const nowVisible = canSeeMonster(occupant);
+                    if (wasVisible && !nowVisible) {
+                        await plineWithContinuation(`${name} vanishes.`);
+                    }
+                    else if (!wasVisible && nowVisible) {
+                        const currentName = monsterName(occupant, { capitalized: true, state });
+                        await plineWithContinuation(`${currentName} appears.`);
+                    }
+                    else if (wasVisible) {
+                        const dx = occupant.mx - corpse.ox;
+                        const dy = occupant.my - corpse.oy;
+                        if (dx * dx + dy * dy > 2)
+                            await plineWithContinuation(`${name} teleports.`);
+                    }
+                }
+            }
+        }
+    }
+    const event = await reviveCorpseImmediately(corpse, state);
+    if (!event)
+        throw new Error('A claimed revival timer requires a corpse.');
+    if (event.kind === 'revived')
+        return event;
+    for (const message of event.messages)
+        await plineWithContinuation(message);
+    let kind: ObjectTimerKind;
+    let delay: number;
+    if (isRider(corpse.corpsenm) && rn2(99)) {
+        kind = OBJECT_TIMER_KIND.REVIVE_MON;
+        delay = riderRevivalTime(corpse, true);
+    }
+    else {
+        kind = OBJECT_TIMER_KIND.ROT_CORPSE;
+        if (!objectTimers(corpse).some(timer => timer.kind === kind)) {
+            await plineWithContinuation(`You feel ${isRider(corpse.corpsenm) ? 'much ' : ''}less hassled.`);
+        }
+        delay = Math.max(1, d(5, 50) - (currentTurn - (corpse.age ?? currentTurn)));
+    }
+    if (!objectTimers(corpse).some(timer => timer.kind === kind)) {
+        scheduleObjectTimer(corpse, kind, currentTurn + delay, state);
+    }
+    const retry = { kind, delay };
+    return { kind: 'failed', corpse, ...event, messages: [], retry };
+}
+
+// C do.c:zombify_mon().
+async function zombifyMon(corpse: CorpseObject, state: GameState, currentTurn: number): Promise<CorpseRevivalTimerEvent> {
+    const target = zombieForm(corpse.corpsenm);
+    if (target == null || ((state.mvitals?.[target]?.mvflags ?? 0) & G_GENOD)) {
+        await rotCorpse(corpse, state);
+        return { kind: 'rotted', corpse, monster: null, messages: [] };
+    }
+    if (corpse.oextra) {
+        delete corpse.oextra.omid;
+        delete corpse.oextra.omonst;
+    }
+    set_corpsenm(corpse, target);
+    return reviveMon(corpse, state, currentTurn);
+}
+
+export async function finishBuriedRevival(event: CorpseRevivalResult, state: GameState): Promise<void> {
+    if (event.kind === 'revived' && event.buried)
+        event.trap = await maketrap(event.monster.mx, event.monster.my, PIT);
+}
+

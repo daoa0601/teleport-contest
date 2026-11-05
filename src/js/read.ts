@@ -47,7 +47,8 @@ import { pline as syncPline, plineWithContinuation, plineWithContinuation as pli
 import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
-import { lightDamage, lightRoom, objectLightRadius } from './light.js';
+import { lightDamage } from './zap.js';
+import { lightRoom, objectLightRadius } from './light.js';
 import type { RoomLightOptions } from './light.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { heroIsInvisible } from './hero_invisibility.js';

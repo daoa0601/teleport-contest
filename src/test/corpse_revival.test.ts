@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { reviveCorpseByMagic, reviveCorpseImmediately, runClaimedCorpseRevivalTimer } from '../js/corpse_revival.js';
+import { reviveCorpseByMagic } from '../js/zap.js';
+import { reviveCorpseImmediately, runClaimedCorpseRevivalTimer } from '../js/do.js';
 import { MFAST, MM_NOTAIL, NO_MINVENT, ROOM, OBJECT_TIMER_KIND } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { doeat } from '../js/eat.js';

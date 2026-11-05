@@ -1,45 +1,34 @@
-// Object light and burn timers.
-
-import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
-import { formatSeenMessage } from './hero_speech.js';
+import { SCROLL_CLASS } from './objclass.js';
 import { monsterHasMapPosition } from './steed.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled } from './mon.js';
 import type { MonsterDeathResult } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
-import { heroSpecies } from './polyself.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
-import { definiteObjectAction, minimalObjectName, withIndefiniteArticle, objectNameIsPlural, ownedObjectName } from './objnam.js';
+import { definiteObjectAction, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { game } from './gstate.js';
-import { requireInitializedHero } from './hero_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
-import {
-    beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGraph,
-} from './timeout.js';
+import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGraph } from './timeout.js';
 import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { artifactById, artifactEmitsLight } from './artifacts.js';
+import { artifactEmitsLight } from './artifacts.js';
 import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
-import {
-    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP,
-    POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
-} from './object_data.js';
+import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
 import { rnd } from './rng.js';
 import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { getObjectLocation } from './zap.js';
-import { loseHeroHp, roomForRoomno } from './hack.js';
+import { roomForRoomno } from './hack.js';
 import { monsterDigests, monsterIsWhirly } from './mondata.js';
-
 // Only message delivery is observed; display callbacks may return input status.
 type Publish = (message: string) => unknown;
 type RandomBelow = (limit: number) => number;
@@ -389,28 +378,6 @@ export async function lightRoom(
         }
     }
     return true;
-}
-
-// C zap.c:lightdamage(). Return pseudo-damage before physical protection.
-export async function lightDamage(
-    source: GameObject, ordinary: boolean, amount: number,
-    { state = game }: { state?: GameState } = {},
-): Promise<number> {
-    if (!amount || heroSpecies(state) !== PM_GREMLIN) return amount;
-    requireInitializedHero(state.u);
-    let damage = rnd(amount);
-    if (damage > 10) damage = 10 + rnd(damage - 10);
-    damage = Math.min(damage, 20);
-    await plineWithContinuation(`Ow, that light hurts${damage > 2 || state.u.mh <= 5 ? '!' : '.'}`);
-    if (source.oclass === SCROLL_CLASS || source.oclass === SPBOOK_CLASS) ordinary = false;
-    const artifact = artifactById(source.oartifact, state);
-    const name = source.oclass === SPBOOK_CLASS ? 'spell of light'
-        : artifact ? artifact.name : withIndefiniteArticle(minimalObjectName(source, state));
-    const reason = `${ordinary ? 'zapped' : 'blasted'} ${state.flags.female ? 'herself' : 'himself'} with ${name}`;
-    const physical = state.u.halfPhysicalDamage
-        ? Math.trunc((damage + 1) / 2) : damage;
-    await loseHeroHp(physical, reason, { state, deathCause: reason });
-    return damage;
 }
 
 // C light.c:new_light_source() prepends to light_base, so each lighting

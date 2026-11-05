@@ -77,7 +77,7 @@ import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
-import { reviveCorpseImmediately } from './corpse_revival.js';
+import { reviveCorpseImmediately } from './do.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
 import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';

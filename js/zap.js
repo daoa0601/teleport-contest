@@ -1,3 +1,4 @@
+import { finishBuriedRevival } from './do.js';
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
 import { objectClassForType, objectMerge, objectMagic, objectCharged, objectDirection, AMULET_OF_YENDOR, BELL_OF_OPENING, CORPSE, CRYSTAL_BALL, MAGIC_LAMP, SPE_NOVEL, OBJECT_NAMES, POT_ACID, POT_FRUIT_JUICE, POT_SICKNESS, POT_WATER, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, WAN_CANCELLATION, AMULET_OF_UNCHANGING, BOULDER, CHEST, EGG, ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK, OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN, getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK, GLOB_OF_GREEN_SLIME, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL, WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_SECRET_DOOR_DETECTION, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES, BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP, SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING, objectPropertyName } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
@@ -31,7 +32,7 @@ import { rechargeRing, unpunishHero } from './read.js';
 import { finishHeroDeath } from './end.js';
 import { consumeInventoryItem, inventoryItemDescription, delobj, inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects } from './invent.js';
 import { useUpInventoryStack, prepareInventoryAddition, finishInventoryAddition, finishInventoryRemoval, displayBuriedInventory, probedContentsTitle } from './invent.js';
-import { lightDamage, lightRoom } from './light.js';
+import { lightRoom } from './light.js';
 import { buryFloorObjectsAt, zapDigWithObject } from './dig.js';
 import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
@@ -91,7 +92,6 @@ import { heroArmName, heroEyeCount, heroEyeName } from './body_parts.js';
 import { dropBoulderIntoLiquid } from './do.js';
 import { xyToDirection } from './cmd.js';
 import { DIED, EXPL_FIERY, GRAVE, IS_ROOM, In_mines, Luck, MOAT, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, M_SEEN_SLEEP, NHW_MENU, NON_PM, PICK_ONE, PLNMSG_OBJ_GLOWS, P_BASIC, P_EXPERT, P_SKILLED, STONE, STRAT_WAITMASK, W_ARM, W_ARMC, W_ARMS, W_ARMU } from './const.js';
-import { reviveCorpseByMagic } from './corpse_revival.js';
 import { unearthFloorObjectsAt } from './dig.js';
 import { canSenseMonster, canSpotMonster, flush_screen, lastDirtyMapCursor, map_invisible, zapdir_to_glyph, TemporaryMapEffect } from './display.js';
 import { namelessMonsterName } from './do_name.js';
@@ -175,6 +175,24 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { snuffThrownCandle } from './thrown_object.js';
 import { CLR_BROWN } from './terminal.js';
 import { rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { corpseName as corpseObjectName } from './objnam.js';
+import { linkObjectToMonsterInventory, unlinkMonsterObject } from './mkobj.js';
+import { setMonsterGivenName } from './do_name.js';
+import { IS_POOL, MFAST, MM_NOCOUNTBIRTH, MM_NOTAIL, MM_NOWAIT } from './const.js';
+import { isReviver } from './corpse_species.js';
+import { makePetWary, tameMonster } from './dog.js';
+import { newuhs } from './eat.js';
+import { delobjCore } from './invent.js';
+import { makemonNear } from './mklev.js';
+import { removeMonsterFromGame, restoreMonsterShape } from './mon.js';
+import { upstart } from './hacklib.js';
+import { objectOwnershipPrefix, restoreShopkeeperResidency, deleteObject } from './shk.js';
+import { BAG_OF_HOLDING } from './object_data.js';
+import { enexto } from './teleport.js';
+import { markQuestLeaderAlive } from './quest.js';
+import { bodyGenderFlags, PM_DOPPELGANGER, PM_HUMAN_ZOMBIE, revivalReplacement } from './read.js';
+import { monsterIsEel } from './mondata.js';
+import { requireInitializedHero } from './hero_types.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -5327,5 +5345,289 @@ export async function flyBoomerang(object, dx, dy, state, volley) {
             await newsym(previous.x, previous.y);
     }
     return flight;
+}
+export function requireCorpseSpecies(corpse) {
+    if (typeof corpse.corpsenm !== 'number')
+        throw new TypeError('Corpse revival requires a monster species.');
+}
+export function isContainerLocation(location) {
+    return 'directContainer' in location;
+}
+const S_ZOMBIE = 52;
+const G_UNIQ = 0x1000;
+const PM_GHOST = 287;
+function parentContainer(object, state) {
+    if (object?.container)
+        return object.container;
+    return objectsInTimerGraph(state).find(candidate => candidate !== object && candidate.contents?.includes(object));
+}
+function carryingMonster(object, state) {
+    if (object?.ocarry)
+        return object.ocarry;
+    return (state.level?.monsters || []).find(monster => monster.m_id === object?.carrierMid
+        || (monster.minvent || monster.inventory || []).includes(object));
+}
+// C zap.c:get_container_location().
+function getContainerLocation(corpse, state) {
+    const directContainer = parentContainer(corpse, state);
+    if (!directContainer)
+        return null;
+    let outer = directContainer;
+    let nesting = 0;
+    const seen = new Set();
+    while (outer?.where === 'contained' && !seen.has(outer)) {
+        seen.add(outer);
+        const parent = parentContainer(outer, state);
+        if (!parent)
+            return null;
+        outer = parent;
+        nesting++;
+    }
+    if (outer.where === 'buried')
+        return null;
+    const location = objectLocation(outer, state);
+    return location ? { ...location, directContainer, nesting, outer } : null;
+}
+function objectLocation(object, state) {
+    if (object?.where === 'inventory') {
+        return { x: state.u?.ux, y: state.u?.uy, monsterCarrier: null };
+    }
+    if (object?.where === 'floor' || object?.where === 'buried') {
+        return { x: object.ox, y: object.oy, monsterCarrier: null };
+    }
+    if (object?.where === 'minvent') {
+        const monsterCarrier = carryingMonster(object, state);
+        if (monsterCarrier?.mx) {
+            return {
+                x: monsterCarrier.mx, y: monsterCarrier.my,
+                monsterCarrier,
+            };
+        }
+    }
+    return null;
+}
+// C zap.c:revive().
+export async function revive(corpse, state, { byHero = false } = {}) {
+    requireCorpseSpecies(corpse);
+    const originalWhere = corpse.where;
+    const occupation = state._occupation;
+    if (occupation?.key === 'eat-food' && state.context.victual?.piece === corpse) {
+        state.context.victual = null;
+        if (!corpse.oeaten)
+            corpse.oeaten = 1;
+        // Revival retains the body until makemon has used it, even on the last bite.
+        await stopHeroOccupation(state, plineWithContinuation, { finishMeal: false });
+        await newuhs(false, { state });
+    }
+    const digsOut = originalWhere === 'buried'
+        && (isReviver(corpse.corpsenm)
+            || MONSTER_SYMBOL[corpse.corpsenm] === S_ZOMBIE);
+    const location = corpse.where === 'contained' ? getContainerLocation(corpse, state)
+        : corpse.where === 'buried' && !digsOut ? null : objectLocation(corpse, state);
+    const messages = [];
+    if (!location?.x
+        || (originalWhere === 'contained' && isContainerLocation(location)
+            && (location.directContainer.olocked || location.nesting > 2
+                || location.directContainer.otyp === STATUE
+                || location.directContainer.otyp === BAG_OF_HOLDING && rn2(40) !== 0))
+        || (digsOut && !zombieCanDig(location.x, location.y, state))) {
+        return { monster: null, messages, originalWhere, location };
+    }
+    corpse.ox = location.x;
+    corpse.oy = location.y;
+    const originalMnum = corpse.corpsenm;
+    const savedTraits = corpse.oextra?.omonst;
+    let x = location.x, y = location.y;
+    const occupant = monsterAtPosition(requireGameLevel(state), x, y);
+    if (occupant) {
+        const nearby = enexto(originalMnum, x, y);
+        if (nearby)
+            ({ x, y } = nearby);
+    }
+    const targetLocation = state.level?.at?.(x, y);
+    if (corpse.norevive
+        || (monsterIsEel(originalMnum)
+            && (!targetLocation || !IS_POOL(targetLocation.typ)))) {
+        if (cansee(x, y))
+            messages.push(`${upstart(corpseObjectName(corpse, { definite: true }))} twitches feebly.`);
+        return { monster: null, messages, originalWhere, location };
+    }
+    const replacement = revivalReplacement(originalMnum, corpse);
+    const useSavedTraits = savedTraits && replacement == null;
+    const targetMnum = replacement ?? savedTraits?.mnum ?? originalMnum;
+    let flags = NO_MINVENT | MM_NOWAIT | MM_NOMSG;
+    if (replacement == null)
+        flags |= MM_NOCOUNTBIRTH;
+    if (useSavedTraits)
+        flags |= MM_NOTAIL;
+    else
+        flags |= bodyGenderFlags(corpse);
+    const heroAt = state.u?.ux === x && state.u?.uy === y;
+    const monster = heroAt
+        ? await makemonNear(targetMnum, x, y, flags, heroAt)
+        : await makemonAt(targetMnum, x, y, flags);
+    if (!monster)
+        return { monster: null, messages, originalWhere, location };
+    if (replacement != null) {
+        if (corpse.oextra) {
+            delete corpse.oextra.omid;
+            delete corpse.oextra.omonst;
+        }
+        delete corpse.omid;
+    }
+    if (useSavedTraits) {
+        restoreMonsterTraits(monster, savedTraits);
+        restoreShopkeeperResidency(monster, state);
+        markQuestLeaderAlive(monster, state);
+        await newsym(monster.mx, monster.my);
+        await restoreMonsterShape(monster, state);
+        if (monster.mtame && !monster.isminion)
+            await makePetWary(monster, { wasDead: true, state });
+    }
+    else if (replacement === PM_DOPPELGANGER) {
+        if (monster.cham === PM_DOPPELGANGER)
+            await changeMonsterForm(monster, originalMnum);
+    }
+    else if (replacement === PM_HUMAN_ZOMBIE) {
+        monster.mhp = monster.mhpmax = 100;
+        monster.permspeed = MFAST;
+        monster.mspeed = MFAST;
+    }
+    if (monster.mundetected) {
+        monster.mundetected = 0;
+        await newsym(monster.mx, monster.my);
+    }
+    await revealMonsterAppearance(monster);
+    const oneOf = objectQuantity(corpse) > 1;
+    const body = oneOf ? splitObjectStack(corpse, 1, state) : corpse;
+    if (!body)
+        throw new Error('A revived corpse could not be separated from its stack');
+    requireCorpseSpecies(body);
+    if (byHero) {
+        const corpse = body;
+        const { ox: x, oy: y } = corpse;
+        const keeper = costlySpot(x, y, state)?.resident;
+        const charge = keeper && (corpse.where === 'inventory' ? corpse.unpaid : !corpse.no_charge);
+        if (cansee(x, y)) {
+            const owner = objectOwnershipPrefix(corpse, state, { capitalized: false });
+            const nameBody = oneOf ? { ...corpse, quan: 2, quantity: 2 } : corpse;
+            const name = `${oneOf ? 'one of ' : ''}${owner}${corpseObjectName(nameBody, { omitPrefix: true })}`;
+            await plineWithContinuation(`${name.charAt(0).toUpperCase()}${name.slice(1)} glows iridescently.`);
+            state._lastPlineKind = PLNMSG_OBJ_GLOWS;
+        }
+        else if (charge) {
+            await plineWithContinuation('A corpse is resuscitated.');
+        }
+        if (charge && keeper !== monster)
+            await stolenValue(corpse, x, y, keeper.mpeaceful, { silent: false, state });
+    }
+    {
+        const corpse = body;
+        const ghostId = corpse.oextra?.omid ?? corpse.omid;
+        if (ghostId) {
+            const ghost = (state.level?.monsters || []).find(candidate => candidate.mhp > 0 && candidate.m_id === ghostId && candidate.mnum === PM_GHOST);
+            if (ghost) {
+                if (canSeeMonster(ghost))
+                    await plineWithContinuation(`${monsterName(ghost, { state, capitalized: true })} is suddenly drawn into its former body!`);
+                for (;;) {
+                    const object = (ghost.minvent || ghost.inventory)?.[0];
+                    if (!object)
+                        break;
+                    unlinkMonsterObject(ghost, object);
+                    await linkObjectToMonsterInventory(monster, object, { state });
+                }
+                if (ghost.mtame && !monster.mtame) {
+                    if (await tameMonster(monster, null, { state }))
+                        monster.mtame = ghost.mtame;
+                }
+                monster.mconf = 1;
+                await removeMonsterFromGame(ghost);
+            }
+            if (corpse.oextra)
+                delete corpse.oextra.omid;
+            delete corpse.omid;
+        }
+    }
+    {
+        const corpse = body;
+        const name = corpse.oextra?.oname || corpse.oname;
+        if (name && !((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
+            setMonsterGivenName(monster, name);
+        }
+        if ((corpse.oeaten ?? 0) > 0) {
+            const nutrition = MONSTER_BODY_META[corpse.corpsenm]?.[1] ?? 0;
+            const remaining = Math.min(corpse.oeaten ?? 0, nutrition);
+            monster.mhp = Math.max(1, nutrition ? Math.trunc(monster.mhp * remaining / nutrition) : 1);
+        }
+    }
+    monster.mrevived = 1;
+    {
+        const corpse = body;
+        if (corpse.where === 'floor') {
+            await delobjCore(corpse, true, state);
+        }
+        else if (corpse.where === 'inventory') {
+            await useUpInventoryStack(corpse, state);
+        }
+        else if (corpse.where === 'minvent') {
+            const carrier = location.monsterCarrier || carryingMonster(corpse, state);
+            if (!carrier)
+                throw new Error('A reviving monster-carried corpse has no carrier');
+            await destroyObjectFromMonsterInventory(carrier, corpse, state);
+        }
+        else {
+            await deleteObject(corpse, state);
+        }
+    }
+    return {
+        kind: 'revived', corpse: body, monster, trap: null,
+        buried: digsOut, originalWhere, location, messages,
+    };
+}
+export async function reviveCorpseForHero(corpse, state = game) {
+    const result = await revive(corpse, state, { byHero: true });
+    await finishBuriedRevival(result, state);
+    for (const message of result.messages)
+        await plineWithContinuation(message);
+    return result;
+}
+export async function reviveCorpseByMagic(corpse, state = game, { byHero = true } = {}) {
+    if (!corpse)
+        return null;
+    const noRevive = corpse.norevive;
+    corpse.norevive = false;
+    const event = await revive(corpse, state, { byHero });
+    await finishBuriedRevival(event, state);
+    if (event.kind !== 'revived') {
+        if (noRevive === undefined)
+            delete corpse.norevive;
+        else
+            corpse.norevive = noRevive;
+        for (const message of event.messages)
+            await plineWithContinuation(message);
+    }
+    return event;
+}
+const PM_GREMLIN = 40;
+// C zap.c:lightdamage(). Return pseudo-damage before physical protection.
+export async function lightDamage(source, ordinary, amount, { state = game } = {}) {
+    if (!amount || heroSpecies(state) !== PM_GREMLIN)
+        return amount;
+    requireInitializedHero(state.u);
+    let damage = rnd(amount);
+    if (damage > 10)
+        damage = 10 + rnd(damage - 10);
+    damage = Math.min(damage, 20);
+    await plineWithContinuation(`Ow, that light hurts${damage > 2 || state.u.mh <= 5 ? '!' : '.'}`);
+    if (source.oclass === SCROLL_CLASS || source.oclass === SPBOOK_CLASS)
+        ordinary = false;
+    const artifact = artifactById(source.oartifact, state);
+    const name = source.oclass === SPBOOK_CLASS ? 'spell of light'
+        : artifact ? artifact.name : withIndefiniteArticle(minimalObjectName(source, state));
+    const reason = `${ordinary ? 'zapped' : 'blasted'} ${state.flags.female ? 'herself' : 'himself'} with ${name}`;
+    const physical = state.u.halfPhysicalDamage
+        ? Math.trunc((damage + 1) / 2) : damage;
+    await loseHeroHp(physical, reason, { state, deathCause: reason });
+    return damage;
 }
 //# sourceMappingURL=zap.js.map
