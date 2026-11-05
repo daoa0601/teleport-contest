@@ -31,7 +31,7 @@ import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
-import { surfaceName, ceilingName } from './terrain_name.js';
+import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport.js';

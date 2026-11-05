@@ -6,7 +6,7 @@ import { heroLiquidEffects } from '../js/hack.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { pushKeys } from '../js/input.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { waterbodyName } from '../js/terrain_name.js';
+import { waterbodyName } from '../js/pager.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';

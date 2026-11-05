@@ -9,7 +9,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { pline, plineWithContinuation } from '../js/pline.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { placeHeroOnLevel } from '../js/hero_location.js';
+import { placeHeroOnLevel } from '../js/dungeon.js';
 import { GameDisplay } from '../js/game_display.js';
 import { NO_COLOR } from '../js/terminal.js';
 import { Terminal } from '../js/terminal.js';

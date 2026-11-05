@@ -10,7 +10,7 @@ import { PM_FIRE_ELEMENTAL, PM_SALAMANDER } from './mklev.js';
 import { possessiveName } from './hacklib.js';
 import { heroFormClings, heroIsFlying, heroMonsterForm } from './polyself.js';
 import { heroIsBlind } from './senses.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { riderCannotReachMessage } from './steed.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

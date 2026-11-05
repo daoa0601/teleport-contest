@@ -78,7 +78,7 @@ import { dismountHero, monsterSaddle } from './steed.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { gotoLevel } from './level_change.js';
 import { levelTeleport } from './level_teleport.js';
 import { teleportMonsterByHero } from './teleport.js';

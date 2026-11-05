@@ -30,7 +30,7 @@ import {
     monsterPossessive, lays_eggs, monsterIsAmorphous, monsterIsHumanoid, monsterIsSlithy,
     eggs_in_water,
 } from './mondata.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { heroFormHidesWithoutCover, heroMonsterForm, heroFormSticks } from './polyself.js';
 import { altarWrath } from './pray.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { AIR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DRAWBRIDGE_UP, POOL } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { surfaceName } from '../js/terrain_name.js';
+import { surfaceName } from '../js/dungeon.js';
 import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

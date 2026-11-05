@@ -44,7 +44,7 @@ import { newsym } from './display.js';
 import { heroCanReachFloor } from './engrave.js';
 import { rn2, rnd, rn1, rne, rnz } from './rng.js';
 import { depth as depth_of_level } from './hacklib.js';
-import { level_difficulty } from './dungeon.js';
+import { level_difficulty, surfaceName } from './dungeon.js';
 import {
     ALTAR, ICE, IRONBARS, In_quest, Is_airlevel, Is_rogue_level, Is_waterlevel, G_GONE, G_NOCORPSE, MON_DETACH,
     MON_FLOOR, ROT_AGE, TROLL_REVIVE_CHANCE, RANDOM_TIN, MAX_OIL_IN_FLASK, CORPSTAT_FEMALE, CORPSTAT_MALE,
@@ -74,7 +74,6 @@ import { encumber_msg } from './pickup.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
-import { surfaceName } from './terrain_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';

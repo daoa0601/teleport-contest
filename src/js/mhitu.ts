@@ -101,7 +101,7 @@ import { randomMonsterRelocation, reportMonsterTeleportRestriction, teleds, enex
 import { advanceMonsterWormBody } from './worm.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { findMonsterArmorClass } from './monworn.js';
-import { ceilingName } from './terrain_name.js';
+import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
 import { expelHero } from './hero_expulsion.js';
 import { endObjectBurn } from './timeout.js';

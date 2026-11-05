@@ -84,12 +84,11 @@ import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibilit
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
-import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
+import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel, ceilingName, surfaceName } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot } from './monworn.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
 import { isWeldedPrimary, willWeld } from './wield.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { dropBoulderOnHero, dropBoulderOnMonster } from './read.js';

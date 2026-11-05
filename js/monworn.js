@@ -15,7 +15,7 @@ import { artifactEmitsLight } from './artifacts.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { displayColorName, monsterName } from './do_name.js';
 import { monsterObjectPronoun, monsterPossessive, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed } from './mondata.js';
 import { monsterCanBeSaddled } from './steed.js';

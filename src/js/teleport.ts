@@ -46,7 +46,7 @@ import type { MonsterFearProbe } from './monmove.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
-import { placeHeroOnLevel } from './hero_location.js';
+import { placeHeroOnLevel } from './dungeon.js';
 import { makeStunned, makeConfused } from './potion.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { learnObjectType } from './o_init.js';

@@ -1,11 +1,11 @@
 // dungeon.js — Dungeon graph and special-level placement.
 // C ref: dungeon.c — init_dungeons(), init_level(), place_level().
 // Data ref: dat/dungeon.lua.
-import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
+import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
-import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
+import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_waterlevel, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
@@ -13,18 +13,24 @@ import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { questLeaderName } from './quest_pager.js';
 import { addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
-import { updateLastSeenTerrain } from './display.js';
+import { map_location, see_nearby_objects, updateLastSeenTerrain } from './display.js';
 import { hasCarriedProperty, hasInvokedProperty, hasWornProperty, propertyIsActive } from './properties.js';
 import { shopResident, shopkeeperInOwnShop } from './shk.js';
 import { monsterAtPosition } from './steed.js';
 import { CmapSymbol } from './glyph_numbers.js';
-import { findDrawbridgeAt } from './dbridge.js';
-import { heroIsBlind } from './senses.js';
+import { drawbridgeUnderlyingType, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
+import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroFootName } from './body_parts.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
 import { formatKiller } from './topten.js';
-import { roomForIndex } from './hack.js';
+import { roomForIndex, roomsAt } from './hack.js';
+import { isok } from './cmd.js';
+import { impossible, panic } from './diagnostics.js';
+import { deepestLevelReached, depth, dungeonDepth, endgameLevelName, ledgerNo } from './hacklib.js';
+import { displayLiquidName } from './do_name.js';
+import { onQuestStart } from './quest.js';
+import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 const WIZARD_TOWER_LEVELS = new Set(['wizard1', 'wizard2', 'wizard3']);
 const DUNGEON_FLAG_BITS = {
     town: TOWN, hellish: HELLISH, mazelike: MAZELIKE,
@@ -1212,6 +1218,34 @@ export async function senseBuriedObjects(state = game) {
         await plineWithContinuation(`You sense something below your ${makePlural(heroFootName(state))}.`);
     }
 }
+// C dungeon.c:u_on_newpos(), shared by hero and swallower relocation.
+// Moved from hero_location.js (pure move).
+export async function placeHeroOnLevel(x, y, state = game) {
+    requireLiveGame(state);
+    if (!isok(x, y)) {
+        const reason = `u_on_newpos: trying to place hero off map <${x},${y}>`;
+        if (x < 0 || y < 0 || x >= COLNO || y >= ROWNO)
+            await panic(reason, { state });
+        await impossible(reason, { state });
+    }
+    const hero = state.u;
+    hero.ux = x;
+    hero.uy = y;
+    hero.uundetected = 0;
+    if (hero.usteed) {
+        hero.usteed.mx = x;
+        hero.usteed.my = y;
+    }
+    if (hero.uz?.dnum !== hero.uz0?.dnum || hero.uz?.dlevel !== hero.uz0?.dlevel) {
+        hero.ux0 = x;
+        hero.uy0 = y;
+        await map_location(x, y, false);
+        state.iflags.terrain_typ = MAX_TYPE;
+    }
+    else if (!heroIsBlind(state) && !heroIsHallucinating(state) && !hero.uswallow)
+        await see_nearby_objects();
+    await senseBuriedObjects(state);
+}
 // C dungeon.c:has_ceiling() and dungeon.h:Is_waterlevel(): level
 // classification by branch bookkeeping, not map terrain.
 export function levelHasCeiling(state = game) {
@@ -1227,5 +1261,66 @@ export function levelIsWaterLevel(state = game) {
     const level = state.u?.uz;
     const water = state.water_level;
     return !!level && !!water && level.dnum === water.dnum && level.dlevel === water.dlevel;
+}
+// C dungeon.c:ceiling(). Moved from terrain_name.js (pure move).
+export function ceilingName(x, y, state = game) {
+    const type = state.level?.at?.(x, y)?.typ;
+    if (roomsAt(state.level, x, y, VAULT).length)
+        return "vault's ceiling";
+    if (roomsAt(state.level, x, y, TEMPLE).length)
+        return "temple's ceiling";
+    if (roomsAt(state.level, x, y, SHOPBASE).length)
+        return "shop's ceiling";
+    if (Is_waterlevel(state.u?.uz))
+        return 'water above';
+    if (type !== undefined && IS_AIR(type))
+        return 'sky';
+    if (Is_firelevel(state.u?.uz))
+        return 'flames above';
+    if (In_quest(state.u?.uz))
+        return 'expanse above';
+    if (state.underwater || state.u?.uinwater)
+        return "water's surface";
+    return type !== undefined && ((IS_ROOM(type) && !Is_earthlevel(state.u?.uz))
+        || IS_WALL(type) || type === DOOR || type === SDOOR)
+        ? 'ceiling' : 'rock cavern';
+}
+// C dungeon.c:surface(). Moved from terrain_name.js (pure move).
+export function surfaceName(x, y, state = game) {
+    const location = state.level?.at(x, y);
+    if (!location)
+        return 'ground';
+    const type = location.typ === DRAWBRIDGE_UP
+        ? drawbridgeUnderlyingType(location.drawbridgemask ?? 0) : location.typ;
+    const engulfer = state.u.ustuck;
+    if (x === state.u.ux && y === state.u.uy && state.u.uswallow
+        && engulfer && monsterIsAnimal(engulfer))
+        return monsterDigests(engulfer) ? 'maw' : monsterEnfolds(engulfer) ? 'husk' : 'nonesuch';
+    if (IS_AIR(type))
+        return Is_waterlevel(state.u.uz) ? 'air bubble' : type === CLOUD ? 'cloud' : 'air';
+    if (isPoolAt(x, y, state))
+        return (state.underwater || state.u.uinwater) && !Is_waterlevel(state.u.uz)
+            ? 'bottom' : displayLiquidName('water', state);
+    if (isIceAt(x, y, state))
+        return 'ice';
+    if (isLavaAt(x, y, state))
+        return displayLiquidName('lava', state);
+    if (type === DRAWBRIDGE_DOWN)
+        return 'bridge';
+    if (type === ALTAR)
+        return 'altar';
+    if (type === GRAVE)
+        return 'headstone';
+    if (type === FOUNTAIN)
+        return 'fountain';
+    for (let stair = state.stairs; stair; stair = stair.next) {
+        if (stair.sx === x && stair.sy === y)
+            return 'stairs';
+    }
+    if (IS_WALL(type) || type === SDOOR)
+        return 'wall';
+    if (type === DOOR)
+        return 'doorway';
+    return IS_ROOM(type) && !Is_earthlevel(state.u.uz) ? 'floor' : 'ground';
 }
 //# sourceMappingURL=dungeon.js.map

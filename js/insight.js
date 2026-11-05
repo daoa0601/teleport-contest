@@ -32,7 +32,7 @@ import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorOb
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
 import { heroLegName, monsterLegName, heroFingerName, heroHandedName, heroHasEyes } from './body_parts.js';
-import { surfaceName, ceilingName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './pager.js';
 import { trapName } from './trap.js';
 import { monsterAlignmentType } from './priest.js';
 import { wormSegmentIndexAt } from './worm.js';
@@ -56,7 +56,7 @@ import { experienceRankIndex, newExperienceThreshold } from './exper.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
-import { levelHasCeiling } from './dungeon.js';
+import { levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
 import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, } from './mondata.js';
 function plural(n, singular, pluralForm = `${singular}s`) {
     return n === 1 ? singular : pluralForm;

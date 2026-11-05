@@ -17,7 +17,7 @@ import { AT_HUGS } from './monster_attack_types.js';
 import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, } from './const.js';
 import { rn2, rnd } from './rng.js';
 import { newsym } from './display.js';
-import { surfaceName, ceilingName } from './terrain_name.js';
+import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport.js';

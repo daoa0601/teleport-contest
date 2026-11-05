@@ -3,7 +3,7 @@ import test from 'node:test';
 import { farlookLocationDescription } from '../js/pager.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { placeHeroOnLevel } from '../js/hero_location.js';
+import { placeHeroOnLevel } from '../js/dungeon.js';
 import { selectInventoryObject } from '../js/invent.js';
 import { DART, FOOD_RATION, GOLD_PIECE, HELMET, LEATHER_ARMOR } from '../js/object_data.js';
 import { placeCreatedObject } from '../js/mkobj.js';

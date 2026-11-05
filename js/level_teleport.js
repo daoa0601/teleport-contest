@@ -17,7 +17,7 @@ import { rn2, rnd, rnl } from './rng.js';
 import { leaveHeroShop } from './shk.js';
 import { heroControlsTeleport } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { monsterIsSilent } from './mondata.js';
 const shudder = 'You shudder for a moment.';
 export async function levelTeleport({ state = game, gotoLevel = (...args) => { scheduleLevelChange(args); }, menuRequested = false } = {}) {

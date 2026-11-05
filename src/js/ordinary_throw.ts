@@ -39,7 +39,7 @@ import {
     setTwoWeaponCombat,
 } from './wield.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
-import { ceilingName } from './terrain_name.js';
+import { ceilingName } from './dungeon.js';
 import { addInventoryItemBefore } from './invent.js';
 import {
     isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo,

@@ -18,7 +18,7 @@ import { feel_location, feel_newsym, newsym, canSeeMonster, glyphAt, canSpotMons
 import { promptDirection, readDirectionKey } from './cmd.js';
 import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { recordMappedOverviewState } from './dungeon.js';
+import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { heroPassesWalls, heroHasNoHands, heroIsVerySmall } from './polyself.js';
@@ -29,7 +29,6 @@ import { wakeMonstersNearWithMessages } from './mon.js';
 import { objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, definiteName, objectName, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, singularObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { heroCanReachFloor } from './engrave.js';
-import { surfaceName } from './terrain_name.js';
 import { objectResistsDestruction } from './zap.js';
 import { isWeaponTool, isBlade } from './object_properties.js';
 import { startCorpseTimeout, unlinkObject, isContainer, placeObject, stack_object } from './mkobj.js';

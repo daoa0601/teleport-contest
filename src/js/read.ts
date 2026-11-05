@@ -84,9 +84,8 @@ import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory, studyBook } from './spell.js';
-import { ceilingName } from './terrain_name.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling } from './dungeon.js';
+import { ceilingName, levelHasCeiling } from './dungeon.js';
 import {
     MONSTER_CLASS_SYMBOLS, monsterObjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
     nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,

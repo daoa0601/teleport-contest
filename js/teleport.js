@@ -41,7 +41,7 @@ import { heroLikesLava } from './polyself.js';
 import { promptYesNo } from './query.js';
 import { heroIsBlind, setHeroBlindnessTurns, heroIsHallucinating } from './senses.js';
 import { buriedBallToPunishment } from './dig.js';
-import { placeHeroOnLevel } from './hero_location.js';
+import { placeHeroOnLevel } from './dungeon.js';
 import { makeStunned, makeConfused } from './potion.js';
 import { learnObjectType } from './o_init.js';
 import { hasShopkeeperData } from './shop_types.js';

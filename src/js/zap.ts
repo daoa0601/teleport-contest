@@ -45,7 +45,7 @@ import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, news
 import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
-import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './pager.js';
 import { resetPick, changeDoorByMagic } from './lock.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { monsterHasFireResistance, monsterHasShockResistance, monsterHasSeductionAttack, monsterResistanceBits, carnivorous, monsterDigests, monsterHasEyes, monsterHasNoHands, monsterHasProperName, monsterIsDemon, monsterIsGolem, monsterIsMindless, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSwimmer, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, monsterYoungerForm } from './mondata.js';
@@ -105,7 +105,7 @@ import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { monsterHitPointsPerLevel, createCritters, makemonAt } from './makemon.js';
 import type { MonsterHitPointRandom } from './makemon.js';
 import { impossible } from './diagnostics.js';
-import { recordMappedOverviewState } from './dungeon.js';
+import { recordMappedOverviewState, ceilingName, surfaceName } from './dungeon.js';
 import { forceDescribeDecor } from './pickup.js';
 import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, relocateEngraving } from './engrave.js';
 import { addExperience } from './exper.js';

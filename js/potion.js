@@ -28,7 +28,7 @@ import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fou
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, see_monsters, see_objects, see_traps, shieldeff, show_glyph_cell, swallowed, unmap_invisible, grantHeroSeeInvisible } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { tameMonster } from './dog.js';
-import { canHeroRiseUp, levelAtDepth, levelHasCeiling } from './dungeon.js';
+import { canHeroRiseUp, ceilingName, levelAtDepth, levelHasCeiling, surfaceName } from './dungeon.js';
 import { encumber_msg, pickupBurden } from './pickup.js';
 import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
 import { explode } from './explosion.js';
@@ -75,7 +75,7 @@ import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
-import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './pager.js';
 import { isPoolAt } from './dbridge.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { dropCursedSecondaryWeapon } from './wield.js';

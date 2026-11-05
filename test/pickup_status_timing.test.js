@@ -3,7 +3,7 @@ import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { placeHeroOnLevel } from '../js/hero_location.js';
+import { placeHeroOnLevel } from '../js/dungeon.js';
 import { LARGE_BOX, ROCK } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { vision_recalc } from '../js/vision.js';

@@ -14,7 +14,7 @@ import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, prope
 import { artifactById } from './artifacts.js';
 import { rnz } from './rng.js';
 import { heroIsBlind } from './senses.js';
-import { surfaceName } from './terrain_name.js';
+import { surfaceName } from './dungeon.js';
 import { floatHeroDown } from './trap.js';
 
 export type LevitationDescentResult =

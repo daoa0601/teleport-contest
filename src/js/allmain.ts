@@ -1,6 +1,6 @@
 import type { ArmorCompletion } from './cmd.js';
 import { publishHeardMessage } from './hero_speech.js';
-import { dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
+import { ceilingName, dungeonBuildsUp, initOverviewRecord } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack,  dolookaround } from './cmd.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
@@ -36,7 +36,6 @@ import { pendingArmorAction, armorSimpleName, heroHasFreeAction, heroIsDisplaced
 import { dosounds, sessionIsNight } from './ambient_sounds.js';
 import { warnWithMasterKey, applyArtifactHit, findArtifact } from './artifacts.js';
 import { regenerateHeroHp } from './hero_regeneration.js';
-import { ceilingName } from './terrain_name.js';
 import { consumeMonsterItem } from './mthrowu.js';
 import { heroCanTeleport, randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { moveMonsterNextToHero } from './mon.js';

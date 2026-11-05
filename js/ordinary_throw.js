@@ -22,7 +22,7 @@ import { propertyIsActive } from './properties.js';
 import { skillName, weaponDescription } from './weapon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat, } from './wield.js';
 import { finishReturningThrow, isAutoReturningThrow, throwerIsImpaired } from './returning_throw.js';
-import { ceilingName } from './terrain_name.js';
+import { ceilingName } from './dungeon.js';
 import { addInventoryItemBefore } from './invent.js';
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, } from './object_properties.js';
 import { applyLowStaminaThrow, applyThrowSlip } from './throw_state.js';

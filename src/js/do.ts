@@ -55,7 +55,7 @@ import { useUpFloorObject } from './floor_consumption.js';
 import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately } from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { impossible } from './diagnostics.js';
-import { waterbodyName } from './terrain_name.js';
+import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { chooseObjectCategories } from './pickup.js';
 import {
@@ -91,7 +91,7 @@ import { monsterAlignmentType } from './priest.js';
 import { createPlayerMonsters } from './mplayer.js';
 import { gainGuardianAngel } from './guardian_angel.js';
 import { randomMonsterRelocation, enexto } from './teleport.js';
-import { placeHeroOnLevel } from './hero_location.js';
+import { placeHeroOnLevel } from './dungeon.js';
 import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './mondata.js';
 
 // Also C invent.c:any_obj_ok(): inlined as the drop chooser's

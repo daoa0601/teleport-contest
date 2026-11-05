@@ -31,10 +31,9 @@ import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHe
 import { finishHeroHelplessness } from './allmain.js';
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { surfaceName } from './terrain_name.js';
 import { newuhs } from './eat.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { levelHasCeiling } from './dungeon.js';
+import { levelHasCeiling, surfaceName } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';

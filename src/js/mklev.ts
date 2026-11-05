@@ -19,7 +19,6 @@ import { deleteTrap, finishSokobanIfSolved, fillPitWithBoulderAt, resetUtrap, ma
 import { roguePlayerName, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemon.js';
-import { placeHeroOnLevel } from './hero_location.js';
 import { addFruit } from './fruit.js';
 import { set_tin_variety } from './eat.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
@@ -48,7 +47,7 @@ import { GP_ALLOW_XY, GP_CHECKSCARY, RLOC_ERR, RLOC_NOMSG, In_mines, PL_NSIZ, A_
 import { isok } from './cmd.js';
 import { init_rect, rnd_rect } from './rect.js';
 import { depth as depth_of_level, ledgerNo, dungeonDepth } from './hacklib.js';
-import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
+import { inducedAlignment, level_difficulty, placeHeroOnLevel, specialLevelAt } from './dungeon.js';
 import { createMaze } from './maze_terrain.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';

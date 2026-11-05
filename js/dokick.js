@@ -69,7 +69,7 @@ import { hiddenGold } from './vault.js';
 import { finishMonsterEating } from './dogmove.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { onQuestStart, okToQuest } from './quest.js';
-import { ceilingName, surfaceName } from './terrain_name.js';
+import { ceilingName, surfaceName } from './dungeon.js';
 import { shopkeeperName } from './shknam.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { objectResistsDestruction } from './zap.js';
