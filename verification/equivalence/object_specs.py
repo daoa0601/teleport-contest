@@ -1,10 +1,10 @@
 """objects.h field readers over every initial objects.c:obj_init row."""
 import z3
 
-from csym import CVal
+from csym import CArray, CState, CVal
 from jssym import V
 from specs import INT, LONG, Spec, UnrelatedState, int_argument
-from state_world import native_objects
+from state_world import native_objects, native_table
 
 OBJECT_DATA = 'js/object_data.js'
 
@@ -52,12 +52,29 @@ OBJECT_FIELDS = (
     ('unique', 'objectUnique', 'OBJECT_UNIQUE', 213),
     ('magic', 'objectMagic', 'OBJECT_MAGIC', 173),
     ('charged', 'objectCharged', 'OBJECT_CHARGED', 18),
+    ('armcat', 'oc_armcat', 'OBJECT_SUBTYPE', 150),
+    ('armor_ac', 'a_ac', 'OBJECT_HIT_BONUS', 121),
+    ('armor_can', 'a_can', 'OBJECT_SPELL_LEVEL', 121),
+    ('level', 'oc_level', 'OBJECT_SPELL_LEVEL', 366),
+    ('nutrition', 'oc_nutrition', 'OBJECT_NUTRITION', 293),
+    ('color', 'oc_color', 'OBJECT_COLOR', 18),
+    ('prob', 'oc_prob', 'OBJECT_PROB', 18),
+    ('nowish', 'oc_nowish', 'OBJECT_NOWISH', 1),
+    ('hitbon', 'oc_hitbon', 'OBJECT_HIT_BONUS', 34),
+    ('wsdam', 'oc_wsdam', 'OBJECT_SMALL_DAMAGE', 34),
+    ('wldam', 'oc_wldam', 'OBJECT_LARGE_DAMAGE', 44),
 )
 
 
 def object_field_spec(field, function, table, row):
     lookup = (f'{table}[otyp] ?? 0' if field == 'class'
               else f'requireObjectData({table}, otyp)')
+    anchor = f'return {lookup};'
+    replacement = f'return ({lookup}) + 1;'
+    if field in ('skill', 'armcat', 'hitbon', 'armor_ac', 'level', 'armor_can'):
+        prefix = f'export function {function}(otyp) {{\n    '
+        anchor = prefix + anchor
+        replacement = prefix + replacement
     return Spec(
         f'object_{field}:tables', f'verification_object_{field}', function, [],
         # Keep the added fast-job cost below its two-minute CI allowance.
@@ -68,7 +85,7 @@ def object_field_spec(field, function, table, row):
         probes=[('index correspondence omitted (two pinned rows)', UnrelatedState(
             lambda s: [s['otyp'] == 0, z3.Int('js:otyp') == row], ('otyp',)))],
         mutant_pre=lambda s: [s['otyp'] == row],
-        mutants=[(OBJECT_DATA, f'return {lookup};', f'return ({lookup}) + 1;')],
+        mutants=[(OBJECT_DATA, anchor, replacement)],
     )
 
 
@@ -94,4 +111,51 @@ OBJECT_SPECS += [
          mutant_pre=lambda s: [s['otyp'] == -1],
          mutants=[(OBJECT_DATA, '|| otyp < 0 || otyp >= OBJECT_CLASS.length)\n        return 0;',
                    '|| otyp < 0 || otyp >= OBJECT_CLASS.length)\n        return 1;')]),
+]
+
+
+
+def object_text_state(field):
+    def configure(world, front, modules):
+        world.join_paths = True
+        world.c_globals['obj_descr'] = native_table(
+            world, front, front.include.parent / 'src' / 'objects.c', 'obj_descr_init')
+        count = front.enum_value('NUM_OBJECTS')
+        native = world.c_state['otyp'][0]
+        world.c_globals['objects'] = CArray(tuple(CState(f'type[{i}]') for i in range(count)))
+        for i in range(count):
+            world.c_globals[f'type[{i}].{field}'] = CVal(z3.IntVal(i), (16, True))
+        port = world.js_state['otyp']
+        world.pre.extend([native >= 0, native < count, port >= 0, port < count])
+        # Exercise the initial-column path before a game installs its shuffled
+        # description array. The shuffle's state correspondence is separate.
+        world.js_values['game.objectDescriptions'] = V('undef')
+    return configure
+
+
+def object_text_arguments(world, front):
+    return [CVal(world.c_state['otyp'][0], INT)], [V('num', world.js_state['otyp'])]
+
+
+def object_text_spec(macro, field, file, table, row):
+    return Spec(
+        f'{macro}:indices', f'verification_{macro}', macro, [],
+        slow=True, js_file=file, state=[('otyp', INT, 'otyp')],
+        configure=object_text_state(field), arguments=object_text_arguments,
+        assumptions=(
+            'objclass.h: the real OBJ_NAME/OBJ_DESCR macro reads obj_descr through the related short index; each native obj_descr initializer and emitted string column executes independently',
+            'every index in 0..NUM_OBJECTS-1; init_objects establishes oc_name_idx == oc_descr_idx == otyp; this claim covers the initial-column path, not preservation by shuffling or later name rewrites',
+            'the reader returns string contents or null; native string pointer identity, allocation, and mutation are outside the value comparison',
+        ), require_counterexamples=True,
+        probes=[('index correspondence omitted (two pinned rows)', UnrelatedState(
+            lambda s: [s['otyp'] == row, z3.Int('js:otyp') == row + 1],
+            ('otyp',)))],
+        mutant_pre=lambda s: [s['otyp'] == row],
+        mutants=[(file, f'{table}[type] ?? null' if macro == 'OBJ_DESCR' else f'{table}[otyp ?? -1] ?? null',
+                  f'{table}[0] ?? null')])
+
+
+OBJECT_SPECS += [
+    object_text_spec('OBJ_NAME', 'oc_name_idx', OBJECT_DATA, 'OBJECT_NAMES', 18),
+    object_text_spec('OBJ_DESCR', 'oc_descr_idx', 'js/o_init.js', 'OBJECT_DESCRIPTIONS', 97),
 ]

@@ -16,7 +16,7 @@ import {
 } from '../js/object_data.js';
 import { readOrdinaryObject } from '../js/readable_objects.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject, artifactObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

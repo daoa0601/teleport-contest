@@ -13,6 +13,7 @@ import {
     SPE_BLANK_PAPER, STATUE, getObjectClassBounds,
 } from './object_data.js';
 import { recordAchievement } from './insight.js';
+import { OBJ_NAME } from './object_data.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
@@ -45,7 +46,7 @@ import { currentHungerState, init_uhunger } from './eat.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { demonLord, summonMinion } from './minion.js';
 import { makemonNear } from './mklev.js';
-import {mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
+import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
 import {
@@ -56,7 +57,7 @@ import {
 import { wakeMonstersNearWithMessages } from './mon.js';
 import type { GameObject } from './object_types.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { isBimanualObject } from './object_properties.js';
+import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';
 import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm } from './polyself.js';
@@ -1161,8 +1162,8 @@ async function giveSpell(): Promise<void> {
         const letter = forceLearnSpell(book.otyp);
         if (letter) {
             await pline(knowledge === 'unknown'
-                ? `Divine knowledge of ${OBJECT_NAMES[book.otyp]} fills your mind!  Spell '${letter}'.`
-                : `Your knowledge of spell '${letter}' - ${OBJECT_NAMES[book.otyp]} is ${knowledge === 'forgotten' ? 'restored' : 'refreshed'}.`);
+                ? `Divine knowledge of ${OBJ_NAME(book.otyp)} fills your mind!  Spell '${letter}'.`
+                : `Your knowledge of spell '${letter}' - ${OBJ_NAME(book.otyp)} is ${knowledge === 'forgotten' ? 'restored' : 'refreshed'}.`);
         }
         await deleteObject(book);
     } else {
@@ -1217,7 +1218,7 @@ async function crownHero(): Promise<void> {
         const name = simpleObjectNameWithArticle(object);
         await dropGift(object, name.charAt(0).toUpperCase() + name.slice(1));
         hero.ugifts = (hero.ugifts || 0) + 1;
-        recordGameLogEvent(`was bestowed with spellbook of ${OBJECT_NAMES[classGift]}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT | LL_SPOILER });
+        recordGameLogEvent(`was bestowed with spellbook of ${OBJ_NAME(classGift)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT | LL_SPOILER });
         if (knownSpell(classGift) !== 'unknown' && isWeapon(game.uwep)) object = game.uwep;
     }
     if (hero.ualign.type > 0) {
@@ -1265,7 +1266,7 @@ async function crownHero(): Promise<void> {
 
 function isWeapon(object: GameObject | null | undefined): object is GameObject {
     return !!object && (object.oclass === WEAPON_CLASS
-        || object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
+        || isWeaponTool(object));
 }
 
 // ---------------------------------------------------------------------------

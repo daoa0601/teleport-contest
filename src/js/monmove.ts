@@ -10,7 +10,7 @@ import {
     CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH,
     MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE,
     TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES,
-    OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING,
+    PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING,
     POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS,
     LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH,
 } from './object_data.js';
@@ -55,7 +55,7 @@ import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.j
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
-import {splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer} from './mkobj.js';
+import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, stack_object, isContainer} from './mkobj.js';
 import { dissolveBars } from './projectile_bars.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
@@ -76,7 +76,7 @@ import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSel
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
-import { isPick, isPolearm, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
+import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
@@ -145,7 +145,6 @@ const POT_SPEED = 302;
 const LOW_BOOTS = 163;
 const IRON = 11;
 const GEMSTONE = 20, MINERAL = 21;
-const ARM_GLOVES = 3, ARM_CLOAK = 5, ARM_SHIRT = 6;
 const PM_GELATINOUS_CUBE = MONSTER_NAME.indexOf('gelatinous cube');
 
 function isFiniteNumber(value: unknown): value is number {
@@ -845,7 +844,7 @@ export async function readyMonsterDiggingWeapon(
 
 function monsterHasLauncherAndAmmo(monster: Monster) {
     const launcher = monsterWieldedWeapon(monster);
-    if (!launcher) return false;
+    if (!launcher || !is_launcher(launcher)) return false;
     const inventory = monster.minvent || monster.inventory || [];
     return inventory.some(ammo => launcherMatchesAmmo(ammo, launcher));
 }
@@ -1337,8 +1336,9 @@ function inventoryBlocksDoorPassage(inventory: readonly GameObject[]): boolean {
         const type = object.otyp;
         // The pinned source compares otyp, not oclass, for this first test.
         if (type === COIN_CLASS && object.quan > 100) return true;
-        const flexibleArmor = object.oclass === ARMOR_CLASS
-            && [ARM_CLOAK, ARM_GLOVES, ARM_SHIRT].includes(objectSkill(type) ?? -1);
+        // C monmove.c:stuff_prevents_passage() tests is_cloak/is_gloves/
+        // is_shirt; each macro carries the armor-class guard.
+        const flexibleArmor = is_cloak(object) || is_gloves(object) || is_shirt(object);
         const tinyCorpse = type === CORPSE && object.corpsenm !== undefined
             && monsterIsVerySmall(object.corpsenm);
         if (![RING_CLASS, AMULET_CLASS, GEM_CLASS, VENOM_CLASS].includes(object.oclass)

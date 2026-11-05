@@ -10,7 +10,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { CORPSE, OBJECT_BASES, OBJECT_COLOR, OBJECT_NAMES, ROCK } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng, rn2Display } from '../js/rng.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';

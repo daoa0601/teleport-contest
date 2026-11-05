@@ -4,12 +4,12 @@ import {
 } from './objclass.js';
 import {
     objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE,
-    CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OBJECT_PROPERTY,
-    OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
+    CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES,
     RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL,
     SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW,
     BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES,
     IRON_SHOES, KICKING_BOOTS,
+    objectPropertyName,
 } from './object_data.js';
 import { formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import {
@@ -31,7 +31,7 @@ import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet } from './do_wear.js';
 import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription } from './invent.js';
 import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName } from './objnam.js';
-import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge } from './o_init.js';
+import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
 import { LIGHT_TYPES, TIMED_LIGHT_TYPES } from './light.js';
@@ -62,9 +62,9 @@ import type {
     MonsterPetrificationResult, MonsterSelfTouchOptions, MonsterSelfTouchResult, PetrificationContactOptions,
     PetrificationOptions, MonsterDeathHandler,
 } from './mon.js';
-import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, objectTypeKnown, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot } from './shk.js';
+import { objectOwnershipPrefix, chargeAlteredUnpaidObject, sellHeroDroppedObject, deleteObject, addShopDamage, shopDig, billDummyObject, chargeUnpaidUsage, costlySpot } from './shk.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, dryTowel, wetTowel, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
+import { isWeaponTool, isBimanualObject, isBlade, objectIsOrganic, objectIsRustprone, objectIsCorrodeable, objectIsCrackable } from './object_properties.js';
 import {
     canSeeMonster, canSpotMonster, map_trap, newsym, shieldeff, flush_screen, lastDirtyMapCursor,
     show_glyph_cell, canOverwriteTerrain, updateLastSeenTerrain, transientObjectGlyph,
@@ -353,7 +353,7 @@ export async function destroyLavaFloorObjects(
             && object.otyp !== SPE_BOOK_OF_THE_DEAD) continue;
         const burnDirectly = objectMaterial(object, state) < DRAGON_HIDE
             && object.oclass !== SCROLL_CLASS && object.oclass !== SPBOOK_CLASS
-            && OBJECT_PROPERTY[object.otyp] !== 'fireResistance'
+            && objectPropertyName(object.otyp) !== 'fireResistance'
             && object.otyp !== WAN_FIRE && object.otyp !== FIRE_HORN
             && !object.oerodeproof && !object.contents?.length;
         const landingX = x ?? object.ox;
@@ -2454,7 +2454,7 @@ export function objectIsVulnerableToErosion(object: GameObject, kind: ErosionKin
 }
 export function erosionMatters(object: Pick<GameObject, 'otyp' | 'oclass'>) {
     return [WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS, CHAIN_CLASS].includes(object.oclass)
-        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
+        || isWeaponTool(object);
 }
 function inventoryResists(kind: ErosionKind, state: GameState, random: typeof rn2) {
     if (kind !== 'burn' && kind !== 'corrosion') return false;

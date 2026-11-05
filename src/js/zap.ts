@@ -16,7 +16,7 @@ import {
     ENORMOUS_MEATBALL, FIGURINE, LARGE_BOX, LEASH, MAGIC_MARKER, MEATBALL, MEAT_RING, MEAT_STICK,
     OIL_LAMP, POT_GAIN_ABILITY, POT_OIL, POT_POLYMORPH, ROCK, SPE_POLYMORPH, STATUE, UNICORN_HORN,
     getObjectClassBounds, WAN_LIGHT, WAN_LIGHTNING, WAN_POLYMORPH, WAN_WISHING, DWARVISH_CLOAK,
-    GLOB_OF_GREEN_SLIME, OBJECT_PROPERTY, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL,
+    GLOB_OF_GREEN_SLIME, RIN_SHOCK_RESISTANCE, SCR_FIRE, SPE_FIREBALL,
     WAN_STRIKING, SPE_CURE_SICKNESS, SPE_DETECT_UNSEEN, SPE_DIG, SPE_EXTRA_HEALING,
     SPE_FINGER_OF_DEATH, SPE_FORCE_BOLT, SPE_HEALING, SPE_LIGHT, SPE_MAGIC_MISSILE,
     SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, WAN_CREATE_MONSTER, WAN_DIGGING,
@@ -24,9 +24,11 @@ import {
     WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_TELEPORTATION, TIN, BLACK_DRAGON_SCALES,
     BLACK_DRAGON_SCALE_MAIL, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, SPE_CONE_OF_COLD, SPE_SLEEP,
     SPE_TURN_UNDEAD, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_SLEEP, WAN_UNDEAD_TURNING,
+    objectPropertyName,
 } from './object_data.js';
 import { mimicHitMessage } from './mon.js';
-import { objectMaterial, learnObjectType, observeObject } from './o_init.js';
+import { OBJ_NAME } from './object_data.js';
+import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { heroFaceName, heroFootName, heroHeadName } from './body_parts.js';
@@ -66,7 +68,7 @@ import { CANDELABRUM_OF_INVOCATION } from './mklev.js';
 import { randomEngraving } from './engrave.js';
 import { fix_wall_spines } from './mkmaze.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, definiteObjectAction, killerObjectName, objectName, ownedObjectName, observeObjectForNaming, observeDistantObjectForNaming, pluralizeObjectNoun, rndClass } from './objnam.js';
-import {objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile} from './mkobj.js';
+import { objectQuantity, splitObjectStack, mksobj, unblessObjectState, uncurseObjectState, mkobj, set_corpsenm, replaceObject, unlinkObject, objectWeight, updateIceObjectTimersAt, placeCreatedObject, stack_object, placeObject, isContainer, remove_object, sweepFloorPile} from './mkobj.js';
 import { MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { scheduleLevelTimer, stopLevelTimer, objectsInTimerGraph, objectTimers, scheduleObjectTimer, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { applySupportedPotionVapor } from './potion.js';
@@ -78,7 +80,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { promptDirection } from './cmd.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
-import { chargeUnpaidUsage, addShopDamage, payForShopDamage, objectTypeKnown, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
+import { chargeUnpaidUsage, addShopDamage, payForShopDamage, chargeAlteredUnpaidObject, addShopObjectToBill, costlySpot, stolenValue, hotPursuitShopkeeper, makeAngryShopkeeper, deleteObjectContents, shopkeeperInOwnShop, containedBuyCost } from './shk.js';
 import { hasWornProperty } from './properties.js';
 
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -1452,7 +1454,7 @@ export async function destroyInventoryByElement(
 }
 
 function deferHeroItemDestruction(object: GameObject, state: GameState) {
-    const property = OBJECT_PROPERTY[object.otyp];
+    const property = objectPropertyName(object.otyp);
     return (!!object.owornmask && (property === 'levitation' || property === 'flying'))
         || (object.otyp === POT_WATER && ismnum(state.u.ulycn)
             && !!(Upolyd(state.u) ? object.blessed : object.cursed));
@@ -1719,7 +1721,7 @@ export async function drainObjectEnchantment(object: GameObject | null | undefin
     random = rn2, byHero = false, state = game,
 }: { random?: typeof rn2; byHero?: boolean; state?: GameState } = {}): Promise<boolean> {
     if (!object || !(object.spe > 0)) return false;
-    const weaponTool = object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0;
+    const weaponTool = isWeaponTool(object);
     if (!objectCharged(object.otyp)
         && ![WEAPON_CLASS, ARMOR_CLASS].includes(object.oclass) && !weaponTool)
         return false;
@@ -1741,7 +1743,7 @@ export async function drainObjectEnchantment(object: GameObject | null | undefin
 }
 
 function drainWornBonuses(object: GameObject, state: GameState): void {
-    const name = OBJECT_NAMES[object.otyp];
+    const name = OBJ_NAME(object.otyp);
     const worn = object.owornmask ?? 0;
     const ring = object === (state.uleft || state.u.uleft)
         || object === (state.uright || state.u.uright);
@@ -2327,7 +2329,7 @@ export async function cancelObjectMagic(
 }
 function removeWornBonuses(object: GameObject, state: GameState): void {
     if (object.where !== 'inventory') return;
-    const name = OBJECT_NAMES[object.otyp];
+    const name = OBJ_NAME(object.otyp);
     const worn = object.owornmask ?? 0;
     const amount = object.spe ?? 0;
     const attributes = new Map<string, readonly [number, number]>([
@@ -3104,7 +3106,7 @@ export async function hitObjectWithWand(object: GameObject, wand: GameObject, { 
         affected = await stone_to_flesh_obj(object, { state });
         break;
     default:
-        throw new Error(`No immediate object effect for ${OBJECT_NAMES[wand.otyp] || wand.otyp}`);
+        throw new Error(`No immediate object effect for ${OBJ_NAME(wand.otyp) || wand.otyp}`);
     }
     if (learned) learnWand(wand, { state });
     return affected;

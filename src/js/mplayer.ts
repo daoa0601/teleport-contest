@@ -1,5 +1,6 @@
 // C mplayer.c: player opponents, their equipment, and developer names.
 import { RANDOM_CLASS } from './objclass.js';
+import { is_spear } from './object_properties.js';
 import {
     objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL,
     CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER,
@@ -10,7 +11,7 @@ import {
     YELLOW_DRAGON_SCALE_MAIL,
 } from './object_data.js';
 import { artifactById, createRandomArtifact } from './artifacts.js';
-import { COLNO, ROWNO, In_endgame, MM_NOMSG, P_SPEAR, RLOC_ERR, RLOC_NOMSG } from './const.js';
+import { COLNO, ROWNO, In_endgame, MM_NOMSG, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject, setMonsterMalign } from './makemon.js';
 import { mkobj, mksobj, blessObjectState, curseObject, objectWeight } from './mkobj.js';
@@ -176,7 +177,7 @@ async function givePlayerWeapon(monster: Monster, type: number, special: boolean
     else if (!rn2(2)) object.greased = true;
     if (special && rn2(2)) createRandomArtifact(object, { maximumValue: 99, adjustEnchantment: false });
     if (objectMerge(object.otyp) && !object.oartifact && monsterMightThrowWeapon(object)) {
-        object.quan += rn2(objectSkill(object.otyp) === P_SPEAR ? 4 : 8);
+        object.quan += rn2(is_spear(object) ? 4 : 8);
         object.quantity = object.quan;
     }
     object.owt = objectWeight(object);

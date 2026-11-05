@@ -1,6 +1,7 @@
 // C pager.c:object_from_map(), look_at_object(), and mhidden_description().
-import { objectClassForType, APPLE, BANANA, CORPSE, EUCALYPTUS_LEAF, GOLD_PIECE, LEASH, OBJECT_NAMES, ORANGE, PEAR, SLIME_MOLD, STATUE, } from './object_data.js';
+import { objectClassForType, APPLE, BANANA, CORPSE, EUCALYPTUS_LEAF, GOLD_PIECE, LEASH, ORANGE, PEAR, SLIME_MOLD, STATUE, } from './object_data.js';
 import { D_CLOSED, D_LOCKED, DOOR, IS_WALL, M_AP_F_DKNOWN, M_AP_OBJECT, M_AP_TYPE, SCORR, SDOOR, STONE, TREE, } from './const.js';
+import { OBJ_NAME } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { mkobj, mksobj, deallocateObject } from './mkobj.js';
 import { monsterAtPosition } from './steed.js';
@@ -41,7 +42,7 @@ export async function withMapObject(x, y, glyph, use, state = game) {
             ?? level.buriedObjects?.find(object => object.otyp === glyph.otyp
                 && object.ox === x && object.oy === y);
     const temporary = !realObject;
-    const object = realObject ?? (OBJECT_NAMES[glyph.otyp]
+    const object = realObject ?? (OBJ_NAME(glyph.otyp)
         ? await mksobj(glyph.otyp, false, false)
         : await mkobj(objectClassForType(glyph.otyp), false));
     try {

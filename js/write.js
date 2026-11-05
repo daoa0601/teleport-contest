@@ -1,6 +1,8 @@
 // Applying a magic marker. C refs: write.c:cost(), write_ok(), dowrite(),
 // new_book_description(). Inventory, billing, and holding keep their owners.
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
+import { OBJ_NAME, oc_level } from './object_data.js';
+import { OBJ_DESCR } from './o_init.js';
 import { exerciseWisdom } from './attrib.js';
 import { heroFingerName } from './body_parts.js';
 import { commandResultCancelled } from './cmd.js';
@@ -15,15 +17,15 @@ import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { recordLiteracy } from './literacy.js';
 import { mksobj } from './mkobj.js';
-import { getObjectClassBounds, OBJECT_DESCRIPTIONS, OBJECT_NAMES, OBJECT_SPELL_LEVEL, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, } from './object_data.js';
+import { getObjectClassBounds, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, } from './object_data.js';
 import { makePlural } from './objnam.js';
-import { learnObjectType, observeObject } from './o_init.js';
+import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { objectCombatName, objectNameIsPlural, simpleObjectName } from './objnam.js';
 import { heroHasNoHands } from './polyself.js';
 import { getLine } from './query.js';
 import { rn1, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { carriedObjectOwner, chargeUnpaidUsage, objectTypeKnown, deleteObject } from './shk.js';
+import { carriedObjectOwner, chargeUnpaidUsage, deleteObject } from './shk.js';
 import { knownSpell } from './spell.js';
 const SCR_MAIL = OBJECT_NAMES.indexOf('mail');
 // C write.c:new_book_description().
@@ -178,7 +180,7 @@ function findWritingType(name, oclass) {
     let deferred = null;
     let real = false;
     for (let otyp = first; otyp <= last; otyp++) {
-        const actual = OBJECT_NAMES[otyp];
+        const actual = OBJ_NAME(otyp);
         if (!actual)
             continue;
         if (actual.toLowerCase() === requested) {
@@ -200,17 +202,17 @@ function findWritingType(name, oclass) {
     return deferred;
 }
 function writingDescription(otyp) {
-    return game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp] ?? '';
+    return OBJ_DESCR(otyp) ?? '';
 }
 // C write.c:cost().
 async function writingCost(object) {
     if (object.oclass === SPBOOK_CLASS) {
-        const level = OBJECT_SPELL_LEVEL[object.otyp];
+        const level = oc_level(object.otyp);
         if (level === undefined)
             throw new RangeError(`Missing spell level for book ${object.otyp}`);
         return 10 * level;
     }
-    const name = OBJECT_NAMES[object.otyp];
+    const name = OBJ_NAME(object.otyp);
     if (typeof name !== 'string')
         throw new RangeError(`Missing scroll name for type ${object.otyp}`);
     switch (name) {

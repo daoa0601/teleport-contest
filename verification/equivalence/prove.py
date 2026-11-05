@@ -28,7 +28,7 @@ import z3
 
 from cfront import CFront
 from core import STREAMS, Machine, Unsupported, World
-from csym import CExec, CPtr, CVal, in_range
+from csym import CExec, CPtr, CStr, CText, CVal, in_range
 from jssym import JSExec, Modules, V, parse_module
 from specs import C_FILES, JS_FILES, SPECS
 from isaac_specs import run as prove_isaac64
@@ -139,9 +139,16 @@ def _outputs_equal(c, j):
                                              for a, b in zip(c.events, j.events)):
         return z3.BoolVal(False)
     c_value, j_value = returned_integer(c), returned_integer(j)
-    if c_value is None or j_value is None:
-        return z3.BoolVal(False)
-    eqs = [c_value == j_value]
+    if c_value is not None and j_value is not None:
+        eqs = [c_value == j_value]
+    else:
+        native, port = returned_text(c), returned_text(j)
+        if native is None or port is None:
+            return z3.BoolVal(False)
+        c_text, c_present = native
+        j_text, j_present = port
+        eqs = [c_present == j_present,
+               z3.Implies(c_present, c_text == j_text)]
     eqs += [c.pos[s] == j.pos[s] for s in STREAMS]
     for a, b in zip(c.events, j.events):
         eqs += [x == y for x, y in zip(a.values, b.values)]
@@ -187,6 +194,26 @@ def returned_integer(path):
     return None
 
 
+def returned_text(path):
+    value = path.ret
+    if isinstance(value, CStr):
+        return z3.StringVal(value.s), z3.BoolVal(True)
+    if isinstance(value, CText):
+        return value.s, value.present
+    if isinstance(value, CPtr) and value.nonnull is False:
+        return z3.StringVal(''), z3.BoolVal(False)
+    if isinstance(value, V):
+        if value.kind == 'null':
+            return z3.StringVal(''), z3.BoolVal(False)
+        if value.kind == 'str':
+            if isinstance(value.v, str):
+                return z3.StringVal(value.v), z3.BoolVal(True)
+            # JSExec encodes null in a symbolic name-table read as ''.
+            # It rejects tables containing an actual empty string.
+            return value.v, value.v != ''
+    return None
+
+
 def describe_model(model, world, extra=()):
     parts = [f'{name}={model.eval(sym, model_completion=True)}' for name, sym, _ in world.params]
     parts += [f'{key}={model.eval(sym, model_completion=True)}' for key, (sym, _) in world.c_state.items()]
@@ -207,7 +234,17 @@ def describe_model(model, world, extra=()):
 
 def show_path(model, label, p):
     ret = returned_integer(p)
-    value = model.eval(ret, model_completion=True) if ret is not None else 'none'
+    if ret is not None:
+        value = model.eval(ret, model_completion=True)
+    else:
+        text = returned_text(p)
+        value = 'none'
+        if text is not None:
+            content, present = text
+            if z3.is_false(model.eval(present, model_completion=True)):
+                value = 'null'
+            else:
+                value = model.eval(content, model_completion=True)
     events = ['%s%s' % (e.shape.format(*[model.eval(v, model_completion=True) for v in e.values]), '')
               for e in p.events]
     pos = {s: model.eval(p.pos[s], model_completion=True) for s in STREAMS}

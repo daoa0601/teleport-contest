@@ -6,9 +6,8 @@ import { game } from './gstate.js';
 import { makemonAt } from './makemon.js';
 import { consumeObjectCharge } from './invent.js';
 import { BAG_OF_TRICKS } from './object_data.js';
-import { learnObjectType } from './o_init.js';
+import { learnObjectType, objectTypeKnown } from './o_init.js';
 import { rn2, rnd } from './rng.js';
-import { objectTypeKnown } from './shk.js';
 export async function useBagOfTricks(bag, { tipping = false } = {}) {
     if (bag.spe < 1) {
         await pline(tipping && bag.cknown ? "It's empty." : 'Nothing happens.');

@@ -23,7 +23,7 @@ import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { splitHeroMonsterForm, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion } from './potion.js';
-import {mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
+import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
 import { definiteName, objectCombatName, rndClass, makePlural } from './objnam.js';
 import { resolveMonsterLiquid, angerWatchGuards } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
@@ -32,7 +32,7 @@ import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { monsterPossessive, monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasNoLimbs } from './mondata.js';
 import { level_difficulty } from './dungeon.js';
-import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, OBJECT_DESCRIPTIONS, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, requireObjectData } from './object_data.js';
+import { BOULDER, DILITHIUM_CRYSTAL, LONG_SWORD, LUCKSTONE, POT_ACID, POT_FRUIT_JUICE, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_POLYMORPH, POT_WATER, } from './object_data.js';
 import { promptYesNo } from './query.js';
 import { rnd, rn1, rn2 } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -54,7 +54,7 @@ import { someGold } from './steal.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType, polymorphSink } from './do.js';
-import { observeObject } from './o_init.js';
+import { OBJ_DESCR, observeObject } from './o_init.js';
 import { heroIsUnchanging, polymorphHero } from './polyself.js';
 import { createPoisonGasCloud } from './regions.js';
 import { updateUnpaidObjectPrice, deleteObject } from './shk.js';
@@ -1067,7 +1067,7 @@ async function drinkFaucetPotion(state: PlayingGameState) {
     }
     source.blessed = source.cursed = false;
     try {
-        const appearance = state.objectDescriptions?.[source.otyp] ?? requireObjectData(OBJECT_DESCRIPTIONS, source.otyp);
+        const appearance = OBJ_DESCR(source.otyp, state);
         if (appearance === null) throw new Error(`Potion type ${source.otyp} has no appearance`);
         await pline(`Some ${heroIsBlind(state) ? 'odd' : displayColorName(appearance, state)} liquid flows from the faucet.`);
         if (!heroIsBlind(state) && !heroIsHallucinating(state)) observeObject(source, state);

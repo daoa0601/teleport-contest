@@ -10,11 +10,11 @@ import {
     VENOM_CLASS,
 } from './objclass.js';
 import {
-    objectClassForType, objectBaseMaterial, objectUsesKnown, objectUnique, FLINT,
+    objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, FLINT,
     getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD,
     CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR,
     OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN,
-    requireObjectData, ARROW as FIRST_OBJECT,
+    requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME,
 } from './object_data.js';
 import { game } from './gstate.js';
 import { artifactById, artifactInfoLines } from './artifacts.js';
@@ -202,7 +202,7 @@ function discoveryBaseName(
     switch (objectClassForType(otyp)) {
         case ARMOR_CLASS:
             return armorPresentationName(
-                known ? actualName : appearance || actualName, OBJECT_NAMES[otyp],
+                known ? actualName : appearance || actualName, otyp,
             );
         case RING_CLASS:
             return known ? `ring of ${actualName}` : 'ring';
@@ -232,14 +232,14 @@ function discoveryBaseName(
 // Also C o_init.c:disco_append_typename(): inlined here (the assembled row
 // with its price quote).
 function formattedDiscovery(otyp: number): string | null {
-    const known = !!OBJECT_INITIAL_KNOWN[otyp] || !!game._knownObjectTypes?.has(otyp);
+    const known = objectTypeKnown({ otyp }, game);
     const encountered = !!game._encounteredObjectTypes?.has(otyp);
     const callName = game._objectCallNames?.[otyp];
-    const ordinaryName = OBJECT_NAMES[otyp] || 'object';
+    const ordinaryName = OBJ_NAME(otyp) || 'object';
     const japaneseName = game.urole?.key === 'samurai' ? japaneseItemName(otyp) : undefined;
     const harp = otyp === WOODEN_HARP || otyp === MAGIC_HARP;
     const appearance = japaneseName && harp ? 'koto'
-        : game.objectDescriptions?.[otyp] ?? OBJECT_DESCRIPTIONS[otyp];
+        : OBJ_DESCR(otyp, game);
     // C interesting_to_discover(): Japanese names need an explanation even
     // when there is no unidentified appearance to list.
     if (!japaneseName && !callName && !((known || encountered) && appearance)) return null;
@@ -488,8 +488,8 @@ function discoveredRelics(): string[] {
         const known = !!game._knownObjectTypes?.has(type);
         if (!known && (type === AMULET_OF_YENDOR || !game._encounteredObjectTypes?.has(type)))
             continue;
-        const name = known ? requireObjectData(OBJECT_NAMES, type)
-            : game.objectDescriptions?.[type] ?? requireObjectData(OBJECT_DESCRIPTIONS, type);
+        const name = known ? OBJ_NAME(type)
+            : OBJ_DESCR(type);
         lines.push(`  ${name}${!known && type === SPE_BOOK_OF_THE_DEAD ? ' spellbook' : ''}`);
     }
     return lines;
@@ -551,6 +551,43 @@ export function objectMaterial(
         ? objectOrType : objectOrType?.otyp;
     if (type === undefined) return 0;
     return state.objectMaterials?.[type] ?? objectBaseMaterial(type);
+}
+
+// C objclass.h:OBJ_DESCR(): obj_descr[objects[otyp].oc_descr_idx].oc_descr.
+// o_init.c:shuffle permutes oc_descr_idx within unidentified classes, so the
+// live read consults the shuffled table first and falls back to the initial
+// column before initialization.
+export function OBJ_DESCR(
+    objectOrType: number | Pick<GameObject, 'otyp'> | null | undefined,
+    state: Pick<GameState, 'objectDescriptions'> = game,
+): string | null {
+    const type = typeof objectOrType === 'number'
+        ? objectOrType : objectOrType?.otyp;
+    if (type === undefined) return null;
+    return state.objectDescriptions?.[type] ?? OBJECT_DESCRIPTIONS[type] ?? null;
+}
+
+// C objclass.h: objects[otyp].oc_color. shuffle() permutes colors together
+// with the descriptions, so the live read consults the per-game table first.
+export function objectTypeColor(
+    objectOrType: number | Pick<GameObject, 'otyp'> | null | undefined,
+    state: Pick<GameState, 'objectColors'> = game,
+): number {
+    const type = typeof objectOrType === 'number'
+        ? objectOrType : objectOrType?.otyp;
+    if (type === undefined) return 0;
+    return state.objectColors?.[type] ?? oc_color(type);
+}
+
+// C objclass.h: objects[otyp].oc_name_known belongs to the type, never to an
+// instance. The initial column comes from objects.c:obj_init; per-game
+// discovery (o_init.c:discover_object) adds the type to the knowledge set.
+export function objectTypeKnown(
+    object: Pick<GameObject, 'otyp'> & Partial<Pick<GameObject, 'oclass'>>,
+    state: GameState = game,
+): boolean {
+    return !!OBJECT_INITIAL_KNOWN[object.otyp]
+        || !!state._knownObjectTypes?.has(object.otyp);
 }
 
 // ---------------------------------------------------------------------------

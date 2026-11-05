@@ -5,15 +5,13 @@ import {
     POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS,
     CHAIN_CLASS,
 } from './objclass.js';
-import {
+import { objectPropertyName, oc_nutrition,
     objectDelay, objectCharged, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR,
     CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF,
     FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE,
-    LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, OBJECT_NUTRITION,
-    OBJECT_PROPERTY, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION,
+    LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION,
     SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION,
-    requireObjectData,
-} from './object_data.js';
+    } from './object_data.js';
 import {
     heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic,
     your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous,
@@ -74,7 +72,7 @@ import {
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
-import {objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object} from './mkobj.js';
+import { objectQuantity, splitObjectStack, objectWeight, objectIsRottable, stack_object} from './mkobj.js';
 import { objectIsMetallic } from './object_properties.js';
 import { finishEnvironmentalMonsterDeath, prepareMonsterPetrification, restoreNaturalMonsterShapes } from './mon.js';
 import type { MonsterDeathHandler } from './mon.js';
@@ -347,7 +345,7 @@ export function obj_nutrition(food: GameObject): number {
         const species = food.corpsenm;
         return species === undefined ? 0 : MONSTER_BODY_META[species]?.[1] ?? 0;
     }
-    return food.globby ? food.owt : requireObjectData(OBJECT_NUTRITION, food.otyp);
+    return food.globby ? food.owt : oc_nutrition(food.otyp);
 }
 
 // C eat.c:adj_victual_nutrition().
@@ -1853,7 +1851,7 @@ function accessory_has_effect(object: GameObject) {
 export async function eataccessory(object: GameObject, { state = game }: { state?: GameState } = {}): Promise<void> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const property = requireObjectData(OBJECT_PROPERTY, object.otyp);
+    const property = objectPropertyName(object.otyp);
     const oldIntrinsic = property && (hasIntrinsicProperty(property, null, state)
         || hasTimedProperty(property, state));
     if (object === state.uleft || object === state.uright) {
@@ -2186,7 +2184,7 @@ export async function doeat_nonfood(object: GameObject, state: PlayingGameState)
     const nutrition = object.otyp === SCR_MAIL ? 0 : object.oclass === COIN_CLASS
         ? Math.min(2000, Math.trunc(objectQuantity(object) / 100))
         : [BALL_CLASS, CHAIN_CLASS].includes(object.oclass) ? objectWeight(object)
-            : requireObjectData(OBJECT_NUTRITION, object.otyp);
+            : oc_nutrition(object.otyp);
     const meal: NonfoodMeal = { piece: object, o_id: object.o_id, reqtime: 1,
         usedtime: 0, nmod: nutrition, canchoke: currentHungerState(state) === SATIATED, eating: true };
     state.context.victual = meal;

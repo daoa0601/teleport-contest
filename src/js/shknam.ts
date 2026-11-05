@@ -26,9 +26,9 @@ import type { MonsterNameOptions } from './do_name.js';
 import { makeEngravingAt } from './engrave.js';
 import { makemon, mkclass } from './makemon.js';
 import { depth as depth_of_level, ledgerNo } from './hacklib.js';
-import { GOLD_PIECE, OBJECT_BASES, OBJECT_PROB, SPE_NOVEL, TOUCHSTONE, CORPSE, EGG, TIN, POT_FRUIT_JUICE, POT_BOOZE, POT_WATER, POT_HEALING, POT_FULL_HEALING, POT_OIL, ICE_BOX, LEATHER_GLOVES, ELVEN_CLOAK, SCR_FOOD_DETECTION, LUMP_OF_ROYAL_JELLY, WAX_CANDLE, TALLOW_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, WAN_LIGHT, SCR_LIGHT, SPE_LIGHT } from './object_data.js';
+import { GOLD_PIECE, OBJECT_BASES, SPE_NOVEL, TOUCHSTONE, CORPSE, EGG, TIN, POT_FRUIT_JUICE, POT_BOOZE, POT_WATER, POT_HEALING, POT_FULL_HEALING, POT_OIL, ICE_BOX, LEATHER_GLOVES, ELVEN_CLOAK, SCR_FOOD_DETECTION, LUMP_OF_ROYAL_JELLY, WAX_CANDLE, TALLOW_CANDLE, BRASS_LANTERN, OIL_LAMP, MAGIC_LAMP, WAN_LIGHT, SCR_LIGHT, SPE_LIGHT } from './object_data.js';
 import { mksobj, mksobj_at, mkobj_at, linkObjectToMonsterInventory } from './mkobj.js';
-import { objectMaterial } from './o_init.js';
+import { objectMaterial, objectProb } from './o_init.js';
 import { set_tin_variety } from './eat.js';
 
 import { addObjectToMonsterInventory } from './steal.js';
@@ -931,7 +931,7 @@ async function mkveggy_at(x: number, y: number): Promise<GameObject> {
         if (objectMaterial(otyp) !== 3 // VEGGY
             && otyp !== EGG && otyp !== TIN && otyp !== CORPSE) continue;
         eligible.push(otyp);
-        const probability = OBJECT_PROB[otyp];
+        const probability = objectProb[otyp];
         if (probability === undefined) throw new Error(`Missing food probability for object ${otyp}`);
         totalProbability += probability;
     }
@@ -939,7 +939,7 @@ async function mkveggy_at(x: number, y: number): Promise<GameObject> {
     let selected = eligible[0];
     for (const otyp of eligible) {
         selected = otyp;
-        const probability = OBJECT_PROB[otyp];
+        const probability = objectProb[otyp];
         if (probability === undefined) throw new Error(`Missing food probability for object ${otyp}`);
         choice -= probability;
         if (choice <= 0) break;

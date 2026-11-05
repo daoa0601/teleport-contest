@@ -41,7 +41,7 @@ import { init_rect, rnd_rect } from './rect.js';
 import { depth as depth_of_level, ledgerNo, dungeonDepth } from './hacklib.js';
 import { inducedAlignment, level_difficulty, specialLevelAt } from './dungeon.js';
 import { createMaze } from './maze_terrain.js';
-import { OBJECT_BASES, OBJECT_PROB, OBJECT_SPELL_LEVEL, OBJECT_WEIGHT, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE } from './object_data.js';
+import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
 import { flush_screen, newsym, terrain_glyph, canOverwriteTerrain } from './display.js';
@@ -2299,8 +2299,8 @@ export async function fill_ordinary_room(croom, bonus_items) {
                         const maxpass = levelDepth > 2 ? 2 : 3;
                         for (let pass = 1; pass <= maxpass; pass++) {
                             const candidate = await mkobj(oclass, false);
-                            if ((OBJECT_SPELL_LEVEL[candidate.otyp] ?? 0)
-                                < (OBJECT_SPELL_LEVEL[otmp.otyp] ?? 0)) {
+                            if ((oc_level(candidate.otyp) ?? 0)
+                                < (oc_level(otmp.otyp) ?? 0)) {
                                 otmp = candidate;
                             }
                         }

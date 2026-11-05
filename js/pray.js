@@ -4,6 +4,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
+import { OBJ_NAME } from './object_data.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
@@ -41,7 +42,7 @@ import { displayColorName, monsterName } from './do_name.js';
 import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterThrowsRocks, } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectNameWithArticle } from './objnam.js';
-import { isBimanualObject } from './object_properties.js';
+import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';
 import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm } from './polyself.js';
@@ -1216,8 +1217,8 @@ async function giveSpell() {
         const letter = forceLearnSpell(book.otyp);
         if (letter) {
             await pline(knowledge === 'unknown'
-                ? `Divine knowledge of ${OBJECT_NAMES[book.otyp]} fills your mind!  Spell '${letter}'.`
-                : `Your knowledge of spell '${letter}' - ${OBJECT_NAMES[book.otyp]} is ${knowledge === 'forgotten' ? 'restored' : 'refreshed'}.`);
+                ? `Divine knowledge of ${OBJ_NAME(book.otyp)} fills your mind!  Spell '${letter}'.`
+                : `Your knowledge of spell '${letter}' - ${OBJ_NAME(book.otyp)} is ${knowledge === 'forgotten' ? 'restored' : 'refreshed'}.`);
         }
         await deleteObject(book);
     }
@@ -1279,7 +1280,7 @@ async function crownHero() {
         const name = simpleObjectNameWithArticle(object);
         await dropGift(object, name.charAt(0).toUpperCase() + name.slice(1));
         hero.ugifts = (hero.ugifts || 0) + 1;
-        recordGameLogEvent(`was bestowed with spellbook of ${OBJECT_NAMES[classGift]}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT | LL_SPOILER });
+        recordGameLogEvent(`was bestowed with spellbook of ${OBJ_NAME(classGift)}`, { flags: LL_DIVINEGIFT | LL_ARTIFACT | LL_SPOILER });
         if (knownSpell(classGift) !== 'unknown' && isWeapon(game.uwep))
             object = game.uwep;
     }
@@ -1335,7 +1336,7 @@ async function crownHero() {
 }
 function isWeapon(object) {
     return !!object && (object.oclass === WEAPON_CLASS
-        || object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
+        || isWeaponTool(object));
 }
 // ---------------------------------------------------------------------------
 // Altar sacrifice (sacrifice)

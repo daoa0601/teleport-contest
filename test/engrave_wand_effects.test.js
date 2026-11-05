@@ -13,7 +13,7 @@ import { initRng } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 // C engrave.c doengrave_sfx_item_WAN(): engraving with a wand spends one
 // charge, announces the writing implement, and prints the wand's engraving
 // message only after the engraving text has been accepted.

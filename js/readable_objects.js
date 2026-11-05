@@ -104,8 +104,8 @@ async function readGarment(object, state) {
         await pline(`${state.flags.verbose ? 'The design' : 'It'} features ${hawaiianDesign(object, state)}.`);
         return readingResult(state, true);
     }
-    const isShirt = object.otyp === T_SHIRT;
-    recordLiteracy(`became literate by reading ${isShirt ? 'a T-shirt' : 'an apron'}`, { state });
+    const is_shirt = object.otyp === T_SHIRT;
+    recordLiteracy(`became literate by reading ${is_shirt ? 'a T-shirt' : 'an apron'}`, { state });
     const text = garmentInscription(object, state);
     let punctuation = '';
     if (state.flags.verbose) {

@@ -14,6 +14,7 @@ from csym import CPtr
 from jssym import V, parse_module
 from prove import REPO, check, recorder_dir
 from specs import INT, LONG, Spec
+from state_world import native_table
 
 GLIBC_ASSERT = '''
     extern void __assert_fail(const char *, const char *, unsigned, const char *)
@@ -71,6 +72,57 @@ class ExecutorTests(unittest.TestCase):
         self.assertFalse(proved, report)
         self.assertIn('C : returns 0', report)
         self.assertIn('JS: returns 1', report)
+
+    def test_nullable_string_table_returns_compare_contents(self):
+        def strings(world, front, modules):
+            world.c_globals['names'] = native_table(world, front, front.files[0], 'names')
+
+        native = 'static const char *names[] = {"first", "second", 0}; ' \
+                 'const char *example(int x) { return names[x]; }'
+        options = dict(params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] < 3],
+                       configure=strings)
+        self.equivalent(native, 'function example(x) { return ["first", "second", null][x]; }',
+                        **options)
+        self.rejected(native, 'function example(x) { return ["first", "wrong", null][x]; }',
+                      reason='outputs differ', **options)
+        self.rejected(native, 'function example(x) { return ["first", "second", "third"][x]; }',
+                      reason='outputs differ', **options)
+
+    def test_null_string_pointer_differs_from_empty_string(self):
+        self.equivalent('const char *example(void) { return 0; }',
+                        'function example() { return null; }')
+        self.equivalent('const char *example(void) { return ""; }',
+                        'function example() { return ""; }')
+        self.rejected('const char *example(void) { return ""; }',
+                      'function example() { return null; }', reason='outputs differ')
+        self.rejected('const char *example(void) { return 0; }',
+                      'function example() { return ""; }', reason='outputs differ')
+
+    def test_string_return_does_not_equal_a_numeric_return(self):
+        self.rejected('const char *example(void) { return "1"; }',
+                      'function example() { return 1; }', reason='outputs differ')
+
+    def test_repeating_a_known_state_value_preserves_read_only_state(self):
+        def entry(world, front, modules):
+            world.js_values['game.context.flag'] = V('bool', z3.BoolVal(True))
+
+        self.equivalent('int example(int x) { return x; }',
+                        'function example(x) { game.context.flag = true; return x; }',
+                        params=[('x', INT)], configure=entry)
+
+    def test_changing_a_known_state_value_fails_the_read_only_obligation(self):
+        def entry(world, front, modules):
+            world.js_values['game.context.flag'] = V('num', z3.IntVal(0))
+
+        self.rejected('int example(int x) { return x; }',
+                      'function example(x) { game.context.flag = x; return x; }',
+                      params=[('x', INT)], pre=lambda s: [s['x'] >= 0, s['x'] <= 1],
+                      configure=entry, reason='JavaScript write changes read-only state')
+
+    def test_unmodeled_state_writes_remain_unsupported(self):
+        self.rejected('int example(void) { return 1; }',
+                      'function example() { game.flag = true; return 1; }',
+                      reason='JavaScript write outside a local binding')
 
     def test_object_shorthand_captures_the_current_binding_value(self):
         self.equivalent('int example(int x) { return x; }',

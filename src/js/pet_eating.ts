@@ -1,6 +1,6 @@
 import { FOOD_CLASS, COIN_CLASS } from './objclass.js';
 import {
-    objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, OBJECT_NUTRITION,
+    objectDelay, CORPSE, LUMP_OF_ROYAL_JELLY, oc_nutrition,
 } from './object_data.js';
 import { currency, inventoryItemDescription } from './invent.js';
 import type { GameState } from './game_state.js';
@@ -51,7 +51,7 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
             nutrition = body[1];
         } else {
             delay = objectDelay(object.otyp);
-            nutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
+            nutrition = oc_nutrition(object.otyp) ?? 0;
         }
         const fullNutrition = obj_nutrition(object);
         const size = MONSTER_SIZE[monster.mnum];
@@ -72,7 +72,7 @@ export function petFoodNutrition(monster: Monster, object: GameObject): number {
         nutrition = coinNutrition < 0 ? 0 : coinNutrition;
     } else {
         monster.meating = Math.trunc(object.owt / 20) + 1;
-        nutrition = 5 * (OBJECT_NUTRITION[object.otyp] ?? 0);
+        nutrition = 5 * (oc_nutrition(object.otyp) ?? 0);
     }
     return nutrition;
 }

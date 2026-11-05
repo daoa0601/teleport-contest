@@ -1,4 +1,5 @@
 import { ILLOBJ_CLASS, WEAPON_CLASS } from './objclass.js';
+import { PROPERTY_NAMES } from './property_types.js';
 // object_data.js — mechanically transcribed NetHack 5.0 object metadata.
 // Source: nethack-c/upstream/include/objects.h.  Keep numeric IDs in sync.
 // BEGIN GENERATED OBJECT NAME DATA
@@ -36,6 +37,7 @@ export const OBJECT_DIR = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 export const OBJECT_SUBTYPE = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -20, -20, -20, -20, -20, -22, -23, -24, -25, 17, 17, 17, 17, 17, 17, 18, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3, 5, 5, 5, 5, 9, 9, 6, 6, 7, 8, 7, 8, 6, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 16, 4, 19, 11, 11, 12, 14, 10, 26, 15, 10, 13, 26, 20, 20, 20, 20, 21, 22, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 6, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 13, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 34, 28, 28, 28, 31, 28, 30, 30, 29, 34, 28, 31, 29, 28, 31, 34, 32, 30, 31, 30, 29, 31, 33, 30, 33, 29, 29, 33, 30, 32, 30, 30, 32, 34, 33, 32, 34, 32, 33, 29, 28, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, -21, 0, 0, 0, 0, 0, 0];
 export const ARROW = 18;
 export const ELVEN_ARROW = 19;
+export const RUBBER_HOSE = 78;
 export const ORCISH_ARROW = 20;
 export const CROSSBOW_BOLT = 23;
 export const YA = 22;
@@ -394,7 +396,7 @@ export function requireObjectData(table, otyp) {
     }
     return value;
 }
-// C objects.h:OBJECT(): objects[otyp].oc_class, including the generic slots.
+// C objclass.h: objects[otyp].oc_class, including the generic slots.
 // Missing or invalid port indices have no class (RANDOM_CLASS).
 export function objectClassForType(otyp) {
     if (typeof otyp !== 'number' || !Number.isInteger(otyp)
@@ -402,57 +404,126 @@ export function objectClassForType(otyp) {
         return 0;
     return OBJECT_CLASS[otyp] ?? 0;
 }
-// C objects.h:OBJECT(): objects[otyp].oc_material before per-game initialization.
+// C objclass.h: objects[otyp].oc_material before per-game initialization.
 export function objectBaseMaterial(otyp) {
     return requireObjectData(OBJECT_MATERIAL, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_weight before per-game initialization.
+// C objclass.h: objects[otyp].oc_weight before per-game initialization.
 export function objectBaseWeight(otyp) {
     return requireObjectData(OBJECT_WEIGHT, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_cost before per-game initialization.
+// C objclass.h: objects[otyp].oc_cost before per-game initialization.
 export function objectBaseCost(otyp) {
     return requireObjectData(OBJECT_COST, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_delay before per-game initialization.
+// C objclass.h: objects[otyp].oc_delay before per-game initialization.
 export function objectDelay(otyp) {
     return requireObjectData(OBJECT_DELAY, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_oprop before per-game initialization.
+// C objclass.h: objects[otyp].oc_oprop before per-game initialization.
 export function objectPropertyId(otyp) {
     return requireObjectData(OBJECT_PROPERTY_ID, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_dir before per-game initialization.
+// C objclass.h: objects[otyp].oc_dir before per-game initialization.
 export function objectBaseDirection(otyp) {
     return requireObjectData(OBJECT_DIR, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_skill before per-game initialization.
+// C objclass.h: objects[otyp].oc_skill before per-game initialization.
 export function objectSkill(otyp) {
     return requireObjectData(OBJECT_SUBTYPE, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_bimanual before per-game initialization.
+// C objclass.h: objects[otyp].oc_bimanual before per-game initialization.
 export function objectBimanual(otyp) {
     return requireObjectData(OBJECT_BIMANUAL, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_merge before per-game initialization.
+// C objclass.h: objects[otyp].oc_merge before per-game initialization.
 export function objectMerge(otyp) {
     return requireObjectData(OBJECT_MERGE, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_uses_known before per-game initialization.
+// C objclass.h: objects[otyp].oc_uses_known before per-game initialization.
 export function objectUsesKnown(otyp) {
     return requireObjectData(OBJECT_USES_KNOWN, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_unique before per-game initialization.
+// C objclass.h: objects[otyp].oc_unique before per-game initialization.
 export function objectUnique(otyp) {
     return requireObjectData(OBJECT_UNIQUE, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_magic before per-game initialization.
+// C objclass.h: objects[otyp].oc_magic before per-game initialization.
 export function objectMagic(otyp) {
     return requireObjectData(OBJECT_MAGIC, otyp);
 }
-// C objects.h:OBJECT(): objects[otyp].oc_charged before per-game initialization.
+// C objclass.h: objects[otyp].oc_charged before per-game initialization.
 export function objectCharged(otyp) {
     return requireObjectData(OBJECT_CHARGED, otyp);
+}
+// C objclass.h: objects[otyp].oc_armcat, the armor alias of oc_subtyp.
+export function oc_armcat(otyp) {
+    return requireObjectData(OBJECT_SUBTYPE, otyp);
+}
+// C objclass.h:OBJ_NAME(): obj_descr[objects[otyp].oc_name_idx].oc_name.
+// o_init.c:init_objects sets oc_name_idx = otyp for every row and nothing
+// changes it (options.c's SLIME_MOLD rewrite assigns the same index), so the
+// port indexes the static name table by otyp.
+export function OBJ_NAME(otyp) {
+    return OBJECT_NAMES[otyp ?? -1] ?? null;
+}
+// C objclass.h: objects[otyp].oc_oprop, the property the object conveys
+// (prop.h enum, 0 = none), as the port's PropertyName view: the runtime
+// property tables are name-keyed. objectPropertyId keeps the native enum.
+export function objectPropertyName(otyp) {
+    if (otyp === undefined || otyp === null)
+        return null;
+    const id = objectPropertyId(otyp);
+    return id > 0 ? PROPERTY_NAMES[id - 1] ?? null : null;
+}
+// C objclass.h: objects[otyp].oc_level, the oc_oc2 alias for
+// spellbooks, before per-game initialization.
+export function oc_level(otyp) {
+    return requireObjectData(OBJECT_SPELL_LEVEL, otyp);
+}
+// C objclass.h: objects[otyp].a_can, the oc_oc2 alias for worn armor,
+// before per-game initialization.
+export function a_can(otyp) {
+    return requireObjectData(OBJECT_SPELL_LEVEL, otyp);
+}
+// C objclass.h: objects[otyp].oc_nutrition before per-game initialization.
+export function oc_nutrition(otyp) {
+    return requireObjectData(OBJECT_NUTRITION, otyp);
+}
+// C objclass.h: objects[otyp].oc_prob before per-game initialization.
+// o_init.c:setgemprobs rewrites the GEM_CLASS rows per level; o_init.ts's
+// objectProb owns the live column.
+export function oc_prob(otyp) {
+    return requireObjectData(OBJECT_PROB, otyp);
+}
+// C objclass.h: objects[otyp].oc_color before per-game initialization.
+// o_init.c:shuffle permutes colors within unidentified classes; o_init.ts's
+// objectColor owns the live column.
+export function oc_color(otyp) {
+    return requireObjectData(OBJECT_COLOR, otyp);
+}
+// C objclass.h: objects[otyp].oc_nowish before per-game initialization.
+export function oc_nowish(otyp) {
+    return requireObjectData(OBJECT_NOWISH, otyp);
+}
+// C objclass.h: objects[otyp].oc_hitbon, the oc_oc1 alias for
+// weapons, before per-game initialization.
+export function oc_hitbon(otyp) {
+    return requireObjectData(OBJECT_HIT_BONUS, otyp);
+}
+// C objclass.h: objects[otyp].a_ac, the oc_oc1 alias for armor, before
+// per-game initialization.
+export function a_ac(otyp) {
+    return requireObjectData(OBJECT_HIT_BONUS, otyp);
+}
+// C objclass.h: objects[otyp].oc_wldam, the large-monster damage die
+// for weapons, before per-game initialization.
+export function oc_wldam(otyp) {
+    return requireObjectData(OBJECT_LARGE_DAMAGE, otyp);
+}
+// C objclass.h: objects[otyp].oc_wsdam, the small-monster damage die.
+export function oc_wsdam(otyp) {
+    return requireObjectData(OBJECT_SMALL_DAMAGE, otyp);
 }
 export function getObjectClassBounds(oclass) {
     const first = OBJECT_BASES[oclass];

@@ -6,10 +6,11 @@
 // ugenocided(), udeadinside().
 
 import { WEAPON_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import {
     objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING,
     ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL,
-    YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
+    YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS,
 } from './object_data.js';
 import { setHeroGrip, angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster, validVampireShiftForm } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
@@ -66,7 +67,7 @@ import { breatheInDirection } from './breath_ray.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
-import {mksobj, placeCreatedObject, stack_object} from './mkobj.js';
+import { mksobj, placeCreatedObject, stack_object} from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
@@ -78,7 +79,7 @@ import {
 } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
-import { isFlimsyObject } from './object_properties.js';
+import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
@@ -1038,8 +1039,7 @@ async function changeArmorForHeroForm(mnum: number) {
         }
     } else if (slipsArmor) {
         if ((object = worn('uarm'))
-            && !(MONSTER_NAME[mnum] === 'hobbit'
-                && object.otyp === ELVEN_MITHRIL_COAT)) {
+            && !(MONSTER_NAME[mnum] === 'hobbit' && is_elven_armor(object))) {
             const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation('Your armor falls around you!');
             await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
@@ -2540,7 +2540,7 @@ async function mergeDragonArmor(armor: GameObject | null | undefined, mnum: numb
                 `Your ${name} reverts to scales as you merge with them.`,
             );
             armor.otyp += GRAY_DRAGON_SCALES - GRAY_DRAGON_SCALE_MAIL;
-            const scaleName = OBJECT_NAMES[armor.otyp];
+            const scaleName = OBJ_NAME(armor.otyp);
             if (!scaleName) throw new Error(`Unknown dragon scales type: ${armor.otyp}`);
             armor.name = scaleName;
             observeObject(armor, game);

@@ -8,7 +8,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
 import { WAN_DEATH, WAN_SPEED_MONSTER, WAN_STRIKING, OBJECT_NAMES, HELMET, IRON_SHOES, CLOAK_OF_PROTECTION } from '../js/object_data.js';
 import { chargedWand, knownObject } from './support/game-objects.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { applyWandEffect } from '../js/zap.js';
 import { zapRayWithObject } from '../js/zap.js';
 import { cansee, vision_recalc } from '../js/vision.js';

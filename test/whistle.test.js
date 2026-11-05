@@ -10,7 +10,7 @@ import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, BOULDER, LEASH, EUCALYPTUS_LEAF, MAGIC_WHISTLE, TIN_WHISTLE } from '../js/object_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { initRng } from '../js/rng.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { invault } from '../js/vault.js';
 import { answerPrompts } from './support/input-boundaries.js';

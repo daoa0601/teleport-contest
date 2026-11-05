@@ -8,7 +8,7 @@ import { pushKeys } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { TOWEL, WATER_WALKING_BOOTS } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

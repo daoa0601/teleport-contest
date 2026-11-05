@@ -28,7 +28,7 @@ import { leashAttachedToMonster, releaseMonsterLeash, bringLeashedFollowers } fr
 import { rn2, rnd } from './rng.js';
 import { isok } from './cmd.js';
 import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
-import { AMULET_OF_YENDOR, BOULDER, CORPSE, OBJECT_SPELL_LEVEL, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
+import { AMULET_OF_YENDOR, BOULDER, CORPSE, oc_level, RIN_TELEPORTATION, RIN_TELEPORT_CONTROL, SCR_SCARE_MONSTER, SPE_TELEPORT_AWAY, WAN_TELEPORTATION } from './object_data.js';
 import { morehungry } from './eat.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished, placeBallAndChain, unplaceBallAndChain } from './ball.js';
 import { ACCESSIBLE, ALTAR, CC_INCL_CENTER, CC_NO_FLAGS, CC_RING_PAIRS, CC_SKIP_INACCS, CC_SKIP_MONS, CC_UNSHUFFLED, COLNO, D_CLOSED, D_LOCKED, DOOR, GP_ALLOW_U, GP_ALLOW_XY, GP_AVOID_MONPOS, GP_CHECKSCARY, IS_STWALL, LEVEL_TELEP, MAGIC_PORTAL, MAX_TYPE, MM_IGNORELAVA, MM_IGNOREWATER, RLOC_ERR, RLOC_MSG, RLOC_NOMSG, RLOC_NONE, ROWNO, SHOPBASE, STRAT_APPEARMSG, TELEP_TRAP, TT_BURIEDBALL, VAULT, VIBRATING_SQUARE, WATER, W_NONPASSWALL, ZAP_POS, In_endgame, Is_botlevel, Is_stronghold, MIGR_PORTAL, MIGR_RANDOM, M_AP_NOTHING, MON_FLOOR, Upolyd, is_hole, is_pit, A_STR, BOLT_LIM, HOLE, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE } from './const.js';
@@ -63,7 +63,7 @@ import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './corpse_revival.js';
 import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
-import {unlinkObject, placeObject} from './mkobj.js';
+import { unlinkObject, placeObject} from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
 import {
     monsterIsAmphibious, monsterIsSwimmer, monsterPassesWalls, monsterIsAmorphous, monsterThrowsRocks, is_lord,
@@ -708,7 +708,7 @@ export async function teleportHeroAtWill({
                 };
             }
         }
-        const level = OBJECT_SPELL_LEVEL[SPE_TELEPORT_AWAY];
+        const level = oc_level(SPE_TELEPORT_AWAY);
         if (level === undefined) throw new Error('Teleport-away has no spell level');
         const energy = 5 * level;
         const failure = hero.uhunger <= 10 ? 'are too weak from hunger'

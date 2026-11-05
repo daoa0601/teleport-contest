@@ -14,7 +14,7 @@ import {
     CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CORPSE, CREAM_PIE, CREDIT_CARD, CRYSTAL_BALL, EGG,
     EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH,
     LENSES, LOCK_PICK, LUMP_OF_ROYAL_JELLY, MAGIC_LAMP, MAGIC_MARKER, MAGIC_WHISTLE, MIRROR,
-    OBJECT_COLOR, OBJECT_DESCRIPTIONS, OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD,
+    OIL_LAMP, POT_OIL, SADDLE, SKELETON_KEY, SLIME_MOLD,
     SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_JUMPING, SPE_NOVEL, STATUE, STETHOSCOPE,
     TALLOW_CANDLE, TIN, TIN_OPENER, TIN_WHISTLE, TINNING_KIT, TOUCHSTONE, TOWEL, UNICORN_HORN,
     WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT,
@@ -23,6 +23,7 @@ import {
     WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, WAX_CANDLE,
 } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
+import { OBJ_DESCR, objectTypeColor } from './o_init.js';
 import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear } from './do_wear.js';
 import { artifactById, speakArtifact } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
@@ -103,7 +104,7 @@ import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import { canDigDown } from './mklev.js';
-import {mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty} from './mkobj.js';
+import { mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty } from './mkobj.js';
 import { paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir } from './mon.js';
 import { is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive, monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests, monsterHasEyes, monsterHasProperName, monsterIsBig, monsterIsBreathless, monsterIsDemon, monsterIsHumanoid, monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives, monsterThrowsRocks } from './mondata.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
@@ -112,7 +113,7 @@ import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { learnObjectType, objectMaterial } from './o_init.js';
+import { learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, withIndefiniteArticle } from './objnam.js';
@@ -130,7 +131,7 @@ import { rayPositionIsOpen } from './zap.js';
 
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout } from './senses.js';
-import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, objectTypeKnown, payForShopDamage, shopkeeperIsMuted } from './shk.js';
+import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
 import { flashBurn } from './zap.js';
 
 import { ensureHeroSkills } from './skills.js';
@@ -2180,7 +2181,7 @@ function stoneNoun(object: GameObject, state: GameState): string {
 function stoneMarks(
     stone: GameObject, object: GameObject, gemLike: boolean, material: number, state: GameState,
 ): StoneFeedback {
-    const colorIndex = state.objectColors?.[object.otyp] ?? OBJECT_COLOR[object.otyp];
+    const colorIndex = objectTypeColor(object.otyp, state);
     const color = colorIndex === undefined ? null : OBJECT_COLOR_NAMES[colorIndex] ?? null;
     if (gemLike) {
         if (stone.otyp !== TOUCHSTONE) return { scratch: true, color };
@@ -3097,7 +3098,7 @@ const affectsObjects = new Set([
 export async function breakWand(wand: GameObject, { state = game }: { state?: GameState } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const description = state.objectDescriptions?.[wand.otyp] ?? OBJECT_DESCRIPTIONS[wand.otyp];
+    const description = OBJ_DESCR(wand.otyp, state);
     const fragile = description === 'balsa' || description === 'glass';
     if (heroHasNoHands(state)) {
         observeObjectForNaming(wand, { state });

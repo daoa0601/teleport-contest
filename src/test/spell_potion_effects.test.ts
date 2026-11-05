@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import type { InventoryObjectOverrides } from './support/game-objects.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

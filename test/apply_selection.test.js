@@ -1,4 +1,4 @@
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { inventoryLetter } from './support/commands.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { addTrap } from './support/level-state.js';

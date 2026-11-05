@@ -2204,7 +2204,7 @@ src/js/spell.ts	cursedBook	rn1	"[""100"", ""250""]"	constant
 src/js/spell.ts	cursedBook	rn1	"[""2"", ""1""]"	constant
 src/js/spell.ts	cursedBook	rn1	"[""4"", ""3""]"	constant
 src/js/spell.ts	cursedBook	rn1	"[""7"", ""16""]"	constant
-src/js/spell.ts	cursedBook	rn2	"[""requireObjectData(OBJECT_SPELL_LEVEL, book.otyp)""]"	unproved
+src/js/spell.ts	cursedBook	rn2	"[""oc_level(book.otyp)""]"	unproved
 src/js/spell.ts	cursedBook	rnd	"[""10""]"	constant
 src/js/spell.ts	cursedBook	rnd	"[""resisted ? 6 : 10""]"	constant
 src/js/spell.ts	studyBook	rn2	"[""3""]"	constant

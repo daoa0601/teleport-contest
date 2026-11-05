@@ -20,8 +20,10 @@ import {
     LOADSTONE, ROCK, STATUE, SPLINT_MAIL, WAN_CANCELLATION, WAN_LIGHT, WAN_LIGHTNING,
     objectDirection, POT_OIL, BELL_OF_OPENING, ELVEN_SHIELD, ORCISH_SHIELD, SHIELD_OF_REFLECTION,
     BOULDER, FOOD_RATION, LUMP_OF_ROYAL_JELLY, POT_BOOZE, POT_SICKNESS, POT_WATER, APPLE, BANANA,
-    EUCALYPTUS_LEAF, ORANGE, PEAR, OBJECT_NUTRITION, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION,
-    OBJECT_PROPERTY, WAN_FIRE,
+    EUCALYPTUS_LEAF, ORANGE, PEAR, HEAVY_IRON_BALL, CANDELABRUM_OF_INVOCATION,
+    WAN_FIRE,
+    oc_nutrition,
+    objectPropertyName,
 } from './object_data.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind } from './object_types.js';
 import type { Position } from './map_types.js';
@@ -2169,7 +2171,7 @@ export function objectWeight(object: WeightObject | null | undefined): number {
     // mkobj.c:weight()->eaten_stat() scales partly eaten food by its
     // remaining nutrition per item, including stacks of partly eaten wishes.
     if (object.oclass === FOOD_CLASS && uneatenNutrition > 0 && base > 0) {
-        const fullNutrition = OBJECT_NUTRITION[object.otyp] ?? 0;
+        const fullNutrition = oc_nutrition(object.otyp) ?? 0;
         if (fullNutrition > 0) {
             return Math.max(1, Math.trunc(
                 base * count * Math.min(uneatenNutrition, fullNutrition) / fullNutrition,
@@ -2214,7 +2216,7 @@ export function objectIsFlammable(
     state?: Pick<GameState, 'objectMaterials'>,
 ): boolean {
     if (object.otyp === TALLOW_CANDLE || object.otyp === WAX_CANDLE) return false;
-    if (OBJECT_PROPERTY[object.otyp] === 'fireResistance'
+    if (objectPropertyName(object.otyp) === 'fireResistance'
         || object.otyp === WAN_FIRE)
         return false;
     const material = objectMaterial(object, state);

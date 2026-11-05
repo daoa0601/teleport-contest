@@ -1,7 +1,7 @@
 // skills.js - Hero weapon/fighting/spell skill state and commands.
 // C refs: skills.h, u_init.c:skill_init(), weapon.c:doenhance().
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS } from './objclass.js';
-import { objectSkill, OBJECT_SPELL_CATEGORY, OBJECT_SPELL_LEVEL, } from './object_data.js';
+import { objectSkill, OBJECT_SPELL_CATEGORY, oc_level, } from './object_data.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
@@ -552,7 +552,7 @@ function identifySpellbooksForSkills(state) {
         if (!OBJECT_SPELL_CATEGORY[type])
             continue;
         const category = spellSkillType(type, state);
-        const spellLevel = OBJECT_SPELL_LEVEL[type];
+        const spellLevel = oc_level(type);
         if (spellLevel === undefined)
             throw new Error(`Spellbook ${type} has incomplete skill data`);
         const skill = requiredSkill(skills, category).skill;

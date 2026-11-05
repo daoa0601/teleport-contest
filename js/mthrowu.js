@@ -4,6 +4,7 @@
 // return_from_mtoss(), thrwmm(), spitmm()/spitmu(), breamm(), thrwmu(),
 // breamu(), blocking_terrain(), linedup() and m_lined_up().
 import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
@@ -79,7 +80,7 @@ const PM_NINJA = MONSTER_NAME.indexOf('ninja');
 const FIRST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of white glass');
 const LAST_GLASS_GEM = OBJECT_NAMES.indexOf('worthless piece of violet glass');
 export function objectTypeName(object) {
-    return object ? OBJECT_NAMES[object.otyp] || '' : '';
+    return object ? OBJ_NAME(object.otyp) || '' : '';
 }
 // C mthrowu.c:thitu(). The hero is struck by a missile thrown or shot by a
 // monster: accuracy and damage rolls, poison, blinding payload, and the

@@ -2,19 +2,20 @@
 // C refs: wield.c dowield(), dowieldquiver(), doquiver_core(),
 // doswapweapon(), dotwoweapon(), and finish_splitting().
 import { WEAPON_CLASS, TOOL_CLASS, SCROLL_CLASS, COIN_CLASS } from './objclass.js';
-import { objectClassForType, objectSkill, LENSES, LOADSTONE, OBJECT_NAMES, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, BATTLE_AXE, CORPSE, WORM_TOOTH, requireObjectData, } from './object_data.js';
+import { OBJ_NAME } from './object_data.js';
+import { objectClassForType, objectSkill, LENSES, LOADSTONE, AKLYS, CRYSKNIFE, ELVEN_ARROW, ELVEN_BOW, ELVEN_BROADSWORD, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_SPEAR, HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER, BATTLE_AXE, CORPSE, WORM_TOOTH, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_BOW, P_CROSSBOW, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, } from './const.js';
+import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroHandName } from './body_parts.js';
-import { armorUsesPairGrammar, makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
+import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
 import { inventoryItemDescription, addInventoryItem, freeInventoryObject, getobj, useUpInventoryStack } from './invent.js';
-import { isBimanualObject, isWeaponTool, isWetTowel, isLauncherAmmunition, isMissileObject, isPolearm } from './object_properties.js';
+import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launcher, isLauncherAmmunition, isMissileObject, isPolearm, pair_of } from './object_properties.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
 import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifacts.js';
@@ -172,7 +173,7 @@ export async function dowield() {
         }
         else {
             const plural = objectNameIsPlural(object, game)
-                || object.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[object.otyp]);
+                || pair_of(object);
             confirmation = `You have ${plural ? 'those' : 'that'} readied.  Wield ${plural ? 'them' : 'it'} instead?`;
         }
         if (await promptYesNoQuit(confirmation) !== 'y') {
@@ -341,7 +342,7 @@ export async function doquiverCore(verb) {
         const noun = minimalObjectName(item, game);
         const names = quantity === 1 ? noun : makePlural(noun);
         const usePlural = objectNameIsPlural(item, game)
-            || item.otyp === LENSES || armorUsesPairGrammar(OBJECT_NAMES[item.otyp]);
+            || pair_of(item);
         let confirmation = primary
             ? `You are wielding ${usePlural ? 'those' : 'that'}.  Ready ${usePlural ? 'them' : 'it'} instead?`
             : `${usePlural ? 'Those are' : 'That is'} your ${wasTwoweap ? 'second' : 'alternate'} weapon.  Ready ${usePlural ? 'them' : 'it'} instead?`;
@@ -410,8 +411,7 @@ export async function doquiverCore(verb) {
 export function isTwoWeaponObject(object) {
     if (object?.oclass !== WEAPON_CLASS)
         return isWeaponTool(object);
-    const skill = objectSkill(object.otyp);
-    return !(skill >= P_BOW && skill <= P_CROSSBOW)
+    return !is_launcher(object)
         && !isLauncherAmmunition(object) && !isMissileObject(object);
 }
 // C setuwep(): an improvised weapon announces its first use in melee.
@@ -420,8 +420,7 @@ export function weaponNeedsBashingMessage(object, state) {
         return true;
     if (object.oclass !== WEAPON_CLASS)
         return !isWeaponTool(object) && !isWetTowel(object);
-    const skill = objectSkill(object.otyp);
-    const launcher = skill >= P_BOW && skill <= P_CROSSBOW;
+    const launcher = is_launcher(object);
     const groundedPolearm = isPolearm(object) && !state.u.usteed
         && artifactById(object.oartifact)?.name !== 'Snickersnee';
     return launcher || isLauncherAmmunition(object) || isMissileObject(object)
@@ -430,7 +429,7 @@ export function weaponNeedsBashingMessage(object, state) {
 export function willWeld(object) {
     if (!object?.cursed)
         return false;
-    const weaponTool = object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0;
+    const weaponTool = isWeaponTool(object);
     return object.oclass === WEAPON_CLASS || weaponTool
         || [HEAVY_IRON_BALL, IRON_CHAIN, TIN_OPENER].includes(object.otyp);
 }
@@ -845,7 +844,7 @@ export async function chwepon(scroll, amount, state) {
     }
     /* Elven weapons vibrate warningly when enchanted beyond a limit. */
     if (objectEnchantment(uwep) > 5
-        && (isElvenWeapon(uwep) || uwep.oartifact || rn2(7) === 0)) {
+        && (is_elven_weapon(uwep) || uwep.oartifact || rn2(7) === 0)) {
         await pline(`${ownedObjectAction(uwep, 'suddenly vibrate', state)} unexpectedly.`);
     }
     return true;
@@ -940,15 +939,10 @@ export function setWeaponEnchantment(object, value) {
 function heroWieldsMagicbane(state) {
     return artifactById((state.uwep || state.u?.uwep)?.oartifact)?.name === 'Magicbane';
 }
-// C include/obj.h is_elven_weapon().
-function isElvenWeapon(object) {
-    return [ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD,
-        ELVEN_BROADSWORD, ELVEN_BOW].includes(object.otyp);
-}
 // Only the tooth/crysknife transformations use simpleonames here. C omits
 // individual names and call names from that transformation message.
 function simpleonames(object) {
-    const name = requireObjectData(OBJECT_NAMES, object.otyp);
+    const name = OBJ_NAME(object.otyp);
     if (name === null)
         throw new Error(`Transformed weapon type ${object.otyp} has no name`);
     return objectQuantity(object) > 1 ? makePlural(name) : name;

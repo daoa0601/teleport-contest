@@ -11,6 +11,7 @@
 // mstatusline(), ustatusline().
 
 import { fromWhat, heroHasNoEyes, intrinsicPropertyMask, extrinsicPropertyMask, veryFast } from './attribute_provenance.js';
+import { OBJ_NAME, objectPropertyName } from './object_data.js';
 import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, blindnessBlocked } from './senses.js';
@@ -33,7 +34,7 @@ import {
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import {
     SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE,
-    OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, ROBE, TOWEL,
+    OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL,
 } from './object_data.js';
 import {
     canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
@@ -690,7 +691,7 @@ export function attributeEnlightenmentLines(final: EnlightenmentFinal = 0): stri
 
     if (extrinsicPropertyMask('adorned')) {
         const adorn = [game.uleft, game.uright].reduce((sum, ring) =>
-            sum + (ring && OBJECT_PROPERTY[ring.otyp] === 'adorned' ? ring.spe ?? 0 : 0), 0);
+            sum + (ring && objectPropertyName(ring.otyp) === 'adorned' ? ring.spe ?? 0 : 0), 0);
         are(`${adorn > 0 ? 'more ' : adorn < 0 ? 'less ' : ''}charismatic`, 'adorned');
     }
     if (propertyIsActive('invisible') || u.invisible || u.invis) {
@@ -1308,7 +1309,7 @@ function achievementLogText(
         const prizes = state.context?.achieveo;
         const otyp = index === ACH_SOKO_PRIZE
             ? prizes?.soko_prize_otyp : prizes?.mines_prize_otyp;
-        const name = otyp === undefined ? null : OBJECT_NAMES[otyp];
+        const name = otyp === undefined ? null : OBJ_NAME(otyp);
         if (!name) throw new Error('A level prize needs its original object type');
         return `${ACHIEVEMENT_LOG_TEXT[index]} ${name}`;
     }

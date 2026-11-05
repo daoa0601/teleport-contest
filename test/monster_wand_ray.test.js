@@ -12,7 +12,7 @@ import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING, 
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { roles } from '../js/roles.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { addInventoryObject, floorObject, uninitializedObject, untimedCorpse } from './support/game-objects.js';

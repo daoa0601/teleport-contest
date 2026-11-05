@@ -10,6 +10,7 @@
 // list_vanquished()/num_gone()/list_genocided()/doborn(), youhiding(),
 // mstatusline(), ustatusline().
 import { fromWhat, heroHasNoEyes, intrinsicPropertyMask, extrinsicPropertyMask, veryFast } from './attribute_provenance.js';
+import { OBJ_NAME, objectPropertyName } from './object_data.js';
 import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBlind, blindnessBlocked } from './senses.js';
@@ -21,7 +22,7 @@ import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWind
 import { gameLogEvents, isSpoilerGameLogEvent, recordGameLogEvent } from './gamelog.js';
 import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, } from './const.js';
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
-import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, OBJECT_PROPERTY, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
+import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
 import { canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType, } from './skills.js';
 import { weaponDescription } from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
@@ -703,7 +704,7 @@ export function attributeEnlightenmentLines(final = 0) {
         message('You ', 'will confuse', 'would have confused', ` monsters when hitting them${hits}`);
     }
     if (extrinsicPropertyMask('adorned')) {
-        const adorn = [game.uleft, game.uright].reduce((sum, ring) => sum + (ring && OBJECT_PROPERTY[ring.otyp] === 'adorned' ? ring.spe ?? 0 : 0), 0);
+        const adorn = [game.uleft, game.uright].reduce((sum, ring) => sum + (ring && objectPropertyName(ring.otyp) === 'adorned' ? ring.spe ?? 0 : 0), 0);
         are(`${adorn > 0 ? 'more ' : adorn < 0 ? 'less ' : ''}charismatic`, 'adorned');
     }
     if (propertyIsActive('invisible') || u.invisible || u.invis) {
@@ -1336,7 +1337,7 @@ function achievementLogText(achievement, state) {
         const prizes = state.context?.achieveo;
         const otyp = index === ACH_SOKO_PRIZE
             ? prizes?.soko_prize_otyp : prizes?.mines_prize_otyp;
-        const name = otyp === undefined ? null : OBJECT_NAMES[otyp];
+        const name = otyp === undefined ? null : OBJ_NAME(otyp);
         if (!name)
             throw new Error('A level prize needs its original object type');
         return `${ACHIEVEMENT_LOG_TEXT[index]} ${name}`;

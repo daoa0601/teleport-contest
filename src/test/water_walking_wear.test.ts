@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { WATER_WALKING_BOOTS } from '../js/object_data.js';
 import type { GameObject } from '../js/object_types.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 

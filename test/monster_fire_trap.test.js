@@ -11,7 +11,7 @@ import { setMonsterGivenName } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_ARMOR, OBJECT_NAMES, POT_HEALING, POT_OIL, RED_DRAGON_SCALE_MAIL, SCR_IDENTIFY, TOWEL, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { makeBlinded } from '../js/potion.js';
-import { objectTypeKnown } from '../js/shk.js';
+import { objectTypeKnown } from '../js/o_init.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { addTrap, floorObjects, floorObjectsAt } from './support/level-state.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';

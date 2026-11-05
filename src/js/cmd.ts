@@ -40,7 +40,7 @@ import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquid
 import { propertyIsActive } from './properties.js';
 import { gotoLevel } from './level_change.js';
 import { inventoryReport } from './invent.js';
-import {isContainer} from './mkobj.js';
+import { isContainer} from './mkobj.js';
 
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
 import type { CommandDefinition } from './command_data.js';
@@ -72,7 +72,7 @@ import { heroHasHidingAbility, useHeroHide } from './polyself.js';
 import { heroCanUseUnicornHorn } from './unicorn_horn.js';
 import { doread } from './read.js';
 import { eatfood, doeat, opentin } from './eat.js';
-import { doclassdisco, dodiscovered } from './o_init.js';
+import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
 import { continueWipingFace, donull, dowipe, dodrop, monsterPreventsStairTravel, dropMultipleObjects } from './do.js';
@@ -93,7 +93,7 @@ import { doborn } from './insight.js';
 import { applyPickAxeDirection } from './dig.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './skills.js';
-import { objectTypeKnown, dopay } from './shk.js';
+import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';

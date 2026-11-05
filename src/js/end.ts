@@ -2,6 +2,7 @@
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
+import { OBJ_NAME } from './object_data.js';
 import {
     objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING,
     CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD,
@@ -43,7 +44,7 @@ import { artifactById } from './artifacts.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
-import {mksobj, isContainer, placeObjectSynchronously, stack_object} from './mkobj.js';
+import { mksobj, isContainer, placeObjectSynchronously, stack_object} from './mkobj.js';
 import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
@@ -1263,7 +1264,7 @@ function collectFinalPossessions(): FinalPossessions {
                 const score = Math.trunc(value * 5 / 2);
                 points += score;
                 artifacts.push({ object, value, points: score,
-                    name: artifact?.name || `The ${OBJECT_NAMES[object.otyp]}` });
+                    name: artifact?.name || `The ${OBJ_NAME(object.otyp)}` });
             } else if (!object.contents?.length
                 && (object.oclass === AMULET_CLASS
                     || object.oclass === GEM_CLASS && object.otyp <= lastGlass)) {

@@ -2,10 +2,11 @@
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 
 import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
+import { OBJ_DESCR } from './o_init.js';
 import {
     objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE,
     DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL,
-    CANDELABRUM_OF_INVOCATION, OBJECT_NUTRITION, OBJECT_DESCRIPTIONS, TALLOW_CANDLE,
+    CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE,
 } from './object_data.js';
 import { setHeroGrip } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
@@ -84,14 +85,15 @@ import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 import { confusePromptDirection } from './cmd.js';
 import { resolveHeroCombatExplosion } from './uhitm.js';
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
-import { isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
+import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { applyPickAxeDirection } from './dig.js';
 import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
-import { objectTypeKnown, tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
+import { objectTypeKnown } from './o_init.js';
+import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, shopGreeting, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
-import {objectWeight, quantity, splitObjectStack, placeObject, stack_object, updateIceObjectTimersAt, remove_object} from './mkobj.js';
+import { objectWeight, quantity, splitObjectStack, placeObject, stack_object, updateIceObjectTimersAt, remove_object} from './mkobj.js';
 import { floorObjectDescription } from './invent.js';
 import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';
@@ -3269,7 +3271,7 @@ export function checkSlipperyIce(): void {
     if (onIce) {
         const skater = hero.usteed ?? { mnum: heroSpecies(game) };
         const boots = game.uarmf ?? hero.uarmf;
-        const appearance = boots && (game.objectDescriptions?.[boots.otyp] ?? OBJECT_DESCRIPTIONS[boots.otyp]);
+        const appearance = boots && (OBJ_DESCR(boots.otyp));
 
         const symbol = MONSTER_SYMBOL[skater.mnum];
         const coldSkater = hero.usteed ? monsterHasColdResistance(hero.usteed)
@@ -4754,7 +4756,7 @@ function maybeHalfPhysicalDamage(amount: number, state: GameState): number {
 
 function isWeaponOrWeaponTool(object: GameObject): boolean {
     return object.oclass === WEAPON_CLASS
-        || (object.oclass === TOOL_CLASS && objectSkill(object.otyp) !== 0);
+        || isWeaponTool(object);
 }
 
 export async function fallIntoSink(

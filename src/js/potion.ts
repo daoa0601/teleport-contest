@@ -18,8 +18,7 @@ import {
     COIN_CLASS,
 } from './objclass.js';
 import {
-    objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_DESCRIPTIONS,
-    OBJECT_INITIAL_KNOWN, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
+    objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION,
     POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY,
     POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY,
     POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS,
@@ -28,6 +27,7 @@ import {
     SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN,
 } from './object_data.js';
 import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
+import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, requireAttributeIndex } from './attrib.js';
@@ -113,7 +113,7 @@ import {
     objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming,
     ownedObjectAction, ownedObjectName, simpleObjectName,
 } from './objnam.js';
-import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
+import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
@@ -123,7 +123,7 @@ import { poisonAttributeMessage } from './poison.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
-import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, objectTypeKnown, updateUnpaidObjectPrice, deleteObject } from './shk.js';
+import { chargeAlteredUnpaidObject, chargeUnpaidObjectAsDebt, chargeUnpaidUsage, updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { monsterAtPosition, monsterSaddle } from './steed.js';
 import { heroIsPetrifying } from './stoning.js';
 import { ceilingName, surfaceName, waterbodyName } from './terrain_name.js';
@@ -562,8 +562,7 @@ async function releaseGhost(state: PlayingGameState) {
 export async function releasePotionOccupant(source: GameObject, { state = game }: PotionEffectOptions = {}): Promise<{ released: boolean; heroDied: boolean }> {
     requireLiveGame(state);
     requirePlayingGame(state);
-    const appearance = state.objectDescriptions?.[source.otyp]
-        ?? OBJECT_DESCRIPTIONS[source.otyp];
+    const appearance = OBJ_DESCR(source.otyp, state);
     const species = appearance === 'milky' ? PM_GHOST
         : appearance === 'smoky' ? PM_DJINNI : null;
     if (species === null || ((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
@@ -654,8 +653,7 @@ export async function drinkPotion(source: GameObject, { state = game, consume = 
             unknown++;
             await pline(`You have a ${heroIsHallucinating(state) ? 'normal' : 'peculiar'} feeling for a moment, then it passes.`);
         }
-        if (source.dknown && !OBJECT_INITIAL_KNOWN[source.otyp]
-            && !state._knownObjectTypes?.has(source.otyp)) {
+        if (source.dknown && !objectTypeKnown(source, state)) {
             if (unknown) await tryCallObjectType(source, state);
             else {
                 learnObjectType(source.otyp, state);
@@ -2674,7 +2672,7 @@ async function applyPotionVaporEffect({
 const AMETHYST = OBJECT_NAMES.indexOf('amethyst');
 
 function potionColor(potion: GameObject): string {
-    return displayColorName(game.objectDescriptions?.[potion.otyp] ?? OBJECT_DESCRIPTIONS[potion.otyp]);
+    return displayColorName(OBJ_DESCR(potion.otyp));
 }
 
 // C potion.c:mixtype()

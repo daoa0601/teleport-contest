@@ -136,6 +136,17 @@ class CStr:
 
 
 @dataclass(frozen=True)
+class CText:
+    """Contents and presence of a selected immutable C string pointer.
+
+    Null and an empty string remain different values. Pointer arithmetic and
+    string mutation are outside this read-only value model.
+    """
+    s: object
+    present: object
+
+
+@dataclass(frozen=True)
 class CFmt:
     fmt: str
     values: tuple
@@ -812,6 +823,21 @@ class CExec:
             return values[number.as_long()]
         if all(isinstance(v, CVal) and v.t == values[0].t for v in values):
             return CVal(select_int([v.v for v in values], index), values[0].t)
+        if all(isinstance(v, (CStr, CText))
+               or isinstance(v, CPtr) and v.nonnull is False for v in values):
+            def text(v):
+                if isinstance(v, CText):
+                    return v.s, v.present
+                if isinstance(v, CStr):
+                    return z3.StringVal(v.s), z3.BoolVal(True)
+                return z3.StringVal(''), z3.BoolVal(False)
+
+            content, present = text(values[-1])
+            for i in reversed(range(len(values) - 1)):
+                item, exists = text(values[i])
+                content = z3.If(index == i, item, content)
+                present = z3.If(index == i, exists, present)
+            return CText(content, present)
         if all(isinstance(v, CArray) and len(v.values) == len(values[0].values) for v in values):
             return CArray(tuple(self._select(tuple(v.values[i] for v in values), index)
                                 for i in range(len(values[0].values))))

@@ -5,7 +5,8 @@
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
 import { WEAPON_CLASS } from './objclass.js';
-import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, OBJECT_NAMES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
+import { OBJ_NAME } from './object_data.js';
+import { objectSkill, ACID_VENOM, BLINDING_VENOM, CORPSE, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, ELVEN_MITHRIL_COAT, LEASH, LOADSTONE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, YELLOW_DRAGON_SCALE_MAIL, YELLOW_DRAGON_SCALES, RIN_POLYMORPH_CONTROL, RIN_PROTECTION_FROM_SHAPE_CHANGERS, } from './object_data.js';
 import { setHeroGrip, angerAttackedMonster, hideHeroUnder, monstersInFmonOrder, wakeMonster, validVampireShiftForm } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { cansee, couldsee, monsterEmitsLight } from './vision.js';
@@ -54,7 +55,7 @@ import { encumber_msg } from './pickup.js';
 import { FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, PM_GREEN_SLIME, S_GHOST, SPECIAL_PM, monsterTypeName, } from './monster_data.js';
 import { canSeeMonster, canSpotMonster, newsym, see_monsters } from './display.js';
 import { addShopDamage, deleteObject } from './shk.js';
-import { isFlimsyObject } from './object_properties.js';
+import { is_elven_armor, isFlimsyObject } from './object_properties.js';
 import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, revokeIntrinsicProperty } from './properties.js';
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
@@ -967,8 +968,7 @@ async function changeArmorForHeroForm(mnum) {
     }
     else if (slipsArmor) {
         if ((object = worn('uarm'))
-            && !(MONSTER_NAME[mnum] === 'hobbit'
-                && object.otyp === ELVEN_MITHRIL_COAT)) {
+            && !(MONSTER_NAME[mnum] === 'hobbit' && is_elven_armor(object))) {
             const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation('Your armor falls around you!');
             await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
@@ -2226,7 +2226,7 @@ async function mergeDragonArmor(armor, mnum) {
             const name = simpleObjectName(armor).replace(' dragon ', ' ');
             await plineWithContinuation(`Your ${name} reverts to scales as you merge with them.`);
             armor.otyp += GRAY_DRAGON_SCALES - GRAY_DRAGON_SCALE_MAIL;
-            const scaleName = OBJECT_NAMES[armor.otyp];
+            const scaleName = OBJ_NAME(armor.otyp);
             if (!scaleName)
                 throw new Error(`Unknown dragon scales type: ${armor.otyp}`);
             armor.name = scaleName;

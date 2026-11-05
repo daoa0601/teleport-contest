@@ -3,19 +3,20 @@
 // mwepgone(), and possibly_unwield().
 
 import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
-import {
+import { is_spear } from './object_properties.js';
+import { OBJ_NAME, oc_wldam, oc_wsdam,
     objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW,
     BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE,
-    OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, requireObjectData, HEAVY_IRON_BALL, TIN_OPENER, TOWEL,
-    OBJECT_LARGE_DAMAGE, OBJECT_SMALL_DAMAGE, OBJECT_HIT_BONUS, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE,
+    OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, HEAVY_IRON_BALL, TIN_OPENER, TOWEL,
+    TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE,
     ROCK, STATUE, TIN, TOUCHSTONE,
+    oc_hitbon,
 } from './object_data.js';
 import { bypassObject } from './worn.js';
 import {
     NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON,
     NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, P_AXE, P_PICK_AXE,
-    Upolyd, WT_IRON_BALL_INCR, P_FLAIL, P_SPEAR,
-} from './const.js';
+    Upolyd, WT_IRON_BALL_INCR, P_FLAIL, } from './const.js';
 import {
     definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
     observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
@@ -31,7 +32,7 @@ import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { MONSTER_FLAGS1, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterCanTouchObject } from './mon.js';
-import {unlinkMonsterObject, placeObject, stack_object} from './mkobj.js';
+import { unlinkMonsterObject, placeObject, stack_object} from './mkobj.js';
 import { monsterName } from './do_name.js';
 import {
     monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight,
@@ -477,7 +478,7 @@ const SMALL_RND6 = objectTypes(['splash of acid venom']);
 function damageProfile(object: GameObject, monster: ArtifactDefender) {
     const large = monsterIsBig(monster.mnum);
     const otyp = object.otyp;
-    const range = (large ? OBJECT_LARGE_DAMAGE : OBJECT_SMALL_DAMAGE)[otyp]
+    const range = (large ? oc_wldam(otyp) : oc_wsdam(otyp))
         ?? 0;
     const fixed = (large ? LARGE_FIXED_ONE : SMALL_FIXED_ONE).has(otyp)
         ? 1 : 0;
@@ -664,7 +665,7 @@ export function weaponHitBonus(object: GameObject, defender: Hero | Monster, {
         || (object.oclass === TOOL_CLASS && skill !== 0);
     const symbol = MONSTER_SYMBOL[target.mnum];
     const flags = MONSTER_FLAGS1[target.mnum];
-    let bonus = OBJECT_HIT_BONUS[object.otyp];
+    let bonus = oc_hitbon(object.otyp);
     if (bonus === undefined)
         throw new RangeError(`Unknown weapon type ${object.otyp}`);
     if (symbol === undefined || flags === undefined)
@@ -676,7 +677,7 @@ export function weaponHitBonus(object: GameObject, defender: Hero | Monster, {
     }
     if (weapon && object.blessed && monsterHatesBlessings(target)) bonus += 2;
 
-    if (object.oclass === WEAPON_CLASS && skill === P_SPEAR
+    if (is_spear(object)
         && [S_XORN, S_DRAGON, S_JABBERWOCK, S_NAGA, S_GIANT].includes(symbol)) {
         bonus += 2;
     }
@@ -709,7 +710,7 @@ export function weaponDescription(object: GameObject): string {
     let description = SKILL_NAMES[skill];
     if (skill === 0) {
         if ([CORPSE, TIN, EGG, STATUE, BOULDER, TOWEL, TIN_OPENER].includes(object.otyp))
-            description = requireObjectData(OBJECT_NAMES, object.otyp) ?? undefined;
+            description = OBJ_NAME(object.otyp) ?? undefined;
         else description = object.globby ? 'glob' : CLASS_NAMES[object.oclass];
     } else if (skill === P_SLING && isLauncherAmmunition(object)) {
         description = [ROCK, LUCKSTONE, LOADSTONE, TOUCHSTONE, FLINT].includes(object.otyp)

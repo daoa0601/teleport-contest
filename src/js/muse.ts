@@ -15,7 +15,7 @@ import {
     objectBaseDirection, objectSkill, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING,
     AMULET_OF_REFLECTION, AMULET_OF_YENDOR, BAG_OF_HOLDING, BAG_OF_TRICKS, BOULDER, BUGLE, BULLWHIP,
     CORPSE, EGG, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GLOB_OF_GREEN_SLIME, HEAVY_IRON_BALL,
-    ICE_BOX, LARGE_BOX, OBJECT_DESCRIPTIONS, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION,
+    ICE_BOX, LARGE_BOX, PICK_AXE, POT_ACID, POT_BLINDNESS, POT_CONFUSION,
     POT_EXTRA_HEALING, POT_FULL_HEALING, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, POT_OIL,
     POT_PARALYSIS, POT_POLYMORPH, POT_SICKNESS, POT_SLEEPING, POT_SPEED, SCR_CREATE_MONSTER,
     SCR_EARTH, SCR_FIRE, SCR_TELEPORTATION, TIN, TIN_OPENER, UNICORN_HORN, WAN_COLD,
@@ -25,6 +25,7 @@ import {
     SILVER_DRAGON_SCALE_MAIL,
 } from './object_data.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { OBJ_DESCR } from './o_init.js';
 import { heroHasInvoluntaryDelay, setMulti, isok } from './cmd.js';
 import { endVoluntaryMultiTurn, loseHeroHp, roomsAt } from './hack.js';
 import {
@@ -82,7 +83,7 @@ import { advanceMonsterWormBody } from './worm.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { makemonAt, rndmonstAdj, growMonster, setMonsterMalign } from './makemon.js';
 import { makePlural, verbForSubject, withIndefiniteArticle, definiteName, distantObjectName, minimalObjectName, objectCombatName, objectName, objectNameIsPlural, observeDistantObjectForNaming, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
-import {splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
+import { splitObjectStack, forgetObjectKnowledge, unlinkObject, addObjectToContainer, objectWeight, isContainer, placeObjectSynchronously, sweepFloorPile} from './mkobj.js';
 import { canHeroRiseUp, levelAtDepth, levelIsWizardTower, sameDungeonLevel } from './dungeon.js';
 import { heroHandName } from './body_parts.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -168,7 +169,7 @@ export async function precheck(monster: Monster, object: GameObject,
     options: MonsterOffensiveOptions): Promise<MonsterOffensiveResult | null> {
     const { state, random = rn2, rollDice = d, publish = plineWithContinuation } = options;
     if (object.oclass === POTION_CLASS) {
-        const appearance = state.objectDescriptions?.[object.otyp] ?? OBJECT_DESCRIPTIONS[object.otyp];
+        const appearance = OBJ_DESCR(object.otyp, state);
         const species = appearance === 'milky' ? 287 : appearance === 'smoky' ? 315 : null;
         if (species !== null && !((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE)
             && !random(13 + 2 * (state.mvitals?.[species]?.born ?? 0))) {

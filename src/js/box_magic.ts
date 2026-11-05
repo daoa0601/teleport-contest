@@ -1,14 +1,15 @@
 import { resetPick } from './lock.js';
+import { OBJ_NAME } from './object_data.js';
 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 // Locking and opening magic applied to a box. C ref: lock.c boxlock().
 import { game } from './gstate.js';
 import { plineWithContinuation as pline } from './pline.js';
-import { OBJECT_NAMES, WAN_POLYMORPH, SPE_POLYMORPH } from './object_data.js';
+import { WAN_POLYMORPH, SPE_POLYMORPH } from './object_data.js';
 
 export async function changeBoxLockByMagic(box: GameObject, source: Pick<GameObject, 'otyp'>, { state = game }: { state?: GameState } = {}) {
-    const effect = OBJECT_NAMES[source.otyp];
+    const effect = OBJ_NAME(source.otyp);
     if (effect === 'locking' || effect === 'wizard lock') {
         if (box.olocked) return false;
         await pline('Klunk!');
