@@ -3,7 +3,7 @@
 // potion.c make_blinded()/toggle_blindness() live in potion.ts.
 
 import { COLNO, ROWNO } from './const.js';
-import { redrawMap, terrain_glyph } from './display.js';
+import { redrawMap, back_to_glyph } from './display.js';
 
 import { game } from './gstate.js';
 
@@ -15,7 +15,7 @@ export function rememberVisibleTerrain() {
             const location = game.level?.at(x, y);
             if (!location || location.remembered_glyph || !cansee(x, y))
                 continue;
-            const terrain = terrain_glyph(location, x, y);
+            const terrain = back_to_glyph(location, x, y);
             location.remembered_glyph = { ...terrain, decgfx: terrain.dec };
         }
     }

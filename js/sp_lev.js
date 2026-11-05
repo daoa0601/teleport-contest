@@ -13,7 +13,6 @@ import { deleteTrap, maketrap } from './trap.js';
 import { lookupNovelTitle, setMonsterGivenName } from './do_name.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
-import { setWallState } from './wall_topology.js';
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
@@ -43,7 +42,7 @@ import { flood_fill_rm, litstate_rnd, mkmap } from './mkmap.js';
 import { carveMazeFrom, createMaze } from './maze_terrain.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, get_location, get_location_coord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
-import { terrain_glyph } from './display.js';
+import { back_to_glyph, set_wall_state } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
@@ -641,7 +640,7 @@ export async function flip_level(flp, extras = false) {
     }
     fix_wall_spines(1, 0, COLNO - 1, ROWNO - 1);
     if (extras) {
-        setWallState();
+        set_wall_state();
         flip_visuals(flp, minx, miny, maxx, maxy);
     }
     vision_reset();
@@ -715,7 +714,7 @@ function flip_visuals(flp, minx, miny, maxx, maxy) {
             location.seenv = seen;
             if ((IS_WALL(location.typ) || location.typ === SDOOR)
                 && location.remembered_glyph?.kind === 'terrain') {
-                const glyph = terrain_glyph(location, x, y);
+                const glyph = back_to_glyph(location, x, y);
                 location.remembered_glyph = { ...glyph, decgfx: glyph.dec };
             }
         }

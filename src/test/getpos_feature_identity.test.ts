@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ALTAR, ROOM } from '../js/const.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { nextGetposFeature } from '../js/getpos.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -25,7 +25,7 @@ void test('altar search finds a remembered DECgraphics altar after terrain chang
     game.symset = 'DECgraphics';
     const altar = level.requireAt(20, 10);
     altar.typ = ALTAR;
-    altar.remembered_glyph = terrain_glyph(altar, 20, 10);
+    altar.remembered_glyph = back_to_glyph(altar, 20, 10);
     altar.typ = ROOM;
     altar.seenv = 0;
 

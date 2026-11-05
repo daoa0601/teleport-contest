@@ -12,9 +12,8 @@ import { monsterAtPosition, placeMonsterAt } from '../js/steed.js';
 import { unpunishHero } from '../js/read.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { invault } from '../js/vault.js';
-import { setWallStateAt } from '../js/wall_topology.js';
 import { memoryStorage } from './support/memory-storage.js';
-import { flush_screen } from '../js/display.js';
+import { flush_screen, xy_set_wall_state } from '../js/display.js';
 import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { finishEnvironmentalMonsterDeath, finishMonsterLiquidDeath, killGenocidedMonster, removeMonsterFromGame, sendMonsterToLimbo } from '../js/mon.js';
@@ -250,7 +249,7 @@ void test('guard arrival preserves the vault wall restriction for restoration', 
     const wall = level.requireAt(11, 10);
     wall.typ = VWALL;
     wall.wall_info = W_NONDIGGABLE;
-    setWallStateAt(11, 10);
+    xy_set_wall_state(11, 10);
     for (let x = 9; x <= 10; x++)
         for (let y = 9; y <= 10; y++) level.requireAt(x, y).roomno = ROOMOFFSET;
     game.u.uinvault = 29;

@@ -154,20 +154,8 @@ export function explosionToGlyph(expltyp: number, idx: number): number {
         : GlyphOffset.explodeFiery);
 }
 
-// C display.c:zapdir_to_glyph(): the direction collapses to one of the four
-// beam symbols and the beam type keeps its own glyph even for equal colors.
-// display.c:2463-2466 reports impossible("zapdir_to_glyph:  illegal beam
-// type") before resetting an out-of-range beam type to 0; this sync encoder
-// clamps without the report, which no caller reaches (display.c:1132 and
-// spell.c:997/1017 pass sgn() deltas and zap-colors enum values).
-export function zapdirToGlyph(dx: number, dy: number, beamType: number): number {
-    const type = beamType >= NUM_ZAP ? 0 : beamType;
-    const direction = dx === dy ? 2 : dx && dy ? 3 : dx ? 1 : 0;
-    return ((type << 2) | direction) + GlyphOffset.zap;
-}
-
-// display.c:swallow_to_glyph() lives in display.ts beside swallowed(): its
-// display.h:what_mon hallucination draw reaches the hero-sense and RNG
+// zapdir_to_glyph() and swallow_to_glyph() live in display.ts: their
+// display.h:what_mon hallucination draws reach the hero-sense and RNG
 // modules, and keeping glyph_numbers.ts import-light preserves the module
 // initialization order.
 

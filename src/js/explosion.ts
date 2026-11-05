@@ -8,7 +8,7 @@ import { monsterHasMagicResistance, burnArmorByFire, burnHeroArmorByFire, ignite
 import { heroHasArtifactDefense } from './artifacts.js';
 import { exerciseAttribute } from './attrib.js';
 import { A_STR, BURNING, BURNING_OIL, COLNO, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE, ROWNO, TRAP_EXPLODE, Upolyd, PLNMSG_CAUGHT_IN_EXPLOSION, PLNMSG_TOWER_OF_FLAME, KILLED_BY, KILLED_BY_AN, NO_KILLER_PREFIX } from './const.js';
-import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph } from './display.js';
+import { canSeeMonster, canSpotMonster, flush_screen, map_invisible, SHIELD_STATIC, show_glyph_cell, unmap_invisible, explosionGlyph, shieldGlyph, TemporaryMapEffect } from './display.js';
 import type { DisplayGlyph } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -38,7 +38,7 @@ import type { InventoryDamageType, MagicDamageResult, RayFloorKind } from './zap
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName } from './property_types.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
+
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage,
     monsterHasAcidResistance, monsterHasColdResistance, monsterHasDisintegrationResistance,
@@ -392,7 +392,7 @@ async function paintExplosion(cells: readonly ExplosionCell[], state: GameState)
     try {
         for (const cell of cells) {
             effect.changeGlyph(cell.glyph);
-            await effect.show(cell.x, cell.y);
+            await effect.tmp_at(cell.x, cell.y);
         }
         await flush();
         if (state.flags.sparkle !== false && cells.some(cell => cell.shield)) {

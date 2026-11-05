@@ -14,7 +14,7 @@ import type { DungeonBranch, DungeonLocation, SpecialLevelDescriptor } from './d
 import { ATR_INVERSE, addMenuHeading, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, showMultiSelectWindow, showTextWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './tty_menu.js';
-import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible } from './display.js';
+import { canSpotMonster, consumeHallucinatedMenuObjectGlyph, docrt, map_engraving, map_trap, unmap_invisible, OBJECT_CLASS_SYMBOLS, cmapSymbolByte, objectClassSymbol, rogueColorsActive, cls, flush_screen, glyphAt, map_invisible, customizedGlyphs } from './display.js';
 import { bot } from './botl.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
@@ -74,7 +74,7 @@ import { CmapSymbol } from './glyph_numbers.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
-import { customizedGlyphs } from './glyph_customizations.js';
+
 import { rumorCheck } from './rumor.js';
 import { resetUtrap } from './trap.js';
 import type { PropertyName } from './property_types.js';

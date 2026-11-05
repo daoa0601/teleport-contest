@@ -1,7 +1,7 @@
 // C detect.c:reveal_terrain()/reveal_terrain_getglyph(); cmd.c:doterrain()
 // lives in cmd.ts.
 import { COLNO, ROWNO, MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ONE, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, TREE, M_AP_FURNITURE, M_AP_TYPE, } from './const.js';
-import { cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, terrain_glyph, transientTrapGlyph, } from './display.js';
+import { cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, back_to_glyph, transientTrapGlyph, } from './display.js';
 import { pline } from './pline.js';
 import { recordMappedOverviewState } from './dungeon.js';
 import { game, requireGameLevel } from './gstate.js';
@@ -127,7 +127,7 @@ function terrainViewGlyph(location, x, y, subset, swallowed) {
 }
 // back_to_glyph() retains the alternate character set with its glyph.
 function terrainBackground(location, x, y) {
-    const glyph = terrain_glyph(location, x, y);
+    const glyph = back_to_glyph(location, x, y);
     return { ...glyph, decgfx: glyph.dec };
 }
 function normalizeTerrainGlyph(glyph) {

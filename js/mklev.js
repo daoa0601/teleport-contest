@@ -13,7 +13,6 @@ import { makemon, mkclass, setMimicAppearance, setMonsterMalign } from './makemo
 import { placeHeroOnLevel } from './hero_location.js';
 import { addFruit } from './fruit.js';
 import { set_tin_variety } from './eat.js';
-import { setWallState } from './wall_topology.js';
 import { monsterHasMapPosition, monsterAtPosition, monsterOccupiesPosition } from './steed.js';
 import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
@@ -44,7 +43,7 @@ import { createMaze } from './maze_terrain.js';
 import { AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, LARGE_BOX, CHEST, ICE_BOX, TALLOW_CANDLE, WAX_CANDLE, EXPENSIVE_CAMERA, CORPSE, EGG, KELP_FROND, SLIME_MOLD, MELON, LUMP_OF_ROYAL_JELLY, CREAM_PIE, TIN, GOLD_PIECE, SPE_NOVEL, TOUCHSTONE, ROCK, BOULDER, STATUE, MACE, RING_MAIL, ROBE, CLOAK_OF_PROTECTION, CLOAK_OF_MAGIC_RESISTANCE, oc_level } from './object_data.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_ALIGNMENT, MONSTER_LEVEL, MONSTER_FLAGS2, MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { nhgetch } from './input.js';
-import { flush_screen, newsym, terrain_glyph, canOverwriteTerrain } from './display.js';
+import { flush_screen, newsym, back_to_glyph, canOverwriteTerrain, set_wall_state } from './display.js';
 import { pline } from './pline.js';
 import { premap_detect, convertSecretDoor } from './detect.js';
 import { TRUE_RUMORS, FALSE_RUMORS } from './random_text_data.js';
@@ -1654,7 +1653,7 @@ export async function mkstairs(x, y, up, croom, force = false) {
     if (force)
         loc.typ = ROOM;
     if (loc.typ !== ROOM && loc.typ !== CORR && loc.typ !== ICE) {
-        const terrain = terrain_glyph(loc, x, y).terrainName;
+        const terrain = back_to_glyph(loc, x, y).terrainName;
         await impossible(`mkstairs:  placing stairs ${up ? 'up' : 'down'} on ${terrain} at <${x},${y}>`);
     }
     const currentLevel = g.u?.uz?.dlevel ?? 1;
@@ -2453,7 +2452,7 @@ async function level_finalize_topology() {
             if (isRoom(room))
                 topologize(room);
     }
-    setWallState();
+    set_wall_state();
     for (const room of [...level.rooms, ...(level.subrooms ?? [])]) {
         if (isRoom(room))
             room.orig_rtype = room.rtype;

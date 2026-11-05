@@ -17,7 +17,7 @@ import { encumber_msg } from './pickup.js';
 import { artifactById } from './artifacts.js';
 import { mapLevel } from './detect.js';
 import {
-    map_background, newsym, newsym_force, see_monsters, shieldeff,
+    map_background, newsym, newsym_force, see_monsters, shieldeff, refreshHeroSeeing,
 } from './display.js';
 import { displayColorName } from './do_name.js';
 import { plineWithContinuation } from './pline.js';
@@ -46,7 +46,7 @@ import {
     removePermanentIntrinsicProperty,
 } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
-import { refreshHeroSeeing } from './hero_seeing.js';
+
 import {
     heroIsPolymorphed, polymorphHero,
 } from './polyself.js';

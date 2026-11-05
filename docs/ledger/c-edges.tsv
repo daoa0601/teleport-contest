@@ -141,6 +141,7 @@ avoid_trap_andor_region	visible_region_at
 baalz_fixup	isok
 baalz_fixup	wallification
 back_on_ground	surface
+back_to_glyph	wall_angle
 backfire	d
 backfire	losehp
 background_enlightenment	align_gname
@@ -229,6 +230,7 @@ bury_objs	shop_keeper
 bydoor	isok
 calc_capacity	inv_weight
 calc_mattacku_vars	dist2
+calc_pole_range	uwep_skill_type
 call_kops	angry_guards
 call_kops	isok
 call_kops	makekops
@@ -277,6 +279,7 @@ check_shop_obj	contained_gold
 check_shop_obj	costly_spot
 check_shop_obj	in_rooms
 check_shop_obj	shop_keeper
+check_special_room	Hello
 check_special_room	furniture_present
 check_special_room	in_town
 check_special_room	intemple
@@ -355,6 +358,7 @@ courtmon	mkclass
 courtmon	rn2
 cpostfx	adjattrib
 cpostfx	attrcurse
+cpostfx	curs_on_u
 cpostfx	d
 cpostfx	dismount_steed
 cpostfx	eatmdone
@@ -431,6 +435,7 @@ create_trap	maketrap
 create_trap	mktrap
 create_trap	pick_vibrasquare_location
 currency	rn2
+curs_on_u	flush_screen
 cursed_book	aggravate
 cursed_book	losehp
 cursed_book	make_blinded
@@ -584,9 +589,14 @@ dismount_steed	set_wounded_legs
 dismount_steed	surface
 dismount_steed	teleds
 display_binventory	hliquid
+display_grapple_positions	tmp_at
+display_jump_positions	tmp_at
 display_monster	cmap_to_type
 display_pickinv	reassign
+display_polearm_positions	tmp_at
+display_spell_target_positions	tmp_at
 display_stinking_cloud_positions	can_center_cloud
+display_stinking_cloud_positions	tmp_at
 display_trap_map	cls
 display_trap_map	glyph_at
 display_trap_map	newsym
@@ -972,6 +982,7 @@ domove_core	u_on_newpos
 domove_core	unmap_invisible
 domove_core	vision_recalc
 domove_fight_empty	accessible
+domove_fight_empty	back_to_glyph
 domove_fight_empty	glyph_at
 domove_fight_empty	is_pool
 domove_fight_empty	isok
@@ -1386,6 +1397,7 @@ explode	monstseesu
 explode	monstunseesu
 explode	rehumanize
 explode	rndmonnam
+explode	tmp_at
 explode	unmap_invisible
 explode	wake_nearto
 extremeattr	acurr
@@ -1451,6 +1463,7 @@ finddpos	finddpos_shift
 finddpos	rn2
 finddpos_shift	good_rm_wall_doorpos
 finddpos_shift	isok
+findone	back_to_glyph
 findone	closed_door
 findone	flash_glyph_at
 findone	magic_map_background
@@ -1462,6 +1475,7 @@ findtravelpath	end_running
 findtravelpath	isok
 findtravelpath	nomul
 findtravelpath	test_move
+findtravelpath	tmp_at
 finesse_ahriman	get_artifact
 finish_map	wallify_map
 finish_paybill	drop_upon_death
@@ -1494,6 +1508,7 @@ fixup_special	rnd
 fixup_special	rndmonnum
 fixup_special	setup_waterlevel
 fixup_special	stolen_booty
+flash_glyph_at	back_to_glyph
 flash_glyph_at	flush_screen
 flashburn	make_blinded
 flashburn	shieldeff
@@ -1510,6 +1525,7 @@ flip_level	unplacebc
 flip_level	vision_reset
 flip_level_rnd	flip_level
 flip_level_rnd	rn2
+flip_visuals	back_to_glyph
 float_down	dismount_steed
 float_down	encumber_msg
 float_down	is_lava
@@ -1596,6 +1612,17 @@ generate_way_out_method	rn2
 generate_way_out_method	selection_floodfill
 generate_way_out_method	selection_getpoint
 generate_way_out_method	selection_rndcoord
+genl_player_setup	maybe_skip_seps
+genl_player_setup	ok_align
+genl_player_setup	ok_gend
+genl_player_setup	ok_race
+genl_player_setup	plsel_startmenu
+genl_player_setup	reset_role_filtering
+genl_player_setup	rigid_role_checks
+genl_player_setup	role_menu_extra
+genl_player_setup	validalign
+genl_player_setup	validgend
+genl_player_setup	validrace
 get_adjacent_loc	getdir
 get_adjacent_loc	isok
 get_atkdam_type	rn2
@@ -1661,6 +1688,8 @@ givit	temp_givit
 glibr	cmdq_clear
 glibr	setuswapwep
 glibr	setuwep
+gloc_filter_floodfill	back_to_glyph
+gloc_filter_floodfill_matcharea	back_to_glyph
 glow_verb	glow_strength
 god_zaps_you	align_gname
 god_zaps_you	fry_by_god
@@ -1862,6 +1891,7 @@ invault	newsym
 invault	nomul
 invault	reset_faint
 invault	rn2
+invault	xy_set_wall_state
 invert_all_on_page	set_item_state
 invoke_banish	isok
 invoke_banish	rn2
@@ -2281,6 +2311,7 @@ m_search_items	rn2
 m_sees_sleepy_soldier	isok
 m_slips_free	rn2
 m_tele	rn2
+magic_map_background	back_to_glyph
 magic_whistled	fill_pit
 magic_whistled	newsym
 make_blinded	toggle_blindness
@@ -2386,6 +2417,7 @@ maketrap	reset_utrap
 makewish	readobjnam
 makewish	rn2
 makewish	wishcmdassist
+map_background	back_to_glyph
 map_location	map_background
 map_location	map_engraving
 map_redisplay	docrt
@@ -2424,6 +2456,10 @@ maybe_generate_rnd_mon	makemon
 maybe_generate_rnd_mon	rn2
 maybe_reset_pick	reset_pick
 maybe_sdoor	rn2
+maybe_skip_seps	ok_align
+maybe_skip_seps	ok_gend
+maybe_skip_seps	ok_race
+maybe_skip_seps	ok_role
 maybe_smudge_engr	rnd
 maybe_spin_web	d
 maybe_spin_web	in_rooms
@@ -2654,6 +2690,7 @@ mksobj_init	rndmonnum
 mksobj_init	rndmonnum_adj
 mksobj_init	rne
 mksobj_init	undead_to_corpse
+mkstairs	back_to_glyph
 mkstairs	isok
 mkswamp	makemon
 mkswamp	mkclass
@@ -2744,6 +2781,7 @@ moveloop_core	check_leash
 moveloop_core	clear_bypasses
 moveloop_core	clear_splitobjs
 moveloop_core	cmdq_clear
+moveloop_core	curs_on_u
 moveloop_core	do_storms
 moveloop_core	do_vicinity_map
 moveloop_core	domove
@@ -3016,6 +3054,7 @@ parse	readchar
 parse_condition	splitsubfields
 parse_condition	str2conditionbitmask
 parse_conf_buf	choose_random_part
+parse_role_opt	clearrolefilter
 parse_status_hl1	parse_status_hl2
 parse_status_hl2	has_ltgt_percentnumber
 parse_status_hl2	is_ltgt_percentnumber
@@ -3119,6 +3158,7 @@ peffect_see_invisible	newsym
 peffect_see_invisible	newuhs
 peffect_see_invisible	rn2
 peffect_see_invisible	see_monsters
+peffect_see_invisible	set_mimic_blocking
 peffect_sickness	adjattrib
 peffect_sickness	exercise
 peffect_sickness	fruitname
@@ -3143,11 +3183,13 @@ percent_success	acurr
 percent_success	spell_skilltype
 pet_type	rn2
 pgetchar	randomkey
+pick_align	ok_align
 pick_align	rn2
 pick_animal	rn2
 pick_familiar_pm	rn2
 pick_familiar_pm	rndmonst_adj
 pick_familiar_pm	spell_skilltype
+pick_gend	ok_gend
 pick_gend	rn2
 pick_lock	can_reach_floor
 pick_lock	feel_location
@@ -3159,7 +3201,12 @@ pick_lock	reset_pick
 pick_lock	untrap
 pick_lock	update_mapseen_for
 pick_nasty	rn2
+pick_race	ok_race
 pick_race	rn2
+pick_role	ok_align
+pick_role	ok_gend
+pick_role	ok_race
+pick_role	ok_role
 pick_role	rn2
 pick_room	rn2
 pick_vibrasquare_location	occupied
@@ -3208,6 +3255,12 @@ pleased	rnl
 pleased	rnz
 pleased	see_monsters
 pleased	welded
+plnamesuffix	str2align
+plnamesuffix	str2gend
+plnamesuffix	str2race
+plnamesuffix	str2role
+plsel_startmenu	maybe_skip_seps
+plsel_startmenu	rigid_role_checks
 pluslvl	newhp
 pluslvl	newpw
 pluslvl	record_achievement
@@ -3331,6 +3384,10 @@ randomkey	rn2
 randomkey	rnd
 randrace	rn2
 randrole	rn2
+randrole_filtered	ok_align
+randrole_filtered	ok_gend
+randrole_filtered	ok_race
+randrole_filtered	ok_role
 randrole_filtered	rn2
 rank	rank_of
 read_engr_at	surface
@@ -3437,6 +3494,7 @@ reset_needed_visuals	check_gold_symbol
 reset_needed_visuals	docrt
 reset_needed_visuals	reglyph_darkroom
 reset_occupations	reset_pick
+reset_role_filtering	gotrolefilter
 reset_utrap	float_up
 responsive_mon_at	isok
 restrap	rn2
@@ -3473,6 +3531,7 @@ rhack	cmdq_pop
 rhack	cmdq_shift
 rhack	domove
 rider_corpse_revival	exercise
+rigid_role_checks	randrole_filtered
 rloc_to_core	check_special_room
 rloc_to_core	costly_spot
 rloc_to_core	dist2
@@ -3520,6 +3579,9 @@ roguejoin	corr
 roguejoin	rn2
 roguename	rn2
 role_init	rn2
+role_menu_extra	gotrolefilter
+root_plselection_prompt	race_alignmentcount
+root_plselection_prompt	role_gendercount
 rottenfood	d
 rottenfood	foodword
 rottenfood	make_blinded
@@ -3528,6 +3590,7 @@ rottenfood	nomul
 rottenfood	rn2
 rottenfood	rnd
 rottenfood	surface
+row_refresh	get_bkglyph_and_framecolor
 rustm	rn2
 sacrifice_your_race	adjalign
 sacrifice_your_race	adjattrib
@@ -3687,6 +3750,8 @@ set_artifact_intrinsic	make_hallucinated
 set_artifact_intrinsic	see_monsters
 set_bc	bc_order
 set_bc	newsym
+set_corn	check_pos
+set_crosswall	check_pos
 set_door_orientation	isok
 set_levltyp	count_level_features
 set_levltyp	isok
@@ -3704,11 +3769,27 @@ set_trap	in_rooms
 set_trap	maketrap
 set_trap	rnl
 set_trap	trapname
+set_twall	check_pos
 set_ulycn	set_uasmon
+set_wall	check_pos
+set_wall_state	xy_set_wall_state
 set_wallprop_in_selection	selection_iterate
 set_wounded_legs	encumber_msg
 setnotworn	monstunseesu
 setnotworn	set_artifact_intrinsic
+setup_algnmenu	ok_align
+setup_algnmenu	ok_race
+setup_algnmenu	ok_role
+setup_gendmenu	ok_gend
+setup_gendmenu	ok_race
+setup_gendmenu	ok_role
+setup_racemenu	ok_align
+setup_racemenu	ok_race
+setup_racemenu	ok_role
+setup_rolemenu	ok_align
+setup_rolemenu	ok_gend
+setup_rolemenu	ok_race
+setup_rolemenu	ok_role
 setup_waterlevel	rn2
 setuqwep	setworn
 setuswapwep	setworn
@@ -3750,6 +3831,7 @@ shopper_financial_report	shop_debt
 shopper_financial_report	shop_keeper
 should_mulch_missile	rn2
 should_mulch_missile	rnl
+show_glyph	isok
 show_map_spot	glyph_at
 show_map_spot	magic_map_background
 show_map_spot	map_engraving
@@ -4023,6 +4105,7 @@ tiphat	rn2
 tmp_at	flush_screen
 tmp_at	isok
 tmp_at	newsym
+tmp_at	tether_glyph
 toggle_blindness	see_monsters
 toggle_blindness	vision_recalc
 toggle_menu_curr	set_item_state
@@ -4200,6 +4283,7 @@ u_on_upstairs	u_on_sstairs
 u_rooted	nomul
 u_simple_floortyp	is_waterwall
 u_slow_down	exercise
+uasmon_maxStr	character_race
 uchangealign	adjalign
 uchangealign	make_confused
 uchangealign	retouch_equipment
@@ -4369,6 +4453,7 @@ walkfrom	rn2
 wallification	fix_wall_spines
 wallification	wall_cleanup
 wallify_vault	newsym
+wallify_vault	xy_set_wall_state
 wantdoor	dist2
 warnreveal	isok
 wash_hands	fingers_or_gloves
@@ -4461,6 +4546,10 @@ worst_cursed_item	near_capacity
 worst_cursed_item	welded
 xname_flags	Japanese_item_name
 xprname	currency
+xy_set_wall_state	set_corn
+xy_set_wall_state	set_crosswall
+xy_set_wall_state	set_twall
+xy_set_wall_state	set_wall
 yn_function	cmdq_add_key
 yn_function	cmdq_clear
 yn_function	cmdq_pop

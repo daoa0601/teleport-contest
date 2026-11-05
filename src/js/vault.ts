@@ -12,14 +12,14 @@ import type { Position, Room, MapLocation } from './map_types.js';
 import { isRoom } from './map_types.js';
 import { getLine } from './query.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
-import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible } from './display.js';
+import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy_set_wall_state } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, ACCESSIBLE, COLNO, COULD_SEE, GD_DESTROYGOLD, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
 import { isok, heroHasInvoluntaryDelay } from './cmd.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
 import { vision_note_blocker_change, cansee, couldsee, monsterHasLineOfSightToHero, unset_seenv } from './vision.js';
-import { setWallStateAt } from './wall_topology.js';
+
 import { stopLevelTimer } from './timeout.js';
 import { containedGold, deleteObject } from './shk.js';
 import { reset_faint } from './eat.js';
@@ -220,7 +220,7 @@ export async function invault(state: GameState = game) {
         else if (y === ly - 1 || y === hy + 1) original.typ = HWALL;
         else if (x === lx - 1 || x === hx + 1) original.typ = VWALL;
         original.wall_info = 0;
-        setWallStateAt(entry.x, entry.y);
+        xy_set_wall_state(entry.x, entry.y);
         setVaultTerrainFlags(original, original.wall_info);
     }
     corridor.fakecorr.push({
@@ -916,7 +916,7 @@ export async function wallifyVault(guard: VaultGuard, state: GameState, random: 
             cell.typ = x === left ? y === top ? TLCORNER : y === bottom ? BLCORNER : VWALL
                 : x === right ? y === top ? TRCORNER : y === bottom ? BRCORNER : VWALL : HWALL;
             cell.wall_info = 0;
-            setWallStateAt(x, y);
+            xy_set_wall_state(x, y);
             setVaultTerrainFlags(cell, cell.wall_info);
             deleteEngravingAt(x, y, level);
             const row = state.viz_array?.[y], oldVision = row?.[x] ?? 0;

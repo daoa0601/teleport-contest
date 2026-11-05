@@ -6,7 +6,7 @@ import {
     M_AP_FURNITURE, M_AP_TYPE,
 } from './const.js';
 import {
-    cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, terrain_glyph, transientTrapGlyph,
+    cmapSymbolAppearance, docrt, flush_screen, show_glyph_cell, back_to_glyph, transientTrapGlyph,
 } from './display.js';
 import { pline } from './pline.js';
 import type { DisplayGlyph } from './display.js';
@@ -136,7 +136,7 @@ function terrainViewGlyph(location: MapLocation, x: number, y: number, subset: n
 
 // back_to_glyph() retains the alternate character set with its glyph.
 function terrainBackground(location: MapLocation, x: number, y: number): DisplayGlyph {
-    const glyph = terrain_glyph(location, x, y);
+    const glyph = back_to_glyph(location, x, y);
     return { ...glyph, decgfx: glyph.dec };
 }
 

@@ -31,8 +31,6 @@ src/js/familiar.ts	dog.c
 src/js/fruit.ts	objnam.c
 src/js/game_state.ts	decl.c
 src/js/gamelog.ts	pline.c
-src/js/glyph_customizations.ts	display.c
-src/js/glyph_numbers.ts	display.c
 src/js/guardian_angel.ts	minion.c
 src/js/hack.ts	hack.c
 src/js/hero_expulsion.ts	monmove.c
@@ -40,7 +38,6 @@ src/js/hero_gold.ts	sit.c
 src/js/hero_location.ts	dungeon.c
 src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
-src/js/hero_seeing.ts	display.c
 src/js/input.ts	wintty.c
 src/js/inventory_reports.ts	shk.c
 src/js/invocation_area.ts	mklev.c
@@ -110,7 +107,6 @@ src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stoning.ts	mhitm.c
 src/js/teleport.ts	teleport.c
-src/js/temporary_map_effect.ts	display.c
 src/js/terrain_name.ts	dungeon.c
 src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c
@@ -122,7 +118,6 @@ src/js/transient_light.ts	light.c
 src/js/uhitm.ts	uhitm.c
 src/js/unicorn_gift.ts	dothrow.c
 src/js/vault.ts	vault.c
-src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
 src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c

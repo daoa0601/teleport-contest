@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { CORR, LADDER, LA_DOWN, LA_UP, ROOM, STAIRS } from '../js/const.js';
-import { flush_screen, glyphAt, newsym, terrain_glyph } from '../js/display.js';
+import { flush_screen, glyphAt, newsym, back_to_glyph } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
 import { CLR_BROWN, CLR_GRAY, CLR_YELLOW } from '../js/terminal.js';
@@ -64,7 +64,7 @@ for (const [type, noun, ordinaryColor] of [
 
             await newsym(11, 10);
             await flush_screen(1);
-            const ordinary = terrain_glyph(location, 11, 10);
+            const ordinary = back_to_glyph(location, 11, 10);
             assert.equal(ordinary.ch, symbol);
             assert.equal(ordinary.color, ordinaryColor);
             assert.equal(ordinary.terrainName, `${noun} ${direction}`);
@@ -72,7 +72,7 @@ for (const [type, noun, ordinaryColor] of [
             game.stairs.u_traversed = true;
             await newsym(11, 10);
             await flush_screen(1);
-            const branch = terrain_glyph(location, 11, 10);
+            const branch = back_to_glyph(location, 11, 10);
             assert.equal(branch.ch, symbol);
             assert.equal(branch.color, CLR_YELLOW);
             assert.equal(branch.terrainName, `branch ${noun} ${direction}`);

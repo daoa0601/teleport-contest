@@ -33,7 +33,7 @@ import { recordObjectKnowledge } from './o_init.js';
 import { findArmorClass } from './do_wear.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,
-    map_invisible, zapdir_to_glyph,
+    map_invisible, zapdir_to_glyph, TemporaryMapEffect,
 } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
 import { explode } from './explosion.js';
@@ -73,7 +73,7 @@ import { makeUndeadNear } from './mkroom.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { roleInitClericLightSchool } from './roles.js';
 import { monsterAtPosition } from './steed.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
+
 import {
     tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu,
     tty_select_menu, tty_destroy_nhwindow,

@@ -7,7 +7,6 @@ import { objectClassForType, objectSkill, BOULDER, CANDELABRUM_OF_INVOCATION, HE
 import { objectMaterial } from './o_init.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { monsterProjectileDisplay } from './mthrowu.js';
-import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { A_STR, BOLT_LIM, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { monsterName } from './do_name.js';
@@ -16,7 +15,7 @@ import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage, shipObject } from './dokick.js';
 import { currentAttribute } from './attrib.js';
-import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, transientObjectGlyph, unmapObject, } from './display.js';
+import { canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym, show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect, } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
@@ -176,7 +175,7 @@ export async function finishHeroThrownObjectLanding({ state = game, object, x, y
         const impact = new TemporaryMapEffect('flash', transientObjectGlyph(object));
         await impact.start();
         try {
-            await impact.show(x, y);
+            await impact.tmp_at(x, y);
             await state.animationFrame?.();
         }
         finally {
