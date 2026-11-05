@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import {
     D_CLOSED, DOOR, DUST, P_POLEARMS, P_SKILLED, STATUE_TRAP, THRONE,
 } from '../js/const.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';

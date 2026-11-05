@@ -8,7 +8,7 @@ import { game, requireGameLevel } from './gstate.js';
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
 import { browseDetectionMap, redisplayDetectionMap, unconstrainMap } from './detect.js';
 import { monsterAtPosition } from './steed.js';
-import { visibleRegionAt } from './regions.js';
+import { visibleRegionAt } from './region.js';
 import { heroIsHallucinating } from './senses.js';
 import { terrainCoversObjectsAt } from './display.js';
 import { CLR_BRIGHT_GREEN, CLR_GRAY, NO_COLOR } from './terminal.js';

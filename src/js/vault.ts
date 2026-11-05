@@ -40,7 +40,7 @@ import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { deleteTrap } from './trap.js';
-import { publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterYelp } from './sounds.js';
 import type { GameObject } from './object_types.js';
 import type { MonsterCallLog, MonsterMovement } from './monster_action_types.js';
 import { impossible } from './diagnostics.js';

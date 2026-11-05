@@ -5,7 +5,7 @@ import { MOAT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import {mksobj, placeObject} from '../js/mkobj.js';
 import { BOULDER } from '../js/object_data.js';
-import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { clearPath, vision_reset } from '../js/vision.js';
 import { freshObjectRoom } from './support/object-room.js';
 

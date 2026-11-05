@@ -1,6 +1,6 @@
 import { capturedScreen } from './support/screen.js';
 import { requirePlayingGame } from '../js/gstate.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { InputGate } from '../js/input.js';
 import { requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';

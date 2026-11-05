@@ -10,7 +10,7 @@ import {
     SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN, WAR_HAMMER,
     YELLOW_DRAGON_SCALE_MAIL,
 } from './object_data.js';
-import { artifactById, createRandomArtifact } from './artifacts.js';
+import { artifactById, createRandomArtifact } from './artifact.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject, setMonsterMalign } from './makemon.js';

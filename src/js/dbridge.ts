@@ -35,7 +35,7 @@ import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroHasWaterWalking } from './do_wear.js';
 import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateMonsterRegions } from './region.js';
 import { teleds, enexto } from './teleport.js';
 import type { Hero } from './hero_types.js';
 import type { Monster } from './monster_types.js';

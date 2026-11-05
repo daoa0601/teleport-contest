@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { restoregamePreamble } from '../js/allmain.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { P_BASIC, P_LONG_SWORD, P_POLEARMS, W_WEP } from '../js/const.js';
 import { newsym } from '../js/display.js';

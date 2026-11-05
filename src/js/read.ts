@@ -31,7 +31,7 @@ import { OBJ_NAME,
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
 import {
@@ -81,7 +81,7 @@ import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHer
 import { listGenocided } from './insight.js';
 import type { DeathHandler } from './end.js';
 import { propertyIsActive } from './properties.js';
-import { createPoisonGasCloud } from './regions.js';
+import { createPoisonGasCloud } from './region.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory, studyBook } from './spell.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -1330,7 +1330,7 @@ function sourceTypeKnown(source: GameObject, state: GameState): boolean {
 
 // C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
 // position? NOT the same thing as canCenterCloud; region.c's cloud growth
-// (regions.ts) shares the test through this export.
+// (region.ts) shares the test through this export.
 export function validCloudPosition(state: GameState, x: number, y: number): boolean {
     if (!isok(x, y)) return false;
     const typ = state.level?.at(x, y)?.typ;

@@ -1,6 +1,6 @@
 // Pet food preferences and hazards. C refs: dog.c dogfood(), obj.h, mondata.h.
 import { FOOD_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
-import { artifactById, artifactByName } from './artifacts.js';
+import { artifactById, artifactByName } from './artifact.js';
 import { G_GENOD, MAX_EGG_HATCH_TIME } from './const.js';
 import { veganCorpse } from './food_traits.js';
 import { requireGameLevel } from './gstate.js';

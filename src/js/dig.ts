@@ -5,7 +5,7 @@ import { wakeNearby,
     finishLiquidDeathForCurrentMover,
 } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
-import { publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterYelp } from './sounds.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroFootName, heroHeadName, monsterStomachName } from './body_parts.js';
@@ -21,7 +21,7 @@ import { migrateMonsterOffLevel } from './dog.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import {
     fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt,
     trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap,
@@ -80,7 +80,7 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { fireDamageObject } from './trap.js';
 import { nomul, roomForRoomno } from './hack.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { makeMonsterFlee } from './monmove.js';
 import { heroIsPunished } from './ball.js';
 import { IS_WATERWALL, LAVAWALL, N_DIRS_Z, TT_WEB, WEB } from './const.js';

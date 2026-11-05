@@ -1,6 +1,6 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { requireFixtureGame } from './support/game-state.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { Monster } from '../js/monster_types.js';
 import type { GameObject } from '../js/object_types.js';
 import test from 'node:test';

@@ -1,5 +1,5 @@
 import type { PropertyName } from './property_types.js';
-import type { RaceName, RoleKey } from './roles.js';
+import type { RaceName, RoleKey } from './role.js';
 
 export type LevelAbility = readonly [level: number, property: PropertyName, gainMessage: string, lossMessage: string];
 

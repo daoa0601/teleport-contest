@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 
 import { grantIntrinsicProperty } from '../js/properties.js';

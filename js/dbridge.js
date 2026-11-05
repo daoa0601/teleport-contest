@@ -30,7 +30,7 @@ import { heroIsAmphibious, heroIsBreathless, heroSpecies } from './polyself.js';
 import { heroHasWaterWalking } from './do_wear.js';
 import { verbForSubject } from './objnam.js';
 import { rnd } from './rng.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateMonsterRegions } from './region.js';
 import { teleds, enexto } from './teleport.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterSubjectPronoun, monsterPassesWalls, monsterIsFlyer, monsterIsSwimmer } from './mondata.js';

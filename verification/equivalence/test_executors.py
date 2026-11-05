@@ -467,7 +467,7 @@ class ExecutorTests(unittest.TestCase):
                         params=[('id', INT)], configure=configure)
 
     def test_cross_module_map_lookup_feeds_an_optional_member_chain(self):
-        # mondata.js:canTrack's shape: an imported artifacts.js helper reads
+        # mondata.js:canTrack's shape: an imported artifact.js helper reads
         # the per-game runtime Map, and the caller compares the nullish
         # chained member while a second imported helper runs the fallback.
         from jssym import V

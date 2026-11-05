@@ -27,12 +27,12 @@ import { isBimanualObject, is_elven_weapon, isWeaponTool, isWetTowel, is_launche
 import type { WeaponCandidate } from './object_properties.js';
 import { resetBulkTakeoff } from './do_wear.js';
 import { readySuggestion } from './quiver.js';
-import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifacts.js';
+import { artifactById, artifactByName, speakArtifact, artifactEmitsLight, restrictName } from './artifact.js';
 import { objectOwnershipPrefix, insideShopRoomAt, shopResident, chargeAlteredUnpaidObject, updateUnpaidObjectPrice } from './shk.js';
 import { promptYesNoQuit } from './query.js';
 import { rn2, rnd } from './rng.js';
 import type { GameState } from './game_state.js';
-import { retouchHeroObject } from './artifacts.js';
+import { retouchHeroObject } from './artifact.js';
 import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
 import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';

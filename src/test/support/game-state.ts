@@ -3,12 +3,12 @@ import type { MonsterVital } from '../../js/monster_types.js';
 import type { GameState, PlayingGameState, Fruit } from '../../js/game_state.js';
 import type { InitializedHero } from '../../js/hero_types.js';
 import type { GameObject } from '../../js/object_types.js';
-import type { Role, RoleKey, Race, AttributeValues } from '../../js/roles.js';
+import type { Role, RoleKey, Race, AttributeValues } from '../../js/role.js';
 import { COLNO, COULD_SEE, IN_SIGHT, MAXULEV, ROWNO } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { resetGame, requirePlayingGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
-import { races, roles } from '../../js/roles.js';
+import { races, roles } from '../../js/role.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
 
 import { initializeMonsterVitals } from '../../js/allmain.js';

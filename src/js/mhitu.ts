@@ -54,11 +54,11 @@ import {
     startHeroPetrificationFromMonster, passiveDamage, erodeArmor,
 } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
-import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifacts.js';
-import type { ArtifactDefenseQuery } from './artifacts.js';
+import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifact.js';
+import type { ArtifactDefenseQuery } from './artifact.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { impossible } from './diagnostics.js';
-import { createElementalMonsterExplosion } from './explosion.js';
+import { createElementalMonsterExplosion } from './explode.js';
 import { makeConfused, makeHallucinated, makeStunned, startHeroSickness, makeBlinded, splitHeroMonsterForm } from './potion.js';
 import { wakeMonstersNearWithMessages, finishEnvironmentalMonsterDeath, applyMonsterGolemEffects, paralyzeMonster, finishHeroMonsterKillOutcome, finishHeroMonsterKill, releaseHeroFromMonster, redrawAfterRelease, moveMonsterNextToHero } from './mon.js';
 import type { MonsterDeathOptions, MonsterLiquidDeathContext, HeroMonsterKillOptions, ReleaseHeroOptions } from './mon.js';
@@ -95,7 +95,7 @@ import { heroHasProtectionFromShapeChangers } from './polyself.js';
 import { find_offensive } from './muse.js';
 import { isPoolAt } from './dbridge.js';
 import { recorderIsLeapDay, recorderLocalHour } from './calendar.js';
-import { monsterSentenceSubject, sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
+import { monsterSentenceSubject, sessionIsNight, monsterGrowlSound } from './sounds.js';
 import type { Hero } from './hero_types.js';
 import { setHeroGrip } from './mon.js';
 import { heroHasConflict } from './hero_conflict.js';

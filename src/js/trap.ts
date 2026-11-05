@@ -166,7 +166,7 @@ import {
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import {
     burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt,
     finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity,
@@ -214,7 +214,7 @@ import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
-import { createPoisonGasCloud } from './regions.js';
+import { createPoisonGasCloud } from './region.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { reset_faint } from './eat.js';
 import type { GameMap } from './game.js';

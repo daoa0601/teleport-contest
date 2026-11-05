@@ -8,7 +8,7 @@ import { displaySelf, flush_screen, newsym, show_glyph_cell, swallowed, zapdir_t
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { GOLD_PIECE, STATUE } from '../js/object_data.js';
 import { applyNethackrc } from '../js/options.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { CLR_BROWN, CLR_ORANGE, CLR_RED, CLR_YELLOW, NO_COLOR } from '../js/terminal.js';
 import { requireScreenCell } from './support/screen.js';
 import { floorObject } from './support/game-objects.js';

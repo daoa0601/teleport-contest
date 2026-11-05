@@ -10,7 +10,7 @@ import { knownObject } from './support/game-objects.js';
 import { HELMET, SPE_NOVEL } from '../js/object_data.js';
 import { runExtendedCommand } from './support/commands.js';
 import { initRng } from '../js/rng.js';
-import { races, roles } from '../js/roles.js';
+import { races, roles } from '../js/role.js';
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -7,7 +7,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME, } from './object_data.js';
 import { game } from './gstate.js';
-import { artifactInfoLines, discoveredArtifacts } from './artifacts.js';
+import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './dungeon.js';

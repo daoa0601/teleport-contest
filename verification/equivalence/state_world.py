@@ -17,7 +17,7 @@ def hero_state(world, front, modules):
     # polyself.c:set_uasmon installs this pointer for the current body.
     world.c_globals['gy.youmonst.data'] = CPtr(True, CElement('mons', species))
     world.pre.extend([species >= 0, species < front.enum_value('NUMMONS')])
-    # artifacts.js:initializeArtifacts copies artifact identity/name from this
+    # artifact.js:initializeArtifacts copies artifact identity/name from this
     # emitted table. Role/alignment retargeting does not change id or name.
     artifacts = module_constant(world, modules, 'js/artifact_data.js', 'ARTIFACT_DATA')
     world.js_values['game._artifactRuntime'] = V('map', tuple(

@@ -30,7 +30,7 @@ import {
     definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
     observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
 } from './objnam.js';
-import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifacts.js';
+import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
 import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -50,7 +50,7 @@ import {
     monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies,
 } from './mondata.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
 import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
 import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
@@ -71,10 +71,10 @@ import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
-import type { ArtifactDefender } from './artifacts.js';
+import type { ArtifactDefender } from './artifact.js';
 import { requireInitializedHero, type HeroSkill } from './hero_types.js';
 import type { Hero } from './hero_types.js';
-import type { RoleKey } from './roles.js';
+import type { RoleKey } from './role.js';
 import type { InventoryMenuItem } from './windows.js';
 
 interface WeaponMessageOptions {

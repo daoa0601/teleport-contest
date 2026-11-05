@@ -12,7 +12,7 @@ import {
 } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { nameToMonster } from '../js/mondata.js';
 import { ensureHeroSkills, rollPhysicalWeaponDamage, selectHandToHandWeapon, selectMonsterRangedWeapon, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus } from '../js/weapon.js';
 import { setPrimaryWeapon, setSecondaryWeapon } from '../js/wield.js';

@@ -7,9 +7,9 @@ import {
     artifactExistCount,
     initializeArtifacts,
     nameArtifact,
-} from '../js/artifacts.js';
+} from '../js/artifact.js';
 import { game } from '../js/gstate.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { freshGame } from './support/game-state.js';
 import { uninitializedObject } from './support/game-objects.js';
 

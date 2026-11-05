@@ -1,4 +1,4 @@
-import type { AttributeValues } from '../../js/roles.js';
+import type { AttributeValues } from '../../js/role.js';
 import type { ActiveSpecialLevel } from '../../js/map_types.js';
 import type { RngSeed } from '../../js/rng.js';
 import { A_CHAOTIC, A_LAWFUL, A_NEUTRAL, MAXNROFROOMS } from '../../js/const.js';

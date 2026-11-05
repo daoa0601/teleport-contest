@@ -21,7 +21,7 @@ import { surfaceName, ceilingName } from './dungeon.js';
 import { isIceAt, drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
 import { sanitizeBonesName } from './bones_name.js';
 import { goodPosition } from './teleport.js';
-import { artifactByName } from './artifacts.js';
+import { artifactByName } from './artifact.js';
 import { TOWEL, MAGIC_MARKER, WAN_CANCELLATION, WAN_COLD, WAN_CREATE_MONSTER, WAN_DEATH, WAN_DIGGING, WAN_ENLIGHTENMENT, WAN_FIRE, WAN_LIGHT, WAN_LIGHTNING, WAN_LOCKING, WAN_MAGIC_MISSILE, WAN_MAKE_INVISIBLE, WAN_NOTHING, WAN_OPENING, WAN_POLYMORPH, WAN_PROBING, WAN_SECRET_DOOR_DETECTION, WAN_SLEEP, WAN_SLOW_MONSTER, WAN_SPEED_MONSTER, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING, } from './object_data.js';
 import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
 import { willWeld, isWeldedPrimary } from './wield.js';

@@ -95,7 +95,7 @@ import type { GameMap } from './game.js';
 import { ingSuffix, upstart } from './hacklib.js';
 
 import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
-import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
+import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './region.js';
 import { requireShopGame } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
 
@@ -105,7 +105,7 @@ import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
 
-import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
 import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import {
     applyPickAxeDirection, diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext,
@@ -113,7 +113,7 @@ import {
 } from './dig.js';
 
 import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
-import { hello } from './roles.js';
+import { hello } from './role.js';
 import { doopen } from './lock.js';
 
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import { BY_COOKIE, BY_OTHER, BY_PAPER, FAINTED } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import * as rumors from '../js/rumor.js';
+import * as rumors from '../js/rumors.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 function collectRumorPages() {

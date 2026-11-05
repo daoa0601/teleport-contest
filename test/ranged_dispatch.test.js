@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { P_BOW, P_DAGGER, P_EXPERT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';

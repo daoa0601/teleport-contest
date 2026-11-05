@@ -2,7 +2,7 @@ import type { GameState } from '../../js/game_state.js';
 import type { FixtureGameState } from './game-state.js';
 import { requireFixtureGame } from './game-state.js';
 import type { FreshGameOptions } from './game-state.js';
-import type { RoleKey } from '../../js/roles.js';
+import type { RoleKey } from '../../js/role.js';
 import { ROOM } from '../../js/const.js';
 import { findArmorClass } from '../../js/do_wear.js';
 import { GameMap } from '../../js/game.js';

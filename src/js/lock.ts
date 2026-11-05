@@ -45,7 +45,7 @@ import { applySupportedPotionVapor, randomBottleName } from './potion.js';
 import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
-import { artifactById, touchArtifactByHero } from './artifacts.js';
+import { artifactById, touchArtifactByHero } from './artifact.js';
 import { heroFingerName } from './body_parts.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';

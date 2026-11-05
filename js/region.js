@@ -1,4 +1,4 @@
-// regions.js — Shared level-region construction.
+// region.js — Shared level-region construction.
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
@@ -518,4 +518,4 @@ export async function runLevelRegions(state, { publish = plineWithContinuation, 
     await announceDissipation(state, dissipation, publish);
     return events;
 }
-//# sourceMappingURL=regions.js.map
+//# sourceMappingURL=region.js.map

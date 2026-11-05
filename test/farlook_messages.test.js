@@ -6,7 +6,7 @@ import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { CHEST } from '../js/object_data.js';
 import { MAP_SYMBOLS } from '../js/map_symbols.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('farlook reports an unremembered object disguise as something', async () => {

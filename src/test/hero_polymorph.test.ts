@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 
 import { wearHeroArmor } from '../js/do_wear.js';
 
-import { touchArtifactByHero } from '../js/artifacts.js';
+import { touchArtifactByHero } from '../js/artifact.js';
 import {
     A_CON, A_STR, BEAR_TRAP, PIT, POOL, STR18, STR19, TT_PIT, WEB,
 } from '../js/const.js';
@@ -16,7 +16,7 @@ import { heroIsSick } from '../js/potion.js';
 import { startHeroSickness } from '../js/potion.js';
 import { morehungry } from '../js/eat.js';
 import { dotrap } from '../js/trap.js';
-import { retouchEquipment } from '../js/artifacts.js';
+import { retouchEquipment } from '../js/artifact.js';
 import { polymorphHero } from '../js/polyself.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { pushKeys, resetInputState } from '../js/input.js';
@@ -25,7 +25,7 @@ import {
     CLOAK_OF_PROTECTION, HAWAIIAN_SHIRT, LEATHER_ARMOR, LONG_SWORD,
     OBJECT_NAMES, SHIELD_OF_REFLECTION,
 } from '../js/object_data.js';
-import { roles, races } from '../js/roles.js';
+import { roles, races } from '../js/role.js';
 import { heroIsSliming, startHeroSliming } from '../js/potion.js';
 import { heroIsPetrifying, startHeroPetrification } from '../js/stoning.js';
 import { setPrimaryWeapon } from '../js/wield.js';

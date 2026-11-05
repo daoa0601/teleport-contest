@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifact.js';
 import {
     CORR, FOUNTAIN, G_EXTINCT, HOLE, MM_NOGRP, MM_NOWAIT, NO_MINVENT, PIT, SHOPBASE, STONE,
 } from '../js/const.js';
@@ -16,7 +16,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { beginMonsterMove } from '../js/monmove.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import {linkObjectToMonsterInventory, placeCreatedObject} from '../js/mkobj.js';
 import {

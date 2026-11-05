@@ -1,4 +1,4 @@
-import { roles, races } from '../../js/roles.js';
+import { roles, races } from '../../js/role.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/do_wear.js';
 import { setHeroSpecies } from '../../js/polyself.js';

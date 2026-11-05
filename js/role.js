@@ -1646,4 +1646,4 @@ export async function reset_role_filtering(filters) {
         await tty_destroy_nhwindow(window);
     }
 }
-//# sourceMappingURL=roles.js.map
+//# sourceMappingURL=role.js.map

@@ -14,7 +14,7 @@ import { cancelObjectMagic } from '../js/zap.js';
 import { CHEST, CORPSE, DAGGER, OBJECT_NAMES, POT_FRUIT_JUICE, POT_SICKNESS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, WAN_CANCELLATION, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, WAN_SLEEP, WAN_SPEED_MONSTER, WAN_STRIKING, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { monsterStatusLine } from '../js/insight.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { probeObjectChain } from '../js/zap.js';
 import { chargedWand, floorObject, knownObject, unopenedCatBox } from './support/game-objects.js';
 import { installSwallowedHero } from './support/hero-state.js';

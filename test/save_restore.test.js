@@ -13,7 +13,7 @@ import { currentAttribute } from '../js/attrib.js';
 import { A_DEX, NON_PM } from '../js/const.js';
 import { heroSpecies, setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { healHeroLegs, woundHeroLegs } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { answerPrompts } from './support/input-boundaries.js';

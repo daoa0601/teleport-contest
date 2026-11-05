@@ -2,7 +2,7 @@
 import { CommandBindings } from './command_bindings.js';
 import { createHeroState } from './hero_types.js';
 import type { Hero, InitializedHero } from './hero_types.js';
-import type { Role, Race, Alignment } from './roles.js';
+import type { Role, Race, Alignment } from './role.js';
 import type { GameFlags, InterfaceFlags } from './flags.js';
 import type { GameMap } from './game.js';
 import type { GameObject } from './object_types.js';
@@ -20,7 +20,7 @@ import type { AfterMove, CmdQueueEntry, MovementAttempt, RunState } from './cmd.
 import type { FoodContext, HeroOccupation, TrapSetting, PickLockOccupation, ForceLockOccupation } from './occupation_types.js';
 import type { TakeoffContext } from './do_wear.js';
 
-import type { Artifact, ArtifactOrigin } from './artifacts.js';
+import type { Artifact, ArtifactOrigin } from './artifact.js';
 import type { LuaVariables } from './lua/runtime.js';
 import type { LuaAlignmentName } from './lua/lifecycle.js';
 import type { SpellCategory } from './data_types.js';

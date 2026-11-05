@@ -1,5 +1,5 @@
 import { requireFixtureGame } from './support/game-state.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 

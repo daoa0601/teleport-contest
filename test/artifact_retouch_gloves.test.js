@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { retouchEquipment } from '../js/artifacts.js';
+import { retouchEquipment } from '../js/artifact.js';
 import { wearHeroAccessory, wearHeroArmor } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

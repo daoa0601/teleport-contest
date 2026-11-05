@@ -10,7 +10,7 @@ import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, 
 import { requireInitializedHero } from './hero_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, } from './const.js';
@@ -48,9 +48,9 @@ import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrif
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
-import { updateMonsterRegions, updateHeroRegions } from './regions.js';
+import { updateMonsterRegions, updateHeroRegions } from './region.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { isPoolAt, isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName, heroHasWaterWalking, objectIsHardHelmet, simpleArmorName } from './do_wear.js';

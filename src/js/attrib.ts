@@ -9,7 +9,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { plineWithContinuation } from './pline.js';
 import { see_monsters, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
@@ -18,7 +18,7 @@ import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, adjustErinys } from './mons
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
 import { d, rn1, rn2, rnd } from './rng.js';
 import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
-import { retouchEquipment } from './artifacts.js';
+import { retouchEquipment } from './artifact.js';
 import { makeConfused } from './potion.js';
 import { summonFuries } from './makemon.js';
 import {
@@ -38,7 +38,7 @@ import { confersLuck } from './invent.js';
 import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import type { AlignmentValue, AttributeValues, Race } from './roles.js';
+import type { AlignmentValue, AttributeValues, Race } from './role.js';
 import type { LevelAbility } from './innate_abilities.js';
 import type { IntrinsicOrigin, PropertyName, WornPropertySlot } from './property_types.js';
 import type { ArtifactDefense, ArtifactFlag } from './data_types.js';

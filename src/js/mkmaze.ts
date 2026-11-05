@@ -12,7 +12,7 @@ import { ACCESSIBLE, AIR, ALTAR, BLCORNER, BRCORNER, CLOUD, COLNO, CORR, CROSSWA
 import { isok } from './cmd.js';
 import { isPoolAt, isIceAt } from './dbridge.js';
 import { CORPSE, EGG, GOLD_PIECE, LEATHER_GLOVES, LEMBAS_WAFER, LONG_SWORD, ROCK, SKELETON_KEY, SLIME_MOLD, TALLOW_CANDLE, TIN, TRIPE_RATION, WAX_CANDLE, BOULDER, STATUE, OBJECT_NAMES } from './object_data.js';
-import { createPoisonGasCloud } from './regions.js';
+import { createPoisonGasCloud } from './region.js';
 import { heroIsDeaf } from './senses.js';
 import { plineWithContinuation } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';

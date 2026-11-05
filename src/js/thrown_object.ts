@@ -16,7 +16,7 @@ import { monsterProjectileDisplay } from './mthrowu.js';
 import { A_STR, BOLT_LIM, IRONBARS, IS_SOFT, IS_WATERWALL, Is_airlevel, LAVAWALL, LOST_THROWN, M_AP_OBJECT, M_AP_TYPE, P_CROSSBOW, SINK, TT_INFLOOR, WEB, WT_SPLASH_THRESHOLD, ZAP_POS, is_hole, is_pit } from './const.js';
 import { isok } from './cmd.js';
 import { monsterName } from './do_name.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { heroMoveBlockedBetween, impactDisturbsZombies } from './hack.js';
 import { dropBall } from './ball.js';
 import { containerImpactDamage, shipObject } from './dokick.js';

@@ -7,7 +7,7 @@ import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { decodeSavedGame } from '../js/persistent_state_validation.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { initializeRoleQuestGenders } from '../js/roles.js';
+import { initializeRoleQuestGenders } from '../js/role.js';
 import {
     dismissUnhealthyRestore, restoreGame, restoreRefusedAsUnhealthy, saveGame,
 } from '../js/save.js';

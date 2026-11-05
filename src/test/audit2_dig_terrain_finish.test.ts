@@ -5,7 +5,7 @@ import { CORR, D_CLOSED, D_NODOOR, DOOR, ROOM, STONE, TREE } from '../js/const.j
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AXE, PICK_AXE, WAN_DIGGING } from '../js/object_data.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';

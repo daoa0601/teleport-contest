@@ -9,7 +9,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { ACID_VENOM, AMULET_OF_LIFE_SAVING, ARROW, BLINDING_VENOM, BOW, CLUB, CROSSBOW, CROSSBOW_BOLT, DART, EGG, ELVEN_ARROW, ELVEN_BOW, GAUNTLETS_OF_POWER, ROCK, STATUE, YA, YUMI, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { throwInventoryObject } from './support/commands.js';
 import { addInventoryObject, addInventoryWeapon, } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';

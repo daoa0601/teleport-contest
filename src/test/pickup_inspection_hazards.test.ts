@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { ARROW_TRAP, W_AMUL } from '../js/const.js';
 import { AMULET_OF_LIFE_SAVING, CLUB, CORPSE } from '../js/object_data.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { addTrap } from './support/level-state.js';

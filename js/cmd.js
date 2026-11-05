@@ -3,9 +3,9 @@ import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS,
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
 import { doannotate, doDungeonOverview, levelIsWizardTower, recordMappedOverviewState, sameDungeonLevel, specialPrototypeAt, u_on_rndspot } from './dungeon.js';
-import { dochat } from './ambient_sounds.js';
+import { dochat } from './sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
-import { doinvoke } from './artifacts.js';
+import { doinvoke } from './artifact.js';
 import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from './insight.js';
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';

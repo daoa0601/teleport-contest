@@ -37,7 +37,7 @@ import {
     POLY_TRAP, QBUFSZ, RLOC_MSG, SCORR, SDOOR, SHOPBASE, STAIRS, STRAT_WAITFORU, TELEP_TRAP, TEMPLE,
     WAND_BACKFIRE_CHANCE, W_ARM, W_ARMF, W_ARMG, W_ARMH, W_WEP, WEB, W_NONDIGGABLE, ZAP_POS, W_AMUL, W_ARMS,
 } from './const.js';
-import { heroHasArtifactDefense, weaponReflects } from './artifacts.js';
+import { heroHasArtifactDefense, weaponReflects } from './artifact.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
@@ -113,7 +113,7 @@ import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';
 import { impossible } from './diagnostics.js';

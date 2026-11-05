@@ -9,7 +9,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { fill_special_room } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import type { AlignmentValue } from '../js/roles.js';
+import type { AlignmentValue } from '../js/role.js';
 import type { Room } from '../js/map_types.js';
 import { makedog } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';

@@ -2,7 +2,7 @@ import { RANDOM_CLASS, SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_FIERY, EXPL_FROSTY } from '../js/const.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { loadScoreRecords } from '../js/score_records.js';

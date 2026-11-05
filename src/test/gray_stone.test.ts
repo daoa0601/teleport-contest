@@ -12,7 +12,7 @@ import {
     TALLOW_CANDLE, TOUCHSTONE,
 } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { objectTypeKnown } from '../js/o_init.js';
 
 import { runExtendedCommand } from './support/commands.js';

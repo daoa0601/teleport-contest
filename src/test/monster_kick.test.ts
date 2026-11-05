@@ -1,6 +1,6 @@
 import { monsterAtPosition } from '../js/steed.js';
 import { initializePet } from '../js/dog.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -22,7 +22,7 @@ import { addInventoryObject, uninitializedObject } from './support/game-objects.
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 
 const PM_JACKAL = 12;
 

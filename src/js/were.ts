@@ -19,7 +19,7 @@ import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterSpecies, is_were, monsterIsHuman } from './mondata.js';
 import { paranoidQuery } from './cmd.js';
 import { rn2, rnd } from './rng.js';
-import { sessionIsNight, monsterGrowlSound } from './ambient_sounds.js';
+import { sessionIsNight, monsterGrowlSound } from './sounds.js';
 import { updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { monsterIsScaredAt, makeMonsterFlee } from './monmove.js';
 import { monsterName } from './do_name.js';

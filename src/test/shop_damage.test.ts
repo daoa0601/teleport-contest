@@ -1,4 +1,4 @@
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { ShopBillEntry, ShopkeeperData, Monster } from '../js/monster_types.js';
 import { isRoom } from '../js/map_types.js';
 import { floorObjectsAt, addTrap } from './support/level-state.js';

@@ -1,14 +1,14 @@
 // Source-owned new-game initialization before mklev().
 // C refs: allmain.c:newgame(), o_init.c:init_objects(),
 // dungeon.c:init_dungeons(), u_init.c:u_init_misc(). The role_init()
-// pieces live in roles.ts.
+// pieces live in role.ts.
 
 import { game } from './gstate.js';
 import { init_objects } from './o_init.js';
 import { init_dungeons } from './dungeon.js';
-import { initializeArtifacts } from './artifacts.js';
+import { initializeArtifacts } from './artifact.js';
 import { rn2, rnd } from './rng.js';
-import { initializeRoleQuestGenders, roleInitPriestPantheon } from './roles.js';
+import { initializeRoleQuestGenders, roleInitPriestPantheon } from './role.js';
 import { initializeMonsterVitals } from './allmain.js';
 
 // This is the part of newgame() that runs before level creation. Role

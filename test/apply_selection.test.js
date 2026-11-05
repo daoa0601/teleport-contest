@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { VIBRATING_SQUARE } from '../js/const.js';
-import { retouchHeroObject } from '../js/artifacts.js';
+import { retouchHeroObject } from '../js/artifact.js';
 import { resetInputState } from '../js/input.js';
 import { BELL_OF_OPENING, CLUB, EUCALYPTUS_LEAF, GOLD_PIECE, LOADSTONE, OIL_LAMP, OBJECT_NAMES, POT_HEALING, POT_OIL, SPE_BLANK_PAPER, TOUCHSTONE, } from '../js/object_data.js';
 import { learnObjectType } from '../js/o_init.js';

@@ -23,7 +23,7 @@ import {
     createMonsterAt, equipMonsterObject,
 } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { finishHeroMonsterKill } from '../js/mon.js';
 
 const PM_WATER_ELEMENTAL = 157;

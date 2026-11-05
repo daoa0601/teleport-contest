@@ -22,7 +22,7 @@ import { MAP_SYMBOLS } from './map_symbols.js';
 import { objectAtMapDescription } from './map_object_description.js';
 import { MONSTER_CLASS_EXPLAIN, MONSTER_CLASS_SYMBOLS, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { makePlural, simpleObjectName, withIndefiniteArticle, singularObjectName } from './objnam.js';
-import { visibleRegionAt } from './regions.js';
+import { visibleRegionAt } from './region.js';
 import { isPoolAt, drawbridgeUnderlyingType, findDrawbridgeAt } from './dbridge.js';
 import { surfaceName } from './dungeon.js';
 import { trapName } from './trap.js';

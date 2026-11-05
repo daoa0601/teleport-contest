@@ -4,7 +4,7 @@ import { POLY_CONTROLLED } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { polymorphHero } from '../js/polyself.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 import { installPagerInput } from './support/pager-input.js';
 // C polyself.c:newman() logs livelog_newform(TRUE, oldgend, newgend) when the

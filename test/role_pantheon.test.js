@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { hallucinatedDeityName } from '../js/pray.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { freshObjectRoom } from './support/object-room.js';
 async function hallucinatedGods(role) {
     await freshObjectRoom({ role, gameplaySeed: 47n });

@@ -8,7 +8,7 @@ import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { chooseWizardLevelDestination } from '../js/wizcmds.js';
 import { doenhance, ensureHeroSkills } from '../js/weapon.js';
-import { displayQuestText } from '../js/quest_pager.js';
+import { displayQuestText } from '../js/questpgr.js';
 import { luaText } from '../js/lua/messages.js';
 import { ddoinv } from '../js/invent.js';
 import { DAGGER, FOOD_RATION } from '../js/object_data.js';

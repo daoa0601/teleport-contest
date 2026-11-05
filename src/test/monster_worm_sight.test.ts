@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MM_ANGRY, MM_NOTAIL, NO_MINVENT } from '../js/const.js';
 import { canSpotMonster, feel_location, glyphAt, newsym } from '../js/display.js';
-import { createElementalMonsterExplosion } from '../js/explosion.js';
+import { createElementalMonsterExplosion } from '../js/explode.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { AD_FIRE } from '../js/monster_attack_types.js';
@@ -16,7 +16,7 @@ import { makeBlinded } from '../js/potion.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { OBJECT_NAMES } from '../js/object_data.js';
-import { createSteamCloud } from '../js/regions.js';
+import { createSteamCloud } from '../js/region.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';

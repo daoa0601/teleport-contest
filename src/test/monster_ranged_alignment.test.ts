@@ -11,7 +11,7 @@ import {
     monsterLinedUpWithHero, monsterLinedUpWithMonster,
 } from '../js/mthrowu.js';
 import { BOULDER, WAN_STRIKING } from '../js/object_data.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

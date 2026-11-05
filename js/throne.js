@@ -9,7 +9,7 @@ import { heroHasHalfSpellDamage, makeWish } from './zap.js';
 import { A_CON, A_MAX, A_STR, Luck, ROOM, } from './const.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute, } from './attrib.js';
 import { encumber_msg } from './pickup.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { mapLevel } from './detect.js';
 import { map_background, newsym, newsym_force, see_monsters, shieldeff, refreshHeroSeeing, } from './display.js';
 import { displayColorName } from './do_name.js';

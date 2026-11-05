@@ -28,7 +28,7 @@ import type { GameObject } from './object_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
 import {
@@ -58,7 +58,7 @@ import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroHandName, heroEyeCount, heroEyeName , heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';
-import type { RoleKey, RaceName } from './roles.js';
+import type { RoleKey, RaceName } from './role.js';
 import { isQuestArtifact } from './quest.js';
 import { encumber_msg } from './pickup.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
@@ -85,9 +85,9 @@ import { mintrap, petrifyMonsterImmediately, erodeObject, resolveImmediatePetrif
 import { stopHeroOccupation } from './occupation.js';
 import { cansee, vision_recalc } from './vision.js';
 import { rn2, rnd, d, rnl } from './rng.js';
-import { updateMonsterRegions , updateHeroRegions } from './regions.js';
+import { updateMonsterRegions , updateHeroRegions } from './region.js';
 import { setMonsterApparentHeroPosition } from './monmove.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet, simpleArmorName } from './do_wear.js';

@@ -1,13 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { CORR, FOUNTAIN, ROOM, SCORR } from '../js/const.js';
 import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { LONG_SWORD } from '../js/object_data.js';
-import { artifactByName, artifactInfoLines } from '../js/artifacts.js';
+import { artifactByName, artifactInfoLines } from '../js/artifact.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { runExtendedCommand } from './support/commands.js';

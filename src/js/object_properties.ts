@@ -9,7 +9,7 @@ import {
     ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_CLOAK, ELVEN_SHIELD, ELVEN_BOOTS,
     ELVEN_ARROW, ELVEN_SPEAR, ELVEN_DAGGER, ELVEN_SHORT_SWORD, ELVEN_BROADSWORD, ELVEN_BOW, LENSES, RUBBER_HOSE,
 } from './object_data.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { objectIsFlammable, objectIsRottable } from './mkobj.js';
 import {
     P_BOOMERANG, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_SHORT_SWORD,

@@ -18,7 +18,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { DeathHandler } from './end.js';
-import type { RoleKey } from './roles.js';
+import type { RoleKey } from './role.js';
 import { heroResistsLifeDrain } from './mondata.js';
 import { experienceRankIndex } from './botl.js';
 import { monsterHitPointsPerLevel } from './makemon.js';

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FOUNTAIN, F_WARNED, MON_OFFMAP, ROOM } from '../js/const.js';
 import { flush_screen, glyphAt, newsym } from '../js/display.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { syncDeafness } from '../js/senses.js';
 import { dryFountainAt } from '../js/fountain.js';
 import { requireGameDisplay, game } from '../js/gstate.js';

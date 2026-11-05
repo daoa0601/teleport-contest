@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { convertQuestLine } from '../js/quest_pager.js';
+import { convertQuestLine } from '../js/questpgr.js';
 function dungeonNamed(dname) {
     return {
         dname,

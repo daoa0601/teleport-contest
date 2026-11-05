@@ -7,8 +7,8 @@ import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
 import { findArmorClass } from '../js/do_wear.js';
 
 import { currentAttribute } from '../js/attrib.js';
-import { invokeArtifactPower } from '../js/artifacts.js';
-import { artifactByName } from '../js/artifacts.js';
+import { invokeArtifactPower } from '../js/artifact.js';
+import { artifactByName } from '../js/artifact.js';
 import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

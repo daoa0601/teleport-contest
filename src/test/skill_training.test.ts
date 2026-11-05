@@ -1,4 +1,4 @@
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { requireScreenRow } from './support/screen.js';
 import type { InputGate } from '../js/input.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';

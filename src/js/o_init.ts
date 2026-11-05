@@ -17,7 +17,7 @@ import {
     requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME,
 } from './object_data.js';
 import { game } from './gstate.js';
-import { artifactInfoLines, discoveredArtifacts } from './artifacts.js';
+import { artifactInfoLines, discoveredArtifacts } from './artifact.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { rn2 } from './rng.js';

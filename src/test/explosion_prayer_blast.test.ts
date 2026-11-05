@@ -4,7 +4,7 @@ import test from 'node:test';
 // property; prayer's u.uinvulnerable (u.invulnerable here) never blocks or
 // zeroes explosion damage.
 import { EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE } from '../js/const.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 

@@ -4,7 +4,7 @@ import { ALTAR, AM_NEUTRAL, DELPHI, ROOMOFFSET, VIBRATING_SQUARE } from '../js/c
 import { mapLevel } from '../js/detect.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
-import { questLeaderName } from '../js/quest_pager.js';
+import { questLeaderName } from '../js/questpgr.js';
 import { readDungeonOverview } from './support/dungeon-overview.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

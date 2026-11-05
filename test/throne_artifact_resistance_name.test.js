@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverArtifact } from '../js/artifacts.js';
+import { discoverArtifact } from '../js/artifact.js';
 import { THRONE } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { addInventoryItem } from '../js/invent.js';

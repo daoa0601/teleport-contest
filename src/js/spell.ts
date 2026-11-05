@@ -36,7 +36,7 @@ import {
     map_invisible, zapdir_to_glyph, TemporaryMapEffect,
 } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero, heroIsSick, makeBlinded, makeConfused, makeStunned, applyPotionEffect, heroIsSliming, setHeroSlimingTimeout } from './potion.js';
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
@@ -72,7 +72,7 @@ import { readNovelTribute } from './novel_tribute.js';
 import { makemonAt, setMonsterMalign } from './makemon.js';
 import { makeUndeadNear } from './mkroom.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { roleInitClericLightSchool } from './roles.js';
+import { roleInitClericLightSchool } from './role.js';
 import { monsterAtPosition } from './steed.js';
 import {
     tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu,
@@ -1444,7 +1444,7 @@ export async function applyPotionSpell(source: GameObject, { state = game }: { s
 
 // ── spell.c:spell_skilltype() and spelltypemnemonic() ──
 // C spell.c:spell_skilltype(). The Priest light-school override is
-// role_init's, at role.c:2088, carried by roles.ts.
+// role_init's, at role.c:2088, carried by role.ts.
 export function spellSkillType(otyp: number, state: GameState = game): number {
     if (roleInitClericLightSchool(otyp, state)) return P_CLERIC_SPELL;
     const subtype = objectSkill(otyp);

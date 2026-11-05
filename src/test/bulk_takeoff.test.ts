@@ -34,7 +34,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
-import { createPoisonGasCloud } from '../js/regions.js';
+import { createPoisonGasCloud } from '../js/region.js';
 import { addTrap } from './support/level-state.js';
 import { createDungeon } from './support/topology.js';
 import { gulpmu } from '../js/mhitu.js';

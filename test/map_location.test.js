@@ -8,7 +8,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { mksobj, placeCreatedObject } from '../js/mkobj.js';
 import { POT_HEALING } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc, vision_reset } from '../js/vision.js';

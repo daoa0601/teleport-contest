@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 // done branch, whose done_eating(TRUE) `if (gn.nomovemsg)` pointer test
 // (eat.c:551) keeps "" set: pline1("") appends two blank columns instead
 // of announcing "You finish eating the food ration."
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';

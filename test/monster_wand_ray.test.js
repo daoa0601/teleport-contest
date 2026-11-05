@@ -11,7 +11,7 @@ import { mbhit } from '../js/muse.js';
 import { AMULET_OF_LIFE_SAVING, BOULDER, CORPSE, POT_WATER, ROCK, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { objectTypeKnown } from '../js/o_init.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { vision_note_blocker_change, vision_recalc } from '../js/vision.js';

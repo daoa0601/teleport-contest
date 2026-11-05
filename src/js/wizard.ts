@@ -1,6 +1,6 @@
 // C wizard.c: Amulet effects and Wizard harassment.
 import { game } from './gstate.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { displayColorName, monsterName } from './do_name.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { ShopGameState } from './shop_types.js';
@@ -33,7 +33,7 @@ import { monsterAtPosition } from './steed.js';
 import { questMonsterFlags3 } from './role_monsters.js';
 import { healMonster, monsterIndexByName, speciesWasGenocided, mnearto, wakeMonstersNearWithMessages } from './mon.js';
 import { randomMonsterRelocation, relocateMonsterTo, monsterTeleportRestricted } from './teleport.js';
-import { deliverCommonQuestInsult } from './quest_pager.js';
+import { deliverCommonQuestInsult } from './questpgr.js';
 import { shopkeeperInOwnShop } from './shk.js';
 import { cansee } from './vision.js';
 import type { GameObject } from './object_types.js';

@@ -9,7 +9,7 @@ import {
     TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP,
 } from './const.js';
 import { currentAttribute } from './attrib.js';
-import { artifactByName } from './artifacts.js';
+import { artifactByName } from './artifact.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { nomul } from './hack.js';
 import {

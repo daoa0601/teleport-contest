@@ -1,6 +1,6 @@
 import { RANDOM_CLASS } from './objclass.js';
 import type { GameObject } from './object_types.js';
-import type { ExplosionOptions } from './explosion.js';
+import type { ExplosionOptions } from './explode.js';
 import type { MagicDamageResult } from './zap.js';
 
 export interface FireExplosionOptions extends ExplosionOptions {
@@ -12,7 +12,7 @@ export interface FireExplosionOptions extends ExplosionOptions {
 import { BURNING_OIL, EXPL_FIERY, LOST_EXPLODING } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { impossible } from './diagnostics.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { game } from './gstate.js';
 import { endObjectBurn } from './timeout.js';
 import { objectCombatName } from './objnam.js';

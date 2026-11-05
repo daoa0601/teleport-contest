@@ -5,7 +5,7 @@ import {
 } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
-import { updateHeroRegions, updateMonsterRegions } from './regions.js';
+import { updateHeroRegions, updateMonsterRegions } from './region.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -60,7 +60,7 @@ import type { Monster } from './monster_types.js';
 import type { Position, Rectangle, Trap, ArrivalRegion } from './map_types.js';
 import { hasShopkeeperData } from './shop_types.js';
 import type { MonsterCallLog, MonsterRelocation, MonsterTeleportTrapEvent } from './monster_action_types.js';
-import { publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterYelp } from './sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './do.js';

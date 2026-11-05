@@ -5,7 +5,7 @@ import { armorBaseBonus } from '../js/do_wear.js';
 import { findMonsterArmorClass } from '../js/monworn.js';
 import { W_ARM, LEVEL_TIMER_KIND } from '../js/const.js';
 import { LEATHER_ARMOR } from '../js/object_data.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { requireScreenRow } from './support/screen.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';

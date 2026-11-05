@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { A_WIS, MONSEEN_INFRAVIS, MONSEEN_NORMAL, NO_MINVENT, W_AMUL, W_ARMS } from '../js/const.js';
-import { speakArtifact } from '../js/artifacts.js';
+import { speakArtifact } from '../js/artifact.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { howMonsterSeen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';

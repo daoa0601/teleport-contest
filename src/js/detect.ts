@@ -19,7 +19,7 @@ import { requirePlayingGame, requireGameLevel, game, requireLiveGame } from './g
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn, showGetposTip } from './hack.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { exerciseWisdom } from './attrib.js';
 import {
     canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location,
@@ -48,7 +48,7 @@ import { revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js'
 import { MONSTER_SYMBOL, MONSTER_NAME } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
-import { visibleRegionAt } from './regions.js';
+import { visibleRegionAt } from './region.js';
 import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
 import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import type { Hero } from './hero_types.js';

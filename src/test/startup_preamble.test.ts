@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { moveloop_core, restoregamePreamble } from '../js/allmain.js';
 import { ensureQuestStatus } from '../js/quest.js';
-import { convertQuestLine } from '../js/quest_pager.js';
+import { convertQuestLine } from '../js/questpgr.js';
 import { removeHeroArmor, wearHeroArmor } from '../js/do_wear.js';
 
 import { DUST } from '../js/const.js';
@@ -12,7 +12,7 @@ import { propertyIsActive } from '../js/properties.js';
 
 import { GameDisplay } from '../js/game_display.js';
 import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { resetInputState } from '../js/input.js';
 import {
     CLOAK_OF_DISPLACEMENT, CORPSE, DART, FEDORA, FOOD_RATION, FUMBLE_BOOTS,

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, artifactDamageBonus, artifactToHitBonus, resolveHeroArtifactTouch, } from '../js/artifacts.js';
+import { artifactByName, artifactDamageBonus, artifactToHitBonus, resolveHeroArtifactTouch, } from '../js/artifact.js';
 import { MM_ANGRY, MM_NOGRP, MM_NOMSG, MM_NOWAIT, NO_MINVENT, W_ARM, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
@@ -8,7 +8,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { weaponHitValue } from '../js/weapon.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';

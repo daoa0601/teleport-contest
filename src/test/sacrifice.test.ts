@@ -3,14 +3,14 @@ import { requireScreenRow } from './support/screen.js';
 import { initializePet } from '../js/dog.js';
 import { createMonsterAt } from './support/monsters.js';
 import type { ObjectRoomOptions } from './support/object-room.js';
-import { aligns } from '../js/roles.js';
+import { aligns } from '../js/role.js';
 import { createSpecialLevel, createDungeon } from './support/topology.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { requirePlayingGame } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactById, initializeArtifacts } from '../js/artifacts.js';
+import { artifactById, initializeArtifacts } from '../js/artifact.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { DOOR, D_CLOSED, D_LOCKED, TT_PIT } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
-import { artifactByName, discoverArtifact } from '../js/artifacts.js';
+import { artifactByName, discoverArtifact } from '../js/artifact.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';

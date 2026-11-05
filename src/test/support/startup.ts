@@ -1,10 +1,10 @@
-import type { Role, RoleKey, Race, RaceName, Alignment, AlignmentName } from '../../js/roles.js';
+import type { Role, RoleKey, Race, RaceName, Alignment, AlignmentName } from '../../js/role.js';
 import type { GameState } from '../../js/game_state.js';
 import { requireInitializedHero } from '../../js/hero_types.js';
 import { resetGame } from '../../js/gstate.js';
 import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';
-import { aligns, races, roles } from '../../js/roles.js';
+import { aligns, races, roles } from '../../js/role.js';
 import { DEFAULT_TEST_DATETIME } from './calendar.js';
 import {
     finishStartingDiscoveries, uInitInventoryAttrs, uInitMisc,

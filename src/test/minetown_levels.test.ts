@@ -8,7 +8,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import {
     CORPSE, TALLOW_CANDLE, WAX_CANDLE,
 } from '../js/object_data.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 
 import {
     countTerrain, floorObjects, levelStairs,

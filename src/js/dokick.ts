@@ -62,14 +62,14 @@ import { canFallThrough, stairwayAt } from './mklev.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_META } from './monster_data.js';
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateMonsterRegions } from './region.js';
 
 import { specialContactDamage } from './contact_damage.js';
 import {
     trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap,
     triggerBoobyTrap, fall_through,
 } from './trap.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { heroFootName, heroLegName } from './body_parts.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';

@@ -207,4 +207,4 @@ function paddedLine(line, lengthWithNewline) {
 function decimal(value) {
     return String(value).padStart(6, '0');
 }
-//# sourceMappingURL=rumor.js.map
+//# sourceMappingURL=rumors.js.map

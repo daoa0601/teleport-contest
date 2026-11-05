@@ -1,6 +1,6 @@
 import { ensureQuestStatus } from '../js/quest.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';

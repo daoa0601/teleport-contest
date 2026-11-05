@@ -1,5 +1,5 @@
 import type { PlayableRoomOptions } from './playable-room.js';
-import type { AttributeValues } from '../../js/roles.js';
+import type { AttributeValues } from '../../js/role.js';
 import { game } from '../../js/gstate.js';
 import { init_objects } from '../../js/o_init.js';
 import { initRng } from '../../js/rng.js';

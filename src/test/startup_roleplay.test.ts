@@ -1,5 +1,5 @@
 import { WEAPON_CLASS, ARMOR_CLASS, FOOD_CLASS } from '../js/objclass.js';
-import type { RoleKey, RaceName } from '../js/roles.js';
+import type { RoleKey, RaceName } from '../js/role.js';
 import type { GameState } from '../js/game_state.js';
 import { createRoomLevel } from './support/playable-room.js';
 import { capturedScreen } from './support/screen.js';
@@ -19,7 +19,7 @@ import {
     SPE_PROTECTION, TOUCHSTONE, WAN_WISHING,
 } from '../js/object_data.js';
 import { parseNethackrc } from '../js/options.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { makedog } from '../js/u_init.js';
 import {
     completeHeroStartup, prepareHeroStartup,

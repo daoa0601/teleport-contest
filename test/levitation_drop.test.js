@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { artifactObject, addInventoryObject } from './support/game-objects.js';
-import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from '../js/artifacts.js';
+import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop, } from '../js/artifact.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { OBJECT_NAMES } from '../js/object_data.js';
 import { clearLevitationMasks, grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, levitationAtWill, propertyHasOtherSources, refreshProperty, restoreLevitationSources, setCarriedProperty, setInvokedProperty, stashLevitationSources, } from '../js/properties.js';

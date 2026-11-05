@@ -3,7 +3,7 @@ import { game } from '../js/gstate.js';
 import { initRng } from '../js/rng.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/ambient_sounds.js';
+import { monsterGrowlSound, publishMonsterNoise, sessionIsNight } from '../js/sounds.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const [season, now] of [['summer', Date.UTC(2026, 6, 1, 12)], ['winter', Date.UTC(2026, 0, 1, 12)]]) {

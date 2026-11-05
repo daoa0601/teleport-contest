@@ -1,5 +1,5 @@
-import { roles } from '../js/roles.js';
-import type { AttributeValues } from '../js/roles.js';
+import { roles } from '../js/role.js';
+import type { AttributeValues } from '../js/role.js';
 import type { Monster } from '../js/monster_types.js';
 import type { InitializedHero } from '../js/hero_types.js';
 import test from 'node:test';

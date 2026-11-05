@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { discoverArtifact } from '../js/artifacts.js';
+import { discoverArtifact } from '../js/artifact.js';
 import { M_AP_OBJECT, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen, glyphAt } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

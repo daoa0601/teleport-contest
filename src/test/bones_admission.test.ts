@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifact.js';
 import { DEFUNCT_MONSTER, G_EXTINCT, G_GENOD, MAGIC_PORTAL, NO_MINVENT } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';

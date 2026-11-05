@@ -23,8 +23,8 @@ import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR }
 import type { GameState, Fruit } from './game_state.js';
 import type { GameObject, ObjectBlessing } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
-import type { Artifact } from './artifacts.js';
+import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifact.js';
+import type { Artifact } from './artifact.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';

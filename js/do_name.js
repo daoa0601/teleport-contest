@@ -39,7 +39,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { wipeoutText } from './engrave.js';
 import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { setTwoWeaponCombat } from './wield.js';
-import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
+import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { withMapObject } from './map_object_description.js';
 import { heroFormHidesUnderObjects } from './polyself.js';
 import { rn2, rn2Display } from './rng.js';

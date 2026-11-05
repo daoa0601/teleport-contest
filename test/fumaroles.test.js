@@ -4,7 +4,7 @@ import test from 'node:test';
 import { COLNO, LAVAPOOL, ROOM, ROWNO } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { runLevelRegions } from '../js/regions.js';
+import { runLevelRegions } from '../js/region.js';
 import { teleds } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 void test('natural lava clouds do not blame the hero outside level generation or monster movement', async () => {

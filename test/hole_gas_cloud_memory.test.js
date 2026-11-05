@@ -4,7 +4,7 @@ import { flush_screen } from '../js/display.js';
 import { HOLE } from '../js/const.js';
 import { makeBlinded } from '../js/potion.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { createPoisonGasCloud } from '../js/regions.js';
+import { createPoisonGasCloud } from '../js/region.js';
 import { cansee } from '../js/vision.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

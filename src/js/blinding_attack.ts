@@ -4,7 +4,7 @@
 
 import { W_ARMH } from './const.js';
 import { OBJ_DESCR } from './o_init.js';
-import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifacts.js';
+import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifact.js';
 import { heroSpecies } from './polyself.js';
 import { heroIsUnaware, blindfolded, heroIsBlind } from './senses.js';
 import {

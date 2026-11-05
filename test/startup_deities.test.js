@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
-import { convertQuestLine } from '../js/quest_pager.js';
+import { convertQuestLine } from '../js/questpgr.js';
 import { memoryStorage } from './support/memory-storage.js';
 for (const { role, alignment, expected } of [
     { role: 'Samurai', alignment: 'lawful', expected: 'Amaterasu Omikami: she, her, her' },

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createPoisonGasCloud } from '../js/regions.js';
+import { createPoisonGasCloud } from '../js/region.js';
 import { freshObjectRoom } from './support/object-room.js';
 
 void test('an oversized gas cloud stops at the native maximum area', async () => {

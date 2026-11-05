@@ -7,7 +7,7 @@ import { setMonsterGivenName } from '../js/do_name.js';
 import { runExtendedCommand } from './support/commands.js';
 import { createSaddledSteed } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { publishMonsterGrowl, publishMonsterYelp, publishMonsterWhimper } from '../js/ambient_sounds.js';
+import { publishMonsterGrowl, publishMonsterYelp, publishMonsterWhimper } from '../js/sounds.js';
 for (const [name, message] of [
     ['', 'The saddled pony is eating noisily.'],
     ['spot', 'Spot is eating noisily.'],

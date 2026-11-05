@@ -1,7 +1,7 @@
 import type { Hero, HeroSkill } from '../../js/hero_types.js';
 import type { Monster } from '../../js/monster_types.js';
-import type { AttributeValues } from '../../js/roles.js';
-import { roles, races } from '../../js/roles.js';
+import type { AttributeValues } from '../../js/role.js';
+import { roles, races } from '../../js/role.js';
 import type { ObjectRoomOptions } from './object-room.js';
 import { game, requirePlayingGame } from '../../js/gstate.js';
 import { wearHeroAccessory } from '../../js/do_wear.js';

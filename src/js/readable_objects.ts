@@ -3,7 +3,7 @@
 import { SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS } from './objclass.js';
 import { armorSimpleName } from './do_wear.js';
 
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -21,7 +21,7 @@ import {
 
 
 import { minimalObjectName, objectName } from './objnam.js';
-import { readCookieFortune } from './rumor.js';
+import { readCookieFortune } from './rumors.js';
 import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { CARD_MESSAGES } from './readable_object_text.js';

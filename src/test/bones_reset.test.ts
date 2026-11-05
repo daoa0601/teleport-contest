@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { CORPSTAT_INIT, NO_MINVENT, OBJECT_TIMER_KIND } from '../js/const.js';
 import { decodeBonesPayload } from '../js/bones_validation.js';
-import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifact.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { mkcorpstat, addObjectToContainer } from '../js/mkobj.js';
