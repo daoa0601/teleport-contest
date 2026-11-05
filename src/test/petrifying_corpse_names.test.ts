@@ -2,17 +2,21 @@ import { feelPetrifyingCorpse } from '../js/invent.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { resetInputState } from '../js/input.js';
+import { pushKeys, resetInputState } from '../js/input.js';
+import { BULLWHIP } from '../js/object_data.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
+import { initRng } from '../js/rng.js';
 import type { GameObject } from '../js/object_types.js';
 import { loadScoreRecords } from '../js/score_records.js';
 import { touchPetrifyingCorpse } from '../js/pickup.js';
-import { corpseObject } from './support/game-objects.js';
+import { useWhip } from '../js/apply.js';
+import { addInventoryObject, corpseObject } from './support/game-objects.js';
+import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
+import { W_WEP } from '../js/const.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { selfTouchPetrifyingWeapons } from '../js/trap.js';
-import { snatchPetrifyingCorpse } from '../js/apply.js';
 
 const COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
 
@@ -54,15 +58,60 @@ void test('picking up from a cockatrice stack warns about one corpse but dies to
     assert.equal(death, 'petrified by cockatrice corpses');
 });
 
+// C apply.c:3187-3231: use_whip()'s snatch case pulls the disarmed weapon
+// straight into the pack; snatched bare-handed, a cockatrice corpse is
+// fatal, and its cxname() is both the warning and the death reason.
+async function snatchPetrifyingCorpseThroughWhip(
+    overrides: Partial<GameObject>,
+): Promise<{ messages: string[]; death: string | undefined }> {
+    for (let seed = 1n; seed <= 200n; seed++) {
+        await freshObjectRoom({
+            role: 'archeologist',
+            hero: {
+                acurr: { a: [10, 10, 10, 18, 10, 10] },
+                urexp: 100,
+            },
+            flags: { bones: false, disclose: '-i -a -v -c -o', tombstone: false },
+        });
+        requirePlayingGame(game);
+        game.storage = memoryStorage();
+        game.iflags.toptenwin = false;
+        const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });
+        game.uwep = game.u.uwep = whip;
+        const corpse = await corpseObject(COCKATRICE, overrides);
+        const bugbear = await createMonsterAt('bugbear', 11, 10);
+        await equipMonsterObject(bugbear, corpse, W_WEP);
+        const messages: string[] = [];
+        const input = resetInputState();
+        input.beforeRead = () => {
+            if (game._pending_message) messages.push(game._pending_message);
+        };
+        installPagerInput(input, {
+            expected: /bullwhip|snatch|stone|fatal mistake|Goodbye|points|You were/i,
+            limit: 12,
+        });
+        initRng(seed);
+        pushKeys('l' + ' '.repeat(12));
+        await useWhip(whip);
+        const text = [...messages, game._pending_message].join('\n');
+        if (/You snatch/u.test(text)) {
+            assert.ok(game.program_state.gameover,
+                'a bare-handed cockatrice snatch must be fatal');
+            return { messages: text.split('\n'), death: loadScoreRecords()[0]?.death };
+        }
+    }
+    throw new Error('No seed reached the bullwhip snatch.');
+}
+
 void test('snatching a cockatrice stack names the plural stack without an article', async () => {
-    const { messages, death } = await fatalContact(corpse => snatchPetrifyingCorpse(corpse), { quan: 2 });
+    const { messages, death } = await snatchPetrifyingCorpseThroughWhip({ quan: 2 });
 
     assert.ok(messages.join(' ').includes('Snatching cockatrice corpses is a fatal mistake.'), messages.join(' | '));
     assert.equal(death, 'petrified by cockatrice corpses');
 });
 
 void test('snatching a named cockatrice corpse uses the plain corpse name', async () => {
-    const { messages, death } = await fatalContact(corpse => snatchPetrifyingCorpse(corpse), { oname: 'Fluffy' });
+    const { messages, death } = await snatchPetrifyingCorpseThroughWhip({ oname: 'Fluffy' });
 
     assert.ok(messages.join(' ').includes('Snatching a cockatrice corpse is a fatal mistake.'), messages.join(' | '));
     assert.equal(death, 'petrified by a cockatrice corpse');

@@ -72,6 +72,13 @@ src/js/apply.ts	useBell	rnd	"[""2""]"	constant
 src/js/apply.ts	useLamp	d	"[""2"", ""10""]"	constant
 src/js/apply.ts	useLamp	rn2	"[""2""]"	constant
 src/js/apply.ts	useLamp	rn2	"[""3""]"	constant
+src/js/apply.ts	useWhip	rn2	"[""proficiency + 2""]"	unproved
+src/js/apply.ts	useWhip	rnl	"[""6""]"	constant
+src/js/apply.ts	useWhip	rnd	"[""2""]"	constant
+src/js/apply.ts	useWhip	rn2	"[""5""]"	constant
+src/js/apply.ts	useWhip	rn2	"[""proficiency + 2""]"	guarded
+src/js/apply.ts	useWhip	rn2	"[""10""]"	constant
+src/js/apply.ts	useWhip	rn2	"[""proficiency + 1""]"	unproved
 src/js/do_wear.ts	applyArmorOnEffects	rnd	"[""20""]"	constant
 src/js/do_wear.ts	erodeWornArmor	rn2	"[""4""]"	constant
 src/js/do_wear.ts	erodeWornArmor	rn2	"[""armors.length""]"	unproved
@@ -148,15 +155,6 @@ src/js/zap.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
 src/js/hack.ts	pushIntoTrap	rn2	"[""10""]"	constant
-src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""5""]"	constant
-src/js/bullwhip.ts	applyImpairedDirection	rn2	"[""directions.length""]"	unproved
-src/js/bullwhip.ts	damageHeroWithWhip	rnd	"[""2""]"	constant
-src/js/bullwhip.ts	disarmMonster	rn2	"[""10""]"	constant
-src/js/bullwhip.ts	disarmMonster	rn2	"[""proficiency + 1""]"	unproved
-src/js/bullwhip.ts	escapePit	rn2	"[""proficiency + 2""]"	guarded
-src/js/bullwhip.ts	snagFloorObject	rnl	"[""6""]"	constant
-src/js/bullwhip.ts	useBullwhip	rn2	"[""5""]"	constant
-src/js/bullwhip.ts	useBullwhip	rn2	"[""proficiency + 2""]"	guarded
 src/js/dig.ts	buryObject	rn1	"[""50"", ""20""]"	constant
 src/js/dig.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
 src/js/dothrow.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
