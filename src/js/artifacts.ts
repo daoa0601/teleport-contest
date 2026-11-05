@@ -84,8 +84,7 @@ import { levelTeleport } from './level_teleport.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
 import { showPagedPickOneMenu } from './windows.js';
-import { throwOrdinaryObject } from './ordinary_throw.js';
-import { resolveSwallowedEggPieOrVenomThrow } from './swallowed_throw.js';
+import { throwOrdinaryObject, resolveSwallowedEggPieOrVenomThrow } from './dothrow.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './hero_hold_object.js';
 

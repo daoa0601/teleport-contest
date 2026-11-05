@@ -20,7 +20,7 @@ import { weaponSkillHitBonus } from './weapon.js';
 import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { catchQuestObject } from './quest_leader_catch.js';
-import { offerUnicornGem } from './unicorn_gift.js';
+import { offerUnicornGem } from './dothrow.js';
 import { wakeAttackedMonster } from './mon.js';
 import { your_race, is_elf, is_orc } from './mondata.js';
 function heroIsPolymorphed(state) {

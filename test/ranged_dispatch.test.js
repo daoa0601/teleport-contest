@@ -4,7 +4,7 @@ import { artifactByName } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { P_BOW, P_DAGGER, P_EXPERT, TT_PIT } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { chooseHeroVolleyCount } from '../js/hero_multishot.js';
+import { chooseHeroVolleyCount } from '../js/dothrow.js';
 import { resetInputState } from '../js/input.js';
 import { ARROW, BOW, CLUB, CROSSBOW_BOLT, DAGGER, DART, ELVEN_ARROW, GOLD_PIECE, OBJECT_NAMES, ROCK, SMALL_SHIELD, } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
