@@ -5,13 +5,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { gameLogEvents } from '../js/gamelog.js';
 import { achievementEntries, recordDungeonEntryAchievements } from '../js/insight.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { game } from '../js/gstate.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon, createSpecialLevel } from './support/topology.js';
 import { createMonsterAt } from './support/monsters.js';
 import { ACH_BGRM, ACH_MEDU, ACH_SOKO, LL_ACHIEVE } from '../js/const.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 // do.c:1908-1916: entering the Sokoban branch for the first time records
 // ACH_SOKO, whose achieve_msg[] line is "entered Sokoban".
 void test('arriving in the Sokoban branch chronicles the branch entry', async () => {

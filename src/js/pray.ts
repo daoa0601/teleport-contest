@@ -22,7 +22,6 @@ import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHer
 import type { AttributeIndex } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
-import { isRider } from './corpse_species.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
 import { reviveCorpseImmediately } from './do.js';
 import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
@@ -41,8 +40,6 @@ import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { angerTemplePriest } from './priest.js';
 import { makeConfused, makeHallucinated, makeStunned, makeBlinded, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming } from './potion.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
-import type { HeroMonsterKillOptions } from './hero_monster_death.js';
 import { healHeroLegs } from './do.js';
 import { resetUtrap, announceTerrainRescue, animateStatue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
@@ -58,7 +55,8 @@ import {
     monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
     monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies,
 } from './mondata.js';
-import { wakeMonstersNearWithMessages } from './mon.js';
+import { wakeMonstersNearWithMessages, finishHeroMonsterKill, isRider } from './mon.js';
+import type { HeroMonsterKillOptions } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';

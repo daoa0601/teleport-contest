@@ -13,8 +13,9 @@ import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
 import { makemonNear } from './mklev.js';
 import { makemonAt, rndmonstAdj, monsterBirthLimit, setMonsterMalign } from './makemon.js';
-import { resolveMonsterLiquid } from './mon.js';
-import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
+import { resolveMonsterLiquid,
+    finishLiquidDeathForCurrentMover,
+} from './mon.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
 import { ensureHeroSkills, wieldMonsterWeapon } from './weapon.js';

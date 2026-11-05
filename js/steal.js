@@ -30,7 +30,7 @@ import { armorSimpleName, stopDonning, isBeingTakenOff, pendingArmorAction } fro
 import { removeHeroEquipment, removeWornHeroItem } from './hero_equipment.js';
 import { detachHeroGold } from './hero_gold.js';
 import { isWeldedPrimary } from './wield.js';
-import { monsterCanCarryObject } from './mon.js';
+import { monsterCanCarryObject, finishHeroMonsterKill, } from './mon.js';
 import { releaseObjectLeash } from './apply.js';
 import { assertCreatedObject } from './do.js';
 import { forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, unlinkObject } from './mkobj.js';
@@ -45,7 +45,6 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { nomul, heroGoldAmount, roomsAt } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { encumber_msg } from './pickup.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { makeMonsterFlee } from './monmove.js';
 import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies, } from './mondata.js';
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".

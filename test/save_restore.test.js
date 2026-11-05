@@ -21,7 +21,6 @@ import { freshObjectRoom } from './support/object-room.js';
 import { runSegment } from '../js/jsmain.js';
 import { CLUB, SACK, GOLD_PIECE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { initializePet } from '../js/dog.js';
 import { CORPSE } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
@@ -34,6 +33,7 @@ import { freshGame } from './support/game-state.js';
 import { floorObjects } from './support/level-state.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 void test('save and restore preserve entity identity across every loaded level', async () => {
     const storage = memoryStorage();
     const level = await freshObjectRoom({ moves: 12 });

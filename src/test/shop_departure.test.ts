@@ -6,8 +6,9 @@ import { DOOR, SHARED, SHOPBASE, STAIRS } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { finishEnvironmentalMonsterDeath, killGenocidedMonster, removeMonsterFromGame } from '../js/mon.js';
+import { finishEnvironmentalMonsterDeath, killGenocidedMonster, removeMonsterFromGame,
+    finishHeroMonsterKill,
+} from '../js/mon.js';
 import { buryObject } from '../js/dig.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { CHEST, DAGGER, POT_HEALING } from '../js/object_data.js';

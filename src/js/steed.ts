@@ -14,9 +14,10 @@ import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { levitationAtWill, refreshMovementProperties, propertyIsActive } from './properties.js';
 import { canSpotMonster, newsym } from './display.js';
-import { finishMonsterKilled } from './mon.js';
+import { finishMonsterKilled,
+    finishHeroMonsterKill,
+} from './mon.js';
 import { AD_PHYS } from './monster_attack_types.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';

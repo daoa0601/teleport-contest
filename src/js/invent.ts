@@ -82,7 +82,6 @@ import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from '
 import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { isReviver } from './corpse_species.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
@@ -95,7 +94,9 @@ import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { HeroPossessions } from './hero_types.js';
 import type { GameDisplay } from './game_display.js';
-import { maybeUnhideAt, hideHeroUnder } from './mon.js';
+import { maybeUnhideAt, hideHeroUnder,
+    isReviver,
+} from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';

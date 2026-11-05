@@ -2,12 +2,12 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { gameLogEvents } from '../js/gamelog.js';
 import { game } from '../js/gstate.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { gotoLevel } from '../js/do.js';
 import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
+import { finishHeroMonsterKillOutcome } from '../js/mon.js';
 function logTexts() {
     return gameLogEvents().map(event => event.text);
 }

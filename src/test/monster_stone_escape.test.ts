@@ -4,8 +4,9 @@ import test from 'node:test';
 import { NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { finishEnvironmentalMonsterDeath,
+    finishHeroMonsterKill,
+} from '../js/mon.js';
 import { petrifyMonsterImmediately } from '../js/trap.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';

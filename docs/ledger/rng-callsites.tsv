@@ -542,8 +542,8 @@ src/js/uhitm.ts	do_attack	rn2	"[""7""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
-src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
-src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
+src/js/mon.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
+src/js/mon.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""4""]"	constant
 src/js/mkmaze.ts	applyWaterFriction	rn2	"[""3""]"	constant

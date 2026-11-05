@@ -78,6 +78,7 @@ import {
     finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone,
     wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance,
     setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape,
+    finishHeroMonsterKill, finishHeroMonsterKillOutcome,
 } from './mon.js';
 import type {
     MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions,
@@ -194,7 +195,6 @@ import {
     splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster,
     makeHallucinated, makeStunned,
 } from './potion.js';
-import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';

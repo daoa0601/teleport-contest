@@ -55,7 +55,6 @@ import {
     TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL,
 } from './const.js';
 import { use_container, pickupFloorObject } from './pickup.js';
-import { isRider } from './corpse_species.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { convertSecretDoor, findit, openit } from './detect.js';
 import { impossible } from './diagnostics.js';
@@ -92,6 +91,8 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import {
     setHeroGrip, paralyzeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages, monsterInAir,
     moveMonsterNextToHero,
+    finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath,
+    isRider,
 } from './mon.js';
 import {
     makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands,
@@ -100,7 +101,6 @@ import {
 import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
-import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import {
     heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating,

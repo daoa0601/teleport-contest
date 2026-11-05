@@ -9,7 +9,6 @@ import {
     DRAWBRIDGE_UP, D_NODOOR, MOAT, PIT, W_AMUL,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { playInstrument } from '../js/music.js';
@@ -25,6 +24,7 @@ import {
 } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 const PM_WATER_ELEMENTAL = 157;
 const PM_GHOST = 287;

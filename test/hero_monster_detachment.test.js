@@ -6,7 +6,6 @@ import { LAVAPOOL, NO_MINVENT, PIT } from '../js/const.js';
 import { flush_screen, map_invisible } from '../js/display.js';
 import { initializePet } from '../js/dog.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { mksobj } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -24,6 +23,7 @@ import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './supp
 import { freshObjectRoom } from './support/object-room.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
 import { requireScreenRow } from './support/screen.js';
+import { finishHeroMonsterKillOutcome } from '../js/mon.js';
 for (const restored of [false, true]) {
     void test(`a killed monster's armor is discovered as it drops${restored ? ' after save and restore' : ''}`, async () => {
         await freshObjectRoom();

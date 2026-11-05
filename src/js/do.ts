@@ -60,6 +60,8 @@ import {
     finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster,
     sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters,
     purgeDeadMonsters, restoreMonsterShape,
+    finishHeroMonsterKill,
+    isRider, zombieForm,
 } from './mon.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from './polyself.js';
@@ -95,7 +97,6 @@ import { hitFloorWithObject } from './dothrow.js';
 import { shipObject, containerImpactDamage, deliverMigratingObjects, impactDrop } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { growMonster, setMonsterMalign } from './makemon.js';
 import { encumber_msg } from './pickup.js';
 import { propertyIsActive } from './properties.js';
@@ -150,7 +151,6 @@ import { do_attack } from './uhitm.js';
 import { monsterSpeciesHidesOnCeiling, monsterIsDisplacer } from './mondata.js';
 import { LL_ACHIEVE, LL_DEBUG, G_GENOD, OBJECT_TIMER_KIND } from './const.js';
 import { rotCorpse } from './corpse_rot.js';
-import { isRider, zombieForm } from './corpse_species.js';
 import { canSeeMonster } from './display.js';
 import { riderRevivalTime, set_corpsenm } from './mkobj.js';
 import { corpseName as corpseObjectName, capitalizedDefiniteName } from './objnam.js';

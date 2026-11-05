@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import { A_NEUTRAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { init_dungeons } from '../js/dungeon.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { currentLuaLifecycle } from '../js/lua/lifecycle.js';
 import { isRoom } from '../js/map_types.js';
@@ -16,6 +15,7 @@ import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 void test('killing a peaceful unaligned high priest counts as murder for a neutral hero with negative alignment', async (t) => {
     await freshObjectRoom({
         flags: { bones: false }, gameplaySeed: 731n,

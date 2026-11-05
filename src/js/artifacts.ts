@@ -54,7 +54,9 @@ import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs
 import { formatFeltMessage } from './hero_speech.js';
 import { lightDamage } from './zap.js';
 import { lightRoom } from './light.js';
-import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip } from './mon.js';
+import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip,
+    finishHeroMonsterKillOutcome,
+} from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { displayColorName, monsterName } from './do_name.js';
 import { destroyInventoryByElement, destroyMonsterInventoryByElement, INVENTORY_DAMAGE, flashBurn, cancelMonster, monsterResistsEffect, probeMonster } from './zap.js';
@@ -88,7 +90,6 @@ import { teleportMonsterByHero } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
 import { showPagedPickOneMenu } from './windows.js';
 import { throwOrdinaryObject, resolveSwallowedEggPieOrVenomThrow } from './dothrow.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { holdAnotherObject } from './invent.js';
 
 const M2_GIANT = 0x00002000;

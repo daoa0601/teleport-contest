@@ -1,7 +1,7 @@
 import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import { wakeNearby } from './mon.js';
+import { wakeNearby, finishLiquidDeathForCurrentMover, } from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { objectIsHardHelmet } from './do_wear.js';
@@ -29,7 +29,6 @@ import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { expelHero } from './hero_expulsion.js';
 import { freeInventoryObject, objectAt } from './invent.js';
-import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';

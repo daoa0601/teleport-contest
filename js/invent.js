@@ -52,7 +52,6 @@ import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from '
 import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
-import { isReviver } from './corpse_species.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
@@ -60,7 +59,7 @@ import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { usedUpBill, showBill } from './inventory_reports.js';
 import { NO_COLOR } from './terminal.js';
-import { maybeUnhideAt, hideHeroUnder } from './mon.js';
+import { maybeUnhideAt, hideHeroUnder, isReviver, } from './mon.js';
 import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';

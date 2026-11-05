@@ -6,11 +6,10 @@ import { DOOR, D_CLOSED, D_NODOOR, D_TRAPPED, NO_MINVENT, PIT } from '../js/cons
 import { plineWithContinuation } from '../js/pline.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { AD_PHYS } from '../js/monster_attack_types.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
-import { finishMonsterKilled } from '../js/mon.js';
+import { finishMonsterKilled, finishHeroMonsterKillOutcome, } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';

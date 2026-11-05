@@ -6,7 +6,7 @@ import { applyHeroEggLuckPenalty, eggHasMonsterSpecies, eggIsStale, explodePyrol
 import { placeObject } from './mkobj.js';
 import { game } from './gstate.js';
 import { useUpInventoryStack } from './invent.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { finishHeroMonsterKillOutcome } from './mon.js';
 import { monsterName } from './do_name.js';
 import { monsterTypeName } from './monster_data.js';
 import { petrifyMonsterFromContact } from './trap.js';

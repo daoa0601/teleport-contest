@@ -16,10 +16,10 @@ import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './suppo
 import { runExtendedCommand } from './support/commands.js';
 import { installPagerInput } from './support/pager-input.js';
 import { hurtleMonster } from '../js/dothrow.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishHeroMonsterKillOutcome } from '../js/mon.js';
 
 async function freshGiantFight() {
     await freshObjectRoom({ heroX: 18, right: 20, flags: { verbose: false } });

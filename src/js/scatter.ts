@@ -17,14 +17,14 @@ import type { PotionHitOptions } from './potion.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { MonsterDeathHandler } from './mon.js';
-import type { finishHeroMonsterKill, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
+import type { MonsterDeathHandler, HeroMonsterKillOptions, HeroMonsterKillOutcome,
+} from './mon.js';
 import {
     revealMonsterAppearance, angerAttackedMonster, finishEnvironmentalMonsterDeath, hideHeroUnder,
     maybeUnhideAt, wakeAttackedMonster, wakeMonstersNearWithMessages,
+    finishHeroMonsterKillOutcome, finishHeroMonsterKill,
 } from './mon.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_attack.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import {

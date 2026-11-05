@@ -1,7 +1,6 @@
 // What the hero leaves behind after death.
 // C refs: end.c:done_in_by()/really_done().
 
-import { isZombieMaker } from './corpse_species.js';
 import {
     BURNING, DISSOLVED, G_GENOD, LEAVESTATUE, NON_PM, PANICKED, STONING,
     TURNED_SLIME,
@@ -10,6 +9,7 @@ import { game } from './gstate.js';
 import type { Monster } from './monster_types.js';
 import type { GameState } from './game_state.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
+import { isZombieMaker } from './mon.js';
 
 const PM_HUMAN = 260;
 const PM_HUMAN_MUMMY = 192;

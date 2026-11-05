@@ -4,11 +4,11 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { A_LAWFUL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 for (const peaceful of [false, true]) {
     void test(`killing a watchman forced ${peaceful ? 'peaceful' : 'hostile'} by #wizgenesis ${peaceful ? 'penalizes alignment and counts as murder' : 'rewards alignment without murder'}`, async () => {

@@ -9,7 +9,7 @@ import {
 import {placeObject} from './mkobj.js';
 import { game } from './gstate.js';
 import { useUpInventoryStack } from './invent.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
+import { finishHeroMonsterKillOutcome } from './mon.js';
 import { monsterName } from './do_name.js';
 import { monsterTypeName } from './monster_data.js';
 import { petrifyMonsterFromContact } from './trap.js';
@@ -20,7 +20,7 @@ import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
+import type { FinishHeroMonsterDeath } from './mon.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { HeroObjectContactResult } from './uhitm.js';
 import { monsterHasStoneResistance, touchPetrifies } from './mondata.js';

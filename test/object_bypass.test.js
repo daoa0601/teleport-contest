@@ -5,7 +5,6 @@ import { game, requirePlayingGame, resetGame } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { MENU_COMBINATION, MENU_FULL, MENU_PARTIAL, MENU_TRADITIONAL } from '../js/const.js';
 import { hitFloorPileWithWand } from '../js/zap.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { CLUB, DAGGER, POT_WATER, ROCK, STATUE, WAN_CANCELLATION, WAN_STRIKING } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { breakWand } from '../js/apply.js';
@@ -17,6 +16,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { floorObjectsAt } from './support/level-state.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 for (const damageType of ['fire', undefined]) {
     void test(`${damageType ?? 'magical blast'} inventory traversal protects a slain stone golem from a broken striking wand`, async () => {
         await freshObjectRoom({ gameplaySeed: 19, hero: { uhp: 500, uhpmax: 500 } });

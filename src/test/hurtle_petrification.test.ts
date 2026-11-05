@@ -8,11 +8,11 @@ import test from 'node:test';
 import { NO_MINVENT } from '../js/const.js';
 import { glyphAt } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { hurtleMonster } from '../js/dothrow.js';
 import { STATUE } from '../js/object_data.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishHeroMonsterKillOutcome } from '../js/mon.js';
 
 void test('a monster the hero hurls into a cockatrice silently becomes a visible statue', async () => {
     await freshObjectRoom();

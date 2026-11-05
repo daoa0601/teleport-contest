@@ -7,8 +7,9 @@ import {
     W_WEP,
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
-import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { changeMonsterForm, decideMonsterShapeChange, finishEnvironmentalMonsterDeath,
+    finishHeroMonsterKill,
+} from '../js/mon.js';
 import { wakeMonstersNearWithMessages } from '../js/mon.js';
 import { MONSTER_NAME, monsterClassSymbol } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';

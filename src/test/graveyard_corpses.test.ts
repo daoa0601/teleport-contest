@@ -3,11 +3,11 @@ import assert from 'node:assert/strict';
 
 import { NO_MINVENT } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { CORPSE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 // mon.c: xkilled() tests LEVEL_SPECIFIC_NOCORPSE, and its corpse_chance()
 // call tests it again, so undead killed in a graveyard pass two 1-in-3 rolls

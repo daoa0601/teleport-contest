@@ -2,7 +2,6 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CHAOTIC, A_LAWFUL, COURT, FILL_NORMAL, MM_ANGRY, MM_NOMSG, NO_MINVENT, ROOMOFFSET, } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { fill_special_room } from '../js/sp_lev.js';
 import { makemonAt } from '../js/makemon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -10,6 +9,7 @@ import { makedog } from '../js/u_init.js';
 import { createMonsterAt } from './support/monsters.js';
 import { finishSpellTurn, prepareSpellCaster } from './support/monster-spells.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 for (const peaceful of [true, false]) {
     for (const changesAlignment of [false, true]) {
         void test(`killing a pony born ${peaceful ? 'peaceful' : 'hostile'} and co-aligned ${changesAlignment ? 'retains its birth alignment value after the hero changes alignment' : 'adjusts the hero alignment record'}`, async () => {

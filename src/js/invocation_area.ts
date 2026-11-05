@@ -10,10 +10,8 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';
-import { finishMonsterLiquidDeath, resolveMonsterLiquid, revealMonsterAppearance } from './mon.js';
-import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
-import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
-import type { HeroLiquidMonsterDeathOutcome } from './hero_monster_death.js';
+import { finishMonsterLiquidDeath, resolveMonsterLiquid, revealMonsterAppearance, finishHeroLiquidMonsterDeath } from './mon.js';
+import type { MonsterLiquidDeathContext, MonsterLiquidDeathResult, HeroLiquidMonsterDeathOutcome } from './mon.js';
 import { impossible, panic } from './diagnostics.js';
 import { mkstairs } from './mklev.js';
 import { monsterAtPosition } from './steed.js';

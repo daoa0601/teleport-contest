@@ -2,11 +2,9 @@
 
 import { SCROLL_CLASS } from './objclass.js';
 import { monsterHasMapPosition } from './steed.js';
-import { wakeMonstersNearWithMessages, finishMonsterKilled } from './mon.js';
-import type { MonsterDeathResult } from './mon.js';
+import { wakeMonstersNearWithMessages, finishMonsterKilled, finishHeroMonsterKillOutcome } from './mon.js';
+import type { MonsterDeathResult, HeroMonsterKillOutcome } from './mon.js';
 import { AD_BLND } from './monster_attack_types.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import type { HeroMonsterKillOutcome } from './hero_monster_death.js';
 import { beginBallAndChainRedraw, finishBallAndChainMove } from './ball.js';
 import { definiteObjectAction, objectNameIsPlural, ownedObjectName } from './objnam.js';
 import { game } from './gstate.js';
