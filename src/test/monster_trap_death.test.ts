@@ -12,7 +12,6 @@ import { initializePet } from '../js/dog.js';
 import { moveDrawbridgeOccupants } from '../js/dbridge.js';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { hurtleMonster } from '../js/dothrow.js';
 
@@ -26,6 +25,7 @@ import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshMonsterTrapRoom } from './support/monster-traps.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 for (const [name, trapType] of [
     ['bear trap', BEAR_TRAP], ['pit', PIT], ['arrow trap', ARROW_TRAP],

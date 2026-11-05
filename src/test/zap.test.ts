@@ -19,7 +19,6 @@ import {
 import { rhack } from '../js/cmd.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { meltIce } from '../js/zap.js';
 
 import { pushKey, pushKeys, resetInputState } from '../js/input.js';
@@ -44,6 +43,7 @@ import {
 import { addTrap } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshGameplayRoom } from './support/playable-room.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 void test('a digging zap changes terrain without retaining its answered direction query', async () => {
     const level = freshGameplayRoom();

@@ -81,7 +81,6 @@ import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from '
 import { MONSTER_NAME } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { dosit } from './sit.js';
 import { continueEngraving, doengrave } from './engrave.js';
 import { finishTeleportArrival } from './teleport.js';
@@ -108,6 +107,7 @@ import type { CharacterInput, CommandDirection, InputState } from './input.js';
 import type { Hero } from './hero_types.js';
 import type { TextPage } from './windows.js';
 import { monsterSpeciesHidesOnCeiling } from './mondata.js';
+import { finishHeroMonsterKill } from './mon.js';
 // cmd.js — Command parsing and dispatch.
 // C ref: cmd.c:rhack(); movement execution belongs to hack.ts. Also hosts
 // the top-line key prompts (win/tty/wintty.c tty_yn_function()'s prompt

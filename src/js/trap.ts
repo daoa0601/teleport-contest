@@ -78,6 +78,7 @@ import {
     finishMonsterKilled, finishMonsterPetrification, monsterSubject, restoreShapechanger, turnGolemToStone,
     wakeMonster, wakeMonstersNearWithMessages, changeMonsterForm, resolveMonsterLiquid, revealMonsterAppearance,
     setHeroGrip, wornMonsterLifeSaver, restoreMonsterShape,
+    finishHeroMonsterKill, finishHeroMonsterKillOutcome,
 } from './mon.js';
 import type {
     MonsterDeathOptions, MonsterContactPetrificationResult, MonsterDeathResult, MonsterKilledOptions,
@@ -194,14 +195,12 @@ import {
     splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster,
     makeHallucinated, makeStunned,
 } from './potion.js';
-import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
 import { putMonsterToSleep } from './mhitm.js';
 import type { LevitationState, PropertyState } from './property_types.js';
 import { autopickupAtHero, encumber_msg } from './pickup.js';
-import { holdingMonsterName, holdingMonsterSubject } from './hero_expulsion.js';
 import { putGeneratedMonsterInventoryInStatue } from './sp_lev.js';
 import { setLevelTerrainType } from './mkmaze.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -211,7 +210,7 @@ import { onQuestStart, markQuestLeaderAlive } from './quest.js';
 import { applyRemoveCurseSpell, bodyGenderFlags, PM_DOPPELGANGER, revivalReplacement, unpunishHero } from './read.js';
 import { randomTeleportDepth } from './level_teleport.js';
 import { stopHeroOccupation } from './occupation.js';
-import { projectileHitsIronBars } from './projectile_bars.js';
+import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot } from './botl.js';
@@ -219,6 +218,7 @@ import { createPoisonGasCloud } from './regions.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { reset_faint } from './eat.js';
 import type { GameMap } from './game.js';
+import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';
 
 export async function burnArmorByFire(
     victim: Hero | Monster, state: GameState,

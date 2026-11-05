@@ -2,10 +2,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { reviveCorpseForHero } from '../js/zap.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { mkcorpstat, unlinkObject } from '../js/mkobj.js';
-import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
+import { finishEnvironmentalMonsterDeath,
+    finishHeroMonsterKill,
+} from '../js/mon.js';
 import type { GameObject } from '../js/object_types.js';
 import { CORPSE, DAGGER, STATUE } from '../js/object_data.js';
 import { addShopObjectToBill, objectOwnershipPrefix, shopResident } from '../js/shk.js';

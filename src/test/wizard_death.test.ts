@@ -3,10 +3,11 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { MIGR_RANDOM, NO_MINVENT, W_AMUL } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { flush_screen } from '../js/display.js';
-import { finishEnvironmentalMonsterDeath, removeMonsterFromGame } from '../js/mon.js';
+import { finishEnvironmentalMonsterDeath, removeMonsterFromGame,
+    finishHeroMonsterKill,
+} from '../js/mon.js';
 import { monsterDeathCount } from '../js/mon.js';
 import { AMULET_OF_LIFE_SAVING } from '../js/object_data.js';
 import { resurrectWizard } from '../js/wizard.js';

@@ -39,10 +39,11 @@ import { displayColorName, displayLiquidName, monsterName, novelTitle } from './
 import { explode } from './explosion.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero, heroIsSick, makeBlinded, makeConfused, makeStunned, applyPotionEffect, heroIsSliming, setHeroSlimingTimeout } from './potion.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { morehungry } from './eat.js';
-import { wakeMonster, monstersInFmonOrder } from './mon.js';
+import { wakeMonster, monstersInFmonOrder,
+    finishHeroMonsterKillOutcome,
+} from './mon.js';
 import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly } from './mondata.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';

@@ -4,7 +4,6 @@ import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { CQ_CANNED, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { CLUB, MAGIC_LAMP, OIL_LAMP } from '../js/object_data.js';
@@ -12,6 +11,7 @@ import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { freshPlayableRoom } from './support/playable-room.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 void test('wielding with no suggested weapons shows the hands choice with one separator', async () => {
     freshPlayableRoom();

@@ -4,7 +4,7 @@ import { CORR, DOOR, IRONBARS, NO_MINVENT, W_NONDIGGABLE } from '../js/const.js'
 import { game } from '../js/gstate.js';
 import { canSeeMonster } from '../js/display.js';
 import { ACID_VENOM, ARROW, BLINDING_VENOM, DAGGER, LEATHER_GLOVES, MIRROR, OBJECT_NAMES, POT_ACID, POT_WATER, WAR_HAMMER, } from '../js/object_data.js';
-import { projectileHitsIronBars } from '../js/projectile_bars.js';
+import { projectileHitsIronBars } from '../js/mthrowu.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { throwInventoryObject } from './support/commands.js';
 import { floorObjectsAt } from './support/level-state.js';

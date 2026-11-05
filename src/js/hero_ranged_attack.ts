@@ -28,7 +28,7 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
-import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './hero_monster_death.js';
+import type { FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome } from './mon.js';
 import type { Position } from './map_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { wakeAttackedMonster } from './mon.js';

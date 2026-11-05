@@ -4,15 +4,15 @@ import { objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, A
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap, enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport.js';
-import { moveMonsterNextToHero, monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake, releaseHeroFromMonster, } from './mon.js';
-import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig } from './hack.js';
+import { moveMonsterNextToHero, monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake, releaseHeroFromMonster, isZombieMaker, zombieForm, } from './mon.js';
+import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig, switchHeroTerrain } from './hack.js';
 import { impossible, panic } from './diagnostics.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { veganCorpse } from './food_traits.js';
 import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN, AD_CORR, AD_DCAY, AD_DGST, AD_DREN, AD_DETH, AD_CONF, AD_DRLI, AD_ELEC, AD_ENCH, AD_FIRE, AD_LEGS, AD_PHYS, AD_POLY, AD_TLPT, AD_DISE, AD_PEST, AD_FAMN, AD_MAGM, AD_SPC2, AD_SAMU, AD_SEDU, AD_SGLD, AD_SSEX, AD_SITM, AD_SLIM, AD_SLOW, AD_SPEL, AD_STCK, AD_STON, AD_STUN, AD_WRAP, AD_PLYS, AD_WERE, AD_RUST, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_GAZE, AT_HUGS, AT_MAGC, AT_SPIT, AT_TUCH, AT_WEAP, AT_KICK, AT_BITE, AT_STNG, AT_BUTT, AT_TENT, AT_EXPL } from './monster_attack_types.js';
 import { M_SEEN_REFL, A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit, Is_rogue_level, DISMOUNT_THROWN, LEVEL_TELEP, RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, ACCESSIBLE, DRAWBRIDGE_UP, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, WEB, WT_TOOMUCH_DIAGONAL } from './const.js';
 import { isok } from './cmd.js';
-import { watchDigging, digMonsterTunnel, diggingTimeToHole } from './dig.js';
+import { watchDigging, digMonsterTunnel, diggingTimeToHole, buryObject } from './dig.js';
 import { heroIsHallucinating, heroIsDeaf, heroIsUnaware } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage } from './zap.js';
@@ -34,22 +34,21 @@ import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.j
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
-import { dissolveBars } from './projectile_bars.js';
+import { dropMonsterObject } from './steal.js';
 import { removeObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHasLineOfSightToHero, vision_note_blocker_change } from './vision.js';
 import { plineWithContinuation } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
-import { releaseMonsterHold } from './hero_expulsion.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { mintrap, trapAt, maketrap, count_traps } from './trap.js';
-import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth, placeHeroOnLevel, depth, } from './dungeon.js';
+import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth, placeHeroOnLevel, depth, specialLevelAt, } from './dungeon.js';
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
 import { attackHeroWithPolearm, monsterLinedUpWithHero, monsterLinedUpWithPerceivedHero, objectTypeName, readyRangedMonsterWeapon, throwMonsterWeaponAtHero } from './mthrowu.js';
 import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, returningWeaponRangeSquared, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
-import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
+import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects, expelHero } from './mhitu.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
 import { poisonAttackAttribute, poisonHeroFromMonster, applyMonsterStoningAttack, startHeroPetrificationFromMonster, } from './uhitm.js';
@@ -64,14 +63,12 @@ import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { heroGoldObject } from './hero_gold.js';
 import { canLetGo } from './do.js';
 import { canFallThrough } from './mklev.js';
-import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
 import { talkToDemon } from './demon_talk.js';
-import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
@@ -261,6 +258,21 @@ export function monsterIsScaredAt(monster, state, x, y) {
         || monster?.mcansee === false || monster?.mcansee === 0
         || monster?.mpeaceful || monster?.mnum === PM_MINOTAUR
         || inHell || endgame);
+}
+// C monmove.c:release_hero(). A monster can end its own hold, but cannot
+// release a sticky hero's grip. Expulsion also settles the hero's landing.
+export async function releaseMonsterHold(monster, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, } = {}) {
+    if (state.u.ustuck !== monster)
+        return false;
+    if (state.u.uswallow) {
+        const result = await expelHero(monster, { state, publish, random, rollOne });
+        return !!result.died;
+    }
+    if (!heroFormSticks(state)) {
+        await releaseHeroFromMonster(monster, { state, publish, rollOne });
+        await publish('You get released!');
+    }
+    return false;
 }
 // C monmove.c:bee_eat_jelly(). A living queen leaves the meal untouched.
 // Also C monmove.c:find_pmmonst(): inlined here for the queen bee search.
@@ -659,6 +671,18 @@ export function canMonsterHideUnderObjectAt(state, x, y) {
     }
     return false;
 }
+// C monmove.c:dissolve_bars(). Bars already transmit light; callers which
+// also remove opaque terrain or objects own any blocker recalculation.
+export async function dissolveBars(x, y, state = game) {
+    const level = requireGameLevel(state);
+    const location = level.requireAt(x, y);
+    location.typ = location.edge === true || location.edge === 1 ? DOOR
+        : specialLevelAt(state.u.uz, state) || roomsAt(level, x, y).length ? ROOM : CORR;
+    location.flags = location.doormask = location.wall_info = 0;
+    await newsym(x, y);
+    if (state.u.ux === x && state.u.uy === y)
+        await switchHeroTerrain(state);
+}
 // C monmove.c:m_digweapon_check().  A pick-dependent tunneller may select a
 // diggable destination while unarmed, but it must spend this action readying
 // the appropriate tool before a later turn can enter and excavate the square.
@@ -989,6 +1013,24 @@ export async function stopMonsterHeldByHero(monster, state) {
         capitalized: true,
     })} cannot escape from you!`);
     return true;
+}
+// C monmove.c:leppie_stash(), after a successful fleeing teleport.
+export async function stashLeprechaunGold(monster, state = game, random = rn2) {
+    const level = requireGameLevel(state);
+    if (monster.mnum !== MONSTER_NAME.indexOf('leprechaun') || monster.dead || monster.mhp <= 0
+        || monsterHasLineOfSightToHero(monster, state)
+        || roomsAt(level, monster.mx, monster.my, SHOPBASE).length
+        || level.at(monster.mx, monster.my)?.typ !== ROOM
+        || level.traps.some(trap => trap.tx === monster.mx && trap.ty === monster.my)
+        || !random(4))
+        return;
+    const gold = monster.minvent?.find(object => object.otyp === GOLD_PIECE);
+    if (!gold)
+        return;
+    await dropMonsterObject(monster, gold, state, { random });
+    const dropped = level.objects[monster.mx]?.[monster.my]?.find(object => object.otyp === GOLD_PIECE);
+    if (dropped)
+        await buryObject(dropped, state);
 }
 // C monmove.c:m_balks_at_approaching().  A nearby monster which can still
 // use a ranged attack does not blindly close to melee range.  Ordinary

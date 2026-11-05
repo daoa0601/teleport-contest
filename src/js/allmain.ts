@@ -9,7 +9,9 @@ import type { MessagePublisher } from './pline.js';
 import { heroLegName } from './body_parts.js';
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
-import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages } from './mon.js';
+import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages,
+    finishHeroLiquidMonsterDeath, finishHeroMonsterKill,
+} from './mon.js';
 import { heroIsHallucinating, heroIsBlind, heroIsDeaf, syncBlindness } from './senses.js';
 import { learnWand, applyRayFloorFeatures, destroyColdInventory, destroyElectricInventory, destroyFireInventory, heroHasHalfSpellDamage } from './zap.js';
 import { flashBurn } from './zap.js';
@@ -73,7 +75,6 @@ import { makemonAt, finishMonsterGrowth } from './makemon.js';
 import type { MonsterGrowth } from './makemon.js';
 import { performQuestExpulsion, ensureQuestStatus, talkQuestCharacter } from './quest.js';
 import { amuletTurn, intervene, publishMonsterCuss } from './wizard.js';
-import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
 import { grantAmuletWish } from './wish.js';
 import { checkAttributeExercise, currentAttribute, exerciseAttribute, exerciseWisdom, loseHeroStrength, periodicTurnExercise } from './attrib.js';
 import { encumber_msg } from './pickup.js';

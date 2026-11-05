@@ -19,14 +19,15 @@ import type { GameState } from './game_state.js';
 import type { Position, MapLocation } from './map_types.js';
 import {remove_object} from './mkobj.js';
 import { BOULDER } from './object_data.js';
-import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid } from './mon.js';
+import { wakeMonstersNearWithMessages, finishMonsterKilled, resolveMonsterLiquid,
+    finishHeroMonsterKill, finishLiquidDeathForCurrentMover,
+} from './mon.js';
 import { delobj } from './invent.js';
 import { unpunishHero } from './read.js';
 import { heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { monsterAtPosition, placeMonsterOnMap } from './steed.js';
 import { finishHeroDeath } from './end.js';
-import { finishHeroMonsterKill, finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroLiquidEffects, reviveNastyAt, finishDestinationSpotEffects } from './hack.js';
 import { MONSTER_MOVE, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { AD_DGST, AD_PHYS } from './monster_attack_types.js';

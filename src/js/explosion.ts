@@ -17,10 +17,11 @@ import { finishHeroDeath } from './end.js';
 import type { DeathHandler, OrdinaryDeathOptions } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { burnAwayHeroSlime } from './hack.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { heroFormSticks, heroSpecies, applyHeroGolemEffects, returnHeroToHumanForm } from './polyself.js';
 import { formatHeardMessage } from './hero_speech.js';
-import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages } from './mon.js';
+import { angerAttackedMonster, applyMonsterGolemEffects, finishMonsterKilled, wakeMonster, revealMonsterAppearance, wakeMonstersNearWithMessages,
+    finishHeroMonsterKillOutcome,
+} from './mon.js';
 import type { MonsterExplosionOptions } from './mon.js';
 import { AD_ACID, AD_COLD, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRDX, AD_DRST, AD_ELEC, AD_ENCH, AD_FIRE, AD_MAGM, AD_PEST, AD_PHYS, AD_RBRE, AD_SPEL, AT_ENGL } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';

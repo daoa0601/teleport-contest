@@ -8,7 +8,6 @@ import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrow
 import { pline, plineWithContinuation } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
 import { artifactById } from './artifacts.js';
@@ -24,7 +23,7 @@ import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronous
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
 import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget, heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
-import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster } from './mon.js';
+import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster, finishHeroMonsterKillOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';

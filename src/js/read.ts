@@ -80,7 +80,6 @@ import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { listGenocided } from './insight.js';
 import type { DeathHandler } from './end.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { propertyIsActive } from './properties.js';
 import { createPoisonGasCloud } from './regions.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
@@ -99,7 +98,9 @@ import { gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { recordLiteracy } from './literacy.js';
 import { getLine, promptYesNo } from './query.js';
 import { readOrdinaryObject } from './readable_objects.js';
-import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages } from './mon.js';
+import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killGenocidedMonsters, removeMonsterFromGame, wakeMonster, wakeMonstersNearWithMessages,
+    finishHeroMonsterKillOutcome,
+} from './mon.js';
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
 import type { GameState, PlayingGameState } from './game_state.js';

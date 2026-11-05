@@ -2,8 +2,9 @@
 // C ref: dbridge.c:destroy_drawbridge() -> explode.c:scatter().
 
 import { plineWithContinuation } from './pline.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
-import { finishEnvironmentalMonsterDeath } from './mon.js';
+import { finishEnvironmentalMonsterDeath,
+    finishHeroMonsterKill,
+} from './mon.js';
 import {mksobj, placeCreatedObject} from './mkobj.js';
 import { IRON_CHAIN } from './object_data.js';
 import { rn2 } from './rng.js';

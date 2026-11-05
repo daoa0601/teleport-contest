@@ -27,7 +27,9 @@ import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requir
 import type { GameState } from './game_state.js';
 import type { PropertyName } from './property_types.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
+import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt,
+    finishHeroMonsterKill,
+} from './mon.js';
 import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import {
@@ -65,7 +67,6 @@ import {
 import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './do.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';

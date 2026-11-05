@@ -1,4 +1,4 @@
-import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, monsterInAir, sendMonsterToLimbo } from './mon.js';
+import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, monsterInAir, sendMonsterToLimbo, isRider, } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { updateHeroRegions, updateMonsterRegions } from './regions.js';
@@ -49,7 +49,6 @@ import { publishMonsterYelp } from './ambient_sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './do.js';
-import { isRider } from './corpse_species.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { unlinkObject, placeObject } from './mkobj.js';
 import { gotoLevel, gotoLevel as changeLevel, scheduleLevelChange } from './do.js';

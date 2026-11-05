@@ -12,6 +12,8 @@ import {
     setHeroGrip, moveMonsterNextToHero, hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt,
     revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid,
     finishEnvironmentalMonsterDeath, publishMonsterWake,
+    finishHeroLiquidMonsterDeath,
+    isRider,
 } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
@@ -128,13 +130,11 @@ import { randomTeleportDepth } from './level_teleport.js';
 
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
-import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './insight.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 
 import { recorderLocalHour } from './calendar.js';
-import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
@@ -144,7 +144,8 @@ import { adjustHeroAlignment, currentAttribute, currentStrength, exerciseAttribu
 
 import { objectBreaksOnImpact } from './dothrow.js';
 import { setPrimaryWeapon } from './wield.js';
-import { hitIronBars, dissolveBars } from './projectile_bars.js';
+import { hitIronBars } from './mthrowu.js';
+import { dissolveBars } from './monmove.js';
 import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
 import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';

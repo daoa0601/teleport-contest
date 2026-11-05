@@ -1,8 +1,10 @@
-// Monster body and terrain rules.
+// Monster body and terrain rules: scheduling and movement allocation,
+// monster death (mondead(), xkilled(), monstone(), vamprises()), corpse
+// and zombie species, waking, hiding, and shapechanging.
 // C ref: mon.c.
-import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS } from './objclass.js';
+import { SCROLL_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, RANDOM_CLASS, FOOD_CLASS } from './objclass.js';
 import { OBJ_DESCR, objectTypeColor } from './o_init.js';
-import { objectBaseWeight, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
+import { objectBaseWeight, objectBimanual, AXE, BATTLE_AXE, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FIGURINE, GLOB_OF_GRAY_OOZE, GLOB_OF_GREEN_SLIME, ICE_BOX, PICK_AXE, TIN, AMULET_OF_STRANGULATION, BOOMERANG, BULLWHIP, CLUB, ELVEN_SPEAR, GRAPPLING_HOOK, GRAY_DRAGON_SCALES, IRON_CHAIN, LEASH, LEATHER_ARMOR, LEATHER_CLOAK, BELL_OF_OPENING, QUARTERSTAFF, RIN_SLOW_DIGESTION, ROCK, SADDLE, SCR_BLANK_PAPER, SCR_SCARE_MONSTER, SMALL_SHIELD, STATUE, UNICORN_HORN, WORM_TOOTH, WORTHLESS_PIECE_OF_VIOLET_GLASS, WORTHLESS_PIECE_OF_WHITE_GLASS, } from './object_data.js';
 import { game, requireInitializedGame, requirePlayingGame, requireGameLevel, requireLiveGame } from './gstate.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility, bypassObject, clearBypasses } from './worn.js';
@@ -12,17 +14,17 @@ import { isLavaAt, isPoolAt } from './dbridge.js';
 import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
-import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed } from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters } from './display.js';
 import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, } from './mondata.js';
+import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, is_dwarf, is_elf, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsAlwaysHostile, monsterIsPlainHuman, monsterIsQuestGuardian, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies, } from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo, reportMonsterTeleportRestriction, monsterTeleportRestricted, enexto, goodPosition } from './teleport.js';
 import { fireDamageChain, monsterTrapIsHarmless, trapAt, waterDamageChain, monsterSelfTouch, monsterWearsGloves, fillPitWithBoulderAt } from './trap.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage } from './hero_speech.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMonsterHitPoints } from './makemon.js';
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName, makePlural } from './objnam.js';
 import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
@@ -31,19 +33,19 @@ import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, reassessMonsterArmor, adjustMonsterClothingAfterPolymorph, checkMonsterGearNextTurn, findMonsterArmorClass, applyMonsterEquipmentProperties, clearMonsterCarriedObjectState } from './monworn.js';
 import { addObjectToMonsterInventory, dropSpecialMonsterObjects, releaseMonsterInventory, armorThiefGone } from './steal.js';
+import { removeIntrinsicProperty } from './properties.js';
 import { isLevelPrize } from './level_prize.js';
 import { objectMaterial } from './o_init.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } from './dogmove.js';
-import { splitObjectStack, mkcorpstat, mkgold, mksobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
+import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './ambient_sounds.js';
-import { adjustHeroAlignment, currentAttribute } from './attrib.js';
+import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { isReviver, isZombieMaker, zombieForm, isRider } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling, surfaceName } from './dungeon.js';
 import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph } from './weapon.js';
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
@@ -54,20 +56,19 @@ import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
-import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig } from './hack.js';
+import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig, finishDestinationSpotEffects } from './hack.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { questMonsterSound } from './role_monsters.js';
-import { expelHero } from './hero_expulsion.js';
+import { questMonsterSound, questMonsterAlignment } from './role_monsters.js';
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import { finishScheduledLevelChange } from './do.js';
 import { moveVaultGuard, prepareVaultGuardDeath } from './vault.js';
-import { LL_ACHIEVE, LL_UMONST, recordGameLogEvent } from './gamelog.js';
+import { LL_ACHIEVE, LL_KILLEDPET, LL_UMONST, recordGameLogEvent } from './gamelog.js';
 import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
+import { markQuestLeaderDead, markQuestNemesisDead, isQuestLeader } from './quest.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';
 import { heroStomachName } from './body_parts.js';
@@ -75,23 +76,23 @@ import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
-import { monsterCanTouchArtifact } from './artifacts.js';
+import { monsterCanTouchArtifact, uncreateArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './do.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
-import { addExperience, checkExperienceLevel, monsterExperience } from './exper.js';
+import { addExperience, awardMonsterExperience, checkExperienceLevel, monsterExperience } from './exper.js';
 import { getLine } from './query.js';
 import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
-import { resolveMonsterGaze } from './mhitu.js';
+import { resolveMonsterGaze, expelHero, } from './mhitu.js';
 import { monsterCanBeLeashed, releaseMonsterLeash, releaseMonsterLeashWithFeedback } from './apply.js';
 import { wormKnown } from './display.js';
 import { controlMonsterTeleport, requireLevel } from './teleport.js';
 import { heroIsUnaware } from './senses.js';
-import { A_WIS, D_NODOOR, D_TRAPPED, W_AMUL } from './const.js';
+import { A_WIS, A_CHAOTIC, A_NONE, D_NODOOR, D_TRAPPED, W_AMUL } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { pline as lifeSavingLine } from './pline.js';
 import { releaseHeroGrip } from './polyself.js';
@@ -422,6 +423,90 @@ export async function resolveMonsterLiquid(monster, state = game, { announce = a
             return { heroDied: true };
     }
     return null;
+}
+// C mon.c:minliquid_core() asks context.mon_moving who owns a liquid death: a
+// monster's own move dies by mondead()/mondied(), anything else by xkilled().
+export function finishLiquidDeathForCurrentMover(monster, options) {
+    return options.state.context.mon_moving
+        ? finishMonsterLiquidDeath(monster, options)
+        : finishHeroLiquidMonsterDeath(monster, options);
+}
+// Drowning caused by the hero uses xkilled() without a second kill line.
+// Rust and fire-resistant scorching retain mon.c's environmental death owner.
+export async function finishHeroLiquidMonsterDeath(monster, { leaveCorpse = false, hallucinating = heroIsHallucinating(game), cause, sadFeeling = false, publish = plineWithContinuation, } = {}) {
+    if (cause === 'rust' || cause === 'lava-scorch') {
+        const death = await finishMonsterLiquidDeath(monster, { leaveCorpse, sadFeeling, publish });
+        return { ...death, heroDied: !!death.heroDied };
+    }
+    const x = monster.mx;
+    const y = monster.my;
+    const { killed, heroDied } = await finishHeroMonsterKillOutcome(monster, x, y, {
+        hallucinating,
+        showKillMessage: false,
+        noCorpse: !leaveCorpse,
+        sadFeeling,
+        publish,
+    });
+    return {
+        oldx: x,
+        oldy: y,
+        x,
+        y,
+        moved: false,
+        dead: killed,
+        actionCompleted: killed,
+        heroDied,
+    };
+}
+// C mon.c:zombie_maker(). A non-cancelled zombie (but not a ghoul or
+// skeleton) or lich turns corpses it kills into zombies.
+export function isZombieMaker(mnum, cancelled = false) {
+    if (cancelled)
+        return false;
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === 38)
+        return true; // S_LICH
+    return symbol === 52 && mnum !== 246 && mnum !== 248; // ghoul, skeleton
+}
+const ZOMBIE_S_HUMANOID = 8, ZOMBIE_S_KOBOLD = 11, ZOMBIE_S_ORC = 15;
+const ZOMBIE_S_GNOME = 33, ZOMBIE_S_GIANT = 34, ZOMBIE_S_KOP = 37, ZOMBIE_S_HUMAN = 53;
+const ZOMBIE_PM_ETTIN = MONSTER_NAME.indexOf('ettin');
+const ZOMBIE_PM_KOBOLD_ZOMBIE = MONSTER_NAME.indexOf('kobold zombie');
+const ZOMBIE_PM_GNOME_ZOMBIE = MONSTER_NAME.indexOf('gnome zombie');
+const ZOMBIE_PM_ORC_ZOMBIE = MONSTER_NAME.indexOf('orc zombie');
+const ZOMBIE_PM_DWARF_ZOMBIE = MONSTER_NAME.indexOf('dwarf zombie');
+const ZOMBIE_PM_ELF_ZOMBIE = MONSTER_NAME.indexOf('elf zombie');
+const ZOMBIE_PM_HUMAN_ZOMBIE = MONSTER_NAME.indexOf('human zombie');
+const ZOMBIE_PM_ETTIN_ZOMBIE = MONSTER_NAME.indexOf('ettin zombie');
+const ZOMBIE_PM_GIANT_ZOMBIE = MONSTER_NAME.indexOf('giant zombie');
+// C mon.c:zombie_form(). The living monster's zombie counterpart, or null
+// when it has none; zombies themselves keep their current species.
+export function zombieForm(mnum) {
+    // C mon.c:zombie_form() uses the living monster's class and race,
+    // so ranked species share the same zombie form as their base species.
+    const symbol = MONSTER_SYMBOL[mnum];
+    if (symbol === undefined)
+        return null;
+    switch (symbol) {
+        case ZOMBIE_S_KOBOLD: return ZOMBIE_PM_KOBOLD_ZOMBIE;
+        case ZOMBIE_S_ORC: return ZOMBIE_PM_ORC_ZOMBIE;
+        case ZOMBIE_S_GIANT: return mnum === ZOMBIE_PM_ETTIN ? ZOMBIE_PM_ETTIN_ZOMBIE : ZOMBIE_PM_GIANT_ZOMBIE;
+        case ZOMBIE_S_HUMAN:
+        case ZOMBIE_S_KOP: return is_elf(mnum) ? ZOMBIE_PM_ELF_ZOMBIE : ZOMBIE_PM_HUMAN_ZOMBIE;
+        case ZOMBIE_S_HUMANOID: return is_dwarf(mnum) ? ZOMBIE_PM_DWARF_ZOMBIE : null;
+        case ZOMBIE_S_GNOME: return ZOMBIE_PM_GNOME_ZOMBIE;
+        default: return null;
+    }
+}
+// C include/mondata.h:is_rider(). Death, Pestilence and Famine never leave
+// a revivable corpse behind for long.
+export function isRider(mnum) {
+    return mnum !== undefined && mnum >= 311 && mnum <= 313;
+}
+// C include/mondata.h:is_reviver(). Riders and trolls rise from their
+// corpses unless the corpse is timed or eaten first.
+export function isReviver(mnum) {
+    return isRider(mnum) || mnum !== undefined && MONSTER_SYMBOL[mnum] === 46; // S_TROLL
 }
 const UNDEAD_CORPSE_TYPES = new Map([
     [239, 59], [187, 59], // kobold zombie/mummy -> kobold
@@ -3135,6 +3220,283 @@ export async function monsterSelfTouchAfterPolymorph(monster, options = {}) {
         ...options,
         prefix: 'No longer petrify-resistant, ',
     });
+}
+const M2_COLLECT = 0x40000000;
+// The boolean records the monster's fate, not the hero's.
+export async function finishHeroMonsterKill(monster, x, y, options = {}) {
+    const outcome = await finishHeroMonsterKillOutcome(monster, x, y, options);
+    return outcome.killed;
+}
+// A monster the hero hurtled into dies without a kill message, corpse, or
+// conduct record; kick recoil, #wiztelekinesis, and polearm pushes share it.
+export function finishHurtleMonsterDeath(monster, { noCorpse = true } = {}) {
+    return finishHeroMonsterKill(monster, monster.mx, monster.my, {
+        showKillMessage: false,
+        noCorpse,
+        recordConduct: false,
+    });
+}
+// C mon.c:xkilled(). Hero-credited monster death: the kill line, treasure
+// and corpse drops, murder luck and alignment penalties, experience, and
+// vault guard / shopkeeper / priest consequences. The options carry C's
+// XKILL_NOMSG / XKILL_NOCORPSE / XKILL_NOCONDUCT flags plus the recorder's
+// continuation context (petrified remains, zombify, swallowed-cause deaths).
+export async function finishHeroMonsterKillOutcome(monster, x, y, { hallucinating = heroIsHallucinating(game), showKillMessage = true, deathContext = null, noCorpse = false, recordConduct = true, zombifyCorpse = false, noRevive = false, petrified = false, stoneRemains = null, sadFeeling = false, publish = plineWithContinuation, } = {}) {
+    requirePlayingGame(game);
+    const wasInside = (game.u.uswallow && game.u.ustuck === monster)
+        || deathContext?.kind === 'swallowed-projectile'
+        || deathContext?.kind === 'swallowed-potion'
+        || deathContext?.kind === 'swallowed-breath'
+        || deathContext?.kind === 'swallowed-venom'
+        || deathContext?.kind === 'swallowed-egg';
+    if (deathContext && !wasInside) {
+        throw new Error(`unsupported monster death context ${deathContext.kind}`);
+    }
+    monster.mhp = 0;
+    const deathLocationVisible = cansee(x, y);
+    const deathWasSpotted = wasInside || canSpotMonster(monster);
+    if (recordConduct)
+        recordHeroKillConduct();
+    if (showKillMessage) {
+        const deathVerb = monsterIsNonliving(monster.mnum)
+            ? 'destroy' : 'kill';
+        const namedPet = !!MGIVENNAME(monster) && !heroIsHallucinating(game);
+        const deathTarget = !deathWasSpotted ? 'it'
+            : monster.mtame ? monsterName(monster, {
+                article: namedPet ? 'none' : 'the', adjective: 'poor',
+                suppressSaddle: namedPet,
+            }) : monsterName(monster);
+        await publish(`You ${deathVerb} ${deathTarget}!`);
+    }
+    // A dying monster trapped in a pit over a boulder buries its corpse;
+    // a boulder already lying in the pit suppresses all remains. C notes
+    // this runs out of order with respect to the rest of the routine.
+    let buryCorpse = false;
+    let suppressPitRemains = false;
+    if (monster.mtrapped) {
+        const trap = game.level?.traps?.find(candidate => candidate.tx === x && candidate.ty === y);
+        if (trap && is_pit(trap.ttyp)) {
+            const floorObjects = game.level?.objects?.[x]?.[y] || [];
+            const carriedObjects = monster.minvent || monster.inventory || [];
+            buryCorpse = carriedObjects.some(object => object.otyp === BOULDER);
+            suppressPitRemains = floorObjects.some(object => object.otyp === BOULDER);
+        }
+    }
+    const suppressRemains = noCorpse || suppressPitRemains;
+    // Your pet knows who just killed it...watch out.
+    if (monster.mtame && !monster.isminion) {
+        const pet = monster.edog || monster.mextra?.edog;
+        if (pet)
+            pet.killed_by_u = 1;
+    }
+    if (deathContext?.kind === 'swallowed-projectile') {
+        await addObjectToMonsterInventory(monster, deathContext.projectile, game, { atFront: true });
+    }
+    const stone = petrified
+        ? await prepareMonsterPetrification(monster, { publish }) : null;
+    if (stone?.heroDied)
+        return { killed: false, heroDied: true };
+    const recovery = stone?.survived ? stone : await preventMonsterDeath(monster, {
+        disintegrated: suppressRemains,
+        state: game,
+    });
+    if (recovery.heroDied)
+        return { killed: !recovery.survived, heroDied: true };
+    if (recovery.survived) {
+        if (!deathLocationVisible && !recovery.messageShown)
+            await plineWithContinuation('Maybe not...');
+        return { killed: false, heroDied: false };
+    }
+    const completedDeath = 'completedDeath' in recovery ? recovery.completedDeath : null;
+    if (!completedDeath && await detachDeadMonster(monster, game, rn2, publish))
+        return { killed: true, heroDied: true };
+    if (wasInside)
+        await describeStoneEngulferEscape(monster, stone?.remains ?? stoneRemains, game, publish);
+    // xkilled() owns this message after mondead() has released the inventory.
+    if (sadFeeling)
+        await publish('You have a sad feeling for a moment, then it passes.');
+    const levelAllowsDeathDrops = !petrified && !suppressRemains
+        && levelAllowsMonsterDeathDrops(monster, game, rn2);
+    const squareAllowsDeathObjects = monsterDeathSquareAllowsObjects(x, y, game);
+    const canCreateDeathObjects = levelAllowsDeathDrops
+        && squareAllowsDeathObjects;
+    if (canCreateDeathObjects) {
+        const extraObjectRoll = rn2(6);
+        if (extraObjectRoll === 0
+            && !((game.mvitals?.[monster.mnum]?.mvflags ?? 0) & G_NOCORPSE)
+            && (x !== game.u?.ux || y !== game.u?.uy)
+            && !monsterIsKop(monster.mnum)
+            && !monster.mcloned) {
+            const extra = await mkobj(RANDOM_CLASS, true);
+            // C mon.c:xkilled() reads M2_COLLECT directly; armed species alone do not collect food.
+            const collectsFood = !!((MONSTER_FLAGS2[monster.mnum] ?? 0)
+                & M2_COLLECT);
+            const tooLarge = (MONSTER_SIZE[monster.mnum] ?? MZ_HUMAN)
+                < MZ_HUMAN
+                && extra.otyp !== FIGURINE
+                && ((extra.owt ?? 1) > 30
+                    // C mon.c:3607 reads objects[otyp].oc_big raw; the
+                    // comment there notes it is also oc_bimanual and oc_bulky.
+                    || objectBimanual(extra.otyp));
+            const disposableFood = extra.oclass === FOOD_CLASS && !collectsFood
+                && !extra.oartifact;
+            if (disposableFood) {
+                await delobj(extra, game);
+            }
+            else if (tooLarge) {
+                if (extra.oartifact)
+                    uncreateArtifact(extra, game);
+                await delobj(extra, game);
+            }
+            else {
+                await landFloorObject(extra, x, y, {
+                    state: game,
+                    publish: plineWithContinuation,
+                });
+            }
+        }
+    }
+    if (game.program_state.gameover)
+        return { killed: true, heroDied: true };
+    const deathExplosion = !wasInside && canCreateDeathObjects
+        ? rollMonsterDeathExplosion(monster)
+        : null;
+    let leavesCorpse = false;
+    if (deathExplosion === null) {
+        if (canCreateDeathObjects && monsterBodyCrumbles(monster)
+            && deathLocationVisible && !wasInside && !monsterDeathSwallower(game))
+            await plineWithContinuation(monsterBodyCrumblesMessage(monster));
+        // corpse_chance() repeats LEVEL_SPECIFIC_NOCORPSE after the crumble
+        // check, so graveyard undead roll again here.
+        leavesCorpse = !wasInside && canCreateDeathObjects
+            && !monsterBodyCrumbles(monster)
+            && levelAllowsMonsterDeathDrops(monster, game, rn2)
+            && monsterLeavesCorpse(monster, rn2);
+    }
+    if (deathExplosion !== null) {
+        await newsym(x, y);
+        const explosion = await resolveMonsterDeathExplosion(monster, x, y, deathExplosion, {
+            state: game,
+            heroCaused: !game.context.mon_moving,
+        });
+        if (explosion.heroDied)
+            return { killed: true, heroDied: true };
+    }
+    let corpse = null;
+    if (leavesCorpse) {
+        corpse = await createMonsterRemains(monster, game, {
+            buried: buryCorpse,
+            zombify: zombifyCorpse,
+            noRevive,
+            seen: deathWasSpotted,
+            publish: plineWithContinuation,
+        });
+        if (game.program_state.gameover)
+            return { killed: true, heroDied: true };
+    }
+    if (buryCorpse && corpse?.where === 'buried'
+        && cansee(x, y) && !monster.minvis && showKillMessage) {
+        const possessive = possessiveName(monsterName(monster, { capitalized: true }));
+        await plineWithContinuation(`${possessive} corpse ends up buried.`);
+    }
+    if (wasInside && levelAllowsDeathDrops) {
+        const destination = await finishDestinationSpotEffects({
+            oldx: game.u.ux0 ?? x,
+            oldy: game.u.uy0 ?? y,
+            newx: x,
+            newy: y,
+        });
+        if (destination.died)
+            return { killed: true, heroDied: true };
+    }
+    // Native xkilled jumps over this landing/redraw block when remains are
+    // suppressed. Otherwise the map is current before kill-credit messages.
+    if (levelAllowsDeathDrops)
+        await newsym(x, y);
+    // Punish bad behavior: murdering a harmless human costs telepathy and
+    // luck (role monsters and plain humans are excluded).
+    if (monsterIsHuman(monster.mnum)
+        && !monsterIsAlwaysHostile(monster.mnum)
+        && monster.malign <= 0
+        && !monsterIsPlayerMonster(monster.mnum)
+        && !monsterIsPlainHuman(monster.mnum)
+        && (game.u?.ualign?.type ?? 0) !== A_CHAOTIC) {
+        removeIntrinsicProperty('telepathy', game);
+        changeHeroLuck(-2);
+        await plineWithContinuation('You murderer!');
+        const blind = !!game.blind || (game.u?.blindTurns ?? 0) > 0;
+        if (blind && !game.u?.blindTelepathy && !game.u?.telepathy)
+            await see_monsters();
+    }
+    if ((monster.mpeaceful && rn2(2) === 0) || monster.mtame)
+        changeHeroLuck(-1);
+    if (monsterIsUnicorn(monster.mnum)
+        && Math.sign(game.u?.ualign?.type ?? 0)
+            === Math.sign(questMonsterAlignment(monster.mnum))) {
+        changeHeroLuck(-5);
+        await plineWithContinuation(formatFeltMessage('guilty...'));
+    }
+    // Give experience points.
+    const killCount = monsterDeathCount(monster.mnum);
+    awardMonsterExperience(monster, {
+        killCount,
+        amphibious: heroIsAmphibious(game),
+        armorClass: findMonsterArmorClass(monster),
+    });
+    await checkExperienceLevel();
+    // Adjust alignment points.
+    if (isQuestLeader(monster, game)) {
+        const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+        const alignmentRecord = game.u?.ualign?.record || 0;
+        adjustHeroAlignment(-(alignmentRecord + Math.trunc(alignmentLimit / 2)));
+        game.u.ugangr = (game.u.ugangr || 0) + 7;
+        changeHeroLuck(-20);
+        const probably = game.u?.uevent?.qcompleted ? 'probably ' : '';
+        await plineWithContinuation(`That was ${probably}a bad idea...`);
+        if (!game.context?.mon_moving)
+            await angerQuestGuardiansAfterLeaderDeath();
+    }
+    else if (questMonsterSound(monster.mnum, game) === 37) {
+        if (!game.quest_status?.killed_leader) {
+            const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+            adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
+        }
+    }
+    else if (monsterIsQuestGuardian(monster.mnum)) {
+        const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+        adjustHeroAlignment(-Math.trunc(alignmentLimit / 8));
+        game.u.ugangr = (game.u.ugangr || 0) + 1;
+        changeHeroLuck(-4);
+        await plineWithContinuation(hallucinating
+            ? 'Whoopsie-daisy!'
+            : 'That was probably a bad idea...');
+    }
+    else if (monster.ispriest) {
+        const coaligned = priestIsCoaligned(monster, game);
+        adjustHeroAlignment(coaligned ? -2 : 2);
+        if (coaligned)
+            game.u.ublessed = 0;
+        if (questMonsterAlignment(monster.mnum) === A_NONE) {
+            const alignmentLimit = 10 + Math.trunc((game.moves || 0) / 200);
+            adjustHeroAlignment(Math.trunc(alignmentLimit / 4));
+        }
+    }
+    else if (monster.mtame) {
+        adjustHeroAlignment(-15);
+        await publishHeardMessage(hallucinating ? 'the studio audience applaud!' : 'the rumble of distant thunder...', plineWithContinuation);
+        // mon.c:xkilled() records the pet murder in the chronicle unless
+        // the species never leaves a corpse behind as a unique statue.
+        if (!((MONSTER_GENO[monster.mnum] ?? 0) & G_UNIQ)) {
+            const given = MGIVENNAME(monster);
+            recordGameLogEvent(`murdered ${given ? `${given}, ` : ''}${game.flags.female ? 'her' : 'his'} faithful ${monsterTypeName(monster.mnum, monster.female)}`, { flags: LL_KILLEDPET });
+        }
+    }
+    else if (monster.mpeaceful) {
+        adjustHeroAlignment(-5);
+    }
+    // malign was already adjusted for u.ualign.type and randomization.
+    adjustHeroAlignment(monster.malign);
+    return { killed: true, heroDied: false };
 }
 export async function turnGolemToStone(monster, publish) {
     if (!monsterPolymorphsWhenStoned(monster))

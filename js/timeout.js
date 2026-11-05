@@ -16,7 +16,7 @@ import { advanceSpellProtection } from './spell.js';
 import { advanceDisplacementTimeout } from './hero_displacement.js';
 import { requireInitializedGame, game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { applyHeroLocationEffects, endVoluntaryMultiTurn, nomul, invWeight } from './hack.js';
-import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt } from './mon.js';
+import { wakeMonstersNearWithMessages, restartMonsterShapechanging, maybeUnhideAt, finishHeroMonsterKill, } from './mon.js';
 import { deferredDecor } from './pickup.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
 import { hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
@@ -37,7 +37,6 @@ import { extinguishHeroFormLight, heroHasNoLimbs, heroIsBreathless, heroIsGreenS
 import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './do.js';
-import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';

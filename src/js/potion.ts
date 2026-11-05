@@ -77,7 +77,7 @@ import {
 } from './invent.js';
 import { hasInternalInvisibility, heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './hero_invisibility.js';
 import type { Hero } from './hero_types.js';
-import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
+import type { FinishHeroMonsterDeath } from './mon.js';
 
 import {
     heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf,

@@ -5,7 +5,7 @@
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
 // xdrainenergym(), attk_protection(), and rustm() are folded in below.
 
-import { setHeroGrip } from './mon.js';
+import { setHeroGrip, isZombieMaker, zombieForm } from './mon.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import type { PlayingGameState, GameState } from './game_state.js';
@@ -35,7 +35,6 @@ import {
     M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON,
     ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH,
 } from './const.js';
-import { isZombieMaker, zombieForm } from './corpse_species.js';
 import {
     monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver,
     monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof,

@@ -2,15 +2,17 @@
 // the hero or at another monster. thitu(), drop_throw(), monmulti(),
 // monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
 // return_from_mtoss(), thrwmm(), spitmm()/spitmu(), breamm(), thrwmu(),
-// breamu(), blocking_terrain(), linedup() and m_lined_up().
+// breamu(), blocking_terrain(), linedup() and m_lined_up(), and the iron
+// bars a missile meets: hit_bars() and hits_bars().
 
-import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
+import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS, ARMOR_CLASS, TOOL_CLASS, FOOD_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {
-    objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES,
-    WAN_STRIKING,
+    objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CORPSE, CREAM_PIE, CREDIT_CARD, EGG, ELVEN_ARROW,
+    ELVEN_BOW, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES,
+    POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, WAN_STRIKING,
 } from './object_data.js';
-import { currentAttribute, poisonHero } from './attrib.js';
+import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import {
@@ -26,7 +28,8 @@ import {
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
-import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
+import { rangedTargetHitBonus, shouldMulchMissile, breakFloorObject, breakObjectAtLocation, harmlessMissile } from './dothrow.js';
+import type { ObjectBreakResult } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
 import {
     clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
@@ -35,7 +38,7 @@ import {
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_WEP } from './const.js';
+import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR } from './const.js';
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import {
@@ -43,22 +46,23 @@ import {
     TemporaryMapEffect,
 } from './display.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
-import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requireLiveGame, requirePlayingGame, requireGameLevel } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
 import { holdAnotherObject, stack_object } from './invent.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
-import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { heroSpecies, heroHasNoHands } from './polyself.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
-import { revealMonsterAppearance, wakeMonstersNearWithMessages, angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled } from './mon.js';
+import { revealMonsterAppearance, wakeMonstersNearWithMessages, angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled,
+    finishHeroMonsterKillOutcome,
+} from './mon.js';
 import { AD_ACID, AD_BLND, AD_DRST, AD_MAGM, AD_PHYS, AD_RBRE, AD_SLEE, AD_SPC2 } from './monster_attack_types.js';
 import { finishHeroDeathAfterMonsterMessage } from './end.js';
 import { recordRandom } from './monster_action_types.js';
 import { petrifyMonsterFromContact } from './trap.js';
-import { MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME, MONSTER_SIZE, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import {
@@ -80,7 +84,6 @@ import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { stopHeroOccupation } from './occupation.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
-import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType, buzz } from './zap.js';
 import { displayRayName } from './zap.js';
 import { capitalizedDefiniteName } from './objnam.js';
@@ -99,7 +102,7 @@ import type {
     HeroMonsterWeaponVolley, MonsterProjectileShot, MonsterWeaponWield, TargetMonsterWeaponVolley,
 } from './monster_projectile_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
-import { requirePerceivedHero } from './monmove.js';
+import { requirePerceivedHero, dissolveBars } from './monmove.js';
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -1410,3 +1413,141 @@ export function rndHallublast(random: typeof rn2 = rn2): string {
     return blast;
 }
 
+
+interface ProjectileBarsOptions {
+    x: number;
+    y: number;
+    barsX: number;
+    barsY: number;
+    forceHit?: boolean;
+    heroCaused?: boolean;
+    state?: GameState;
+    publish?: MessagePublisher;
+    random?: typeof rn2;
+}
+
+interface ProjectileBarsResult {
+    blocked: boolean;
+    destroyed: boolean;
+    heroDied: boolean;
+}
+
+type BarsHitOptions = Omit<ProjectileBarsOptions, 'forceHit' | 'heroCaused'>;
+type BarsAttack = { kind: 'projectile'; heroCaused: boolean }
+    | { kind: 'wielded'; breaksOnImpact: boolean };
+
+const BARS_ARM_GLOVES = 3;
+const BARS_LEATHER = 7;
+const BARS_SILVER = 14;
+const BARS_GOLD = 15;
+const BARS_MZ_TINY = 0;
+const BARS_RUBBER_HOSE = OBJECT_NAMES.indexOf('rubber hose');
+
+const BARS_SMALL_WEAPON_SKILLS = new Set([-P_BOW, -P_CROSSBOW, -P_DART, -P_SHURIKEN, P_SPEAR, P_KNIFE]);
+const BARS_SMALL_TOOLS = new Set([
+    SKELETON_KEY, LOCK_PICK, CREDIT_CARD, TALLOW_CANDLE, WAX_CANDLE,
+    LENSES, TIN_WHISTLE, MAGIC_WHISTLE,
+]);
+
+// A corpse or statue meeting the bars needs its species to read the
+// monster's size (C: mons[otmp->corpsenm].msize).
+function barsCorpseSize(object: GameObject): number {
+    if (object.corpsenm === undefined)
+        throw new Error('A corpse or statue hitting iron bars needs its species.');
+    return requireMonsterData(MONSTER_SIZE, object.corpsenm);
+}
+
+// C mthrowu.c:hit_bars(). A missile or the hero's wielded weapon reaching
+// iron bars breaks against them, clangs off them, or — for acid or a well
+// swung war hammer — dissolves them outright.
+export async function hitIronBars(object: GameObject, attack: BarsAttack, {
+    x, y, barsX, barsY, state = game, publish = plineWithContinuation, random = rn2,
+}: BarsHitOptions): Promise<ProjectileBarsResult> {
+    const level = requireGameLevel(state);
+    const bars = level.requireAt(barsX, barsY);
+    const nondiggable = (bars.wall_info & W_NONDIGGABLE) !== 0;
+    const heroCaused = attack.kind === 'wielded' || attack.heroCaused;
+    const breakOptions = { x, y, state, publish, random, heroCaused };
+    const broken: ObjectBreakResult = attack.kind === 'projectile'
+        ? await breakFloorObject(object, breakOptions)
+        : attack.breaksOnImpact
+            ? await breakObjectAtLocation(object, { ...breakOptions, fromInventory: true })
+            : { destroyed: false, observed: false };
+    if (broken.heroDied || state.program_state.gameover)
+        return { blocked: true, destroyed: broken.destroyed, heroDied: true };
+    if (broken.destroyed) {
+        if (object.otyp === POT_ACID) {
+            if (cansee(barsX, barsY) && !nondiggable)
+                await publish('The iron bars are dissolved!');
+            else
+                await publishHeardMessage(heroIsHallucinating(state) ? 'angry snakes!' : 'a hissing noise.', publish, state);
+            if (!nondiggable) await dissolveBars(barsX, barsY, state);
+        }
+        return { blocked: true, destroyed: true, heroDied: !!state.program_state.gameover };
+    }
+
+    const harmless = harmlessMissile(object, state);
+    const material = objectMaterial(object, state);
+    const flimsy = material <= BARS_LEATHER || object.otyp === BARS_RUBBER_HOSE;
+    if (!heroIsDeaf(state)) {
+        const sound = object.otyp === BOULDER || object.otyp === HEAVY_IRON_BALL ? 'Whang'
+            : harmless ? 'Whap'
+                : flimsy ? 'Flapp'
+                    : object.oclass === COIN_CLASS || material === BARS_GOLD || material === BARS_SILVER
+                        ? 'Clink' : 'Clonk';
+        await publish(`${sound}!`);
+    }
+    let noise = harmless || flimsy ? 0 : 16;
+    if (heroCaused && (object.otyp === WAR_HAMMER || object.otyp === HEAVY_IRON_BALL)) {
+        const strength = currentStrength(state);
+        const enchantment = object.otyp === HEAVY_IRON_BALL
+            ? Math.trunc(object.owt / WT_IRON_BALL_INCR) : object.spe;
+        const chance = (attack.kind === 'wielded' ? 40 : 60) - strength - enchantment;
+        if (random(Math.max(2, chance)) === 0) {
+            await publish('You break the bars apart!');
+            await dissolveBars(barsX, barsY, state);
+            noise *= 2;
+        }
+    }
+    if (noise) await wakeMonstersNearWithMessages(barsX, barsY, noise, state, publish);
+    return { blocked: true, destroyed: false, heroDied: !!state.program_state.gameover };
+}
+
+// C mthrowu.c:hits_bars(). Whether a thrown, kicked or rolled object fails
+// to pass through iron bars, and the impact when it does not.
+export async function projectileHitsIronBars(object: GameObject, {
+    forceHit = false, heroCaused = false, ...options
+}: ProjectileBarsOptions): Promise<ProjectileBarsResult> {
+    let hits = forceHit;
+    if (!hits) {
+        switch (object.oclass) {
+        case WEAPON_CLASS:
+            hits = !BARS_SMALL_WEAPON_SKILLS.has(objectSkill(object.otyp));
+            break;
+        case ARMOR_CLASS:
+            hits = objectSkill(object.otyp) !== BARS_ARM_GLOVES;
+            break;
+        case TOOL_CLASS:
+            hits = !BARS_SMALL_TOOLS.has(object.otyp);
+            break;
+        case ROCK_CLASS:
+            hits = object.otyp !== STATUE || barsCorpseSize(object) > BARS_MZ_TINY;
+            break;
+        case FOOD_CLASS:
+            hits = (object.otyp === CORPSE && barsCorpseSize(object) > BARS_MZ_TINY)
+                || object.otyp === MEAT_STICK || object.otyp === ENORMOUS_MEATBALL;
+            break;
+        case SPBOOK_CLASS:
+        case WAND_CLASS:
+        case BALL_CLASS:
+        case CHAIN_CLASS:
+            hits = true;
+            break;
+        default:
+            break;
+        }
+    }
+    if (!hits)
+        return { blocked: false, destroyed: false, heroDied: false };
+    return hitIronBars(object, { kind: 'projectile', heroCaused }, options);
+}

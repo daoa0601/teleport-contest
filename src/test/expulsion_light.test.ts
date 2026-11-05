@@ -4,7 +4,6 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { expelHero } from '../js/hero_expulsion.js';
 import { createPoisonGasCloud, runLevelRegions, updateMonsterRegions } from '../js/regions.js';
 import { game } from '../js/gstate.js';
 import { cansee, vision_recalc } from '../js/vision.js';
@@ -12,6 +11,7 @@ import { installSwallowedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenCell } from './support/screen.js';
+import { expelHero } from '../js/mhitu.js';
 
 void test('an expelled luminous monster illuminates its destination on the next vision refresh', async () => {
     const level = await freshObjectRoom({ recalculateVision: false });

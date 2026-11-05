@@ -542,8 +542,8 @@ src/js/uhitm.ts	do_attack	rn2	"[""7""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	attackWithHumanForm	rnd	"[""20""]"	constant
 src/js/uhitm.ts	cleaveAroundTarget	rnd	"[""20""]"	constant
-src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
-src/js/hero_monster_death.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
+src/js/mon.ts	finishHeroMonsterKillOutcome	rn2	"[""2""]"	constant
+src/js/mon.ts	finishHeroMonsterKillOutcome	rn2	"[""6""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""3""]"	constant
 src/js/hack.ts	airTurbulenceStopsHero	rn2	"[""4""]"	constant
 src/js/mkmaze.ts	applyWaterFriction	rn2	"[""3""]"	constant
@@ -734,7 +734,7 @@ src/js/trap.ts	finishMonsterLandMine	random	"[""3""]"	constant
 src/js/apply.ts	checkHeroLeashes	rn2	"[""3""]"	constant
 src/js/apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
 src/js/apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
-src/js/leprechaun_stash.ts	stashLeprechaunGold	random	"[""4""]"	constant
+src/js/monmove.ts	stashLeprechaunGold	random	"[""4""]"	constant
 src/js/do.ts	gotoLevel	rnd	"[""3""]"	constant
 src/js/do.ts	finishAstralArrival	rn1	"[""4"", ""3""]"	constant
 src/js/do.ts	gotoLevel	d	"[""Math.max(distance, 1)"", ""6""]"	constant
@@ -2025,7 +2025,7 @@ src/js/dothrow.ts	shouldMulchMissile	rn2	"[""3""]"	constant
 src/js/dothrow.ts	shouldMulchMissile	rn2	"[""4""]"	constant
 src/js/dothrow.ts	shouldMulchMissile	rn2	"[""chance""]"	guarded
 src/js/dothrow.ts	shouldMulchMissile	rnl	"[""4""]"	constant
-src/js/projectile_bars.ts	hitIronBars	random	"[""Math.max(2, chance)""]"	constant
+src/js/mthrowu.ts	hitIronBars	random	"[""Math.max(2, chance)""]"	constant
 src/js/trap.ts	beginMonsterProjectileTrap	random	"[""15""]"	constant
 src/js/trap.ts	beginMonsterProjectileTrap	random	"[""6""]"	constant
 src/js/trap.ts	beginMonsterProjectileTrap	rollOne	"[""20""]"	constant

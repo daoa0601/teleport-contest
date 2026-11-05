@@ -1,7 +1,9 @@
 import { stack_object } from './invent.js';
 import { POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import { wakeNearby } from './mon.js';
+import { wakeNearby,
+    finishLiquidDeathForCurrentMover,
+} from './mon.js';
 import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, releaseObjectLeash } from './apply.js';
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { objectIsHardHelmet } from './do_wear.js';
@@ -32,9 +34,7 @@ import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';
 import { heroLiquidEffects, mayDig, spotChecks, loseHeroHp, finishDestinationSpotEffects, inTown, roomsAt, switchHeroTerrain } from './hack.js';
 import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
-import { expelHero } from './hero_expulsion.js';
 import { freeInventoryObject, objectAt } from './invent.js';
-import { finishLiquidDeathForCurrentMover } from './hero_monster_death.js';
 import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';
@@ -93,6 +93,7 @@ import { MONSTER_MOVE } from './monster_data.js';
 import { confusePromptDirection } from './cmd.js';
 import type { Hero } from './hero_types.js';
 import { monsterDigests, monsterIsClinger, monsterIsFlyer, monsterIsWhirly, monsterPassesWalls } from './mondata.js';
+import { expelHero } from './mhitu.js';
 // dig.c owner: hero and monster digging, terrain changes, burial, and
 // wand digging.  Folded from hero_digging/digging_terrain/digging_magic/
 // digging_watch/buried_object/hole (pure move, no behavior change).

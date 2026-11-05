@@ -8,7 +8,6 @@ import { ALTAR, AM_SHRINE, Align2amask, NO_MINVENT, ROOMOFFSET, TEMPLE } from '.
 import { pline } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { finishHeroHitAftermath, shouldAngerGuardsAfterHeroHit } from '../js/uhitm.js';
-import { finishHeroMonsterKillOutcome } from '../js/hero_monster_death.js';
 import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, WAN_COLD } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
@@ -21,6 +20,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
 import { createStaffedShop } from './support/shop.js';
 import { updateHeroRoomMembership } from '../js/hack.js';
+import { finishHeroMonsterKillOutcome } from '../js/mon.js';
 
 async function createTemple({ hitPoints = 100 } = {}) {
     const level = await freshObjectRoom({

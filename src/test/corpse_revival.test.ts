@@ -10,7 +10,6 @@ import { initializePet } from '../js/dog.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import type { GameObject } from '../js/object_types.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { finishHeroMonsterKill } from '../js/hero_monster_death.js';
 import { mkcorpstat, mksobj, set_corpsenm, addCreatedObjectToContainer } from '../js/mkobj.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
@@ -26,6 +25,7 @@ import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import {objectWeight, placeCreatedObject} from '../js/mkobj.js';
+import { finishHeroMonsterKill } from '../js/mon.js';
 
 function terrainAt(x: number, y: number) {
     const location = requireGameLevel().at(x, y);

@@ -8,8 +8,7 @@ import { A_DEX, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, COLNO, CORR, MGIVENNAME
 import { newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster } from './mon.js';
-import { finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './hero_monster_death.js';
+import { finishMonsterLiquidDeath, resolveMonsterLiquid, wakeMonster, finishHeroLiquidMonsterDeath, finishHeroMonsterKill } from './mon.js';
 import { heroLiquidEffects, loseHeroHp, roomsAt, finishDestinationSpotEffects } from './hack.js';
 import { liquidForHole, unearthFloorObjectsAt } from './dig.js';
 import { remove_object, updateIceObjectTimersAt } from './mkobj.js';

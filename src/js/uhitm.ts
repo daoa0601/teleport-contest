@@ -37,7 +37,6 @@ import {
 } from './const.js';
 import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
-import { isZombieMaker } from './corpse_species.js';
 import type { MonsterAttack } from './data_types.js';
 import { isPoolAt } from './dbridge.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, glyphAt, map_invisible, map_location, newsym, senseWithTelepathy, shieldeff, show_glyph_cell, transientMonsterGlyph, unmap_invisible } from './display.js';
@@ -61,14 +60,13 @@ import { checkHeroAttackOverexertion, doorlessDoor, exceedsActionCapacity, heroT
 import { dist2, ordinalSuffix, possessiveName, upstart } from './hacklib.js';
 import { dropObjectAtHero, woundHeroLegs } from './do.js';
 import { resolveHeroEggHit } from './hero_egg_hit.js';
-import { releaseHeroFromMonster } from './mon.js';
+import { releaseHeroFromMonster, finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome, isZombieMaker } from './mon.js';
 import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
+import type { FinishHeroMonsterDeath, HeroMonsterKillOptions } from './mon.js';
 import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './invent.js';
 import { freeInventoryObject } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { finishHeroLiquidMonsterDeath, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
-import type { FinishHeroMonsterDeath, HeroMonsterKillOptions } from './hero_monster_death.js';
 import type { HeroNaturalDamageResult, HeroNaturalEffectContext, HeroNaturalEffectResult } from './hero_natural_types.js';
 import type { HeroPhysicalAttackMode, HeroPhysicalHitOptions, HeroPhysicalHitResult, HeroProjectileVolley } from './hero_physical_types.js';
 import { retouchEquipment } from './artifacts.js';

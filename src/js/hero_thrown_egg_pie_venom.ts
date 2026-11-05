@@ -13,7 +13,7 @@ import { prepareHeroThrownTarget } from './thrown_object.js';
 import { offerThrownFood } from './thrown_food.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameState } from './game_state.js';
-import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
+import type { FinishHeroMonsterDeath } from './mon.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { Position } from './map_types.js';
 import type { Monster } from './monster_types.js';

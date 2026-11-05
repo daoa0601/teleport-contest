@@ -31,12 +31,12 @@ import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { propertyIsActive } from './properties.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { expelHero } from './hero_expulsion.js';
 import { findDrawbridgeAt, openDrawbridge } from './dbridge.js';
 import { currency } from './invent.js';
 import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
+import { expelHero } from './mhitu.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
 // C detect.c:skip_premap_detect().
