@@ -39,12 +39,11 @@ import {
     W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, AC_MAX, DISMOUNT_FELL,
 } from './const.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { publishHeardMessage } from './hero_speech.js';
 import { dragonFormForArmor } from './polyself.js';
 import {
     ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, verbForSubject,
 } from './objnam.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
 import { learnWand } from './zap.js';

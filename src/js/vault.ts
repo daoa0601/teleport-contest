@@ -13,7 +13,9 @@ import { isRoom } from './map_types.js';
 import { getLine } from './query.js';
 import { deleteEngravingAt, make_grave } from './engrave.js';
 import { newsym, canSpotMonster, map_invisible, map_location, monsterVisible, xy_set_wall_state } from './display.js';
-import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
+import {
+    formatSeenMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage,
+} from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { ROOM, ROOMOFFSET, DOOR, D_NODOOR, VAULT, IS_WALL, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, MM_NOMSG, M_AP_OBJECT, M_AP_TYPE, NEED_HTH_WEAPON, LEVEL_TIMER_KIND, RLOC_MSG, CORR, IS_OBSTRUCTED, IS_STWALL, STONE, Upolyd, ACCESSIBLE, COLNO, COULD_SEE, GD_DESTROYGOLD, GD_EATGOLD, IN_SIGHT, IS_POOL, IS_ROOM, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, RLOC_ERR, RLOC_NOMSG, ROWNO, SCORR } from './const.js';
 import { isok, heroHasInvoluntaryDelay } from './cmd.js';
@@ -34,7 +36,6 @@ import { BOULDER, GOLD_PIECE, ROCK, TIN_WHISTLE } from './object_data.js';
 import { simpleObjectTypeName } from './objnam.js';
 import { fractureRock } from './zap.js';
 import { rn2 } from './rng.js';
-import { formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { angerMonster, removeMonsterFromGame, sendMonsterToLimbo, moveMonsterNextToHero } from './mon.js';
 import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';

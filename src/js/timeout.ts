@@ -10,7 +10,6 @@
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
 import type { CorpseRevivalTimerEvent } from './do.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import {
     clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming,
     heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf,
@@ -64,7 +63,10 @@ import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, newsym, see_monsters, refreshHeroSeeing } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import {
+    formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation,
+    publishHeardMessage,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject, ObjectTimer, ObjectTimerKind, LevelTimer } from './object_types.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';

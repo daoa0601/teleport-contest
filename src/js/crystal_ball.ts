@@ -1,7 +1,6 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
 
 import { RANDOM_CLASS, ROCK_CLASS } from './objclass.js';
-import { formatSeenMessage } from './hero_speech.js';
 import type { GameObject } from './object_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import {
@@ -18,7 +17,7 @@ import {
 } from './display.js';
 import { displayColorName } from './do_name.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { formatSeenMessage, plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './dungeon.js';

@@ -4,7 +4,7 @@ import { rhack } from '../js/cmd.js';
 import { M_AP_FURNITURE, M_AP_TYPE, MM_ANGRY, NO_MINVENT, DOOR, D_NODOOR } from '../js/const.js';
 import { flush_screen, map_background, newsym } from '../js/display.js';
 import { deleteEngraving, makeEngravingAt } from '../js/engrave.js';
-import { recordGameLogEvent } from '../js/gamelog.js';
+import { recordGameLogEvent } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { prepareMapPositionHighlights } from '../js/getpos.js';
 import { resetInputState } from '../js/input.js';

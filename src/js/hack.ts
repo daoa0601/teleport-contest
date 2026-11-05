@@ -16,7 +16,6 @@ import {
     isRider,
 } from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
-import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, In_mines, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, Invocation_lev, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U, FOOT } from './const.js';
 import {
@@ -27,7 +26,10 @@ import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndCha
 import { docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
 import { impossible } from './diagnostics.js';
 import { bot } from './botl.js';
-import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js';
+import {
+    formatFeltMessage, formatHeardMessage, pline, plineWithContinuation, pline_dir, publishHeardMessage,
+    recordGameLogEvent, set_msg_xy,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm, body_part } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
@@ -147,7 +149,6 @@ import { setPrimaryWeapon } from './wield.js';
 import { hitIronBars } from './mthrowu.js';
 import { dissolveBars } from './monmove.js';
 import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } from './weapon.js';
-import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';
 
 // Door opening and teleport input live with their C owners.

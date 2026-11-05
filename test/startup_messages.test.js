@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { runSegment } from '../js/jsmain.js';
 import { game } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { saveGame } from '../js/save.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { memoryStorage } from './support/memory-storage.js';

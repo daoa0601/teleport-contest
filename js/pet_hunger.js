@@ -1,6 +1,5 @@
 // C dogmove.c:dog_hunger() and dog_starve().
-import { formatFeltMessage } from './hero_speech.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterName } from './do_name.js';
 import { begForFood } from './sounds.js';

@@ -16,7 +16,7 @@ import { ILLOBJ_CLASS, RING_CLASS, COIN_CLASS, VENOM_CLASS } from './objclass.js
 import { OBJ_NAME } from './object_data.js';
 import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
@@ -36,7 +36,6 @@ import { buryFloorObjectsAt, addBuriedObject, buriedBallToPunishment, applyPickA
 import { canSpotMonster, newsym, docrt, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, map_object, flush_screen, reglyphSymbolSet, } from './display.js';
 import { cansee, vision_note_blocker_change, vision_recalc, vision_reset, vision_reset_new_level } from './vision.js';
 import { finishEnvironmentalMonsterDeath, wakeMonstersNearWithMessages, monsterInAir, changeMonsterForm, healMonster, sendMonsterToLimbo, moveMonsterNextToHero, setHeroGrip, monsterDeathCount, killGenocidedMonsters, purgeDeadMonsters, restoreMonsterShape, finishHeroMonsterKill, isRider, zombieForm, } from './mon.js';
-import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
@@ -86,7 +85,6 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { bot, checkGoldSymbol } from './botl.js';
 import { restoreLevelRegions, updateHeroRegions } from './region.js';
 import { fumaroles, movebubbles, restore_waterlevel } from './mkmaze.js';
-import { recordGameLogEvent } from './gamelog.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';
 import { displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest, } from './quest.js';
 import { resurrectWizard } from './wizard.js';

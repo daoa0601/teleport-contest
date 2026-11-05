@@ -6,7 +6,6 @@
 // shopkeepers use to reach a goal square.
 
 import { SPBOOK_no_NOVEL } from './objclass.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordTempleOverview } from './dungeon.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -19,7 +18,7 @@ import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { exerciseAttribute } from './attrib.js';
 import { castMonsterSpellRay } from './breath_ray.js';

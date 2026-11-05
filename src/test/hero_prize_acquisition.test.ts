@@ -4,7 +4,7 @@ import { achievementEntries } from '../js/insight.js';
 import { rhack } from '../js/cmd.js';
 import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import {remove_object} from '../js/mkobj.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { isLevelPrize } from '../js/level_prize.js';

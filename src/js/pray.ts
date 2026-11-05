@@ -24,7 +24,14 @@ import type { AttributeIndex } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
 import { reviveCorpseImmediately } from './do.js';
-import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT } from './const.js';
+import {
+    ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM,
+    DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX,
+    LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD,
+    PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL,
+    TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT, LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER,
+} from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
@@ -33,7 +40,6 @@ import { landFloorObject } from './floor_effects.js';
 import { floorObjectDescription, chooseInventoryObject, confersLuck, consumeInventoryItem, inventoryItemDescription, feelPetrifyingCorpse } from './invent.js';
 import { heroCanReachFloor, heroHasFreeHand } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
-import { LL_ARTIFACT, LL_CONDUCT, LL_DIVINEGIFT, LL_SPOILER, recordGameLogEvent } from './gamelog.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { nomul, loseHeroHp, nearCapacity } from './hack.js';
 import { AT_ENGL, AD_BLND } from './monster_attack_types.js';
@@ -43,14 +49,17 @@ import { makeConfused, makeHallucinated, makeStunned, makeBlinded, cureHeroSickn
 import { healHeroLegs } from './do.js';
 import { resetUtrap, announceTerrainRescue, animateStatue } from './trap.js';
 import { currentHungerState, init_uhunger } from './eat.js';
-import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { demonLord, summonMinion } from './minion.js';
 import { setMonsterMalign } from './makemon.js';
 import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
-import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount } from './mondata.js';
+import {
+    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
+    monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
+    monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount, heroCanChant,
+} from './mondata.js';
 import { wakeMonstersNearWithMessages, finishHeroMonsterKill, isRider } from './mon.js';
 import type { HeroMonsterKillOptions } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
@@ -86,7 +95,10 @@ import { purifyHeroLycanthropy } from './were.js';
 import { aggravateMonsters } from './wizard.js';
 import { isPoolOrLavaAt } from './dbridge.js';
 import type { GameState, PlayingGameState, PrayerOutcome } from './game_state.js';
-import { pline as printLine, plineWithContinuation as pline } from './pline.js';
+import {
+    formatFeltMessage, pline as printLine, plineWithContinuation as pline, publishHeardMessage,
+    recordGameLogEvent,
+} from './pline.js';
 import { freeHeroFromBuriedBall } from './dig.js';
 
 // ---------------------------------------------------------------------------

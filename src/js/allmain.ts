@@ -1,12 +1,11 @@
 // allmain.js — Main game loop.
 // C ref: allmain.c — newgame, moveloop, moveloop_core.
 import type { ArmorCompletion } from './cmd.js';
-import { publishHeardMessage } from './hero_speech.js';
 import { ceilingName, dungeonBuildsUp, dungeonDepth, initOverviewRecord, printLevelAnnotation, u_on_rndspot } from './dungeon.js';
 import { noticeAllMonsters, withMonsterNoticesBlocked, applyHeroLiquidEffects, continueRun, endVoluntaryMultiTurn, nomul, overexertHeroHp, finishDestinationSpotEffects, stopRun, captureRunmodeDelay, isTeleportRunmode, nearCapacity, checkSpecialRoom } from './hack.js';
 import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCountedCommand, getLine, promptYesNo, rhack,  dolookaround } from './cmd.js';
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 
 import { doStorms } from './timeout.js';
@@ -32,7 +31,14 @@ import { clearSplitObjects, unlinkObject } from './mkobj.js';
 import { tryCallObjectType } from './do.js';
 import { observeBucForNaming, verbForSubject, withIndefiniteArticle, observeDistantObjectForNaming, observeObjectForNaming, ownedObjectName } from './objnam.js';
 import { observeObject, recordObjectEncounter, recordObjectKnowledge, learnObjectType } from './o_init.js';
-import { A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR, PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG, UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd, Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN } from './const.js';
+import {
+    A_CURRENT, A_ORIGINAL, CQ_CANNED, CQ_REPEAT, ESCAPED, G_NOCORPSE, In_endgame, In_hell, MON_FLOOR,
+    PICK_ONE, PLNMSG_MON_TAKES_OFF_ITEM, RLOC_NOMSG, WATER, RLOC_MSG, LOST_STOLEN, MMOVE_DIED, NORMAL_SPEED,
+    A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, COLNO, ROWNO, DOOR, D_CLOSED, D_LOCKED, HOLE, M_SEEN_ELEC,
+    M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, STONE, ZAP_POS, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, W_ARMG,
+    UNENCUMBERED, MOD_ENCUMBER, HVY_ENCUMBER, EXT_ENCUMBER, W_ACCESSORY, W_ARMOR, W_WEAPONS, ismnum, Upolyd,
+    Is_airlevel, Is_waterlevel, LUCKMIN, LUCKMAX, TT_BURIEDBALL, TT_LAVA, KILLED_BY_AN, LL_ACHIEVE,
+} from './const.js';
 import { showInventoryWindow } from './windows.js';
 import type { InventoryMenuItem } from './windows.js';
 import { pendingArmorAction, armorSimpleName, heroHasFreeAction, heroIsDisplaced, stopDonning, applyArmorOnEffects, applyStartingArmorEffects, armorOnIdentifiesType, findArmorClass, erodeWornArmor, isBeingTakenOff, finishArmorRemoval, heroHasSlipperyHands, slipFromSlipperyHands } from './do_wear.js';
@@ -95,7 +101,6 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { addObjectToMonsterInventory, finishDelayedArmorTheft } from './steal.js';
 import { aligns, nativeRoleAt } from './role.js';
 import { initializeSourceStartup } from './startup.js';
-import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { fumaroles } from './mkmaze.js';
 import { commitPetPickup } from './dogmove.js';
 import { monsterWieldedWeapon } from './weapon.js';

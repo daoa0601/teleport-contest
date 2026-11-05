@@ -6,7 +6,7 @@ import { adjustLevelAbilities } from '../js/attrib.js';
 import { A_CON, A_WIS, SINK } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { nameToMonster } from '../js/mondata.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/role.js';

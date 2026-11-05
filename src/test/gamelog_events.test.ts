@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { gotoLevel } from '../js/do.js';
 import { pushKeys } from '../js/input.js';

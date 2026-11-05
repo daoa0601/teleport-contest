@@ -2,7 +2,7 @@
 // C refs: timeout.c hatch_egg(), claimed and finished around the port's
 // async continuation split; attach_egg_hatch_timeout() lives in timeout.ts.
 
-import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
+import { formatFeltMessage, formatSeenMessage } from './pline.js';
 import { ingSuffix } from './hacklib.js';
 import { G_EXTINCT, G_GENOD, MM_NOMSG, MV_KNOWS_EGG, NO_MINVENT, OBJECT_TIMER_KIND } from './const.js';
 import { canSeeMonster, newsym } from './display.js';

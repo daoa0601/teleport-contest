@@ -2,12 +2,11 @@
 // C ref: region.c create_region(), make_gas_cloud(), and
 // create_gas_cloud_selection().
 
-import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { isPoolAt } from './dbridge.js';
 import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, EYE, LUNG } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatSeenMessage, plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';

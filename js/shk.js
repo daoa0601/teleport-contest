@@ -1,6 +1,7 @@
 // shk.js — the shk.c owner: shop billing and pricing, payment (dopay and
-// the itemized bill), selling, theft and damage settlement, the shopkeeper
-// anger/repair lifecycle, shop entry/exit policy, chat and price quotes.
+// the itemized bill), the 'I x' used-up bill view (doinvbill), selling,
+// theft and damage settlement, the shopkeeper anger/repair lifecycle, shop
+// entry/exit policy, chat and price quotes.
 // C refs beyond shk.c: hack.c move_update()/check_special_room() in the
 // entry policy below. Lua/mklev owns room construction and initial stock
 // (shknam.ts); this module owns the live relationship among room, resident,
@@ -11,7 +12,7 @@ import { impossible } from './diagnostics.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { isRoom } from './map_types.js';
-import { pline, plineWithContinuation, verbalize } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize, } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
 import { hello } from './role.js';
@@ -23,7 +24,7 @@ import { depth } from './dungeon.js';
 import { monsterPossessive, monsterSubjectPronoun, monsterIsHelpless, monsterObjectPronoun, is_elf, monsterHasEyes, monsterHasHead, monsterHasNoLimbs, monsterHasProperName, monsterIsDemon, monsterIsHuman, monsterIsVampire, monsterPassesWalls, } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval } from './invent.js';
+import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval, pricedInventoryLine } from './invent.js';
 import { simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming, simpleObjectNameWithArticle, objectDescription, paymentObjectDescription, } from './objnam.js';
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
@@ -47,12 +48,11 @@ import { heroIsDisplaced } from './do_wear.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dropHeroInventoryForBones } from './bones.js';
-import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
 import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
+import { showDisclosureOverlay, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { intrinsic_possible } from './eat.js';
 import { artifactById } from './artifact.js';
 import { bot } from './botl.js';
@@ -63,7 +63,6 @@ import { heroIsPunished, unplaceBallAndChain, placeBallAndChain } from './ball.j
 import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
-import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { pickingAt, maybeResetPick } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
@@ -2635,6 +2634,12 @@ function completeShopSettlement(keeper, taken) {
     }
     return taken;
 }
+// C shk.c:bp_to_obj(): find a bill entry's object by o_id — used-up entries
+// sit on the bill list, the rest on any list find_oid() (the port's timer
+// graph) walks, so the merged scan below covers both arms.
+function bpToObj(entry, objects) {
+    return objects.find(object => object.o_id === entry.bo_id) ?? null;
+}
 function heroRepositoryPosition() {
     return { x: game.u.ux || game.u.ux0, y: game.u.ux ? game.u.uy : game.u.uy0 };
 }
@@ -4383,6 +4388,38 @@ export async function sellHeroDroppedObject(object, x, y, state = game, { publis
         object.no_charge = true;
     removeObjectAndContentsFromBill(object, state);
     return { sold: false };
+}
+export function doinvbill(mode) {
+    const keeper = currentShopResident();
+    if (!keeper || !shopkeeperInOwnShop(keeper))
+        return mode === 0 ? [] : Promise.resolve();
+    const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
+    const lines = [];
+    for (const entry of keeper.eshk.bill ?? []) {
+        const object = bpToObj(entry, objects);
+        if (object && (entry.useup || object.quan < entry.bquan)) {
+            const quantity = entry.useup ? entry.bquan : entry.bquan - object.quan;
+            lines.push({ object, quantity, price: quantity * entry.price });
+        }
+    }
+    if (keeper.eshk.debit)
+        lines.push({ object: null, quantity: 0, price: keeper.eshk.debit });
+    if (mode === 0)
+        return lines;
+    return (async () => {
+        const view = ['Unpaid articles already used up:', ''];
+        let total = 0;
+        for (const line of lines) {
+            if (!line.object && total)
+                view.push('');
+            view.push(await pricedInventoryLine(line.object, line.object ? 'x' : '$', line.price, line.object ? null : 'usage charges and/or other fees', { quantity: line.quantity, useInvlet: false, distant: false }));
+            total += line.price;
+        }
+        view.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
+        // C shk.c:4229 fills the bill window with putstr(), which never reaches
+        // add_menu()'s menucoloring.
+        await showTextMenuOverlay(view, { viaPutstr: true });
+    })();
 }
 // C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.
 // Chooses a goal before move_special() selects a square.

@@ -19,7 +19,7 @@ import {
     isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel,
     launcherMatchesAmmo, objectIsCrackable,
 } from './object_properties.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -82,7 +82,6 @@ import { monsterSentenceSubject } from './sounds.js';
 import { displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { isPoolAt , isLavaAt, isMoatAt, isWaterwallAt } from './dbridge.js';
 import { armorSimpleName , heroHasWaterWalking, objectIsHardHelmet, simpleArmorName } from './do_wear.js';
-import { publishHeardMessage , formatFeltMessage } from './hero_speech.js';
 import { setMonsterMalign, makemonAt } from './makemon.js';
 import { applyHeroEggLuckPenalty, explodePyroliskEggAt, isPyroliskEgg } from './egg_impact.js';
 import { explodeLitOilPotion } from './fire_explosion.js';

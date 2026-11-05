@@ -27,18 +27,30 @@ import { mimicHitMessage } from './mon.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectMaterial, learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { convertSecretDoor, findit, revealSecretDoor, showMapSpot } from './detect.js';
-import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 
 import { monsterHasMapPosition, monsterAtPosition } from './steed.js';
 import { chooseInventoryObject, stack_object } from './invent.js';
-import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED, D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel, Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR, TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR, G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN, SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL, IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR, TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, HEAD, FACE, FOOT, ARM, EYE } from './const.js';
+import {
+    GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_MAGIC, CORR, DBWALL, D_CLOSED,
+    D_LOCKED, DOOR, DRAWBRIDGE_DOWN, ENGRAVE, EXPL_MAGICAL, HEADSTONE, HOLE, IS_FURNITURE, Is_airlevel,
+    Invocation_lev, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, POLY_TRAP, SCORR, TELEP_TRAP, TRAPDOOR,
+    TRAP_EXPLODE, VIBRATING_SQUARE, A_CON, A_CHA, W_ARMH, A_WIS, W_ARMG, A_DEX, A_STR, A_INT, W_RING, W_ARMOR,
+    G_GENOD, MAX_OIL_IN_FLASK, MAX_SPELL_STUDY, MM_NOMSG, NO_MINVENT, W_AMUL, W_ART, W_ARTI, W_QUIVER,
+    W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, COLNO, DB_FLOOR, DB_ICE, DB_UNDER, DRAWBRIDGE_UP, FOUNTAIN,
+    SHOP_BARS_COST, SHOP_DOOR_COST, D_BROKEN, D_NODOOR, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_WALL,
+    IS_WATERWALL, Is_rogue_level, Is_waterlevel, ismnum, LAVAWALL, PIT, POOL, ROOM, ROWNO, SDOOR, TT_INFLOOR,
+    TT_LAVA, Upolyd, VWALL, WEB, W_NONDIGGABLE, SHOPBASE, BOLT_LIM, LEVEL_TIMER_KIND, OBJECT_TIMER_KIND, HEAD,
+    FACE, FOOT, ARM, EYE, LL_CONDUCT, LL_ARTIFACT, LL_WISH,
+} from './const.js';
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifact.js';
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
-import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
+import {
+    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, set_msg_dir,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
 import { waterbodyName } from './pager.js';
@@ -128,7 +140,6 @@ import { isWeaponTool, isBimanualObject, isPoisonableObject, objectIsMetallic } 
 import { hatchableEggSpecies, eggSpeciesIsDead } from './mon.js';
 import { setPrimaryWeapon, setQuiverObject, setSecondaryWeapon, setTwoWeaponCombat } from './wield.js';
 import { releaseObjectLeash } from './apply.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { vegetarianCorpse } from './food_traits.js';
 import { updateInventoryPresentation } from './invent.js';
 import { changeBoxLockByMagic } from './box_magic.js';
@@ -150,7 +161,6 @@ import { finishMonsterEating } from './dogmove.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
-import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
 import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, burnAwayHeroSlime, nomul } from './hack.js';
 import { releaseHeroFromMonster } from './mon.js';

@@ -9,7 +9,7 @@
 // lookup_novel().  The category menu is naming_categories.ts.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND, LL_ARTIFACT, LL_CONDUCT, } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
 import { OBJ_DESCR } from './o_init.js';
 import { chooseNamingCategory } from './naming_categories.js';
@@ -20,7 +20,7 @@ import { canSenseMonster, canSpotMonster, flush_screen, glyphAt, monsterVisible,
 import { repriceDiscoveredGems, objectOwnershipPrefix, updateUnpaidObjectPrice } from './shk.js';
 import { definiteName, makePlural, objectName, objectNameIsPlural, observeObjectForNaming, pluralizeObjectNoun, simpleObjectName, simpleObjectNameWithArticle, verbForSubject, withIndefiniteArticle, } from './objnam.js';
 import { impossible } from './diagnostics.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { glyphIsSwallow } from './glyph_numbers.js';
 import { selectMapPosition } from './getpos.js';
@@ -36,7 +36,6 @@ import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monster
 import { getLine } from './query.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { wipeoutText } from './engrave.js';
-import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { withMapObject } from './map_object_description.js';

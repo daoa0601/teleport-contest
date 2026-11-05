@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { SCR_GENOCIDE } from '../js/object_data.js';

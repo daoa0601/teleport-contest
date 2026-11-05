@@ -10,7 +10,7 @@ import { grantIntrinsicProperty } from '../js/properties.js';
 import { punishHero } from '../js/read.js';
 import { applyInventoryObject } from './support/commands.js';
 import { rhack } from '../js/cmd.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { APPLE, CHEST, POT_HEALING } from '../js/object_data.js';

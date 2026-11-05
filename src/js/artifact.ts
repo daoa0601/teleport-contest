@@ -18,12 +18,15 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK } from './const.js';
+import {
+    P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR,
+    KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT,
+    W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK, LL_ARTIFACT,
+} from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
 import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
-import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer, uncurseObjectState} from './mkobj.js';
 import { races, roles } from './role.js';
@@ -41,7 +44,7 @@ import {
 } from './mondata.js';
 import { see_monsters, glyphAt, canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff } from './display.js';
 import { grantWornProperty, hasCarriedProperty, removeWornProperty, setCarriedProperty, wornObjectGrantsProperty, hasInvokedProperty, hasIntrinsicProperty, propertyHasOtherSources, propertyIsActive, refreshProperty, setInvokedProperty, clearLevitationMasks, restoreLevitationSources, stashLevitationSources } from './properties.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from './senses.js';
 import { getRumor } from './mklev.js';
@@ -51,7 +54,6 @@ import type { DeathHandler } from './end.js';
 
 import { loseHeroExperience } from './exper.js';
 import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { lightDamage } from './zap.js';
 import { lightRoom } from './light.js';
 import { healMonster, wakeMonstersNearWithMessages, migrateMonsterToLevel, setHeroGrip,

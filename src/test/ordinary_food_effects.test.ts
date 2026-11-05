@@ -7,7 +7,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { addInventoryItem } from '../js/invent.js';
 import { races } from '../js/role.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { APPLE, CARROT, CLOVE_OF_GARLIC, EGG, FOOD_RATION, FORTUNE_COOKIE, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, PEAR, TRIPE_RATION } from '../js/object_data.js';

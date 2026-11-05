@@ -1,6 +1,5 @@
 // C detect.c:use_crystal_ball(), furniture_detect(), level_distance().
 import { RANDOM_CLASS, ROCK_CLASS } from './objclass.js';
-import { formatSeenMessage } from './hero_speech.js';
 import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { artifactByName } from './artifact.js';
@@ -9,7 +8,7 @@ import { nomul } from './hack.js';
 import { canSpotMonster, currentBoulderSymbol, glyphAt, magic_map_background, map_invisible, } from './display.js';
 import { displayColorName } from './do_name.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { formatSeenMessage, plineWithContinuation as pline } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { cmapToGlyph, CmapSymbol } from './glyph_numbers.js';
 import { depth } from './dungeon.js';

@@ -1,7 +1,7 @@
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from './const.js';
 import { currentAttribute } from './attrib.js';
 import { requirePlayingGame } from './gstate.js';
-import { formatFeltMessage } from './hero_speech.js';
+import { formatFeltMessage } from './pline.js';
 import { rn2 } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 // C dig.c:draft_message(). Callers decide when the hero feels the draft.

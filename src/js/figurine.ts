@@ -1,7 +1,7 @@
 // Cursed figurines which come to life on their own.
 // C refs: apply.c:fig_transform() and dog.c:make_familiar()/initedog().
 
-import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
+import { formatFeltMessage, formatSeenMessage } from './pline.js';
 import { makeFamiliar } from './familiar.js';
 import { IS_OBSTRUCTED, STONE, TREE, W_NONPASSWALL, OBJECT_TIMER_KIND } from './const.js';
 import { isok } from './cmd.js';

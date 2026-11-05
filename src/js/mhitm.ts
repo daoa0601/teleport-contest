@@ -27,7 +27,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_
 import {
     canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym,
 } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatHeardMessage, plineWithContinuation } from './pline.js';
 import { artifactById } from './artifact.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
@@ -42,7 +42,6 @@ import {
     touchPetrifies, isHeroDefender,
 } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
-import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
 import { findMonsterArmorClass } from './worn.js';
 import { revealMonsterAppearance } from './mon.js';

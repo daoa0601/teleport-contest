@@ -1,13 +1,15 @@
-// Message admission and publishing: C pline.c:pline(), vpline(), and raw_printf().
+// Message admission and publishing: C pline.c pline(), pline_dir(),
+// pline_xy(), pline_mon(), set_msg_dir(), set_msg_xy(), vpline(), You_feel(),
+// You_hear(), You_see(), verbalize(), gamelog_add(), and raw_printf().
 import { game } from './gstate.js';
 import { flush_screen } from './display.js';
 import { vision_recalc } from './vision.js';
 import { coordinateDescription } from './pager.js';
 import { messageTypeFor } from './message_types.js';
-import { truncatePlineMessage, truncateRawMessage } from './pline_text.js';
+import { heroIsBlind, heroIsDeaf, heroIsUnaware } from './senses.js';
 import { displayMessageWindow, rememberToplines, replaceTopline, updateTopline, } from './tty_topline.js';
 import { nhgetch } from './input.js';
-import { BUFSZ, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
+import { BUFSZ, LL_NONE, MSGTYP_NORMAL, MSGTYP_NOREP, MSGTYP_NOSHOW, MSGTYP_STOP, PLNMSG_UNKNOWN, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
 import { NO_COLOR } from './terminal.js';
 // C pline.c:set_msg_dir(). The next vpline consumes the location, even when hidden.
@@ -21,6 +23,10 @@ export function set_msg_dir(direction) {
 // C pline.c:set_msg_xy().
 export function set_msg_xy(x, y) {
     game.iflags.messageLocation = { x, y };
+}
+// C pline.c:pline() delegates message admission and publication to vpline().
+export async function pline(msg) {
+    await plineWithContinuation(msg);
 }
 // C pline.c:pline_dir().
 export async function pline_dir(direction, message) {
@@ -40,13 +46,15 @@ export async function pline_mon(monster, message) {
         set_msg_xy(0, 0);
     await pline(message);
 }
-// C pline.c:pline() delegates message admission and publication to vpline().
-export async function pline(msg) {
-    await plineWithContinuation(msg);
-}
-// C pline.c:verbalize(): the message goes out wrapped in quotes.
-export async function verbalize(message) {
-    await pline(`"${message}"`);
+// vpline()'s BUFSZ-1 byte truncate, shared with cfgfiles.c's raw startup
+// diagnostics: shorten prose while retaining its last three bytes.
+export function truncatePlineMessage(message) {
+    const text = message.split('\0', 1)[0] ?? '';
+    const bytes = new TextEncoder().encode(text);
+    if (bytes.length <= BUFSZ - 1)
+        return text;
+    const decoder = new TextDecoder();
+    return `${decoder.decode(bytes.subarray(0, BUFSZ - 7))}...${decoder.decode(bytes.subarray(-3))}`;
 }
 // C pline.c:vpline(). Await the window port before recording the last
 // message.  The empty-line guard `if (!line || !*line) return;` tests the
@@ -68,6 +76,8 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
     }
     const length = new TextEncoder().encode(msg).length;
     if (length > 5 * BUFSZ - 1) {
+        // diagnostics.js statically imports this module; a static import
+        // back would be a load cycle, so panic() is fetched lazily.
         const { panic } = await import('./diagnostics.js');
         await panic(`pline attempting to print ${length} characters!`);
     }
@@ -107,6 +117,67 @@ export async function plineWithContinuation(msg, { noRepeat = false, urgent = fa
 export async function pline1(msg, options = {}) {
     return plineWithContinuation(msg, options, true);
 }
+// C pline.c:You_feel(). Sensations reach an unaware hero as dreams.
+export function formatFeltMessage(text, state = game) {
+    return `${heroIsUnaware(state) ? 'You dream that you feel' : 'You feel'} ${text}`;
+}
+// C pline.c:436-452 You_hear().  Pure formatter: returns the exact line
+// to publish, or null when the sound is suppressed.  An awake deaf hero or
+// disabled acoustics hears nothing; an unaware (sleeping, fainted,
+// unconscious) hero only dreams the sound; being underwater muffles it.
+export function formatHeardMessage(text, state = game) {
+    const deaf = heroIsDeaf(state);
+    const unaware = heroIsUnaware(state);
+    if ((deaf && !unaware) || state.flags?.acoustics === false)
+        return null;
+    if (state.underwater || state.u?.uinwater)
+        return `You barely hear ${text}`;
+    if (unaware)
+        return `You dream that you hear ${text}`;
+    return `You hear ${text}`;
+}
+// Publishes through You_hear()'s own suppression. Callers must retain their
+// C guards: an unconditional You_hear reaches a deaf unaware hero, but
+// `if (!Deaf)` does not.
+export async function publishHeardMessage(text, publish, state = game) {
+    const message = formatHeardMessage(text, state);
+    if (message)
+        await publish(message);
+}
+// C pline.c:You_see(). Callers decide whether the event can be seen.
+export function formatSeenMessage(text, state = game) {
+    if (heroIsUnaware(state))
+        return `You dream that you see ${text}`;
+    if (heroIsBlind(state))
+        return `You sense ${text}`;
+    return `You see ${text}`;
+}
+// C pline.c:verbalize(): the message goes out wrapped in quotes.
+// The caller is responsible for checking deafness; gods can speak directly
+// to the hero in spite of it.
+export async function verbalize(message) {
+    await pline(`"${message}"`);
+}
+// C pline.c:gamelog_add()
+export function recordGameLogEvent(text, { state = game, turn = state.moves || 1, flags = LL_NONE, } = {}) {
+    if (!text)
+        return null;
+    if (!Array.isArray(state.gamelog))
+        state.gamelog = [];
+    const entry = {
+        turn: Math.max(1, Math.trunc(turn)),
+        text: String(text),
+        flags: Math.trunc(flags) || LL_NONE,
+    };
+    state.gamelog.push(entry);
+    return entry;
+}
+// The saved chronicle lines, oldest first: insight.c:do_gamelog()/
+// show_gamelog()'s input. Entries saved before flags were tracked carry
+// none, so they count as ordinary non-spoiler lines.
+export function gameLogEvents(state = game) {
+    return Array.isArray(state.gamelog) ? state.gamelog : [];
+}
 // Replace the message line without tty's update_topl() negotiation. Only the
 // tty topline owner, its direct pagers, and prompt owners (whose native
 // TOPLINE_SPECIAL_PROMPT text never pages) write the line this way.
@@ -131,6 +202,23 @@ export async function setTopline(msg) {
     replaceTopline(msg);
     game._lastPlineMessage = msg;
     game._lastPlineKind = PLNMSG_UNKNOWN;
+}
+// vraw_printf()'s BUFSZ-1 byte truncate, shared with files.c:paniclog()'s
+// yn-debug line: keep only the prefix, with no ellipsis.
+export function truncateRawMessage(message) {
+    const bytes = new TextEncoder().encode(message.split('\0', 1)[0] ?? '');
+    return new TextDecoder().decode(bytes.subarray(0, BUFSZ - 1));
+}
+// C pline.c:raw_printf()/vraw_printf().
+export function rawPrintf(message) {
+    rawPrint(truncateRawMessage(message));
+    // Both raw_printf() and vraw_printf() increment the early-message count.
+    if (!game.program_state.beyond_savefile_load)
+        game.earlyRawMessages += 2;
+}
+// C win/tty/wintty.c:tty_raw_print().
+export function rawPrint(message) {
+    writeRawText(`${message}\n`);
 }
 function writeRawText(text) {
     const display = game.nhDisplay;
@@ -159,17 +247,6 @@ function writeRawText(text) {
         }
     }
     display.flush();
-}
-// C pline.c:raw_printf()/vraw_printf().
-export function rawPrintf(message) {
-    rawPrint(truncateRawMessage(message));
-    // Both raw_printf() and vraw_printf() increment the early-message count.
-    if (!game.program_state.beyond_savefile_load)
-        game.earlyRawMessages += 2;
-}
-// C win/tty/wintty.c:tty_raw_print().
-export function rawPrint(message) {
-    writeRawText(`${message}\n`);
 }
 // C end.c:panic(), with win/tty/wintty.c:getret() before the window exit.
 // The browser has no host tty to restore after exit_nhwindows(). Keep the

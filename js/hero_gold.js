@@ -1,8 +1,7 @@
 // The hero's carried gold is the COIN_CLASS object in inventory.
 // C refs: hack.c money_cnt(), invent.c addinv()/freeinv()/splitobj().
 import { COIN_CLASS } from './objclass.js';
-import { formatFeltMessage } from './hero_speech.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { splitObjectStack } from './mkobj.js';

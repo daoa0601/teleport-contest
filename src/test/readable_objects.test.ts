@@ -6,7 +6,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryItem } from '../js/invent.js';
 import {

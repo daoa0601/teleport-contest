@@ -1,10 +1,9 @@
 // C teleport.c:level_tele() and random_teleport_level().
-import { formatFeltMessage } from './hero_speech.js';
 import { buriedBallToPunishment } from './dig.js';
 import { chooseWizardLevelDestination } from './wizcmds.js';
 import { In_endgame, In_mines, In_quest, In_sokoban, TT_BURIEDBALL } from './const.js';
 import { flushPendingTopline } from './tty_topline.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { depth, levelAtDepth, levelDepthByName, specialDisplayName, surfaceName } from './dungeon.js';
 import { finishHeroDeath } from './end.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';

@@ -14,7 +14,7 @@ import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED
 import { definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
 import { canSeeMonster, newsym } from './display.js';
-import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
+import { formatFeltMessage, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireLiveGame } from './gstate.js';
 import { inventoryItemDescription, stack_object } from './invent.js';
@@ -32,7 +32,6 @@ import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';
 import { possessiveName } from './hacklib.js';
 import { willWeld } from './wield.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { flushPendingTopline } from './tty_topline.js';
 import { promptYesNo } from './query.js';
 import { showInventoryWindow } from './windows.js';

@@ -1,16 +1,14 @@
 // Peaceful demons demand payment before letting the hero pass.
 // C minion.c:demon_talk()/bribe() and monmove.c:dochug().
 
-import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';
-import { A_CHA, FAINTED, In_hell, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
+import { A_CHA, FAINTED, In_hell, LL_UMONST, NON_PM, RLOC_MSG, STRAT_APPEARMSG } from './const.js';
 import { currency } from './invent.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
-import { LL_UMONST, recordGameLogEvent } from './gamelog.js';
+import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { heroSpecies } from './polyself.js';
 import { reset_faint } from './eat.js';
 import { setMonsterMalign } from './makemon.js';

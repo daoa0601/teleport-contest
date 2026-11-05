@@ -20,7 +20,7 @@ import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 import { MAGIC_PORTAL } from '../js/const.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 async function questLeader(level = 14, record = 20) {
     await freshObjectRoom({ role: 'healer', hero: { ulevel: level, ualign: { type: 0, record }, ualignbase: [0, 0] } });
     game.dungeons = [createDungeon({ dname: 'The Quest' })];

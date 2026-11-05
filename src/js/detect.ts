@@ -9,7 +9,6 @@ import {
     objectClassForType, objectMerge, BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES,
     OBJECT_NAMES, getObjectClassBounds,
 } from './object_data.js';
-import { formatFeltMessage } from './hero_speech.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
@@ -29,7 +28,7 @@ import {
     feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt,
 } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
-import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok } from './cmd.js';
 import { observeObject, objectMaterial } from './o_init.js';

@@ -1,6 +1,7 @@
 // shk.js — the shk.c owner: shop billing and pricing, payment (dopay and
-// the itemized bill), selling, theft and damage settlement, the shopkeeper
-// anger/repair lifecycle, shop entry/exit policy, chat and price quotes.
+// the itemized bill), the 'I x' used-up bill view (doinvbill), selling,
+// theft and damage settlement, the shopkeeper anger/repair lifecycle, shop
+// entry/exit policy, chat and price quotes.
 // C refs beyond shk.c: hack.c move_update()/check_special_room() in the
 // entry policy below. Lua/mklev owns room construction and initial stock
 // (shknam.ts); this module owns the live relationship among room, resident,
@@ -28,7 +29,9 @@ import type { Monster, ShopBillEntry, MonsterFlag } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { isRoom } from './map_types.js';
 import type { Room, Position, Trap, ShopDamage, MapLocation } from './map_types.js';
-import { pline, plineWithContinuation, verbalize } from './pline.js';
+import {
+    formatFeltMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent, verbalize,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js';
 import type { ShopGameState, ShopBillItem, BilledShopkeeper, CostlyShopSpot, Shopkeeper, ShopRoom, ShopTransaction } from './shop_types.js';
@@ -46,7 +49,8 @@ import {
 } from './mondata.js';
 import { hiddenGold } from './vault.js';
 import { canSeeMonster, canSenseMonster, flush_screen, canSpotMonster, newsym, map_invisible } from './display.js';
-import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval } from './invent.js';
+import { currency, mergable, addInventoryItem, countContents, finishInventoryRemoval,
+    pricedInventoryLine } from './invent.js';
 import {
     simpleObjectName, objectTypeName, objectName, objectCombatName, definiteName, observeObjectForNaming,
     simpleObjectNameWithArticle, objectDescription, paymentObjectDescription,
@@ -78,12 +82,11 @@ import { heroIsDisplaced } from './do_wear.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dropHeroInventoryForBones } from './bones.js';
-import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
 import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
-import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
+import { showDisclosureOverlay, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { intrinsic_possible } from './eat.js';
 import type { CorpseIntrinsic } from './eat.js';
 import { artifactById } from './artifact.js';
@@ -95,7 +98,6 @@ import { heroIsPunished, unplaceBallAndChain, placeBallAndChain } from './ball.j
 import { migrateMonsterOffLevel } from './dog.js';
 import { deleteEngravingAt } from './engrave.js';
 import { removeWornHeroItem, removeHeroEquipment } from './hero_equipment.js';
-import { publishHeardMessage, formatFeltMessage } from './hero_speech.js';
 import { pickingAt, maybeResetPick } from './lock.js';
 import { stopHeroOccupation } from './occupation.js';
 import { dropSpecialMonsterObjects, addObjectToMonsterInventory } from './steal.js';
@@ -2769,6 +2771,13 @@ function completeShopSettlement(keeper: Shopkeeper, taken: boolean): boolean {
     return taken;
 }
 
+// C shk.c:bp_to_obj(): find a bill entry's object by o_id — used-up entries
+// sit on the bill list, the rest on any list find_oid() (the port's timer
+// graph) walks, so the merged scan below covers both arms.
+function bpToObj(entry: ShopBillEntry, objects: readonly GameObject[]): GameObject | null {
+    return objects.find(object => object.o_id === entry.bo_id) ?? null;
+}
+
 function heroRepositoryPosition(): Position {
     return { x: game.u.ux || game.u.ux0, y: game.u.ux ? game.u.uy : game.u.uy0 };
 }
@@ -4501,6 +4510,46 @@ export async function sellHeroDroppedObject(object: GameObject, x: number, y: nu
     if (!object.unpaid) object.no_charge = true;
     removeObjectAndContentsFromBill(object, state);
     return { sold: false };
+}
+
+// C shk.c:doinvbill(): the used-up bill views behind 'I x'. Mode 0 collects
+// the used-up lines (and the debit) so the 'I' command can decide whether
+// its prompt offers 'x'; mode 1 pages through them, re-reading the bill like
+// the native two-call sequence. These commands inspect inventory without
+// taking time; the invent.c report commands they extend live in invent.ts.
+export interface BillLine { object: GameObject | null; quantity: number; price: number }
+
+export function doinvbill(mode: 0): BillLine[];
+export function doinvbill(mode: 1): Promise<void>;
+export function doinvbill(mode: 0 | 1): BillLine[] | Promise<void> {
+    const keeper = currentShopResident();
+    if (!keeper || !shopkeeperInOwnShop(keeper)) return mode === 0 ? [] : Promise.resolve();
+    const objects = [...objectsInTimerGraph(), ...game.billObjects ?? []];
+    const lines: BillLine[] = [];
+    for (const entry of keeper.eshk.bill ?? []) {
+        const object = bpToObj(entry, objects);
+        if (object && (entry.useup || object.quan < entry.bquan)) {
+            const quantity = entry.useup ? entry.bquan : entry.bquan - object.quan;
+            lines.push({ object, quantity, price: quantity * entry.price });
+        }
+    }
+    if (keeper.eshk.debit) lines.push({ object: null, quantity: 0, price: keeper.eshk.debit });
+    if (mode === 0) return lines;
+    return (async () => {
+        const view = ['Unpaid articles already used up:', ''];
+        let total = 0;
+        for (const line of lines) {
+            if (!line.object && total) view.push('');
+            view.push(await pricedInventoryLine(line.object, line.object ? 'x' : '$', line.price,
+                line.object ? null : 'usage charges and/or other fees',
+                { quantity: line.quantity, useInvlet: false, distant: false }));
+            total += line.price;
+        }
+        view.push('', await pricedInventoryLine(null, '*', total, 'Total:'));
+        // C shk.c:4229 fills the bill window with putstr(), which never reaches
+        // add_menu()'s menucoloring.
+        await showTextMenuOverlay(view, { viaPutstr: true });
+    })();
 }
 
 // C shk.c:shk_move(): return 1: moved  0: didn't  -1: let m_move do it.

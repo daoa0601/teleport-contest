@@ -1,14 +1,12 @@
 // exper.js — Hero levels, monster experience, and score awards.
 // C refs: exper.c pluslvl()/experience()/more_experienced(), mon.c xkilled().
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
 import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints } from './attrib.js';
-import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
-import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
-import { plineWithContinuation } from './pline.js';
+import { A_CON, A_WIS, KILLED_BY, LL_MINORAC, MAXULEV, Upolyd } from './const.js';
+import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
 import { heroResistsLifeDrain } from './mondata.js';

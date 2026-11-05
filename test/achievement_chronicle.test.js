@@ -3,7 +3,7 @@
 // the current turn, except during final disclosure.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { achievementEntries, recordDungeonEntryAchievements } from '../js/insight.js';
 import { resetInputState } from '../js/input.js';
 import { game } from '../js/gstate.js';

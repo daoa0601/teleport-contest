@@ -8,7 +8,6 @@
 // timeout_luck.js, and timeout_body.js.
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming, heroIsVomiting, makeBlinded, makeConfused, makeHallucinated, makeStunned, makeDeaf, setSlipperyHands, } from './potion.js';
 import { clearHeroStrangulation } from './do_wear.js';
 import { corpseName, definiteName, killerObjectName, makePlural, objectDescription, objectName, observeObjectForNaming, withIndefiniteArticle, } from './objnam.js';
@@ -41,7 +40,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
 import { MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, PM_GREEN_SLIME, requireMonsterData } from './monster_data.js';
 import { canSpotMonster, newsym, see_monsters, refreshHeroSeeing } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, formatSeenMessage, pline, plineWithContinuation, publishHeardMessage, } from './pline.js';
 import { CANDLE_TYPES, LIGHT_TYPES, TIMED_LIGHT_TYPES, registerObjectLightSource } from './light.js';
 import { eating_dangerous_corpse, Popeye, morehungry, vomit } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';

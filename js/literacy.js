@@ -1,6 +1,7 @@
 // Native reading conduct: every reading counts, only the first is logged.
 import { game, requireLiveGame } from './gstate.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { LL_CONDUCT } from './const.js';
+import { recordGameLogEvent } from './pline.js';
 export function recordLiteracy(message, { state = game } = {}) {
     requireLiveGame(state);
     const conduct = state.u.uconduct;

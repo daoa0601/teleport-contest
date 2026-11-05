@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT, RUST_TRAP, W_WEP } from '../js/const.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { placeCreatedObject } from '../js/mkobj.js';
 import { damageObjectWithAcid, erodeObject } from '../js/trap.js';
 import { DAGGER, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LEATHER_GLOVES, OBJECT_NAMES, YELLOW_DRAGON_SCALES, } from '../js/object_data.js';

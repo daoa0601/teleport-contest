@@ -1,6 +1,5 @@
 // C cfgfiles.c:config_error_init(), config_erradd(), config_error_done().
-import { rawPrint, rawPrintf } from './pline.js';
-import { truncatePlineMessage } from './pline_text.js';
+import { rawPrint, rawPrintf, truncatePlineMessage } from './pline.js';
 import { game } from './gstate.js';
 import { getret } from './wintty.js';
 import { NO_COLOR } from './terminal.js';

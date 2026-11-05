@@ -3,7 +3,6 @@
 // and rndcurse().
 
 import { COIN_CLASS } from './objclass.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused, makeBlinded, cureHeroSickness, setSlipperyHands } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage, makeWish } from './zap.js';
@@ -18,7 +17,7 @@ import {
     map_background, newsym, newsym_force, see_monsters, shieldeff, refreshHeroSeeing,
 } from './display.js';
 import { displayColorName } from './do_name.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { loseHeroExperience } from './exper.js';
 import { heroHasDrainResistance } from './do_wear.js';

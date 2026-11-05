@@ -3,8 +3,8 @@
 import { COIN_CLASS } from './objclass.js';
 import { displayColorName } from './do_name.js';
 import { upstart } from './hacklib.js';
-import { plineWithContinuation } from './pline.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { plineWithContinuation, recordGameLogEvent } from './pline.js';
+import { LL_CONDUCT } from './const.js';
 import { game } from './gstate.js';
 import { inventoryItemDescription } from './invent.js';
 import { simpleObjectNameWithArticle, observeObjectForNaming, } from './objnam.js';

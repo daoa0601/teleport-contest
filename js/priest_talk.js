@@ -1,9 +1,8 @@
 // C priest.c:priest_talk(). Payments and property changes follow the dialogue.
 import { adjustHeroAlignment, exerciseAttribute } from './attrib.js';
-import { A_WIS } from './const.js';
+import { A_WIS, LL_CONDUCT } from './const.js';
 import { currency } from './invent.js';
-import { plineWithContinuation as pline } from './pline.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
+import { plineWithContinuation as pline, recordGameLogEvent } from './pline.js';
 import { offerGoldToMonster } from './minion.js';
 import { monsterAlignmentType } from './priest.js';
 import { monsterName } from './do_name.js';

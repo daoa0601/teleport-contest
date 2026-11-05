@@ -1,11 +1,10 @@
 // Musical instruments and their effects.
 // C ref: music.c.
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, syncDeafness } from './senses.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { A_DEX, A_WIS, COLNO, In_endgame, In_sokoban, In_V_tower, Is_astralevel, KILLED_BY, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, ROWNO, STRAT_WAITMASK, } from './const.js';
 import { canSeeMonster, newsym, shieldeff } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { createEarthquake } from './earthquake.js';
 import { game } from './gstate.js';

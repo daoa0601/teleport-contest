@@ -8,7 +8,7 @@ import { rhack } from '../js/cmd.js';
 import { GameMap } from '../js/game.js';
 import { game, resetGame } from '../js/gstate.js';
 import { pushKey } from '../js/input.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { currentAttribute } from '../js/attrib.js';
 import { A_DEX, NON_PM } from '../js/const.js';
 import { heroSpecies, setHeroSpecies } from '../js/polyself.js';
