@@ -214,8 +214,12 @@ export async function tty_clear_nhwindow<T>(window: TtyMenuWindow<T>): Promise<v
     free_window_info(window);
 }
 
-// C wintty.c:toggle_menu_curr()
-function toggle_menu_curr<T>(row: TtyMenuRow<T>, count: number): void {
+// C wintty.c:toggle_menu_curr(): toggle a specific entry. `lineno >= 0`
+// means the entry is on the displayed page (C's in_view), so its marker is
+// repainted through set_item_state().
+function toggle_menu_curr<T>(
+    d: GameDisplay, boundary: number, row: TtyMenuRow<T>, lineno: number, count: number,
+): void {
     if (row.selected && count === -1) {
         row.selected = false;
         row.count = -1;
@@ -223,6 +227,7 @@ function toggle_menu_curr<T>(row: TtyMenuRow<T>, count: number): void {
         row.selected = true;
         if (count > 0) row.count = count;
     }
+    if (lineno >= 0) set_item_state(d, boundary, lineno, row);
 }
 
 // C wintty.c:dmore()
@@ -404,10 +409,6 @@ async function process_menu_window<T>(
             page = next;
             continue;
         }
-        const update = (row: TtyMenuRow<T>) => {
-            const index = pageRows.indexOf(row);
-            if (index >= 0) set_item_state(d, layout.boundary, index, row);
-        };
         // Native bulk commands precede group shortcuts unless the key is
         // an explicit choice (including unique groups in PICK_ONE).
         if (!explicit && '.@,\\-~'.includes(letter)) {
@@ -457,10 +458,10 @@ async function process_menu_window<T>(
         }
         if (explicit) {
             if (how === PICK_NONE) continue;
+            // find, toggle, and possibly update
             const row = pageRows.find(row => row.key === letter);
             if (!row || row.identifier === null) continue;
-            toggle_menu_curr(row, selectedCount);
-            update(row);
+            toggle_menu_curr(d, layout.boundary, row, pageRows.indexOf(row), selectedCount);
             if (how === PICK_ONE) return result(key);
             continue;
         }
@@ -469,8 +470,7 @@ async function process_menu_window<T>(
             if (!query) continue;
             for (const row of rows) {
                 if (row.identifier === null || !menuSearchMatches(query, row.text)) continue;
-                toggle_menu_curr(row, selectedCount);
-                update(row);
+                toggle_menu_curr(d, layout.boundary, row, pageRows.indexOf(row), selectedCount);
                 if (how === PICK_ONE) return result(key);
             }
         }
