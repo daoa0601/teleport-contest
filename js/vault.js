@@ -19,7 +19,7 @@ import { stopLevelTimer } from './timeout.js';
 import { containedGold, deleteObject } from './shk.js';
 import { reset_faint } from './eat.js';
 import { heroIsDeaf, heroIsBlind } from './senses.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { adjustHeroAlignment } from './attrib.js';
 import { stopHeroOccupation } from './occupation.js';
 import { monsterTypeName } from './monster_data.js';
 import { monsterName } from './do_name.js';

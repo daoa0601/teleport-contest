@@ -5,10 +5,10 @@ import { RANDOM_CLASS, WEAPON_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTIO
 import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_YENDOR, BOULDER, CORPSE, FAKE_AMULET_OF_YENDOR, FUMBLE_BOOTS, GAUNTLETS_OF_FUMBLING, HELM_OF_OPPOSITE_ALIGNMENT, LEVITATION_BOOTS, LONG_SWORD, LOADSTONE, MAGIC_MARKER, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, SPE_BLANK_PAPER, STATUE, getObjectClassBounds, } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
+import { deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
-import { adjustAttribute, attributeChangeMessage, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
 import { isRider } from './corpse_species.js';
@@ -1576,10 +1576,10 @@ async function offerToAnotherGod(corpse, alignment) {
             await pline(`${deityName(alignment)} accepts your allegiance.`);
             if (alignment !== -1 && alignment !== 0 && alignment !== 1)
                 throw new Error(`Cannot convert to altar alignment ${alignment}`);
-            await convertHeroAlignment(alignment);
+            await changeHeroAlignment(alignment, 'convert');
             if (game.program_state.gameover)
                 return;
-            changeLuck(-3);
+            changeHeroLuck(-3);
             hero.ublesscnt = (hero.ublesscnt || 0) + 300;
         }
         else {
@@ -1587,7 +1587,7 @@ async function offerToAnotherGod(corpse, alignment) {
             adjustHeroAlignment(-5);
             await pline(`${deityName(alignment)} rejects your sacrifice!`);
             await godVoice(alignment, 'Suffer, infidel!');
-            changeLuck(-5);
+            changeHeroLuck(-5);
             adjustAttribute(A_WIS, -2);
             if (!inHell())
                 await angryGods(hero.ualign.type);
@@ -1599,7 +1599,7 @@ async function offerToAnotherGod(corpse, alignment) {
     if (rn2(8 + hero.ulevel) > 5) {
         await pline(formatFeltMessage(`the power of ${deityName(hero.ualign.type)} increase.`));
         await exerciseAttribute(A_WIS, true);
-        changeLuck(1);
+        changeHeroLuck(1);
         const altar = game.level.requireAt(hero.ux, hero.uy);
         altar.flags = Align2amask(hero.ualign.type) | (altar.flags & AM_SHRINE);
         await newsym(hero.ux, hero.uy);
@@ -1614,7 +1614,7 @@ async function offerToAnotherGod(corpse, alignment) {
     }
     else {
         await pline(`Unluckily, you feel the power of ${deityName(hero.ualign.type)} decrease.`);
-        changeLuck(-1);
+        changeHeroLuck(-1);
         await exerciseAttribute(A_WIS, false);
         if (rnl(hero.ulevel) > 6 && hero.ualign.record > 0
             && rnd(hero.ualign.record) > Math.trunc(7 * alignmentLimit() / 8))
@@ -1656,7 +1656,7 @@ async function offerOwnRace(corpse, highAltar, alignment) {
         }
         else {
             await pline('The blood covers the altar!');
-            changeLuck(alignment === A_NONE ? -2 : 2);
+            changeHeroLuck(alignment === A_NONE ? -2 : 2);
             failure = 'The blood coagulates.';
         }
         const type = demonLord(alignment);
@@ -1684,7 +1684,7 @@ async function offerOwnRace(corpse, highAltar, alignment) {
             await angryGods(hero.ualign.type);
         if (game.program_state.gameover)
             return;
-        changeLuck(-5);
+        changeHeroLuck(-5);
     }
     else
         adjustHeroAlignment(5);
@@ -1706,7 +1706,7 @@ async function rewardOffering(value) {
             await pline(`${deityName(hero.ualign.type)} seems ${mood}.`);
             if ((hero.uluck ?? 0) < 0) {
                 if (hero.ugangr)
-                    changeLuck(1);
+                    changeHeroLuck(1);
                 else
                     hero.uluck = 0;
             }
@@ -1725,7 +1725,7 @@ async function rewardOffering(value) {
                 : (hallucinating ? 'Overall, there is a smell of fried onions.' : 'You have a feeling of reconciliation.'));
             if ((hero.uluck ?? 0) < 0) {
                 if (hero.ublesscnt)
-                    changeLuck(1);
+                    changeHeroLuck(1);
                 else
                     hero.uluck = 0;
             }
@@ -1736,7 +1736,7 @@ async function rewardOffering(value) {
             return;
         const previous = hero.uluck || 0;
         const increase = Math.min(Math.trunc(value * LUCKMAX / (MAX_VALUE * 2)), Math.max(0, value - previous));
-        changeLuck(increase);
+        changeHeroLuck(increase);
         hero.uluck = Math.max(0, hero.uluck ?? 0);
         if (hero.uluck !== previous) {
             const feet = makePlural(heroFootName());
@@ -1815,12 +1815,12 @@ async function offerFakeAmulet(amulet, highAltar, alignment) {
     if (!amulet.known) {
         await pline(`You realize you have made a ${heroIsHallucinating(game) ? 'boo-boo' : 'mistake'}.`);
         amulet.known = true;
-        changeLuck(-1);
+        changeHeroLuck(-1);
     }
     else {
         if (heroIsDeaf(game))
             await pline('Oh, no.');
-        changeLuck(-3);
+        changeHeroLuck(-3);
         adjustHeroAlignment(-1);
         game.u.ugangr = (game.u.ugangr || 0) + 3;
         await rejectOffering(highAltar, alignment);
@@ -1869,8 +1869,5 @@ async function offerAmulet(amulet, alignment) {
 }
 function alignmentLimit() {
     return 10 + Math.trunc(game.moves / 200);
-}
-function changeLuck(amount) {
-    game.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (game.u.uluck || 0) + amount));
 }
 //# sourceMappingURL=pray.js.map

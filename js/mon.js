@@ -43,7 +43,7 @@ import { surfaceName } from './terrain_name.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './ambient_sounds.js';
-import { currentAttribute } from './attrib.js';
+import { adjustHeroAlignment, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { isReviver, isZombieMaker, zombieForm, isRider } from './corpse_species.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling } from './dungeon.js';
@@ -57,7 +57,6 @@ import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './p
 import { impossible } from './diagnostics.js';
 import { wereChange, isHumanWereMonster, isWereMonster, transformWereMonster } from './were.js';
 import { badRockForMonster, disturbBuriedZombies, roomsAt, loseHeroHp, heroLocomotion, mayDig } from './hack.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';

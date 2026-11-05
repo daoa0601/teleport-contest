@@ -2382,3 +2382,14 @@ export async function cloneMonster(
     if (state === game) await newsym(clone.mx, clone.my);
     return clone;
 }
+
+// C makemon.c:summon_furies(). Erinyes are a real species with a birth
+// limit; makemon() updates that history, ending the unlimited Astral case.
+export async function summonFuries(limit: number, state: GameState): Promise<void> {
+    const species = MONSTER_NAME.indexOf('erinys');
+    let created = 0;
+    while (!((state.mvitals?.[species]?.mvflags ?? 0) & G_GONE) && (created < limit || limit === 0)) {
+        await makemonAt(species, state.u.ux, state.u.uy, MM_ADJACENTOK | MM_NOWAIT);
+        created++;
+    }
+}

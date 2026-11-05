@@ -5,10 +5,9 @@ import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTe
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting, } from './potion.js';
 import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifacts.js';
-import { adjustAttribute, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';

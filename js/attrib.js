@@ -1,26 +1,30 @@
 // attrib.js — Hero attributes, exercise, luck, poison, and HP maxima.
 // One TS module per C file: every attrib.c function lives here.
 import { formatFeltMessage } from './hero_speech.js';
-import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
+import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
 import { see_monsters, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
-import { encumber_msg } from './pickup.js';
-import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, adjustErinys } from './monster_data.js';
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
-import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
-import { d, rn2, rnd } from './rng.js';
+import { d, rn1, rn2, rnd } from './rng.js';
+import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
+import { retouchEquipment } from './artifacts.js';
+import { makeConfused } from './potion.js';
+import { summonFuries } from './makemon.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, revokeIntrinsicProperty, } from './properties.js';
 import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
 import { experienceRankIndex } from './exper.js';
 import { formMaximumStrength } from './polyself.js';
-import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, LUCKSTONE, MUMMY_WRAPPING, } from './object_data.js';
+import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, LUCKSTONE, MUMMY_WRAPPING, } from './object_data.js';
+import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
+import { encumber_msg } from './pickup.js';
 import { confersLuck } from './invent.js';
 import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;
@@ -945,6 +949,68 @@ export function setHeroMaxHitPoints(newMax, evenWhenPolyd, state) {
             hero.mh = hero.mhmax;
             state.context.botl = true;
         }
+    }
+}
+// C attrib.c:adjalign(). Keep the alignment record within its bounds and
+// track abuse for the Erinyes summons.
+export function adjustHeroAlignment(amount, state = game) {
+    if (!amount || !state.u?.ualign)
+        return;
+    const alignment = state.u.ualign;
+    if (amount < 0) {
+        alignment.record = (alignment.record || 0) + amount;
+        alignment.abuse = (alignment.abuse ?? 0) - amount;
+        adjustErinys(alignment.abuse);
+        return;
+    }
+    const alignmentLimit = 10 + Math.trunc((state.moves || 0) / 200);
+    alignment.record = Math.min(alignmentLimit, (alignment.record || 0) + amount);
+}
+// C attrib.c:uchangealign(). Change the hero's alignment type — a
+// permanent conversion via altar, or a helm of opposite alignment being
+// put on or taken off — possibly losing use of artifacts.
+export async function changeHeroAlignment(newAlignment, reason, state = game) {
+    requireLiveGame(state);
+    const hero = state.u;
+    const current = hero.ualign;
+    if (!current)
+        throw new Error('Hero alignment is not initialized');
+    const previous = current.type;
+    hero.ublessed = 0; /* lose divine protection */
+    // You/Your/pline messages call flush_screen(), triggering bot(), so
+    // the data change needs to come before the message.
+    state.context.botl = true;
+    if (reason === 'convert') {
+        const original = hero.ualignbase?.[1] ?? previous;
+        hero.ualignbase = [newAlignment, original];
+        const name = newAlignment > 0 ? 'lawful' : newAlignment < 0 ? 'chaotic' : 'neutral';
+        recordGameLogEvent(`permanently converted to ${name}`, { state, flags: LL_ALIGNMENT });
+        const helmet = state.uarmh || hero.uarmh;
+        // A helm of opposite alignment can hide a permanent conversion,
+        // but it cannot undo the change to the hero's chosen deity.
+        if (helmet?.otyp !== HELM_OF_OPPOSITE_ALIGNMENT)
+            current.type = newAlignment;
+        await plineWithContinuation(`You have a ${current.type !== previous ? 'sudden ' : ''}sense of a new direction.`);
+    }
+    else {
+        current.type = newAlignment;
+        if (reason === 'helmOn') {
+            adjustHeroAlignment(-7, state); /* for abuse -- record will be cleared shortly */
+            await plineWithContinuation(`Your mind oscillates ${heroIsHallucinating(state) ? 'wildly' : 'briefly'}.`);
+            await makeConfused(rn1(2, 3), { state, talk: false });
+            const astral = Is_astralevel(hero.uz);
+            if (astral || rn2(50) < (current.abuse ?? 0))
+                await summonFuries(astral ? 0 : 1, state);
+            recordGameLogEvent(`used a helm to turn ${newAlignment > 0 ? 'lawful' : 'chaotic'}`, { state, flags: LL_ALIGNMENT });
+        }
+        else {
+            await plineWithContinuation(`Your mind is ${heroIsHallucinating(state)
+                ? 'much of a muchness' : 'back in sync with your body'}.`);
+        }
+    }
+    if (current.type !== previous) {
+        current.record = 0; /* slate is wiped clean */
+        await retouchEquipment(0, { state });
     }
 }
 const EXERCISE_EXPLANATIONS = {

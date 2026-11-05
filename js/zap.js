@@ -16,7 +16,7 @@ import { GETOBJ_EXCLUDE, GETOBJ_SUGGEST, PLNMSG_ENVELOPED_IN_GAS, ZAP_POS, ANTI_
 import { isok } from './cmd.js';
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
-import { exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
+import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
 import { formatDraftMessage } from './draft_message.js';
@@ -147,7 +147,6 @@ import { monsterHasLineOfSightToHero, vision_recalc } from './vision.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { showTextWindow } from './windows.js';
 import { M_AP_FURNITURE, M_AP_OBJECT, W_SADDLE } from './const.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { abusePet } from './dog.js';
 import { checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';

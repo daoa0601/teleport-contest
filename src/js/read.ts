@@ -28,7 +28,7 @@ import { OBJ_NAME,
     SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING,
     WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES,
     objectDirection, } from './object_data.js';
-import { exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
@@ -107,7 +107,6 @@ import type { GameObject } from './object_types.js';
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { landFloorObject } from './floor_effects.js';
 import { possessiveName, upstart } from './hacklib.js';

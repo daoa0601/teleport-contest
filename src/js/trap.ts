@@ -132,8 +132,7 @@ import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadR
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { adjustHeroAlignment } from './alignment.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,

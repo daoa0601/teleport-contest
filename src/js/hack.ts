@@ -120,9 +120,8 @@ import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
 import { applyWaterFriction } from './mkmaze.js';
 
-import { adjustHeroAlignment } from './alignment.js';
 import { mdamageu } from './mhitu.js';
-import { currentStrength, currentAttribute, exerciseAttribute } from './attrib.js';
+import { adjustHeroAlignment, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { freeInventoryObject } from './invent.js';
 import { delobj } from './invent.js';
 import { objectBreaksOnImpact } from './dothrow.js';

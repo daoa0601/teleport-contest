@@ -18,7 +18,7 @@ import { questMonsterSound } from './role_monsters.js';
 import { displayQuestText, prepareQuestText, qtPager, comPager } from './quest_pager.js';
 import type { QuestText } from './quest_pager.js';
 import { artifactByName } from './artifacts.js';
-import { exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
+import { adjustHeroAlignment, exerciseWisdom as exerciseQuestWisdom } from './attrib.js';
 import { fullyIdentifyObject } from './invent.js';
 import { observeObject } from './o_init.js';
 
@@ -27,7 +27,6 @@ import { objectCombatName, definiteName } from './objnam.js';
 import { heroIsDeaf } from './senses.js';
 import { LL_ACHIEVE, recordGameLogEvent } from './gamelog.js';
 import { monsterName } from './do_name.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { rn2 } from './rng.js';
 import { createPoisonGasCloud } from './regions.js';

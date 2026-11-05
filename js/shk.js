@@ -27,7 +27,7 @@ import { simpleObjectName, objectTypeName, objectName, objectCombatName, definit
 import { rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
 import { heroGoldObject, detachHeroGold } from './hero_gold.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { angerWatchGuards, removeMonsterFromGame, mnearto, resistConflict, moveMonsterNextToHero } from './mon.js';
@@ -46,7 +46,6 @@ import { heroIsDisplaced } from './do_wear.js';
 import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { dropHeroInventoryForBones } from './bones.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';

@@ -1,6 +1,5 @@
 // C priest.c:priest_talk(). Payments and property changes follow the dialogue.
-import { adjustHeroAlignment } from './alignment.js';
-import { exerciseAttribute } from './attrib.js';
+import { adjustHeroAlignment, exerciseAttribute } from './attrib.js';
 import { A_WIS } from './const.js';
 import { currency } from './invent.js';
 import { plineWithContinuation as pline } from './pline.js';
