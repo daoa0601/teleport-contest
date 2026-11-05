@@ -158,6 +158,7 @@ src/js/roles.ts	pickRandom	rn2	"[""candidates.length * 100""]"	unproved
 src/js/roles.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/roles.ts	rigid_role_checks	rn2	"[""1""]"	constant
 src/js/roles.ts	rigid_role_checks	rn2	"[""candidates.length""]"	unproved
+src/js/roles.ts	randrole_filtered	rn2	"[""candidates.length""]"	unproved
 src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
 src/js/ambient_sounds.ts	dochat	rn2	"[""10""]"	constant
 src/js/lock.ts	doclose	rn2	"[""25""]"	constant
