@@ -28,7 +28,7 @@ import { insideShopRoomAt } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer, uncurseObjectState} from './mkobj.js';
 import { races, roles } from './roles.js';
 import { recordObjectEncounter, objectMaterial, objectTypeKnown } from './o_init.js';
-import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming, killerObjectName, ownedObjectName } from './objnam.js';
+import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming, killerObjectName, ownedObjectName, simpleObjectTypeName } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
@@ -363,6 +363,21 @@ export function setArtifactOrigin(
     (state._artifactOrigins ??= new Map()).set(id, origin);
     if (knownOrigin) markArtifactFound(id, state);
     else state._artifactFound?.delete(id);
+}
+
+// The discovered-artifact rows of the #discoveries list.
+// C artifact.c:disp_artifact_discoveries(): each identified artifact with
+// its alignment (align_str(), unaligned printed as "non-aligned") and
+// simple type name; artiname() is the record's name field.
+export function discoveredArtifacts(state: GameState = game): string[] {
+    return (state._artifactDiscoveries ?? []).map(id => {
+        const artifact = artifactById(id, state);
+        if (!artifact) throw new Error(`Unknown discovered artifact ${id}`);
+        const alignment = artifact.alignment === 1 ? 'lawful'
+            : artifact.alignment === 0 ? 'neutral'
+                : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
+        return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
+    });
 }
 
 // C artifact.c:dump_artifact_info(). This includes artifacts the hero has
@@ -2554,4 +2569,13 @@ export async function doinvoke() {
 export function weaponReflects(object: GameObject | null | undefined, state: GameState): object is GameObject {
     if (!object) return false;
     return !!artifactById(object?.oartifact, state)?.flags.includes('SPFX_REFLECT');
+}
+
+// C artifact.c:permapoisoned(): Grimtooth is the permanently poisoned
+// artifact; it is also the only record with the fling-poison invoke power.
+export function isPermanentlyPoisonedObject(object: {
+    oartifact?: number | null;
+} | null | undefined): boolean {
+    if (!object) return false;
+    return artifactById(object.oartifact)?.invokePower === 'fling-poison';
 }

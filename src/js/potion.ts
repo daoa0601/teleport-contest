@@ -26,7 +26,7 @@ import {
     POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY,
     SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN,
 } from './object_data.js';
-import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
+import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWarns } from './artifacts.js';
 import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -114,7 +114,7 @@ import {
     ownedObjectAction, ownedObjectName, simpleObjectName,
 } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
-import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
+import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';

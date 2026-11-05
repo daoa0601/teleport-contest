@@ -129,12 +129,6 @@ export function isPoisonableObject(object: ObjectCandidate): boolean {
         || artifactById(object.oartifact)?.invokePower === 'fling-poison';
 }
 
-// C artifact.c:permapoisoned().
-export function isPermanentlyPoisonedObject(object: ObjectCandidate): boolean {
-    if (!object) return false;
-    return artifactById(object.oartifact)?.invokePower === 'fling-poison';
-}
-
 // C obj.h:is_blunt_weapon().
 export function isBluntWeapon(object: ObjectCandidate): boolean {
     if (!object) return false;

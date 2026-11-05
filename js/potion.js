@@ -14,7 +14,7 @@
 // equipment_selection.ts.
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, } from './objclass.js';
 import { objectMagic, ALCHEMY_SMOCK, CORPSE, LENSES, MAGIC_LAMP, MUMMY_WRAPPING, OBJECT_NAMES, OIL_LAMP, POT_ACID, POT_BLINDNESS, POT_BOOZE, POT_CONFUSION, POT_ENLIGHTENMENT, POT_EXTRA_HEALING, POT_FRUIT_JUICE, POT_FULL_HEALING, POT_GAIN_ABILITY, POT_GAIN_ENERGY, POT_GAIN_LEVEL, POT_HALLUCINATION, POT_HEALING, POT_INVISIBILITY, POT_LEVITATION, POT_MONSTER_DETECTION, POT_OBJECT_DETECTION, POT_OIL, POT_PARALYSIS, POT_POLYMORPH, POT_RESTORE_ABILITY, POT_SEE_INVISIBLE, POT_SICKNESS, POT_SLEEPING, POT_SPEED, POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY, SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN, } from './object_data.js';
-import { artifactWarningFeedback, wieldedArtifactWarns } from './artifacts.js';
+import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWarns } from './artifacts.js';
 import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -68,7 +68,7 @@ import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME,
 import { tryCallObjectType, healHeroLegs } from './do.js';
 import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, definiteName, definiteObjectAction, objectAction, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, } from './objnam.js';
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
-import { isLauncherAmmunition, isPermanentlyPoisonedObject, isPoisonableObject, isWeaponTool } from './object_properties.js';
+import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { poisonAttributeMessage } from './poison.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';

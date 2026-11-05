@@ -7,7 +7,7 @@ import { adjustHeroAlignment } from './alignment.js';
 import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
-import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, monsterHasArtifactDefense } from './artifacts.js';
+import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense } from './artifacts.js';
 import { getmattk } from './attack_selection.js';
 import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
@@ -66,7 +66,7 @@ import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MON
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './monworn.js';
 import { munslime, munstone } from './muse.js';
 import { objectMaterial, observeObject, objectTypeKnown } from './o_init.js';
-import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPermanentlyPoisonedObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
+import { isAxe, isBimanualObject, isBlade, isBluntWeapon, isFlimsyObject, isLauncherAmmunition, isMissileObject, isPoisonableObject, isPolearm, isWeaponTool, launcherMatchesAmmo, is_launcher } from './object_properties.js';
 import { corpseName, makePlural, minimalObjectName, objectCombatName, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName, pluralizeObjectNoun, verbForSubject, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { objectAtMonsterDescription } from './pager.js';

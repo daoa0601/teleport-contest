@@ -7,7 +7,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseMaterial, oc_color, objectUsesKnown, objectUnique, FLINT, getObjectClassBounds, OBJECT_PROB, AMULET_OF_YENDOR, BELL_OF_OPENING, SPE_BOOK_OF_THE_DEAD, CANDELABRUM_OF_INVOCATION, MAGIC_HARP, WOODEN_HARP, SPE_NOVEL, OBJECT_COLOR, OBJECT_DESCRIPTIONS, OBJECT_MATERIAL, OBJECT_NAMES, OBJECT_TOUGH, OBJECT_INITIAL_KNOWN, requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME, } from './object_data.js';
 import { game } from './gstate.js';
-import { artifactById, artifactInfoLines } from './artifacts.js';
+import { artifactInfoLines, discoveredArtifacts } from './artifacts.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import { rn2 } from './rng.js';
 import { ledgerNo, maxLedgerNo } from './hacklib.js';
@@ -468,21 +468,6 @@ function discoveredRelics() {
         lines.push(`  ${name}${!known && type === SPE_BOOK_OF_THE_DEAD ? ' spellbook' : ''}`);
     }
     return lines;
-}
-// The discovered-artifact rows of the #discoveries list.
-// C artifact.c:disp_artifact_discoveries(): each identified artifact with
-// its alignment (align_str(), unaligned printed as "non-aligned") and
-// simple type name; artiname() is the record's name field.
-function discoveredArtifacts() {
-    return (game._artifactDiscoveries ?? []).map(id => {
-        const artifact = artifactById(id);
-        if (!artifact)
-            throw new Error(`Unknown discovered artifact ${id}`);
-        const alignment = artifact.alignment === 1 ? 'lawful'
-            : artifact.alignment === 0 ? 'neutral'
-                : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
-        return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
-    });
 }
 // Object probabilities are mutable because gemstone rarity changes with
 // dungeon depth.  This is the level-dependent half of o_init.c.

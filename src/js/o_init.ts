@@ -17,7 +17,7 @@ import {
     requireObjectData, ARROW as FIRST_OBJECT, OBJ_NAME,
 } from './object_data.js';
 import { game } from './gstate.js';
-import { artifactById, artifactInfoLines } from './artifacts.js';
+import { artifactInfoLines, discoveredArtifacts } from './artifacts.js';
 import { ATR_INVERSE, addMenuHeading, showTextWindow } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import { rn2 } from './rng.js';
@@ -493,21 +493,6 @@ function discoveredRelics(): string[] {
         lines.push(`  ${name}${!known && type === SPE_BOOK_OF_THE_DEAD ? ' spellbook' : ''}`);
     }
     return lines;
-}
-
-// The discovered-artifact rows of the #discoveries list.
-// C artifact.c:disp_artifact_discoveries(): each identified artifact with
-// its alignment (align_str(), unaligned printed as "non-aligned") and
-// simple type name; artiname() is the record's name field.
-function discoveredArtifacts(): string[] {
-    return (game._artifactDiscoveries ?? []).map(id => {
-        const artifact = artifactById(id);
-        if (!artifact) throw new Error(`Unknown discovered artifact ${id}`);
-        const alignment = artifact.alignment === 1 ? 'lawful'
-            : artifact.alignment === 0 ? 'neutral'
-                : artifact.alignment === -1 ? 'chaotic' : 'non-aligned';
-        return `  ${artifact.name} [${alignment} ${simpleObjectTypeName(artifact.baseType)}]`;
-    });
 }
 
 // Object probabilities are mutable because gemstone rarity changes with
