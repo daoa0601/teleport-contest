@@ -100,7 +100,6 @@ import { finishMonsterEating } from './dogmove.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { encumber_msg } from './pickup.js';
 import { loseHeroExperience } from './exper.js';
-import { hitFloorObjectWithForce } from './force_bolt.js';
 import { LL_ARTIFACT, LL_WISH } from './gamelog.js';
 import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, burnAwayHeroSlime, endVoluntaryMultiTurn } from './hack.js';
@@ -144,7 +143,6 @@ import { M_AP_FURNITURE, M_AP_OBJECT, W_SADDLE } from './const.js';
 import { abusePet } from './dog.js';
 import { checkExperienceLevel } from './exper.js';
 import { flashHitsMonster } from './flash.js';
-import { hitMonsterWithForce } from './force_bolt.js';
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { m_is_steadfast } from './uhitm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
@@ -163,6 +161,7 @@ import { shopClaimsObject } from './shk.js';
 import { breakObjectAtLocation } from './dothrow.js';
 import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
+import { breakFloorObject } from './dothrow.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -2911,6 +2910,7 @@ export async function hitFloorPileWithWand(wand, x, y, { state = game, direction
     await fillPitWithBoulderAt(x, y, state);
     return affected;
 }
+// C zap.c:bhito().
 export async function hitObjectWithWand(object, wand, { state = game } = {}) {
     requirePlayingGame(state);
     if (object === wand)
@@ -2946,9 +2946,35 @@ export async function hitObjectWithWand(object, wand, { state = game } = {}) {
             break;
         case WAN_STRIKING:
         case SPE_FORCE_BOLT: {
-            const result = await hitFloorObjectWithForce(object, { state });
-            learned = result.learned;
-            affected = result.affected;
+            const x = object.ox, y = object.oy;
+            learned = cansee(x, y) || !heroIsDeaf(state);
+            if (object.otyp === BOULDER) {
+                if (cansee(x, y))
+                    await plineWithContinuation('The boulder falls apart.');
+                else
+                    await publishHeardMessage('a crumbling sound.', plineWithContinuation, state);
+                await fractureRock(object, x, y, { state });
+            }
+            else if (object.otyp === STATUE) {
+                if (await breakStatue(object, x, y, { state })) {
+                    if (cansee(x, y)) {
+                        const subject = heroIsHallucinating(state) ? randomDisplayMonsterName() : 'statue';
+                        await plineWithContinuation(`The ${subject} shatters.`);
+                    }
+                    else
+                        await publishHeardMessage('a crumbling sound.', plineWithContinuation, state);
+                }
+            }
+            else {
+                const result = await breakFloorObject(object, {
+                    state, random: rn2, rollDice: d,
+                    heroCaused: !state.context?.mon_moving,
+                });
+                learned &&= result.destroyed;
+                if (result.destroyed)
+                    await newsym(x, y);
+                affected = 0;
+            }
             break;
         }
         case WAN_CANCELLATION:
@@ -4688,11 +4714,49 @@ export async function hitMonsterWithWand(monster, wand, { state = game, x = mons
     const options = { random: rn2, roll: rnd, rollDice: d, finishMonsterKill: finishHeroMonsterKill };
     switch (wand.otyp) {
         case WAN_STRIKING:
-        case SPE_FORCE_BOLT:
-            learned = await hitMonsterWithForce(monster, source, state, { ...options, x, y });
+        case SPE_FORCE_BOLT: {
             alreadyWoke = true;
             reveal = true;
+            learned = cansee(x, y);
+            if (monsterHasMagicResistance(monster)) {
+                await revealMonsterAppearance(monster, { includeMonsterDisguise: false });
+                await shieldeff(monster.mx, monster.my, state);
+                await plineWithContinuation('Boing!');
+                await wakeAttackedMonster(monster);
+            }
+            else if (state.u.uswallow || rnd(20) < 10 + findMonsterArmorClass(monster)) {
+                await revealMonsterAppearance(monster);
+                let damage = d(2, 12);
+                if (state.urole.key === 'knight' && state.u.uhave.questart)
+                    damage *= 2;
+                if (source === 'spell')
+                    damage = adjustSpellDamage(damage, state);
+                await plineWithContinuation(rayHitMessage(source, monster, {
+                    x: monster.mx, y: monster.my, damage, state,
+                }));
+                if (monsterResistsEffect(monster, attackLevel, rn2)) {
+                    damage = Math.ceil(damage / 2);
+                    await shieldeff(monster.mx, monster.my, state);
+                    if (cansee(monster.mx, monster.my))
+                        await plineWithContinuation(`${monsterName(monster, { capitalized: true })} resists!`);
+                }
+                monster.mhp = (monster.mhp ?? 1) - damage;
+                if (monster.mhp <= 0)
+                    await finishHeroMonsterKill(monster, monster.mx, monster.my);
+                if (monster.mhp > 0 && !monster.dead)
+                    await wakeAttackedMonster(monster);
+            }
+            else {
+                if (!monster.m_ap_type) {
+                    await plineWithContinuation(rayMissMessage(source, monster, {
+                        x: monster.mx, y: monster.my, state,
+                    }));
+                }
+                await wakeAttackedMonster(monster);
+                learned = false;
+            }
             break;
+        }
         case WAN_SLOW_MONSTER:
         case SPE_SLOW_MONSTER:
         case WAN_SPEED_MONSTER:

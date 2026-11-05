@@ -416,7 +416,7 @@ src/js/flash.ts	flashHitsMonster	rnd	"[""100""]"	constant
 src/js/flash.ts	flashHitsMonster	rnd	"[""Math.min(monster.mhp, 4)""]"	unproved
 src/js/do_name.ts	nameFloorType	rn2Display	"[""30""]"	constant
 src/js/do_name.ts	nameFloorType	rn2Display	"[""choices.length""]"	constant
-src/js/force_bolt.ts	hitMonsterWithForce	options.rollDice	"[""2"", ""12""]"	constant
+src/js/zap.ts	hitMonsterWithWand	d	"[""2"", ""12""]"	constant
 src/js/fountain.ts	blessedFountainDraught	rn2	"[""A_MAX""]"	constant
 src/js/fountain.ts	dipFountain	rn2	"[""2""]"	constant
 src/js/fountain.ts	dipFountain	rnd	"[""30""]"	constant
