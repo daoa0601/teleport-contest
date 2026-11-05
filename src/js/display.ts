@@ -1890,8 +1890,8 @@ function tether_glyph(x: number, y: number): DisplayGlyph {
     return zapdir_to_glyph(Math.sign(game.u.ux - x), Math.sign(game.u.uy - y), 2);
 }
 
-// Native display.c:tmp_at(). Each active effect owns its saved positions,
-// so nested effects keep independent trails without global display state.
+// Each active temporary effect owns its saved positions, so nested effects
+// keep independent trails without global display state (native tmp_at()).
 export type TemporaryGlyphStyle = 'beam' | 'all' | 'tether' | 'flash' | 'always';
 
 export class TemporaryMapEffect {
@@ -1916,9 +1916,9 @@ export class TemporaryMapEffect {
         if (await this.draw(x, y)) await flush_screen(0);
     }
 
-    // The do-it checks and show_glyph() without tmp_at()'s closing
-    // flush_screen(0); callers that publish several cells in one frame
-    // draw each cell and flush the frame themselves.
+    // The do-it checks and show_glyph() without the closing flush; callers
+    // that publish several cells in one frame draw each cell, then flush
+    // the frame themselves (tmp_at() always adds its flush_screen(0)).
     async draw(x: number, y: number): Promise<boolean> {
         if (!isok(x, y)) return false;
         if (this.style === 'beam' || this.style === 'all' || this.style === 'tether') {
@@ -3025,7 +3025,7 @@ export function set_wall_state(): void {
     }
 }
 
-// The SDOOR, straight-wall and corner cases of wall_angle() below: a room's
+// The SDOOR, straight-wall and corner cases of the angle switch below: a
 // unfinished exterior face is stored in the low three wall_info bits.  Seen
 // vectors which only approach from that rock side project unexplored stone,
 // not the nominal line-drawing wall.
@@ -3072,7 +3072,7 @@ function simpleWallVisible(loc: MapLocation) {
     }
 }
 
-// The do_twall block of wall_angle() below: T walls retain their topology
+// The do_twall block of the angle switch below: T walls retain their topology
 // type while their visible glyph changes with the accumulated seen vector.
 // This matters when opening a nearby door reveals a previously hidden arm:
 // the same TUWALL can project as a corner, straight wall, or full tee.
@@ -3132,7 +3132,7 @@ function projectedTWallType(loc: MapLocation): number {
     return row[column];
 }
 
-// The CROSSWALL case of wall_angle() below.  Cross-wall topology is stable,
+// The CROSSWALL case of the angle switch below.  Cross-wall topology is stable,
 // but its visible glyph is the subset of arms approached by the hero.  The
 // wall mode additionally records which quadrant(s) remain unfinished rock.
 // Rows are C's cross_matrix[][]; all single-solid quarters rotate to the
