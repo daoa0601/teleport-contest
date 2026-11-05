@@ -12,6 +12,7 @@ import {
     MIRROR, POT_OIL, POT_WATER, STATUE, HEAVY_IRON_BALL, TRIDENT, WAN_STRIKING,
     BAG_OF_HOLDING, BAG_OF_TRICKS, EUCALYPTUS_LEAF, FLINT, FORTUNE_COOKIE, HARD_GEM_TYPES,
     KELP_FROND, OILSKIN_SACK, PANCAKE, SACK, SPRIG_OF_WOLFSBANE,
+    ELVEN_ARROW, ELVEN_BOW, ORCISH_ARROW, ORCISH_BOW, YA, YUMI,
 } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { isWeaponTool, isMissileObject } from './object_properties.js';
@@ -37,9 +38,10 @@ import {
     M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel,
     Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
     TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE,
+    P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR,
 } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { weaponHitValue, dryTowel , rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { weaponHitValue, dryTowel , rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills } from './weapon.js';
 import type { WeaponAccuracyOptions } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural , simpleObjectName, withIndefiniteArticle } from './objnam.js';
@@ -56,7 +58,8 @@ import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { heroResistsStoning, touchPetrifies , formCanBecomeStoneGolem } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName , heroFaceName, heroHeadName } from './body_parts.js';
-import { beginHeroVolley, chooseHeroVolleyCount, finishHeroVolley , endHeroVolley } from './hero_multishot.js';
+import type { RoleKey, RaceName } from './roles.js';
+import { isQuestArtifact } from './quest.js';
 import { encumber_msg } from './pickup.js';
 import { resolveGenericSwallowedThrow, resolveSwallowedEggPieOrVenomThrow, resolveSwallowedFoodThrow, resolveSwallowedPotionThrow, resolveSwallowedWeaponThrow } from './swallowed_throw.js';
 import { hitMonsterWithSupportedPotion, SUPPORTED_MONSTER_POTION_TYPES, applySupportedPotionVapor, heroPotionVaporProfile, makeBlinded } from './potion.js';
@@ -118,15 +121,99 @@ import type { HeroTrapOptions } from './trap.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import type { LevelChangeOptions } from './level_change.js';
 
-// C weapon.c WEAPON_CLASS/GEM_CLASS/TOOL_CLASS used by omon_adj()'s hitval() branch.
+// C dothrow.c:multishot_class_bonus(): the role-specific volley bonuses.
+// PM_NINJA shares PM_SAMURAI's YUMI+YA case through C's fallthrough; the
+// port's role keys have no ninja.
+function multishotClassBonus(role: RoleKey, item: GameObject, launcher: GameObject | null, skill: number) {
+    if (role === 'caveman')
+        return skill === -P_SLING || skill === P_SPEAR ? 1 : 0;
+    if (role === 'monk') return skill === -P_SHURIKEN ? 1 : 0;
+    if (role === 'ranger') return skill !== P_DAGGER ? 1 : 0;
+    if (role === 'rogue') return skill === P_DAGGER ? 1 : 0;
+    if (role === 'samurai')
+        return item.otyp === YA && launcher?.otyp === YUMI ? 1 : 0;
+    return 0;
+}
 
-// C refs: dothrow(), throw_obj().  Splitting the selected arrow stack makes
-// a new object id, then obj_resists() is consulted when it lands.
+// throw_obj()'s weakmultishot local (dothrow.c:170-174): these roles, poor
+// dexterity, or fumbling hold the volley back to its smaller bonuses.
+function weakMultishot(role: RoleKey, skill: number, state: PlayingGameState) {
+    return role === 'wizard' || role === 'priest'
+        || (role === 'healer' && skill !== P_KNIFE)
+        || (role === 'tourist' && skill !== -P_DART)
+        || state.u?.fumbling || (state.u?.fumblingTurns ?? 0) > 0
+        || currentAttribute(A_DEX, state) <= 6;
+}
+
+// throw_obj()'s race bonus switch (dothrow.c:193-214): the racial bows and
+// the gnome crossbow.  The quest-artifact launcher's extra shot follows in
+// the caller.
+function raceBonus(race: RaceName, item: GameObject, launcher: GameObject | null, skill: number) {
+    if (race === 'elf') {
+        return item.otyp === ELVEN_ARROW && launcher?.otyp === ELVEN_BOW
+            ? 1 : 0;
+    }
+    if (race === 'orc') {
+        return item.otyp === ORCISH_ARROW && launcher?.otyp === ORCISH_BOW
+            ? 1 : 0;
+    }
+    return race === 'gnome' && skill === -P_CROSSBOW ? 1 : 0;
+}
+
+interface HeroVolleyOptions {
+    state?: GameState;
+    shotLimit?: number;
+    random?: (range: number) => number;
+}
+
+// throw_obj()'s multishot calculation (dothrow.c:158-238): the skill,
+// role, race and quest-artifact bonuses, the crossbow strength cap, then
+// the rnd() roll and the quantity and shotlimit clamps.
+export function chooseHeroVolleyCount(item: GameObject, {
+    state = game,
+    shotLimit = 0,
+    random = rnd,
+}: HeroVolleyOptions = {}): number {
+    requirePlayingGame(state);
+    const quantity = Math.max(1, item?.quan ?? item?.quantity ?? 1);
+    const launcher = launcherMatchesAmmo(item, state.uwep)
+        ? state.uwep ?? null : null;
+    const objectClass = item?.oclass || objectClassForType(item?.otyp);
+    const canVolley = quantity > 1
+        && (isLauncherAmmunition(item) ? !!launcher
+            : objectClass === WEAPON_CLASS)
+        && !state.u?.confused && !((state.u.confusionTurns ?? 0) > 0)
+        && !state.u?.stunned && !((state.u.stunnedTurns ?? 0) > 0);
+    if (!canVolley) return 1;
+
+    const skill = objectSkill(item.otyp);
+    const skillLevel = ensureHeroSkills(state)?.[Math.abs(skill)]?.skill ?? 0;
+    const role = state.urole.key;
+    const race = state.urace.name;
+    const weak = weakMultishot(role, skill, state);
+    let maximum = 1;
+    if (skillLevel >= P_EXPERT) maximum++;
+    if (skillLevel >= P_SKILLED && !weak) maximum++;
+    maximum += multishotClassBonus(role, item, launcher, skill);
+    if (!weak) {
+        maximum += raceBonus(race, item, launcher, skill);
+        if (launcher && isQuestArtifact(launcher, state)) maximum++;
+    }
+
+    if (maximum > 1 && skill === -P_CROSSBOW
+        && currentAttribute(A_STR, state) < (race === 'gnome' ? 16 : 18)) {
+        maximum = random(maximum);
+    }
+    let count = Math.min(random(maximum), quantity);
+    if (shotLimit > 0) count = Math.min(count, shotLimit);
+    return count;
+}
+
+// C dothrow.c:ok_to_throw(): shared by #throw and #fire.  It rejects
+// form capabilities before capacity and before either command chooses an
+// object; M1_NOTAKE deliberately precedes M1_NOHANDS because forms such
+// as brown molds satisfy both and own the stronger message.
 async function okToThrow(): Promise<boolean> {
-    // dothrow.c:ok_to_throw() is shared by #throw and #fire.  It rejects
-    // form capabilities before capacity and before either command chooses an
-    // object. M1_NOTAKE deliberately precedes M1_NOHANDS because forms such
-    // as brown molds satisfy both and own the stronger message.
     if (heroCannotTake(game)) {
         await pline(
             'You are physically incapable of throwing or shooting anything.',
@@ -147,8 +234,9 @@ async function okToThrow(): Promise<boolean> {
     return true;
 }
 
-// Also C dothrow.c:find_launcher(): inlined in the fireassist branch that
-// prefers a matching known non-cursed launcher, then unknown BUC.
+// C dothrow.c:dofire().  Also C dothrow.c:find_launcher(): inlined in the
+// fireassist branch that prefers a matching known non-cursed launcher,
+// then unknown BUC.
 export async function dofire(): Promise<void> {
     // C dothrow.c:ok_to_throw() reads the count from gc.command_count; a
     // queued dofire (fireassist swap chains) finds it untouched because
@@ -283,6 +371,43 @@ export async function dofire(): Promise<void> {
     }
 }
 
+
+// C dothrow.c:endmultishot(): if a volley is in flight, the current
+// projectile finishes and becomes the last one.  C keeps gm.m_shot in
+// global state, so end.c:savelife() cuts a hero's in-flight volley short
+// through endmultishot(FALSE) without the announcement; the throw loop
+// registers the shared volley object here by reference.
+let activeVolley: HeroProjectileVolley | null = null;
+
+function beginHeroVolley(volley: HeroProjectileVolley): void {
+    activeVolley = volley;
+}
+
+function finishHeroVolley(): void {
+    activeVolley = null;
+}
+
+export async function endmultishot(
+    verbose: boolean,
+    volley: HeroProjectileVolley | null = activeVolley,
+    state: GameState = game,
+): Promise<void> {
+    if (!volley || volley.index >= volley.count) return;
+    // end.c:savelife() passes FALSE; a monster-moving truncation would cut
+    // a volley that no longer belongs to the hero's command.
+    if (!verbose && state.context.mon_moving) return;
+    if (verbose && !state.context.mon_moving) {
+        const index = volley.index;
+        const suffix = index % 100 >= 11 && index % 100 <= 13 ? 'th'
+            : index % 10 === 1 ? 'st' : index % 10 === 2 ? 'nd'
+                : index % 10 === 3 ? 'rd' : 'th';
+        await plineWithContinuation(`You stop ${volley.shooting ? 'firing' : 'throwing'} after the ${
+            index}${suffix} ${volley.shooting ? 'shot' : 'toss'}.`);
+    }
+    // Keep the count live so remaining contact messages see the limit.
+    volley.count = volley.index;
+}
+
 async function finishOrdinarySwallowedThrowKill(
     monster: Monster, projectile: GameObject, options: HeroMonsterKillOptions = {},
 ) {
@@ -314,11 +439,12 @@ export async function dothrow(selectedItem: GameObject | null = null): Promise<v
     await throwCommand(selectedItem);
 }
 
-// Also C artifact.c:is_art(): inlined here; the Mjollnir checks (wielded
-// before throwing, strength minimum, getobj suggestion) compare oartifact
-// names.
+// C dothrow.c:throw_obj().  Also C artifact.c:is_art(): inlined here; the
+// Mjollnir checks (wielded before throwing, strength minimum, getobj
+// suggestion) compare oartifact names.
 // Also C dothrow.c:throw_ok(): inlined as the throwClassification callback
-// passed to the inventory chooser.
+// passed to the inventory chooser.  Splitting the selected arrow stack
+// makes a new object id, then obj_resists() is consulted when it lands.
 async function throwCommand(
     selectedItem: GameObject | null = null, capabilityChecked = false, suppliedShotLimit: number | null = null,
 ): Promise<void> {
@@ -1835,7 +1961,7 @@ export async function hurtleHero(dx: number, dy: number, range: number, {
         );
     }
 
-    if (volley) await endHeroVolley(volley);
+    if (volley) await endmultishot(true, volley);
 
     const remaining = { value: range };
     const options = {
