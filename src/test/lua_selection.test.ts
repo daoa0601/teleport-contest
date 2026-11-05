@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { LuaState } from '../js/lua/runtime.js';
-import { createSelectionBindings } from '../js/lua/selection.js';
+import { createSelectionBindings } from '../js/lua/nhlsel.js';
 import { initRng } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { ROOM, ROOMOFFSET } from '../js/const.js';

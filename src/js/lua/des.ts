@@ -1,7 +1,7 @@
 // des.js — the Lua des.* binding layer for special levels.
 // C ref: sp_lev.c l_register_des() and the des-table readers that stay at
 // this boundary: get_coord(), get_table_region() and find_objtype() are
-// called by tableOptions()/lua/objects.ts, which cannot import sp_lev.ts
+// called by tableOptions()/lua/nhlobj.ts, which cannot import sp_lev.ts
 // without a cycle. find_montype() and get_table_xy_or_coord() moved to
 // sp_lev.ts, their only caller.
 
@@ -25,7 +25,7 @@ import type { LuaHostObject, LuaValue } from './runtime.js';
 import type { GameState } from '../game_state.js';
 import type { SpecialSelection } from '../selvar.js';
 
-import { unwrapSelection } from './selection.js';
+import { unwrapSelection } from './nhlsel.js';
 import { luaInteger } from './arguments.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
 

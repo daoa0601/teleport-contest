@@ -44,7 +44,7 @@ src/js/light.ts	light.c
 src/js/lock.ts	lock.c
 src/js/lua/des.ts	sp_lev.c
 src/js/lua/lifecycle.ts	nhlua.c
-src/js/lua/objects.ts	nhlobj.c
+src/js/lua/nhlobj.ts	nhlobj.c
 src/js/makemon.ts	makemon.c
 src/js/map_object_description.ts	pager.c
 src/js/mcastu.ts	mcastu.c

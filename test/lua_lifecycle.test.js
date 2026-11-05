@@ -4,7 +4,7 @@ import { game } from '../js/gstate.js';
 import { rhack } from '../js/cmd.js';
 import { LuaUserdata } from '../js/lua/runtime.js';
 import { LuaLifecycle } from '../js/lua/lifecycle.js';
-import { createSelectionBindings } from '../js/lua/selection.js';
+import { createSelectionBindings } from '../js/lua/nhlsel.js';
 import { initRng, rn2Display } from '../js/rng.js';
 import { freshGame } from './support/game-state.js';
 import { startLuaCore } from './support/lua-game.js';

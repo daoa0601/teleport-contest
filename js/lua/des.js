@@ -1,7 +1,7 @@
 // des.js — the Lua des.* binding layer for special levels.
 // C ref: sp_lev.c l_register_des() and the des-table readers that stay at
 // this boundary: get_coord(), get_table_region() and find_objtype() are
-// called by tableOptions()/lua/objects.ts, which cannot import sp_lev.ts
+// called by tableOptions()/lua/nhlobj.ts, which cannot import sp_lev.ts
 // without a cycle. find_montype() and get_table_xy_or_coord() moved to
 // sp_lev.ts, their only caller.
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, } from '../objclass.js';
@@ -9,7 +9,7 @@ import { objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
 import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
-import { unwrapSelection } from './selection.js';
+import { unwrapSelection } from './nhlsel.js';
 import { luaInteger } from './arguments.js';
 import { OBJECT_CLASS_SYMBOLS } from '../display.js';
 export const MONSTER_CLASS_SYMBOLS = ['', ...'abcdefghijklmnopqrstuvwxyz',

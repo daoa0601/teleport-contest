@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LuaState } from '../js/lua/runtime.js';
-import { createSelectionBindings } from '../js/lua/selection.js';
+import { createSelectionBindings } from '../js/lua/nhlsel.js';
 const context = { xstart: 2, ystart: 3, width: 20, height: 12 };
 void test('Lua selection coordinates accept integer strings as native Lua does', () => {
     const state = new LuaState({ selection: createSelectionBindings(context) });
