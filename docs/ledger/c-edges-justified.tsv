@@ -2148,5 +2148,5 @@ sp_level_coder_init	alloc	n/a	the coder is the Lua session object (sp_lev_lua.ts
 sp_level_coder_init	update_croom	inlined	the room context IS the coder state; room and map operations assign context directly (sp_lev_lua.ts)
 lspo_altar	create_des_coder	n/a	the des coder is the Lua session, created once per level (sp_lev_lua.ts sp_level_coder_init)
 lspo_altar	get_table_option	inlined	align and type are direct option reads (sp_lev.ts create_altar)
-makemap_prepost	get_freeing_nhfile	n/a	only opens the throwaway file handle around savelev(FREEING); the port frees level objects in memory (wizcmds.ts)
-makemap_prepost	close_nhfile	n/a	closes that throwaway handle after the freeing save; no observable counterpart (wizcmds.ts)
+makemap_prepost	get_freeing_nhfile	n/a	only opens the throwaway file handle around savelev(FREEING); the port frees level objects in memory (cmd.ts)
+makemap_prepost	close_nhfile	n/a	closes that throwaway handle after the freeing save; no observable counterpart (cmd.ts)

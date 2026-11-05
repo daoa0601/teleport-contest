@@ -20,7 +20,7 @@ import { pline, plineWithContinuation } from './pline.js';
 import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js';
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
-import { visibleCommandKey, setMulti } from './cmd.js';
+import { visibleCommandKey, setMulti, makemapPrepost } from './cmd.js';
 import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, objectNeedsFullIdentification, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
@@ -385,7 +385,7 @@ export async function wizMakeMap(): Promise<void> {
 
 // C wizcmds.c:makemap_remove_mons(), the first step of the pre half of
 // cmd.c:makemap_prepost(); dmonsfree() is purgeDeadMonsters() at its end.
-async function makemapRemoveMons(): Promise<Monster[]> {
+export async function makemapRemoveMons(): Promise<Monster[]> {
     const pets = await collectLevelFollowers(game, true);
     // C fmon is newest first, whereas level.monsters appends births.
     for (const monster of requireGameLevel().monsters.slice().reverse()) {
@@ -421,143 +421,19 @@ async function makemapUnmakemon(monster: Monster): Promise<void> {
     // A parked guard may already be dead; its vault is going away too.
     if (monster.isgd) monster.isgd = 0;
     else if (monster.mhp <= 0) return;
-    else if (hasShopkeeperData(monster) && sameLevel(monster.eshk.shoplevel, game.u.uz))
+    else if (hasShopkeeperData(monster) && sameDungeonLevel(monster.eshk.shoplevel, game.u.uz))
         setPaidShopkeeper(monster);
     await removeMonsterFromGame(monster);
 }
 
 function belongsToCurrentLevel(monster: Monster): boolean {
     requirePlayingGame(game);
-    return !!(monster.isshk && sameLevel(monster.eshk?.shoplevel, game.u.uz)
-        || monster.ispriest && sameLevel((monster.epri ?? monster.mextra?.epri)?.shrlevel, game.u.uz)
-        || monster.isgd && sameLevel(monster._egd?.gdlevel, game.u.uz));
+    return !!(monster.isshk && sameDungeonLevel(monster.eshk?.shoplevel, game.u.uz)
+        || monster.ispriest && sameDungeonLevel((monster.epri ?? monster.mextra?.epri)?.shrlevel, game.u.uz)
+        || monster.isgd && sameDungeonLevel(monster._egd?.gdlevel, game.u.uz));
 }
 
-function sameLevel(first: DungeonLocation | undefined, second: DungeonLocation): boolean {
-    return first?.dnum === second.dnum && first.dlevel === second.dlevel;
-}
 
-function freeLevelObject(object: GameObject): void {
-    for (const content of [...(object.contents ?? [])]) freeLevelObject(content);
-    const { victual, tin, spbook } = game.context;
-    if (victual?.piece === object) {
-        victual.o_id = object.o_id;
-        victual.piece = null;
-    }
-    if (tin?.tin === object) {
-        tin.o_id = object.o_id;
-        tin.tin = null;
-    }
-    if (spbook?.book === object) {
-        spbook.o_id = object.o_id;
-        spbook.book = null;
-    }
-    unlinkObject(object);
-    deallocateObject(object);
-}
-
-// C cmd.c:makemap_prepost(). The pre half discards the current level —
-// after wizcmds.c:makemap_remove_mons() has taken its monsters off — and
-// the post half re-enters the rebuilt replacement. C parks the kept pets
-// in mydogs for the post half's losedogs(); the port returns them to the
-// caller instead, so the pre half returns the kept followers, and null
-// when monster removal ends the game (an abort C's synchronous halves
-// cannot take). In the pre half, dobjsfree() plus savelev(FREEING)
-// release the level's objects below — get_freeing_nhfile() and
-// close_nhfile() are only the file plumbing around that release, which
-// the port performs in memory — set_uinwater(0) is the u.uinwater write,
-// and the svd.dndest/svu.updest memsets need no counterpart because the
-// arrival regions belong to the replacement level, which rebuilds them.
-// In the post half, vision_reset() is vision_reset_new_level(),
-// u_on_rndspot() keeps its C name in dungeon.ts, losedogs() is
-// deliverMigratingMonsters(), u_collide_m() is resolveHeroArrivalCollision(),
-// initrack() is the track reset, and deliver_splev_message() is
-// deliverSpecialLevelMessages(). The INSURANCE save_currentstate()
-// checkpoint is saveCurrentState() (do.ts).
-// Also C dungeon.c:rm_mapseen(): inlined here (the overview record and
-// annotation of the replaced level are discarded).
-async function makemapPrepost(
-    pre: boolean, wasInsideTower: boolean, pets: readonly Monster[] = [],
-): Promise<readonly Monster[] | null> {
-    requirePlayingGame(game);
-    if (pre) {
-        const kept = await makemapRemoveMons();
-        if (game.program_state.gameover) return null;
-        // rm_mapseen(): discard the overview record of the level being
-        // replaced; mklev() re-creates an empty one via init_mapseen().
-        const key = `${game.u.uz.dnum}:${game.u.uz.dlevel}`;
-        game._overviewRecords?.delete(key);
-        game._levelAnnotations?.delete(key);
-        // Achievement tracking; if replacing a level that has a special
-        // prize, lose credit for previously finding it and reset for the
-        // new instance of that prize (remove_achievement()).
-        const prototype = specialPrototypeAt(game.u.uz.dnum, game.u.uz.dlevel);
-        const achievement = prototype === 'minend' ? ACH_MINE_PRIZE
-            : prototype === 'soko1' ? ACH_SOKO_PRIZE : null;
-        if (achievement !== null) {
-            const earned = game.u.uachieved ?? [];
-            if (earned.some(entry => Math.abs(entry) === achievement)) {
-                game.u.uachieved = earned.filter(entry => Math.abs(entry) !== achievement);
-                await plineWithContinuation(`${achievement === ACH_MINE_PRIZE ? "Mine's-end" : 'Soko-prize'} achievement revoked.`);
-            }
-            const prizes = game.context.achieveo;
-            if (prizes) {
-                if (achievement === ACH_MINE_PRIZE) prizes.mines_prize_oid = 0;
-                else prizes.soko_prize_oid = 0;
-            }
-        }
-        if (heroIsPunished()) {
-            await releaseCarriedBall(game);
-            await unplaceBallAndChain();
-        }
-        maybeResetPick(null);
-        if (sameLevel(game.context.digging?.level, game.u.uz)) delete game.context.digging;
-        game._travelTarget = null;
-        if (game.context.polearm) game.context.polearm.hitmonId = null;
-        await resetUtrap(false);
-        await checkSpecialRoom({ newLevel: true });
-        game.u.ustuck = null;
-        game.u.uswallow = game.uswallow = 0;
-        game.u.uswldtim = 0;
-        game.u.uinwater = 0;
-        game.u.uundetected = false;
-        // savelev(FREEING) releases level-owned objects without destruction
-        // rolls or uncreating their artifacts. Carried objects have
-        // already left.
-        const oldLevel = game.level;
-        for (const column of oldLevel.objects)
-            for (const pile of column ?? [])
-                for (const object of [...(pile ?? [])]) freeLevelObject(object);
-        for (const object of [...(oldLevel.buriedObjects ?? [])]) freeLevelObject(object);
-        game._levelCache?.delete(key);
-        return kept;
-    }
-    vision_reset_new_level();
-    await cls();
-    const level = requireGameLevel();
-    const up = !!game.u.uhave.amulet;
-    const stayInsideTower = wasInsideTower && levelIsWizardTower();
-    const region = stayInsideTower
-        ? game._activeSpecialLevel?.downTeleportExclude
-        : up ? level.upTeleportRegion : level.downTeleportRegion;
-    await u_on_rndspot(region, !stayInsideTower && up);
-    await deliverMigratingMonsters(game, pets);
-    if (game.program_state.gameover) return [];
-    if ((await killGenocidedMonsters()).heroDied) return [];
-    await resolveHeroArrivalCollision();
-    game._heroTrack = [];
-    if (heroIsPunished()) {
-        await unplaceBallAndChain();
-        await placeBallAndChain();
-    }
-    await docrt();
-    await flush_screen(1);
-    await deliverSpecialLevelMessages();
-    await checkSpecialRoom();
-    // C cmd.c:makemap_prepost(FALSE) checkpoints the replacement level.
-    await saveCurrentState();
-    return [];
-}
 
 // C refs: wizcmds.c:wiz_map() and detect.c:do_mapping().  This is a
 // zero-time debug reveal: it maps traps and engravings first, then maps every
