@@ -19,9 +19,8 @@ import { monsterHidesUnder, monsterIsEel, monsterIsHider } from './mondata.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { isok } from './cmd.js';
 import {
-    AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, ismnum, MAGIC_PORTAL,
-    M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR,
-    NON_PM,
+    AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, ismnum, MAGIC_PORTAL, M_AP_FURNITURE,
+    M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM,
 } from './const.js';
 import { SLIME_MOLD } from './object_data.js';
 import { validSavedHeroAlignment } from './character_validation.js';

@@ -35,7 +35,7 @@ import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming } from './objnam.js';
+import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, } from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './dungeon.js';

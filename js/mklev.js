@@ -26,7 +26,7 @@ import { nameObjectFromTopten } from './topten.js';
 import { normalDemon } from './minion.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { pickNastyShape } from './wizard.js';
-import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies, } from './restore.js';
+import { restoreLevelChains, restoreMonsterWormHeads, validMonsterWormBodies } from './restore.js';
 import { restoreLevelPetHistory } from './save.js';
 import { exerciseWisdom } from './attrib.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';

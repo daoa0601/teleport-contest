@@ -43,9 +43,7 @@ import { restoreSavedTimers } from './timeout.js';
 import {
     restoreLevelChains, restoreMessageHistory, restoreMonsterWormHeads, validMonsterWormBodies,
 } from './restore.js';
-import type {
-    Monster, SavedMonsterTraits,
-} from './monster_types.js';
+import type { Monster, SavedMonsterTraits } from './monster_types.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
