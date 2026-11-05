@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 // caller's killer and format. Each case starts the hero at one hit point.
 import { LAVAPOOL, MAGIC_TRAP, NO_MINVENT, PIT, ROCKTRAP, ROLLING_BOULDER_TRAP, SPIKED_PIT, TT_LAVA, TT_PIT, W_WEP, } from '../js/const.js';
 import { dropBoulderOnHero } from '../js/read.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

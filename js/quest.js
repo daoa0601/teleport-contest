@@ -1,7 +1,7 @@
 // quest.js — Quest scorecard, role text, and quest-character conversation.
 // C refs: quest.c, questpgr.c, sounds.c; Lua ref: dat/quest.lua.
 import { game } from './gstate.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { nhgetch } from './input.js';
 import { canSeeMonster, flush_screen } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/do.js';
 import { levelTeleport } from '../js/level_teleport.js';
 import { resetInputState } from '../js/input.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

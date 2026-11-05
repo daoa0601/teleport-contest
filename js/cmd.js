@@ -1,8 +1,8 @@
 import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
-import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting, bringLeashedFollowers } from './apply.js';
+import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting } from './apply.js';
 import { doname, monsterName } from './do_name.js';
-import { doannotate, doDungeonOverview, ledgerNo, next_level, prev_level, recordMappedOverviewState, surfaceName } from './dungeon.js';
+import { doannotate, doDungeonOverview, recordMappedOverviewState } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
@@ -10,7 +10,7 @@ import { doChronicle, doGenocided, doVanquished, doattributes, doconduct } from 
 import { doturn, dopray, dosacrifice } from './pray.js';
 import { dipInto, dodip, quaff } from './potion.js';
 import { doclose, doopen, continuePicking, continueForceLock, doforce, resetPick } from './lock.js';
-import { moveIntoFailedUntrap, doUntrap, climbOutOfPit, dotrapAt } from './trap.js';
+import { moveIntoFailedUntrap, doUntrap } from './trap.js';
 import { askTeleportDestination, teleportAtWillCommand, dotelecmd } from './teleport.js';
 import { adjustSplit, doadjust, doPermanentInventory, ddoinv, dolook } from './invent.js';
 import { CLICK_1, CLICK_2, xdir, ydir, ECMD_CANCEL, ECMD_FAIL, ECMD_OK, ECMD_TIME, PARANOID_QUIT, STAIRS, THRONE, ESCAPED, VIBRATING_SQUARE, COLNO, ROWNO, SCORR, DOOR, FOUNTAIN, SINK, D_CLOSED, D_LOCKED, PIT, SPIKED_PIT, TT_PIT, HOLE, TRAPDOOR, Is_airlevel, Is_waterlevel, Is_valley, W_ARMOR, W_ACCESSORY, ALTAR, BOLT_LIM, DIRECTION_KEYS, DIR_W, D_ISOPEN, GFILTER_VIEW, GLOC_DOOR, GLOC_INTERESTING, IS_DOOR, IS_ROOM, LOOK_ONCE, LOOK_QUICK, MENU_ITEMFLAGS_SELECTED, NHW_MENU, N_DIRS, PICK_ANY, PICK_ONE, ROOMOFFSET, TER_FULL, TER_MAP, TER_OBJ, TER_TRP, Upolyd, zdir, CORR, IS_STWALL, IS_TREE, IS_WATERWALL, LAVAWALL, IRONBARS, SDOOR, DRAWBRIDGE_UP, QBUFSZ, PARANOID_CONFIRM, CMDQ_KEY, CMDQ_EXTCMD, CMDQ_DIR, CMDQ_USER_INPUT, CMDQ_INT, CQ_CANNED, CQ_REPEAT, FEMALE, MALE } from './const.js';
@@ -21,15 +21,12 @@ import { wizTimeoutQueue } from './timeout.js';
 import { continueSpellbookStudy } from './spell.js';
 import { clearMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
 import { game, requireGameLevel, requirePlayingGame } from './gstate.js';
-import { requireInitializedHero } from './hero_types.js';
 import { doquickwhatis, dohelp, dowhatis, identifyTrap, lookatDescription, whatDoesCommand, displayHelpFile, describeMapLocation, farlookLocationDescription, screenDescription } from './pager.js';
-import { do_attack } from './uhitm.js';
-import { monsterAtPosition, doride, stuckSteed, monsterSaddle, monsterCanBeSaddled } from './steed.js';
+import { monsterAtPosition, doride, monsterSaddle, monsterCanBeSaddled } from './steed.js';
 import { withIndefiniteArticle, observeObjectForNaming } from './objnam.js';
-import { descendFromLevitation } from './levitation_commands.js';
-import { endVoluntaryMultiTurn, TRAVEL_DIRECTIONS, heroTestMove, applyHeroLiquidEffects, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, nearCapacity, SLT_ENCUMBER, showGetposTip, shouldShowGetposTip } from './hack.js';
+import { TRAVEL_DIRECTIONS, heroTestMove, domove, threateningMonsterNearby, arriveTravel, captureRunmodeDelay, stopRun, showGetposTip, shouldShowGetposTip } from './hack.js';
 import { propertyIsActive } from './properties.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel, dodown, doup } from './do.js';
 import { inventoryReport } from './invent.js';
 import { isContainer } from './mkobj.js';
 import { doOptions, toggleBooleanOptionPrefix } from './options.js';
@@ -61,11 +58,10 @@ import { eatfood, doeat, opentin } from './eat.js';
 import { doclassdisco, dodiscovered, objectTypeKnown } from './o_init.js';
 import { doextversion, NATIVE_VERSION } from './extversion.js';
 import { dosearch } from './detect.js';
-import { continueWipingFace, donull, dowipe, dodrop, monsterPreventsStairTravel, dropMultipleObjects } from './do.js';
+import { continueWipingFace, donull, dowipe, dodrop, dropMultipleObjects } from './do.js';
 import { setSecondaryWeapon, doready, doswapweapon, dotwoweapon, dowield } from './wield.js';
-import { isPick } from './object_properties.js';
 import { LOCK_PICK, CREDIT_CARD, SADDLE, POT_OIL, SKELETON_KEY, BOULDER } from './object_data.js';
-import { MONSTER_MOVE, MONSTER_NAME } from './monster_data.js';
+import { MONSTER_NAME } from './monster_data.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { dosave } from './save.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
@@ -74,7 +70,6 @@ import { continueEngraving, doengrave } from './engrave.js';
 import { finishTeleportArrival } from './teleport.js';
 import { doquit, finishHeroDeath } from './end.js';
 import { doborn } from './insight.js';
-import { applyPickAxeDirection } from './dig.js';
 import { dofire, dothrow } from './dothrow.js';
 import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
@@ -740,10 +735,10 @@ async function runCommandHandler(binding) {
         await pickupAtHero();
     }
     else if (ch === '>') {
-        await travelStairs(false);
+        await dodown();
     }
     else if (ch === '<') {
-        await travelStairs(true);
+        await doup();
     }
     else if (ch === 'z') {
         await dozap();
@@ -961,152 +956,6 @@ async function readCommand() {
     const result = await doread();
     if (result.cancelled)
         commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
-}
-// Stair traversal shared by up and down: the do.c admission checks, then
-// dungeon.ts's next_level()/prev_level() for the destination itself,
-// including prev_level()'s escape ending from dungeon 0 level 1.
-// C do.c:dodown() and C do.c:doup(): the '<' and '>' commands whose shared
-// body this is; each still starts with set_move_cmd(). C hack.c:u_rooted():
-// the "You are rooted" refusal. C trap.c:uteetering_at_seen_pit() and
-// C trap.c:uescaped_shaft(): the seen pit and shaft underfoot take the
-// plunge before the stairway is required; C dbridge.c:is_pool_or_lava():
-// the hider's drop-to-liquid message.
-export async function travelStairs(up) {
-    const level = requireGameLevel();
-    requireInitializedHero(game.u);
-    // C do.c doup()/dodown() start with set_move_cmd(): the menu prefix's
-    // no-pickup request and the cleared travel state outlive a refusal.
-    game.u.dx = game.u.dy = 0;
-    game.u.dz = up ? -1 : 1;
-    if (game.iflags.menu_requested)
-        game.context.nopick = true;
-    game.context.travel = game.context.travel1 = false;
-    if (MONSTER_MOVE[game.u.umonnum] === 0) {
-        const where = propertyIsActive('levitation', game) || Is_airlevel(game.u.uz)
-            || Is_waterlevel(game.u.uz) ? 'in place' : 'to the ground';
-        await plineWithContinuation(`You are rooted ${where}.`);
-        endVoluntaryMultiTurn(game);
-        game.context.move = 1;
-        return false;
-    }
-    if (up && game.u.utrap && game.u.utraptype === TT_PIT) {
-        await climbOutOfPit();
-        game.context.move = 1;
-        return true;
-    }
-    if (!up && await stuckSteed(true, game)) {
-        game.context.move = 0;
-        return false;
-    }
-    if (!up) {
-        const descent = await descendFromLevitation(game);
-        if (descent.handled) {
-            game.context.move = descent.spentTurn ? 1 : 0;
-            return descent.spentTurn;
-        }
-        if (heroIsPolymorphed(game) && game.u.uundetected
-            && monsterSpeciesHidesOnCeiling(game.u.umonnum)) {
-            game.u.uundetected = 0;
-            if (game.u.flying)
-                await plineWithContinuation('You fly out of hiding.');
-            else {
-                await plineWithContinuation(`You drop to the ${surfaceName(game.u.ux, game.u.uy)}.`);
-                if (isPoolAt(game.u.ux, game.u.uy) || isLavaAt(game.u.ux, game.u.uy)) {
-                    await applyHeroLiquidEffects();
-                }
-                else {
-                    await autopickupAtHero();
-                    if (!game.program_state.gameover)
-                        await dotrapAt(game.u.ux, game.u.uy, {
-                            finishTeleport: finishTeleportArrival, gotoLevel, tookPlunge: true,
-                        });
-                }
-            }
-            game.context.move = 1;
-            return true;
-        }
-        if (await monsterPreventsStairTravel(false))
-            return false;
-    }
-    let stairs = game.stairs;
-    while (stairs && (stairs.sx !== game.u.ux || stairs.sy !== game.u.uy))
-        stairs = stairs.next;
-    if (!stairs || stairs.up !== up) {
-        const pit = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
-            && (trap.ttyp === PIT || trap.ttyp === SPIKED_PIT) && trap.tseen
-            && !(game.u.utrap && game.u.utraptype === TT_PIT));
-        if (pit) {
-            await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
-            game.context.move = 1;
-            return true;
-        }
-        const hole = !up && level.traps.find(trap => trap.tx === game.u.ux && trap.ty === game.u.uy
-            && (trap.ttyp === HOLE || trap.ttyp === TRAPDOOR) && trap.tseen);
-        if (hole) {
-            const result = await dotrapAt(game.u.ux, game.u.uy, { gotoLevel, tookPlunge: true });
-            if (result.died)
-                return false;
-            game.context.move = 1;
-            return true;
-        }
-        const pick = game.uwep || game.u.uwep;
-        if (!up && game.flags.autodig && !game.context.nopick && pick && isPick(pick)) {
-            const result = await applyPickAxeDirection(pick, {
-                state: game,
-                attackMonster: (target, struckAt, permission) => do_attack(target, struckAt.x, struckAt.y, { permission }),
-                payShopkeeper: dopay,
-            });
-            game.context.move = result.spentTime ? 1 : 0;
-            return result.spentTime;
-        }
-        const vibratingSquare = !up && level.traps.some(trap => trap.tx === game.u.ux && trap.ty === game.u.uy && trap.ttyp === VIBRATING_SQUARE);
-        await plineWithContinuation(`You can't go ${up ? 'up' : 'down'} here${vibratingSquare ? ' yet' : ''}.`);
-        game.context.move = 0;
-        return false;
-    }
-    if (!up && Is_valley(game.u.uz) && !game.u.uevent?.gehennom_entered) {
-        await plineWithContinuation('You are standing at the gate to Gehennom.');
-        await plineWithContinuation('Unspeakable cruelty and harm lurk down there.');
-        if (await promptYesNo('Are you sure you want to enter?') !== 'y') {
-            game.context.move = 0;
-            return false;
-        }
-        await plineWithContinuation('So be it.');
-        const events = game.u.uevent ?? (game.u.uevent = {});
-        events.gehennom_entered = 1;
-    }
-    if (up && await stuckSteed(true, game)) {
-        game.context.move = 0;
-        return false;
-    }
-    if (up && await monsterPreventsStairTravel(true))
-        return false;
-    if (up && nearCapacity(game) > SLT_ENCUMBER) {
-        await plineWithContinuation(`Your load is too heavy to climb the ${level.requireAt(game.u.ux, game.u.uy).typ === STAIRS ? 'stairs' : 'ladder'}.`);
-        game.context.move = 1;
-        return false;
-    }
-    if (up && ledgerNo(game.u.uz) === 1
-        && await promptYesNo('Beware, there will be no return!  Still climb?') !== 'y') {
-        game.context.move = 0;
-        return false;
-    }
-    if (!await bringLeashedFollowers()) {
-        await plineWithContinuation('You are held back by your pet!');
-        game.context.move = 0;
-        return false;
-    }
-    // dungeon.c next_level()/prev_level() own the destination; the escape
-    // ending comes from prev_level() at dungeon 0 level 1.
-    const changed = up ? await prev_level(stairs, gotoLevel)
-        : await next_level(stairs, gotoLevel);
-    if (changed === 'escaped') {
-        game.context.move = 1;
-        return true;
-    }
-    if (changed !== false)
-        game.context.move = 1;
-    return changed !== false;
 }
 // C cmd.c:doterrain().
 export async function terrainCommand() {

@@ -16,7 +16,7 @@ import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 
 // dat/symbols `start:` sets that a Rogue level can display layer their
 // S_ entries over the base rogue set (symbols.c:load_symset() →

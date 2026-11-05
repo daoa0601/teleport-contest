@@ -12,7 +12,7 @@ import { detectTraps } from '../js/detect.js';
 import { vision_recalc } from '../js/vision.js';
 import { createStaffedShop } from './support/shop.js';
 import { installPagerInput } from './support/pager-input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { u_on_upstairs } from '../js/mklev.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

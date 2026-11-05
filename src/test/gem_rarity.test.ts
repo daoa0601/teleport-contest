@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { mklev } from '../js/mklev.js';
 import { oinit } from '../js/o_init.js';
 import { rndClass } from '../js/objnam.js';

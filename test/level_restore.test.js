@@ -6,7 +6,7 @@ import { initializePet } from '../js/dog.js';
 import { remove_object } from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, hideMonsterUnder } from '../js/mon.js';
 import { RIN_PROTECTION_FROM_SHAPE_CHANGERS, ROCK, TRIPE_RATION } from '../js/object_data.js';

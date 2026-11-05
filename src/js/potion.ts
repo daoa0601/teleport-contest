@@ -32,7 +32,7 @@ import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment,
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, poisonAttributeMessage, requireAttributeIndex } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
-import { commandResultCancelled, commandResultFailed, setMulti, travelStairs, cmdq_peek } from './cmd.js';
+import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
 import {
     A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN,
@@ -89,7 +89,7 @@ import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { showEnlightenment } from './insight.js';
 import type { InventoryClassification } from './invent.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel, doup } from './do.js';
 import { floatingAbove } from './levitation_commands.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { detectMonsters, detectObjects } from './detect.js';
@@ -1428,7 +1428,7 @@ export async function applyLevitationPotion(
         revokeIntrinsicProperty('levitation', 'potion', state);
         if (!blocked && !propertyIsBlocked('levitation', state)) {
             if (upStairwayAt(hero.ux, hero.uy, state)) {
-                await travelStairs(true);
+                await doup();
                 potionNothing = false; /* not nothing after all */
             } else if (levelHasCeiling(state)) {
                 const helmet = state.uarmh || hero.uarmh;

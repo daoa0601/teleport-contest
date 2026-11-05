@@ -737,16 +737,17 @@ src/js/apply.ts	checkHeroLeashes	rn2	"[""3""]"	constant
 src/js/apply.ts	checkHeroLeashes	rn2	"[""monster.mtame""]"	unproved
 src/js/apply.ts	checkHeroLeashes	rnd	"[""2""]"	constant
 src/js/leprechaun_stash.ts	stashLeprechaunGold	random	"[""4""]"	constant
-src/js/level_change.ts	applyStairTravelEffects	rnd	"[""3""]"	constant
+src/js/do.ts	gotoLevel	rnd	"[""3""]"	constant
 src/js/do.ts	finishAstralArrival	rn1	"[""4"", ""3""]"	constant
-src/js/level_change.ts	gotoLevel	d	"[""Math.max(distance, 1)"", ""6""]"	constant
-src/js/level_change.ts	gotoLevel	rn2	"[""4 + (game.context.mysteryforce ?? 0)""]"	unproved
-src/js/level_change.ts	gotoLevel	rn2	"[""4""]"	constant
-src/js/level_change.ts	gotoLevel	rn2	"[""diff + 2""]"	unproved
-src/js/level_change.ts	gotoLevel	rn2	"[""odds""]"	guarded
-src/js/level_change.ts	gotoLevel	rnd	"[""diff""]"	unproved
+src/js/do.ts	gotoLevel	d	"[""Math.max(distance, 1)"", ""6""]"	constant
+src/js/do.ts	gotoLevel	rn2	"[""4 + (game.context.mysteryforce ?? 0)""]"	unproved
+src/js/do.ts	gotoLevel	rn2	"[""4""]"	constant
+src/js/do.ts	gotoLevel	rn2	"[""diff + 2""]"	unproved
+src/js/do.ts	gotoLevel	rn2	"[""odds""]"	guarded
+src/js/do.ts	gotoLevel	rnd	"[""diff""]"	unproved
 src/js/do.ts	resolveHeroArrivalCollision	rn2	"[""2""]"	constant
-src/js/level_change.ts	restoreCachedMonsterState	rnd	"[""10""]"	constant
+src/js/do.ts	gotoLevel	rnd	"[""10""]"	constant
+src/js/do.ts	familiarLevelMsg	rn2	"[""4""]"	constant
 src/js/level_teleport.ts	levelTeleport	rn2	"[""dungeonAt(state, dnum).num_dunlevs""]"	unproved
 src/js/level_teleport.ts	levelTeleport	rn2	"[""state.dungeons.length""]"	unproved
 src/js/level_teleport.ts	randomTeleportDepth	random	"[""5""]"	constant

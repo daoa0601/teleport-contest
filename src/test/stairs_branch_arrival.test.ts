@@ -3,7 +3,7 @@ import test from 'node:test';
 import type { GameMap } from '../js/game.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import type { Stairway } from '../js/map_types.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createRoomLevel } from './support/playable-room.js';

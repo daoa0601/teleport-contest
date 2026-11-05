@@ -4,7 +4,7 @@ import { game, requireGameDisplay, requireGameLevel } from '../js/gstate.js';
 import { BURN, DOOR, D_NODOOR, HWALL, SHOP_WALL_COST } from '../js/const.js';
 import { engravingAt, makeEngravingAt } from '../js/engrave.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { mklev } from '../js/mklev.js';
 import { saveBonesLevel } from '../js/bones.js';
 import { init_objects } from '../js/o_init.js';

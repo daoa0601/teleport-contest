@@ -73,7 +73,7 @@ import { deleteEngravingAt, engravingAt, makeEngravingAt, wipeEngravingAt, reloc
 import { addExperience } from './exper.js';
 import { explode } from './explosion.js';
 import { monsterStatusLine, showEnlightenment } from './insight.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { okToQuest, onQuestStart } from './quest.js';
 import { askTeleportDestination, heroControlsTeleport, teleportHero } from './teleport.js';
 import { bot } from './botl.js';

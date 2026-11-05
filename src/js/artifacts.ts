@@ -79,7 +79,7 @@ import { dropInventoryObjectAtHero } from './do.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { depth, surfaceName } from './dungeon.js';
-import { gotoLevel } from './level_change.js';
+import { gotoLevel } from './do.js';
 import { levelTeleport } from './level_teleport.js';
 import { teleportMonsterByHero } from './teleport.js';
 import { bringLeashedFollowers } from './apply.js';
@@ -2472,11 +2472,11 @@ export async function deactivateArtifactProperty(
     return true;
 }
 
-// C do.c:drop() finesse for dropping an invoked levitation artifact while
-// unable to reach the floor: finesse_ahriman() (artifact.c) decides whether
-// freeinv() would end levitation, pins a carried W_ART source so the hero
-// stays aloft through freeinv()/hitfloor(), and the caller lands the hero
-// afterwards with the explicit float-down below.
+// Finesse for the do.c drop caller: dropping an invoked levitation
+// artifact while unable to reach the floor.  finesse_ahriman() (artifact.c)
+// decides whether freeinv() would end levitation, pins a carried W_ART
+// source so the hero stays aloft through freeinv()/hitfloor(), and the
+// caller lands the hero afterwards with the explicit float-down below.
 
 // C finesse_ahriman(): true when dropping `object` would toggle levitation
 // off inside freeinv().  On true, the invoked source is replaced by an

@@ -4,7 +4,7 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { TRIPE_RATION } from '../js/object_data.js';
 import { beginPetEating, finishPetEating } from '../js/pet_eating.js';
 import { restoreGame, saveGame } from '../js/save.js';

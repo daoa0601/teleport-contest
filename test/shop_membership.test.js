@@ -5,7 +5,7 @@ import { STAIRS } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { shopkeeperForHero } from '../js/shk.js';

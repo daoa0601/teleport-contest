@@ -9,7 +9,7 @@ import {
     TT_LAVA, TT_PIT, W_WEP,
 } from '../js/const.js';
 import { dropBoulderOnHero } from '../js/read.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { rhack } from '../js/cmd.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

@@ -9,7 +9,7 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { finishAtCommandInput, installPagerInput } from './support/pager-input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { monsterAtPosition } from '../js/steed.js';
 import { takeMonsterTurn } from '../js/monmove.js';
 import { monstersInFmonOrder } from '../js/mon.js';

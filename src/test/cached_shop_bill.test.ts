@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { consumeInventoryItem } from '../js/invent.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { APPLE, FOOD_RATION } from '../js/object_data.js';
 import { restoreGame, saveGame } from '../js/save.js';

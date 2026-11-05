@@ -14,7 +14,7 @@ import { floorObject } from './support/game-objects.js';
 import { requireScreenCell } from './support/screen.js';
 import { CLR_BROWN, NO_COLOR } from '../js/terminal.js';
 import { BOULDER, GOLD_PIECE } from '../js/object_data.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { applyNethackrc } from '../js/options.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';

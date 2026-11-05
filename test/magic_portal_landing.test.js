@@ -3,7 +3,7 @@ import test from 'node:test';
 import { MAGIC_PORTAL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { dotrap } from '../js/trap.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { addTrap } from './support/level-state.js';
 for (const previous of [{ dnum: 0, dlevel: 2 }, { dnum: 1, dlevel: 1 }]) {

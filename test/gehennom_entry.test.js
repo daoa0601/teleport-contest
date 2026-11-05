@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { rhack } from '../js/cmd.js';
 import { resetInputState } from '../js/input.js';
 import { LA_UP, STAIRS } from '../js/const.js';

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { createRoomLevel } from './support/playable-room.js';
 // A one-way branch descent: the stair on the source level leads into

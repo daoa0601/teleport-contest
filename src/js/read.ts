@@ -94,7 +94,7 @@ import {
 } from './mondata.js';
 import { addExperience } from './exper.js';
 import type { InventoryClassification } from './invent.js';
-import { gotoLevel as changeLevel, scheduleLevelChange } from './level_change.js';
+import { gotoLevel as changeLevel, scheduleLevelChange } from './do.js';
 import { recordLiteracy } from './literacy.js';
 import { getLine, promptYesNo } from './query.js';
 import { readOrdinaryObject } from './readable_objects.js';

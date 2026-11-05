@@ -12,7 +12,7 @@ import { level_difficulty } from '../js/dungeon.js';
 import {placeCreatedObject, remove_object} from '../js/mkobj.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { finishScheduledLevelChange, gotoLevel } from '../js/level_change.js';
+import { finishScheduledLevelChange, gotoLevel } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';

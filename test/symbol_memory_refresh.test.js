@@ -12,7 +12,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { requireScreenCell } from './support/screen.js';
 import { installPagerInput } from './support/pager-input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { NO_COLOR } from '../js/terminal.js';
 // goto_level() repaints the destination from its glyph numbers against the
 // live symbol tables, so a cached level re-skins under whatever symbols

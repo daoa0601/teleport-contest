@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { game } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { flush_screen } from '../js/display.js';
 import { freshPlayableRoom } from './support/playable-room.js';

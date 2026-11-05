@@ -21,7 +21,7 @@ import { expelHero } from './hero_expulsion.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { heroFormSticks } from './polyself.js';
 import { monsterName } from './do_name.js';
-import { scheduleLevelChange } from './level_change.js';
+import { scheduleLevelChange } from './do.js';
 import { nhgetch } from './input.js';
 import { bot } from './botl.js';
 import { canSpotMonster, flush_screen } from './display.js';

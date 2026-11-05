@@ -4,7 +4,7 @@ import test from 'node:test';
 import { COLNO, LAVAPOOL, ROOM, ROWNO, STONE, W_NONPASSWALL } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { initRng } from '../js/rng.js';
 import { freshConnectedLevels } from './support/connected-levels.js';

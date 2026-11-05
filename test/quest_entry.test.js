@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game } from '../js/gstate.js';
-import { gotoLevel } from '../js/level_change.js';
+import { gotoLevel } from '../js/do.js';
 import { resetInputState } from '../js/input.js';
 import { displayPreparedQuestArrival, ensureQuestStatus, prepareQuestArrival } from '../js/quest.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
