@@ -7,7 +7,7 @@ import { flipCoin } from '../js/apply.js';
 import { AIR, DOOR, D_BROKEN, HUNGRY, NOT_HUNGRY, WATER, WEAK } from '../js/const.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { cmapSymbolAppearance, flush_screen, newsym } from '../js/display.js';
-import { moveElementalBubbles } from '../js/elemental.js';
+import { movebubbles } from '../js/mkmaze.js';
 import { doextversion } from '../js/extversion.js';
 import { game, resetGame, requirePlayingGame } from '../js/gstate.js';
 import { runSegment } from '../js/jsmain.js';
@@ -173,7 +173,7 @@ void test('restored overlapping bubbles collect their contents in the initial tr
     assert.equal(await restoreGame(game.plname, storage), true);
     initRng(1n);
 
-    await moveElementalBubbles();
+    await movebubbles();
 
     assert.equal(game.u.ux, 21, 'the last bubble in the chain picks up the hero first');
 });

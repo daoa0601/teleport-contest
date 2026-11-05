@@ -52,7 +52,7 @@ import { iceDescriptionAt } from './pager.js';
 import { ingSuffix, upstart } from './hacklib.js';
 import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers } from './timeout.js';
 import { resetOccupations } from './cmd.js';
-import { maybeAdjustHeroBubble } from './elemental.js';
+import { maybe_adjust_hero_bubble } from './mkmaze.js';
 import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
 import { requireShopGame } from './shop_types.js';
 import { finishTeleportArrival } from './teleport.js';
@@ -3333,7 +3333,7 @@ export async function domove(dx, dy, explicitAttempt = true) {
     if (!game.program_state.gameover) {
         if (explicitAttempt && game._domoveSucceeded) {
             maybeSmudgeEngravings(oldx, oldy, game.u.ux, game.u.uy);
-            maybeAdjustHeroBubble();
+            maybe_adjust_hero_bubble();
         }
         game._kickedLoc = null;
         game._movementAttempt = null;

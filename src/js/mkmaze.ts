@@ -19,7 +19,13 @@ import type { GameState, PlayingGameState } from './game_state.js';
 import { monsterAtPosition } from './steed.js';
 import { randomMonsterRelocation } from './teleport.js';
 import { deleteTrap, maketrap } from './trap.js';
-import { canOverwriteTerrain } from './display.js';
+import { canOverwriteTerrain, cmapSymbolAppearance, newsym } from './display.js';
+import { CLR_BRIGHT_BLUE, CLR_CYAN, CLR_GRAY } from './terminal.js';
+import { CmapSymbol } from './glyph_numbers.js';
+import { placeObject, remove_object, stack_object } from './mkobj.js';
+import { clearMonsterWormFromMap } from './worm.js';
+import { block_point, recalc_block_point, unblock_point, vision_recalc } from './vision.js';
+import { heroIsPunished, reserveBallAndChainPlacement, restoreBallAndChainPlacement } from './ball.js';
 import { stopLevelTimer } from './timeout.js';
 import { fill_special_room, medusaPetrifiable } from './sp_lev.js';
 import { load_special } from './sp_lev_lua.js';
@@ -43,10 +49,9 @@ import { impossible } from './diagnostics.js';
 import { LUA_SOURCES } from './generated/lua_sources.js';
 import { NO_TRAP, PM_MINOTAUR, countLevelFeatures, is_branchlev, mkstairs, mktrap, place_branch, placeBranchAt, stairway_find_dir } from './mklev.js';
 import { isRoom } from './map_types.js';
-import type { ActiveSpecialLevel, ArrivalRegion, Position, Rectangle, Room, StairRegion } from './map_types.js';
+import type { ActiveSpecialLevel, ArrivalRegion, ElementalBubble, MapLocation, Position, Rectangle, Room, StairRegion } from './map_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import { sendMonsterToLimbo } from './mon.js';
-import { setupElementalBubbles } from './elemental.js';
+import { sendMonsterToLimbo, mnearto, dealWithMonsterOvercrowding, moveMonsterNextToHero } from './mon.js';
 import type { GameMap } from './game.js';
 
 // C ref: mkmaze.c set_levltyp().  Terrain mutation owns persistent tile
@@ -614,7 +619,7 @@ export async function fixupSpecial(active: ActiveSpecialLevel): Promise<void> {
     );
     // mkmaze.c:fixup_special() must allocate and initially paint Air/Water
     // bubbles before named portals and arrival regions are materialized.
-    if (active?.elementalBubbles) await setupElementalBubbles();
+    if (active?.elementalBubbles) await setup_waterlevel();
     await fixupSpecialRegions(active);
     // fixup_special() reduces undead remains throughout the Castle and the
     // Priest quest, even after the hero has entered any morgue rooms.
@@ -1184,6 +1189,114 @@ export async function fumaroles(state: PlayingGameState = requireInitializedGame
     return { heard, loud };
 }
 
+// C mkmaze.c's bubble movement boundaries: gbxmin/gbymin/gbxmax/gbymax
+// (mkmaze.c:1523-1530), mirrored here with the bubble walk bounds.
+const BOUNDS = {
+    xmin: 3, ymin: 1, xmax: 78, ymax: 20,
+    bubbleXMin: 4, bubbleYMin: 2, bubbleXMax: 77, bubbleYMax: 19,
+};
+
+// C mkmaze.c:movebubbles().  On the Plane of Water every bubble first
+// collects its contents (objects, monsters, hero, traps) and is filled with
+// water; on the Plane of Air the whole sky is repainted and the border
+// gains fresh clouds; then each bubble moves once, alternating the traversal
+// direction so overlapped junk does not pool in the last bubble.
+export async function movebubbles(): Promise<void> {
+    const bubbles = game.level?.elementalBubbles;
+    if (!Array.isArray(bubbles) || !bubbles.length) return;
+    const level = requireGameLevel();
+
+    await vision_recalc(2);
+    game._heroBubble = null;
+
+    const traversalUp = !!game._bubbleTraversalUp;
+    let ballChainPin = 0;
+    if (Is_waterlevel(game.u?.uz)) {
+        // keep attached ball&chain separate from bubble objects
+        if (heroIsPunished()) ballChainPin = await reserveBallAndChainPlacement();
+        const collectionOrder = traversalUp
+            ? bubbles : [...bubbles].reverse();
+        for (const bubble of collectionOrder) {
+            // pick up everything inside of a bubble, then fill its cells
+            // with water (the CONS_OBJ/CONS_MON/CONS_HERO/CONS_TRAP loop).
+            bubble.contents = [];
+            for (const { x, y } of bubbleCells(bubble)) {
+                const pile = level.objects[x]?.[y];
+                if (pile?.length) {
+                    const items = [];
+                    for (const object of [...pile]) {
+                        remove_object(object);
+                        object.ox = 0;
+                        object.oy = 0;
+                        items.unshift(object);
+                    }
+                    bubble.contents.unshift({ kind: 'objects', x, y, items });
+                }
+                const monster = monsterAtPosition(level, x, y);
+                if (monster) {
+                    bubble.contents.unshift({ kind: 'monster', x, y, monster });
+                    if (monster.wormno) await clearMonsterWormFromMap(monster);
+                    monster.mx = 0;
+                    monster.my = 0;
+                    monster.mstate = (monster.mstate ?? 0) | MON_BUBBLEMOVE;
+                    await newsym(x, y);
+                }
+                if (!game.u?.uswallow && game.u?.ux === x && game.u?.uy === y) {
+                    bubble.contents.unshift({ kind: 'hero', x, y });
+                    game._heroBubble = bubble;
+                }
+                const trap = level.traps.find(candidate =>
+                    candidate.tx === x && candidate.ty === y);
+                if (trap)
+                    bubble.contents.unshift({ kind: 'trap', x, y, trap });
+                setElementalCell(level.at(x, y), WATER, false);
+                // C movebubbles() blocks the filled square outright; plain
+                // WATER is not an obstruction for does_block(), so the
+                // direct call matters.
+                block_point(x, y);
+            }
+        }
+    } else if (Is_airlevel(game.u?.uz)) {
+        for (let x = 1; x < COLNO; x++) {
+            for (let y = 0; y < ROWNO; y++) {
+                const loc = level.requireAt(x, y);
+                setElementalCell(loc, AIR, true);
+                // C assigns air_pos then recalc_block_point(): the cell
+                // joins or leaves the blocker table incrementally rather
+                // than through a full vision_reset() rebuild.
+                recalc_block_point(x, y);
+                const xedge = x < BOUNDS.bubbleXMin
+                    || x > BOUNDS.bubbleXMax;
+                const yedge = y < BOUNDS.bubbleYMin
+                    || y > BOUNDS.bubbleYMax;
+                if ((xedge || yedge) && rn2(xedge ? 3 : 5) === 0) {
+                    loc.typ = CLOUD;
+                    block_point(x, y);
+                }
+            }
+        }
+    }
+
+    // Every second time traverse down.  This is because otherwise all the
+    // junk that changes owners when bubbles overlap would eventually end up
+    // in the last bubble in the chain.
+    game._bubbleTraversalUp = !traversalUp;
+    const ordered = game._bubbleTraversalUp
+        ? bubbles : [...bubbles].reverse();
+    for (const bubble of ordered) {
+        const rx = rn2(3);
+        const ry = rn2(3);
+        const dx = bubble.dx + 1
+            - (!bubble.dx ? rx : (rx ? 1 : 0));
+        const dy = bubble.dy + 1
+            - (!bubble.dy ? ry : (ry ? 1 : 0));
+        await mv_bubble(bubble, dx, dy, false);
+    }
+    if (Is_waterlevel(game.u.uz) && heroIsPunished())
+        await restoreBallAndChainPlacement(ballChainPin);
+    game.vision_full_recalc = 1;
+}
+
 // C mkmaze.c:water_friction().  Water can deflect a swimming hero's
 // intended move onto the orthogonal axis.
 export async function applyWaterFriction(): Promise<void> {
@@ -1206,4 +1319,271 @@ export async function applyWaterFriction(): Promise<void> {
         return;
     }
     await plineWithContinuation('Water turbulence affects your movements.');
+}
+
+// C mkmaze.c:restore_waterlevel() redraws each saved bubble through
+// mv_bubble(..., TRUE), including its Air-plane movement roll and
+// border-direction bounce.  It runs while the level is still reloading, so
+// it drives mv_bubble()'s synchronous cores directly.
+export function restore_waterlevel(): void {
+    if (!Is_airlevel(game.u.uz) && !Is_waterlevel(game.u.uz)) return;
+    game._heroBubble = null;
+    for (const bubble of game.level?.elementalBubbles ?? []) {
+        const motion = moveBubblePosition(bubble, 0, 0);
+        drawBubble(bubble);
+        changeBubbleDirection(bubble, motion.collision, true);
+    }
+}
+
+// C mkmaze.c:setup_waterlevel().  The entire level is remembered as one
+// glyph and unspecified terrain defaults to the level's base element; the
+// bubbles themselves are spaced by the plane's own skips.
+export async function setup_waterlevel(): Promise<void> {
+    if (!Is_airlevel(game.u?.uz) && !Is_waterlevel(game.u?.uz)) return;
+
+    const level = requireGameLevel();
+    level.flags.hero_memory = false;
+    level.elementalBounds = { ...BOUNDS };
+    level.elementalBubbles = [];
+
+    const baseTerrain = Is_waterlevel(game.u?.uz) ? WATER : AIR;
+    for (let x = 1; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const loc = level.at(x, y);
+            if (!loc) continue;
+            if (loc.typ === STONE) loc.typ = baseTerrain;
+            const water = baseTerrain === WATER;
+            const appearance = cmapSymbolAppearance(
+                water ? CmapSymbol.water : CmapSymbol.air);
+            loc.remembered_glyph = {
+                ch: appearance.ch,
+                color: water ? CLR_BRIGHT_BLUE : CLR_CYAN,
+                decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'air',
+            };
+        }
+    }
+
+    const xskip = Is_waterlevel(game.u?.uz)
+        ? 10 + rn2(10) : 6 + rn2(4);
+    const yskip = Is_waterlevel(game.u?.uz)
+        ? 4 + rn2(4) : 3 + rn2(3);
+    for (let x = BOUNDS.bubbleXMin; x <= BOUNDS.bubbleXMax; x += xskip)
+        for (let y = BOUNDS.bubbleYMin; y <= BOUNDS.bubbleYMax; y += yskip)
+            await mk_bubble(x, y, rn2(7));
+}
+
+// C mkmaze.c:mk_bubble().  These bit masks make visually pleasing bubbles
+// on a normal aspect 25x80 terminal, which naturally results in them being
+// mathematically anything but symmetric; the first two elements tell the
+// dimensions of the bubble's bounding box.
+const BUBBLE_MASKS = [
+    { width: 2, height: 1, rows: [0x3] },
+    { width: 3, height: 2, rows: [0x7, 0x7] },
+    { width: 4, height: 3, rows: [0x6, 0xf, 0x6] },
+    { width: 5, height: 3, rows: [0xe, 0x1f, 0xe] },
+    { width: 6, height: 4, rows: [0x1e, 0x3f, 0x3f, 0x1e] },
+    { width: 7, height: 4, rows: [0x3e, 0x7f, 0x7f, 0x3e] },
+    { width: 8, height: 4, rows: [0x7e, 0xff, 0xff, 0x7e] },
+];
+
+// C mkmaze.c:mk_bubble().
+async function mk_bubble(x: number, y: number, maskIndex: number): Promise<void> {
+    if (x >= BOUNDS.bubbleXMax || y >= BOUNDS.bubbleYMax) return;
+    const mask = BUBBLE_MASKS[Math.min(maskIndex, BUBBLE_MASKS.length - 1)];
+    if (!mask) throw new Error(`Elemental bubble has invalid shape ${maskIndex}`);
+    const bubble: ElementalBubble = {
+        x: Math.min(x, BOUNDS.bubbleXMax - mask.width + 1),
+        y: Math.min(y, BOUNDS.bubbleYMax - mask.height + 1),
+        dx: 1 - rn2(3),
+        dy: 1 - rn2(3),
+        width: mask.width,
+        height: mask.height,
+        rows: [...mask.rows],
+    };
+    const bubbles = requireGameLevel().elementalBubbles;
+    if (!bubbles) throw new Error('Elemental bubble construction has no initialized bubble list');
+    bubbles.push(bubble);
+    await mv_bubble(bubble, 0, 0, true);
+}
+
+// C mkmaze.c:maybe_adjust_hero_bubble().  The bubble last carrying the hero
+// remains sticky for subsequent steps until movebubbles() collects again.
+export function maybe_adjust_hero_bubble(): void {
+    const hero = game.u;
+    if (!Is_waterlevel(hero.uz) || (!hero.dx && !hero.dy)) return;
+    const bubble = game._heroBubble;
+    if (bubble && game.level?.elementalBubbles?.includes(bubble) && !rn2(2)) {
+        bubble.dx = hero.dx ?? 0;
+        bubble.dy = hero.dy ?? 0;
+    }
+}
+
+// The levl[x][y] = water_pos / air_pos assignments of C movebubbles() and
+// mv_bubble(): the whole rm record is replaced, so every JS terrain alias is
+// reset, and the remembered glyph resolves the cmap symbol through the
+// active symbol set the way showsyms[] does in C.
+function setElementalCell(loc: MapLocation | null, typ: number, lit: boolean): void {
+    if (!loc) return;
+    loc.typ = typ;
+    loc.roomno = 0;
+    loc.lit = lit;
+    loc.waslit = false;
+    loc.flags = 0;
+    loc.doormask = 0;
+    loc.seenv = 0;
+    loc.horizontal = false;
+    loc.edge = false;
+    loc.wall_info = 0;
+    loc.icedpool = 0;
+    loc.altarmask = 0;
+    loc.ladder = 0;
+    loc.drawbridgemask = 0;
+    loc.looted = 0;
+    loc.emptygrave = false;
+    loc.blessedftn = false;
+    loc.disturbed = false;
+    loc.candig = false;
+    loc.arboreal_sdoor = false;
+    // movebubbles() resets old air clouds to an Air cell remembered as
+    // Cloud, and old water bubbles to a Water cell remembered as Water.
+    const water = typ === WATER;
+    const appearance = cmapSymbolAppearance(
+        water ? CmapSymbol.water : CmapSymbol.cloud);
+    loc.remembered_glyph = {
+        ch: appearance.ch,
+        color: water ? CLR_BRIGHT_BLUE : CLR_GRAY,
+        decgfx: appearance.dec, kind: 'terrain', terrainName: water ? 'water' : 'cloud',
+    };
+}
+
+// The b->bm bit-mask walk of C movebubbles()/mv_bubble(), which both inline;
+// shared here by the collection loop and the bubble painter.
+function bubbleCells(bubble: ElementalBubble): Position[] {
+    const cells: Position[] = [];
+    for (let dx = 0; dx < bubble.width; dx++) {
+        for (let dy = 0; dy < bubble.height; dy++) {
+            if ((bubble.rows[dy] ?? 0) & (1 << dx))
+                cells.push({ x: bubble.x + dx, y: bubble.y + dy });
+        }
+    }
+    return cells;
+}
+
+// The movement core of C mv_bubble(): clouds move only one time in six —
+// the roll belongs even to the initial zero-distance draw that paints a
+// newly allocated cloud — and the border clamps and bounces precede it.
+function moveBubblePosition(bubble: ElementalBubble, requestedDx: number, requestedDy: number) {
+    let dx = requestedDx;
+    let dy = requestedDy;
+    let collision = 0;
+
+    if (!Is_airlevel(game.u?.uz) || rn2(6) === 0) {
+        if (dx < -1 || dx > 1) dx = Math.sign(dx);
+        if (dy < -1 || dy > 1) dy = Math.sign(dy);
+
+        if (bubble.x <= BOUNDS.bubbleXMin) collision |= 2;
+        if (bubble.y <= BOUNDS.bubbleYMin) collision |= 1;
+        if (bubble.x + bubble.width - 1 >= BOUNDS.bubbleXMax)
+            collision |= 2;
+        if (bubble.y + bubble.height - 1 >= BOUNDS.bubbleYMax)
+            collision |= 1;
+
+        bubble.x = Math.max(
+            BOUNDS.bubbleXMin,
+            Math.min(BOUNDS.bubbleXMax - bubble.width + 1, bubble.x),
+        );
+        bubble.y = Math.max(
+            BOUNDS.bubbleYMin,
+            Math.min(BOUNDS.bubbleYMax - bubble.height + 1, bubble.y),
+        );
+
+        if (bubble.x === BOUNDS.bubbleXMin && dx < 0) dx = -dx;
+        if (bubble.x + bubble.width - 1 === BOUNDS.bubbleXMax && dx > 0)
+            dx = -dx;
+        if (bubble.y === BOUNDS.bubbleYMin && dy < 0) dy = -dy;
+        if (bubble.y + bubble.height - 1 === BOUNDS.bubbleYMax && dy > 0)
+            dy = -dy;
+
+        bubble.x += dx;
+        bubble.y += dy;
+    }
+
+    return { dx, dy, collision };
+}
+
+// The "boing?" tail of C mv_bubble(): border collisions flip the heading,
+// and a stationary bubble sometimes alters direction for fun anyway.
+function changeBubbleDirection(bubble: ElementalBubble, collision: number, initial: boolean): void {
+    if (collision & 1) bubble.dy = -bubble.dy;
+    if (collision & 2) bubble.dx = -bubble.dx;
+    if (!collision && !initial
+        && rn2(bubble.dx || bubble.dy ? 20 : 5) === 0) {
+        bubble.dx = 1 - rn2(3);
+        bubble.dy = 1 - rn2(3);
+    }
+}
+
+// The drawing half of C mv_bubble(): a water bubble paints AIR cells and
+// unblocks them, an air bubble paints CLOUD cells and blocks them.
+function drawBubble(bubble: ElementalBubble): void {
+    const isAir = Is_airlevel(game.u?.uz);
+    for (let dx = 0; dx < bubble.width; dx++) {
+        for (let dy = 0; dy < bubble.height; dy++) {
+            if (!((bubble.rows[dy] ?? 0) & (1 << dx))) continue;
+            const x = bubble.x + dx, y = bubble.y + dy;
+            const loc = game.level?.at?.(x, y);
+            if (isAir) {
+                if (loc) {
+                    loc.typ = CLOUD;
+                    loc.lit = true;
+                }
+                // C mv_bubble() blocks each drawn cloud cell incrementally.
+                block_point(x, y);
+            } else if (Is_waterlevel(game.u?.uz)) {
+                if (loc) {
+                    loc.typ = AIR;
+                    loc.lit = true;
+                }
+                unblock_point(x, y);
+            }
+        }
+    }
+}
+
+// C mkmaze.c:mv_bubble().  The player, the portal and all other objects and
+// monsters float along with their associated bubble; after the draw, a
+// water bubble puts its collected contents back at the moved position.
+async function mv_bubble(bubble: ElementalBubble, requestedDx: number, requestedDy: number, initial: boolean): Promise<void> {
+    const motion = moveBubblePosition(bubble, requestedDx, requestedDy);
+    drawBubble(bubble);
+    if (Is_waterlevel(game.u?.uz) && !initial) {
+        // replace contents of bubble
+        requirePlayingGame(game);
+        const level = requireGameLevel();
+        for (const content of bubble.contents || []) {
+            const x = content.x + motion.dx, y = content.y + motion.dy;
+            if (content.kind === 'objects') {
+                for (const object of content.items) {
+                    await placeObject(object, x, y);
+                    await stack_object(object);
+                }
+            } else if (content.kind === 'monster') {
+                // mnearto() might fail; the monster is moved next to the
+                // hero instead (C jumps to elemental_clog()).
+                if (!await mnearto(content.monster, x, y, game, { moveOther: true, flags: RLOC_NOMSG }))
+                    await dealWithMonsterOvercrowding(content.monster);
+            } else if (content.kind === 'hero') {
+                const occupant = monsterAtPosition(level, x, y);
+                const oldx = game.u.ux, oldy = game.u.uy;
+                await placeHeroOnLevel(x, y);
+                await newsym(oldx, oldy);
+                if (occupant) await moveMonsterNextToHero(occupant, game, { flags: RLOC_NOMSG });
+            } else if (content.kind === 'trap') {
+                content.trap.tx = x;
+                content.trap.ty = y;
+            }
+        }
+        bubble.contents = [];
+    }
+    changeBubbleDirection(bubble, motion.collision, initial);
 }

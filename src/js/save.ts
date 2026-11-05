@@ -32,7 +32,7 @@ import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './wield.js';
 import { GRAPPLING_HOOK, PICK_AXE, SLIME_MOLD } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
-import { restoreElementalBubbles } from './elemental.js';
+import { restore_waterlevel } from './mkmaze.js';
 import { restoreLevelRegions } from './regions.js';
 import { oinit } from './o_init.js';
 import { restoreScheduledLevelChange } from './level_change.js';
@@ -350,7 +350,7 @@ export async function restoreGame(
         game._toplines = sessionToplines;
         restoreMessageHistory(snapshot.state._messageHistory ?? []);
         restoreScheduledLevelChange();
-        restoreElementalBubbles();
+        restore_waterlevel();
         // restgamestate() rebuilds the first-use reminder from the restored
         // weapon, treating applied tools conservatively as improvised weapons.
         const weapon = game.uwep || game.u.uwep;
