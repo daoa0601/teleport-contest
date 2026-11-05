@@ -1,7 +1,7 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
 import { pair_of } from './object_properties.js';
-import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
+import { bypassObjectList, clearBypasses, nextUnbypassedObject, setnotworn, setworn } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
@@ -29,7 +29,7 @@ import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeO
 import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
-import { isTwoWeaponObject, mergeHeroWeaponSlots, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
+import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed } from './polyself.js';
 import { heroFingerName, heroHandName, monsterStomachName } from './body_parts.js';
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
@@ -3442,7 +3442,18 @@ async function prepareStackMerge(survivor, incoming, state) {
         survivor.rknown = true;
     if (!!survivor.bknown !== !!incoming.bknown)
         survivor.bknown = true;
-    await mergeHeroWeaponSlots(survivor, incoming, state);
+    if (incoming.owornmask && survivor.where === 'inventory') {
+        const combined = (survivor.owornmask ?? 0) | incoming.owornmask;
+        const wmask = combined & W_WEP ? W_WEP
+            : combined & W_SWAPWEP ? W_SWAPWEP
+                : combined & W_QUIVER ? W_QUIVER : 0;
+        if (!wmask)
+            throw new Error('merging objects in non-weapon slots');
+        if (((survivor.owornmask ?? 0) & ~wmask) !== 0)
+            await setnotworn(survivor, state);
+        await setworn(survivor, wmask, state);
+        await setnotworn(incoming, state);
+    }
     if (incoming.bypass)
         survivor.bypass = true;
     return discovered;
@@ -3461,6 +3472,7 @@ export async function mergeCreatedObjectStacks(survivor, incoming, state = game)
     await deleteObject(incoming, state, { mergeInto: survivor });
     return survivor;
 }
+// C invent.c:merged(). Merge quantities, knowledge, timers, and weapon slots.
 export async function mergeObjectStacks(survivor, incoming, state = game) {
     requireLiveGame(state);
     if (!survivor || !incoming || !mergable(survivor, incoming, state))
