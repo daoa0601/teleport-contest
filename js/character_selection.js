@@ -6,8 +6,7 @@ import { rn2 } from './rng.js';
 import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { rawPrint } from './pline.js';
-import { findRole, findRace, findGender, findAlignment, randomCharacterOption, roles, races, genders, aligns } from './roles.js';
-import { characterSelectionQuestion, nativeRoleChoices, ROLE_SELECTION_RULES as ROLE_RULES, RACE_SELECTION_RULES } from './character_choices.js';
+import { RACE_SELECTION_RULES, ROLE_SELECTION_RULES, aligns, build_plselection_prompt, genders, nativeRoleChoices, races, randomCharacterOption, roles, str2align, str2gend, str2race, str2role, } from './roles.js';
 import { characterRoleAllowed, characterRaceAllowed, characterGenderAllowed, characterAlignmentAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
 import { tty_create_nhwindow, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
 const FACETS = ['role', 'race', 'gender', 'alignment'];
@@ -33,10 +32,10 @@ class CharacterSelection {
         this.readName = readName;
         this.filters = options.characterFilters ?? createCharacterFilters();
         this.choices = {
-            role: findRole(options.role) ?? null,
-            race: findRace(options.race) ?? null,
-            gender: findGender(options.gender) ?? null,
-            alignment: findAlignment(options.align) ?? null,
+            role: str2role(options.role) ?? null,
+            race: str2race(options.race) ?? null,
+            gender: str2gend(options.gender) ?? null,
+            alignment: str2align(options.align) ?? null,
         };
         for (const facet of FACETS) {
             const value = facet === 'alignment' ? options.align : options[facet];
@@ -54,7 +53,7 @@ class CharacterSelection {
         this.rigidChecks();
         let pickForYou = 'n';
         if (FACETS.some(facet => !this.choices[facet] && !this.random.has(facet))) {
-            const question = this.selectionQuestion();
+            const question = build_plselection_prompt(this.choices, this.random, this.filters);
             for (;;) {
                 pickForYou = (await readSetupAnswer(question)).toLowerCase();
                 if (pickForYou === 'q' || pickForYou === '\x1b')
@@ -169,9 +168,9 @@ class CharacterSelection {
         const { role, race, gender, alignment } = this.choices;
         switch (facet) {
             case 'role': return !!role;
-            case 'race': return !!race && (!role || ROLE_RULES[role.key].races.includes(race.name));
+            case 'race': return !!race && (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name));
             case 'gender': return !!gender && (!role || this.roleAllowsGender(role, gender));
-            case 'alignment': return !!alignment && (!role || ROLE_RULES[role.key].aligns.includes(alignment.name))
+            case 'alignment': return !!alignment && (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
                 && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
         }
     }
@@ -282,16 +281,16 @@ class CharacterSelection {
         switch (facet) {
             case 'role': return nativeRoleChoices().map(role => role.key);
             case 'race': return races.filter(candidate => !role
-                || ROLE_RULES[role.key].races.includes(candidate.name)).map(candidate => candidate.name);
+                || ROLE_SELECTION_RULES[role.key].races.includes(candidate.name)).map(candidate => candidate.name);
             case 'gender': return genders.filter(candidate => !role
                 || this.roleAllowsGender(role, candidate)).map(candidate => candidate.name);
             case 'alignment': return aligns.filter(candidate => (!role
-                || ROLE_RULES[role.key].aligns.includes(candidate.name))
+                || ROLE_SELECTION_RULES[role.key].aligns.includes(candidate.name))
                 && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(candidate.name))).map(candidate => candidate.name);
         }
     }
     roleAllowsGender(role, gender) {
-        return ROLE_RULES[role.key].genders?.includes(gender.name) ?? true;
+        return ROLE_SELECTION_RULES[role.key].genders?.includes(gender.name) ?? true;
     }
     candidates(facet, menu = false) {
         const c = this.choices;
@@ -405,7 +404,7 @@ class CharacterSelection {
     }
     forcedRoute(facet) {
         const { role, race, gender, alignment } = this.choices;
-        const rules = role && ROLE_RULES[role.key];
+        const rules = role && ROLE_SELECTION_RULES[role.key];
         switch (facet) {
             case 'role':
                 return nativeRoleChoices().every(candidate => candidate === role || this.filters.roles.has(candidate.key))
@@ -443,9 +442,6 @@ class CharacterSelection {
             this.random.clear();
         }
         return result === 'filtered';
-    }
-    selectionQuestion() {
-        return characterSelectionQuestion(this.choices, this.random, this.filters);
     }
 }
 async function readSetupAnswer(question) {

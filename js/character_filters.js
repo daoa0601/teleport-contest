@@ -1,8 +1,7 @@
 // C role.c:reset_role_filtering() and its four setup_*menu() helpers.
 import { MENU_ITEMFLAGS_SELECTED, NHW_MENU, PICK_ANY } from './const.js';
-import { nativeRoleChoices, validCharacterAlignment, validCharacterGender, validCharacterRace, } from './character_choices.js';
+import { aligns, genders, nativeRoleChoices, races, str2align, str2gend, str2race, str2role, validalign, validrace, validgend, } from './roles.js';
 import { withIndefiniteArticle } from './objnam.js';
-import { aligns, findAlignment, findGender, findRace, findRole, genders, races } from './roles.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
 // C role.c:reset_role_filtering(): the empty filter state.
 export function createCharacterFilters() {
@@ -14,22 +13,22 @@ export function hasCharacterFilters(filters) {
 }
 // C setrolefilter() accepts any character facet, trying roles first.
 export function setCharacterFilter(filters, value) {
-    const role = findRole(value);
+    const role = str2role(value);
     if (role) {
         filters.roles.add(role.key);
         return true;
     }
-    const race = findRace(value);
+    const race = str2race(value);
     if (race) {
         filters.races.add(race.name);
         return true;
     }
-    const gender = findGender(value);
+    const gender = str2gend(value);
     if (gender) {
         filters.genders.add(gender.name);
         return true;
     }
-    const alignment = findAlignment(value);
+    const alignment = str2align(value);
     if (alignment) {
         filters.alignments.add(alignment.name);
         return true;
@@ -58,21 +57,21 @@ export function clearCharacterFilter(filters, facet) {
 export function characterRoleAllowed(filters, choices) {
     const { role, race, gender, alignment } = choices;
     return (role ? [role] : nativeRoleChoices()).some(candidate => !filters.roles.has(candidate.key)
-        && (!race || validCharacterRace(candidate, race, null))
-        && (!gender || validCharacterGender(candidate, gender))
-        && (!alignment || validCharacterAlignment(candidate, null, alignment)));
+        && (!race || validrace(candidate, race, null))
+        && (!gender || validgend(candidate, gender))
+        && (!alignment || validalign(candidate, null, alignment)));
 }
 export function characterRaceAllowed(filters, choices) {
     const { role, race, alignment } = choices;
-    return (race ? [race] : races).some(candidate => !filters.races.has(candidate.name) && validCharacterRace(role, candidate, alignment));
+    return (race ? [race] : races).some(candidate => !filters.races.has(candidate.name) && validrace(role, candidate, alignment));
 }
 export function characterGenderAllowed(filters, choices) {
     const { role, gender } = choices;
-    return (gender ? [gender] : genders).some(candidate => !filters.genders.has(candidate.name) && validCharacterGender(role, candidate));
+    return (gender ? [gender] : genders).some(candidate => !filters.genders.has(candidate.name) && validgend(role, candidate));
 }
 export function characterAlignmentAllowed(filters, choices) {
     const { role, race, alignment } = choices;
-    return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validCharacterAlignment(role, race, candidate));
+    return (alignment ? [alignment] : aligns).some(candidate => !filters.alignments.has(candidate.name) && validalign(role, race, candidate));
 }
 // C role.c:reset_role_filtering(): the reset choice clears every facet
 // mask (C role.c:clearrolefilter() is the per-facet clear of a toggle);

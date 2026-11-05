@@ -621,9 +621,47 @@ export const genders = [
     { name: 'male', value: 0 },
     { name: 'female', value: 1 },
 ];
+// ── role.c function ports, in role.c source order ──
+// C ref: role.c roles[] table order.  The JS role table keeps Ranger
+// before Rogue for historical callers, while the C selection table
+// deliberately keeps Rogue before Ranger; random character selection must
+// use the latter order to preserve the PRNG-to-role mapping.
+const CHARACTER_ROLE_ORDER = [
+    'archeologist', 'barbarian', 'caveman', 'healer', 'knight', 'monk',
+    'priest', 'rogue', 'ranger', 'samurai', 'tourist', 'valkyrie', 'wizard',
+];
+export function nativeRoleChoices() {
+    return CHARACTER_ROLE_ORDER.flatMap(key => {
+        const role = roles.find(candidate => candidate.key === key);
+        return role ? [role] : [];
+    });
+}
+export const ROLE_SELECTION_RULES = {
+    archeologist: { races: ['human', 'dwarf', 'gnome'], aligns: ['lawful', 'neutral'] },
+    barbarian: { races: ['human', 'orc'], aligns: ['neutral', 'chaotic'] },
+    caveman: { races: ['human', 'dwarf', 'gnome'], aligns: ['lawful', 'neutral'] },
+    healer: { races: ['human', 'gnome'], aligns: ['neutral'] },
+    knight: { races: ['human'], aligns: ['lawful'] },
+    monk: { races: ['human'], aligns: ['lawful', 'neutral', 'chaotic'] },
+    priest: { races: ['human', 'elf'], aligns: ['lawful', 'neutral', 'chaotic'] },
+    rogue: { races: ['human', 'orc'], aligns: ['chaotic'] },
+    ranger: { races: ['human', 'elf', 'gnome', 'orc'], aligns: ['neutral', 'chaotic'] },
+    samurai: { races: ['human'], aligns: ['lawful'] },
+    tourist: { races: ['human'], aligns: ['neutral'] },
+    valkyrie: { races: ['human', 'dwarf'], aligns: ['lawful', 'neutral'], genders: ['female'] },
+    wizard: { races: ['human', 'elf', 'gnome', 'orc'], aligns: ['neutral', 'chaotic'] },
+};
+// C ref: role.c races[].allow & ROLE_ALIGNMASK.
+export const RACE_SELECTION_RULES = {
+    human: { aligns: ['lawful', 'neutral', 'chaotic'] },
+    elf: { aligns: ['chaotic'] },
+    dwarf: { aligns: ['lawful'] },
+    gnome: { aligns: ['neutral'] },
+    orc: { aligns: ['chaotic'] },
+};
 // C role.c:str2role(): resolve a role by case-insensitive prefix, in
 // native table order.
-export function findRole(name) {
+export function str2role(name) {
     if (typeof name !== 'string' || !name)
         return null;
     const lc = name.toLowerCase();
@@ -637,32 +675,155 @@ export function findRole(name) {
     }
     return undefined;
 }
-export function randomCharacterOption(option) {
-    if (!option)
-        return false;
-    const text = option.toLowerCase();
-    return text === '*' || text === '@' || 'random'.startsWith(text);
+// C role.c:validrace(): the role's permitted-race mask and the race's
+// alignment mask (roles[].allow & races[].allow) as table membership;
+// IndexOkT bounds are the typed lookups.  ok_race() adds the filter
+// masks and the any-candidate question; validrace() only checks the
+// two tables.
+export function validrace(role, race, alignment) {
+    return (!role || ROLE_SELECTION_RULES[role.key].races.includes(race.name))
+        && (!alignment || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
 }
 // C role.c:str2race(): resolve a race by name or adjective prefix.
-export function findRace(name) {
+export function str2race(name) {
     if (typeof name !== 'string' || !name)
         return null;
     const lc = name.toLowerCase();
     return races.find(r => r.name.toLowerCase().startsWith(lc)
         || r.adj.toLowerCase().startsWith(lc));
 }
+// C role.c:validgend(): the role's permitted-gender mask
+// (roles[].allow & genders[].allow & ROLE_GENDMASK) as table membership.
+export function validgend(role, gender) {
+    const permitted = role && ROLE_SELECTION_RULES[role.key].genders;
+    return !permitted || permitted.includes(gender.name);
+}
+// C role.c:str2gend(): resolve a gender by name prefix.
+export function str2gend(name) {
+    if (typeof name !== 'string' || !name)
+        return null;
+    const lc = name.toLowerCase();
+    return genders.find(g => g.name.startsWith(lc));
+}
+// C role.c:validalign(): the role's and race's permitted-alignment masks
+// (roles[].allow & races[].allow & aligns[].allow & ROLE_ALIGNMASK) as
+// table membership.
+export function validalign(role, race, alignment) {
+    return (!role || ROLE_SELECTION_RULES[role.key].aligns.includes(alignment.name))
+        && (!race || RACE_SELECTION_RULES[race.name].aligns.includes(alignment.name));
+}
 // C role.c:str2align(): resolve an alignment by name prefix.
-export function findAlignment(name) {
+export function str2align(name) {
     if (typeof name !== 'string' || !name)
         return null;
     const lc = name.toLowerCase();
     return aligns.find(a => a.name.startsWith(lc));
 }
-// C role.c:str2gend(): resolve a gender by name prefix.
-export function findGender(name) {
-    if (typeof name !== 'string' || !name)
-        return null;
-    const lc = name.toLowerCase();
-    return genders.find(g => g.name.startsWith(lc));
+// C ref: role.c randomstr[] — the ROLE_RANDOM tail shared by all four
+// str2XXX() matchers ('*', '@', or a prefix of "random").
+export function randomCharacterOption(option) {
+    if (!option)
+        return false;
+    const text = option.toLowerCase();
+    return text === '*' || text === '@' || 'random'.startsWith(text);
+}
+// C role.c:promptsep(): the separator between the post attributes still
+// to pick — a comma before all but the first and last, "and " before the
+// last one when there are several.
+function promptsep(prompt, numPostAttribs, rolePostAttribs) {
+    if (numPostAttribs > 1 && rolePostAttribs.count < numPostAttribs && rolePostAttribs.count > 1)
+        prompt += ',';
+    prompt += ' ';
+    rolePostAttribs.count--;
+    if (rolePostAttribs.count === 0 && numPostAttribs > 1)
+        prompt += 'and ';
+    return prompt;
+}
+// C role.c:role_gendercount(): how many genders the role permits
+// (roles[].allow & ROLE_MALE/ROLE_FEMALE/ROLE_NEUTER).
+function role_gendercount(role) {
+    if (!role)
+        return 0;
+    return ROLE_SELECTION_RULES[role.key].genders?.length ?? genders.length;
+}
+// C role.c:race_alignmentcount(): how many alignments the race permits
+// (races[].allow & ROLE_ALIGNMASK).
+function race_alignmentcount(race) {
+    if (!race)
+        return 0;
+    return RACE_SELECTION_RULES[race.name].aligns.length;
+}
+// C role.c:root_plselection_prompt(): build "<your lawful female gnomish
+// cavewoman>" from the aspects already decided and record which facets
+// the prompt must still ask for (C's gr.role_pa[] bits).  ok_align() and
+// ok_race() consult the filter masks; the count guards use
+// role_gendercount() and race_alignmentcount().
+function root_plselection_prompt(choices, random, filters) {
+    const { role, race, gender, alignment } = choices;
+    const description = [];
+    const missing = new Set();
+    const usableAlignment = alignment && !filters?.alignments.has(alignment.name)
+        && validalign(role, race, alignment) ? alignment : null;
+    if (usableAlignment)
+        description.push(usableAlignment.name);
+    else if (!race || !filters?.races.has(race.name) && validrace(role, race, null)
+        && race_alignmentcount(race) > 1)
+        missing.add('alignment');
+    const genderCount = role_gendercount(role);
+    if (gender) {
+        if (!role || genderCount > 1 && role.name.m === role.name.f)
+            description.push(gender.name);
+    }
+    else if (!role || genderCount > 1)
+        missing.add('gender');
+    if (race && (!role || !filters?.races.has(race.name) && validrace(role, race, usableAlignment)))
+        description.push(role ? race.adj : race.name);
+    else
+        missing.add('race');
+    if (role) {
+        const name = gender?.name === 'female' ? role.name.f
+            : !gender && !random.has('gender') && role.name.m !== role.name.f
+                ? `${role.name.m}/${role.name.f}` : role.name.m;
+        description.push(name);
+    }
+    else if (!random.has('role'))
+        missing.add('role');
+    if (!role && !race)
+        description.push('character');
+    return { description, missing };
+}
+// C role.c:build_plselection_prompt(): "Shall I pick a character's race,
+// role, gender, and alignment for you? [ynaq]" — s_suffix() adds the
+// possessive, with build_plselection_prompt()'s own exception for a
+// combined "priest/priestess" name, and promptsep() joins the facets
+// still to pick.
+export function build_plselection_prompt(choices, random, filters) {
+    const { role, race, gender, alignment } = choices;
+    const { description, missing } = root_plselection_prompt(choices, random, filters);
+    const owner = role || race || random.has('race') ? 'your' : 'a';
+    let prompt = `Shall I pick ${owner} ${description.join(' ')}`
+        .replace('pick a character', 'pick character');
+    // Native s_suffix() uses a bare apostrophe after s; this one combined
+    // role name has an explicit exception in build_plselection_prompt().
+    prompt += /s$/i.test(prompt) && !prompt.endsWith('Priest/Priestess') ? "'" : "'s";
+    if (!missing.size) {
+        if (!role && !random.has('role'))
+            missing.add('role');
+        if (!race && !random.has('race'))
+            missing.add('race');
+        if (!gender && !random.has('gender'))
+            missing.add('gender');
+        if (!alignment && !random.has('alignment'))
+            missing.add('alignment');
+    }
+    // C appends in race, role, gender, alignment order (BP_RACE first).
+    const rolePostAttribs = { count: missing.size };
+    for (const facet of ['race', 'role', 'gender', 'alignment']) {
+        if (!missing.has(facet))
+            continue;
+        prompt = promptsep(prompt, missing.size, rolePostAttribs);
+        prompt += facet;
+    }
+    return `${prompt} for you? [ynaq]`;
 }
 //# sourceMappingURL=roles.js.map
