@@ -14,11 +14,11 @@ export async function removeHeroEquipment(object, state = game, { deferArmorClas
     if (state.uskin === object) {
         state.uskin = null;
         object.owornmask = (object.owornmask ?? 0) & ~I_SPECIAL;
-        await clearHeroArmor(object, state, { deferArmorClass, embeddedSkin: true });
+        await clearHeroArmor(object, state, { embeddedSkin: true });
     }
     if (armorSlot && (state[armorSlot] === object
         || state.u?.[armorSlot] === object)) {
-        await clearHeroArmor(object, state, { deferArmorClass });
+        await clearHeroArmor(object, state);
     }
     await clearHeroAccessory(object, state, { deferArmorClass });
     if (state.ublindf === object || state.u?.ublindf === object) {
@@ -48,10 +48,7 @@ export async function removeWornHeroItem(object, state = game, { unchainBall = t
         const slot = armorSlotFor(object.otyp);
         if (slot && (state[slot] === object || state.u?.[slot] === object)) {
             // Native *_off() clears worn sources; the command loop owns find_ac().
-            await removeHeroArmor(object, state, {
-                deferArmorClass: true,
-                ...armorOptions,
-            });
+            await removeHeroArmor(object, state, armorOptions);
         }
         await removeHeroAccessory(object, state);
         if (state.ublindf === object || state.u?.ublindf === object) {

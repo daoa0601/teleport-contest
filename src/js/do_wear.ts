@@ -233,7 +233,7 @@ async function putOnAccessoryObject(object: GameObject): Promise<void> {
 export async function finishArmorRemoval(
     object: GameObject, { silent = false }: { silent?: boolean } = {},
 ): Promise<string> {
-    await removeHeroArmor(object, game, { deferArmorClass: true });
+    await removeHeroArmor(object, game);
     if (silent || game.flags?.verbose === false) return '';
     return await armorOffMessage(object, game);
 }
@@ -692,7 +692,7 @@ async function removeSelectedSlot(slot: TakeoffSlot, state: GameState): Promise<
     } else {
         // Native armor-off functions leave AC for allmain.c:find_ac(),
         // after the removal messages and the elapsed monster turns.
-        await removeHeroArmor(object, state, { deferArmorClass: true });
+        await removeHeroArmor(object, state);
         if (!state.program_state.gameover) {
             await offMessage(object, state);
         }
@@ -1133,7 +1133,6 @@ export function wearingFullEquipment(state: GameState = game): boolean {
 // C refs: do_wear.c find_ac() and hack.h ARM_BONUS().
 interface ArmorRemovalOptions {
     cancelledDon?: boolean;
-    deferArmorClass?: boolean;
     // Armor_off() is voluntary; polymorph uses Armor_gone().
     voluntary?: boolean;
     // Removing embedded dragon skin bypasses setworn()'s slot loop, so it
@@ -1426,7 +1425,6 @@ async function losePetrificationProtection(armor: GameObject, state: GameState, 
 export async function clearHeroArmor(object: GameObject, state: GameState = game, {
     cancelledDon = pendingArmorAction(state)?.kind === 'wear'
         && pendingArmorAction(state)?.object === object,
-    deferArmorClass = false,
     embeddedSkin = false,
 }: ArmorRemovalOptions = {}) {
     const slot = armorSlotFor(object?.otyp);
@@ -1469,8 +1467,14 @@ export async function clearHeroArmor(object: GameObject, state: GameState = game
     if ((object.otyp === FUMBLE_BOOTS || object.otyp === GAUNTLETS_OF_FUMBLING)
         && !fumblingHasPermanentOrEquipmentSource(state))
         setPropertyTimeout('fumbling', 0, state);
-    if (deferArmorClass) state._armorClassDirty = true;
-    else findArmorClass(state);
+    // C body-armor transitions never recompute u.uac: setworn()/
+    // setnotworn() (worn.c) and Armor_off()/Armor_gone()/Shirt_off()
+    // (do_wear.c) call no find_ac(); the explicit find_ac() callers are
+    // the once-per-input allmain.c:453, polymon() (polyself.c:890,967),
+    // guarding/protection accessories, and spell protection.  u.uac keeps
+    // its previous value through the removal messages and only the dirty
+    // flush (or an explicit caller) updates it.
+    state._armorClassDirty = true;
     return true;
 }
 
@@ -2154,7 +2158,7 @@ export async function stopDonning(stolenObject: GameObject | null = null, state:
         : `You stop ${puttingOn ? 'putting on' : 'taking off'} the ${simpleObjectName(delayed.object, state)}.`;
     await finishHeroHelplessness(message, state);
     if (puttingOn)
-        await removeHeroArmor(delayed.object, state, { cancelledDon: true, deferArmorClass: true });
+        await removeHeroArmor(delayed.object, state, { cancelledDon: true });
     return true;
 }
 

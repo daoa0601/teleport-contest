@@ -939,7 +939,7 @@ async function changeArmorForHeroForm(mnum) {
                 endObjectBurn(object, game);
             await plineWithContinuation('You break out of your armor!');
             await exerciseAttribute(A_STR, false);
-            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, voluntary: false });
             if (game.program_state.gameover)
                 return;
             await deleteObject(object);
@@ -969,7 +969,7 @@ async function changeArmorForHeroForm(mnum) {
             && !(MONSTER_NAME[mnum] === 'hobbit' && is_elven_armor(object))) {
             const dressing = cancelPolymorphDressing(object);
             await plineWithContinuation('Your armor falls around you!');
-            await removeHeroArmor(object, game, { ...dressing, deferArmorClass: true, voluntary: false });
+            await removeHeroArmor(object, game, { ...dressing, voluntary: false });
             if (game.program_state.gameover)
                 return;
             await dropCarriedObject(object);
