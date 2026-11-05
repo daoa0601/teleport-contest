@@ -115,11 +115,8 @@ import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { runDueTimers, restoreLevelTimers, objectTimers, scheduleObjectTimer } from './timeout.js';
-import { restoreLevelChains } from './level_restore.js';
-import {
-    restoreLevelPetHistory, restoreObjectPetHistory, restoreMonsterCover, hideMonsterOnRestore,
-    restoreMonsterWormHeads,
-} from './save.js';
+import { restoreLevelChains, restoreMonsterCover, hideMonsterOnRestore, restoreMonsterWormHeads } from './restore.js';
+import { restoreLevelPetHistory, restoreObjectPetHistory } from './save.js';
 import { restoreLevelLightSources } from './light.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';

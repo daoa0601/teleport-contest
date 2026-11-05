@@ -46,7 +46,10 @@ import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';
 import { mksobj, isContainer, placeObjectSynchronously } from './mkobj.js';
-import { makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName, observeObjectForNaming, pluralizeObjectNoun } from './objnam.js';
+import {
+    makePlural, withIndefiniteArticle, objectDescription, definiteName, objectName, simpleObjectName,
+    observeObjectForNaming,
+} from './objnam.js';
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 import { isQuantumBox, observeQuantumCat } from './quantum_cat.js';
 import { deepestLevelReached, depth } from './dungeon.js';
@@ -61,6 +64,7 @@ import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { clearHeroRemains, setHeroRemainsFromDeath, setHeroRemainsFromMonster } from './death_remains.js';
 import type { ScoreOutcome, ScoreRecord, ScoreUpdate } from './topten.js';
+import { finishInUseInventory } from './restore.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
@@ -1432,17 +1436,4 @@ export async function doneObjectCleanup(): Promise<void> {
     }
     const chain = game.uchain || game.u.uchain;
     if (chain?.where === 'free') await restoreBallAndChainPlacement(-1);
-}
-// C restore.c:inven_inuse(). Announce before consuming, so a pager still
-// shows the in-use stack until its message is acknowledged.
-export async function finishInUseInventory(quietly: boolean): Promise<void> {
-    for (const object of [...game.inventory]) {
-        if (!object.in_use) continue;
-        if (!quietly) {
-            const noun = objectName(object);
-            const name = object.quan === 1 ? noun : pluralizeObjectNoun(object, noun);
-            await plineWithContinuation(`Finishing off ${name}...`);
-        }
-        await consumeInventoryItem(object);
-    }
 }

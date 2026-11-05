@@ -1,8 +1,10 @@
 // save.js — Web-Storage-backed save and restore.
-// C refs: save.c and restore.c.
+// C refs: save.c; the restore.c dorecover()/restgamestate() flow, whose TS
+// counterpart restoreGame() runs here. restore.c's other ports live in
+// restore.ts.
 
-import { MONSTER_SYMBOL, resetErinys } from './monster_data.js';
-import { game, requireLiveGame } from './gstate.js';
+import { resetErinys } from './monster_data.js';
+import { game } from './gstate.js';
 import { PanicTermination } from './panic_termination.js';
 import { clearMessageWindow, displayMessageWindow, rememberToplines } from './tty_topline.js';
 import { tty_exit_nhwindows } from './wintty.js';
@@ -13,25 +15,24 @@ import { restoreSavedLightSources } from './light.js';
 import { promptChoice, promptYesNo } from './query.js';
 import { requireInitializedHero } from './hero_types.js';
 import type { GameMap } from './game.js';
-import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { encodeSavedGraph, isSavedRecord } from './saved_graph.js';
+import { encodeSavedGraph } from './saved_graph.js';
 import { decodeSavedGame } from './persistent_state_validation.js';
 import type { SavedGame } from './persistent_state_validation.js';
-import { cmdq_clear, isok } from './cmd.js';
+import { cmdq_clear } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
 import { rollQuestFigureGenders } from './role.js';
 import type { PersistentState } from './state_schema.js';
 import type { StorageBackend } from './storage.js';
 import { resolveDungeonIdentities } from './dungeon.js';
-import { purgeDeadMonsters, attemptMonsterRestrap, hideMonsterUnder, restoreMonsterInventoryOwnership } from './mon.js';
-import { CQ_CANNED, CQ_REPEAT, FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd, AM_CHAOTIC, AM_LAWFUL, AM_NEUTRAL, AM_NONE, COULD_SEE, IN_SIGHT, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPMASK, M_AP_TYPE, MAX_NUM_WORMS, MON_FLOOR, NON_PM, ismnum } from './const.js';
+import { purgeDeadMonsters, restoreMonsterInventoryOwnership } from './mon.js';
+import { CQ_CANNED, CQ_REPEAT, FULL_MOON, LUCKMAX, LUCKMIN, M_AP_NOTHING, Upolyd } from './const.js';
 import { vision_reset_new_level } from './vision.js';
 import { rewindEngravingsForSave, restoreEngravings } from './engrave.js';
 import { weaponNeedsBashingMessage } from './wield.js';
-import { GRAPPLING_HOOK, PICK_AXE, SLIME_MOLD } from './object_data.js';
+import { GRAPPLING_HOOK, PICK_AXE } from './object_data.js';
 import { forgetTempleEntry } from './priest.js';
 import { restore_waterlevel } from './mkmaze.js';
 import { restoreLevelRegions } from './region.js';
@@ -39,19 +40,10 @@ import { oinit } from './o_init.js';
 import { restoreScheduledLevelChange } from './do.js';
 import { recorderRestoredTime } from './calendar.js';
 import { restoreSavedTimers } from './timeout.js';
-import { restoreLevelChains } from './level_restore.js';
-import { validSavedHeroAlignment } from './character_validation.js';
-import { validSavedSpeciesOrNone } from './species_validation.js';
 import {
-    arrayOf, boolean, closedFieldsMatch, integer, nullable, optional, string, validateSavedEntity,
-} from './saved_validation.js';
-import type { Check, Fields, SavedEntityContext } from './saved_validation.js';
-import type {
-    BonesMonsterData, MinionData, Monster, MonsterExtra, MonsterFlag, MonsterLevel, PetData, PriestData,
-    SavedMonsterTraits, ShopBillEntry, ShopkeeperData, VaultGuardData, WormSegment,
-} from './monster_types.js';
-import type { Position } from './map_types.js';
-import { monsterHidesUnder, monsterIsEel, monsterIsHider } from './mondata.js';
+    restoreLevelChains, restoreMessageHistory, restoreMonsterWormHeads, validMonsterWormBodies,
+} from './restore.js';
+import type { Monster, SavedMonsterTraits } from './monster_types.js';
 
 const SAVE_PREFIX = 'teleport-save:';
 const ERROR_SAVE_PREFIX = 'teleport-error-save:';
@@ -77,28 +69,6 @@ function snapshotState(): SavedGame {
         version: SAVE_VERSION,
         state: copyPersistentState(game),
     };
-}
-/**
- * C restore.c:restore_msghistory(): the first restored message purges the
- * session's own ring (keeping its entries), each restored message becomes
- * the current topline in turn, and the final empty call puts the session's
- * messages back on top of the restored ones.
- */
-function restoreMessageHistory(saved: readonly string[]): void {
-    if (!saved.length) return;
-    rememberToplines();
-    const session = game._messageHistory.splice(0);
-    game._messageHistoryWriteIndex = 0;
-    game._messageHistoryCursor = null;
-    for (const message of saved) {
-        if (!message) continue;
-        rememberToplines();
-        game._toplines = message;
-    }
-    for (const message of session) {
-        rememberToplines();
-        game._toplines = message;
-    }
 }
 
 function restoreLevelMonsters(level: GameMap, moves: number): void {
@@ -502,383 +472,3 @@ export function restoreObjectPetHistory(objects: readonly GameObject[], elapsed:
     }
 }
 
-// ---------------------------------------------------------------------------
-// C restore.c:restmon(): saved monster validation.
-// ---------------------------------------------------------------------------
-
-const monsterFlag: Check<MonsterFlag> = (value): value is MonsterFlag =>
-    typeof value === 'boolean' || value === 0 || value === 1;
-
-const monsterPosition: Check<Position> = (value): value is Position =>
-    closedFieldsMatch(value, { x: integer, y: integer });
-
-const wormSegment: Check<WormSegment> = (value): value is WormSegment =>
-    closedFieldsMatch(value, { x: integer, y: integer, onMap: optional(boolean) });
-
-const monsterHomeLevel: Check<MonsterLevel> = (value): value is MonsterLevel =>
-    closedFieldsMatch(value, { dnum: integer, dlevel: integer });
-
-const pet: Check<PetData> = (value): value is PetData => closedFieldsMatch<PetData>(value, {
-    parentmid: optional(integer),
-    droptime: integer,
-    dropdist: integer,
-    apport: integer,
-    whistletime: integer,
-    hungrytime: integer,
-    ogoal: monsterPosition,
-    abuse: integer,
-    revivals: integer,
-    mhpmax_penalty: integer,
-    killed_by_u: monsterFlag,
-});
-
-const minion: Check<MinionData> = (value): value is MinionData => closedFieldsMatch<MinionData>(value, {
-    min_align: integer,
-    renegade: monsterFlag,
-    parentmid: optional(integer),
-});
-
-const priest: Check<PriestData> = (value): value is PriestData => closedFieldsMatch<PriestData>(value, {
-    parentmid: integer,
-    cheapskate_count: optional(integer),
-    shroom: integer,
-    shralign: integer,
-    shrpos: monsterPosition,
-    shrlevel: monsterHomeLevel,
-    intone_time: integer,
-    enter_time: integer,
-    peaceful_time: integer,
-    hostile_time: integer,
-});
-
-const bill: Check<ShopBillEntry> = (value): value is ShopBillEntry => closedFieldsMatch<ShopBillEntry>(value, {
-    bo_id: integer,
-    bquan: integer,
-    price: integer,
-    useup: monsterFlag,
-});
-
-const shopkeeper: Check<ShopkeeperData> = (value): value is ShopkeeperData => closedFieldsMatch<ShopkeeperData>(value, {
-    shoproom: integer,
-    shoptype: integer,
-    shoplevel: monsterHomeLevel,
-    shd: monsterPosition,
-    shk: monsterPosition,
-    parentmid: optional(integer),
-    shknam: optional(string),
-    bill: optional(arrayOf(bill)),
-    billct: optional(integer),
-    billUnavailable: optional(boolean),
-    credit: optional(integer),
-    debit: optional(integer),
-    loan: optional(integer),
-    robbed: optional(integer),
-    surcharge: optional(monsterFlag),
-    following: optional(monsterFlag),
-    customer: optional(string),
-    visitct: optional(integer),
-    dismiss_kops: optional(boolean),
-    break_seq: optional(integer),
-    seq_peaceful: optional(monsterFlag),
-});
-
-const corridor: Check<VaultGuardData['fakecorr'][number]> =
-    (value): value is VaultGuardData['fakecorr'][number] => closedFieldsMatch(value, {
-        x: integer, y: integer, typ: integer, flags: integer,
-    });
-
-function guard(context: SavedEntityContext): Check<VaultGuardData> {
-    return (value): value is VaultGuardData => closedFieldsMatch<VaultGuardData>(value, {
-        gdlevel: monsterHomeLevel,
-        gddone: monsterFlag,
-        ogx: integer,
-        ogy: integer,
-        gdx: integer,
-        gdy: integer,
-        vault: nullable(context.room),
-        warncnt: integer,
-        fcbeg: integer,
-        fcend: integer,
-        fakecorr: arrayOf(corridor),
-        dropgoldcnt: integer,
-        witness: optional(integer),
-    });
-}
-
-const bones: Check<BonesMonsterData> = (value): value is BonesMonsterData => closedFieldsMatch<BonesMonsterData>(value, {
-    parentmid: integer,
-    role: integer,
-    race: integer,
-    oldalign: validSavedHeroAlignment,
-    deathlevel: integer,
-    luck: integer,
-    mnum: ismnum,
-    female: boolean,
-    demigod: boolean,
-    crowned: boolean,
-});
-
-function extra(representation: Check<number>): Check<MonsterExtra> {
-    return (value): value is MonsterExtra => closedFieldsMatch<MonsterExtra>(value, {
-        mgivenname: optional(string),
-        mcorpsenm: optional(representation),
-        edog: optional(pet),
-        emin: optional(minion),
-        epri: optional(priest),
-        eshk: optional(shopkeeper),
-        ebones: optional(bones),
-    });
-}
-
-function appearanceType(value: unknown): number {
-    return isSavedRecord(value) && integer(value.m_ap_type)
-        ? value.m_ap_type & M_AP_TYPMASK : 0;
-}
-
-// makemon.c:set_mimic_sym() also stores a fruit ID or altar mask here.
-// Neither overload is a monster index, despite the field's native name.
-function mimicRepresentation(value: unknown): Check<number> {
-    if (!isSavedRecord(value)) return validSavedSpeciesOrNone;
-    const type = appearanceType(value);
-    if (type === M_AP_OBJECT && value.mappearance === SLIME_MOLD)
-        return (entry): entry is number => entry === NON_PM
-            || integer(entry) && entry >= 1 && entry <= 127;
-    if (type === M_AP_FURNITURE && value.mappearance === 33) // S_altar
-        return (entry): entry is number => entry === NON_PM || entry === AM_NONE
-            || entry === AM_CHAOTIC || entry === AM_NEUTRAL || entry === AM_LAWFUL;
-    return validSavedSpeciesOrNone;
-}
-
-function monsterFields(value: unknown, context: SavedEntityContext): Fields<Monster> {
-    const representation = mimicRepresentation(value);
-    return {
-        mx: integer,
-        my: integer,
-        mstate: optional(integer),
-        headOnMap: optional(boolean),
-        wormSegments: optional(arrayOf(wormSegment)),
-        // Saving is unavailable while cutworm is awaiting a message pager.
-        wormDetachedSegments: (entry): entry is undefined => entry === undefined,
-        m_id: integer,
-        mnum: ismnum,
-        m_lev: integer,
-        mhp: integer,
-        mhpmax: integer,
-        female: boolean,
-        mux: optional(integer),
-        muy: optional(integer),
-        mcanmove: monsterFlag,
-        mcansee: monsterFlag,
-        mgenmklev: optional(boolean),
-        msleeping: optional(monsterFlag),
-        mpeaceful: monsterFlag,
-        minvent: optional(arrayOf(context.object)),
-        inventory: optional(arrayOf(context.object)),
-        hasInventory: optional(boolean),
-        cham: optional(validSavedSpeciesOrNone),
-        dead: optional(boolean),
-        lightRemoved: optional(boolean),
-        movement: optional(integer),
-        mmove: optional(integer),
-        mspeed: optional(integer),
-        permspeed: optional(integer),
-        symbol: optional(string),
-        color: optional(integer),
-        mstrategy: optional(integer),
-        mgoal: optional(monsterPosition),
-        mtrapseen: optional(integer),
-        mtrack: optional(arrayOf(monsterPosition)),
-        mtame: optional(integer),
-        pet: optional(boolean),
-        meating: optional(integer),
-        mlstmv: optional(integer),
-        mspec_used: optional(integer),
-        mfrozen: optional(integer),
-        mblinded: optional(integer),
-        mfleetim: optional(integer),
-        mcan: optional(monsterFlag),
-        mstun: optional(monsterFlag),
-        mconf: optional(monsterFlag),
-        mflee: optional(monsterFlag),
-        mtrapped: optional(monsterFlag),
-        mburied: optional(monsterFlag),
-        mleashed: optional(monsterFlag),
-        mrevived: optional(monsterFlag),
-        mcloned: optional(monsterFlag),
-        mavenge: optional(monsterFlag),
-        meverseen: optional(monsterFlag),
-        mtemplit: optional(monsterFlag),
-        // save.c:savemon() writes the raw struct monst (Sfo_monst), so the
-        // spot_monsters latch survives save, restore, and bones.
-        mspotted: optional(monsterFlag),
-        mundetected: optional(monsterFlag),
-        minvis: optional(monsterFlag),
-        perminvis: optional(monsterFlag),
-        invis_blkd: optional(monsterFlag),
-        seen_resistance: optional(integer),
-        mintrinsics: optional(integer),
-        mextrinsics: optional(integer),
-        defendedSleep: optional(boolean),
-        defendedDisintegration: optional(boolean),
-        seenMagicResistance: optional(boolean),
-        misc_worn_check: optional(integer),
-        weaponCheck: optional(integer),
-        mw: optional(nullable(context.object)),
-        saddle: optional(nullable(context.object)),
-        saddled: optional(boolean),
-        mwandexp: optional(boolean),
-        m_ap_type: optional(integer),
-        mappearance: appearanceType(value) === M_AP_MONSTER ? ismnum : optional(integer),
-        mcorpsenm: optional(representation),
-        mgivenname: optional(string),
-        name: optional(string),
-        givenName: optional(string),
-        iswiz: optional(monsterFlag),
-        isgd: optional(monsterFlag),
-        isshk: optional(monsterFlag),
-        ispriest: optional(monsterFlag),
-        isminion: optional(monsterFlag),
-        questLeader: optional(boolean),
-        waiting: optional(boolean),
-        malign: integer,
-        maligntyp: optional(integer),
-        edog: optional(pet),
-        emin: optional(minion),
-        epri: optional(priest),
-        eshk: optional(shopkeeper),
-        mextra: optional(extra(representation)),
-        _egd: optional(guard(context)),
-        wormno: optional(integer),
-        wormHead: optional(nullable(monsterPosition)),
-        wormGrowTime: optional(integer),
-        migrating: optional(boolean),
-        migratingWormSegments: optional(integer),
-        migrationMode: optional(integer),
-        migrationArrival: optional(integer),
-        migrationFlags: optional(integer),
-        migflags: optional(integer),
-        migrationSource: optional(monsterPosition),
-        migrationOrigin: optional(monsterHomeLevel),
-        migrationDestination: optional(monsterHomeLevel),
-    };
-}
-
-export function validSavedMonster(value: unknown, context: SavedEntityContext): value is Monster {
-    return validateSavedEntity(value, 'monster', context, monsterFields(value, context));
-}
-
-export function validSavedMonsterTraits(value: unknown, context: SavedEntityContext): value is SavedMonsterTraits {
-    const {
-        minvent, inventory, mw, wormSegments, wormDetachedSegments, wormHead, wormGrowTime, lightRemoved, headOnMap,
-        ...fields
-    } = monsterFields(value, context);
-    return validateSavedEntity(value, 'savedMonster', context, fields);
-}
-
-// ---------------------------------------------------------------------------
-// C restore.c:getlev(): rechecked cover and a fresh hiding attempt for a
-// restored monster. The native hiding decisions themselves live in mon.ts
-// (restrap()/hideunder()/maybe_unhide_at()) and monmove.ts
-// (can_hide_under_obj()).
-// ---------------------------------------------------------------------------
-
-const S_MIMIC = 13;
-
-// C restore.c:getlev() rechecks existing cover before catch-up and shape
-// changes. A saved mundetected bit alone does not establish valid cover.
-export async function restoreMonsterCover(monster: Monster, state: GameState = game): Promise<void> {
-    if (monster !== state.u.usteed && monster.mundetected
-        && monsterHidesUnder(monster.mnum))
-        await hideMonsterUnder(monster, state);
-}
-
-// Restored hiders get their attempt before normal vision can expose their spot.
-// Only that square's vision bits are hidden, and hideunder sees restored vision.
-export async function hideMonsterOnRestore(monster: Monster, state: GameState = game): Promise<void> {
-    requireLiveGame(state);
-
-    const hiderUnder = monsterHidesUnder(monster.mnum) || monsterIsEel(monster.mnum);
-    if (!monsterIsHider(monster.mnum) && !hiderUnder) return;
-    if (monster.mundetected || M_AP_TYPE(monster)) return;
-    const row = state.viz_array?.[monster.my];
-    const savedVision = row?.[monster.mx];
-    if (!row || savedVision === undefined)
-        throw new Error('Restoring monster hiding requires an initialized vision square.');
-    row[monster.mx] = savedVision & ~(IN_SIGHT | COULD_SEE);
-    try {
-        if (monsterIsHider(monster.mnum)) await attemptMonsterRestrap(monster, state);
-        if (MONSTER_SYMBOL[monster.mnum] === S_MIMIC && !M_AP_TYPE(monster))
-            await attemptMonsterRestrap(monster, state);
-    } finally {
-        row[monster.mx] = savedVision;
-    }
-    if (hiderUnder) await hideMonsterUnder(monster, state);
-}
-
-// ---------------------------------------------------------------------------
-// C restore.c rebuilds the monster grid and places the whole worm chain.
-// ---------------------------------------------------------------------------
-
-type WormRestoreMonster = Pick<Monster,
-    'mx' | 'my' | 'mstate' | 'headOnMap' | 'wormno' | 'wormHead' | 'wormSegments' | 'wormGrowTime'>;
-
-export interface WormRestoreLevel {
-    monsters: WormRestoreMonster[];
-}
-
-// This boundary proves only worm restoration fields, not a complete Monster.
-// Full saves and bones retain body identity and deadlines rather than rebuilding them.
-export function validMonsterWormBodies(level: unknown): level is WormRestoreLevel {
-    if (!isSavedRecord(level) || !Array.isArray(level.monsters)) return false;
-    const monsters: unknown[] = level.monsters;
-    const slots = new Set<number>();
-    for (const monster of monsters) {
-        if (!isSavedRecord(monster)
-            || typeof monster.mx !== 'number' || !Number.isInteger(monster.mx)
-            || typeof monster.my !== 'number' || !Number.isInteger(monster.my)
-            || monster.mstate !== undefined && typeof monster.mstate !== 'number'
-            || monster.headOnMap !== undefined && typeof monster.headOnMap !== 'boolean'
-            || monster.wormno !== undefined && typeof monster.wormno !== 'number'
-            || monster.wormGrowTime !== undefined
-                && typeof monster.wormGrowTime !== 'number') return false;
-        if (!monster.wormno) {
-            if (monster.wormHead != null) return false;
-            if (monster.wormSegments !== undefined
-                && (!Array.isArray(monster.wormSegments)
-                    || monster.wormSegments.length !== 0)) return false;
-            continue;
-        }
-        if (!Number.isInteger(monster.wormno)
-            || monster.wormno < 1 || monster.wormno >= MAX_NUM_WORMS
-            || slots.has(monster.wormno)
-            || typeof monster.wormGrowTime !== 'number'
-            || !Number.isInteger(monster.wormGrowTime) || monster.wormGrowTime < 0
-            || !savedWormPoint(monster.wormHead)
-            || (monster.wormHead.x !== 0 && !isok(monster.wormHead.x, monster.wormHead.y))
-            || !Array.isArray(monster.wormSegments)) return false;
-        const segments: unknown[] = monster.wormSegments;
-        for (const point of segments) {
-            if (!savedWormPoint(point)
-                || !(point.x === 0 && (monster.mstate ?? MON_FLOOR) !== MON_FLOOR)
-                    && !isok(point.x, point.y)) return false;
-        }
-        slots.add(monster.wormno);
-    }
-    return true;
-}
-
-function savedWormPoint(value: unknown): value is WormSegment {
-    return isSavedRecord(value)
-        && typeof value.x === 'number' && Number.isInteger(value.x)
-        && typeof value.y === 'number' && Number.isInteger(value.y)
-        && (value.onMap === undefined || typeof value.onMap === 'boolean');
-}
-
-export function restoreMonsterWormHeads(level: WormRestoreLevel): void {
-    for (const monster of level.monsters) {
-        // The native monster grid is rebuilt from fmon when loading a level.
-        delete monster.headOnMap;
-        for (const segment of monster.wormSegments ?? []) delete segment.onMap;
-        if (monster.wormno) monster.wormHead = { x: monster.mx, y: monster.my };
-    }
-}
