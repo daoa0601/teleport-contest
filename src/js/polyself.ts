@@ -74,7 +74,10 @@ import { rankOf, roleSwitch } from './botl.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
 import { breatheInDirection } from './breath_ray.js';
-import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp, hitMonsterWithThrownObject } from './dothrow.js';
+import {
+    hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp,
+    hitMonsterWithThrownObject,
+} from './dothrow.js';
 import { mksobj, placeCreatedObject } from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
