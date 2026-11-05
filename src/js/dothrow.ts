@@ -50,7 +50,7 @@ import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryO
 import { objectMaterial, objectTypeKnown } from './o_init.js';
 import { rejoinObjectStack, linkObjectToMonsterInventory, placeObjectSynchronously, stack_object} from './mkobj.js';
 import { applyPolearm, applyTool, couldPoleMonster } from './apply.js';
-import { snapshotMenuUnderlay } from './windows.js';
+import { snapshotMenuUnderlay } from './wintty.js';
 import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLanding, flyHeroThrownObject, heroThrowTrajectory, prepareHeroThrownTarget , heroDirectGoldThrowRange, snuffThrownCandle } from './thrown_object.js';
 import type { ProjectileFlightCapture, ProjectileFlight } from './thrown_object.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster , angerMonster } from './mon.js';

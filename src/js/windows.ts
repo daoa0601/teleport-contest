@@ -1,6 +1,5 @@
-// Native menu callers and tty text windows.
-// Menus collect their entries here; tty_menu.ts owns layout and selection.
-// C refs: windows.c and win/tty/wintty.c.
+// Native menu callers and tty text windows (windows.c).
+// The wintty.c menu port itself lives in wintty.ts.
 
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
@@ -13,10 +12,8 @@ import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED
 import type { GameDisplay } from './game_display.js';
 import { windowOrigin, tty_create_nhwindow, tty_start_menu,
     tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss,
-    tty_destroy_nhwindow } from './tty_menu.js';
-import type { TextMenuLine, TtyMenuWindow } from './tty_menu.js';
-export type { TextMenuLine, MenuUnderlay } from './tty_menu.js';
-export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
+    tty_destroy_nhwindow } from './wintty.js';
+import type { TextMenuLine, TtyMenuWindow } from './wintty.js';
 
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;

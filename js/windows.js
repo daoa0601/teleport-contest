@@ -1,6 +1,5 @@
-// Native menu callers and tty text windows.
-// Menus collect their entries here; tty_menu.ts owns layout and selection.
-// C refs: windows.c and win/tty/wintty.c.
+// Native menu callers and tty text windows (windows.c).
+// The wintty.c menu port itself lives in wintty.ts.
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
@@ -8,8 +7,7 @@ import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
 import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
-import { windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './tty_menu.js';
-export { snapshotMenuUnderlay, restoreMenuUnderlay } from './tty_menu.js';
+import { windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './wintty.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
 // C windows.c:decode_mixed(), for the literal portions of putmixed() lines.

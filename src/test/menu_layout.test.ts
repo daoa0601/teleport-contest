@@ -8,7 +8,7 @@ import { NO_COLOR, Terminal } from '../js/terminal.js';
 import {
     tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu,
     tty_select_menu, tty_start_menu,
-} from '../js/tty_menu.js';
+} from '../js/wintty.js';
 import {
     ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow,
     showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay,

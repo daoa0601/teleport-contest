@@ -5,7 +5,7 @@ import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { GameDisplay } from '../js/game_display.js';
 import { CLR_RED, NO_COLOR, Terminal } from '../js/terminal.js';
-import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from '../js/tty_menu.js';
+import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from '../js/wintty.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 void test('changing a menu selection paints its marker in the item color', async () => {
     freshPlayableRoom();

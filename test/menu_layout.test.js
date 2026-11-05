@@ -5,7 +5,7 @@ import { GameDisplay } from '../js/game_display.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { NO_COLOR, Terminal } from '../js/terminal.js';
-import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from '../js/tty_menu.js';
+import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from '../js/wintty.js';
 import { ATR_INVERSE, showChoiceWindow, showInventoryWindow, showMultiSelectWindow, showDisclosureOverlay, showPagedPickOneMenu, showTextMenuOverlay, } from '../js/windows.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 function menuDisplay(columns = 80, rows = 24) {
