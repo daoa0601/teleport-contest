@@ -4,7 +4,7 @@
 import { ILLOBJ_CLASS, COIN_CLASS } from './objclass.js';
 import { game } from './gstate.js';
 import type { CharacterFacet, CharacterFilters } from './roles.js';
-import { clearCharacterFilter, createCharacterFilters, setCharacterFilter } from './character_filters.js';
+import { clearrolefilter, createCharacterFilters, setrolefilter } from './roles.js';
 import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './roles.js';
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './cmd.js';
@@ -1898,8 +1898,8 @@ function configureCharacterOption(result: ConfigurationSettings, {
         }
         priorNegation = tokenNegated;
         if (negated || tokenNegated) {
-            if (previous.get(facet) !== 'negative') clearCharacterFilter(filters, facet);
-            if (!setCharacterFilter(filters, token)) {
+            if (previous.get(facet) !== 'negative') clearrolefilter(filters, facet);
+            if (!setrolefilter(filters, token)) {
                 addError(`Invalid ${facet} '${token}'`);
                 return;
             }

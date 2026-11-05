@@ -6,8 +6,7 @@ import { rn2 } from './rng.js';
 import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { rawPrint } from './pline.js';
-import { RACE_SELECTION_RULES, ROLE_SELECTION_RULES, aligns, build_plselection_prompt, genders, nativeRoleChoices, races, randomCharacterOption, roles, str2align, str2gend, str2race, str2role, } from './roles.js';
-import { characterRoleAllowed, characterRaceAllowed, characterGenderAllowed, characterAlignmentAllowed, createCharacterFilters, editCharacterFilters, hasCharacterFilters } from './character_filters.js';
+import { RACE_SELECTION_RULES, ROLE_SELECTION_RULES, aligns, build_plselection_prompt, createCharacterFilters, genders, gotrolefilter, nativeRoleChoices, ok_align, ok_gend, ok_race, ok_role, races, randomCharacterOption, reset_role_filtering, roles, str2align, str2gend, str2race, str2role, } from './roles.js';
 import { tty_create_nhwindow, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow } from './tty_menu.js';
 const FACETS = ['role', 'race', 'gender', 'alignment'];
 const ROUTE_KEYS = { role: '?', race: '/', gender: '"', alignment: '[' };
@@ -298,26 +297,26 @@ class CharacterSelection {
             case 'role': return this.roleCandidates(c);
             case 'race': return races.filter(race => {
                 const choice = { ...c, race };
-                return characterRaceAllowed(this.filters, choice) && (!menu
-                    || characterRoleAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice));
+                return ok_race(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_align(choice, this.filters));
             }).map(race => race.name);
             case 'gender': return genders.filter(gender => {
                 const choice = { ...c, gender };
-                return characterGenderAllowed(this.filters, choice) && (!menu
-                    || characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice));
+                return ok_gend(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
             }).map(gender => gender.name);
             case 'alignment': return aligns.filter(alignment => {
                 const choice = { ...c, alignment };
-                return characterAlignmentAllowed(this.filters, choice) && (!menu
-                    || characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice));
+                return ok_align(choice, this.filters) && (!menu
+                    || ok_role(choice, this.filters) && ok_race(choice, this.filters));
             }).map(alignment => alignment.name);
         }
     }
     roleCandidates(choices) {
         return nativeRoleChoices().filter(role => {
             const choice = { ...choices, role };
-            return characterRoleAllowed(this.filters, choice) && characterRaceAllowed(this.filters, choice)
-                && characterGenderAllowed(this.filters, choice) && characterAlignmentAllowed(this.filters, choice);
+            return ok_role(choice, this.filters) && ok_race(choice, this.filters)
+                && ok_gend(choice, this.filters) && ok_align(choice, this.filters);
         }).map(role => role.key);
     }
     roleName(role, gender, combined = false) {
@@ -375,7 +374,7 @@ class CharacterSelection {
             else
                 addChoice(window, `pick-${other}`, ROUTE_KEYS[other], `Pick${this.choices[other] ? ' another' : ''} ${other} first`);
         }
-        addChoice(window, 'filter', '~', `${hasCharacterFilters(this.filters) ? 'Reset' : 'Set'} role/race/&c filtering`);
+        addChoice(window, 'filter', '~', `${gotrolefilter(this.filters) ? 'Reset' : 'Set'} role/race/&c filtering`);
         addChoice(window, 'quit', 'q', 'Quit');
         return finishMenu(window, TITLES[facet], 'random');
     }
@@ -436,7 +435,7 @@ class CharacterSelection {
         return remaining.length === 1 && remaining[0] === selected;
     }
     async editFilters() {
-        const result = await editCharacterFilters(this.filters);
+        const result = await reset_role_filtering(this.filters);
         if (result !== 'cancelled') {
             this.choices = { ...EMPTY_CHOICES };
             this.random.clear();
