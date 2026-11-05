@@ -691,6 +691,16 @@ export function restoreMenuUnderlay(snapshot) {
     const d = display();
     if (!d || !snapshot)
         return;
+    // Row 0: docorner() cl_end()s it from the dismissed window's left edge
+    // (wintty.c:3741-3744) and toplineClipColumn carries that edge, so a
+    // restore must not resurrect the columns past it. When no state line
+    // owns the row, the surviving prefix is the seen text the preserve
+    // cache reads (tty_display_nhwindow(WIN_MESSAGE) demoted it without
+    // erasing). When a pending/retained/prompt line is repainted from
+    // state, the row is blanked so the stale snapshot cannot bleed through.
+    const stateOwnsTopline = !!(game._pending_message || game._retained_message
+        || game._promptOwnsTopline);
+    const toplineLimit = stateOwnsTopline ? 0 : d.toplineClipColumn ?? d.cols - 1;
     for (const [row, cells] of snapshot.entries()) {
         if (row >= d.rows)
             break;
@@ -702,10 +712,13 @@ export function restoreMenuUnderlay(snapshot) {
             // restored snapshot must not repaint old content there either.
             if (col === d.cols - 1)
                 break;
+            if (row === 0 && col >= toplineLimit)
+                break;
             d.setCell(col, row, cell.ch, cell.color, cell.attr);
         }
     }
-    d.clearRow(0);
+    if (stateOwnsTopline)
+        d.clearRow(0);
 }
 // C wintty.c:docorner()
 async function docorner(d, left, bottom) {
