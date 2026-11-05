@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STONE, SV3, SV4, SV5, SV7, TDWALL, VWALL, WM_C_OUTER } from '../js/const.js';
+import { STONE, SV3, SV4, SV5, SV7, TDWALL, VWALL, WM_C_INNER } from '../js/const.js';
 import { CmapSymbol, cmapToGlyph } from '../js/glyph_numbers.js';
 import { back_to_glyph, set_wall_state, xy_set_wall_state } from '../js/display.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -28,7 +28,7 @@ void test('set_wall_state scans the level through xy_set_wall_state', async () =
     const wall = level.requireAt(12, 10);
     wall.typ = VWALL;
     level.requireAt(11, 10).typ = STONE;
-    wall.wall_info = WM_C_OUTER; // a stale mode the scan must replace
+    wall.wall_info = WM_C_INNER; // a stale mode the scan must replace
 
     set_wall_state();
 
