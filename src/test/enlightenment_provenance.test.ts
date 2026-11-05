@@ -9,7 +9,7 @@ import { resetInputState } from '../js/input.js';
 import { finishOrdinaryQuit } from '../js/end.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
-import { adjustLevelAbilities } from '../js/exper.js';
+import { adjustLevelAbilities } from '../js/attrib.js';
 import { setHeroSpecies } from '../js/polyself.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDFOLD, DUNCE_CAP, CORNUTHAUM, MUMMY_WRAPPING, RIN_INVISIBILITY, OBJECT_NAMES, SPEED_BOOTS, TOWEL } from '../js/object_data.js';

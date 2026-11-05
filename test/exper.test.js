@@ -1,7 +1,8 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { addExperience, adjustLevelAbilities, awardMonsterExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, monsterExperience, newExperienceThreshold, randomExperience, } from '../js/exper.js';
+import { addExperience, awardMonsterExperience, checkExperienceLevel, gainExperienceLevel, loseHeroExperience, monsterExperience, newExperienceThreshold, randomExperience, } from '../js/exper.js';
+import { adjustLevelAbilities } from '../js/attrib.js';
 import { A_CON, A_WIS, SINK } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';

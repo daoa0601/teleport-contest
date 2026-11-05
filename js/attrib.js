@@ -4,21 +4,23 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifacts.js';
 import { plineWithContinuation } from './pline.js';
-import { shieldeff } from './display.js';
+import { see_monsters, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { encumber_msg } from './pickup.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
 import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { d, rn2, rnd } from './rng.js';
-import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, } from './properties.js';
+import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, revokeIntrinsicProperty, } from './properties.js';
+import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
+import { experienceRankIndex } from './exper.js';
 import { formMaximumStrength } from './polyself.js';
 import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, LUCKSTONE, MUMMY_WRAPPING, } from './object_data.js';
 import { confersLuck } from './invent.js';
 import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKADD, LUCKMAX, LUCKMIN, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;
@@ -634,6 +636,14 @@ export function veryFast(state = game) {
     return !!((intrinsicPropertyMask('fast', state) & ~INTRINSIC)
         || extrinsicPropertyMask('fast', state));
 }
+// C attrib.c:postadjabil(). Screen refresh after a level-driven ability
+// change; the hero-initializing caller (ulevel 0) skips screen updates.
+async function postAdjustAbilities(property, state) {
+    if (!state.u.ulevel)
+        return;
+    if (property === 'warning' || property === 'seeInvisible')
+        await see_monsters();
+}
 // C attrib.c:role_abil(). The role's innate ability table for the current
 // role; adjabil() and check_innate_abil() both read it.
 function roleAbilities(state) {
@@ -795,6 +805,102 @@ export function whatGives(property, state = game) {
             return object;
     }
     return null;
+}
+// C attrib.c:adjabil(). A level change grants or revokes role (FROMEXPER)
+// and race (FROMRACE) abilities, and each changed level adds or removes
+// one weapon-skill slot. The role rank cache on the role object is TS glue;
+// C computes the rank from ulevel when drawing the status line.
+export async function adjustLevelAbilities(oldLevel, newLevel, publish = plineWithContinuation) {
+    const state = requireInitializedGame();
+    state.urole.rank = state.urole.title[experienceRankIndex(newLevel)] || state.urole.name;
+    const walk = async (abilities, origin) => {
+        for (const [level, property, gainMessage, lossMessage] of abilities) {
+            let changed = false;
+            if (oldLevel < level && newLevel >= level) {
+                const alreadyIntrinsic = hasPermanentIntrinsicProperty(property, game);
+                grantIntrinsicProperty(property, origin, game);
+                if (level === 1)
+                    grantIntrinsicProperty(property, 'outside', game);
+                changed = true;
+                if (!alreadyIntrinsic && gainMessage)
+                    await publish(formatFeltMessage(`${gainMessage}!`));
+            }
+            else if (oldLevel >= level && newLevel < level) {
+                changed = revokeIntrinsicProperty(property, origin, game);
+                // C announces crossing the level threshold even if a curse
+                // already removed this ability; other intrinsic sources suppress it.
+                if (!hasPermanentIntrinsicProperty(property, game)) {
+                    const message = lossMessage || (gainMessage
+                        ? `less ${gainMessage}` : '');
+                    if (message)
+                        await publish(formatFeltMessage(`${message}!`));
+                }
+            }
+            if (changed)
+                await postAdjustAbilities(property, state);
+        }
+    };
+    await walk(roleAbilities(state), 'experience');
+    await walk(state.urace.name === 'elf' || state.urace.name === 'orc'
+        ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [], 'race');
+    if (newLevel > oldLevel)
+        await addHeroWeaponSkillSlots(newLevel - oldLevel, game);
+    else if (newLevel < oldLevel)
+        await loseHeroWeaponSkillSlots(oldLevel - newLevel, game);
+}
+// C attrib.c:newhp(). Hit-point increment for the hero's next level;
+// level 0 rolls the initial HP (its alignment seeding stays in u_init).
+export function newHeroHitPoints(state) {
+    const level = state.u.ulevel;
+    const role = state.urole.hpadv;
+    const race = state.urace.hpadv;
+    let hp;
+    if (level === 0) {
+        hp = (role.infix || 0) + (race.infix || 0);
+        if ((role.inrnd || 0) > 0)
+            hp += rnd(role.inrnd);
+        if ((race.inrnd || 0) > 0)
+            hp += rnd(race.inrnd);
+    }
+    else {
+        const lower = level < state.urole.xlev;
+        const fixed = lower ? 'lofix' : 'hifix';
+        const random = lower ? 'lornd' : 'hirnd';
+        hp = (role[fixed] || 0) + (race[fixed] || 0);
+        if ((role[random] || 0) > 0)
+            hp += rnd(role[random]);
+        if ((race[random] || 0) > 0)
+            hp += rnd(race[random]);
+        hp += newHeroConstitutionBonus(currentAttribute(A_CON));
+    }
+    hp = Math.max(1, hp);
+    if (level < MAXULEV) {
+        if (!state.u.uhpinc)
+            state.u.uhpinc = Array.from({ length: MAXULEV }, () => 0);
+        state.u.uhpinc[level] = hp;
+    }
+    else {
+        // after level 30, throttle hit point gains from extra experience;
+        // once max reaches 1200, further increments will be just 1 more
+        hp = Math.min(hp, Math.max(5 - Math.trunc(state.u.uhpmax / 300), 1));
+    }
+    return hp;
+}
+// The Con adjustment table of C newhp().
+function newHeroConstitutionBonus(constitution) {
+    if (constitution <= 3)
+        return -2;
+    if (constitution <= 6)
+        return -1;
+    if (constitution <= 14)
+        return 0;
+    if (constitution <= 16)
+        return 1;
+    if (constitution === 17)
+        return 2;
+    if (constitution === 18)
+        return 3;
+    return 4;
 }
 const EXERCISE_EXPLANATIONS = {
     [A_STR]: ['exercising diligently', 'exercising properly'],
