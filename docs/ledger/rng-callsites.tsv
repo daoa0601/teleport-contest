@@ -104,6 +104,11 @@ src/js/attrib.ts	gainHeroStrength	rn2	"[""4""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""10""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""6""]"	constant
 src/js/attrib.ts	loseHeroStrength	random	"[""4""]"	constant
+src/js/attrib.ts	poisonHero	random	"[""10""]"	constant
+src/js/attrib.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unproved
+src/js/attrib.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
+src/js/attrib.ts	poisonHero	rollDice	"[""4"", ""6""]"	constant
+src/js/attrib.ts	poisonHero	rollOne	"[""6""]"	constant
 src/js/potion.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
@@ -1875,11 +1880,6 @@ src/js/dig.ts	attackWithTool	rnd	"[""6""]"	constant
 src/js/dig.ts	strikeUndiggable	d	"[""2"", ""2""]"	constant
 src/js/dig.ts	strikeUndiggable	rn2	"[""3""]"	constant
 src/js/do.ts	applyBoulderPitEffects	rnd	"[""15""]"	constant
-src/js/poison.ts	poisonHero	random	"[""10""]"	constant
-src/js/poison.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unproved
-src/js/poison.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
-src/js/poison.ts	poisonHero	rollDice	"[""4"", ""6""]"	constant
-src/js/poison.ts	poisonHero	rollOne	"[""6""]"	constant
 src/js/polyself.ts	applyFieryGaze	random	"[""20""]"	constant
 src/js/polyself.ts	applyFieryGaze	rollDice	"[""2"", ""6""]"	constant
 src/js/polyself.ts	beginMonsterForm	d	"[""monsterLevel"", ""4""]"	invariant

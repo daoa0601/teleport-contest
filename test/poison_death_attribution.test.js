@@ -5,7 +5,7 @@ import { A_STR, SICK_NONVOMITABLE } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { startHeroSickness } from '../js/potion.js';
-import { poisonHero } from '../js/poison.js';
+import { poisonHero } from '../js/attrib.js';
 import { LUMP_OF_ROYAL_JELLY } from '../js/object_data.js';
 import { fpostfx } from '../js/eat.js';
 import { loadScoreRecords } from '../js/score_records.js';

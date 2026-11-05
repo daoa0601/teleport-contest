@@ -39,7 +39,7 @@ import { isok } from './cmd.js';
 
 import { isIceAt, isLavaAt, isMoatAt, isPoolAt, closeDrawbridge, destroyDrawbridge, findDrawbridgeAt, openDrawbridge, drawbridgeUnderlyingType } from './dbridge.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag, artifactById } from './artifacts.js';
-import { exerciseAttribute, exerciseWisdom, currentAttribute } from './attrib.js';
+import { exerciseAttribute, exerciseWisdom, currentAttribute, poisonHero } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { canSeeMonster, consumeHallucinatedMenuObjectGlyph, docrt, glyphAt, newsym, shieldeff, unmap_invisible } from './display.js';
 import { pline, plineWithContinuation, set_msg_dir } from './pline.js';
@@ -174,7 +174,6 @@ import { findMonsterArmorClass } from './monworn.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects, monsterReflectsRay } from './muse.js';
 import { corpseName, distantObjectName, minimalObjectName, readObjectName, singularObjectName } from './objnam.js';
 import type { ToplineOptions } from './pline.js';
-import { poisonHero } from './poison.js';
 import { applyHeroGolemEffects, heroFormSticks, heroIsUnchanging, heroMonsterForm, heroSpecies, polymonHero, polymorphHero, returnHeroToHumanForm } from './polyself.js';
 import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } from './potion.js';
 import { propertyIsActive } from './properties.js';

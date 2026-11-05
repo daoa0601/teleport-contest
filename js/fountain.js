@@ -7,7 +7,7 @@ import { distmin } from './hacklib.js';
 import { fingersOrGloves } from './do_wear.js';
 import { heroArmName, heroFaceName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifacts.js';
-import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
 import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
@@ -38,7 +38,6 @@ import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardM
 import { morehungry, newuhs, vomit } from './eat.js';
 import { showEnlightenment } from './insight.js';
 import { fruitName } from './fruit.js';
-import { poisonHeroStrengthAndHp } from './poison.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
 import { encumber_msg } from './pickup.js';

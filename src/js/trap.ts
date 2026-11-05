@@ -133,7 +133,7 @@ import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './h
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { currentAttribute, exerciseAttribute, changeHeroLuck, adjustAttribute, attributeChangeMessage } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,
@@ -159,7 +159,6 @@ import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { poisonHero } from './poison.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
 import type { LevitationState, PropertyState } from './property_types.js';

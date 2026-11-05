@@ -15,7 +15,7 @@ import { encumber_msg } from '../js/pickup.js';
 import { AMULET_OF_LIFE_SAVING, DAGGER, GLOB_OF_GRAY_OOZE, GOLD_PIECE, HEAVY_IRON_BALL, ROCK, SCR_ENCHANT_WEAPON, WORM_TOOTH } from '../js/object_data.js';
 import { claimNextDueObjectTimer, scheduleObjectTimer, stopAllObjectTimers } from '../js/timeout.js';
 import { returnHeroToHumanForm } from '../js/polyself.js';
-import { poisonHero } from '../js/poison.js';
+import { poisonHero } from '../js/attrib.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { dismountHero } from '../js/steed.js';
 import { runObjectTimer } from '../js/timeout.js';
