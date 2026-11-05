@@ -115,7 +115,7 @@ import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject
 import { dist2, distmin } from './hacklib.js';
 
 import { shopkeeperName } from './shknam.js';
-import { heroHasEyes, monsterHandName } from './body_parts.js';
+
 import { heroGoldObject } from './hero_gold.js';
 import { canLetGo } from './do.js';
 import { canFallThrough } from './mklev.js';

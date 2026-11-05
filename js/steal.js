@@ -7,9 +7,8 @@ import { objectDelay, BOULDER, CORPSE, GOLD_PIECE, LEASH, OBJECT_NAMES, AMULET_O
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { plineWithContinuation } from './pline.js';
-import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, } from './const.js';
+import { LARGEST_INT, PLNMSG_MON_TAKES_OFF_ITEM, TT_BURIEDBALL, W_ACCESSORY, W_ARMG, W_ARMOR, W_WEAPONS, LOST_DROPPED, LOST_NONE, LOST_STOLEN, LOST_THROWN, RLOC_MSG, SHOPBASE, W_SADDLE, FOOT, HAND } from './const.js';
 import { canSeeMonster, canSpotMonster, newsym } from './display.js';
-import { heroFootName, monsterFootName, heroHandName } from './body_parts.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
 import { MONSTER_ATTACKS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
@@ -22,7 +21,7 @@ import { impossible } from './diagnostics.js';
 import { rn2 } from './rng.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { objectShedsLight, snuffLightSource } from './light.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { randomMonsterRelocation, relocateObjectRandomly, reportMonsterTeleportRestriction } from './teleport.js';
 import { openHoldingTrap, petrifyMonsterImmediately } from './trap.js';
@@ -387,7 +386,7 @@ export async function stealHeroGold(monster, state, publish, random, rollOne) {
         const species = steed ? steed.mnum : heroSpecies(state);
         const owner = steed ? possessiveName(monsterName(steed, { state, article: 'your' })) : 'your';
         const feet = monsterIsSlithy(species) ? 'coils'
-            : makePlural(steed ? monsterFootName(species) : heroFootName(state)).replace(/^rear /, '');
+            : makePlural(steed ? mbodypart(species, FOOT) : body_part(FOOT, state)).replace(/^rear /, '');
         await publish(`${monsterName(monster, { state, capitalized: true })} quickly snatches some gold from ${state.u.levitating || state.u.flying ? 'beneath' : 'between'} ${owner} ${feet}!`);
         if (!purse || random(5) === 0)
             await fleeWithGold(monster, state, publish, random, rollOne);
@@ -561,7 +560,7 @@ export async function maybeAbsorbItem(monster, object, state = game, ordinaryCha
             await plineWithContinuation(`${subject} pulls ${name} away from you and absorbs ${object.quan > 1 ? 'them' : 'it'}!`);
         }
         else {
-            const hand = heroHandName(state);
+            const hand = body_part(HAND, state);
             const hands = isBimanualObject(object) ? makePlural(hand) : hand;
             const subject = name.charAt(0).toUpperCase() + name.slice(1);
             await plineWithContinuation(`${subject} ${objectNameIsPlural(object, state) ? 'are' : 'is'} pulled from your ${hands}!`);

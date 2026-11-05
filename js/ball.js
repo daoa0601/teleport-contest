@@ -12,14 +12,13 @@ import { applyFloorEffects } from './floor_effects.js';
 import { hitFloorWithObject, rangedTargetHitBonus } from './dothrow.js';
 import { exerciseAttribute } from './attrib.js';
 import { objectIsHardHelmet } from './do_wear.js';
-import { heroHeadName, heroLegName } from './body_parts.js';
 import { removeHeroEquipment } from './hero_equipment.js';
 import { canLetGo } from './do.js';
 import { finishInventoryRemoval } from './invent.js';
 import { unlinkObject, placeObjectSynchronously, remove_object } from './mkobj.js';
 import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon } from './wield.js';
 import { rn1, rn2, rnd } from './rng.js';
-import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, Luck, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit } from './const.js';
+import { A_STR, BC_BALL, BC_CHAIN, D_CLOSED, D_LOCKED, DOOR, IS_OBSTRUCTED, KILLED_BY_AN, LEFT_SIDE, Luck, NO_KILLER_PREFIX, POOL, RIGHT_SIDE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Is_waterlevel, is_hole, is_pit, HEAD, LEG } from './const.js';
 import { dist2, distmin } from './hacklib.js';
 import { propertyIsActive } from './properties.js';
 import { heroIsBlind } from './senses.js';
@@ -30,6 +29,7 @@ import { hitMonsterWithHeroObject } from './uhitm.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { objectName, ownedObjectName } from './objnam.js';
 import { rayMissMessage } from './zap.js';
+import { body_part } from './polyself.js';
 export const BCPOS_DIFFER = 0;
 export const BCPOS_CHAIN = 1;
 export const BCPOS_BALL = 2;
@@ -87,7 +87,7 @@ export async function fallWithIronBall(state = game) {
     if (!hits)
         return false;
     let damage = rn1(7, 25);
-    await plineWithContinuation(`The iron ball falls on your ${heroHeadName(state)}.`);
+    await plineWithContinuation(`The iron ball falls on your ${body_part(HEAD, state)}.`);
     const helmet = state.uarmh || state.u.uarmh;
     if (helmet) {
         if (objectIsHardHelmet(helmet)) {
@@ -292,7 +292,7 @@ export async function dropBall(x, y, { state = game, publish = plineWithContinua
                 await publish(`${pullmsg}bear trap!`);
                 await woundHeroLegs(side === LEFT_SIDE ? 'left' : 'right', rn1(1000, 500), state, { publish });
                 if (!hero.usteed) {
-                    await publish(`Your ${side === LEFT_SIDE ? 'left' : 'right'} ${heroLegName(state)} is severely damaged.`);
+                    await publish(`Your ${side === LEFT_SIDE ? 'left' : 'right'} ${body_part(LEG, state)} is severely damaged.`);
                     let damage = 2;
                     if (hero.halfPhysicalDamage)
                         damage = Math.trunc((damage + 1) / 2);

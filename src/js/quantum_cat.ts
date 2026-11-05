@@ -1,8 +1,8 @@
 // C pickup.c:observe_quantum_cat(), shared by opening and final disclosure.
 
 import { monsterHasMapPosition } from './steed.js';
-import { heroFootName } from './body_parts.js';
-import { MM_ADJACENTOK, MM_NOMSG, NO_MINVENT } from './const.js';
+
+import { MM_ADJACENTOK, MM_NOMSG, NO_MINVENT, FOOT } from './const.js';
 import { canSpotMonster } from './display.js';
 import { randomDisplayMonsterName, randomDisplayMonsterSubject } from './do_name.js';
 import { plineWithContinuation as pline } from './pline.js';
@@ -23,6 +23,7 @@ import { heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { objectWeight } from './mkobj.js';
+import { body_part } from './polyself.js';
 
 interface QuantumCatOptions { makeCat?: boolean; showMessage?: boolean; state?: GameState }
 
@@ -63,7 +64,7 @@ export async function observeQuantumCat(box: GameObject, {
         setMonsterMalign(cat, state);
         if (showMessage) {
             if (!canSpotMonster(cat)) {
-                await pline(`You think something brushed your ${heroFootName()}.`);
+                await pline(`You think something brushed your ${body_part(FOOT)}.`);
             } else {
                 const subject = heroIsHallucinating(state)
                     ? randomDisplayMonsterSubject() : 'The housecat';

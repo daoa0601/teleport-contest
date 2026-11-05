@@ -8,10 +8,9 @@ import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
-import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
 import { bot } from './botl.js';
 import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation, paranoidQuery } from './cmd.js';
-import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
+import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL, FINGER, LIGHT_HEADED, STOMACH, NOSE } from './const.js';
 import { reviveCorpseImmediately } from './do.js';
 import { impossible } from './diagnostics.js';
 import { canSeeMonster, canSpotMonster, flush_screen, newsym, see_monsters, refreshHeroSeeing, curs_on_u } from './display.js';
@@ -39,7 +38,7 @@ import { heroIsInvisible, invisibilityIsBlocked, syncHeroInvisibility } from './
 import { retouchEquipment, retouchHeroObject } from './artifact.js';
 import { heroIsUnaware, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { putHeroToSleep } from './timeout.js';
-import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm, heroIsSlimeproof, } from './polyself.js';
+import { changeHeroSex, heroIsBreathless, heroSpecies, heroHasNoHands, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, polymonHero, polymorphHero, returnHeroToHumanForm, heroIsSlimeproof, body_part } from './polyself.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
 import { releaseObjectLeash } from './apply.js';
 import { recordLiteracy } from './literacy.js';
@@ -1217,7 +1216,7 @@ async function consume_tin(message, { state }) {
         if (preparation.greasy) {
             const old = state.u.glibTurns || 0;
             setSlipperyHands(old + rn1(11, 5), state);
-            const fingers = state.uarmg ? armorSimpleName(state.uarmg, state) : makePlural(heroFingerName(state));
+            const fingers = state.uarmg ? armorSimpleName(state.uarmg, state) : makePlural(body_part(FINGER, state));
             await plineWithContinuation(`Eating ${preparation.name} food made your ${fingers} ${old ? 'even more' : 'very'} slippery.`);
         }
     }
@@ -1336,7 +1335,7 @@ export async function start_tin(tin, { state = game } = {}) {
     else {
         await plineWithContinuation('It is not so easy to open this tin.');
         if ((state.u.glibTurns ?? 0) > 0 || state.u.glib) {
-            await plineWithContinuation(`The tin slips from your ${makePlural(heroFingerName(state))}.`);
+            await plineWithContinuation(`The tin slips from your ${makePlural(body_part(FINGER, state))}.`);
             if (objectQuantity(tin) > 1)
                 tin = splitTin(tin, state);
             if (tin.where === 'inventory')
@@ -1388,7 +1387,7 @@ export async function rottenfood(food, { state = game } = {}) {
     requirePlayingGame(state);
     await pline(`Blecch!  ${objectIsRottable(food, state) ? 'Rotten' : 'Awful'} ${foodword(food, state)}!`);
     if (!rn2(4)) {
-        await pline(formatFeltMessage(`rather ${heroIsHallucinating(state) ? 'trippy' : heroLightHeadedFeeling(state)}.`, state));
+        await pline(formatFeltMessage(`rather ${heroIsHallucinating(state) ? 'trippy' : body_part(LIGHT_HEADED, state)}.`, state));
         await makeConfused((state.u.confusionTurns || 0) + d(2, 4), { state, talk: false });
     }
     else if (!rn2(4) && !heroIsBlind(state)) {
@@ -1632,7 +1631,7 @@ export async function fprefx(food, { state = game } = {}) {
             await pline(heroIsHallucinating(state)
                 ? 'Oh wow, like, superior, man!' : 'This food really hits the spot!');
         else if (state.u.uhunger < 700)
-            await pline(`This satiates your ${heroStomachName(state)}!`);
+            await pline(`This satiates your ${body_part(STOMACH, state)}!`);
         return !state.program_state.gameover;
     }
     else if (type === TRIPE_RATION) {
@@ -2082,7 +2081,7 @@ export async function edibility_prompts(object, { state = game } = {}) {
         return true;
     const quantity = objectQuantity(object);
     const answer = await promptYesNo(`${warning}  Eat ${quantity === 1 ? 'it' : 'one'} anyway?`);
-    await immediatePline(`Your ${heroNoseName(state)} stops tingling and your sense of smell returns to normal.`);
+    await immediatePline(`Your ${body_part(NOSE, state)} stops tingling and your sense of smell returns to normal.`);
     state.u.uedibility = 0;
     return answer === 'y';
 }
@@ -2701,7 +2700,7 @@ export async function vomit({ state = game, publish = immediatePline, angerAltar
         if ((hero.sickType ?? 0) & SICK_VOMITABLE)
             await cureHeroSicknessWithMessages(state, SICK_VOMITABLE, publish);
         if (hungerState >= FAINTING)
-            await publish(`Your ${heroStomachName(state)} heaves convulsively!`);
+            await publish(`Your ${body_part(STOMACH, state)} heaves convulsively!`);
     }
     if (currentMulti(state) >= -2) {
         nomul(-2, state);

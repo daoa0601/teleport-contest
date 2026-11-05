@@ -14,7 +14,6 @@ import {
 } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
-import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import {
     applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness,
 } from './blinding_attack.js';
@@ -38,7 +37,7 @@ import {
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR } from './const.js';
+import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_CROSSBOW, P_DAGGER, P_DART, P_KNIFE, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_NONDIGGABLE, W_WEP, WT_IRON_BALL_INCR, ARM, HAND, FOOT } from './const.js';
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import {
@@ -52,7 +51,7 @@ import { holdAnotherObject, stack_object } from './invent.js';
 import { rejectMonsterShadeContact, applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
-import { heroSpecies, heroHasNoHands } from './polyself.js';
+import { heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { objectShedsLight } from './light.js';
 import { revealMonsterAppearance, wakeMonstersNearWithMessages, angerAttackedMonster, finishEnvironmentalMonsterDeath, finishMonsterKilled,
@@ -767,7 +766,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             const lastMessage = state.lastMonsterWeaponReturnMessage;
             if (!lastMessage || state.moves - lastMessage > 500) {
                 await publish(`${definiteObjectAction(weapon, 'return', state)} to ${possessiveName(name())} ${
-                    monsterHandName(monster.mnum)
+                    mbodypart(monster.mnum, HAND)
                 }!`);
                 state.lastMonsterWeaponReturnMessage = state.moves;
             }
@@ -786,7 +785,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
         let damage = random(2);
         if (!damage) {
             if (visible) {
-                const feet = makePlural(monsterFootName(monster.mnum));
+                const feet = makePlural(mbodypart(monster.mnum, FOOT));
                 await publish(`${definiteObjectAction(weapon, 'return', state)} back to ${name()}, landing at ${monsterPossessive(monster, { state })} ${feet}.`);
             } else if (!heroIsDeaf(state)) {
                 await publishHeardMessage(`Something land near ${name()}.`, publish, state);
@@ -796,7 +795,7 @@ export async function returnMonsterWeapon(monster: Monster, weapon: GameObject, 
             if (visible) {
                 // C uses body_part(ARM), which describes the hero's form.
                 await publish(`${definiteObjectAction(weapon, 'fly', state)} back toward ${name()}, hitting ${monsterPossessive(monster, { state })} ${
-                    heroArmName(state)
+                    body_part(ARM, state)
                 }!`);
             } else if (!heroIsDeaf(state)) {
                 await publishHeardMessage(`something hit ${name()} with a thud!`, publish, state);

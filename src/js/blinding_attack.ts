@@ -2,10 +2,10 @@
 // C refs: mondata.c can_blnd(), uhitm.c hmon_hitmon_misc_obj(), and
 // mthrowu.c m_throw()/ohitmon().
 
-import { W_ARMH } from './const.js';
+import { W_ARMH, EYE, FACE } from './const.js';
 import { OBJ_DESCR } from './o_init.js';
 import { heroHasArtifactDefense, monsterHasArtifactDefense } from './artifact.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, body_part, mbodypart } from './polyself.js';
 import { heroIsUnaware, blindfolded, heroIsBlind } from './senses.js';
 import {
     AD_BLND, AT_BOOM, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE,
@@ -18,14 +18,14 @@ import type { Monster } from './monster_types.js';
 import { MONSTER_ATTACKS, MONSTER_NAME } from './monster_data.js';
 import {
     BLINDING_VENOM, CREAM_PIE, } from './object_data.js';
-import { heroEyeCount, heroEyeName, heroFaceName, heroHasEyes, monsterFaceName } from './body_parts.js';
+
 import { makePlural, verbForSubject, objectName, pluralizeObjectNoun } from './objnam.js';
 import { rnd } from './rng.js';
 import { makeBlinded } from './potion.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { monsterName } from './do_name.js';
-import { monsterHasEyes } from './mondata.js';
+import { monsterHasEyes, eyecount } from './mondata.js';
 
 const PM_FLOATING_EYE = MONSTER_NAME.indexOf('floating eye');
 const PM_RAVEN = MONSTER_NAME.indexOf('raven');
@@ -55,7 +55,7 @@ function wearsVisoredHelmet(objects: readonly GameObject[], state: GameState): b
 export function heroCanBeBlindedByContact(
     attacker: Monster, attackType: number, state: GameState = game,
 ): boolean {
-    if (!heroHasEyes(state)) return false;
+    if (!monsterHasEyes(heroSpecies(state))) return false;
     // "a crow will not pluck out the eye of another crow"
     if (attacker.mnum === PM_RAVEN && heroSpecies(state) === PM_RAVEN) return false;
     if ([AT_EXPL, AT_BOOM, AT_GAZE, AT_MAGC, AT_BREA].includes(attackType))
@@ -137,7 +137,7 @@ function creamPieTarget(monster: Monster, name: string): string {
     const hasFace = monsterHasEyes(monster.mnum)
         && monster.mnum !== PM_FLOATING_EYE;
     if (!hasFace) return name;
-    const face = monsterFaceName(monster.mnum);
+    const face = mbodypart(monster.mnum, FACE);
     return /s$/i.test(name) ? `${name}' ${face}` : `${name}'s ${face}`;
 }
 
@@ -156,7 +156,7 @@ export function blindMonsterWithThrownObject(
 
 export function heroCanBeBlindedByVenom(state: GameState = game): boolean {
     const hero = state.u;
-    if (!heroHasEyes(state)
+    if (!monsterHasEyes(heroSpecies(state))
         || state.ublindf || hero.ublindf || hero.ucreamed) return false;
 
     const helmet = state.uarmh || hero.uarmh;
@@ -167,7 +167,7 @@ export function heroCanBeBlindedByVenom(state: GameState = game): boolean {
 }
 
 function heroCanBeBlindedByCreamPie(state: GameState): boolean {
-    return heroHasEyes(state) && !blindfolded(state);
+    return monsterHasEyes(heroSpecies(state)) && !blindfolded(state);
 }
 
 export function heroCanBeBlindedByObject(
@@ -187,14 +187,14 @@ export function heroCanBeBlindedByObject(
 
 function venomBlindMessage(state: GameState, wasBlind: boolean): string {
     if (!wasBlind) return 'The venom blinds you.';
-    const eye = heroEyeName(state);
-    const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+    const eye = body_part(EYE, state);
+    const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
     return `Your ${eyes} ${verbForSubject(eyes, 'sting')}.`;
 }
 
 function creamPieBlindMessage(state: GameState, wasBlind: boolean): string {
     return wasBlind
-        ? `There's something sticky all over your ${heroFaceName(state)}.`
+        ? `There's something sticky all over your ${body_part(FACE, state)}.`
         : "Yecch!  You've been creamed.";
 }
 

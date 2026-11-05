@@ -18,9 +18,9 @@ import type { GameObject } from './object_types.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
+import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
-import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
+import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
 import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
@@ -48,7 +48,7 @@ import { getRumor } from './mklev.js';
 import { exerciseAttribute } from './attrib.js';
 import { finishHeroDeath } from './end.js';
 import type { DeathHandler } from './end.js';
-import { monsterNeckName } from './body_parts.js';
+
 import { loseHeroExperience } from './exper.js';
 import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
 import { formatFeltMessage } from './hero_speech.js';
@@ -1766,7 +1766,7 @@ async function applyBeheading(
             return { damage: 0, specialMessage: true };
         }
         if (monsterIsNoncorporeal(species) || monsterIsAmorphous(species)) {
-            await publish(`Vorpal Blade slices through your ${monsterNeckName(species.mnum)}.`);
+            await publish(`Vorpal Blade slices through your ${mbodypart(species.mnum, NECK)}.`);
             return { damage, specialMessage: true };
         }
         await publish(`Vorpal Blade ${random(2) === 0 ? 'beheads' : 'decapitates'} you!`);
@@ -1816,7 +1816,7 @@ async function applyBeheading(
         return { damage: 0, specialMessage: !attacker || visible, attackStopped: true };
     }
     if (monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster)) {
-        await publish(`Vorpal Blade slices through ${possessiveTarget(describeTarget())} ${monsterNeckName(monster.mnum)}.`);
+        await publish(`Vorpal Blade slices through ${possessiveTarget(describeTarget())} ${mbodypart(monster.mnum, NECK)}.`);
         return { damage, specialMessage: true };
     }
 

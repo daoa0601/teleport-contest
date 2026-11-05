@@ -2,7 +2,7 @@
 
 import { POTION_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroHeadName } from './body_parts.js';
+
 import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -13,7 +13,7 @@ import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
 import {
     applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, randomBottleName,
 } from './potion.js';
-import { heroIsUnchanging, polymorphHero } from './polyself.js';
+import { heroIsUnchanging, polymorphHero, body_part } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
@@ -23,6 +23,7 @@ import type { MessagePublisher } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import { loseHeroHp } from './hack.js';
+import { HEAD } from './const.js';
 
 
 interface HeroPotionImpactOptions {
@@ -43,7 +44,7 @@ export async function hitHeroWithThrownPotion(potion: GameObject, {
     if (potion.where !== 'free' || potion.oclass !== POTION_CLASS)
         throw new TypeError('Thrown potion impact requires the free potion from projectile flight');
     const bottle = randomBottleName(state, random);
-    await publish(`The ${bottle} crashes on your ${heroHeadName(state)} and breaks into shards.`);
+    await publish(`The ${bottle} crashes on your ${body_part(HEAD, state)} and breaks into shards.`);
     let heroDied = await loseHeroHp(physicalDamage(rollOne(2), state), `${source} potion`, { state, publish });
     if (!heroDied) {
         if (potion.otyp !== POT_OIL && cansee(state.u.ux, state.u.uy))

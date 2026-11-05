@@ -371,7 +371,8 @@ export const BACKTRACK = -1;
 
 // Body-part selector enum (include/hack.h enum bodypart_types; src/polyself.c)
 // Runtime fields:
-// - body_part(partId) and mbodypart(mon, partId) selector args
+// - body_part(partId) and mbodypart(mon, partId) selector args; the hack.h
+//   NO_PART below is the invalid selector caught by mbodypart()'s guard
 // - message formatting for anatomy-dependent text
 export const ARM = 0;
 export const EYE = 1;

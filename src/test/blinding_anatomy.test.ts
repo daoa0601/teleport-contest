@@ -2,14 +2,14 @@ import { ensureQuestStatus } from '../js/quest.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { finishHeroThrownBlindness, prepareHeroThrownBlindness } from '../js/blinding_attack.js';
-import { heroEyeCount } from '../js/body_parts.js';
+import { eyecount } from '../js/mondata.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { clearMessageWindow } from '../js/tty_topline.js';
 import { fixPrayerTrouble, Trouble } from '../js/pray.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { BLINDING_VENOM, CREAM_PIE } from '../js/object_data.js';
-import { polymonHero } from '../js/polyself.js';
+import { heroSpecies, polymonHero } from '../js/polyself.js';
 import { heroIsBlind, setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryItem } from '../js/invent.js';
 import { cansee } from '../js/vision.js';
@@ -98,15 +98,15 @@ void test('eye count follows the body rather than its current blindness', async 
     requirePlayingGame(game);
     const input = resetInputState();
     input.beforeRead = () => input.feed(' ');
-    assert.equal(heroEyeCount(), 2);
+    assert.equal(eyecount(heroSpecies()), 2);
     setHeroBlindnessTurns(5);
-    assert.equal(heroEyeCount(), 2);
+    assert.equal(eyecount(heroSpecies()), 2);
     await polymonHero(MONSTER_NAME.indexOf('floating eye'));
-    assert.equal(heroEyeCount(), 1);
+    assert.equal(eyecount(heroSpecies()), 1);
 
     await polymonHero(MONSTER_NAME.indexOf('yellow light'));
 
-    assert.equal(heroEyeCount(), 0);
+    assert.equal(eyecount(heroSpecies()), 0);
     assert.equal(prepareHeroThrownBlindness(CREAM_PIE), null);
     assert.equal(prepareHeroThrownBlindness(BLINDING_VENOM), null);
 });

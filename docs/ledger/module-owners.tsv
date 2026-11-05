@@ -4,7 +4,6 @@ src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
-src/js/body_parts.ts	polyself.c
 src/js/botl.ts	botl.c
 src/js/breath_ray.ts	mthrowu.c
 src/js/calendar.ts	calendar.c

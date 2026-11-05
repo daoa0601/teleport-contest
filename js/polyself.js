@@ -1,6 +1,7 @@
 // Hero form changes and equipment.
 // C refs: polyself.c polyself(), polymon(), set_uasmon(), polysense(),
-// newman(), break_armor(), drop_weapon(), the #monster abilities
+// newman(), break_armor(), drop_weapon(), mbodypart(), body_part(), the
+// #monster abilities
 // (dobreathe, dospit, doremove, dospinweb, dosummon, dogaze, dopoly,
 // domindblast), uunstick(), ugolemeffects(), armor_to_dragon(),
 // ugenocided(), udeadinside().
@@ -13,16 +14,15 @@ import { formatFeltMessage } from './hero_speech.js';
 import { cansee, couldsee, monsterEmitsLight } from './vision.js';
 import { weaponDescription } from './weapon.js';
 import { isWeldedPrimary, uswapwepgone, uwepgone, heroCanUseTwoWeapons, stopTwoWeaponCombat } from './wield.js';
-import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, G_GENOD, I_SPECIAL, In_endgame, M_AP_NOTHING, M_AP_OBJECT, STR18, STR19, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT } from './const.js';
+import { BOLT_LIM, P_SHORT_SWORD, P_SABER, ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, GENOCIDED, HOLE, IS_AIR, IS_SOFT, KILLED_BY, LANDMINE, LEVEL_TELEP, LOST_THROWN, M_AP_FURNITURE, M_AP_TYPE, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SHOPBASE, SHOP_WEB_COST, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STAIRS, STONING, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, A_CHA, A_CON, A_DEX, A_STR, A_WIS, ARM, EYE, FINGER, FINGERTIP, FOOT, G_GENOD, HAIR, HAND, HANDED, HEAD, I_SPECIAL, In_endgame, LEG, M_AP_NOTHING, M_AP_OBJECT, NECK, NO_PART, NOSE, STR18, STR19, TOE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_MONSTER, POLY_NOFLAGS, POLY_REVERT, W_ACCESSORY, W_ARMOR, W_SADDLE, STRANGE_OBJECT } from './const.js';
 import { corpseName, verbForSubject, makePlural, withIndefiniteArticle, minimalObjectName, ownedObjectName, simpleObjectName } from './objnam.js';
 import { learnObjectType, observeObject } from './o_init.js';
-import { heroNeckName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { finishHeroDeath } from './end.js';
 import { captureThrownObjectFlight, flyHeroThrownObject, heroThrowTrajectory } from './thrown_object.js';
 import { heroBreathAttack, hitHeroWithRay, destroyFireMonsterInventory, monsterHasElementalResistance } from './zap.js';
 import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePack, wereBeastForSpecies } from './were.js';
-import { AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
+import { AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import { character_race, races } from './role.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
@@ -59,7 +59,7 @@ import { grantIntrinsicProperty, refreshMovementProperties, refreshProperty, rev
 import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
-import { nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision, is_dwarf, is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport, monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs, monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates, strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies, } from './mondata.js';
+import { nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision, is_dwarf, is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport, monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs, monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall, monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates, strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies, PM_STONE_GOLEM, } from './mondata.js';
 import { getLine, promptYesNo } from './query.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { retouchEquipment } from './artifact.js';
@@ -443,7 +443,7 @@ export async function restartAmuletStrangulation(state = game, publish = plineWi
     refreshProperty('strangled', state);
     const action = wasStrangled ? 'still constricts' : 'begins constricting';
     const name = simpleObjectName(amulet, state);
-    await publish(`Your ${name} ${action} your ${heroNeckName(state)}!`);
+    await publish(`Your ${name} ${action} your ${body_part(NECK, state)}!`); /* "throat" */
     learnObjectType(AMULET_OF_STRANGULATION, state);
 }
 function speciesEntry(table, species) {
@@ -2189,6 +2189,258 @@ async function restoreDragonArmor(state = game, publish = plineWithContinuation)
     armor.wornSlot = 'uarm';
     if (armor.lamplit)
         await adjustObjectLight(armor, oldLight, state);
+}
+const S_BLOB = 2;
+const S_CENTAUR = 29;
+const S_UNICORN = 21;
+const S_VORTEX = 22;
+const S_COCKATRICE = 3;
+const S_DOG = 4;
+const S_EEL = 57;
+const S_ELEMENTAL = 31;
+const S_EYE = 5;
+const S_FELINE = 6;
+const S_FUNGUS = 32;
+const S_JELLY = 10;
+const S_LIGHT = 25;
+const S_PUDDING = 42;
+const S_RODENT = 18;
+const S_SPIDER = 19;
+const S_WORM = 23;
+const S_YETI = 51;
+// not_claws: humanoids whose claw attacks should still read as hands
+const S_HUMAN = 53;
+const S_MUMMY = 39;
+const S_ZOMBIE = 52;
+const S_ANGEL = 27;
+const S_LEPRECHAUN = 12;
+const S_QUANTMECH = 43;
+const S_VAMPIRE = 48;
+const S_ORC = 15;
+const S_GIANT = 34;
+const PM_ROTHE = MONSTER_NAME.indexOf('rothe');
+const PM_KI_RIN = MONSTER_NAME.indexOf('ki-rin');
+const PM_RAVEN = MONSTER_NAME.indexOf('raven');
+const PM_OWLBEAR = MONSTER_NAME.indexOf('owlbear');
+const PM_JELLYFISH = MONSTER_NAME.indexOf('jellyfish');
+const PM_KRAKEN = MONSTER_NAME.indexOf('kraken');
+const PM_MUMAK = MONSTER_NAME.indexOf('mumak');
+const PM_MASTODON = MONSTER_NAME.indexOf('mastodon');
+const PM_SHARK = MONSTER_NAME.indexOf('shark');
+const PM_STALKER = MONSTER_NAME.indexOf('stalker');
+const PM_AMOROUS_DEMON = MONSTER_NAME.indexOf('amorous demon');
+const humanoid_parts = [
+    'arm', 'eye', 'face', 'finger',
+    'fingertip', 'foot', 'hand', 'handed',
+    'head', 'leg', 'light headed', 'neck',
+    'spine', 'toe', 'hair', 'blood',
+    'lung', 'nose', 'stomach',
+];
+const jelly_parts = [
+    'pseudopod', 'dark spot', 'front',
+    'pseudopod extension', 'pseudopod extremity',
+    'pseudopod root', 'grasp', 'grasped',
+    'cerebral area', 'lower pseudopod', 'viscous',
+    'middle', 'surface', 'pseudopod extremity',
+    'ripples', 'juices', 'surface', 'sensor',
+    'stomach',
+];
+const animal_parts = [
+    'forelimb', 'eye', 'face',
+    'foreclaw', 'claw tip', 'rear claw',
+    'foreclaw', 'clawed', 'head',
+    'rear limb', 'light headed', 'neck',
+    'spine', 'rear claw tip', 'fur',
+    'blood', 'lung', 'nose',
+    'stomach',
+];
+const bird_parts = [
+    'wing', 'eye', 'face', 'wing',
+    'wing tip', 'foot', 'wing', 'winged',
+    'head', 'leg', 'light headed', 'neck',
+    'spine', 'toe', 'feathers', 'blood',
+    'lung', 'bill', 'stomach',
+];
+const horse_parts = [
+    'foreleg', 'eye', 'face',
+    'forehoof', 'hoof tip', 'rear hoof',
+    'forehoof', 'hooved', 'head',
+    'rear leg', 'light headed', 'neck',
+    'backbone', 'rear hoof tip', 'mane',
+    'blood', 'lung', 'nose',
+    'stomach',
+];
+const sphere_parts = [
+    'appendage', 'optic nerve', 'body', 'tentacle',
+    'tentacle tip', 'lower appendage', 'tentacle',
+    'tentacled', 'body', 'lower tentacle',
+    'rotational', 'equator', 'body',
+    'lower tentacle tip', 'cilia', 'life force',
+    'retina', 'olfactory nerve', 'interior',
+];
+const fungus_parts = [
+    'mycelium', 'visual area', 'front',
+    'hypha', 'hypha', 'root',
+    'strand', 'stranded', 'cap area',
+    'rhizome', 'sporulated', 'stalk',
+    'root', 'rhizome tip', 'spores',
+    'juices', 'gill', 'gill',
+    'interior',
+];
+const vortex_parts = [
+    'region', 'eye', 'front',
+    'minor current', 'minor current', 'lower current',
+    'swirl', 'swirled', 'central core',
+    'lower current', 'addled', 'center',
+    'currents', 'edge', 'currents',
+    'life force', 'center', 'leading edge',
+    'interior',
+];
+const snake_parts = [
+    'vestigial limb', 'eye', 'face', 'large scale',
+    'large scale tip', 'rear region', 'scale gap',
+    'scale gapped', 'head', 'rear region',
+    'light headed', 'neck', 'length', 'rear scale',
+    'scales', 'blood', 'lung', 'forked tongue',
+    'stomach',
+];
+const worm_parts = [
+    'anterior segment', 'light sensitive cell',
+    'clitellum', 'setae', 'setae', 'posterior segment',
+    'segment', 'segmented', 'anterior segment',
+    'posterior', 'over stretched', 'clitellum',
+    'length', 'posterior setae', 'setae', 'blood',
+    'skin', 'prostomium', 'stomach',
+];
+const spider_parts = [
+    'pedipalp', 'eye', 'face', 'pedipalp', 'tarsus',
+    'claw', 'pedipalp', 'palped', 'cephalothorax',
+    'leg', 'spun out', 'cephalothorax', 'abdomen',
+    'claw', 'hair', 'hemolymph', 'book lung',
+    'labrum', 'digestive tract',
+];
+const fish_parts = [
+    'fin', 'eye', 'premaxillary', 'pelvic axillary',
+    'pelvic fin', 'anal fin', 'pectoral fin', 'finned',
+    'head', 'peduncle', 'played out', 'gills',
+    'dorsal fin', 'caudal fin', 'scales', 'blood',
+    'gill', 'nostril', 'stomach',
+];
+/* claw attacks are overloaded in mons[]; most humanoids with
+   such attacks should still reference hands rather than claws */
+const not_claws = [
+    S_HUMAN, S_MUMMY, S_ZOMBIE, S_ANGEL, S_NYMPH, S_LEPRECHAUN,
+    S_QUANTMECH, S_VAMPIRE, S_ORC, S_GIANT, /* quest nemeses */
+];
+// C indexes the static part tables directly; out-of-range part ids (a port
+// bug) fall back to the bad-part name rather than reading past the table.
+function tablePart(parts, part) {
+    return parts[part] ?? 'mystery part';
+}
+// C polyself.c:mbodypart()
+export function mbodypart(mnum, part) {
+    const symbol = MONSTER_SYMBOL[mnum] ?? -1;
+    if (part <= NO_PART) {
+        // C reports impossible("mbodypart: bad part %d", part); the port only
+        // passes the bodypart_types ids from const.ts, so this is unreachable
+        // and a sync lookup has no message publisher.
+        return 'mystery part';
+    }
+    /* some special cases */
+    if (symbol === S_DOG || symbol === S_FELINE || symbol === S_RODENT
+        || mnum === PM_OWLBEAR) {
+        if (part === HAND)
+            return 'paw';
+        if (part === HANDED)
+            return 'pawed';
+        if (part === FOOT)
+            return 'rear paw';
+        if (part === ARM || part === LEG)
+            return tablePart(horse_parts, part); /* "foreleg", "rear leg" */
+        /* for other parts, use animal_parts[] below */
+    }
+    else if (symbol === S_YETI) { /* excl. owlbear due to 'if' above */
+        /* opposable thumbs, hence "hands", "arms", "legs", &c */
+        return tablePart(humanoid_parts, part); /* yeti/sasquatch, monkey/ape */
+    }
+    if ((part === HAND || part === HANDED)
+        && (monsterIsHumanoid(mnum)
+            && (MONSTER_ATTACKS[mnum] || []).some(([attackType]) => attackType === AT_CLAW) /* attacktype() */
+            && !not_claws.includes(symbol) && mnum !== PM_STONE_GOLEM
+            && mnum !== PM_AMOROUS_DEMON))
+        return (part === HAND) ? 'claw' : 'clawed';
+    if ((mnum === PM_MUMAK || mnum === PM_MASTODON)
+        && part === NOSE)
+        return 'trunk';
+    if (mnum === PM_SHARK && part === HAIR)
+        return 'skin'; /* sharks don't have scales */
+    if ((mnum === PM_JELLYFISH || mnum === PM_KRAKEN)
+        && (part === ARM || part === FINGER || part === HAND || part === FOOT
+            || part === TOE))
+        return 'tentacle';
+    if (mnum === PM_FLOATING_EYE && part === EYE)
+        return 'cornea';
+    if (monsterIsHumanoid(mnum) && (part === ARM || part === FINGER
+        || part === FINGERTIP
+        || part === HAND || part === HANDED))
+        return tablePart(humanoid_parts, part);
+    if (symbol === S_COCKATRICE)
+        return tablePart(part === HAIR ? snake_parts : bird_parts, part);
+    if (mnum === PM_RAVEN)
+        return tablePart(bird_parts, part);
+    if (symbol === S_CENTAUR || symbol === S_UNICORN
+        || mnum === PM_KI_RIN
+        || (mnum === PM_ROTHE && part !== HAIR))
+        return tablePart(horse_parts, part);
+    if (symbol === S_LIGHT) {
+        if (part === HANDED)
+            return 'rayed';
+        else if (part === ARM || part === FINGER || part === FINGERTIP
+            || part === HAND)
+            return 'ray';
+        else
+            return 'beam';
+    }
+    if (mnum === PM_STALKER && part === HEAD)
+        return 'head';
+    if (symbol === S_EEL && mnum !== PM_JELLYFISH)
+        return tablePart(fish_parts, part);
+    if (symbol === S_WORM)
+        return tablePart(worm_parts, part);
+    if (symbol === S_SPIDER)
+        return tablePart(spider_parts, part);
+    if (monsterIsSlithy(mnum) || (symbol === S_DRAGON && part === HAIR))
+        return tablePart(snake_parts, part);
+    if (symbol === S_EYE)
+        return tablePart(sphere_parts, part);
+    if (symbol === S_JELLY || symbol === S_PUDDING
+        || symbol === S_BLOB || mnum === PM_JELLYFISH)
+        return tablePart(jelly_parts, part);
+    if (symbol === S_VORTEX || symbol === S_ELEMENTAL)
+        return tablePart(vortex_parts, part);
+    if (symbol === S_FUNGUS)
+        return tablePart(fungus_parts, part);
+    if (monsterIsHumanoid(mnum))
+        return tablePart(humanoid_parts, part);
+    return tablePart(animal_parts, part);
+}
+// The permonst index of the hero's current body, this port's model of
+// youmonst.data: u.umonnum when polymorphed, the saved role body otherwise.
+function currentHeroMonsterNumber(state) {
+    const current = state.u.umonnum;
+    if (typeof current === 'number' && Number.isInteger(current))
+        return current;
+    const original = state.u.umonster;
+    if (typeof original === 'number' && Number.isInteger(original))
+        return original;
+    const role = state.urole;
+    if (role && Number.isInteger(role.mnum))
+        return SPECIAL_PM + 1 + role.mnum;
+    return PM_HUMAN;
+}
+// C polyself.c:body_part()
+export function body_part(part, state = game) {
+    return mbodypart(currentHeroMonsterNumber(state), part);
 }
 // C polyself.c:armor_to_dragon(): scales and scale mail use the same color order.
 export function dragonFormForArmor(object) {

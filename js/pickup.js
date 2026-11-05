@@ -5,12 +5,12 @@ import { commandResultCancelled, cmdq_add_ec, setMulti, getAdjacentLocation, iso
 import { endVoluntaryMultiTurn, nomul, roomsAt, exceedsActionCapacity, nearCapacity, loseHeroHp, heroGoldAmount, calcCapacity, invWeight, MOD_ENCUMBER, weightCapacity, } from './hack.js';
 import { monsterStagger, monsterIsBig, monsterThrowsRocks } from './mondata.js';
 import { MONSTER_NAME } from './monster_data.js';
-import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed } from './polyself.js';
+import { heroSpecies, heroCannotTake, heroFormHidesUnderObjects, heroHasNoHands, heroHasNoLimbs, heroIsPolymorphed, body_part } from './polyself.js';
 import { game, requireGameLevel } from './gstate.js';
 import { isLavaAt, isPoolAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { definiteName, objectCombatName, objectNameIsPlural, objectQuestion, observeObjectForNaming, ownedSimpleObjectName, simpleObjectName, simpleObjectNameWithArticle, makeSingular, objectDescription, makePlural, withIndefiniteArticle, wishedObjectPresentation, ownedObjectAction, definiteObjectAction, ownedObjectQuestion, corpseName, killerObjectName, } from './objnam.js';
 import { autokey, autoUnlockFlags, pickLock, isForceableWeapon } from './lock.js';
-import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL } from './const.js';
+import { CQ_CANNED, ECMD_OK, ECMD_TIME, ECMD_CANCEL, ALTAR, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_FORCE, AUTOUNLOCK_UNTRAP, SHOPBASE, A_WIS, STONE, W_WEP, W_ARMOR, W_ACCESSORY, is_pit, GRAVE, ICE, P_BASIC, P_RIDING, LOST_THROWN, LOST_STOLEN, LOST_DROPPED, LOST_EXPLODING, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MENU_COMBINATION, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPINVERT, PLNMSG_OBJNAM_ONLY, PLNMSG_BACK_ON_GROUND, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_EXCLUDE_SELECTABLE, PARANOID_AUTOALL, PARANOID_CONFIRM, SORTLOOT_INVLET, OBJECT_TIMER_KIND, THRONE, T_LOOTED, DRAWBRIDGE_UP, IS_FURNITURE, IS_LAVA, IS_POOL, HAND } from './const.js';
 import { inventoryClassOrder, lootSortMode, objectClassHeading, sortObjects, selectInventoryObject, inventoryItemDescription, inventoryPrimaryHandDetail, mergable, consumeObjectCharge, dolook, addInventoryItem, chooseInventoryObject, currency, dungeonFeatureAt, finishInventoryRemoval, floorObjectDescription, freeInventoryObject, getobj, lookHere, pricedFloorObjectDescription, readFloorEngraving, recordHeroPrizeAcquisition, useUpInventoryStack, feelPetrifyingCorpse, willFeelPetrifyingCorpse, } from './invent.js';
 import { tryCallObjectType, dropObjectAtHero, dropInventoryObjectAtHero } from './do.js';
 import { objectQuantity, splitObjectStack, unlinkMonsterObject, addObjectToContainer, unlinkObject, objectWeight, startCorpseTimeout, remove_object, useHornOfPlenty, isContainer, containerWeight, restoreRejectedSplit, startGlobTimeout } from './mkobj.js';
@@ -41,7 +41,6 @@ import { removeObjectFromMonsterInventory } from './monworn.js';
 import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2, rnd, d } from './rng.js';
-import { heroHandName } from './body_parts.js';
 import { tipWornHelmet } from './tip_hat.js';
 import { reviveCorpseImmediately } from './do.js';
 import { exerciseAttribute } from './attrib.js';
@@ -954,7 +953,7 @@ export async function ableToLoot(x, y, looting) {
         return false;
     }
     if (looting && !heroHasFreeHand(game)) {
-        await plineWithContinuation(`Without a free ${heroHandName()}, you cannot loot anything.`);
+        await plineWithContinuation(`Without a free ${body_part(HAND)}, you cannot loot anything.`);
         return false;
     }
     return true;
@@ -1260,7 +1259,7 @@ async function tipDestination(source) {
     const hands = targets.length === 0 || (!heroHasNoHands(game) && heroHasFreeHand(game));
     if (!hands)
         await plineWithContinuation(heroHasNoHands(game) ? 'You have no hands!'
-            : `You have no free ${heroHandName()}.`);
+            : `You have no free ${body_part(HAND)}.`);
     for (const object of targets) {
         if (!hands || object.olocked && object.lknown || !object.invlet)
             items.push({ selectable: false, text: `    ${await containerDescription(object)}` });
@@ -2052,7 +2051,7 @@ function rejectedPutMessage(container, object, state) {
     if (weldedPrimary(object, state)) {
         object.bknown = true;
         observeObjectForNaming(object, { state });
-        const hand = heroHandName(state);
+        const hand = body_part(HAND, state);
         return `${ownedObjectAction(object, 'are', state)} welded to your ${isBimanualObject(object) ? makePlural(hand) : hand}!`;
     }
     return null;
@@ -2421,7 +2420,7 @@ export async function use_container(container, { held = false, moreContainers = 
             return { spentTime: false, container };
         }
         if (!heroHasFreeHand(game)) {
-            await pline(`You have no free ${heroHandName()}.`);
+            await pline(`You have no free ${body_part(HAND)}.`);
             return { spentTime: false, container };
         }
         container.contents ||= [];

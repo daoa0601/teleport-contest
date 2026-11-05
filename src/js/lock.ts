@@ -14,7 +14,7 @@ import {
 } from './object_data.js';
 import { currency, stack_object } from './invent.js';
 import { currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
-import { CQ_CANNED, A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level } from './const.js';
+import { CQ_CANNED, A_CON, A_DEX, A_STR, P_DAGGER, P_FLAIL, P_LANCE, P_PICK_AXE, AUTOUNLOCK_APPLY_KEY, AUTOUNLOCK_KICK, DBWALL, DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, SHOPBASE, SHOP_DOOR_COST, TT_PIT, A_WIS, AUTOUNLOCK_UNTRAP, AUTOUNLOCK_FORCE, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, SDOOR, Is_rogue_level, FINGER } from './const.js';
 import { isok } from './cmd.js';
 import { commandResultCancelled, cmdq_add_dir, cmdq_add_ec } from './cmd.js';
 import { game, requireGameLevel, requirePlayingGame, requireLiveGame } from './gstate.js';
@@ -27,7 +27,7 @@ import { vision_note_blocker_change, cansee, vision_recalc } from './vision.js';
 import { findDrawbridgeAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
-import { heroPassesWalls, heroHasNoHands, heroIsVerySmall } from './polyself.js';
+import { heroPassesWalls, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { rnl, rn2 } from './rng.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -46,7 +46,6 @@ import { promptYesNoQuit, promptYesNo } from './query.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { costlySpot, currentShopResident, chargeAlteredUnpaidObject, stolenValue, addShopDamage, deleteObject } from './shk.js';
 import { artifactById, touchArtifactByHero } from './artifact.js';
-import { heroFingerName } from './body_parts.js';
 import { monsterAtPosition } from './steed.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
@@ -942,7 +941,7 @@ export async function continuePicking(occupation: PickLockOccupation, state: Gam
             box.olocked = !box.olocked;
             box.lknown = true;
             if (box.otrapped) {
-                const trap = await triggerChestTrap(box, { state, bodyPart: heroFingerName(state) });
+                const trap = await triggerChestTrap(box, { state, bodyPart: body_part(FINGER, state) });
                 if (trap?.died) return false;
             }
         }

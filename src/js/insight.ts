@@ -20,16 +20,7 @@ import { expiredFatally } from './timeout.js';
 import { pline } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow, ATR_NONE, showInventoryWindow } from './windows.js';
 import { gameLogEvents, isSpoilerGameLogEvent, recordGameLogEvent } from './gamelog.js';
-import {
-    G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK,
-    ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO,
-    ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY,
-    M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED,
-    SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX,
-    A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level,
-    LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT,
-    PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP,
-} from './const.js';
+import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import {
     SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE,
@@ -43,14 +34,10 @@ import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, ordinalSuffix, upstart } from './hacklib.js';
 import { MONSTER_NAME, MONSTER_SIZE, MONSTER_CLASS_EXPLAIN, MONSTER_DIFFICULTY, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
-import {
-    feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings,
-    heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying,
-    heroMonsterForm, heroPassesWalls,
-} from './polyself.js';
+import { feelingAfterSelfGenocide, heroHasBeenGenocided, heroFormSticks, floorObjects, heroFormClings, heroFormHidesUnderObjects, heroHatesSilver, heroIsAmphibious, heroIsBreathless, heroIsFlying, heroMonsterForm, heroPassesWalls, body_part, mbodypart, heroSpecies } from './polyself.js';
 import { heroIsSick, heroIsVomiting } from './potion.js';
 import { monsterSaddle } from './steed.js';
-import { heroLegName, monsterLegName, heroFingerName, heroHandedName, heroHasEyes } from './body_parts.js';
+
 import { waterbodyName } from './pager.js';
 import { trapName } from './trap.js';
 import { monsterAlignmentType } from './priest.js';
@@ -83,10 +70,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsPetrifying } from './stoning.js';
 import { depth, endgameLevelName, levelHasCeiling, surfaceName, ceilingName } from './dungeon.js';
 import type { DungeonLocation } from './dungeon_types.js';
-import {
-    is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal,
-    monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer,
-} from './mondata.js';
+import { is_male, is_neuter, lays_eggs, monsterDigests, monsterEnfolds, monsterHasProperName, monsterIsAnimal, monsterIsClinger, monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterHasEyes } from './mondata.js';
 
 export interface EnlightenmentOptions { basic?: boolean; magic?: boolean }
 
@@ -245,7 +229,7 @@ export function goldInsightLines(final: boolean, indent = '  '): [string, ...str
 }
 
 export function handednessDescription(): string {
-    return `${heroHandedName() === 'handed' ? '' : 'normally '}${game.u.rightHanded ? 'right' : 'left'}-handed`;
+    return `${body_part(HANDED) === 'handed' ? '' : 'normally '}${game.u.rightHanded ? 'right' : 'left'}-handed`;
 }
 
 function alignmentName(value: number): 'lawful' | 'neutral' | 'chaotic' {
@@ -391,7 +375,7 @@ function statusEnlightenmentLines(magic = false, final: EnlightenmentFinal = 0, 
     if ((u._woundedLegTurns ?? 0) > 0 && u._woundedLegSide) {
         // When mounted these are the steed's legs, shown only in wizard mode.
         const side = u._woundedLegSide;
-        const leg = u.usteed ? monsterLegName(u.usteed.mnum) : heroLegName(game);
+        const leg = u.usteed ? mbodypart(u.usteed.mnum, LEG) : body_part(LEG, game);
         const legs = side === 'both' ? `wounded ${makePlural(leg)}` : `a wounded ${side} ${leg}`;
         if (!u.usteed) have(legs);
         else if (wizard && steedName)
@@ -1883,7 +1867,7 @@ export async function monsterStatusLine(monster: Monster, {
     if (monster === state.u.usteed) {
         conditions.push('carrying you');
         if ((state.u._woundedLegTurns ?? 0) > 0 || state.u._woundedLegSide) {
-            const leg = monsterLegName(monster.mnum);
+            const leg = mbodypart(monster.mnum, LEG);
             conditions.push(`injured ${state.u._woundedLegSide === 'both' ? makePlural(leg) : leg}`);
         }
     }
@@ -1919,19 +1903,19 @@ export function heroStatusLine(state = game) {
         let blindness = 'blind';
         if (hero.ucreamed) {
             const otherCause = hero.ucreamed < (hero.blindTurns ?? 0)
-                || blindfolded(state) || !heroHasEyes(state);
+                || blindfolded(state) || !monsterHasEyes(heroSpecies(state));
             blindness += `${otherCause ? ', covered' : 'ed'} by sticky goop`;
         }
         conditions.push(blindness);
     }
     if (hero.stunned || (hero.stunnedTurns ?? 0) > 0) conditions.push('stunned');
     if (((hero._woundedLegTurns ?? 0) > 0 || hero._woundedLegSide) && !hero.usteed) {
-        const leg = heroLegName(state);
+        const leg = body_part(LEG, state);
         conditions.push(`injured ${hero._woundedLegSide === 'both' ? makePlural(leg) : leg}`);
     }
     if ((hero.glibTurns ?? 0) > 0) {
         const gloves = state.uarmg || hero.uarmg;
-        conditions.push(`slippery ${gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state))}`);
+        conditions.push(`slippery ${gloves ? armorSimpleName(gloves, state) : makePlural(body_part(FINGER, state))}`);
     }
     if (hero.utrap) conditions.push('trapped');
     if (hero.veryFast) conditions.push('very fast');

@@ -1,27 +1,27 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
 import { POTION_CLASS } from './objclass.js';
 import { formatFeltMessage } from './hero_speech.js';
-import { heroHeadName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { tryCallObjectType } from './do.js';
 import { POT_ACID, POT_OIL, POT_POLYMORPH } from './object_data.js';
 import { applySupportedPotionVapor, heroPotionVaporProfile, potionImpactObjectName, randomBottleName, } from './potion.js';
-import { heroIsUnchanging, polymorphHero } from './polyself.js';
+import { heroIsUnchanging, polymorphHero, body_part } from './polyself.js';
 import { propertyIsActive } from './properties.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsHallucinating } from './senses.js';
 import { chargeUnpaidObjectAsDebt, currentShopResident, removeObjectAndContentsFromBill, deleteObject } from './shk.js';
 import { cansee } from './vision.js';
 import { loseHeroHp } from './hack.js';
+import { HEAD } from './const.js';
 export async function hitHeroWithThrownPotion(potion, { state = game, publish = plineWithContinuation, random = rn2, rollOne = rnd, rollDice = d, source = 'thrown', } = {}) {
     requireLiveGame(state);
     requirePlayingGame(state);
     if (potion.where !== 'free' || potion.oclass !== POTION_CLASS)
         throw new TypeError('Thrown potion impact requires the free potion from projectile flight');
     const bottle = randomBottleName(state, random);
-    await publish(`The ${bottle} crashes on your ${heroHeadName(state)} and breaks into shards.`);
+    await publish(`The ${bottle} crashes on your ${body_part(HEAD, state)} and breaks into shards.`);
     let heroDied = await loseHeroHp(physicalDamage(rollOne(2), state), `${source} potion`, { state, publish });
     if (!heroDied) {
         if (potion.otyp !== POT_OIL && cansee(state.u.ux, state.u.uy))

@@ -20,22 +20,7 @@ import {
     KICKING_BOOTS, objectPropertyName, AMULET_OF_LIFE_SAVING,
 } from './object_data.js';
 import { formatSeenMessage, formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
-import {
-    ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL,
-    MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD,
-    SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF,
-    W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP,
-    TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole,
-    SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED,
-    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT,
-    Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR,
-    DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL,
-    Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE,
-    ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND,
-    A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM,
-    W_ACCESSORY, W_ARMOR, WT_ELF, CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOTAIL, MM_NOWAIT, NO_MINVENT, M_SEEN_ELEC,
-    FAINTED, WATER, Is_earthlevel, In_sokoban, W_QUIVER, In_endgame, LAVAPOOL,
-} from './const.js';
+import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, MMOVE_DIED, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, RUST_TRAP, SLP_GAS_TRAP, SQKY_BOARD, SPIKED_PIT, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, Is_waterlevel, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_SWAPWEP, W_WEP, is_pit, TRAPNUM, TRAP_EXPLANATIONS, Upolyd, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, In_hell, In_quest, xdir, ydir, M_SEEN_FIRE, is_hole, SHOPBASE, A_CON, A_DEX, A_STR, A_WIS, DISMOUNT_FELL, DOOR, D_BROKEN, D_ISOPEN, D_NODOOR, D_TRAPPED, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, WT_TOOMUCH_DIAGONAL, M_SEEN_SLEEP, VAULT, Is_stronghold, MGIVENNAME, KILLED_BY, STONING, DISMOUNT_GENERIC, IS_ROOM, Is_airlevel, W_SADDLE, CORR, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, D_CLOSED, D_LOCKED, FOUNTAIN, IS_AIR, IS_DOOR, IS_FURNITURE, IS_WALL, Is_knox_level, LEVEL_TIMER_KIND, MM_NOCOUNTBIRTH, MM_NOMSG, ROOM, SCORR, SDOOR, SHOP_HOLE_COST, SINK, STONE, ZAP_POS, TRAPPED_DOOR, TRAPPED_CHEST, BURNING, DISSOLVED, DROWNING, IS_WATERWALL, PLNMSG_BACK_ON_GROUND, A_CHA, BOLT_LIM, COULD_SEE, IRONBARS, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Luck, M_AP_MONSTER, MIGR_RANDOM, W_ACCESSORY, W_ARMOR, WT_ELF, CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOTAIL, MM_NOWAIT, NO_MINVENT, M_SEEN_ELEC, FAINTED, WATER, Is_earthlevel, In_sokoban, W_QUIVER, In_endgame, LAVAPOOL, HEAD, ARM, FOOT, LEG, SPINE, HAND, FINGER } from './const.js';
 import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import {
     armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction,
@@ -63,11 +48,7 @@ import {
     MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, monsterTypeName, MONSTER_SOUND,
 } from './monster_data.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
-import {
-    heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed,
-    returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava,
-    heroMonsterForm as polymorphedHeroForm,
-} from './polyself.js';
+import { heroIsFlying, heroSpecies, heroCanSpinWeb, heroHasNoHands, heroFormSticks, heroPassesWalls, heroIsPolymorphed, returnHeroToHumanForm, polymonHero, heroIsUnchanging, polymorphHero, heroFormHidesUnderObjects, heroLikesLava, heroMonsterForm as polymorphedHeroForm, body_part, mbodypart } from './polyself.js';
 import { isPoolAt, isIceAt, isLavaAt } from './dbridge.js';
 import {
     levelHasCeiling, level_difficulty, specialPrototypeAt, levelIsWaterLevel as heroIsOnWaterLevel, levelAtDepth,
@@ -175,10 +156,7 @@ import {
     UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks,
 } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
-import {
-    heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,
-    heroSpineName, monsterArmName, monsterHeadName,
-} from './body_parts.js';
+
 import { displayMessageWindow } from './tty_topline.js';
 import { abusePet, tameMonster, makePetWary } from './dog.js';
 import { heroCanReachFloor, deleteEngravingAt } from './engrave.js';
@@ -1354,7 +1332,7 @@ async function trapeffectRocktrap(
         await plineWithContinuation(
             `A trap door in the ${ceiling} opens and ${
                 withIndefiniteArticle(objectName(rock))
-            } falls on your ${heroHeadName(game)}!`,
+            } falls on your ${body_part(HEAD, game)}!`,
         );
 
         let harmless = false;
@@ -1791,7 +1769,7 @@ async function trapeffectRustTrap(
 
         if (target === 0) {
             await plineWithContinuation(
-                `A gush of water hits you on the ${heroHeadName(game)}!`,
+                `A gush of water hits you on the ${body_part(HEAD, game)}!`,
             );
             const helmet = heroObject('uarmh');
             await wetHeroObject(
@@ -1799,7 +1777,7 @@ async function trapeffectRustTrap(
             );
         } else if (target === 1) {
             await plineWithContinuation(
-                `A gush of water hits your left ${heroArmName(game)}!`,
+                `A gush of water hits your left ${body_part(ARM, game)}!`,
             );
             const shield = heroObject('uarms');
             const shieldResult = await wetHeroObject(shield, 'shield');
@@ -1818,7 +1796,7 @@ async function trapeffectRustTrap(
             }
         } else if (target === 2) {
             await plineWithContinuation(
-                `A gush of water hits your right ${heroArmName(game)}!`,
+                `A gush of water hits your right ${body_part(ARM, game)}!`,
             );
             const weapon = heroObject('uwep');
             await wetHeroObject(weapon);
@@ -1860,9 +1838,9 @@ async function trapeffectRustTrap(
     const targetRoll = roll(5);
     if (inSight) {
         const name = monsterName(monster, { state });
-        const arm = monsterArmName(monster.mnum);
+        const arm = mbodypart(monster.mnum, ARM);
         const hit = targetRoll === 0
-            ? `A gush of water hits ${name} on the ${monsterHeadName(monster.mnum)}!`
+            ? `A gush of water hits ${name} on the ${mbodypart(monster.mnum, HEAD)}!`
             : targetRoll === 1
                 ? `A gush of water hits ${name}'s left ${arm}!`
                 : targetRoll === 2
@@ -3394,7 +3372,7 @@ async function triggerBearTrap(trap: Trap, {
         // C trap.c:1508-1509: s_suffix(mon_nam(u.usteed)).
         const possessive = possessiveName(monsterName(steed));
         await plineWithContinuation(
-            `${subject} bear trap closes on ${possessive} ${monsterFootName(steed.mnum)}!`,
+            `${subject} bear trap closes on ${possessive} ${mbodypart(steed.mnum, FOOT)}!`,
         );
         // C thitm(0, steed, NULL, damage, FALSE): forced damage, no missile.
         steed.mhp -= damage;
@@ -3404,7 +3382,7 @@ async function triggerBearTrap(trap: Trap, {
             if (!death.survived) await resetUtrap(true);
         }
     } else {
-        await plineWithContinuation(`${subject} bear trap closes on your ${heroFootName()}!`);
+        await plineWithContinuation(`${subject} bear trap closes on your ${body_part(FOOT)}!`);
         if (['owlbear', 'bugbear'].includes(MONSTER_NAME[body.mnum] ?? ''))
             await plineWithContinuation('You howl in anger!');
         const boots = heroIronShoes();
@@ -5158,7 +5136,7 @@ export async function finishMonsterVibratingSquare(
         const location = event.wholeBody
             ? subject
             : `${possessive(subject)} ${makePlural(
-                  monsterFootName(monster.mnum).replace(/^rear /u, ''),
+                  mbodypart(monster.mnum, FOOT).replace(/^rear /u, ''),
               )}`;
         await publish(formatSeenMessage(`a strange vibration beneath ${location}.`));
     }
@@ -5387,21 +5365,21 @@ export async function floatHeroUp(
             await fillPitWithBoulderAt(hero.ux, hero.uy, state);
         } else if (hero.utraptype === TT_LAVA || hero.utraptype === TT_INFLOOR) {
             await plineWithContinuation(
-                `Your body pulls upward, but your ${makePlural(heroLegName(state))} are still stuck.`);
+                `Your body pulls upward, but your ${makePlural(body_part(LEG, state))} are still stuck.`);
         } else if (hero.utraptype === TT_BURIEDBALL) {
             const ball = buriedBallNear(hero.ux, hero.uy, state);
             const terrain = requireGameLevel(state).requireAt(
                 ball?.ox ?? hero.ux, ball?.oy ?? hero.uy,
             );
             await plineWithContinuation(
-                `You feel lighter, but your ${heroLegName(state)} is still chained to the ${IS_ROOM(terrain.typ) ? 'floor' : 'ground'}.`);
+                `You feel lighter, but your ${body_part(LEG, state)} is still chained to the ${IS_ROOM(terrain.typ) ? 'floor' : 'ground'}.`);
         } else if (hero.utraptype === WEB) {
             // C float_up() compares with WEB, not the hero restraint TT_WEB.
             await plineWithContinuation(
                 `You float up slightly, but you are still stuck in the ${trapName(WEB, { state })}.`);
         } else {
             await plineWithContinuation(
-                `You float up slightly, but your ${heroLegName(state)} is still stuck.`);
+                `You float up slightly, but your ${body_part(LEG, state)} is still stuck.`);
         }
     } else if (hero.uinwater) {
         // C float_up() (trap.c:3975) calls spoteffects(TRUE): leaving the
@@ -5710,8 +5688,8 @@ export async function climbOutOfPit() {
 
     const creviceRoll = rn2(2);
     if (creviceRoll === 0 && objectAtHero(BOULDER)) {
-        await plineWithContinuation(`Your ${heroLegName(game)} gets stuck in a crevice.`);
-        await pline(`You free your ${heroLegName(game)}.`);
+        await plineWithContinuation(`Your ${body_part(LEG, game)} gets stuck in a crevice.`);
+        await pline(`You free your ${body_part(LEG, game)}.`);
         return;
     }
 
@@ -6004,7 +5982,7 @@ export async function triggerHeroMagicTrapEffect(): Promise<void> {
         await triggerHeroFireTrap();
         return;
     case 13:
-        await plineWithContinuation(`A shiver runs up and down your ${heroSpineName()}!`);
+        await plineWithContinuation(`A shiver runs up and down your ${body_part(SPINE)}!`);
         return;
     case 14:
         await hear(heroIsHallucinating(game) ? 'the moon howling at you.' : 'distant howling.');
@@ -7547,7 +7525,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
     const failed = untrapFailureRoll(trap, state, random);
     if (failed && !monsterIsHelplessForUntrap(monster)) {
         await publish(
-            `You try to reach out your ${makePlural(heroArmName(state))}, but ${canonicalMonsterName(monster, { state })} backs away skeptically.`,
+            `You try to reach out your ${makePlural(body_part(ARM, state))}, but ${canonicalMonsterName(monster, { state })} backs away skeptically.`,
         );
         return true;
     }
@@ -7556,7 +7534,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
         && !(state.uarmg || state.u?.uarmg)
         && !(state.u.stoneResistance)) {
         const species = monsterTypeName(monster.mnum, !!monster.female);
-        await publish(`You grab the trapped ${species} using your bare ${makePlural(heroHandName(state))}.`);
+        await publish(`You grab the trapped ${species} using your bare ${makePlural(body_part(HAND, state))}.`);
         const contact = await resolveImmediatePetrification({
             state,
             killer: `trying to help ${withIndefiniteArticle(species)} out of a pit`,
@@ -7577,7 +7555,7 @@ async function helpMonsterOut(monster: Monster, trap: Trap, options: FloorTrapOp
         return true;
     }
 
-    await publish(`You reach out your ${makePlural(heroArmName(state))} and grab ${canonicalMonsterName(monster, { state })}.`);
+    await publish(`You reach out your ${makePlural(body_part(ARM, state))} and grab ${canonicalMonsterName(monster, { state })}.`);
     if (monster.msleeping) {
         monster.msleeping = 0;
         await publish(`${canonicalMonsterName(monster, { state, capitalized: true })} awakens.`);
@@ -7639,7 +7617,7 @@ async function disarmBox(box: GameObject, {
     if (!force && (heroIsImpaired(state) || heroIsFumbling(state)
         || rollOne(75 + Math.trunc(level_difficulty() / 2)) > chance)) {
         const trap = await triggerChestTrap(box, {
-            state, disarm: true, bodyPart: heroFingerName(state), publish, random, rollDice,
+            state, disarm: true, bodyPart: body_part(FINGER, state), publish, random, rollDice,
         });
         if (trap?.died) return;
     } else {
@@ -8113,7 +8091,7 @@ const BLIND_GAS = [
 export async function triggerChestTrap(container: GameObject | null | undefined, {
     state = game,
     disarm = false,
-    bodyPart = heroHandName(state),
+    bodyPart = body_part(HAND, state),
     random = rn2,
     rollDice = d,
     publish = plineWithContinuation,

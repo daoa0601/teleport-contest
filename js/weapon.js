@@ -10,10 +10,9 @@ import { WEAPON_CLASS, TOOL_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS } from './
 import { is_spear } from './object_properties.js';
 import { OBJ_NAME, oc_wldam, oc_wsdam, objectClassForType, objectBaseWeight, objectSkill, objectBimanual, AKLYS, AXE, BATTLE_AXE, BOULDER, BOW, BULLWHIP, CLUB, CORPSE, CREAM_PIE, CROSSBOW, DART, DWARVISH_MATTOCK, EGG, ELVEN_BOW, LOADSTONE, OBJECT_NAMES, ORCISH_BOW, PICK_AXE, SLING, YUMI, HEAVY_IRON_BALL, TIN_OPENER, TOWEL, TRIDENT, FLINT, GRAPPLING_HOOK, LUCKSTONE, ROCK, STATUE, TIN, TOUCHSTONE, oc_hitbon, } from './object_data.js';
 import { bypassObject } from './worn.js';
-import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, } from './const.js';
+import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
 import { definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming, observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular, } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
-import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
@@ -41,7 +40,7 @@ import { ATR_INVERSE } from './terminal.js';
 import { objectMaterial } from './o_init.js';
 import { isPoolAt } from './dbridge.js';
 import { currentAttribute } from './attrib.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, mbodypart } from './polyself.js';
 import { roleMaximums } from './u_init.js';
 import { identifySpellbooks } from './spell.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -611,7 +610,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
     if (artifactEmitsLight(weapon) && !weapon.lamplit) {
         beginObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
-            const hand = monsterHandName(monster.mnum);
+            const hand = mbodypart(monster.mnum, HAND);
             const brightness = equipmentLightDescription(weapon, state);
             await publish(`${definiteObjectAction(weapon, null, state)} shines ${brightness} in ${monsterPossessive(monster, state)} ${hand}!`);
         }
@@ -628,7 +627,7 @@ export async function wieldMonsterWeapon(monster, state = game, { publish = plin
 // C mon_wield_item() checks bimanual() at both the welded message (866) and
 // the welds-itself message (910): the monster's hand name, pluralized.
 function wieldingHand(monster, weapon) {
-    const hand = monsterHandName(monster.mnum);
+    const hand = mbodypart(monster.mnum, HAND);
     return isBimanualObject(weapon) ? makePlural(hand) : hand;
 }
 // C hack.h:mhis()/s_suffix(mon_nam()) in the wield messages.
@@ -651,7 +650,7 @@ export async function unwieldMonsterWeapon(monster, state = game, { weapon = mon
     if (weapon.lamplit && artifactEmitsLight(weapon)) {
         endObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
-            const hand = monsterHandName(monster.mnum);
+            const hand = mbodypart(monster.mnum, HAND);
             await publish(`${definiteObjectAction(weapon, null, state)} in ${monsterPossessive(monster, state)} ${hand} ${objectNameIsPlural(weapon, state) ? 'stop' : 'stops'} shining.`);
         }
     }

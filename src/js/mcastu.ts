@@ -4,7 +4,7 @@
 // (cursetxt), and the awaited mcast_spell()/mcast_*() effects, which run
 // each visible line and its state change as one native-order transaction.
 
-import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT } from './const.js';
+import { A_DEX, M_AP_OBJECT, M_AP_TYPE, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_REFL, MFAST, MM_NOWAIT, Upolyd, ismnum, KILLED_BY, M_ATTK_HIT, M_ATTK_MISS, MM_ANGRY, MM_NOMSG, MONSEEN_TELEPAT, HEAD, EYE } from './const.js';
 import { AD_CLRC, AD_COLD, AD_FIRE, AD_MAGM, AD_SPEL, AT_MAGC, AD_SPC2 } from './monster_attack_types.js';
 import { recordRandom } from './monster_action_types.js';
 import type { HeroSpellAttack, MonsterCallLog, MonsterSpell, MonsterSpellEffect, MonsterSpellName, MovementSpellCast, RandomBelow, RollDice, RollOne } from './monster_action_types.js';
@@ -26,7 +26,7 @@ import type { DeathHandler } from './end.js';
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
 
 import { rndcurse } from './throne.js';
-import { returnHeroToHumanForm } from './polyself.js';
+import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
@@ -46,12 +46,9 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { cansee, couldsee } from './vision.js';
 import { finishWizardClone, monsterSpellHasAggravatables, aggravateMonsters } from './wizard.js';
 import { msummon } from './minion.js';
-import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
+
 import { dist2 } from './hacklib.js';
-import {
-    monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance,
-    seenResistanceForDamage, monsterHasProperName, monsterIsDemon, monsterIsNonliving, monsterPerceives,
-} from './mondata.js';
+import { monsterSubjectPronoun, monstersForgetHeroResistance, monstersObserveHeroResistance, seenResistanceForDamage, monsterHasProperName, monsterIsDemon, monsterIsNonliving, monsterPerceives, eyecount } from './mondata.js';
 
 export const MCF_INDIRECT = 0x01;
 const MCF_SIGHT = 0x02;
@@ -488,7 +485,7 @@ async function mcastPsiBolt(dmg: number, ctx: McastuSpellContext): Promise<Mcast
     } else {
         monstersForgetHeroResistance(M_SEEN_MAGR, state);
     }
-    const head = heroHeadName(state);
+    const head = body_part(HEAD, state);
     const effectLineDismissal = await ctx.publish(
         dmg <= 5 ? `You get a slight ${head}ache.`
             : dmg <= 10 ? 'Your brain is on fire!'
@@ -614,9 +611,9 @@ async function mcastLightning(ctx: McastuSpellContext): Promise<McastuSpellOutco
 // C mcastu.c:mcast_blind_you().
 async function mcastBlindYou(ctx: McastuSpellContext): Promise<number | null | undefined> {
     const { state } = ctx;
-    const eye = heroEyeName(state);
+    const eye = body_part(EYE, state);
     const dismissal = await ctx.publish(`Scales cover your ${
-        heroEyeCount(state) === 1 ? eye : makePlural(eye)}!`);
+        eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye)}!`);
     await makeBlinded(heroHasHalfSpellDamage(state) ? 100 : 200,
         { state, talk: false, publish: ctx.publish });
     if (!heroIsBlind(state)) await ctx.publish('Your vision clears.');

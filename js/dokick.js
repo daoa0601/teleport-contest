@@ -3,7 +3,7 @@
 //     /kick_door()/kick_nondoor().
 import { COIN_CLASS, GEM_CLASS } from './objclass.js';
 import { objectBaseCost, objectBimanual, BOULDER, KICKING_BOOTS, ROCK, CHEST, CORPSE, LARGE_BOX, EGG, EXPENSIVE_CAMERA, MIRROR, BAG_OF_HOLDING, BAG_OF_TRICKS, APPLE, BANANA, DILITHIUM_CRYSTAL, EUCALYPTUS_LEAF, LUCKSTONE, ORANGE, PEAR, } from './object_data.js';
-import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, DOOR, FOUNTAIN, G_GONE, GRAVE, IRONBARS, IS_DRAWBRIDGE, IS_OBSTRUCTED, IS_STWALL, IS_TREE, Is_stronghold, LADDER, LA_DOWN, LAVAWALL, Luck, M_AP_MONSTER, M_AP_TYPE, MM_ANGRY, MM_FEMALE, MM_MALE, MM_NOMSG, ROOM, SCORR, SDOOR, SINK, S_LDWASHER, S_LPUDDING, STAIRS, THRONE, T_LOOTED, TREE_LOOTED, TREE_SWARM, Is_airlevel, Is_waterlevel, SHOPBASE, SHOP_DOOR_COST, STATUE_TRAP, WEB, is_pit, IS_SOFT, MIGR_LADDER_UP, MIGR_NOBREAK, MIGR_NOSCATTER, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_UP, MIGR_TO_SPECIES, MIGR_WITH_HERO, TRAPDOOR, Upolyd, W_ARMF, ZAP_POS, is_hole, FOOT, LEG } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
@@ -29,7 +29,7 @@ import { killerObjectName, objectNameIsPlural, observeObjectForNaming, corpseNam
 import { mksobj, mkgold, unlinkObject, splitObjectStack, objectWeight, placeCreatedObject, placeObject, remove_object, isContainer } from './mkobj.js';
 import { vision_recalc, vision_reset, cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { convertSecretDoor, findTrap } from './detect.js';
-import { heroPolyGender, heroSpecies } from './polyself.js';
+import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { makemonAt } from './makemon.js';
 import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
@@ -43,7 +43,6 @@ import { updateMonsterRegions } from './region.js';
 import { specialContactDamage } from './contact_damage.js';
 import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap, triggerBoobyTrap, fall_through, } from './trap.js';
 import { artifactById } from './artifact.js';
-import { heroFootName, heroLegName } from './body_parts.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
@@ -1174,7 +1173,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
     }
     if (!(state.uarmf || state.u.uarmf) && object.otyp === CORPSE
         && touchPetrifies(object.corpsenm) && !heroResistsStoning(state)) {
-        await publish(`You kick ${corpseName(object, { definite: true })} with your bare ${makePlural(heroFootName(state))}.`);
+        await publish(`You kick ${corpseName(object, { definite: true })} with your bare ${makePlural(body_part(FOOT, state))}.`);
         const result = await resolveImmediatePetrification({ state, publish,
             killer: `kicking ${killerObjectName(object, state)} barefoot` });
         if (result.died || state.program_state.gameover)
@@ -1240,7 +1239,7 @@ export async function kickFloorObject(x, y, { state = game, dx = state.u?.dx ?? 
                 object.lknown = true;
             }
             if (trapped)
-                await triggerChestTrap(object, { state, publish, random, bodyPart: heroLegName(state) });
+                await triggerChestTrap(object, { state, publish, random, bodyPart: body_part(LEG, state) });
             return true;
         }
         if (range < 2)

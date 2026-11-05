@@ -31,16 +31,10 @@ import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
 import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, poisonAttributeMessage, requireAttributeIndex } from './attrib.js';
-import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
+
 import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
-import {
-    A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN,
-    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE,
-    IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT,
-    M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS,
-    ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK,
-} from './const.js';
+import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG } from './const.js';
 import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
@@ -82,7 +76,7 @@ import {
     heroIsUnaware, blindfolded, blindnessBlocked, heroDetectsMonsters, heroIsBlind, heroIsBlinded, heroIsDeaf,
     heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness,
 } from './senses.js';
-import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming } from './polyself.js';
+import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming, body_part } from './polyself.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js';
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
@@ -99,11 +93,7 @@ import { putMonsterToSleep } from './mhitm.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { mkobj, blessObjectState, curseObject, curseObjectState, deallocateObject, mksobj, unblessObjectState, uncurseObjectState, unlinkObject, objectQuantity, splitObjectStack } from './mkobj.js';
 import type { MonsterFormChange, MonsterSelfTouchResult } from './mon.js';
-import {
-    monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance,
-    monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead,
-    monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster,
-} from './mondata.js';
+import { monsterHasAcidResistance, monsterHasPoisonResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsBreathless, monsterHasEyes, is_were, monsterHasHead, monsterHatesBlessings, monsterIsHuman, monsterIsPlayerMonster, eyecount } from './mondata.js';
 import { AD_ACID, AD_DISE, AD_PEST } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_LEVEL, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
 import type { Monster } from './monster_types.js';
@@ -431,13 +421,13 @@ export async function makeBlinded(turns: number, {
 
 function maskedBlindnessMessage(clearing: boolean, state: GameState) {
     const hallucinating = heroIsHallucinating(state);
-    if (!heroHasEyes(state) || permanentBlind(state)) {
+    if (!monsterHasEyes(heroSpecies(state)) || permanentBlind(state)) {
         return `You have a ${hallucinating ? 'normal' : 'strange'} feeling `
             + 'for a moment, then it passes.';
     }
     if (blindfolded(state)) {
-        const eye = heroEyeName(state);
-        const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+        const eye = body_part(EYE, state);
+        const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
         return `Your ${eyes} momentarily ${
             verbForSubject(eyes, clearing ? 'itch' : 'twitch')}.`;
     }
@@ -489,12 +479,12 @@ export async function makeHallucinated(turns: number, {
         changed = !extrinsic && (!!old !== !!turns);
         hero.hallucinationTurns = Math.max(0, Math.min(TIMEOUT, Math.trunc(turns)));
         if (!changed && !hero.hallucinationTurns && old && speaking) {
-            if (!heroHasEyes(state)) {
+            if (!monsterHasEyes(heroSpecies(state))) {
                 const feeling = heroIsHallucinating(state) ? 'normal' : 'strange';
                 await publish(`You have a ${feeling} feeling for a moment, then it passes.`);
             } else if (heroIsBlind(state)) {
-                const eye = heroEyeName(state);
-                const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+                const eye = body_part(EYE, state);
+                const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
                 await publish(`Your ${eyes} momentarily ${verbForSubject(eyes, 'itch')}.`);
             } else {
                 await publish('Your vision seems to flatten for a moment but is normal now.');
@@ -936,7 +926,7 @@ async function paralysisEffect(source: GameObject, state: PlayingGameState) {
     } else if (state.u.usteed) {
         await pline('You are frozen in place!');
     } else {
-        await pline(`Your ${makePlural(heroFootName(state))} are frozen to the ${
+        await pline(`Your ${makePlural(body_part(FOOT, state))} are frozen to the ${
             surfaceName(state.u.ux, state.u.uy, state)}!`);
     }
     const turns = rn1(10, 25 - 12 * blessing(source));
@@ -1069,7 +1059,7 @@ async function drinkOil(source: GameObject, state: PlayingGameState) {
             await plineWithContinuation('Ahh, a refreshing drink.');
             good = true;
         } else {
-            await plineWithContinuation(`You burn your ${heroFaceName(state)}.`);
+            await plineWithContinuation(`You burn your ${body_part(FACE, state)}.`);
             const vulnerable = !propertyIsActive('fireResistance', state)
                 || propertyIsActive('coldResistance', state);
             const killer = 'quaffing a burning potion of oil';
@@ -1435,7 +1425,7 @@ export async function applyLevitationPotion(
                     : !objectIsHardHelmet(helmet) ? 6 : 3);
                 if (hero.halfPhysicalDamage)
                     damage = Math.trunc((damage + 1) / 2);
-                await publish(`You hit your ${heroHeadName(state)} on the ${
+                await publish(`You hit your ${body_part(HEAD, state)} on the ${
                     ceilingName(hero.ux, hero.uy, state)}.`);
                 await loseHeroHp(damage, 'colliding with the ceiling',
                     { state, publish, deathCause: 'killed by colliding with the ceiling' });
@@ -2493,8 +2483,8 @@ async function finishPotionVaporKnowledge(state: GameState, potion: GameObject, 
 }
 
 function cursedVaporEyeMessage(state: GameState): string {
-    const eye = heroEyeName(state);
-    const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+    const eye = body_part(EYE, state);
+    const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
     return `Your ${eyes} ${verbForSubject(eyes, 'sting')}!`;
 }
 
@@ -2733,7 +2723,7 @@ async function chooseDipTarget(verb: string, floorWater = true): Promise<DipTarg
     const handsSuggested = atHere && !!game.u.glibTurns && heroCanReachFloor(game);
     const selection = await getobj(verb, dipClassification, {
         forcePrompt: true, hands: handsSuggested ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
-        handsText: `your ${makePlural(heroHandName())}`,
+        handsText: `your ${makePlural(body_part(HAND))}`,
     });
     return selection.none ? 'hands' : selection.object;
 }
@@ -2773,7 +2763,7 @@ export async function dip({
     if (object !== 'hands' && await reportCoveredEquipment(object)) { game.context.move = 0; return; }
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     let declinedSource = false;
-    const description = object === 'hands' ? `your ${makePlural(heroHandName())}` : await dipTargetDescription(object);
+    const description = object === 'hands' ? `your ${makePlural(body_part(HAND))}` : await dipTargetDescription(object);
     const target = game.flags.verbose ? description : dipTargetPronoun(object);
     if (!game.iflags.menu_requested && heroCanReachFloor(game) && location.typ === FOUNTAIN) {
         if (await promptYesNo(`Dip ${target} into the fountain?`, 'n') === 'y') {
@@ -2993,7 +2983,7 @@ async function dipInPolymorph(object: GameObject, potion: GameObject): Promise<v
 
 async function finishDip(object: DipTarget, potion: GameObject): Promise<boolean> {
     if (object !== 'hands') return treatDippedObject(object, potion);
-    await pline(`You can't fit your ${heroHandName()} into the mouth of the bottle!`);
+    await pline(`You can't fit your ${body_part(HAND)} into the mouth of the bottle!`);
     return false;
 }
 
@@ -3259,7 +3249,7 @@ export async function speedUpHero(duration: number, state = game) {
         const alreadyFast = hero.fast || hero.veryFastFromArmor;
         await plineWithContinuation(`You are suddenly moving ${alreadyFast ? '' : 'much '}faster.`);
     } else {
-        await plineWithContinuation(`Your ${makePlural(heroLegName(state))} get new energy.`);
+        await plineWithContinuation(`Your ${makePlural(body_part(LEG, state))} get new energy.`);
     }
     await exerciseAttribute(A_DEX, true, state);
     setPropertyTimeout('fast', propertyTimeout('fast', state) + duration, state);

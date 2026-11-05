@@ -18,15 +18,14 @@ import { summonFuries } from './makemon.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, revokeIntrinsicProperty, } from './properties.js';
 import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
 import { experienceRankIndex } from './botl.js';
-import { formMaximumStrength } from './polyself.js';
+import { formMaximumStrength, body_part } from './polyself.js';
 import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, HELM_OF_OPPOSITE_ALIGNMENT, LUCKSTONE, MUMMY_WRAPPING, } from './object_data.js';
 import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { encumber_msg } from './pickup.js';
 import { confersLuck } from './invent.js';
-import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, FACE } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;
@@ -767,7 +766,7 @@ export function fromWhat(property, state = game, blocked = false) {
             && !extrinsicPropertyMask(property, state)
             && intrinsicPropertyMask(property, state) === state.u.ucreamed) {
             // The native text deliberately has no leading space here.
-            suffix = `due to goop covering your ${heroFaceName(state)}`;
+            suffix = `due to goop covering your ${body_part(FACE, state)}`;
         }
     }
     suffix = suffix.replace(/ pair of /i, ' ');

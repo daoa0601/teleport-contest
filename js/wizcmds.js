@@ -2,7 +2,7 @@
 // C refs: wizcmds.c wiz_wish()/wiz_polyself()/wiz_genesis()/wiz_detect()/
 // wiz_kill()/wiz_telekinesis()/wiz_where()/wiz_level_tele()/wiz_level_change()/
 // wiz_map()/wiz_identify()/wiz_show_nhuuid().
-import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_mines, In_quest, In_sokoban, In_V_tower, IN_SIGHT, Invocation_lev, Is_airlevel, Is_botlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR } from './const.js';
+import { ACH_MINE_PRIZE, ACH_SOKO_PRIZE, A_WIS, COLNO, COULD_SEE, CORR, DIED, G_EXTINCT, In_endgame, In_mines, In_quest, In_sokoban, In_V_tower, IN_SIGHT, Invocation_lev, Is_airlevel, Is_botlevel, Is_earthlevel, Is_firelevel, Is_knox_level, Is_rogue_level, Is_stronghold, Is_waterlevel, KILLED_BY, MAGIC_PORTAL, MENU_ITEMFLAGS_SKIPINVERT, MENU_ITEMFLAGS_SKIPMENUCOLORS, MGIVENNAME, MIGR_EXACT_XY, MM_NOMSG, MON_ENDGAME_MIGR, MON_LIMBO, MON_MIGRATING, MON_OFFMAP, NHW_MENU, PICK_ANY, PICK_NONE, POLY_CONTROLLED, ROWNO, SICK_NONVOMITABLE, SICK_VOMITABLE, SDOOR, STONE, TEMP_LIT, WM_MASK, IS_WALL, IS_ROOM, IS_DOOR, ARM } from './const.js';
 import { AD_PHYS } from './monster_attack_types.js';
 import { game, requireGameLevel, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { requireInitializedHero } from './hero_types.js';
@@ -19,7 +19,7 @@ import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryIte
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
-import { polymorphHero, heroSpecies, heroHasOlfaction } from './polyself.js';
+import { polymorphHero, heroSpecies, heroHasOlfaction, body_part } from './polyself.js';
 import { createParticularMonster } from './read.js';
 import { findit, mapMagicLevel } from './detect.js';
 import { monsterName } from './do_name.js';
@@ -56,7 +56,6 @@ import { hasShopkeeperData } from './shop_types.js';
 import { vision_reset_new_level } from './vision.js';
 import { collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from './dog.js';
 import { makemonAt, rndmonstAdj } from './makemon.js';
-import { heroArmName } from './body_parts.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol } from './glyph_numbers.js';
 import { displayMessageWindow } from './tty_topline.js';
@@ -836,7 +835,7 @@ export async function wizSmell() {
             continue;
         }
         if (self)
-            await plineWithContinuation(`You surreptitiously sniff under your ${heroArmName(game)}.`);
+            await plineWithContinuation(`You surreptitiously sniff under your ${body_part(ARM, game)}.`);
         if (!await smellUnseenMonster(species, game))
             await plineWithContinuation(`${self ? 'You seem' : 'That monster seems'} to not give off any smell.`);
         if (glyph?.kind !== 'monster')

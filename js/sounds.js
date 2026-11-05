@@ -3,14 +3,13 @@
 // growl(), yelp(), whimper(), beg(), growl_sound().
 import { WEAPON_CLASS } from './objclass.js';
 import { hallucinatedDeityName } from './pray.js';
-import { heroBloodName, heroHairName, heroHeadName, heroNeckName } from './body_parts.js';
-import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, } from './const.js';
+import { ANY_SHOP, BARRACKS, BEEHIVE, COURT, Is_astralevel, MON_FLOOR, MORGUE, ROOMOFFSET, TEMPLE, VAULT, ZOO, IS_WALL, SDOOR, STRAT_WAITMASK, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, In_endgame, PLNMSG_GROWL, Upolyd, NECK, HEAD, HAIR, BLOOD } from './const.js';
 import { isok, commandResultCancelled, promptDirection, readDirectionKey } from './cmd.js';
 import { canSeeMonster, canSpotMonster, glyphAt, map_invisible } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { nomul, heroGoldAmount, roomForRoomno, stopRun } from './hack.js';
-import { heroPolyGender, heroSpecies } from './polyself.js';
+import { heroPolyGender, heroSpecies, body_part } from './polyself.js';
 import { MONSTER_LEVEL, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { propertyIsActive } from './properties.js';
 import { verbForSubject, withIndefiniteArticle } from './objnam.js';
@@ -129,13 +128,13 @@ export async function dosounds(state = requireInitializedGame()) {
             && monInRoom(monster, MORGUE, state));
         if (undead) {
             const selection = rn2(2) + hallu;
-            const hair = heroHairName(state);
+            const hair = body_part(HAIR, state);
             if (selection === 0)
                 await plineWithContinuation('You suddenly realize it is unnaturally quiet.');
             else if (selection === 1)
-                await plineWithContinuation(`The ${hair} on the back of your ${heroNeckName(state)} ${verbForSubject(hair, 'stand')} up.`);
+                await plineWithContinuation(`The ${hair} on the back of your ${body_part(NECK, state)} ${verbForSubject(hair, 'stand')} up.`);
             else
-                await plineWithContinuation(`The ${hair} on your ${heroHeadName(state)} ${verbForSubject(hair, 'seem')} to stand up.`);
+                await plineWithContinuation(`The ${hair} on your ${body_part(HEAD, state)} ${verbForSubject(hair, 'seem')} to stand up.`);
             return;
         }
     }
@@ -906,7 +905,7 @@ function vampireReply(monster, state) {
     if (species === 'silver dragon' || species === 'baby silver dragon')
         return `${species === 'silver dragon' ? 'Fool' : 'Young Fool'}!  Your silver sheen does not frighten me!`;
     if (!rn2(2))
-        return `I vant to suck your ${heroBloodName(state)}!`;
+        return `I vant to suck your ${body_part(BLOOD, state)}!`;
     const race = state.urace.name === 'human' ? state.flags.female ? 'woman' : 'man' : state.urace.noun;
     const target = Upolyd(state.u) ? monsterTypeName(heroSpecies(state), !!state.flags.female) : race;
     return `I vill come after ${withIndefiniteArticle(target)} without regret!`;

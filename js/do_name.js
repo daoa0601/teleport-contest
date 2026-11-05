@@ -9,7 +9,7 @@
 // lookup_novel().  The category menu is naming_categories.ts.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectBaseWeight, objectUnique, objectMagic, SPE_NOVEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, STATUE, TIN, TOWEL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_PROTECTION, HELMET, LEATHER_GLOVES, LEVITATION_BOOTS, OBJECT_BASES, OBJECT_NAMES, POT_WATER, SPEED_BOOTS, } from './object_data.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, In_endgame, Is_astralevel, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, PL_PSIZ, QBUFSZ, Upolyd, W_SADDLE, CMDQ_KEY, CQ_CANNED, HAND } from './const.js';
 import { cmdq_clear, cmdq_pop, takeQueuedAdjacentPosition, visibleCommandKey } from './cmd.js';
 import { OBJ_DESCR } from './o_init.js';
 import { chooseNamingCategory } from './naming_categories.js';
@@ -34,14 +34,13 @@ import { rankOf, roleSwitch } from './botl.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterPronounGender, monsterSubjectPronoun, monsterHasProperName, monsterIsAnimal, monsterIsHumanoid, monsterIsMindless, monsterIsPlayerMonster, monsterIsRider, } from './mondata.js';
 import { getLine } from './query.js';
-import { heroHandName } from './body_parts.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { wipeoutText } from './engrave.js';
 import { LL_ARTIFACT, LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactByName, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { withMapObject } from './map_object_description.js';
-import { heroFormHidesUnderObjects } from './polyself.js';
+import { heroFormHidesUnderObjects, body_part } from './polyself.js';
 import { rn2, rn2Display } from './rng.js';
 import { monsterAtPosition } from './steed.js';
 import { showGetposTip } from './hack.js';
@@ -643,7 +642,7 @@ export async function nameIndividualObject(object) {
         do {
             inscription = start + wipeoutText(artifact.name.slice(start.length), rn2Display(2) + 1);
         } while (inscription === artifact.name);
-        await plineWithContinuation(`While engraving, your ${heroHandName(game)} slips.`);
+        await plineWithContinuation(`While engraving, your ${body_part(HAND, game)} slips.`);
         await displayMessageWindow();
         await plineWithContinuation(`You engrave: "${inscription}".`);
         const conduct = (game.u.uconduct ??= {});
