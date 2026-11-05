@@ -69,6 +69,8 @@ async function turnOneMonster(monster, state, options) {
     const flight = await makeMonsterFlee(monster, { state, random });
     return flight.heroDied ? 'hero-died' : 'fled';
 }
+// C pray.c:doturn()
+// Also C pray.c:maybe_turn_mon_iter(): target iteration is inlined here; turnOneMonster resolves resistance
 export async function turnUndeadByCallingOnDeity(state = game, { finishMonsterKill = finishHeroMonsterKill, random = rn2, } = {}) {
     requirePlayingGame(state);
     if (!state.u.uconduct)

@@ -32,6 +32,9 @@ import { makeBlinded } from './potion.js';
 import { detectTraps } from './detect.js';
 import { ynSingleKey } from './cmd.js';
 import { loseHeroHp } from './hack.js';
+// C detect.c:use_crystal_ball()
+// Also C drawing.c:def_char_is_furniture(): inlined here
+// Also C drawing.c:def_char_to_monclass(): symbol table lookup is inlined here
 export async function useCrystalBall(object) {
     if (heroIsBlind()) {
         await pline(`Too bad you can't see ${definiteName(objectCombatName(object))}.`);

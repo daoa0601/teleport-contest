@@ -30,7 +30,9 @@ export interface QuestText {
     synopsis: string | null;
 }
 
-// C com_pager_core(): each attempted section opens its own Lua state,
+// C questpgr.c:com_pager_core()
+// Also C questpgr.c:skip_pager(): wizard-kit suppression is inlined here
+// Each attempted section opens its own Lua state,
 // including nhlib's alignment shuffle, before resolving a fallback or choice.
 async function prepareSection(section: string, messageId: string, state: GameState): Promise<QuestText | null> {
     if (state.program_state.wizkit_wishing) return null;
@@ -81,6 +83,8 @@ export async function prepareQuestText(messageId: string, state: GameState = gam
         ?? await prepareSection('common', messageId, state);
 }
 
+// Also C questpgr.c:deliver_by_pline(): inlined here after prepareSection converts lines
+// Also C questpgr.c:deliver_by_window(): inlined here after prepareSection converts lines
 export async function displayQuestText(text: QuestText | null, state: GameState = game): Promise<boolean> {
     if (!text) return false;
     if (text.output === 'pline') {

@@ -6,6 +6,7 @@ Amulet_off	spoteffects
 Amulet_on	newsym
 Amulet_on	rnd
 Armor_off	setworn
+Blindf_off	gulp_blnd_check
 Blindf_off	setworn
 Blindf_off	toggle_blindness
 Boots_off	float_down
@@ -46,6 +47,7 @@ Ring_off_or_gone	setworn
 Shield_off	setworn
 Shirt_off	setworn
 Sting_effects	glow_strength
+a_gname_at	align_gname
 able_to_loot	hliquid
 abon	acurr
 accessory_or_armor_on	setworn
@@ -80,6 +82,7 @@ altar_wrath	adjattrib
 altar_wrath	align_gname
 altar_wrath	godvoice
 altar_wrath	rn2
+altarmask_at	isok
 amulet	rn2
 angry_priest	findpriest
 angrygods	adjattrib
@@ -333,6 +336,7 @@ consume_tin	use_up_tin
 consume_tin	yn_function
 convert_arg	homebase
 convert_arg	rank_of
+corr	rn2
 costly_gold	costly_spot
 costly_gold	currency
 costly_spot	in_rooms
@@ -1541,6 +1545,9 @@ gazemm	rn2
 gcrownu	discover_artifact
 gcrownu	godvoice
 gcrownu	known_spell
+gd_move_cleanup	wallify_vault
+gd_mv_monaway	recalc_block_point
+gd_pick_corridor_gold	newsym
 generate_stairs	generate_stairs_find_room
 generate_stairs	mkstairs
 generate_stairs_find_room	generate_stairs_room_good
@@ -1626,6 +1633,7 @@ god_zaps_you	monstunseesu
 god_zaps_you	shieldeff
 god_zaps_you	summon_minion
 god_zaps_you	ureflects
+gods_angry	godvoice
 gods_upset	angrygods
 godvoice	align_gname
 godvoice	rn2
@@ -1636,6 +1644,7 @@ goodpos	closed_door
 goodpos	is_pool
 goodpos	isok
 goodpos	rn2
+gulp_blnd_check	gulpmu
 gulpmm	newsym
 gulpmu	acurr
 gulpmu	d
@@ -1684,8 +1693,10 @@ help_monster_out	untrap_prob
 hero_behind_chokepoint	accessible
 hero_behind_chokepoint	isok
 hidden_gold	contained_gold
+histemple_at	in_rooms
 hitmu	d
 hitmu	newsym
+hitmu	passiveum
 hitmu	rn2
 hitmu	rnd
 hitum	double_punch
@@ -1778,6 +1789,7 @@ ini_inv_use_obj	setuqwep
 ini_inv_use_obj	setuswapwep
 ini_inv_use_obj	setuwep
 ini_inv_use_obj	setworn
+init_attr_role_redist	rnd_attr
 init_castle_tune	rn2
 init_dungeon_dungeons	rn2
 init_fill	rn2
@@ -2516,12 +2528,14 @@ minliquid_core	fire_damage_chain
 minliquid_core	hliquid
 minliquid_core	rn2
 minliquid_core	water_damage_chain
+mixtype	rn2
 mk_artifact	rn2
 mk_bubble	mv_bubble
 mk_bubble	rn2
 mk_knox_portal	rn2
 mk_mplayer_armor	rn2
 mk_mplayer_armor	rnd
+mk_roamer	makemon
 mk_tt_object	mksobj_at
 mk_tt_object	rn2
 mk_tt_object	tt_oname
@@ -2579,6 +2593,13 @@ mkobj_erosions	rn2
 mkportal	maketrap
 mkroll_launch	newsym
 mkroll_launch	weight
+mkshobj_at	get_shop_item
+mkshobj_at	makemon
+mkshobj_at	mkclass
+mkshobj_at	mkobj_at
+mkshobj_at	mksobj_at
+mkshobj_at	mkveggy_at
+mkshobj_at	rn2
 mkshop	invalid_shop_shape
 mkshop	rnd
 mkshop	topologize
@@ -2912,6 +2933,10 @@ offer_fake_amulet	change_luck
 offer_fake_amulet	offer_negative_valued
 offer_negative_valued	desecrate_altar
 offer_negative_valued	gods_upset
+offer_real_amulet	adjalign
+offer_real_amulet	done
+offer_real_amulet	fry_by_god
+offer_real_amulet	godvoice
 offer_too_soon	gods_upset
 oinit	setgemprobs
 okdoor	bydoor
@@ -2960,6 +2985,7 @@ passivemm	golemeffects
 passivemm	hliquid
 passivemm	rn2
 passiveum	acid_damage
+passiveum	assess_dmg
 passiveum	attk_protection
 passiveum	d
 passiveum	golemeffects
@@ -3197,6 +3223,7 @@ populate_maze	mksobj_at
 populate_maze	mktrap
 populate_maze	rn2
 possible_places	level_range
+postadjabil	see_monsters
 postmov	dissolve_bars
 postmov	in_rooms
 postmov	may_dig
@@ -3645,6 +3672,10 @@ shk_fixes_damage	dist2
 shk_fixes_damage	find_damage
 shk_owns	costly_spot
 shk_owns	shop_keeper
+shkinit	good_shopdoor
+shkinit	makemon
+shkinit	rn2
+shkinit	rnd
 shkveg	rnd
 shop_object	costly_spot
 shopdig	adjalign
@@ -4210,6 +4241,7 @@ use_tinning_kit	costly_spot
 use_tinning_kit	in_rooms
 use_tinning_kit	instapetrify
 use_tinning_kit	weight
+use_towel	gulp_blnd_check
 use_towel	make_blinded
 use_towel	rn2
 use_trap	acurr

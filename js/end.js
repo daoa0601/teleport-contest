@@ -260,6 +260,7 @@ function terminalLine(row, col, value, attr = 0) {
     for (let index = 0; index < value.length; index++)
         display?.setCell(col + index, row, value.charAt(index), NO_COLOR, attr);
 }
+// C rip.c:center()
 function tombstoneLine(value) {
     const text = String(value).slice(0, 16);
     const col = 28 - Math.trunc((text.length + 1) / 2);
@@ -867,6 +868,8 @@ async function discloseGame({ killer = '', deathVerb = 'died', deathCause = null
     }
     return true;
 }
+// C end.c:done_intr()
+// Native signal handlers are replaced by the caller's input cancellation.
 export function stopDisclosure() {
     game.program_state.stopprint = (game.program_state.stopprint ?? 0) + 1;
     return false;

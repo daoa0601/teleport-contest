@@ -368,6 +368,7 @@ export function definiteName(name, state = game) {
         return `the ${name}`;
     return name;
 }
+// C rumors.c:init_CapMons()
 // Native rumors.c:CapitalMon() includes capitalized species names and titles,
 // but excludes individual names in both the real and hallucinatory tables.
 // Read trait owners after module initialization; their module also uses objnam.

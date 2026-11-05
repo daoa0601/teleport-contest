@@ -929,6 +929,9 @@ async function mkveggy_at(x, y) {
         set_tin_variety(object, HEALTHY_TIN);
     return object;
 }
+// C shknam.c:stock_room()
+// Also C shknam.c:shkinit(): shopkeeper initialization is inlined here
+// Also C shknam.c:mkshobj_at(): per-square stocking is inlined here
 export async function stockShopRoom(sroom) {
     const level = requireGameLevel();
     const shopLevel = game.u.uz;

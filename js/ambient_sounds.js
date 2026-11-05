@@ -44,7 +44,9 @@ import { shopkeeperInOwnShop, quoteShopGoods, chatWithShopkeeper } from './shk.j
 import { cansee } from './vision.js';
 const S_ANT = 1;
 const MS_ANIMAL = 17;
-// C sounds.c:dosounds(): periodic ambient noise. The shop branch's
+// C sounds.c:dosounds()
+// Also C vault.c:gd_sound(): occupied-vault and guard checks are inlined here
+// Periodic ambient noise. The shop branch's
 // wake_nearto() over an 11-square radius is C shk.c:noisy_shop() inlined.
 // C sounds.c:throne_mon_sound(), beehive_mon_sound(), morgue_mon_sound(),
 // zoo_mon_sound(), and oracle_sound(): the per-room resident tests are the
@@ -246,7 +248,8 @@ async function hearChoice(state, messages, selection) {
 async function hear(state, message) {
     await publishHeardMessage(message, plineWithContinuation, state);
 }
-// C sounds.c:dochat().
+// C sounds.c:dochat()
+// Also C sounds.c:dotalk(): command dispatch calls dochat directly
 export async function dochat() {
     const species = heroSpecies(game);
     let refusal = null;

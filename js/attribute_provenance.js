@@ -38,6 +38,9 @@ export function veryFast(state = game) {
     return !!((intrinsicPropertyMask('fast', state) & ~INTRINSIC)
         || extrinsicPropertyMask('fast', state));
 }
+// C attrib.c:innately()
+// Also C attrib.c:check_innate_abil(): inlined here
+// Also C attrib.c:role_abil(): role table lookup is inlined here
 // Native checks the role/race tables at the current level even if an outside
 // effect removed the corresponding source bit. The tables are shared with adjabil.
 function innately(property, state) {

@@ -702,6 +702,8 @@ export async function flip_level_rnd(allowed: number, extras = false): Promise<v
     await flip_level(flp, extras);
 }
 
+// C priest.c:mk_roamer()
+// The caller creates the monster; this is its aligned-minion initialization.
 export function finishSpecialRoamer(monster: Monster, alignment: number, peaceful: boolean): void {
     const coaligned = alignment === (game.u?.ualign?.type ?? A_NEUTRAL);
     monster.ispriest = 0;
@@ -1992,7 +1994,9 @@ export async function lspo_monster(
     return monster;
 }
 
-// C sp_lev.c:create_monster(). Resolve species and location, then apply the requested attributes.
+// C sp_lev.c:create_monster()
+// Also C priest.c:mk_roamer(): creation is inlined here; finishSpecialRoamer initializes it
+// Resolve species and location, then apply the requested attributes.
 export async function create_monster(context: SpecialLevelContext, options: DesMonsterOptions): Promise<Monster | null> {
     const { point, monsterClass, monsterType } = options;
     const peaceful = options.peaceful == null ? null : !!options.peaceful;

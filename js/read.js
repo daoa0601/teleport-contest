@@ -1961,6 +1961,7 @@ async function genocideInput(kind, attempt) {
 function declinedGenocide(response) {
     return response.startsWith('\u001b') || ['none', "'none'", 'nothing'].includes(response.toLowerCase());
 }
+// Also C questpgr.c:quest_info(): leader, nemesis, and guardian fields are read inline here
 function canAnnounceImmuneSpecies(species) {
     const role = requireInitializedGame().urole;
     const sound = questMonsterSound(species);

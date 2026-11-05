@@ -53,6 +53,7 @@ function rogueGridRoom(cell: RogueRoomCell): Room {
     return room;
 }
 
+// C extralev.c:corr()
 function rogueCorrCell(x: number, y: number): void {
     const loc = game.level?.at(x, y);
     if (loc) loc.typ = rn2(50) ? CORR : SCORR;

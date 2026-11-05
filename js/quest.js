@@ -144,12 +144,16 @@ export function isQuestArtifact(object, state = game) {
     return !!object.oartifact
         && object.oartifact === artifactByName(state.urole?.artifactName, state)?.id;
 }
+// C questpgr.c:find_qarti()
+// The caller walks the outer chain; this searches one object and its contents.
 function objectContainsQuestArtifact(object, state) {
     if (!object)
         return false;
     return isQuestArtifact(object, state)
         || (object.contents ?? []).some(content => objectContainsQuestArtifact(content, state));
 }
+// C questpgr.c:find_quest_artifact()
+// The on_goal caller searches floor, monster inventory, and buried objects.
 function levelContainsQuestArtifact(g = game) {
     const level = g.level;
     if ((level?.objects || []).flat(2).some(object => objectContainsQuestArtifact(object, g)))
@@ -159,6 +163,10 @@ function levelContainsQuestArtifact(g = game) {
     return (level?.monsters || []).some(monster => !monster.dead && monster.mhp > 0 && (monster.minvent || [])
         .some(object => objectContainsQuestArtifact(object, g)));
 }
+// C quest.c:onquest()
+// Also C quest.c:on_start(): inlined here
+// Also C quest.c:on_locate(): inlined here
+// Also C quest.c:on_goal(): inlined here
 // C do.c:goto_level() leaves its level-teleport pline pending and then calls
 // quest.c:onquest().  qt_pager() has already loaded quest.lua and substituted
 // the role text when opening its text window forces the older pline's More
@@ -397,7 +405,9 @@ export async function touchQuestArtifact(object, state = game) {
     await qtPager('gotit', state);
     exerciseQuestWisdom(true, state);
 }
-// C chat_with_leader(): the checks after the greeting apply only at home.
+// C quest.c:chat_with_leader()
+// Also C quest.c:not_capable(): level threshold is inlined here
+// The checks after the greeting apply only at home.
 export async function chatWithQuestLeader(monster, g = game) {
     if (!monster || !isQuestLeader(monster, g))
         return false;

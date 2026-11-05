@@ -73,6 +73,8 @@ function minionData(priest: Monster | null | undefined): MinionData | null {
     return priest?.emin || priest?.mextra?.emin || null;
 }
 
+// C priest.c:histemple_at()
+// This caller supplies the priest's own position through its room number.
 export function priestInOwnTemple(
     priest: Monster, roomno: number, state: GameState = game,
 ): boolean {
@@ -89,6 +91,7 @@ export function priestIsInOwnTemple(priest: Monster, state: GameState = game): b
         && priestHasShrine(priest, state);
 }
 
+// C priest.c:findpriest()
 function findPriest(roomno: number, state: GameState = game): Monster | null {
     // makemon prepends to Native fmon; JS appends to the level array.
     const monsters = state.level?.monsters || [];
@@ -177,6 +180,7 @@ export function inHeroSanctuary(
 
 // C priest.c:ghod_hitsu(). The original shrine supplies the deity, while
 // the hero's current temple supplies the fallback launch edges.
+// Also C pray.c:a_gname_at(): inlined here for the validated shrine square
 export async function ghodHitsu(priest: Monster, {
     state = game, publish = plineWithContinuation,
 }: { state?: GameState; publish?: MessagePublisher } = {}): Promise<{ heroDied: boolean }> {
