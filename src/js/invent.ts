@@ -515,6 +515,7 @@ function inventoryPresentation(raw: GameObject, presentation: ItemPresentation |
     };
 }
 
+// C invent.c:assigninvlet(). Assign a free inventory letter using the rotating cursor.
 export function assignInventoryLetter(item: GameObject): GameObject {
     if (item.oclass === COIN_CLASS) {
         item.invlet = '$';
@@ -596,10 +597,12 @@ async function finishAddedInventoryItem(item: GameObject, recoveredThrownStack =
     return item;
 }
 
+// C invent.c:addinv().
 export async function addInventoryItem(raw: GameObject, presentation: ItemPresentation | null = null, observe = true): Promise<GameObject> {
     return await addInventoryItemCore(raw, presentation, observe, null);
 }
 
+// C invent.c:addinv_before().
 export async function addInventoryItemBefore(raw: GameObject, next: GameObject | null): Promise<GameObject> {
     return await addInventoryItemCore(raw, null, true, next);
 }
@@ -659,7 +662,7 @@ const DUPLICATE_POSSESSION_MESSAGES: Record<keyof HeroPossessions, string> = {
     questart: 'already have quest artifact?',
 };
 
-// C freeinv(): extraction precedes carried effects; equipment stays installed.
+// C invent.c:freeinv(): extraction precedes carried effects; equipment stays installed.
 export async function freeInventoryObject(object: GameObject, state: GameState = game) {
     requireLiveGame(state);
     const index = state.inventory.indexOf(object);
@@ -775,7 +778,7 @@ async function heldInventoryMessage(
     return `${prefix ? `${prefix} ` : ''}${letter} - ${description}${suffix}`;
 }
 
-// C invent.c useupall(): setnotworn, freeinv, then obfree.
+// C invent.c:useupall(): setnotworn, freeinv, then obfree.
 export async function useUpInventoryStack(object: GameObject, state: GameState = game) {
     requireLiveGame(state);
     const gameWasOver = state.program_state.gameover;
@@ -799,7 +802,7 @@ export function recordHeroPrizeAcquisition(object: GameObject, state: GameState 
     object.nomerge = false;
 }
 
-// C addinv_core1(): these effects precede merging and inventory insertion.
+// C invent.c:addinv_core1(): these effects precede merging and inventory insertion.
 export async function prepareInventoryAddition(object: GameObject, state: GameState = game) {
     if (object.oclass === COIN_CLASS) state.context.botl = true;
     const flag = carriedPossessionFlag(object, state);
@@ -815,14 +818,9 @@ export async function prepareInventoryAddition(object: GameObject, state: GameSt
     await setCarriedArtifactProperties(object, true, state);
 }
 
-// C addinv_core2(): the surviving object is now in the inventory chain.
+// C invent.c:addinv_core2(). The object is linked, including after a merge.
+// Regaining sight reuses these effects without adding the object again.
 export async function finishInventoryAddition(object: GameObject, state: GameState = game) {
-    await reactToSeenInventoryObject(object, state);
-}
-
-// C addinv_core2(): the object is already linked, including after a merge.
-// Sight recovery reuses these effects without adding the object again.
-export async function reactToSeenInventoryObject(object: GameObject, state: GameState = game) {
     if (confersLuck(object, state)) setMoreLuck(state);
     if (state.urole?.key !== 'archeologist' || object.oclass !== SCROLL_CLASS
         || object.otyp === SCR_BLANK_PAPER || heroIsBlind(state)
@@ -844,11 +842,12 @@ export async function learnUnseenInventory(state: GameState = game) {
         if (object.dknown && (object.bknown || !priest)
             && (object.oclass !== SCROLL_CLASS || !archeologist)) continue;
         observeObjectForNaming(object, { state });
-        await reactToSeenInventoryObject(object, state);
+        await finishInventoryAddition(object, state);
     }
     // The pinned TTY build's update_inventory() has no persistent window.
 }
 
+// C invent.c:freeinv_core(). Remove carried properties after extraction.
 export async function finishInventoryRemoval(object: GameObject, state: GameState = game) {
     const gameWasOver = state.program_state.gameover;
     object.pickup_prev = false;
@@ -908,7 +907,7 @@ export function takingOff(action: string): boolean {
     return action === 'take off' || action === 'remove';
 }
 
-// C invent.c:currency(). Hallucinated currency names use the core RNG.
+// Currency names from invent.c; hallucinated choices use the core RNG.
 const CURRENCIES: readonly string[] = [
     'Altarian Dollar', 'Ankh-Morpork Dollar', 'auric', 'buckazoid', 'cirbozoid',
     'credit chit', 'cubit', 'Flanian Pobble Bead', 'fretzer', 'imperial credit',
@@ -916,6 +915,7 @@ const CURRENCIES: readonly string[] = [
     'solari', 'spacebuck', 'sporebuck', 'Triganic Pu', 'woolong', 'zorkmid',
 ];
 
+// C invent.c:currency().
 export function currency(amount: number, {
     state = game, random = rn2,
 }: { state?: GameState; random?: typeof rn2 } = {}): string {
@@ -1055,7 +1055,7 @@ function selectedInventoryObject(selection: InventoryObjectSelection): GameObjec
     return object;
 }
 
-// C invent.c:getobj(): the need_more_cq loop pops queue entries before
+// Queued getobj() branch: the need_more_cq loop pops queue entries before
 // reassign() (invent.c:1778-1830) — CQ_REPEAT during a do-again replay,
 // CQ_CANNED otherwise. A queued letter must not become a different
 // possession merely because fixinv is disabled. Every entry which selects
@@ -1309,7 +1309,7 @@ export function reassignInventoryLetters() {
     game._lastInvNr = Math.min(index, 51);
 }
 
-// C invent.c invletter_value(): '$' first, then a-z, then A-Z, then other.
+// Inventory prompt order: '$' first, then a-z, then A-Z, then other.
 export function inventoryLetterOrder(letter: string | null | undefined): number {
     if (letter == null) return 53;
     if (letter === '$') return 0;
@@ -1628,6 +1628,7 @@ export async function inventoryItemDescription(item: GameObject, options: Invent
     return await objectDescription(item, options);
 }
 
+// C invent.c:useup().
 export async function consumeInventoryItem(item: GameObject, state: GameState = game) {
     requireLiveGame(state);
     const quantity = item?.quantity ?? item?.quan ?? 1;
@@ -1676,7 +1677,7 @@ async function rerollFallbackPrompt() {
     }
 }
 
-// C ref: invent.c:reroll_menu().  This menu is a startup transaction, not a
+// C invent.c:reroll_menu().  This menu is a startup transaction, not a
 // command: accepting another roll changes no turn state and keeps consuming
 // the live RNG stream from its current position.
 export async function rerollMenu() {
@@ -2848,12 +2849,11 @@ export function inventoryCommandLetter(item: GameObject): string {
     return item.invlet;
 }
 
-// C ref: invent.c:adjust_split(). The split remains linked beside its
+// C invent.c:adjust_split(). The split remains linked beside its
 // original until the destination is chosen; cancelling merges it back.
 export async function adjustSplit(): Promise<void> {
     game.context.move = 0;
-    const object = await chooseInventoryObject('split', candidate =>
-        candidate.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST);
+    const object = await chooseInventoryObject('split', adjustOk);
     if (!object || object.quan < 2 || object.oclass === COIN_CLASS) {
         commandResultFailed(); // invent.c:adjust_split() ECMD_FAIL.
         return;
@@ -2892,9 +2892,17 @@ export async function adjustSplit(): Promise<void> {
     await doadjust(split, object);
 }
 
-// C ref: invent.c:doorganize()/doorganize_core().
-// C invent.c:adjust_ok()/adjust_gold_ok(): the getobj filters that make
-// every lettered object selectable (gold only after confirmation).
+// C invent.c:adjust_ok(). Gold is excluded from ordinary adjustment.
+function adjustOk(object: GameObject): InventoryClassification {
+    return object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST;
+}
+
+// C invent.c:adjust_gold_ok(). The sanity repair allows gold too.
+function adjustGoldOk(_object: GameObject): InventoryClassification {
+    return GETOBJ_SUGGEST;
+}
+
+// C invent.c:doorganize(). Select the source object before adjusting its letter.
 export async function doadjust(selected: GameObject | null = null, splitting: GameObject | null = null) {
     const inventory = (game.inventory || [])
         .filter((object: GameObject): object is GameObject & { invlet: string } =>
@@ -2912,9 +2920,16 @@ export async function doadjust(selected: GameObject | null = null, splitting: Ga
     }
     if (!selected && game.flags.fixinv === false) reassignInventoryLetters();
     const repairGold = !selected && await checkInventoryGold('adjust');
-    let object = selected || await chooseInventoryObject('adjust', candidate =>
-        candidate.oclass === COIN_CLASS && !repairGold ? GETOBJ_EXCLUDE : GETOBJ_SUGGEST,
+    const object = selected || await chooseInventoryObject('adjust', repairGold ? adjustGoldOk : adjustOk,
         { forcePrompt: true, allowCount: true });
+    await doorganizeCore(object, splitting, inventory);
+}
+
+// C invent.c:doorganize_core(). Move, split, merge, or exchange the selected stack.
+async function doorganizeCore(
+    object: GameObject | null, splitting: GameObject | null,
+    inventory: readonly (GameObject & { invlet: string })[],
+): Promise<void> {
     if (!object) {
         // invent.c:doorganize_core() returns ECMD_CANCEL when getobj() is
         // dismissed; the rhack seam clears both command queues.
@@ -3245,6 +3260,7 @@ export function lootSortMode({ inventoryLetters = false, state = game }: {
 
 // Returns a new order without rewriting the inventory or container chain.
 // Observation is the native sort boundary; name normalization uses a view.
+// C invent.c:sortloot().
 export function sortObjects(objects: readonly GameObject[], {
     mode = 0, state = game, filter = null,
 }: ObjectSortOptions = {}): GameObject[] {
@@ -3258,6 +3274,7 @@ export function sortObjects(objects: readonly GameObject[], {
         .map(entry => entry.object);
 }
 
+// C invent.c:loot_classify().
 export function classifyLoot(object: LootView, state: GameState = game): LootClassification {
     const oclass = object.oclass || objectClassForType(object.otyp);
     const classOrder = state.flags.sortpack !== false ? inventoryClassOrder(state) : DEFAULT_LOOT_ORDER;
@@ -3368,6 +3385,7 @@ function lootErosion(object: GameObject): number {
         Number(!!object.orotten), Number(!!object.odiluted), Number(!!object.norevive));
 }
 
+// C invent.c:invletter_value().
 function inventoryLetterValue(letter: string | null | undefined): number {
     if (!letter) return 55;
     if (letter >= 'a' && letter <= 'z') return letter.charCodeAt(0) - 95;
@@ -3375,6 +3393,7 @@ function inventoryLetterValue(letter: string | null | undefined): number {
     return letter === '$' ? 1 : letter === '#' ? 54 : 55;
 }
 
+// C invent.c:inuse_classify(). Rank the worn slot for an in-use inventory view.
 function inUseRating(object: GameObject, state: GameState): number {
     const mask = (object.owornmask ?? 0) & (W_ACCESSORY | W_WEAPONS | W_ARMOR);
     if (!mask && object.otyp === LEASH && object.leashmon) return 1;
