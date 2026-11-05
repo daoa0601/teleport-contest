@@ -159,6 +159,17 @@ src/js/bullwhip.ts	useBullwhip	rn2	"[""5""]"	constant
 src/js/bullwhip.ts	useBullwhip	rn2	"[""proficiency + 2""]"	guarded
 src/js/dig.ts	buryObject	rn1	"[""50"", ""20""]"	constant
 src/js/dig.ts	scheduleBuriedRot	rnd	"[""250""]"	constant
+src/js/dothrow.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
+src/js/dothrow.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
+src/js/dothrow.ts	finishReturningThrow	rn2	"[""100""]"	constant
+src/js/dothrow.ts	finishReturningThrow	rn2	"[""100""]"	constant
+src/js/dothrow.ts	finishReturningThrow	rn2	"[""2""]"	constant
+src/js/dothrow.ts	finishReturningThrow	rnd	"[""3""]"	constant
+src/js/dothrow.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
+src/js/dothrow.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
+src/js/dothrow.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
+src/js/dothrow.ts	offerUnicornGem	rn2	"[""3""]"	constant
+src/js/dothrow.ts	offerUnicornGem	rn2	"[""7""]"	constant
 src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/dothrow.ts	releaseCameraDemon	random	"[""3""]"	constant
 src/js/apply.ts	useCamera	rn2	"[""2""]"	constant
@@ -542,8 +553,6 @@ src/js/mkmaze.ts	applyWaterFriction	rn2	"[""3""]"	constant
 src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dx ? 5 : 3""]"	constant
 src/js/mkmaze.ts	applyWaterFriction	rn2	"[""hero.dy ? 6 : 3""]"	constant
 src/js/hack.ts	waterTurbulenceStopsHero	rn2	"[""4""]"	constant
-src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
-src/js/hero_multishot.ts	chooseHeroVolleyCount	random	"[""maximum""]"	unproved
 src/js/uhitm.ts	mhitm_ad_drin	random	"[""8""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""10""]"	constant
 src/js/eat.ts	eat_brains	rollOne	"[""30""]"	constant
@@ -2072,10 +2081,6 @@ src/js/read.ts	rechargeWand	rnd	"[""charges""]"	unproved
 src/js/read.ts	rechargeWand	rnd	"[""limit""]"	constant
 src/js/rect.ts	rnd_rect	rn2	"[""count""]"	guarded
 src/js/regions.ts	rescueHeroFromRegion	d	"[""4"", ""4""]"	constant
-src/js/returning_throw.ts	finishReturningThrow	rn2	"[""100""]"	constant
-src/js/returning_throw.ts	finishReturningThrow	rn2	"[""100""]"	constant
-src/js/returning_throw.ts	finishReturningThrow	rn2	"[""2""]"	constant
-src/js/returning_throw.ts	finishReturningThrow	rnd	"[""3""]"	constant
 src/js/do.ts	dropRingIntoSink	rn2	"[""20""]"	constant
 src/js/do.ts	dropRingIntoSink	rn2	"[""5""]"	constant
 src/js/do.ts	polymorphSink	rn2	"[""3""]"	constant
@@ -2239,9 +2244,6 @@ src/js/timeout.ts	doStorms	rn2	"[""8""]"	constant
 src/js/timeout.ts	doStorms	rn2	"[""ROWNO""]"	constant
 src/js/timeout.ts	doStorms	rnd	"[""64""]"	constant
 src/js/timeout.ts	doStorms	rnd	"[""COLNO - 1""]"	constant
-src/js/swallowed_throw.ts	resolveGenericSwallowedThrow	rnd	"[""20""]"	constant
-src/js/swallowed_throw.ts	resolveSwallowedFoodThrow	rnd	"[""20""]"	constant
-src/js/swallowed_throw.ts	resolveSwallowedPotionThrow	rnd	"[""20""]"	constant
 src/js/mon.ts	dealWithMonsterOvercrowding	rn2	"[""2""]"	constant
 src/js/teleport.ts	randomMonsterRelocation	random	"[""ROWNO""]"	constant
 src/js/teleport.ts	randomMonsterRelocation	random	"[""remaining""]"	unproved
@@ -2375,8 +2377,6 @@ src/js/u_init.ts	uInitRaceInventoryAndKnowledge	rn2	"[""ELF_INSTRUMENTS.length""
 src/js/undead_summoning.ts	summonUndead	rnd	"[""5""]"	constant
 src/js/zap.ts	turnHeroWithUndeadMagic	roll	"[""30""]"	constant
 src/js/zap.ts	turnMonsterWithUndeadMagic	options.roll	"[""8""]"	constant
-src/js/unicorn_gift.ts	offerUnicornGem	rn2	"[""3""]"	constant
-src/js/unicorn_gift.ts	offerUnicornGem	rn2	"[""7""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""13""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""90""]"	constant
 src/js/apply.ts	causeHornTrouble	random	"[""constitution""]"	invariant

@@ -72,7 +72,7 @@ dogmove.c	dog_invent	edog->apport > 0	diagnostic	NHASSERT assertion condition te
 dokick.c	really_kick_object	It comes loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	It doesn't come loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
 dokick.c	really_kick_object	n't come loose.	composed	src/js/dokick.ts:kickFloorObject; Selects blind It or the object name and singular or plural come-loose verbs.
-dothrow.c	thitmonst	catches and drops	composed	src/js/unicorn_gift.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
+dothrow.c	thitmonst	catches and drops	composed	src/js/dothrow.ts:offerUnicornGem; A tame unicorn inserts and drops between catches and the definite gem name.
 dungeon.c	br_string2	One way stairs down	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
 dungeon.c	br_string2	One way stairs up	composed	src/js/dungeon.ts:overviewBranchLine; Composes `One way stairs ${direction}` for the no_end2 branch rows of #overview.
 dungeon.c	dumpit	, dunlev_ureached	diagnostic	#ifdef DEBUG dumpit() gated by explicitdebug(__FILE__), writing to stderr; developer diagnostic.
