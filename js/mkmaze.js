@@ -544,7 +544,8 @@ async function fixupBaalz(active) {
     active.baalzFixupArea = { ...inarea };
     active.baalzPoolMarkers = poolMarkers.map(marker => ({ ...marker }));
 }
-// C mkmaze.c:fixup_special() processes regions in Lua declaration order.
+// fixup_special()'s region pass: regions are processed in Lua declaration
+// order; this helper owns that loop for the port below.
 async function fixupSpecialRegions(active) {
     let branchDeclared = false;
     for (const region of active.levelRegions ?? []) {
@@ -1372,10 +1373,10 @@ export async function setup_waterlevel() {
         for (let y = BOUNDS.bubbleYMin; y <= BOUNDS.bubbleYMax; y += yskip)
             await mk_bubble(x, y, rn2(7));
 }
-// C mkmaze.c:mk_bubble().  These bit masks make visually pleasing bubbles
-// on a normal aspect 25x80 terminal, which naturally results in them being
-// mathematically anything but symmetric; the first two elements tell the
-// dimensions of the bubble's bounding box.
+// mk_bubble()'s static bmask[] table.  These bit masks make visually
+// pleasing bubbles on a normal aspect 25x80 terminal, which naturally
+// results in them being mathematically anything but symmetric; the first
+// two elements tell the dimensions of the bubble's bounding box.
 const BUBBLE_MASKS = [
     { width: 2, height: 1, rows: [0x3] },
     { width: 3, height: 2, rows: [0x7, 0x7] },

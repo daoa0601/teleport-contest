@@ -346,21 +346,21 @@ src/js/egg.ts	runClaimedEggHatchTimer	rn2	"[""2""]"	constant
 src/js/egg.ts	runClaimedEggHatchTimer	rnd	"[""quantity""]"	unproved
 src/js/egg_impact.ts	explodePyroliskEggAt	rollDice	"[""3"", ""6""]"	constant
 src/js/mon.ts	hatchableEggSpecies	rn2	"[""77""]"	constant
-src/js/elemental.ts	changeBubbleDirection	rn2	"[""3""]"	constant
-src/js/elemental.ts	changeBubbleDirection	rn2	"[""3""]"	constant
-src/js/elemental.ts	changeBubbleDirection	rn2	"[""bubble.dx || bubble.dy ? 20 : 5""]"	constant
-src/js/elemental.ts	makeBubble	rn2	"[""3""]"	constant
-src/js/elemental.ts	makeBubble	rn2	"[""3""]"	constant
-src/js/elemental.ts	maybeAdjustHeroBubble	rn2	"[""2""]"	constant
-src/js/elemental.ts	moveBubblePosition	rn2	"[""6""]"	constant
-src/js/elemental.ts	moveElementalBubbles	rn2	"[""3""]"	constant
-src/js/elemental.ts	moveElementalBubbles	rn2	"[""3""]"	constant
-src/js/elemental.ts	moveElementalBubbles	rn2	"[""xedge ? 3 : 5""]"	constant
-src/js/elemental.ts	setupElementalBubbles	rn2	"[""10""]"	constant
-src/js/elemental.ts	setupElementalBubbles	rn2	"[""3""]"	constant
-src/js/elemental.ts	setupElementalBubbles	rn2	"[""4""]"	constant
-src/js/elemental.ts	setupElementalBubbles	rn2	"[""4""]"	constant
-src/js/elemental.ts	setupElementalBubbles	rn2	"[""7""]"	constant
+src/js/mkmaze.ts	changeBubbleDirection	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	changeBubbleDirection	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	changeBubbleDirection	rn2	"[""bubble.dx || bubble.dy ? 20 : 5""]"	constant
+src/js/mkmaze.ts	mk_bubble	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	mk_bubble	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	maybe_adjust_hero_bubble	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	moveBubblePosition	rn2	"[""6""]"	constant
+src/js/mkmaze.ts	movebubbles	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	movebubbles	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	movebubbles	rn2	"[""xedge ? 3 : 5""]"	constant
+src/js/mkmaze.ts	setup_waterlevel	rn2	"[""10""]"	constant
+src/js/mkmaze.ts	setup_waterlevel	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	setup_waterlevel	rn2	"[""4""]"	constant
+src/js/mkmaze.ts	setup_waterlevel	rn2	"[""4""]"	constant
+src/js/mkmaze.ts	setup_waterlevel	rn2	"[""7""]"	constant
 src/js/wield.ts	chwepon	rn2	"[""3""]"	constant
 src/js/wield.ts	chwepon	rn2	"[""7""]"	constant
 src/js/read.ts	enchantWeapon	rn2	"[""enchantment""]"	guarded
@@ -949,12 +949,12 @@ src/js/mcastu.ts	mCureSelf	d	"[""3"", ""6""]"	constant
 src/js/mcastu.ts	mcastStunYou	d	"[""dice"", ""4""]"	constant
 src/js/mcastu.ts	mcastWeakenYou	rollOne	"[""lossSides""]"	guarded
 src/js/mcastu.ts	castmuSpellEffect	rollDice	"[""attack.spellDice"", ""attack.spellSides""]"	unproved
-src/js/maze_terrain.ts	carveMazeFrom	rn2	"[""available.length""]"	guarded
-src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeXMax >> 1) - 1""]"	unproved
-src/js/maze_terrain.ts	createMaze	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
-src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
-src/js/maze_terrain.ts	createMaze	rnd	"[""4""]"	constant
-src/js/maze_terrain.ts	openDeadEnds	rn2	"[""openings.length""]"	guarded
+src/js/mkmaze.ts	walkfrom	rn2	"[""dirs.length""]"	guarded
+src/js/mkmaze.ts	maze0xy	rn2	"[""(mazeXMax >> 1) - 1""]"	unproved
+src/js/mkmaze.ts	maze0xy	rn2	"[""(mazeYMax >> 1) - 1""]"	unproved
+src/js/mkmaze.ts	create_maze	rnd	"[""4""]"	constant
+src/js/mkmaze.ts	create_maze	rnd	"[""4""]"	constant
+src/js/mkmaze.ts	maze_remove_deadends	rn2	"[""dirok.length""]"	guarded
 src/js/mhitm.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
 src/js/mhitm.ts	attackMonsterWithMonster	rollOne	"[""die""]"	guarded
 src/js/minion.ts	demonLord	rn1	"[""PM_YEENOGHU + 1 - PM_JUIBLEX"", ""PM_JUIBLEX""]"	constant
@@ -1849,29 +1849,29 @@ src/js/objnam.ts	readObjectName	rn2	"[""wishClasses.length""]"	constant
 src/js/objnam.ts	rndClass	rn2	"[""last - first + 1""]"	guarded
 src/js/objnam.ts	rndClass	rnd	"[""total""]"	unproved
 src/js/options.ts	chooseRandomPart	rn2	"[""parts""]"	guarded
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""10""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""2""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""4""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1""]"	unproved
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""PM_ORC_SHAMAN - PM_ORC + 1""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rn2	"[""TIN - TRIPE_RATION + 1""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rnd	"[""10""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rnd	"[""3""]"	constant
-src/js/orc_raid.ts	createOrcRaid	rnd	"[""4""]"	constant
-src/js/orc_raid.ts	createStolenItem	rn2	"[""2""]"	constant
-src/js/orc_raid.ts	createStolenItem	rn2	"[""3""]"	constant
-src/js/orc_raid.ts	deliverOrcRaidLoot	rn2	"[""2""]"	constant
-src/js/orc_raid.ts	giveShinyLoot	rn2	"[""1000""]"	constant
-src/js/orc_raid.ts	giveShinyLoot	rn2	"[""1000""]"	constant
-src/js/orc_raid.ts	giveShinyLoot	rn2	"[""8""]"	constant
-src/js/orc_raid.ts	giveShinyLoot	rnd	"[""goldChance""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""10""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""4""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""GAUNTLETS_OF_DEXTERITY - LEATHER_GLOVES + 1""]"	unproved
+src/js/mkmaze.ts	stolen_booty	rn2	"[""PM_ORC_SHAMAN - PM_ORC + 1""]"	constant
+src/js/mkmaze.ts	stolen_booty	rn2	"[""TIN - TRIPE_RATION + 1""]"	constant
+src/js/mkmaze.ts	stolen_booty	rnd	"[""10""]"	constant
+src/js/mkmaze.ts	stolen_booty	rnd	"[""3""]"	constant
+src/js/mkmaze.ts	stolen_booty	rnd	"[""4""]"	constant
+src/js/mkmaze.ts	migr_booty_item	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	migr_booty_item	rn2	"[""3""]"	constant
+src/js/mkmaze.ts	deliverOrcRaidLoot	rn2	"[""2""]"	constant
+src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""1000""]"	constant
+src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""1000""]"	constant
+src/js/mkmaze.ts	shiny_orc_stuff	rn2	"[""8""]"	constant
+src/js/mkmaze.ts	shiny_orc_stuff	rnd	"[""goldChance""]"	constant
 src/js/do_name.ts	randomOrcName	rn2	"[""2""]"	constant
 src/js/do_name.ts	randomOrcName	rn2	"[""2""]"	constant
 src/js/do_name.ts	randomOrcName	rn2	"[""30""]"	constant
 src/js/do_name.ts	randomOrcName	rn2	"[""syllables.length""]"	unproved
-src/js/orc_raid.ts	sendRaiderToLowerMines	rn2	"[""40""]"	constant
-src/js/orc_raid.ts	sendRaiderToLowerMines	rn2	"[""bottom - current.dlevel + 1""]"	unproved
+src/js/mkmaze.ts	migrate_orc	rn2	"[""40""]"	constant
+src/js/mkmaze.ts	migrate_orc	rn2	"[""bottom - current.dlevel + 1""]"	unproved
 src/js/eat.ts	fprefx	d	"[""10"", ""4""]"	constant
 src/js/eat.ts	fprefx	d	"[""3"", ""6""]"	constant
 src/js/eat.ts	fprefx	rn1	"[""currentFoodMeal(state).reqtime"", ""5""]"	unproved

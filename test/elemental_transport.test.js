@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { AIR, COLNO, NO_MINVENT, ROWNO, WATER } from '../js/const.js';
-import { moveElementalBubbles } from '../js/elemental.js';
+import { movebubbles } from '../js/mkmaze.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { generateWaterLevel } from '../js/mkmaze.js';
 import { CRYSKNIFE, WORM_TOOTH } from '../js/object_data.js';
@@ -56,7 +56,7 @@ void test('a water bubble brings an attached ball and chain back under its trans
     assert.ok(ball && chain);
     await moveObject(ball, 19, 10);
     initRng(2n);
-    await moveElementalBubbles();
+    await movebubbles();
     for (const attachment of [ball, chain]) {
         assert.equal(attachment.where, 'floor');
         assert.equal(attachment.ox, game.u.ux);
@@ -73,7 +73,7 @@ void test('water bubble transport leaves a carried punishment ball in inventory'
     assert.ok(ball && chain);
     unlinkObject(ball);
     await addInventoryItem(ball);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(ball.where, 'inventory');
     assert.ok(game.inventory.includes(ball));
     assert.equal(chain.ox, game.u.ux);
@@ -89,7 +89,7 @@ void test('water bubble transport replaces swallowed punishment beneath the tran
     assert.ok(ball && chain);
     const swallower = await createMonsterAt('purple worm', 20, 10, NO_MINVENT);
     await installSwallowedHero(swallower);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(game.u.ustuck, swallower);
     for (const attachment of [ball, chain]) {
         assert.equal(attachment.where, 'floor');
@@ -106,7 +106,7 @@ void test('a water bubble transports a floor crysknife and can revert it to a wo
     });
     assert.equal(knife.otyp, CRYSKNIFE, 'the fixed knife survives its initial floor placement');
     initRng(1n);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(knife.otyp, WORM_TOOTH, 'bubble placement applies the fixed knife reversion chance');
     assert.equal(knife.oerodeproof, false);
     assert.equal(knife.where, 'floor');
@@ -122,7 +122,7 @@ void test('a water bubble carries a mounted hero and exposes their hiding place'
     game.u.usteed = horse;
     game.u.uundetected = 1;
     initRng(2n);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(game.u.ux, bubble.x);
     assert.equal(game.u.uy, bubble.y);
     assert.deepEqual([horse.mx, horse.my], [game.u.ux, game.u.uy], 'the mount follows the transported rider');
@@ -133,7 +133,7 @@ void test('a swallowed hero travels with the monster carried by a water bubble',
     const swallower = await createMonsterAt('purple worm', 20, 10, NO_MINVENT);
     await installSwallowedHero(swallower);
     initRng(2n);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(swallower.mx, bubble.x);
     assert.equal(swallower.my, bubble.y);
     assert.deepEqual([game.u.ux, game.u.uy], [swallower.mx, swallower.my], 'swallowing remains attached during transport');
@@ -150,7 +150,7 @@ void test('walking inside a water bubble can steer its next drift', async () => 
             game.level.requireAt(x, y).typ = AIR;
     game.u.ux = 21;
     initRng(2n);
-    await moveElementalBubbles();
+    await movebubbles();
     for (let attempt = 0; attempt < 20 && bubble.dx !== -1; attempt++) {
         await rhack('h'.charCodeAt(0));
         if (bubble.dx !== -1)
@@ -188,7 +188,7 @@ void test('water replacing a moving bubble clears the old terrain flags', async 
     oldCell.candig = true;
     oldCell.altarmask = 7;
     initRng(2n);
-    await moveElementalBubbles();
+    await movebubbles();
     assert.equal(oldCell.typ, WATER);
     assert.equal(!!oldCell.candig, false, 'water cannot retain the digging exception of a former trapdoor');
     assert.equal(oldCell.altarmask, 0, 'the replacement cell has no former altar alignment');

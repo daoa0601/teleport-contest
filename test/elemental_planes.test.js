@@ -4,7 +4,7 @@ import { createSpecialLevel } from './support/topology.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { AIR, ALTAR, AM_SANCTUM, MAGIC_PORTAL, ROOM, WATER, } from '../js/const.js';
-import { moveElementalBubbles } from '../js/elemental.js';
+import { movebubbles } from '../js/mkmaze.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { generateAstralLevel, generateEarthLevel, generateWaterLevel } from '../js/mkmaze.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
@@ -101,7 +101,7 @@ void test('the Plane of Water builds moving air bubbles and its Astral portal', 
     game.u.ux = carriedCell.x;
     game.u.uy = carriedCell.y;
     const oldBubble = { x: bubble.x, y: bubble.y };
-    await moveElementalBubbles();
+    await movebubbles();
     const dx = bubble.x - oldBubble.x;
     const dy = bubble.y - oldBubble.y;
     assert.deepEqual({ x: game.u.ux, y: game.u.uy }, { x: carriedCell.x + dx, y: carriedCell.y + dy });

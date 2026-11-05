@@ -22,7 +22,6 @@ src/js/draft_message.ts	dig.c
 src/js/dungeon.ts	dungeon.c
 src/js/earthquake.ts	music.c
 src/js/eat.ts	eat.c
-src/js/elemental.ts	mkmaze.c
 src/js/engrave.ts	engrave.c
 src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
@@ -53,7 +52,6 @@ src/js/lua/lifecycle.ts	nhlua.c
 src/js/lua/objects.ts	nhlobj.c
 src/js/makemon.ts	makemon.c
 src/js/map_object_description.ts	pager.c
-src/js/maze_terrain.ts	mkmaze.c
 src/js/mcastu.ts	mcastu.c
 src/js/menu_coloring.ts	windows.c
 src/js/mhitm.ts	mhitm.c
@@ -73,7 +71,6 @@ src/js/o_init.ts	o_init.c
 src/js/occupation.ts	allmain.c
 src/js/option_editors.ts	botl.c
 src/js/option_escapes.ts	options.c
-src/js/orc_raid.ts	mkmaze.c
 src/js/pager.ts	pager.c
 src/js/persistent_state_validation.ts	save.c
 src/js/pet_hunger.ts	dogmove.c
