@@ -6,7 +6,7 @@ import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './g
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER } from './const.js';
-import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
+import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './alignment.js';
@@ -35,6 +35,12 @@ import { impossible, panic } from './diagnostics.js';
 import { displayLiquidName } from './do_name.js';
 import { onQuestStart } from './quest.js';
 import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
+import type { Stairway } from './map_types.js';
+import type { gotoLevel as gotoLevelImplementation } from './level_change.js';
+import { finishHeroDeath } from './end.js';
+
+// C do.c:goto_level()'s port signature (level_change.ts).
+type StairGotoLevel = typeof gotoLevelImplementation;
 
 interface PlacedLevel {
     name: string;
@@ -196,6 +202,40 @@ export function dungeonBuildsUp(
         branch.end2.dnum === level.dnum && branch.end2.dlevel === level.dlevel);
     return !!branch?.end1_up;
 }
+
+// C dungeon.c:next_level(): mark the down stairway traversed and hand its
+// destination to goto_level().  The '<'/'>'
+// commands always enter through a stairway (at_stairs), so the C fall
+// branch — goto_level() one level deeper without a stairway — belongs to
+// the hole-trap owner that C's dodown() also routes there.
+export async function next_level(
+    stairs: Stairway, gotoLevel: StairGotoLevel,
+): Promise<boolean> {
+    stairs.u_traversed = true;
+    return gotoLevel(stairs.tolev, {
+        arrival: 'stairs', ladder: !!stairs.isladder,
+    });
+}
+
+// C dungeon.c:prev_level(): an up branch stair from dungeon 0 level 1 ends
+// the game as an escape unless the hero carries the Amulet, and only then
+// lets goto_level() enter the branch.
+export async function prev_level(
+    stairs: Stairway, gotoLevel: StairGotoLevel,
+): Promise<boolean | 'escaped'> {
+    stairs.u_traversed = true;
+    const here = currentDungeonLocation();
+    if (stairs.tolev.dnum !== here.dnum
+        && here.dnum === 0 && here.dlevel === 1
+        && !game.u.uhave?.amulet) {
+        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+        return 'escaped';
+    }
+    return gotoLevel(stairs.tolev, {
+        arrival: 'downstairs', ladder: !!stairs.isladder,
+    });
+}
+
 
 // C dungeon.c:Can_rise_up(). Branch-top ascent requires its real up stair.
 export function canHeroRiseUp(

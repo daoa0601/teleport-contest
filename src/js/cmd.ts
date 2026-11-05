@@ -2,7 +2,7 @@ import { FOOD_CLASS, POTION_CLASS } from './objclass.js';
 import { DIRECTION_HANDLERS, INITIAL_COMMAND_BINDINGS, NATIVE_COMMAND_CONSTANTS, NATIVE_COMMAND_FLAGS, NATIVE_COMMAND_PROFILE, NATIVE_COMMANDS, NATIVE_SPECIAL_KEYS } from './command_data.js';
 import { doapply, dorub, dojump, useUnicornHorn, continueTrapSetting, resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { doname, monsterName } from './do_name.js';
-import { doannotate, doDungeonOverview, ledgerNo, recordMappedOverviewState, surfaceName } from './dungeon.js';
+import { doannotate, doDungeonOverview, ledgerNo, next_level, prev_level, recordMappedOverviewState, surfaceName } from './dungeon.js';
 import { dochat } from './ambient_sounds.js';
 import { doloot, pickupAtHero, dotip, autopickupAtHero } from './pickup.js';
 import { doinvoke } from './artifacts.js';
@@ -863,8 +863,8 @@ async function readCommand(): Promise<void> {
     if (result.cancelled) commandResultCancelled(); // read.c:doread() ECMD_CANCEL.
 }
 
-// Stair traversal shared by up and down: mark the stairway traversed, then
-// hand the destination to goto_level().
+// Stair traversal shared by up and down: the do.c admission checks, then
+// dungeon.c's next_level()/prev_level() for the destination itself.
 // C do.c:dodown() and C do.c:doup(): the '<' and '>' commands whose shared
 // body this is; each still starts with set_move_cmd(). C hack.c:u_rooted():
 // the "You are rooted" refusal. C trap.c:uteetering_at_seen_pit() and
@@ -997,21 +997,14 @@ export async function travelStairs(up: boolean) {
         game.context.move = 0;
         return false;
     }
-    stairs.u_traversed = true;
-    // C dungeon.c:prev_level(): an up branch stair from dungeon 0 level 1
-    // ends the game as an escape unless the hero carries the Amulet, and
-    // only then lets goto_level() enter the endgame.
-    if (up && stairs.tolev.dnum !== game.u.uz.dnum
-        && game.u.uz.dnum === 0 && game.u.uz.dlevel === 1
-        && !game.u.uhave?.amulet) {
-        await finishHeroDeath({ killer: '', deathType: ESCAPED });
+    // C dungeon.c:next_level() and prev_level(): the branch-stair wrappers,
+    // including prev_level()'s escape ending from dungeon 0 level 1.
+    const changed = up ? await prev_level(stairs, gotoLevel)
+        : await next_level(stairs, gotoLevel);
+    if (changed === 'escaped') {
         game.context.move = 1;
         return true;
     }
-    const changed = await gotoLevel(stairs.tolev, {
-        arrival: up ? 'downstairs' : 'stairs',
-        ladder: !!stairs.isladder,
-    });
     if (changed !== false) game.context.move = 1;
     return changed !== false;
 }
