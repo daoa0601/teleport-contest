@@ -35,7 +35,7 @@ import { heroIsUnaware } from './senses.js';
 import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './level_change.js';
-import { adjustedMonsterLevel, makemonAt, mkclassAligned } from './makemon.js';
+import { makemonAt, mkclassAligned } from './makemon.js';
 import { canDigDown, stairwayAt } from './mklev.js';
 import { createToptenObject, mksobj, placeTreeFruit, unlinkObject, placeCreatedObject, placeObject, remove_object, stack_object, updateIceObjectTimersAt, placeObjectSynchronously } from './mkobj.js';
 import { angerWatchGuards, maybeUnhideAt, monsterSubject, resolveMonsterLiquid, wakeMonstersNearWithMessages, monsterFliesOrFloats } from './mon.js';
@@ -46,7 +46,7 @@ import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, 
 import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { heroMonsterForm, heroIsFlying } from './polyself.js';
+import { heroIsFlying } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';
 import { punishHero, unpunishHero } from './read.js';
 import { autopickupAtHero } from './pickup.js';
@@ -63,7 +63,7 @@ import { levelHasCeiling, levelAtDepth } from './dungeon.js';
 import { CLR_WHITE } from './terminal.js';
 import { scheduleObjectTimer, stopObjectTimer } from './timeout.js';
 import { cansee, monsterHasLineOfSightToHero, unblock_point, vision_note_blocker_change } from './vision.js';
-import { heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { heroAttackBonus, heroStrengthDamageBonus, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { willWeld } from './wield.js';
 import { objectResistsDestruction } from './zap.js';
 import { breakStatue, fractureRock } from './rock_breakage.js';
@@ -187,27 +187,8 @@ export function clearDiggingContext(state) {
     digging.lastdigtime = 0;
     digging.quiet = false;
 }
-// C weapon.c abon().  cmd.js meleeAttributeBonus() holds the same human
-// ladder; dig.c needs the polymorphed-form branch too.
-function heroAttackBonus(state) {
-    if (Upolyd(state.u)) {
-        const form = heroMonsterForm(state);
-        return form == null ? 0 : adjustedMonsterLevel(form) - 3;
-    }
-    const strength = currentAttribute(A_STR, state);
-    const dexterity = currentAttribute(A_DEX, state);
-    let bonus = strength < 6 ? -2
-        : strength < 8 ? -1
-            : strength < 17 ? 0
-                : strength < 68 ? 1 // STR18(50)
-                    : strength < 118 ? 2 : 3; // STR18(100)
-    if ((state.u?.ulevel ?? 1) < 3)
-        bonus++;
-    return bonus + (dexterity < 4 ? -3
-        : dexterity < 6 ? -2
-            : dexterity < 8 ? -1
-                : dexterity < 14 ? 0 : dexterity - 14);
-}
+// weapon.c's abon() lives in weapon.js (heroAttackBonus); dig.c's digmon()
+// reads the same strength/dexterity ladder for digging effort.
 // C weapon.c greatest_erosion(): worst of fire and rot damage.
 function greatestErosion(object) {
     return Math.max(object.oeroded ?? 0, object.oeroded2 ?? 0);

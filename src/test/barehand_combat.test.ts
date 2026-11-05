@@ -27,7 +27,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { LEATHER_GLOVES, OBJECT_NAMES, ROBE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { addInventoryObject, knownObject } from './support/game-objects.js';
 import { installHeroWeaponSkills } from './support/hero-state.js';

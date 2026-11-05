@@ -37,9 +37,8 @@ import {
     OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL,
 } from './object_data.js';
 import {
-    canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponSkillType,
-} from './skills.js';
-import { weaponDescription } from './weapon.js';
+    canAdvanceHeroSkill, ensureHeroSkills, skillName, SKILL_LEVEL_NAMES, weaponDescription, weaponSkillType,
+} from './weapon.js';
 import { isLauncherAmmunition, isWetTowel, objectIsMetallic } from './object_properties.js';
 import { emptyHandedDescription } from './wield.js';
 import { displayLiquidName, monsterName } from './do_name.js';

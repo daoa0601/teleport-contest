@@ -19,7 +19,7 @@ import { MONSTER_ATTACKS, MONSTER_FLAGS2, MONSTER_LEVEL, MONSTER_NAME, MONSTER_R
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating, blindfolded, heroIsBlinded, setHeroBlindnessTurns } from './senses.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced, objectIsHardHelmet, stopDonning, removeHeroAccessory, wearHeroAccessory } from './do_wear.js';
-import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitBonus } from './weapon.js';
+import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weapon.js';
 import { isPolearm, isPermanentlyPoisonedObject, isMissileObject, isWeaponTool } from './object_properties.js';
 import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
@@ -1811,7 +1811,7 @@ async function beginHeroAttackSlot(sequence, slot, state, random, rollOne, rollD
     if (attackType === AT_WEAP) {
         const wieldedWeapon = monsterWieldedWeapon(monster);
         if (wieldedWeapon && !retainedAttackRoll) {
-            weaponAccuracy = weaponHitBonus(wieldedWeapon, state.u, {
+            weaponAccuracy = weaponHitValue(wieldedWeapon, state.u, {
                 state,
                 random,
                 rollOne,

@@ -16,7 +16,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { isLauncherAmmunition, isThrowingWeapon, launcherMatchesAmmo, isAxe } from './object_properties.js';
 import { rnd, rn2 } from './rng.js';
 import { chargeUnpaidObjectAsDebt } from './shk.js';
-import { weaponSkillHitBonus } from './skills.js';
+import { weaponSkillHitBonus } from './weapon.js';
 import { offerThrownFood } from './thrown_food.js';
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { catchQuestObject } from './quest_leader_catch.js';

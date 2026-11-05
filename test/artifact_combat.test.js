@@ -9,7 +9,7 @@ import { BLACK_DRAGON_SCALES } from '../js/object_data.js';
 import { polymonHero, returnHeroToHumanForm } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
 import { races } from '../js/roles.js';
-import { weaponHitBonus } from '../js/weapon.js';
+import { weaponHitValue } from '../js/weapon.js';
 import { artifactObject, uninitializedObject } from './support/game-objects.js';
 import { freshGame } from './support/game-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
@@ -109,14 +109,14 @@ for (const [raceName, artifactName, maximumBonus] of [
         requirePlayingGame(game);
         const artifact = await artifactObject(artifactName, { spe: 0 });
         const ordinary = await uninitializedObject(artifact.otyp, { spe: 0 });
-        const ordinaryAccuracy = weaponHitBonus(ordinary, game.u);
-        const racialBonus = weaponHitBonus(artifact, game.u) - ordinaryAccuracy;
+        const ordinaryAccuracy = weaponHitValue(ordinary, game.u);
+        const racialBonus = weaponHitValue(artifact, game.u) - ordinaryAccuracy;
         assert.ok(racialBonus >= 1 && racialBonus <= maximumBonus);
         pushKeys(' '.repeat(20));
         await polymonHero(MONSTER_NAME.indexOf('tiger'));
-        assert.equal(weaponHitBonus(artifact, game.u), ordinaryAccuracy, 'the carnivore body does not retain racial vulnerability');
+        assert.equal(weaponHitValue(artifact, game.u), ordinaryAccuracy, 'the carnivore body does not retain racial vulnerability');
         await returnHeroToHumanForm();
-        const restoredBonus = weaponHitBonus(artifact, game.u) - ordinaryAccuracy;
+        const restoredBonus = weaponHitValue(artifact, game.u) - ordinaryAccuracy;
         assert.ok(restoredBonus >= 1 && restoredBonus <= maximumBonus);
     });
 }

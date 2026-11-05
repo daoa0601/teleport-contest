@@ -49,7 +49,7 @@ import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './he
 import { requireInitializedHero } from './hero_types.js';
 import { consumeInventoryItem, inventoryItemDescription, mergable } from './invent.js';
 import { snuffMonsterInventoryLights } from './light.js';
-import { adjustedMonsterLevel, cloneMonster } from './makemon.js';
+import { cloneMonster } from './makemon.js';
 import { touchHeroWithDeath } from './mcastu.js';
 import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
@@ -83,7 +83,6 @@ import { ureflects, heroReflectsRay } from './muse.js';
 import { d, rn2, rnd, rnl } from './rng.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { carriedObjectOwner, deleteObject, dopay, tendedShop } from './shk.js';
-import { drainHeroWeaponSkills, ensureHeroSkills, useHeroSkill, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './skills.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { addObjectToMonsterInventory, stealFromHero, stealHeroGold, stealHeroQuestObject } from './steal.js';
 import { dismountHero, monsterAtPosition } from './steed.js';
@@ -95,7 +94,7 @@ import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, mi
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
-import { dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, weaponHitBonus } from './weapon.js';
+import { drainHeroWeaponSkills, dryTowel, ensureHeroSkills, heroAttackBonus, heroStrengthDamageBonus, monsterWieldedWeapon, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, shadeBlocksWeaponBaseDamage, unwieldMonsterWeapon, updateMonsterWeaponAfterPolymorph, useHeroSkill, weaponHitValue, weaponSkillDamageBonus, weaponSkillHitBonus, weaponSkillType } from './weapon.js';
 import { applyHeroWereChange, isHumanWereMonster, isWereMonster, revertHeroWereForm, setHeroLycanthropy, wereChange } from './were.js';
 import { isTwoWeaponObject, setPrimaryWeapon, setTwoWeaponCombat, uwepgone } from './wield.js';
 import { cutWorm } from './worm.js';
@@ -310,7 +309,7 @@ export async function findHeroMeleeHitThreshold(monster, method, weapon, { first
     const polymorphed = Upolyd(hero);
     const species = heroSpecies(state);
     const luck = Luck(hero);
-    let threshold = 1 + heroAttributeHitBonus(state) + findMonsterArmorClass(monster)
+    let threshold = 1 + heroAttackBonus(state) + findMonsterArmorClass(monster)
         + (hero.uhitinc ?? 0) + Math.sign(luck) * Math.trunc((Math.abs(luck) + 2) / 3)
         + (polymorphed ? requireMonsterData(MONSTER_LEVEL, species) : hero.ulevel);
     let armorPenalty = 0;
@@ -345,7 +344,7 @@ export async function findHeroMeleeHitThreshold(monster, method, weapon, { first
         threshold -= 3;
     if (method === AT_WEAP || method === AT_CLAW) {
         if (weapon)
-            threshold += weaponHitBonus(weapon, monster, { state });
+            threshold += weaponHitValue(weapon, monster, { state });
         threshold += weaponSkillHitBonus(weapon, state);
     }
     else if (method === AT_KICK && heroUsesMartialArts(state)) {
@@ -376,20 +375,8 @@ export async function showHeroMeleeMiss(monster, attack, wouldHaveHit, { state =
         return wakeAttackedMonster(monster);
     return { heroDied: false };
 }
-// weapon.c:abon(). A monster form uses adjusted monster level, including
-// dungeon difficulty; its base species level is added separately above.
-function heroAttributeHitBonus(state) {
-    if (Upolyd(state.u))
-        return adjustedMonsterLevel(heroSpecies(state)) - 3;
-    const strength = currentAttribute(A_STR, state);
-    const dexterity = currentAttribute(A_DEX, state);
-    let bonus = strength < 6 ? -2 : strength < 8 ? -1 : strength < 17 ? 0
-        : strength < STR18(50) ? 1 : strength < STR18(100) ? 2 : 3;
-    if ((state.u.ulevel ?? 1) < 3)
-        bonus++;
-    return bonus + (dexterity < 4 ? -3 : dexterity < 6 ? -2
-        : dexterity < 8 ? -1 : dexterity < 14 ? 0 : dexterity - 14);
-}
+// weapon.c's abon() lives in weapon.js (heroAttackBonus); its monster-form
+// level reading is shared with dig.c.
 // Await monmove.c m_move(), its post-move effects and messages as one call.
 // Resolve that movement transaction before the hero tests its new position;
 // no movement ration, dochug prelude, or dochug attack tail belongs here.

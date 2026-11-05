@@ -11,7 +11,7 @@ import { resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, OBJECT_NAMES, SPE_CONFUSE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_HEALING, SPE_PROTECTION, WAN_DEATH, WAN_NOTHING, } from '../js/object_data.js';
 import { castSpell, forceLearnSpell } from '../js/spell.js';
 import { currentSpellKnowledge, spellSkillType, advanceSpellProtection } from '../js/spell.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { rhack } from '../js/cmd.js';
 import { backfireWand } from '../js/zap.js';
 import { wearHeroAccessory } from '../js/do_wear.js';

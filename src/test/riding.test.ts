@@ -10,7 +10,7 @@ import { AMULET_OF_LIFE_SAVING, RING_MAIL, SADDLE } from '../js/object_data.js';
 import { changeMonsterForm, finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { W_AMUL } from '../js/const.js';
 import { pushKeys, resetInputState } from '../js/input.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { putSaddleOnMonster } from '../js/steed.js';
 import { createMonsterAt, createSaddledSteed, equipMonsterObject } from './support/monsters.js';
 import { runExtendedCommand } from './support/commands.js';

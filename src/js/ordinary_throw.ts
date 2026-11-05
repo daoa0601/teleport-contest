@@ -31,8 +31,7 @@ import { rejoinObjectStack } from './mkobj.js';
 
 import { definiteName, objectName, observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
-import { skillName } from './skills.js';
-import { weaponDescription } from './weapon.js';
+import { skillName, weaponDescription } from './weapon.js';
 import {
     setPrimaryWeapon,
     setQuiverObject,

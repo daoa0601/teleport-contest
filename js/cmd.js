@@ -78,7 +78,7 @@ import { doquit, finishHeroDeath } from './end.js';
 import { doborn } from './insight.js';
 import { applyPickAxeDirection } from './dig.js';
 import { dofire, dothrow } from './dothrow.js';
-import { doenhance } from './skills.js';
+import { doenhance } from './weapon.js';
 import { dopay } from './shk.js';
 import { dokick } from './dokick.js';
 import { rn1, rn2, rnd } from './rng.js';

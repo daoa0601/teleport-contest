@@ -8,7 +8,7 @@ import { nameToMonster } from '../js/mondata.js';
 import { SPE_TELEPORT_AWAY } from '../js/object_data.js';
 import { grantIntrinsicProperty, propertyIsActive } from '../js/properties.js';
 import { forceLearnSpell } from '../js/spell.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const command of ['m\x14', 'm#teleport\n']) {
     void test(`${command.includes('#') ? 'm #teleport' : 'm Ctrl-T'} cancels its mode menu without taking time or nutrition`, async () => {

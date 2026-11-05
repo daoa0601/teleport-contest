@@ -15,7 +15,7 @@ import {
     SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_TURN_UNDEAD,
     TWO_HANDED_SWORD,
 } from '../js/object_data.js';
-import { ensureHeroSkills } from '../js/skills.js';
+import { ensureHeroSkills } from '../js/weapon.js';
 import { forceLearnSpell } from '../js/spell.js';
 import {
     checkSpellCast, currentSpellKnowledge, liveSpellSkill, percentSuccess,

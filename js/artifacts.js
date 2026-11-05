@@ -15,14 +15,13 @@ import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
 import { insideShopRoomAt } from './shk.js';
 import { mksobj, objectWeight, objectQuantity, isContainer } from './mkobj.js';
-import { ensureHeroSkills } from './skills.js';
 import { races, roles } from './roles.js';
 import { recordObjectEncounter, objectMaterial, objectTypeKnown } from './o_init.js';
 import { verbForSubject, objectName, objectNameIsPlural, definiteName, objectCombatName, observeDistantObjectForNaming } from './objnam.js';
 import { d, rnd, rn2, rnz } from './rng.js';
 import { questMonsterAlignment } from './role_monsters.js';
 import { MONSTER_FLAGS2, MONSTER_MAGIC_RESISTANCE, MONSTER_NAME, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { monsterWieldedWeapon } from './weapon.js';
+import { ensureHeroSkills, monsterWieldedWeapon } from './weapon.js';
 import { monsterAlignmentType } from './priest.js';
 import { monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasShockResistance, is_dlord, is_dprince, monsterHasHead, monsterIsAmorphous, monsterIsBig, monsterIsCovetous, monsterIsDemon, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, } from './mondata.js';
 import { see_monsters, glyphAt, canSeeMonster, newsym } from './display.js';
@@ -541,7 +540,7 @@ function artifactAttackApplies(artifact, defender, { hero = false, random = rn2,
             return false;
     }
 }
-// C weapon.c:hitval() calls spec_abon() before hitum() rolls its ordinary d20.
+// weapon.c's hitval() calls spec_abon() before hitum() rolls its ordinary d20.
 export function artifactToHitBonus(object, defender, roll = rnd, { hero = false, random = rn2, state = game } = {}) {
     const artifact = artifactById(object?.oartifact, state);
     if (!artifact?.attack ||

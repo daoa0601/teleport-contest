@@ -563,7 +563,7 @@ def direction_arguments(world, front):
             [V('num', values['x']), V('num', values['y'])])
 
 
-# ---- weapon.c skill bonuses (skills.js weaponSkillHit/DamageBonus) ----
+# ---- weapon.c skill bonuses (weapon.js weaponSkillHit/DamageBonus) ----
 
 SKILL_COUNT = 38     # skills.h P_NUM_SKILLS
 P_MARTIAL_ARTS = 35  # skills.h: P_MARTIAL_ARTS is P_BARE_HANDED_COMBAT

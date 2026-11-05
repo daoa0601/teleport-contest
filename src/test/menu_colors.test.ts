@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { chooseWizardLevelDestination } from '../js/wizcmds.js';
-import { doenhance, ensureHeroSkills } from '../js/skills.js';
+import { doenhance, ensureHeroSkills } from '../js/weapon.js';
 import { displayQuestText } from '../js/quest_pager.js';
 import type { QuestText } from '../js/quest_pager.js';
 import { luaText } from '../js/lua/messages.js';

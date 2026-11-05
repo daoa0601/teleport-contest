@@ -1,5 +1,5 @@
 import { RANDOM_CLASS } from './objclass.js';
-import { objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, QUARTERSTAFF, OBJ_NAME, oc_level, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, ROBE, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
+import { objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, CORNUTHAUM, LENSES, QUARTERSTAFF, OBJ_NAME, oc_level, OBJECT_SPELL_CATEGORY, SMALL_SHIELD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CANCELLATION, SPE_CAUSE_FEAR, ROBE, SPE_CHAIN_LIGHTNING, SPE_CHARM_MONSTER, SPE_CLAIRVOYANCE, SPE_CONE_OF_COLD, SPE_CONFUSE_MONSTER, SPE_CREATE_FAMILIAR, SPE_CREATE_MONSTER, SPE_CURE_BLINDNESS, SPE_CURE_SICKNESS, SPE_DETECT_FOOD, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_DETECT_UNSEEN, SPE_DIG, SPE_DRAIN_LIFE, SPE_EXTRA_HEALING, SPE_FINGER_OF_DEATH, SPE_FIREBALL, SPE_FORCE_BOLT, SPE_HASTE_SELF, SPE_HEALING, SPE_IDENTIFY, SPE_INVISIBILITY, SPE_JUMPING, SPE_KNOCK, SPE_LEVITATION, SPE_LIGHT, SPE_MAGIC_MAPPING, SPE_MAGIC_MISSILE, SPE_NOVEL, SPE_POLYMORPH, SPE_PROTECTION, SPE_REMOVE_CURSE, SPE_RESTORE_ABILITY, SPE_SLEEP, SPE_SLOW_MONSTER, SPE_STONE_TO_FLESH, SPE_TELEPORT_AWAY, SPE_TURN_UNDEAD, SPE_WIZARD_LOCK, } from './object_data.js';
 import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 import { commandResultFailed, isok, promptDirection, cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
@@ -13,7 +13,8 @@ import { jumpHero } from './apply.js';
 import { mapVicinity } from './detect.js';
 import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
-import { useHeroSkill, ensureHeroSkills } from './skills.js';
+import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
+import { recordObjectKnowledge } from './o_init.js';
 import { findArmorClass } from './do_wear.js';
 import { canSeeMonster, canSpotMonster, flush_screen, shieldeff, map_invisible, zapdir_to_glyph, } from './display.js';
 import { displayColorName, displayLiquidName, monsterName, novelTitle } from './do_name.js';
@@ -703,6 +704,26 @@ function spellLevel(type) {
     if (level === undefined)
         throw new RangeError(`Object type ${type} has no spell level.`);
     return level;
+}
+// C spell.c:skill_based_spellbook_id() grants knowledge without an
+// encounter or Wisdom exercise, and reevaluates every school after a gain.
+export function identifySpellbooks(state) {
+    if (state.urole?.key !== 'wizard')
+        return;
+    const skills = initializedSkills(state);
+    for (let type = 0; type < OBJECT_SPELL_CATEGORY.length; type++) {
+        if (!OBJECT_SPELL_CATEGORY[type])
+            continue;
+        const category = spellSkillType(type, state);
+        const spellLevel = oc_level(type);
+        if (spellLevel === undefined)
+            throw new Error(`Spellbook ${type} has incomplete skill data`);
+        const skill = requiredSkill(skills, category).skill;
+        const level = skill >= P_EXPERT ? 7 : skill === P_SKILLED ? 5
+            : skill === P_BASIC ? 3 : state.u.uroleplay?.pauper ? 0 : 1;
+        if (spellLevel <= level)
+            recordObjectKnowledge(type, state);
+    }
 }
 const HEALING_BONUS_SPELLS = new Set([
     SPE_HEALING, SPE_EXTRA_HEALING, SPE_CURE_BLINDNESS,

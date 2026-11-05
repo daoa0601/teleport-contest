@@ -123,10 +123,12 @@ src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
+src/js/uhitm.ts	uhitm.c
 src/js/unicorn_gift.ts	dothrow.c
 src/js/vault.ts	vault.c
 src/js/wall_topology.ts	display.c
 src/js/warning_symbols.ts	cfgfiles.c
+src/js/weapon.ts	weapon.c
 src/js/were.ts	were.c
 src/js/wield.ts	wield.c
 src/js/wintty.ts	wintty.c

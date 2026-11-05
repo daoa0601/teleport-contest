@@ -18,7 +18,7 @@ import { isLauncherAmmunition, isPolearm, isWetTowel, launcherMatchesAmmo, objec
 import { isWeldedPrimary, setQuiverObject, doquiverCore } from './wield.js';
 import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, } from './const.js';
 import { isAutoReturningThrow } from './returning_throw.js';
-import { weaponHitBonus, dryTowel, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
+import { weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero } from './weapon.js';
 import { autoquiverCandidate } from './quiver.js';
 import { corpseName, killerObjectName, objectCombatName, objectName, observeObjectForNaming, singularObjectName, makePlural, verbForSubject, objectDescription, objectNameIsPlural, simpleObjectName, withIndefiniteArticle } from './objnam.js';
 import { inventoryItemDescription, delobj, chooseInventoryObject, freeInventoryObject } from './invent.js';
@@ -901,7 +901,7 @@ export function rangedTargetHitBonus(object, defender, { state = game, defenderN
     }
     else if (object.oclass === WEAPON_CLASS || object.oclass === GEM_CLASS
         || isWeaponTool(object)) {
-        bonus += weaponHitBonus(object, defender, { state, random, rollOne });
+        bonus += weaponHitValue(object, defender, { state, random, rollOne });
     }
     return bonus;
 }

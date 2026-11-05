@@ -59,11 +59,13 @@ import { findArmorClass } from './do_wear.js';
 import { ensureQuestStatus } from './quest.js';
 import {
     GP_AVOID_MONPOS, A_CHA, A_CHAOTIC, A_CON, A_STR, COLNO, ROWNO, NOT_HUNGRY,
+    P_FIRST_SPELL, P_LAST_SPELL,
 } from './const.js';
 
 import { recordObjectEncounter, recordObjectKnowledge } from './o_init.js';
 
-import { ensureHeroSkills, roleAllowsSpellbook } from './skills.js';
+import { ensureHeroSkills } from './weapon.js';
+import { spellSkillType } from './spell.js';
 import { hiddenGold } from './vault.js';
 
 import { addHeroGoldObject, setHeroGoldAmount } from './hero_gold.js';
@@ -597,6 +599,108 @@ function initializeRolePreknowledge(role: RoleKey): void {
     // explicitly overrides pauper suppression.
     if (role === 'priest')
         recordObjectKnowledge(POT_WATER);
+}
+
+// u_init.c Skill_A and Skill_K.  Role maximums are distinct from the startup
+// inventory snapshot which promotes only weapons already carried to Basic.
+const ARCHEOLOGIST_MAXIMUMS = new Map([
+    [1, 2], [2, 2], [4, 4], [5, 2], [9, 4], [10, 3], [15, 3], [21, 3],
+    [23, 2], [25, 4], [26, 4], [27, 3], [28, 2], [29, 2], [30, 4],
+    [34, 2], [37, 2], [36, 2], [35, 4],
+]);
+const BARBARIAN_MAXIMUMS = new Map([
+    [1, 2], [3, 4], [4, 3], [5, 4], [6, 3], [7, 3], [8, 4], [9, 3],
+    [10, 3], [11, 3], [12, 3], [13, 2], [14, 4], [15, 2], [17, 3],
+    [18, 3], [20, 2], [28, 2], [33, 2], [37, 2], [36, 2], [35, 5],
+]);
+const CAVEMAN_MAXIMUMS = new Map([
+    [1, 2], [2, 3], [3, 3], [4, 2], [10, 4], [11, 4], [12, 2], [13, 3],
+    [14, 3], [15, 4], [16, 3], [17, 4], [18, 3], [20, 3], [21, 4],
+    [28, 2], [34, 3], [25, 4], [27, 2], [35, 5],
+]);
+const HEALER_MAXIMUMS = new Map([
+    [1, 3], [2, 4], [5, 3], [9, 2], [10, 3], [11, 2], [15, 4], [16, 2],
+    [17, 2], [18, 2], [21, 3], [23, 4], [24, 3], [27, 4], [29, 4],
+    [35, 2],
+]);
+const KNIGHT_MAXIMUMS = new Map([
+    [1, 2], [2, 2], [3, 3], [4, 2], [5, 3], [6, 3], [7, 4], [8, 3],
+    [9, 3], [10, 2], [11, 3], [12, 3], [13, 2], [14, 2], [16, 3],
+    [17, 3], [18, 2], [19, 4], [20, 2], [22, 3], [28, 3], [29, 3],
+    [32, 3], [37, 4], [36, 3], [35, 4],
+]);
+const MONK_MAXIMUMS = new Map([
+    [15, 2], [17, 2], [22, 2], [24, 2], [28, 2], [29, 4], [30, 2],
+    [31, 2], [32, 3], [33, 3], [34, 2], [35, 6],
+]);
+const PRIEST_MAXIMUMS = new Map([
+    [10, 4], [11, 4], [12, 4], [13, 4], [14, 4], [15, 4], [16, 3],
+    [17, 3], [18, 3], [19, 2], [20, 2], [21, 2], [22, 2], [23, 2],
+    [24, 2], [25, 2], [27, 3], [29, 4], [30, 4], [32, 4], [35, 2],
+]);
+const RANGER_MAXIMUMS = new Map([
+    [1, 4], [2, 3], [3, 3], [4, 2], [5, 2], [12, 2], [13, 3], [14, 2],
+    [15, 2], [16, 3], [17, 4], [18, 2], [20, 4], [21, 4], [22, 4],
+    [23, 4], [24, 3], [25, 4], [26, 2], [29, 2], [30, 4], [33, 2],
+    [37, 2], [35, 2],
+]);
+const ROGUE_MAXIMUMS = new Map([
+    [1, 4], [2, 4], [5, 4], [6, 3], [7, 3], [8, 2], [9, 3], [10, 3],
+    [11, 3], [12, 2], [13, 2], [14, 2], [16, 2], [17, 2], [22, 4],
+    [23, 4], [24, 3], [30, 3], [33, 3], [34, 3], [37, 2], [36, 4],
+    [35, 4],
+]);
+const SAMURAI_MAXIMUMS = new Map([
+    [1, 2], [2, 3], [5, 4], [6, 3], [7, 4], [8, 4], [9, 2], [13, 3],
+    [15, 2], [16, 3], [17, 3], [19, 3], [20, 4], [24, 4], [28, 2],
+    [30, 2], [32, 3], [37, 3], [36, 4], [35, 5],
+]);
+const TOURIST_MAXIMUMS = new Map([
+    [1, 4], [2, 3], [3, 2], [4, 2], [5, 4], [6, 2], [7, 2], [8, 2],
+    [9, 3], [11, 2], [12, 2], [13, 2], [14, 2], [15, 2], [16, 2],
+    [17, 2], [18, 2], [19, 2], [20, 2], [21, 2], [22, 2], [23, 4],
+    [24, 2], [25, 2], [26, 2], [27, 3], [30, 2], [31, 2], [33, 3],
+    [37, 2], [36, 3], [35, 3],
+]);
+const VALKYRIE_MAXIMUMS = new Map([
+    [1, 4], [3, 4], [4, 3], [5, 3], [6, 3], [7, 4], [8, 4], [9, 2],
+    [14, 4], [15, 2], [16, 3], [17, 4], [18, 2], [19, 3], [21, 2],
+    [28, 2], [33, 2], [37, 3], [36, 3], [35, 4],
+]);
+const WIZARD_MAXIMUMS = new Map([
+    [1, 4], [2, 3], [3, 3], [5, 2], [10, 3], [11, 2], [15, 4],
+    [16, 3], [17, 2], [18, 2], [21, 3], [23, 4], [24, 2], [28, 4],
+    [29, 3], [30, 4], [31, 3], [32, 3], [33, 4], [34, 4], [37, 2],
+    [35, 2],
+]);
+
+// C u_init.c:skills_for_role().
+export function roleMaximums(game: GameState): ReadonlyMap<number, number> | null {
+    const key = game.urole?.key;
+    if (!key) return null;
+    return {
+        archeologist: ARCHEOLOGIST_MAXIMUMS,
+        barbarian: BARBARIAN_MAXIMUMS,
+        caveman: CAVEMAN_MAXIMUMS,
+        healer: HEALER_MAXIMUMS,
+        knight: KNIGHT_MAXIMUMS,
+        monk: MONK_MAXIMUMS,
+        priest: PRIEST_MAXIMUMS,
+        ranger: RANGER_MAXIMUMS,
+        rogue: ROGUE_MAXIMUMS,
+        samurai: SAMURAI_MAXIMUMS,
+        tourist: TOURIST_MAXIMUMS,
+        valkyrie: VALKYRIE_MAXIMUMS,
+        wizard: WIZARD_MAXIMUMS,
+    }[key];
+}
+
+// C u_init.c:restricted_spell_discipline(): inverted to report an allowed discipline.
+// Startup precedes skill_init(); admission uses the role's skill list.
+function roleAllowsSpellbook(otyp: number, state: GameState): boolean {
+    const skill = spellSkillType(otyp, state);
+    return skill >= P_FIRST_SPELL
+        && skill <= P_LAST_SPELL && !!roleMaximums(state)?.has(skill);
 }
 
 // C ref: u_init_skills_discoveries()->ini_inv_use_obj().  This runs after

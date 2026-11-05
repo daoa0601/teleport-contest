@@ -18,7 +18,7 @@ import {
 import {
     grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty,
 } from './properties.js';
-import { adjustWeaponSkillSlots } from './skills.js';
+import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import type { MessagePublisher } from './pline.js';
@@ -257,7 +257,10 @@ export async function adjustLevelAbilities(
             ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [],
         'race', oldLevel, newLevel, publish,
     );
-    await adjustWeaponSkillSlots(newLevel - oldLevel, game);
+    if (newLevel > oldLevel)
+        await addHeroWeaponSkillSlots(newLevel - oldLevel, game);
+    else if (newLevel < oldLevel)
+        await loseHeroWeaponSkillSlots(oldLevel - newLevel, game);
 }
 
 // C exper.c:losexp(). A null drainer loses experience without killing a
