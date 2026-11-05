@@ -75,7 +75,7 @@ import { is_domestic } from './mondata.js';
 // mklev.js — regular level generation.
 // C ref: mklev.c — mklev, makelevel, makerooms, makecorridors,
 // generate_stairs, fill_ordinary_room, mineralize, level_finalize_topology.
-// sp_lev.c special-level construction lives in sp_lev.ts and sp_lev_lua.ts;
+// sp_lev.c special-level construction lives in sp_lev.ts;
 // mkmaze.c mazes and special-level fixups in mkmaze.ts; mkroom.c special
 // room selection and filling in mkroom.ts; bones.c in bones.ts; the Rogue
 // level (extralev.c) in extralev.ts. Level construction uses the game's

@@ -1,3 +1,10 @@
+// des.js — the Lua des.* binding layer for special levels.
+// C ref: sp_lev.c l_register_des() and the des-table readers that stay at
+// this boundary: get_coord(), get_table_region() and find_objtype() are
+// called by tableOptions()/lua/objects.ts, which cannot import sp_lev.ts
+// without a cycle. find_montype() and get_table_xy_or_coord() moved to
+// sp_lev.ts, their only caller.
+
 import {
     RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS,
     SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,

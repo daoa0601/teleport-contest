@@ -1,5 +1,9 @@
 // selvar.js — map selections used by the Lua level API.
 // C refs: src/selvar.c and src/nhlsel.c.
+// sp_lev.c floodfillchk_match_under()/set_floodfillchk_match_under() also
+// live here: their only caller is specialSelectionFloodFill() (nhlsel.c
+// l_selection_flood) in this module, and sp_lev.ts already imports
+// SpecialSelection from here, so moving them would add an import cycle.
 
 import { game } from './gstate.js';
 import { rn2 } from './rng.js';

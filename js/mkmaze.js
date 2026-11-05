@@ -2,7 +2,7 @@
 // set_levltyp, lregion/portal placement, fixup_special and the named
 // special-level fixups, makemaz and the random maze fillers, the orc-raid
 // stolen booty, and the Plane of Water/Air bubbles. sp_lev.c construction
-// lives in sp_lev.ts / sp_lev_lua.ts; regular room-and-corridor generation
+// lives in sp_lev.ts; regular room-and-corridor generation
 // stays in mklev.ts.
 import { RANDOM_CLASS, GEM_CLASS, RING_CLASS, FOOD_CLASS } from './objclass.js';
 import { game, requireGameLevel, requireInitializedGame, requirePlayingGame } from './gstate.js';
