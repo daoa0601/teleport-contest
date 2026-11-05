@@ -10,7 +10,6 @@ import {
     SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, GEM_CLASS, ROCK_CLASS,
     BALL_CLASS, VENOM_CLASS,
 } from './objclass.js';
-import { formatSeenMessage } from './hero_speech.js';
 import { is_boots } from './object_properties.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import type { GameState, PlayingGameState } from './game_state.js';
@@ -22,7 +21,11 @@ import { heroFormSticks, heroHidesOnCeiling, heroIsFlying, heroMonsterForm, hero
 import { heroTeetersAtPit, heroEscapedShaft } from './trap.js';
 import { MONSTER_ATTACKS, MONSTER_SIZE, MONSTER_SYMBOL } from './monster_data.js';
 import { AT_HUGS } from './monster_attack_types.js';
-import { P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS, ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN, NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND } from './const.js';
+import {
+    P_RIDING, BUFSZ, BURN, COLNO, DUST, ENGR_BLOOD, ENGRAVE, HEADSTONE, MARK, N_ENGRAVE, ROWNO, A_WIS,
+    ACCESSIBLE, ALTAR, CLOUD, DRAWBRIDGE_UP, GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, GRAVE, IS_AIR, IS_FOUNTAIN,
+    NO_MM_FLAGS, ROOM, WAND_BACKFIRE_CHANCE, FINGERTIP, HAND, LL_CONDUCT,
+} from './const.js';
 import type { Monster } from './monster_types.js';
 import type { DungeonLocation } from './dungeon_types.js';
 import { rn2, rnd } from './rng.js';
@@ -43,7 +46,9 @@ import { isBimanualObject, isBlade, isWetTowel } from './object_properties.js';
 import { willWeld, isWeldedPrimary } from './wield.js';
 import type { GameObject } from './object_types.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { plineWithContinuation as pline, plineWithContinuation } from './pline.js';
+import {
+    plineWithContinuation as pline, plineWithContinuation, formatSeenMessage, recordGameLogEvent,
+} from './pline.js';
 import { getLine, promptYesNoQuit } from './query.js';
 import { getobj, inventoryItemDescription, useUpInventoryStack } from './invent.js';
 import type { InventoryClassification } from './invent.js';
@@ -61,7 +66,6 @@ import {
     objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectAction, ownedObjectName,
 } from './objnam.js';
 import { addExperience } from './exper.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { altarWrath } from './pray.js';
 import { getRandomTextLine, getRumor } from './mklev.js';
 import { monsterName } from './do_name.js';

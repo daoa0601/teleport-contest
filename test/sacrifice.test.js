@@ -13,7 +13,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
 import { back_to_glyph } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { rhack } from '../js/cmd.js';
 import { ddoinv } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';

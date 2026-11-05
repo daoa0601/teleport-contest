@@ -17,8 +17,18 @@ import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
 import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 import { commandResultFailed, isok, promptDirection, cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
-import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir, FACE, SPINE, EYE, HEAD } from './const.js';
+import {
+    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, publishHeardMessage,
+    recordGameLogEvent,
+} from './pline.js';
+import {
+    ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR,
+    DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL,
+    MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL,
+    P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED,
+    P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir, FACE, SPINE, EYE, HEAD,
+    LL_CONDUCT,
+} from './const.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute, poisonHeroStrengthAndHp } from './attrib.js';
 
 import { impossible } from './diagnostics.js';
@@ -39,12 +49,14 @@ import { displayColorName, displayLiquidName, monsterName, novelTitle } from './
 import { explode } from './explode.js';
 import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions } from './getpos.js';
 import { healHero, heroIsSick, makeBlinded, makeConfused, makeStunned, applyPotionEffect, heroIsSliming, setHeroSlimingTimeout } from './potion.js';
-import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { morehungry } from './eat.js';
 import { wakeMonster, monstersInFmonOrder,
     finishHeroMonsterKillOutcome,
 } from './mon.js';
-import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, eyecount } from './mondata.js';
+import {
+    monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter,
+    monsterIsWhirly, eyecount, heroCanChant,
+} from './mondata.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectIsMetallic } from './object_properties.js';
@@ -53,7 +65,6 @@ import { propertyIsActive } from './properties.js';
 import { d, rn1, rn2, rnd, rnl, rn2Display } from './rng.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
 import { takeHeroGold } from './hero_gold.js';
-import { recordGameLogEvent, LL_CONDUCT } from './gamelog.js';
 import { recordAchievement } from './insight.js';
 import { makeInvocationArea } from './invocation_area.js';
 import { consumeInventoryItem } from './invent.js';

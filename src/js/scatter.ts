@@ -2,7 +2,7 @@
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
 
 import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
-import { publishHeardMessage } from './hero_speech.js';
+import { publishHeardMessage } from './pline.js';
 import { currency, delobj, stack_object } from './invent.js';
 import { deleteTrap, petrifyMonsterFromContact } from './trap.js';
 import { DOOR, D_CLOSED, D_LOCKED, LARGEST_INT, M_AP_MONSTER, M_AP_TYPE, SHOPBASE, SINK, STATUE_TRAP, ZAP_POS } from './const.js';

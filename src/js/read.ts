@@ -34,10 +34,20 @@ import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrate
 import { explode } from './explode.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 
-import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR, HAND, HEAD, LEG, STOMACH } from './const.js';
+import {
+    A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD,
+    G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST,
+    In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG,
+    MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT,
+    ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR,
+    HAND, HEAD, LEG, STOMACH, LL_CONDUCT, LL_GENOCIDE,
+} from './const.js';
 import { canSpotMonster, flashGlyphAt, map_invisible, newsym, shieldeff, transientMonsterGlyph } from './display.js';
 import { isok } from './cmd.js';
-import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
+import {
+    formatFeltMessage, formatHeardMessage, pline as syncPline, plineWithContinuation,
+    plineWithContinuation as pline, recordGameLogEvent,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { revealSecretDoor, detectFood, detectGold, detectTraps, mapMagicLevel } from './detect.js';
 import { impossible } from './diagnostics.js';
@@ -48,7 +58,6 @@ import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } fro
 import { heroIsInvisible } from './hero_invisibility.js';
 import { makeConfused, finishStrangeFeeling, strangeFeeling, makeStunned } from './potion.js';
 import { feelingAfterSelfGenocide, genocideDeathOptions, heroIsUnchanging, heroMonsterForm, heroSpecies, polymorphHero, rememberPolymorphGenocide, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
-import { formatFeltMessage, formatHeardMessage, heroCanChant } from './hero_speech.js';
 import { sokobanGuilt, erosionMatters } from './trap.js';
 import { consumeInventoryItem, delobj, identifyPack, inventoryItemDescription, chooseInventoryObject } from './invent.js';
 import { createCritters, mkclassAligned, rndmonstAdj, setMonsterMalign } from './makemon.js';
@@ -85,6 +94,7 @@ import {
     nameToMonster, nameToMonsterClass, resolveMonsterClass, resolveMonsterName, is_male, monsterHasProperName,
     monsterHidesUnder, monsterIsAmorphous, monsterIsDemon, monsterIsFemale, monsterIsHider, monsterIsHuman,
     monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVampire, monsterIsWhirly, monsterPassesWalls,
+    heroCanChant,
 } from './mondata.js';
 import { addExperience } from './exper.js';
 import type { InventoryClassification } from './invent.js';
@@ -102,7 +112,6 @@ import type { GameObject } from './object_types.js';
 import type { Monster, MonsterVital } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { landFloorObject } from './floor_effects.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';

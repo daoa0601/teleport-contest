@@ -51,7 +51,7 @@ import { heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, 
 import { iceDescriptionAt, swallowedHeroDescription } from './pager.js';
 import { impossible, panic } from './diagnostics.js';
 import { armorSimpleName, armorSlotFor } from './do_wear.js';
-import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, } from './shk.js';
+import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, doinvbill, } from './shk.js';
 import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
 import { hitFloorWithObject } from './dothrow.js';
@@ -61,7 +61,6 @@ import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
 import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
 import { displayLiquidName, monsterName } from './do_name.js';
-import { usedUpBill, showBill } from './inventory_reports.js';
 import { NO_COLOR } from './terminal.js';
 import { maybeUnhideAt, hideHeroUnder, isReviver, } from './mon.js';
 import { propertyIsActive } from './properties.js';
@@ -1627,7 +1626,7 @@ async function showUnpaid(carried, floor, buried) {
 // C pickup.c:count_justpicked()/find_justpicked(): the marked stacks
 // of the previous pickup feed the 'P' selection.
 async function typeInventory() {
-    const bill = usedUpBill();
+    const bill = doinvbill(0);
     if (!game.inventory.length && !bill.length) {
         await pline("You aren't carrying anything.");
         return null;
@@ -1669,7 +1668,7 @@ async function typeInventory() {
         return null;
     if (choice === 'x' || choice === 'X' && bill.length && !statuses.has('X')) {
         if (bill.length)
-            await showBill(bill);
+            await doinvbill(1);
         else
             await pline(`No used-up objects${carried.length + floor.length + buried.length ? ' on your shopping bill' : ''}.`);
         return null;

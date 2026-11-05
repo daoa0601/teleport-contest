@@ -2,11 +2,10 @@
 // invisibility case.  potion.c self_invis_message() and peffect_invisibility()
 // live in potion.ts.
 
-import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating } from './senses.js';
 import { TIMEOUT } from './const.js';
 import { newsym } from './display.js';
-import { plineWithContinuation as pline } from './pline.js';
+import { formatFeltMessage, plineWithContinuation as pline } from './pline.js';
 import { game } from './gstate.js';
 import { MUMMY_WRAPPING } from './object_data.js';
 import { ownedObjectName } from './objnam.js';

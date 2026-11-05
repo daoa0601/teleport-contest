@@ -1,5 +1,6 @@
 // Species and actor predicates, and monster data queries.
-// C mondata.h and mondata.c, including petrifying species and poly_when_stoned().
+// C mondata.h and mondata.c, including can_chant(), petrifying species and
+// poly_when_stoned().
 
 import { levelHasCeiling } from './dungeon.js';
 import {
@@ -338,7 +339,7 @@ export function monsterCorrodesBars(monster: Pick<Monster, 'mnum'>): boolean {
 
 // C mondata.c:can_blow(). Hero strangulation is an actor-specific check.
 const M1_BREATHLESS = 0x400, M1_NOHEAD = 0x8000;
-const MS_SILENT = 0, MS_BUZZ = 10, MZ_SMALL = 1, S_EEL = 57;
+const MS_SILENT = 0, MS_BUZZ = 10, MS_BURBLE = 16, MZ_SMALL = 1, S_EEL = 57;
 
 export function speciesCanBlow(mnum: number): boolean {
     const sound = requireMonsterData(MONSTER_SOUND, mnum);
@@ -346,6 +347,19 @@ export function speciesCanBlow(mnum: number): boolean {
     return !(monsterIsBreathless(mnum) || !monsterHasHead({ mnum }))
         && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
         && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
+}
+
+// C mondata.c:can_chant(), shared by reading and calling on a deity.
+export function heroCanChant(state = game) {
+    const hero = state.u;
+    if (hero.strangled || (hero.strangledTurns ?? 0) > 0) return false;
+    const mnum = hero.umonnum;
+    if (mnum === undefined || !Number.isInteger(mnum)) return true;
+    const sound = MONSTER_SOUND[mnum] ?? MS_SILENT;
+    return sound !== MS_SILENT
+        && sound !== MS_BUZZ
+        && sound !== MS_BURBLE
+        && monsterHasHead({ mnum });
 }
 
 // C mondata.c:can_track().  u_wield_art(ART_EXCALIBUR) comes first: the

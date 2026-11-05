@@ -1,7 +1,6 @@
 // ball.js — Punishment ball-and-chain movement.
 // C ref: ball.c bc_order(), move_bc(), and drag_ball().
 import { encumber_msg } from './pickup.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { isPoolAt } from './dbridge.js';
 import { game, requireGameLevel, requireLiveGame } from './gstate.js';
@@ -9,7 +8,7 @@ import { impossible } from './diagnostics.js';
 import { maybeUnhideAt } from './mon.js';
 import { cls, map_object, newsym } from './display.js';
 import { displayLiquidName } from './do_name.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { hitFloorWithObject, rangedTargetHitBonus } from './dothrow.js';

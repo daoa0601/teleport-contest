@@ -7,7 +7,7 @@ import {
 import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { rollHeroJoust, resolveHeroJoust, tryHeroPuddingSplit } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';

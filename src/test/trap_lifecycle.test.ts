@@ -10,7 +10,7 @@ import { flushPendingTopline } from '../js/tty_topline.js';
 import { back_to_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { digActualHole } from '../js/dig.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { pushKey } from '../js/input.js';
 import { placeMonsterAt } from '../js/steed.js';
 import { heroLiquidEffects } from '../js/hack.js';

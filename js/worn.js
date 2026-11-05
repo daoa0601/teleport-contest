@@ -21,10 +21,9 @@ import { artifactEmitsLight, setWieldedArtifactProperties, setWornArtifactProper
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import { I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, AC_MAX, DISMOUNT_FELL, } from './const.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { publishHeardMessage } from './hero_speech.js';
 import { dragonFormForArmor } from './polyself.js';
 import { ownedObjectName, objectNameIsPlural, observeDistantObjectForNaming, simpleObjectName, verbForSubject, } from './objnam.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
 import { learnWand } from './zap.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';

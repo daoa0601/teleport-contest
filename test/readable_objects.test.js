@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { wearHeroArmor } from '../js/do_wear.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { addInventoryItem } from '../js/invent.js';
 import { ALCHEMY_SMOCK, CANDY_BAR, CAN_OF_GREASE, CORNUTHAUM, CREDIT_CARD, DUNCE_CAP, FORTUNE_COOKIE, HAWAIIAN_SHIRT, MAGIC_MARKER, OBJECT_NAMES, RING_MAIL, SCR_BLANK_PAPER, SPE_FORCE_BOLT, } from '../js/object_data.js';

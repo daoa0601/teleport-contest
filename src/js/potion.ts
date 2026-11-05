@@ -34,7 +34,14 @@ import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttr
 
 import { commandResultCancelled, commandResultFailed, setMulti, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
-import { A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST, G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL, POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT, FACE, HEAD, HAND, LEG } from './const.js';
+import {
+    A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, BOLT_LIM, COLNO, CQ_CANNED, EXPL_FIERY, FOUNTAIN,
+    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_SUGGEST,
+    G_GONE, IS_SINK, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, MM_NOMSG, M_AP_FURNITURE,
+    M_AP_OBJECT, M_AP_TYPE, M_SEEN_SLEEP, NO_KILLER_PREFIX, PLNMSG_OBJ_GLOWS, POLY_CONTROLLED, POLY_LOW_CTRL,
+    POLY_NOFLAGS, ROWNO, SICK_ALL, SICK_VOMITABLE, SINK, STRAT_WAITFORU, TIMEOUT, Upolyd, WEAK, EYE, FOOT,
+    FACE, HEAD, HAND, LEG, LL_CONDUCT,
+} from './const.js';
 import { impossible } from './diagnostics.js';
 import type { PropertyObject, WornPropertySlot } from './property_types.js';
 import { dipFountain, dipSink, drinkFountain, drinkSink, washHands } from './fountain.js';
@@ -52,7 +59,6 @@ import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './engrave.js';
 import { useUpFloorObject } from './invent.js';
 import type { GameState, PlayingGameState } from './game_state.js';
-import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { possessiveName } from './hacklib.js';
 import { depth, ledgerNo } from './dungeon.js';
@@ -77,7 +83,6 @@ import {
     heroIsHallucinating, heroWouldBeBlindWithTimeout, permanentBlind, setHeroBlindnessTurns, syncDeafness,
 } from './senses.js';
 import { heroFormSticks, heroSpecies, heroHasProtectionFromShapeChangers, heroIsPolymorphed, heroIsUnchanging, polymorphHero, heroIsFlaming, body_part } from './polyself.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { heroCanBeSlimed, newuhs, eatmupdate, fix_petrification } from './eat.js';
 import { doEnlightenmentEffect, makeWish, obj_unpolyable, objectResistsDestruction, poly_obj, polymorphMonsterFromMagic } from './zap.js';
 import { showEnlightenment } from './insight.js';
@@ -107,7 +112,9 @@ import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnow
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import type { GameObject } from './object_types.js';
 import type { ScrollEffectOptions, ScrollEffectResult } from './read.js';
-import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
+import {
+    formatFeltMessage, plineWithContinuation, plineWithContinuation as pline, recordGameLogEvent,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { promptYesNo } from './query.js';

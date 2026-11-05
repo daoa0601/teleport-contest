@@ -6,7 +6,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { LAVAPOOL } from '../js/const.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { makeEngravingAt } from '../js/engrave.js';
 import { game } from '../js/gstate.js';
 import { heroCanReachFloor } from '../js/engrave.js';

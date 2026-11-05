@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { resetInputState } from '../js/input.js';
 import { BOULDER, OBJECT_NAMES, SPE_NOVEL, SCR_BLANK_PAPER, SCR_MAGIC_MAPPING, SPE_FORCE_BOLT, WAN_MAGIC_MISSILE, } from '../js/object_data.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';

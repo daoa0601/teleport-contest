@@ -12,7 +12,7 @@ import { A_CHA, A_CON, A_DEX, A_STR, A_WIS, ALTAR, CORR, DBWALL, D_BROKEN, D_ISO
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { rn1, rnd, rn2, rnl } from './rng.js';
 import { canSeeMonster, canSpotMonster, feel_location, feel_newsym, glyphAt, map_invisible, newsym, show_glyph_cell, unmap_invisible } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatHeardMessage, pline, plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
@@ -74,7 +74,6 @@ import { inventoryItemDescription, delobj, currency, stack_object } from './inve
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectMaterial } from './o_init.js';
-import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { hiddenGold } from './vault.js';

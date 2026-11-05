@@ -2,16 +2,14 @@
 // HP maxima, and alignment changes.
 // C restore_attrib() is dead code upstream (never called; ATIME is never
 // set non-zero) and is deliberately not ported.
-import { formatFeltMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { artifactById } from './artifact.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation, recordGameLogEvent } from './pline.js';
 import { see_monsters, shieldeff } from './display.js';
 import { finishHeroDeath } from './end.js';
 import { MONSTER_GENO, MONSTER_NAME, MONSTER_SYMBOL, adjustErinys } from './monster_data.js';
 import { monsterHasEyes, monsterHasProperName, nameToMonster } from './mondata.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { LL_ALIGNMENT, recordGameLogEvent } from './gamelog.js';
 import { retouchEquipment } from './artifact.js';
 import { makeConfused } from './potion.js';
 import { summonFuries } from './makemon.js';
@@ -25,7 +23,7 @@ import { encumber_msg } from './pickup.js';
 import { confersLuck } from './invent.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, FACE } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, Is_astralevel, LUCKADD, LUCKMAX, LUCKMIN, MAXULEV, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, FACE, LL_ALIGNMENT, } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;

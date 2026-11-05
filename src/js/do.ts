@@ -20,7 +20,9 @@ import { setHeroBlindnessTimeout, heroIsBlind, heroIsDeaf, heroIsHallucinating }
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { WipeFaceOccupation } from './occupation_types.js';
-import { pline, plineWithContinuation } from './pline.js';
+import {
+    formatHeardMessage, pline, plineWithContinuation, publishHeardMessage, recordGameLogEvent,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
@@ -57,7 +59,6 @@ import {
     finishHeroMonsterKill,
     isRider, zombieForm,
 } from './mon.js';
-import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
@@ -123,7 +124,6 @@ import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { bot, checkGoldSymbol } from './botl.js';
 import { restoreLevelRegions, updateHeroRegions } from './region.js';
 import { fumaroles, movebubbles, restore_waterlevel } from './mkmaze.js';
-import { recordGameLogEvent } from './gamelog.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';
 import {
     displayPreparedQuestArrival, prepareQuestArrival, prepareMainQuestPortalCall, onQuestStart, okToQuest,

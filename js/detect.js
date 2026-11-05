@@ -2,7 +2,6 @@
 // C ref: detect.c — dosearch(), dosearch0().
 import { RANDOM_CLASS, WEAPON_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS, ROCK_CLASS, VENOM_CLASS, } from './objclass.js';
 import { objectClassForType, objectMerge, BOULDER, CHEST, LARGE_BOX, LENSES, GOLD_PIECE, OBJECT_BASES, OBJECT_NAMES, getObjectClassBounds, } from './object_data.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { requirePlayingGame, requireGameLevel, game, requireLiveGame } from './gstate.js';
 import { monsterAtPosition, monsterHasMapPosition } from './steed.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
@@ -11,7 +10,7 @@ import { artifactById } from './artifact.js';
 import { exerciseWisdom } from './attrib.js';
 import { canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible, flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
-import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok } from './cmd.js';
 import { observeObject, objectMaterial } from './o_init.js';

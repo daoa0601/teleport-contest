@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_NOGRP, MM_NOWAIT, NO_MINVENT } from '../js/const.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hitMonsterWithHeroObject } from '../js/uhitm.js';
 import { resetInputState } from '../js/input.js';

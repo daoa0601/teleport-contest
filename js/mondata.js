@@ -1,5 +1,6 @@
 // Species and actor predicates, and monster data queries.
-// C mondata.h and mondata.c, including petrifying species and poly_when_stoned().
+// C mondata.h and mondata.c, including can_chant(), petrifying species and
+// poly_when_stoned().
 import { levelHasCeiling } from './dungeon.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName, requireMonsterData, MONSTER_RESISTS, MONSTER_COLOR, monsterClassSymbol, FLAMING_SPECIES, MONSTER_FLAGS3, PM_GREEN_SLIME, S_GHOST, } from './monster_data.js';
 import { AD_ACID, AD_BLND, AD_COLD, AD_CORR, AD_DCAY, AD_DISE, AD_DISN, AD_DRLI, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_PHYS, AD_PLYS, AD_RUST, AD_SLEE, AD_SLOW, AD_STON, AD_WERE, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP, } from './monster_attack_types.js';
@@ -275,7 +276,7 @@ export function monsterCorrodesBars(monster) {
 }
 // C mondata.c:can_blow(). Hero strangulation is an actor-specific check.
 const M1_BREATHLESS = 0x400, M1_NOHEAD = 0x8000;
-const MS_SILENT = 0, MS_BUZZ = 10, MZ_SMALL = 1, S_EEL = 57;
+const MS_SILENT = 0, MS_BUZZ = 10, MS_BURBLE = 16, MZ_SMALL = 1, S_EEL = 57;
 export function speciesCanBlow(mnum) {
     const sound = requireMonsterData(MONSTER_SOUND, mnum);
     if (sound !== MS_SILENT && sound !== MS_BUZZ)
@@ -283,6 +284,20 @@ export function speciesCanBlow(mnum) {
     return !(monsterIsBreathless(mnum) || !monsterHasHead({ mnum }))
         && requireMonsterData(MONSTER_SIZE, mnum) >= MZ_SMALL
         && requireMonsterData(MONSTER_SYMBOL, mnum) !== S_EEL;
+}
+// C mondata.c:can_chant(), shared by reading and calling on a deity.
+export function heroCanChant(state = game) {
+    const hero = state.u;
+    if (hero.strangled || (hero.strangledTurns ?? 0) > 0)
+        return false;
+    const mnum = hero.umonnum;
+    if (mnum === undefined || !Number.isInteger(mnum))
+        return true;
+    const sound = MONSTER_SOUND[mnum] ?? MS_SILENT;
+    return sound !== MS_SILENT
+        && sound !== MS_BUZZ
+        && sound !== MS_BURBLE
+        && monsterHasHead({ mnum });
 }
 // C mondata.c:can_track().  u_wield_art(ART_EXCALIBUR) comes first: the
 // artifact lets even eyeless monsters follow the hero's tracks.

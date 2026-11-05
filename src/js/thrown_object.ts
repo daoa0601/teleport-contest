@@ -25,7 +25,7 @@ import {
     canSpotMonster, flush_screen, glyphAt, lastDirtyMapCursor, map_invisible, newsym,
     show_glyph_cell, transientObjectGlyph, unmapObject, TemporaryMapEffect,
 } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
@@ -49,7 +49,6 @@ import { objectIsVulnerableToErosion } from './trap.js';
 import { closedDoor } from './monmove.js';
 import { projectileHitsIronBars } from './mthrowu.js';
 import { rn2 } from './rng.js';
-import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { objectNoLongerHeld } from './do.js';

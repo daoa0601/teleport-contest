@@ -2,7 +2,6 @@
 // C refs: were.c counter_were(), new_were(), you_unwere();
 // mondata.c set_mon_data().
 
-import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { PARANOID_WERECHANGE } from './const.js';
 import { game, requirePlayingGame } from './gstate.js';
@@ -14,7 +13,7 @@ import { splitHeroMonsterForm } from './potion.js';
 import { makemonAt } from './makemon.js';
 import { adjustMonsterClothingAfterPolymorph } from './worn.js';
 import { canSeeMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterSpecies, is_were, monsterIsHuman } from './mondata.js';
 import { paranoidQuery } from './cmd.js';

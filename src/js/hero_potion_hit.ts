@@ -1,9 +1,8 @@
 // Native potion.c:potionhit(&youmonst, ..., POTHIT_MONST_THROW).
 
 import { POTION_CLASS } from './objclass.js';
-import { formatFeltMessage } from './hero_speech.js';
 
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 

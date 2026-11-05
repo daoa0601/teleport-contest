@@ -16,9 +16,8 @@ import { heroIsHallucinating, blindfolded, heroIsBlind, heroIsDeaf, permanentBli
 import { makePlural, withIndefiniteArticle, simpleObjectName, simpleObjectNameWithArticle, simpleObjectTypeName } from './objnam.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { expiredFatally } from './timeout.js';
-import { pline } from './pline.js';
+import { gameLogEvents, pline, recordGameLogEvent } from './pline.js';
 import { showDisclosureOverlay, showTextMenuOverlay, showTextPages, showTextWindow, ATR_NONE, showInventoryWindow } from './windows.js';
-import { gameLogEvents, isSpoilerGameLogEvent, recordGameLogEvent } from './gamelog.js';
 import { G_GENOD, FROMFORM, FROMOUTSIDE, Upolyd, ACH_AMUL, ACH_ASTR, ACH_BELL, ACH_BGRM, ACH_BLND, ACH_BOOK, ACH_CNDL, ACH_ENDG, ACH_INVK, ACH_MEDU, ACH_MINE_PRIZE, ACH_NOVL, ACH_NUDE, ACH_ORCL, ACH_SHOP, ACH_SOKO, ACH_SOKO_PRIZE, ACH_TMPL, ACH_TUNE, ACH_UWIN, ENL_GAMEOVERALIVE, ENL_GAMEOVERDEAD, MGIVENNAME, NOT_HUNGRY, M_AP_NOTHING, M_AP_TYPE, P_ISRESTRICTED, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, SICK_NONVOMITABLE, SICK_VOMITABLE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, STRAT_WAITMASK, A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, AC_MAX, G_EXTINCT, G_GONE, In_endgame, In_quest, Is_knox_level, Is_rogue_level, LL_ACHIEVE, LL_DUMP, LL_MINORAC, LL_SPOILER, LL_UMONST, Luck, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, PICK_ONE, SPIKED_PIT, STRANGE_OBJECT, TT_PIT, W_ACCESSORY, W_ARMOR, W_ART, W_WEP, HANDED, LEG, FINGER } from './const.js';
 import { simpleArmorName, fingersOrGloves, armorSimpleName, findArmorClass, heroIsStrangled, ringRemovalObstacle } from './do_wear.js';
 import { SHIELD_OF_REFLECTION, AMULET_OF_GUARDING, DUNCE_CAP, DWARVISH_CLOAK, GAUNTLETS_OF_POWER, LUCKSTONE, OBJECT_NAMES, RIN_PROTECTION, ROBE, TOWEL, } from './object_data.js';
@@ -1393,6 +1392,11 @@ export function recordDungeonEntryAchievements(state, oldDepth, newDepth, { newL
             && bigroom.dlevel === newDepth?.dlevel)
             recordAchievement(state, ACH_BGRM);
     }
+}
+// C insight.c:spoilerevent().  Entries saved before flags were tracked carry
+// none, so they count as ordinary non-spoiler lines.
+export function isSpoilerGameLogEvent(entry) {
+    return ((entry.flags ?? 0) & LL_SPOILER) !== 0;
 }
 // C ref: insight.c:do_gamelog()/show_gamelog(ENL_GAMEINPROGRESS).  Chronicle
 // is a projection of events recorded by their owning mechanics; it does not

@@ -1,11 +1,10 @@
 // Monster summoning by demons, minions, and the Wizard of Yendor.
 // C ref: minion.c msummon(), dprince(), dlord(), and ndemon().
-import { formatFeltMessage } from './hero_speech.js';
 import { artifactById } from './artifact.js';
 import { deityName } from './pray.js';
 import { A_NONE, In_endgame, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG } from './const.js';
 import { canSeeMonster, canSpotMonster } from './display.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, pline, plineWithContinuation } from './pline.js';
 import { cleanupTransientLight, showTransientLight } from './transient_light.js';
 import { game, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { makemonNear } from './mklev.js';

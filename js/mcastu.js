@@ -23,11 +23,10 @@ import { finishHeroDeathAfterMonsterMessage, finishHeroDeath, finishMonsterAttac
 import { discoverHeroReflectionSource, ureflects } from './muse.js';
 import { rndcurse } from './throne.js';
 import { returnHeroToHumanForm, body_part, heroSpecies } from './polyself.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, plineWithContinuation } from './pline.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { endVoluntaryMultiTurn, nomul, loseHeroHp } from './hack.js';
 import { d, rn2, rnd } from './rng.js';
-import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibility } from './worn.js';
 import { monsterName as canonicalMonsterName, randomBogusMonsterName } from './do_name.js';
 import { makemonNear, summonNastyMonsters } from './mklev.js';

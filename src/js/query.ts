@@ -6,7 +6,7 @@ import {
     clearMessageWindow, flushPendingTopline, rememberToplines, resetToplineClip,
 } from './tty_topline.js';
 import { flush_screen } from './display.js';
-import { pline, setTopline } from './pline.js';
+import { pline, setTopline, truncateRawMessage } from './pline.js';
 import { game } from './gstate.js';
 import { nhgetch } from './input.js';
 import { readchar, cmdq_pop } from './cmd.js';
@@ -17,7 +17,6 @@ import { messageWindowMode } from './prevmsg.js';
 import { doprevMessage, keyText } from './cmd.js';
 import { visibleCommandKey } from './cmd.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, impossible, paniclog } from './diagnostics.js';
-import { truncateRawMessage } from './pline_text.js';
 import { showChoiceWindow } from './windows.js';
 import { availableExtendedCommands, commandAutocompletes, yn_function } from './cmd.js';
 

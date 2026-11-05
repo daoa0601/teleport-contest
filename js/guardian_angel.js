@@ -1,6 +1,6 @@
 import { MM_ADJACENTOK, MM_EMIN, MM_NOMSG, STRAT_APPEARMSG, W_ARMS } from './const.js';
 import { canSpotMonster, newsym } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import { formatFeltMessage, plineWithContinuation } from './pline.js';
 import { requireInitializedGame, requireLiveGame } from './gstate.js';
 import { enexto } from './teleport.js';
 import { finishSpecialRoamer } from './sp_lev.js';
@@ -12,7 +12,6 @@ import { monsterName } from './do_name.js';
 import { d, rn1, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { formatFeltMessage } from './hero_speech.js';
 import { Hear_again } from './eat.js';
 import { addCreatedObjectToMonsterInventory } from './steal.js';
 import { selectHandToHandWeapon } from './weapon.js';

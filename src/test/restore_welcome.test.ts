@@ -3,7 +3,7 @@ import test from 'node:test';
 import { restoregamePreamble, welcome } from '../js/allmain.js';
 import { G_GENOD } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { setPropertyTimeout } from '../js/properties.js';

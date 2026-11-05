@@ -31,7 +31,6 @@ import { dist2, possessiveName, upstart } from './hacklib.js';
 import { dropInventoryObjectAtHero, woundHeroLegs } from './do.js';
 import { freeInventoryObject, objectAt } from './invent.js';
 import { heroIsUnaware } from './senses.js';
-import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { delobj } from './invent.js';
 import { gotoLevel } from './do.js';
 import { makemonAt, mkclassAligned } from './makemon.js';
@@ -44,7 +43,7 @@ import { definiteName, objectName, observeObjectForNaming, ownedObjectAction, ow
 import { BEARTRAP, BOULDER, CORPSE, HEAVY_IRON_BALL, LAND_MINE, LEASH, POT_OIL, ROCK, STATUE } from './object_data.js';
 import { isAxe, isBimanualObject, isPick, objectIsOrganic } from './object_properties.js';
 import { stopHeroOccupation } from './occupation.js';
-import { pline, plineWithContinuation } from './pline.js';
+import { formatFeltMessage, formatHeardMessage, pline, plineWithContinuation } from './pline.js';
 import { heroIsFlying, body_part, mbodypart } from './polyself.js';
 import { altarWrath, desecrateAltar } from './pray.js';
 import { punishHero, unpunishHero } from './read.js';

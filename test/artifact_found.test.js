@@ -7,7 +7,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { grantPrayerFavor } from '../js/pray.js';
 import { setPrimaryWeapon } from '../js/wield.js';
-import { gameLogEvents } from '../js/gamelog.js';
+import { gameLogEvents } from '../js/pline.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { ddoinv, inventoryItemDescription } from '../js/invent.js';

@@ -93,7 +93,6 @@ import {
     setHeroBlindnessTimeout,
 } from './senses.js';
 import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
-import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import {
     dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification,
@@ -141,7 +140,10 @@ import {
     simpleObjectTypeName, singularObjectName, withIndefiniteArticle,
 } from './objnam.js';
 import { walkPathCells } from './path_walk.js';
-import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
+import {
+    formatFeltMessage, formatHeardMessage, formatSeenMessage, pline as syncPline, plineWithContinuation,
+    plineWithContinuation as pline, publishHeardMessage,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { propertyIsActive } from './properties.js';
 import { unpunishHero } from './read.js';

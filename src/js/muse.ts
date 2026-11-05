@@ -65,7 +65,9 @@ import {
 } from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
-import { plineWithContinuation } from './pline.js';
+import {
+    formatFeltMessage, formatHeardMessage, plineWithContinuation, publishHeardMessage,
+} from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { d, rn2, rnd } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
@@ -112,7 +114,6 @@ import { canDigDown, canFallThrough, stairwayAt } from './mklev.js';
 import { shopkeeperInOwnShop, addShopDamage, deleteObject } from './shk.js';
 import { monsterCarriesSpecialObject } from './wizard.js';
 import { inHeroSanctuary } from './priest.js';
-import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { explode } from './explode.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { extendPetHungerDeadline, petFoodNutrition } from './pet_eating.js';

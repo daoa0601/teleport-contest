@@ -56,7 +56,9 @@ import { NO_COLOR } from './terminal.js';
 import type { TerminalCell } from './terminal.js';
 import { promptYesNo } from './query.js';
 import { flush_screen, docrt, canSpotMonster, glyphAt, cls } from './display.js';
-import { pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy } from './pline.js';
+import {
+    pline, plineWithContinuation, setTopline, pline_xy, set_msg_xy, truncateRawMessage,
+} from './pline.js';
 import { messageWindowMode, CTRL_P, redotoplin, showMessageHistoryWindow, stepHistoryBack } from './prevmsg.js';
 import { dozap } from './zap.js';
 import { docast, dovspell, dowizcast } from './spell.js';
@@ -104,7 +106,6 @@ import { floorObjectDescription } from './invent.js';
 import { cansee, couldsee, vision_reset_new_level } from './vision.js';
 import { blockingTerrain } from './mthrowu.js';
 import { revealTerrain } from './terrain_view.js';
-import { truncateRawMessage } from './pline_text.js';
 import type { Selection } from './selvar.js';
 import type { TtyPromptAnswer } from './query.js';
 import type { CharacterInput, CommandDirection, InputState } from './input.js';

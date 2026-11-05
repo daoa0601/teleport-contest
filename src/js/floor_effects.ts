@@ -9,7 +9,7 @@ import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from 
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Trap } from './map_types.js';
-import { plineWithContinuation } from './pline.js';
+import { plineWithContinuation, publishHeardMessage } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { map_background, newsym } from './display.js';
 import { breakObjectAtLocation } from './dothrow.js';
@@ -20,7 +20,6 @@ import { shipObject } from './dokick.js';
 import { objectResistsDestruction } from './zap.js';
 import { waterDamageObject, lava_damage } from './trap.js';
 import { rnl, rn2 } from './rng.js';
-import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
 import { cansee } from './vision.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
