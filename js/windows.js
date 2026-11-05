@@ -6,8 +6,8 @@ import { clearMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { docrt, flush_screen } from './display.js';
 import { NO_COLOR } from './terminal.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
-import { BUFSZ, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
-import { windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './wintty.js';
+import { NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY, MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS } from './const.js';
+import { compressStr, dmore, windowOrigin, tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_display_and_dismiss, tty_destroy_nhwindow } from './wintty.js';
 export const ATR_NONE = 0;
 export const ATR_INVERSE = 1;
 // C windows.c:decode_mixed(), for the literal portions of putmixed() lines.
@@ -118,7 +118,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     if (pagerStyle === 'menu') {
         return await showTextMenuOverlay(entries);
     }
-    const prose = entries.map(line => ({ ...line, text: compressTextWindowLine(line.text, d.cols) }));
+    const prose = entries.map(line => ({ ...line, text: compressStr(line.text, d.cols) }));
     const dataWidth = prose.reduce((widest, line) => Math.max(widest, line.text.length), 0);
     // putstr-built windows wrap prose but retain their original width
     // when deciding placement.
@@ -172,7 +172,8 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     return key;
 }
 // Text-backed menu windows page prose without accepting menu commands.
-// Also C wintty.c:dmore(): inlined here to paint and acknowledge each page prompt.
+// C wintty.c:process_text_window()'s full-screen pages acknowledge each
+// prompt through dmore(); quitchars are ESC, space, newline and return.
 async function pageDisclosureWindow(d, lines, marker, extraDismissKey = null) {
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));
@@ -182,12 +183,7 @@ async function pageDisclosureWindow(d, lines, marker, extraDismissKey = null) {
             d.clearScreen();
             for (const [row, line] of content.entries())
                 putLine(0, row, line.text, line.attr);
-            putLine(1, content.length, marker);
-            d.setCursor(1 + marker.length, content.length);
-            let key;
-            do
-                key = await nhgetch();
-            while (![27, 32, 10, 13].includes(key) && key !== extraDismissKey);
+            const key = await dmore(d, 1, content.length, marker, key => [27, 32, 10, 13].includes(key) || key === extraDismissKey);
             if (key === 27 || page === pageCount - 1)
                 return key;
         }
@@ -354,7 +350,7 @@ function textWindowRows(text, columns) {
     // tty_putstr() undoes topline wrapping and compresses spaces before
     // splitting the whole string again for the text window's width.
     const rows = [];
-    let line = compressTextWindowLine(text, columns);
+    let line = compressStr(text, columns);
     while (line.length >= columns) {
         let split = columns - 1;
         while (split > 0 && line.charAt(split) !== ' ')
@@ -369,16 +365,6 @@ function textWindowRows(text, columns) {
     // final column.
     rows.push(line.slice(0, columns - 1));
     return rows;
-}
-// tty_putstr() compresses long lines before buffering them. It leaves
-// indentation alone on short lines and reserves BUFSZ's terminator slot.
-// C wintty.c:compress_str().
-function compressTextWindowLine(text, columns) {
-    if (text.length < columns && !text.includes('\n'))
-        return text;
-    const compressed = text.replace(/[ \n]+/g, ' ').replace(/^ /, '').slice(0, BUFSZ - 1);
-    return compressed.length === BUFSZ - 1 || compressed.endsWith(' ')
-        ? compressed.slice(0, -1) : compressed;
 }
 /**
  * Display one or more full-screen tty text pages.  Each page has

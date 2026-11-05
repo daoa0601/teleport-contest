@@ -195,7 +195,7 @@ function toggle_menu_curr<T>(row: TtyMenuRow<T>, count: number): void {
 // C wintty.c:dmore()
 // Paint the pager prompt past the window's edge, leave the cursor after it,
 // and wait for a response in `valid` (xwaitforspace's accepted set).
-async function dmore(
+export async function dmore(
     d: GameDisplay, col: number, row: number, prompt: string, valid: (key: number) => boolean,
 ): Promise<number> {
     putLine(col, row, prompt);
@@ -566,6 +566,16 @@ export async function tty_destroy_nhwindow<T>(window: TtyMenuWindow<T>): Promise
     await tty_dismiss_nhwindow(window);
     await tty_clear_nhwindow(window);
     window.destroyed = true;
+}
+
+// C wintty.c:compress_str()
+// tty_putstr() compresses long lines before buffering them. It leaves
+// indentation alone on short lines and reserves BUFSZ's terminator slot.
+export function compressStr(text: string, columns: number): string {
+    if (text.length < columns && !text.includes('\n')) return text;
+    const compressed = text.replace(/[ \n]+/g, ' ').replace(/^ /, '').slice(0, BUFSZ - 1);
+    return compressed.length === BUFSZ - 1 || compressed.endsWith(' ')
+        ? compressed.slice(0, -1) : compressed;
 }
 
 export function selectableMenuText(key: string, text: string, marker = '-'): string {
