@@ -15,7 +15,7 @@ import { getLine, promptYesNoQuit, promptChoice, promptYesNo } from './query.js'
 import { paranoidQuery, yn_function } from './cmd.js';
 import { promptDirection, readDirectionKey } from './cmd.js';
 import { visibleCommandKey, setMulti, makemapPrepost } from './cmd.js';
-import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, objectNeedsFullIdentification, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
+import { inventoryCommandLetter, fullyIdentifyObject, identifyPack, inventoryItemDescription, inventoryPrimaryHandDetail, inventorySortMode, objectClassHeading, sortObjects } from './invent.js';
 import { askTeleportDestination } from './teleport.js';
 import { selectMapPosition } from './getpos.js';
 import { makeWish } from './zap.js';
@@ -41,7 +41,7 @@ import { mksobj, unlinkObject, deallocateObject } from './mkobj.js';
 import { AMULET_OF_YENDOR } from './object_data.js';
 import { recordObjectEncounter, objectTypeKnown } from './o_init.js';
 import { addInventoryItem, reassignInventoryLetters } from './invent.js';
-import { observeObjectForNaming } from './objnam.js';
+import { objectNeedsFullIdentification, observeObjectForNaming } from './objnam.js';
 import { setPaidShopkeeper } from './shk.js';
 import { FUZZER_IMPOSSIBLE_CONTINUE, FUZZER_IMPOSSIBLE_PANIC, panic } from './diagnostics.js';
 import { flip_level, flip_level_rnd } from './sp_lev.js';

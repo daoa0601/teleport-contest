@@ -1,10 +1,12 @@
+// objnam.js — object naming and wish parsing.
+// C ref: objnam.c — xname()/doname() naming, readobjnam() wishes, the
+// Japanese_items vocabulary, and the named-fruit lookups live here.
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
 import { guardianGenus, hatchableEggSpecies } from './mon.js';
 import { objectClassForType, objectBaseWeight, objectBaseCost, objectSkill, objectMerge, objectUsesKnown, objectUnique, objectMagic, objectCharged, CRYSKNIFE, FLINT, GOLD_PIECE, LENSES, ROCK, TALLOW_CANDLE, WAX_CANDLE, ACID_VENOM, AMULET_OF_YENDOR, BELL, BELL_OF_OPENING, BLINDING_VENOM, BOULDER, CANDELABRUM_OF_INVOCATION, CHEST, CORPSE, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, FIGURINE, HEAVY_IRON_BALL, IRON_CHAIN, LARGE_BOX, MAGIC_LAMP, OIL_LAMP, SKELETON_KEY, SLIME_MOLD, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, STATUE, POT_WATER, TIN, TOWEL, WAN_WISHING, SPE_NOVEL, requireObjectData, OBJECT_NAMES, OBJECT_SPELL_CATEGORY, OBJ_NAME, oc_nowish, oc_level, EGG, GRAY_DRAGON_SCALE_MAIL, GLOB_OF_BLACK_PUDDING, GLOB_OF_GRAY_OOZE, GRAY_DRAGON_SCALES, ALCHEMY_SMOCK, AKLYS, CANDY_BAR, HAWAIIAN_SHIRT, LEASH, MEAT_RING, YELLOW_DRAGON_SCALES, BEARTRAP, LAND_MINE, BAG_OF_TRICKS, BRASS_LANTERN, HORN_OF_PLENTY, POT_OIL, } from './object_data.js';
 import { game, requireGameLevel } from './gstate.js';
 import { objectProb, objectMaterial, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { artifactById, artifactByName, artifactExistCount, findArtifact, nameArtifact, uncreateArtifact, artifactEmitsLight, artifactGlowColor, artifactGlowVerb, wieldedArtifactWarns } from './artifacts.js';
-import { fruitFromIndex, fruitFromName, matchWishedFruit } from './fruit.js';
 import { objectOwnershipPrefix, deleteObject, deleteObjectContents, getCostOfShopItem, objectIsUnpaid, unpaidObjectCost, priceQuoteSuffix, recordObjectPriceQuote } from './shk.js';
 import { rn2, rnd } from './rng.js';
 import { impossible } from './diagnostics.js';
@@ -29,7 +31,6 @@ import { OBJECT_CLASS_SYMBOLS, docrt, feel_newsym, canOverwriteTerrain } from '.
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { BOGUS_MONSTERS } from './random_text_data.js';
 import { nameToMonster, resolveMonsterNamePrefix, is_male, is_neuter, is_were, monsterHasProperName, monsterIsFemale, monsterIsHuman, monsterIsVerySmall, } from './mondata.js';
-import { japaneseItemName, japaneseWishType } from './japanese_item_name.js';
 import { counterWereSpecies } from './were.js';
 import { applyHeroLiquidEffects, switchHeroTerrain } from './hack.js';
 import { iceDescriptionAt, waterbodyName } from './pager.js';
@@ -41,9 +42,28 @@ import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import * as objects from './object_data.js';
-export { japaneseItemName } from './japanese_item_name.js';
 const STRANGE_OBJECT = 0;
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
+// C objnam.c:Japanese_items. Naming and wish lookup use the same vocabulary.
+const japaneseItems = new Map([
+    [OBJECT_NAMES.indexOf('short sword'), 'wakizashi'],
+    [OBJECT_NAMES.indexOf('broadsword'), 'ninja-to'],
+    [OBJECT_NAMES.indexOf('flail'), 'nunchaku'],
+    [OBJECT_NAMES.indexOf('glaive'), 'naginata'],
+    [OBJECT_NAMES.indexOf('lock pick'), 'osaku'],
+    [OBJECT_NAMES.indexOf('wooden harp'), 'koto'],
+    [OBJECT_NAMES.indexOf('magic harp'), 'magic koto'],
+    [OBJECT_NAMES.indexOf('knife'), 'shito'],
+    [OBJECT_NAMES.indexOf('plate mail'), 'tanko'],
+    [OBJECT_NAMES.indexOf('helmet'), 'kabuto'],
+    [OBJECT_NAMES.indexOf('leather gloves'), 'yugake'],
+    [OBJECT_NAMES.indexOf('food ration'), 'gunyoki'],
+    [OBJECT_NAMES.indexOf('booze'), 'sake'],
+]);
+// C objnam.c:Japanese_item_name().
+export function japaneseItemName(type) {
+    return japaneseItems.get(type);
+}
 // C xname_flags() observation, kept separate from reusable name formatting.
 // distant_name() suppresses new appearance knowledge, not existing knowledge.
 export function observeObjectForNaming(object, { distant = false, source = object, state = game, } = {}) {
@@ -80,6 +100,61 @@ export async function distantObjectName(object, format, state = game) {
     finally {
         object.o_id = identity;
     }
+}
+// C objnam.c:fruitname(). The preferred name's " of " tail becomes juice.
+export function fruitName(juice = false, state = game) {
+    const preferred = preferredFruitName(state);
+    const of = preferred.toLowerCase().indexOf(' of ');
+    const name = makeSingular(of >= 0 ? preferred.slice(of + 4) : preferred);
+    return name + (juice ? ' juice' : '');
+}
+// C objnam.c:fruit_from_indx(). Look up a named fruit by index (1..127).
+export function fruitFromIndex(id, state = game) {
+    return fruitRegistry(state).find(fruit => fruit.fid === id) || null;
+}
+// C objnam.c:fruit_from_name(). Named fruits are case-sensitive; the prefix
+// match keeps the longest candidate, and plural targets singularize late.
+export function fruitFromName(name, { exact = false, state = game } = {}) {
+    const found = fruitRegistry(state).find(fruit => fruit.fname === name);
+    if (found)
+        return found;
+    if (!exact) {
+        let prefix = null;
+        for (const fruit of fruitRegistry(state)) {
+            if (name.startsWith(fruit.fname)
+                && (name.length === fruit.fname.length || name[fruit.fname.length] === ' ')
+                && (!prefix || fruit.fname.length > prefix.fname.length))
+                prefix = fruit;
+        }
+        if (prefix)
+            return prefix;
+    }
+    const singular = makeSingular(name);
+    const singularMatch = fruitRegistry(state).find(fruit => fruit.fname === singular);
+    if (singularMatch || exact)
+        return singularMatch || null;
+    let result = null;
+    for (const fruit of fruitRegistry(state)) {
+        const afterName = name.indexOf(' ', fruit.fname.length);
+        if (name.length < fruit.fname.length || afterName < 0)
+            continue;
+        const prefix = makeSingular(name.slice(0, afterName));
+        if (prefix === fruit.fname && (!result || prefix.length > result.fname.length))
+            result = fruit;
+    }
+    return result;
+}
+// C gf.ffruit and svp.pl_fruit: the fruit chain and the preferred name only
+// exist after options initialization; naming before that is a port error.
+export function fruitRegistry(state) {
+    if (!state.fruits)
+        throw new Error('Fruit registry has not been initialized');
+    return state.fruits;
+}
+export function preferredFruitName(state) {
+    if (state.fruitName === undefined)
+        throw new Error('Preferred fruit has not been initialized');
+    return state.fruitName;
 }
 // objnam.c:xname() visible name without inventory annotations.
 // Also C objnam.c:xcalled(): inlined as the "<class> called <name>"
@@ -270,6 +345,25 @@ function corpseMonsterIsUnique(species) {
         return false;
     return !!((MONSTER_GENO[species] ?? 0) & 0x1000)
         && !['high cleric', 'long worm tail'].includes(MONSTER_NAME[species] ?? '');
+}
+// C objnam.c:not_fully_identified().
+// Also C artifact.c:undiscovered_artifact(): inlined here as the
+// _artifactDiscoveries membership test.
+export function objectNeedsFullIdentification(object) {
+    if (!object || object.oclass === COIN_CLASS)
+        return false;
+    const typeKnown = objectTypeKnown(object);
+    if (!object.known || (!object.bknown && object.otyp !== SCROLL_OF_MAIL)
+        || !object.dknown || !typeKnown)
+        return true;
+    if ((!object.cknown && (isContainer(object) || object.otyp === STATUE))
+        || (!object.lknown && [CHEST, LARGE_BOX].includes(object.otyp)))
+        return true;
+    if (object.oartifact && !game._artifactDiscoveries?.includes(object.oartifact))
+        return true;
+    if (object.rknown || !([WEAPON_CLASS, ARMOR_CLASS, BALL_CLASS].includes(object.oclass) || isWeaponTool(object)))
+        return false;
+    return ['rust', 'burn', 'rot', 'corrosion', 'crack'].some(kind => objectIsVulnerableToErosion(object, kind));
 }
 // C corpse_xname(): corpse species is visible even when the object type has
 // not been discovered. Possessive species put adjectives after their name.
@@ -1739,9 +1833,11 @@ function searchWishNames(parsed, search, state) {
             if (type !== null)
                 return foundWishType(type);
         }
-        const japaneseType = japaneseWishType(search.actual);
-        if (japaneseType !== null)
-            return foundWishType(japaneseType);
+        if (search.actual) {
+            for (const [type, japaneseName] of japaneseItems)
+                if (search.actual.toLowerCase() === japaneseName)
+                    return foundWishType(type);
+        }
         if (search.oclass === ARMOR_CLASS && !/mail/i.test(search.name)) {
             rewriteSearchNoun(search, `${search.name} mail`);
             if (search.descriptionUsesNoun)
@@ -1758,12 +1854,18 @@ function searchWishNames(parsed, search, state) {
         parsed.empty = false;
         return foundWishType(objects.TIN);
     }
-    const fruit = matchWishedFruit(parsed.fruit.name, state);
-    if (fruit) {
-        parsed.count = parsed.fruit.count ?? fruit.count;
+    // readobjnam_postparse3 has a distinct, case-sensitive fruit namespace.
+    // Already plural external fruit labels are valid, so compare both forms.
+    for (const fruit of fruitRegistry(state)) {
+        const count = parsed.fruit.name === fruit.fname ? 0
+            : parsed.fruit.name === makeSingular(fruit.fname) ? 1
+                : parsed.fruit.name === makePlural(fruit.fname) ? 2 : null;
+        if (count === null)
+            continue;
+        parsed.count = parsed.fruit.count ?? count;
         parsed.buc = parsed.fruit.buc;
         parsed.partlyEaten = parsed.fruit.partlyEaten;
-        return { kind: 'object', type: objects.SLIME_MOLD, fruit: fruit.fruit, artifact: null };
+        return { kind: 'object', type: objects.SLIME_MOLD, fruit, artifact: null };
     }
     if (!search.oclass && search.actual) {
         const artifact = artifactByName(search.actual);

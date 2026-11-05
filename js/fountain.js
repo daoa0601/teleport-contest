@@ -18,8 +18,8 @@ import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requir
 import { countLevelFeatures, makemonNear } from './mklev.js';
 import { splitHeroMonsterForm, grantMonsterWish, applySupportedPotionVapor, heroPotionVaporProfile, drinkPotion } from './potion.js';
 import { mkobj, mkgold, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject } from './mkobj.js';
-import { definiteName, objectCombatName, rndClass, makePlural } from './objnam.js';
-import { resolveMonsterLiquid, angerWatchGuards, finishLiquidDeathForCurrentMover, } from './mon.js';
+import { definiteName, objectCombatName, rndClass, makePlural, fruitName } from './objnam.js';
+import { resolveMonsterLiquid, angerWatchGuards, finishLiquidDeathForCurrentMover } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayColorName, displayLiquidName, monsterName, randomDisplayMonsterName } from './do_name.js';
@@ -36,7 +36,6 @@ import { floatingAbove } from './levitation_commands.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { morehungry, newuhs, vomit } from './eat.js';
 import { showEnlightenment } from './insight.js';
-import { fruitName } from './fruit.js';
 import { detectMonsters } from './detect.js';
 import { grantIntrinsicProperty, propertyIsActive, setPropertyTimeout } from './properties.js';
 import { encumber_msg } from './pickup.js';

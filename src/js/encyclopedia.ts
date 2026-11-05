@@ -4,8 +4,7 @@ import { BUFSZ } from './const.js';
 import type { EncyclopediaEntry } from './encyclopedia_data.js';
 import type { GameState } from './game_state.js';
 import { game } from './gstate.js';
-import { fruitFromName } from './fruit.js';
-import { makeSingular } from './objnam.js';
+import { fruitFromName, makeSingular } from './objnam.js';
 
 
 export function encyclopediaEntries(name: string, state: GameState = game): readonly EncyclopediaEntry[] {

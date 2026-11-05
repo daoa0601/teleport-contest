@@ -12,7 +12,7 @@ import { initRng, enableRngLog, getRngLog } from './rng.js';
 import { bindInputGate, InputGate, nhgetch } from './input.js';
 import { bindLuaLifecycle, LuaLifecycle } from './lua/lifecycle.js';
 import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './allmain.js';
-import { parseNethackOptions, parseNethackrc } from './options.js';
+import { initializeFruitRegistry, parseNethackOptions, parseNethackrc } from './options.js';
 import type { NethackConfiguration } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { rawPrint } from './pline.js';
@@ -23,7 +23,6 @@ import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
 import { PanicTermination } from './panic_termination.js';
 import { discardTutorialState } from './tutorial_state.js';
-import { initializeFruitRegistry } from './fruit.js';
 import { COPYRIGHT_BANNER_A, COPYRIGHT_BANNER_B, COPYRIGHT_BANNER_C,
     COPYRIGHT_BANNER_D, MAX_MSG_HISTORY } from './const.js';
 

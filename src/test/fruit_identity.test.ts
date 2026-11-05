@@ -8,8 +8,9 @@ import { deleteObject } from '../js/shk.js';
 import { mergable } from '../js/invent.js';
 
 import {
-    addFruit, changePreferredFruit, fruitFromIndex, fruitFromName, fruitName, initializeFruitRegistry,
-} from '../js/fruit.js';
+    addFruit, changePreferredFruit, initializeFruitRegistry,
+} from '../js/options.js';
+import { fruitFromIndex, fruitFromName, fruitName } from '../js/objnam.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { inventoryItemDescription } from '../js/invent.js';

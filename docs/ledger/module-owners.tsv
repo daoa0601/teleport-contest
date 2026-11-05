@@ -26,7 +26,6 @@ src/js/explosion.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
-src/js/fruit.ts	objnam.c
 src/js/game_state.ts	decl.c
 src/js/gamelog.ts	pline.c
 src/js/guardian_angel.ts	minion.c
@@ -38,7 +37,6 @@ src/js/input.ts	wintty.c
 src/js/inventory_reports.ts	shk.c
 src/js/invocation_area.ts	mklev.c
 src/js/isaac64.ts	isaac64.c
-src/js/japanese_item_name.ts	objnam.c
 src/js/jsmain.ts	wintty.c
 src/js/level_change.ts	questpgr.c
 src/js/level_teleport.ts	teleport.c
