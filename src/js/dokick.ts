@@ -26,10 +26,12 @@ import { heroIsBlind, heroIsHallucinating, heroIsDeaf } from './senses.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
 import { findDrawbridgeAt, isPoolAt, isIceAt } from './dbridge.js';
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, maybeUnhideAt, angerWatchGuards, isWatch, revealMonsterAppearance, maybeMnexto } from './mon.js';
-import { woundHeroLegs } from './do.js';
-import { finishTeleportArrival } from './teleport.js';
-import { gotoLevel, scheduleLevelChange } from './do.js';
-import { askTeleportDestination, relocateObjectRandomly } from './teleport.js';
+import { woundHeroLegs, gotoLevel, scheduleLevelChange } from './do.js';
+import {
+    finishTeleportArrival, askTeleportDestination, relocateObjectRandomly, enexto, goodPosition,
+    monsterTeleportRestricted,
+} from './teleport.js';
+
 import { finishHeroMonsterKill, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { applyHeroContactPassive, applyCaitiffPenalty, prepareAppliedWeaponAttack } from './uhitm.js';
 import { AT_KICK } from './monster_attack_types.js';
@@ -53,7 +55,6 @@ import { altarWrath } from './pray.js';
 import { sinkBacksUp } from './fountain.js';
 import { bringLeashedFollowers } from './apply.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import type { Monster } from './monster_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { canFallThrough, stairwayAt } from './mklev.js';
@@ -61,12 +62,14 @@ import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, MONSTER_BODY_
 import { abusePet } from './dog.js';
 import { closedDoor, makeMonsterFlee, setMonsterApparentHeroPosition } from './monmove.js';
 import { updateMonsterRegions } from './regions.js';
-import { enexto, goodPosition, monsterTeleportRestricted } from './teleport.js';
+
 import { specialContactDamage } from './contact_damage.js';
-import { trapAt, mintrap, resolveImmediatePetrification, waterDamageObject } from './trap.js';
+import {
+    trapAt, mintrap, resolveImmediatePetrification, waterDamageObject, activateStatueTrapAt, triggerChestTrap,
+    triggerBoobyTrap, fall_through,
+} from './trap.js';
 import { artifactById } from './artifacts.js';
 import { heroFootName, heroLegName } from './body_parts.js';
-import { triggerChestTrap } from './chest_trap.js';
 import { applyFloorEffects } from './floor_effects.js';
 import { impactDisturbsZombies, loseHeroHp, checkHeroAttackOverexertion, invWeight, weightCapacity, roomsAt, inTown, heroGoldAmount, inventoryWeight } from './hack.js';
 import { breakChestLock, maybeResetPick } from './lock.js';
@@ -77,8 +80,6 @@ import { breakFloorObject, hurtleHero } from './dothrow.js';
 import type { GoldContactOptions } from './dothrow.js';
 import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
-import { touchPetrifies, heroResistsStoning } from './stoning.js';
-import { activateStatueTrapAt } from './statue_trap.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
@@ -96,7 +97,7 @@ import { objectResistsDestruction } from './zap.js';
 import {
     is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs,
     monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy,
-    monsterIsThickSkinned,
+    monsterIsThickSkinned, touchPetrifies, heroResistsStoning,
 } from './mondata.js';
 
 // C dokick.c:kick_ouch().
@@ -775,52 +776,11 @@ async function kickThrone(x: number, y: number, location: MapLocation, responses
         const current = game.u.uz;
         const dungeon = game.dungeons[current.dnum];
         if (dungeon && current.dlevel < dungeon.num_dunlevs) {
-            await fallThroughTerrain();
+            await fall_through(false);
             return;
         }
     }
     await responses.ouch(x, y);
-}
-
-// C trap.c:fall_through(FALSE, 0). A throne opens a temporary hole under
-// the hero; level travel waits until the current command has finished.
-async function fallThroughTerrain(): Promise<void> {
-    requirePlayingGame(game);
-    const hero = game.u;
-    const { ux: x, uy: y } = hero;
-    const sokoban = game.level.flags.sokoban_rules;
-    if (heroIsBlind() && hero.levitating && !sokoban) return;
-    await plineWithContinuation(`The ${surfaceName(x, y)} opens up under you!`);
-    const form = heroSpecies();
-
-    const clings = monsterIsClinger(form);
-    const ceilingHider = monsterIsHider(form) && (clings && MONSTER_SYMBOL[form] !== 13 || monsterIsFlyer(form));
-    let refusal: string | null = null;
-    if (!(sokoban && canFallThrough(hero.uz))) {
-        if (hero.levitating || hero.ustuck || (!canFallThrough(hero.uz) && !game.level.requireAt(x, y).candig)
-            || hero.flying || clings || ceilingHider && hero.uundetected)
-            refusal = "You don't fall in.";
-        else if ((MONSTER_SIZE[form] ?? 2) >= 4) refusal = "You don't fit through.";
-        else if (!await bringLeashedFollowers()) refusal = 'You are jerked back by your pet!';
-    }
-    if (refusal) {
-        await plineWithContinuation(refusal);
-        await impactDrop(null, x, y, { publish: plineWithContinuation });
-        await displayMessageWindow();
-        await plineWithContinuation('The opening under you closes up.');
-        return;
-    }
-    if (hero.ushops?.length) await shopDig(1);
-    const destination = Is_stronghold(hero.uz) ? game.valley_level
-        : { dnum: hero.uz.dnum, dlevel: hero.uz.dlevel + 1 };
-    if (!destination) throw new Error('The stronghold fall requires the Valley destination.');
-    if (!Is_stronghold(hero.uz)) {
-        const distance = dungeonDepth(destination.dnum, destination.dlevel)
-            - dungeonDepth(hero.uz.dnum, hero.uz.dlevel);
-        if (distance > 1) await plineWithContinuation(`You fall down a ${distance > 3 ? 'very ' : ''}${distance > 2 ? 'deep ' : ''}shaft!`);
-    }
-    scheduleLevelChange([destination, { arrival: hero.flying ? 'random' : 'falling',
-        postMessage: `The hole in the ${ceilingName(x, y)} above you closes up.` }]);
 }
 
 async function kickAltarOrFountain(x: number, y: number, location: MapLocation, responses: TerrainKickResponses): Promise<void> {

@@ -5,7 +5,6 @@ import { stack_object } from './invent.js';
 import { POTION_CLASS } from './objclass.js';
 import { ALTAR, CORR, Luck, ROOM, TT_PIT, WT_SPLASH_THRESHOLD, is_hole, is_pit } from './const.js';
 import { landObjectOnAltar } from './altar_object.js';
-
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame } from './gstate.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
@@ -19,7 +18,7 @@ import { BOULDER, POT_OIL } from './object_data.js';
 import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { shipObject } from './dokick.js';
 import { objectResistsDestruction } from './zap.js';
-import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
+import { waterDamageObject, lava_damage } from './trap.js';
 import { rnl, rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -156,14 +155,13 @@ export async function applyFloorEffects(
     }
 
     if (isLavaAt(x, y, state)) {
-        const landed = [object];
-        await destroyLavaFloorObjects(landed, {
+        const destroyed = await lava_damage(object, {
             state, x, y,
             publish,
             random,
             visible: squareIsVisible(state, x, y),
         });
-        if (!landed.includes(object))
+        if (destroyed)
             return { finished: true, object: null };
         return { finished: false, object };
     } else if (isPoolAt(x, y, state)) {

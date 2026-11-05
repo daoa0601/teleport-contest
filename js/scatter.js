@@ -15,7 +15,7 @@ import { applyMonsterBlindness, monsterCanBeBlindedByObject } from './blinding_a
 import { finishHeroMonsterKillOutcome } from './hero_monster_death.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { possessiveName, dist2 } from './hacklib.js';
-import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, passes_rocks, } from './mondata.js';
+import { monsterObjectPronoun, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsVampireShifter, passes_rocks, touchPetrifies, } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
 import { applyMonsterPassiveToObject, captureHeroProjectileName } from './uhitm.js';
 import { heroSpecies } from './polyself.js';
@@ -33,7 +33,6 @@ import { hitMonsterWithSupportedPotion } from './potion.js';
 import { shipObject } from './dokick.js';
 import { isPoisonableObject } from './object_properties.js';
 import { shouldMulchMissile, breakFloorObject, rangedTargetHitBonus } from './dothrow.js';
-import { touchPetrifies } from './stoning.js';
 import { cansee } from './vision.js';
 import { d, rn2, rnd } from './rng.js';
 import { breakStatue, fractureRock } from './zap.js';

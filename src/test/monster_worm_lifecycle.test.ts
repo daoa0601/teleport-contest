@@ -3,7 +3,6 @@ import { assertWormBody } from './support/worms.js';
 import type { Monster } from '../js/monster_types.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import {
     COLNO, DB_MOAT, DB_NORTH, DBWALL, DRAWBRIDGE_UP,
     MM_ANGRY, MM_NOTAIL, NO_MINVENT, ROOM, ROWNO, STONE, W_AMUL, TELEP_TRAP,
@@ -27,7 +26,6 @@ import { runMonsterAction } from '../js/monmove.js';
 import { AMULET_OF_LIFE_SAVING, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
 import { restoreGame, saveGame } from '../js/save.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { teleportMonsterFromTrap } from '../js/teleport.js';
 import { knownObject, untimedCorpse } from './support/game-objects.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
@@ -35,6 +33,7 @@ import { memoryStorage } from './support/memory-storage.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createDungeon } from './support/topology.js';
+import { animateStatue } from '../js/trap.js';
 
 function occupiedSquares(worm: Monster, level = requireGameLevel()) {
     const squares = [];
@@ -216,7 +215,6 @@ for (const grow of [false, true]) {
     });
 }
 
-
 void test('a relocation that truncates every segment does not restart growth', async () => {
     const worm = await growingWorm();
     requirePlayingGame(game);
@@ -237,7 +235,6 @@ void test('a relocation that truncates every segment does not restart growth', a
     assert.equal(worm.mhp, health);
     assert.equal(worm.wormGrowTime, deadline);
 });
-
 
 void test('a revived pet worm receives a new head-only body and grows from its revival square', async () => {
     const worm = await growingWorm();
@@ -312,7 +309,6 @@ for (const restoration of ['none', 'save', 'revisit']) {
         assert.equal(monsterAtPosition(game.level, 12, restored ? 9 : 10), null);
     });
 }
-
 
 void test('a slotless worm stays head-only after another worm releases its body slot', async () => {
     await freshObjectRoom({ left: 2, right: 76, top: 2, bottom: 18,

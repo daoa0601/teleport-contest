@@ -13,7 +13,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from '../js/mon.js';
 import { CORPSE, RIN_PROTECTION_FROM_SHAPE_CHANGERS, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { isHumanWereMonster } from '../js/were.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -23,6 +22,7 @@ import { createRoomLevel } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { cancelMonster } from '../js/zap.js';
 import { beginMonsterMealMimicry } from '../js/dogmove.js';
+import { animateStatue } from '../js/trap.js';
 void test('restoring a chameleon re-enables shape changes after protection was removed elsewhere', async () => {
     const savedLevel = await freshObjectRoom();
     const ring = await addInventoryObject(RIN_PROTECTION_FROM_SHAPE_CHANGERS);

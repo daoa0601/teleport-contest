@@ -29,7 +29,7 @@ import { mapVicinity } from './detect.js';
 import { mksobj, objectWeight } from './mkobj.js';
 import { deleteObject, chargeUnpaidUsage } from './shk.js';
 import { useHeroSkill, ensureHeroSkills, initializedSkills, requiredSkill } from './weapon.js';
-import { recordObjectKnowledge } from './o_init.js';
+import { recordObjectKnowledge, learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { findArmorClass } from './do_wear.js';
 import {
     canSeeMonster, canSpotMonster, flush_screen, shieldeff,
@@ -57,7 +57,7 @@ import { recordAchievement } from './insight.js';
 import { makeInvocationArea } from './invocation_area.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType } from './do.js';
-import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
+
 import { erodeObject } from './trap.js';
 import { putHeroToSleep } from './timeout.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -73,7 +73,6 @@ import { makeUndeadNear } from './mkroom.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { roleInitClericLightSchool } from './roles.js';
 import { monsterAtPosition } from './steed.js';
-
 import {
     tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu,
     tty_select_menu, tty_destroy_nhwindow,
@@ -86,9 +85,7 @@ import type { SpellCategory } from './data_types.js';
 import type { Position } from './map_types.js';
 import { applyScrollEffects } from './read.js';
 import {
-    loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition,
-    shouldShowGetposTip,
-    showGetposTip,
+    loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip,
     exceedsActionCapacity,
 } from './hack.js';
 
@@ -735,7 +732,6 @@ export function identifySpellbooks(state: GameState): void {
         if (spellLevel <= level) recordObjectKnowledge(type, state);
     }
 }
-
 
 // ── spell.c admission: rejectcasting(), spelleffects_check(), spell_backfire(),
 //    percent_success() ──

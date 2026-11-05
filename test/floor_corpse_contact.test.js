@@ -16,12 +16,12 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_GLOVES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { heroCannotTake, polymonHero } from '../js/polyself.js';
-import { heroResistsStoning } from '../js/stoning.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import { heroResistsStoning } from '../js/mondata.js';
 const finds = () => gameLogEvents().filter(event => event.text.startsWith('found '));
 async function dangerousPile({ artifact = true, quantity = 1 } = {}) {
     let magicbane;

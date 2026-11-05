@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { removeHeroAccessory, wearHeroAccessory } from '../js/do_wear.js';
-
 import { CORPSTAT_INIT, M_AP_NOTHING, M_AP_TYPE, NON_PM, NO_MINVENT, ROOM } from '../js/const.js';
 import { reviveCorpseByMagic } from '../js/zap.js';
 import { canSeeMonster, flush_screen } from '../js/display.js';
@@ -15,7 +13,6 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm, removeMonsterFromGame, restoreMonsterShape } from '../js/mon.js';
 import { CORPSE, RIN_PROTECTION_FROM_SHAPE_CHANGERS, STATUE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import { animateStatue } from '../js/statue_trap.js';
 import { isHumanWereMonster } from '../js/were.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
@@ -25,6 +22,7 @@ import { createRoomLevel } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';
 import { cancelMonster } from '../js/zap.js';
 import { beginMonsterMealMimicry } from '../js/dogmove.js';
+import { animateStatue } from '../js/trap.js';
 
 void test('restoring a chameleon re-enables shape changes after protection was removed elsewhere', async () => {
     const savedLevel = await freshObjectRoom();

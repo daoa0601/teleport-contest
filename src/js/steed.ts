@@ -27,11 +27,10 @@ import { applyMonsterEquipmentProperties } from './monworn.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
 import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_name.js';
 import {
-    monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger,
-    monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks,
-    needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid,
+    monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer,
+    monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown,
+    monsterIsAmorphous, monsterIsUnsolid, touchPetrifies,
 } from './mondata.js';
-
 import { shopkeeperName } from './shknam.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
@@ -47,7 +46,6 @@ import { useHeroSkill } from './weapon.js';
 import { teleds, randomMonsterRelocation, relocateMonsterTo, enexto } from './teleport.js';
 import { promptYesNo } from './query.js';
 import { healHeroLegs, woundHeroLegs } from './do.js';
-import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
 import { depth, endgameLevelName, levelHasCeiling, surfaceName } from './dungeon.js';

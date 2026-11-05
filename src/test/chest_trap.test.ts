@@ -1,12 +1,9 @@
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
-import { triggerChestTrap } from '../js/chest_trap.js';
 import { M_SEEN_COLD, M_SEEN_ELEC } from '../js/const.js';
 import { use_container } from '../js/pickup.js';
 import { flush_screen } from '../js/display.js';
-
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR, CHEST, CLUB, RIN_FREE_ACTION, ROCK } from '../js/object_data.js';
@@ -14,7 +11,7 @@ import { punishHero } from '../js/read.js';
 import { initRng } from '../js/rng.js';
 import { heroIsHallucinating } from '../js/senses.js';
 import { putHeroToSleep } from '../js/timeout.js';
-import { untrap } from '../js/trap.js';
+import { untrap, triggerChestTrap } from '../js/trap.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

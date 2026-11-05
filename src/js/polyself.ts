@@ -50,7 +50,6 @@ import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js'
 import { clearHeroStrangulation, heroHasFreeAction, heroIsStrangled, pendingArmorAction, cancelDonning, findArmorClass, removeHeroArmor, simpleArmorName, isBeingTakenOff, removeEyewear } from './do_wear.js';
 import { endVoluntaryMultiTurn, nomul, roomsAt, applyHeroLocationEffects, loseHeroHp, roundDiv } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
-
 import { makeBlinded, setSlipperyHands, cureHeroSickness, heroIsSick, clearHeroSliming, heroIsSliming, resetHeroSlimingCountdown } from './potion.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { newuhs } from './eat.js';
@@ -68,7 +67,7 @@ import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_mons
 import { hitMonsterWithThrownEggPieOrVenom } from './hero_thrown_egg_pie_venom.js';
 import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpact, tossObjectUp } from './dothrow.js';
 import { mksobj, placeCreatedObject } from './mkobj.js';
-import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
+import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap, selfTouchPetrifyingWeapons } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
 import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
@@ -85,21 +84,20 @@ import { heroIsInvisible, syncHeroInvisibility } from './hero_invisibility.js';
 import { adjustObjectLightAfterBlessing as adjustObjectLight, objectLightRadius } from './light.js';
 import { endObjectBurn, learnEggType } from './timeout.js';
 import {
-    nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision,
-    is_dwarf, is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor,
-    monsterCanTeleport, monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead,
-    monsterHasNoHands, monsterHasNoLimbs, monsterHasProperName, monsterHidesUnder, monsterHornCount,
-    monsterIsAmorphous, monsterIsAmphibious, monsterIsAnimal, monsterIsBat, monsterIsBreathless,
-    monsterIsCentaur, monsterIsClinger, monsterIsDemon, monsterIsEel, monsterIsFemale,
-    monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindFlayer,
-    monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic, monsterIsUndead,
-    monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall,
-    monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives,
-    monsterSlipsArmor, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed,
-    notake, polyok, regenerates, strongmonst, cantwield,
+    nameToMonster, resolveMonsterClass, speciesCanBlow, your_race, monsterIsMindless, infravision, is_dwarf,
+    is_elf, is_gnome, is_male, is_neuter, is_orc, is_were, lays_eggs, monsterBreaksArmor, monsterCanTeleport,
+    monsterControlsTeleport, monsterDigests, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasNoLimbs,
+    monsterHasProperName, monsterHidesUnder, monsterHornCount, monsterIsAmorphous, monsterIsAmphibious,
+    monsterIsAnimal, monsterIsBat, monsterIsBreathless, monsterIsCentaur, monsterIsClinger, monsterIsDemon,
+    monsterIsEel, monsterIsFemale, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsHumanoid,
+    monsterIsMindFlayer, monsterIsNonliving, monsterIsSlithy, monsterIsSwimmer, monsterIsTelepathic,
+    monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVerySmall,
+    monsterIsWeirdNonliving, monsterIsWhirly, monsterPassesWalls, monsterPerceives, monsterSlipsArmor,
+    monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterWrappingAllowed, notake, polyok, regenerates,
+    strongmonst, cantwield, formCanBecomeStoneGolem, touchPetrifies,
 } from './mondata.js';
 import { getLine, promptYesNo } from './query.js';
-import { clearHeroPetrification, formCanBecomeStoneGolem, heroIsPetrifying, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
+import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { retouchEquipment } from './artifacts.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './do.js';
@@ -1182,8 +1180,6 @@ function canDropPolymorphWeapon(object: GameObject) {
     }
     return !(object.otyp === LEASH && object.leashmon);
 }
-
-
 
 // roles.js currently stores the pre-consumed initial energy die separately
 // during startup.  These are the corresponding role.c enadv.inrnd values

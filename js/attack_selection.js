@@ -8,9 +8,8 @@ import { AD_ACID, AD_COLD, AD_DISE, AD_DREN, AD_ELEC, AD_FAMN, AD_FIRE, AD_PEST,
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { CORPSE } from './object_data.js';
-import { touchPetrifies } from './stoning.js';
 import { isHomeElemental } from './makemon.js';
-import { monsterHasColdResistance, monsterIsShade } from './mondata.js';
+import { monsterHasColdResistance, monsterIsShade, touchPetrifies } from './mondata.js';
 export function getmattk(attacker, defender, attackIndex, previousResults, state) {
     requireLiveGame(state);
     const attackerSpecies = actorSpecies(attacker, state);

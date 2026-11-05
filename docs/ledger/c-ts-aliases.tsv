@@ -239,3 +239,5 @@ dosinkring	dropRingIntoSink
 finesse_ahriman	beginLevitatingArtifactDrop
 drop_boulder_on_player	dropBoulderOnHero
 reassign	reassignInventoryLetters
+is_pool	isPoolAt
+water_damage_chain	damageWaterChain

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { HOLE } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { prepareHoleFall } from '../js/trap.js';
+import { fall_through } from '../js/trap.js';
 import { pushKeys } from '../js/input.js';
 import { ROCK } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
@@ -20,7 +20,7 @@ void test('a shopkeeper takes the indebted hero backpack before a hole fall', as
     const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 2 } });
     pushKeys(' '.repeat(10));
 
-    assert.ok(await prepareHoleFall(hole));
+    assert.ok(await fall_through(true, hole));
 
     assert.equal(game.inventory.includes(rocks), false);
     assert.ok(shopkeeper.minvent?.includes(rocks));
@@ -38,7 +38,7 @@ for (const invoked of [false, true]) {
         const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 3 } });
         pushKeys(' '.repeat(10));
 
-        const fall = await prepareHoleFall(hole);
+        const fall = await fall_through(true, hole);
 
         assert.equal(fall?.destination.dlevel, invoked ? 3 : 2);
     });
@@ -56,7 +56,7 @@ for (const visitedLocate of [false, true]) {
         const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 5 } });
         pushKeys(' '.repeat(10));
 
-        const fall = await prepareHoleFall(hole);
+        const fall = await fall_through(true, hole);
 
         assert.equal(fall?.destination.dlevel, visitedLocate ? 5 : 3);
     });
@@ -74,7 +74,7 @@ for (const plunge of [false, true]) {
         const hole = addTrap(source, HOLE, 10, 10, { dst: { dnum: 0, dlevel: 4 } });
         pushKeys(' '.repeat(10));
 
-        const fall = await prepareHoleFall(hole, { tookPlunge: plunge });
+        const fall = await fall_through(true, hole, { tookPlunge: plunge });
 
         assert.ok(fall);
         assert.match(String(game._pending_message ?? ''),

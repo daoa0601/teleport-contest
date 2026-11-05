@@ -1,18 +1,18 @@
 import { feelPetrifyingCorpse } from '../js/invent.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import type { GameObject } from '../js/object_types.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { selfTouchPetrifyingWeapons, snatchPetrifyingCorpse } from '../js/stoning.js';
 import { touchPetrifyingCorpse } from '../js/pickup.js';
 import { corpseObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { selfTouchPetrifyingWeapons } from '../js/trap.js';
+import { snatchPetrifyingCorpse } from '../js/apply.js';
 
 const COCKATRICE = MONSTER_NAME.indexOf('cockatrice');
 

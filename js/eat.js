@@ -1,15 +1,14 @@
 // Hero eating and nutrition. Ports from eat.c.
 import { RANDOM_CLASS, WEAPON_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectPropertyName, oc_nutrition, objectDelay, objectCharged, AMULET_OF_STRANGULATION, AMULET_OF_YENDOR, APPLE, AXE, CANDY_BAR, CARROT, CLOVE_OF_GARLIC, CORPSE, CRAM_RATION, CREAM_PIE, EGG, EUCALYPTUS_LEAF, FAKE_AMULET_OF_YENDOR, FLINT, FOOD_RATION, FORTUNE_COOKIE, GLOB_OF_GREEN_SLIME, GOLD_PIECE, LEASH, LEMBAS_WAFER, LUMP_OF_ROYAL_JELLY, MEAT_RING, OBJECT_NAMES, ORANGE, PANCAKE, PEAR, PICK_AXE, RIN_PROTECTION, RIN_SLOW_DIGESTION, SCR_SCARE_MONSTER, SLIME_MOLD, SPRIG_OF_WOLFSBANE, TIN, TIN_OPENER, TRIDENT, TRIPE_RATION, } from './object_data.js';
-import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, } from './mondata.js';
+import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic, your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous, monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem, heroResistsStoning, heroWouldPetrifyFromFlesh, } from './mondata.js';
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting, } from './potion.js';
-import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
+import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifacts.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';
 import { commandResultCancelled, commandResultSpentTime, currentMulti, setMulti, setOccupation, paranoidQuery } from './cmd.js';
 import { ALTAR, A_CHA, A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, CHOKING, DIED, DISMOUNT_FELL, EXPL_FIERY, FAINTED, FAINTING, GD_EATGOLD, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, HEALTHY_TIN, HOMEMADE_TIN, HUNGRY, Is_airlevel, Is_waterlevel, KILLED_BY, KILLED_BY_AN, LUCKMIN, MON_FLOOR, M_AP_NOTHING, M_AP_OBJECT, M_ATTK_AGR_DIED, M_ATTK_HIT, M_ATTK_MISS, NOT_HUNGRY, PARANOID_EATING, POISONING, RANDOM_TIN, ROTTEN_TIN, SATIATED, SICK_VOMITABLE, SPINACH_TIN, STARVED, STARVING, STONING, TIMEOUT, Upolyd, WEAK, W_AMUL, W_ARMOR, W_RING, W_SADDLE, W_TOOL } from './const.js';
@@ -69,7 +68,7 @@ import { flushPendingTopline } from './tty_topline.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone, wieldTool } from './wield.js';
-import { captureLevitationState, floatHeroUp } from './trap.js';
+import { captureLevitationState, floatHeroUp, triggerBoobyTrap, selfTouchPetrifyingWeapons } from './trap.js';
 const G_UNIQ = 0x1000;
 const PM_WIZARD = MONSTER_NAME.indexOf('Wizard of Yendor');
 const PM_HIGH_CLERIC = MONSTER_NAME.indexOf('high cleric');

@@ -6,8 +6,6 @@
 // (shknam.ts); this module owns the live relationship among room, resident,
 // customer, and hero.
 
-
-
 import {
     WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS,
     FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS,
@@ -89,7 +87,6 @@ import { dropHeroInventoryForBones } from './bones.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { releaseAllMonsterLeashes, releaseObjectLeash, umDist } from './apply.js';
 import { makemonAt } from './makemon.js';
-
 import { enexto } from './teleport.js';
 import { cansee, vision_note_blocker_change } from './vision.js';
 import { showDisclosureOverlay, showMultiSelectWindow } from './windows.js';
@@ -114,20 +111,13 @@ import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { bookDisappears } from './spell.js';
 import {
-    checkSpecialRoom,
-    heroGoldAmount,
-    monsterGoldAmount,
-    inTown,
-    roomForRoomno,
-    roomsAt,
-    roomForIndex,
-    showGetposTip
+    checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex,
+    showGetposTip,
 } from './hack.js';
 
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;
-
 
 const FIRST_REAL_GEM = OBJECT_NAMES.indexOf('dilithium crystal');
 

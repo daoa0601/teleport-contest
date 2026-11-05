@@ -6,7 +6,6 @@ import { bringLeashedFollowers, leashAttachedToMonster, releaseMonsterLeash, rel
 import { publishMonsterYelp } from './ambient_sounds.js';
 import { objectIsHardHelmet } from './do_wear.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { heroFootName, heroHeadName, monsterStomachName } from './body_parts.js';
 import { A_LAWFUL, A_STR, A_DEX, A_WIS, ALTAR, AM_MASK, AM_SANCTUM, Amask2align, BEAR_TRAP, COLNO, CORR, COULD_SEE, DBWALL, DB_LAVA, DB_MOAT, DB_UNDER, D_BROKEN, D_CLOSED, D_LOCKED, D_NODOOR, D_TRAPPED, DIGCHECK_FAIL_AIRLEVEL, DIGCHECK_FAIL_ALTAR, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAIL_CANTDIG, DIGCHECK_FAIL_ONLADDER, DIGCHECK_FAIL_ONSTAIRS, DIGCHECK_FAIL_OBJ_POOL_OR_TRAP, DIGCHECK_FAIL_THRONE, DIGCHECK_FAIL_TOOHARD, DIGCHECK_FAIL_UNDESTROYABLETRAP, DIGCHECK_FAIL_WATERLEVEL, DIGCHECK_FAILED, DIGCHECK_PASSED, DIGCHECK_PASSED_DESTROY_TRAP, DIGCHECK_PASSED_PITONLY, DIGTYP_BOULDER, DIGTYP_DOOR, DIGTYP_ROCK, DIGTYP_STATUE, DIGTYP_TREE, DIGTYP_UNDIGGABLE, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, EXPL_MAGICAL, FOUNTAIN, F_WARNED, HOLE, IN_SIGHT, IRONBARS, IS_ALTAR, IS_DOOR, IS_FURNITURE, IS_GRAVE, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_THRONE, IS_TREE, IS_WALL, Is_airlevel, Is_botlevel, Is_earthlevel, Is_stronghold, Is_waterlevel, KILLED_BY, LANDMINE, LAVAPOOL, MAGIC_PORTAL, MIGR_RANDOM, MM_NOMSG, MON_OFFMAP, MOAT, OBJECT_TIMER_KIND, PIT, POOL, RLOC_NOMSG, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SHOP_DOOR_COST, SHOP_PIT_COST, SHOP_WALL_COST, SINK, STONE, THRONE, TRAPDOOR, TRAP_EXPLODE, TT_BURIEDBALL, TT_INFLOOR, TT_PIT, Upolyd, VIBRATING_SQUARE, W_NONDIGGABLE, is_hole, is_magical_trap, is_pit, xdir, ydir } from './const.js';
 import { isok } from './cmd.js';
@@ -21,7 +20,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { canSeeMonster, feel_location, flush_screen, newsym, show_glyph_cell } from './display.js';
 import { deleteEngravingAt } from './engrave.js';
 import { explode } from './explosion.js';
-import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt, trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap } from './trap.js';
+import { fireDamageChain, connectPits, pitsAreConjoined, convertTrapToObject, deleteTrap, feelTrap, seeTrap, trapAt, trapName, mintrap, waterDamageChain, setHeroTrap, dotrap, resetUtrap, maketrap, deleteFloorTrap, triggerBoobyTrap, } from './trap.js';
 import { breakSinkAt, dryFountainAt, gushForthFromFountain } from './fountain.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { CmapSymbol, cmapToGlyph } from './glyph_numbers.js';

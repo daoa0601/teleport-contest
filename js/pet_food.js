@@ -10,8 +10,7 @@ import { AMULET_OF_STRANGULATION, APPLE, BANANA, CARROT, CLOVE_OF_GARLIC, CORPSE
 import { objectMaterial } from './o_init.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
-import { fleshPetrifies } from './stoning.js';
-import { sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, carnivorous, herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter, monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter, } from './mondata.js';
+import { sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, carnivorous, herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter, monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter, fleshPetrifies, } from './mondata.js';
 export const DOGFOOD = 0;
 export const CADAVER = 1;
 export const ACCFOOD = 2;

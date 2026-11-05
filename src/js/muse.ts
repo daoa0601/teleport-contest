@@ -39,7 +39,6 @@ import {
 } from './const.js';
 import { heroHasArtifactDefense, weaponReflects } from './artifacts.js';
 import { monsterHasMagicResistance } from './trap.js';
-import { touchPetrifies } from './stoning.js';
 import { fillPitWithBoulderAt, mintrap, seeTrap, trapAt, trapName, heroIsUnconscious, maketrap } from './trap.js';
 import { CLR_BRIGHT_GREEN, CLR_GREEN } from './terminal.js';
 import {
@@ -62,7 +61,7 @@ import {
     monsterIsAmorphous, monsterIsAnimal, monsterIsBat, monsterIsFlyer, monsterIsKop, monsterIsMindless,
     monsterIsNoncorporeal, monsterIsNonliving, monsterIsSlimeproof, monsterIsSlithy, monsterIsUndead,
     monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterPassesWalls,
-    monsterThrowsRocks, needspick, acidic as speciesIsAcidic,
+    monsterThrowsRocks, needspick, acidic as speciesIsAcidic, touchPetrifies,
 } from './mondata.js';
 import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
 import { canSeeMonster, canSenseMonster, canSpotMonster, cls, displaySelf, docrt, flashGlyphAt, map_invisible, newsym, shieldeff, show_glyph_cell, transientMonsterGlyph } from './display.js';
@@ -131,7 +130,6 @@ import { buzz, dobuzz, hitMonsterWithRay } from './zap.js';
 import type { NativeRayOptions } from './zap.js';
 import { hitObjectWithWand } from './zap.js';
 import { turnCarriedObjects, turnHeroWithUndeadMagic } from './zap.js';
-
 
 // ---------------------------------------------------------------------------
 // Shared muse.c constants.

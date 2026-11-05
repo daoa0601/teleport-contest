@@ -1,49 +1,14 @@
-// Hero petrification from contact, corpses, and eggs.
-// C refs: mondata.c touch_petrifies()/poly_when_stoned(),
-// pickup.c fatal_corpse_mistake(), trap.c instapetrify(),
-// timeout.c stoned_dialogue(); potion.c make_stoned() lives in potion.ts
-// (setHeroPetrificationTimeout).
-import { withIndefiniteArticle, corpseName, objectMonsterName } from './objnam.js';
-import { objectQuantity } from './mkobj.js';
-import { G_GENOD, KILLED_BY, KILLED_BY_AN, W_ARMC, W_ARMF, W_ARMG, W_ARMH } from './const.js';
-import { pline, plineWithContinuation } from './pline.js';
-import { finishHeroDeath } from './end.js';
+// Shared petrifying contact and delayed hero petrification.
+// State helpers serve potion.c make_stoned(); corpse pickup and whip snatching
+// share the contact transaction, while egg effects serve eat.c and mthrowu.c.
+import { KILLED_BY, KILLED_BY_AN } from './const.js';
+import { plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { MONSTER_NAME, requireMonsterData } from './monster_data.js';
-import { AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC, AT_CLAW, AT_TUCH, AT_WEAP, AT_KICK, AT_BUTT, AT_HUGS } from './monster_attack_types.js';
 import { CORPSE, EGG } from './object_data.js';
-import { heroIsPolymorphed, polymonHero } from './polyself.js';
-import { uswapwepgone, uwepgone } from './wield.js';
+import { polymonHero } from './polyself.js';
 import { resolveImmediatePetrification } from './trap.js';
-import { monsterIsGolem } from './mondata.js';
-const PM_CHICKATRICE = 9;
-const PM_COCKATRICE = 10;
-const PM_MEDUSA = 284;
-export const PM_STONE_GOLEM = 257;
-export function touchPetrifies(mnum) {
-    return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
-}
-export function fleshPetrifies(mnum) {
-    return touchPetrifies(mnum) || mnum === PM_MEDUSA;
-}
-// C mhitm.c:attk_protection(). Bites cannot be insulated by worn armor.
-export function contactIsProtected(attackType, wornMask, usedWeapon = false) {
-    if ([AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC]
-        .includes(attackType))
-        return true;
-    if ([AT_CLAW, AT_TUCH, AT_WEAP].includes(attackType))
-        return usedWeapon || !!(wornMask & W_ARMG);
-    if (attackType === AT_KICK)
-        return !!(wornMask & W_ARMF);
-    if (attackType === AT_BUTT)
-        return !!(wornMask & W_ARMH);
-    if (attackType === AT_HUGS)
-        return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
-    return false;
-}
-export function heroResistsStoning(state = game) {
-    return !!state.u?.stoneResistance;
-}
+import { PM_STONE_GOLEM, touchPetrifies, fleshPetrifies, heroResistsStoning, formCanBecomeStoneGolem, } from './mondata.js';
 export function heroIsPetrifying(state = game) {
     return !!state.u?.stoned || (state.u?.stonedTurns ?? 0) > 0;
 }
@@ -70,63 +35,6 @@ export function clearHeroPetrification(state = game) {
     delete hero.stoneKiller;
     delete hero.stoneKillerFormat;
     return wasPetrifying;
-}
-// C mondata.c:poly_when_stoned(): a non-stone golem hero becomes a stone
-// golem only if stone golems have not been genocided.
-function heroPolymorphsWhenStoned(state = game) {
-    return heroIsPolymorphed(state)
-        && formCanBecomeStoneGolem(state.u?.umonnum, state);
-}
-export function formCanBecomeStoneGolem(mnum, state = game) {
-    const stoneGolemGenocided = !!((state.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD);
-    return mnum !== undefined && monsterIsGolem(mnum) && mnum !== PM_STONE_GOLEM
-        && !stoneGolemGenocided;
-}
-export function heroWouldPetrifyFromFlesh(mnum, state = game) {
-    return fleshPetrifies(mnum)
-        && !heroResistsStoning(state)
-        && !heroPolymorphsWhenStoned(state);
-}
-export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer petrify-resistant, you', state = game, publish = pline, die = finishHeroDeath, } = {}) {
-    if (heroResistsStoning(state))
-        return { touched: false, died: false };
-    let touched = false;
-    for (let slot = 0; slot < 2; slot++) {
-        const weapon = slot === 0
-            ? state.uwep || state.u?.uwep
-            : state.u?.twoweap
-                ? state.uswapwep || state.u?.uswapwep : null;
-        if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm))
-            continue;
-        touched = true;
-        // C trap.c:selftouch() names the species with obj_pmname(), not
-        // corpse_xname(), so unique and personal species stay unadorned.
-        const species = objectMonsterName(weapon);
-        await publish(`${messageStart} touch the ${species} corpse.`);
-        const result = await resolveImmediatePetrification({
-            killer: `${withIndefiniteArticle(species)} corpse`,
-            state, publish, die,
-        });
-        if (result.died)
-            return { touched: true, died: true };
-        if (!(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)) {
-            // C trap.c:selftouch() unwields through the gone() family.
-            if (slot === 0)
-                await uwepgone(state);
-            else
-                await uswapwepgone(state);
-        }
-    }
-    return { touched, died: false };
-}
-// C apply.c:use_whip(): a snatched corpse is named by cxname() before it
-// moves, and that name is also the death reason.
-export async function snatchPetrifyingCorpse(object, { beforeDeath = null, } = {}) {
-    if (!handlesPetrifyingCorpseBareHanded(object))
-        return null;
-    const name = corpseName(object);
-    const corpse = objectQuantity(object) === 1 ? withIndefiniteArticle(name) : name;
-    return await petrifyFromCorpseContact(`Snatching ${corpse} is a fatal mistake.`, corpse, beforeDeath);
 }
 export function handlesPetrifyingCorpseBareHanded(object) {
     return object?.otyp === CORPSE && touchPetrifies(object.corpsenm)

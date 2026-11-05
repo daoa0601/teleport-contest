@@ -2,18 +2,25 @@
 // C refs: hack.c:test_move(), findtravelpath(), lookaround(), domove(), pooleffects().
 
 import { WEAPON_CLASS, TOOL_CLASS, FOOD_CLASS, COIN_CLASS } from './objclass.js';
-import { OBJ_DESCR } from './o_init.js';
+import { OBJ_DESCR, objectTypeKnown } from './o_init.js';
 import {
     objectBaseWeight, objectSkill, AMULET_OF_LIFE_SAVING, BOULDER, LOADSTONE, PICK_AXE,
     DWARVISH_MATTOCK, WAN_DIGGING, STATUE, CORPSE, LEVITATION_BOOTS, OBJECT_NAMES, HEAVY_IRON_BALL,
     CANDELABRUM_OF_INVOCATION, TALLOW_CANDLE,
 } from './object_data.js';
-import { setHeroGrip } from './mon.js';
+import {
+    setHeroGrip, moveMonsterNextToHero, hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt,
+    revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid,
+    finishEnvironmentalMonsterDeath, publishMonsterWake,
+} from './mon.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
-import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
+import { heroIsBlind, heroIsDeaf, heroIsHallucinating, heroIsUnaware } from './senses.js';
 import { BURNING, CMDQ_EXTCMD, CQ_CANNED, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DISMOUNT_FELL, DISMOUNT_GENERIC, DISSOLVED, DROWNING, DOOR, IS_AIR, IS_OBSTRUCTED, IS_STWALL, IS_WALL, IS_WATERWALL, IS_TREE, Is_earthlevel, Is_juiblex_level, Is_waterlevel, Is_rogue_level, LAVAPOOL, LAVAWALL, Luck, MAX_TYPE, MOAT, PARANOID_SWIM, POOL, ROOM, STONE, FAINTED, M_SEEN_FIRE, TREE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WATER, W_NONDIGGABLE, W_NONPASSWALL, W_ARTI, I_SPECIAL, TIMEOUT, NO_KILLER_PREFIX, WT_TOOMUCH_DIAGONAL, TIP_SWIM, PLNMSG_BACK_ON_GROUND, DBWALL, DB_UNDER, DB_ICE, LEVEL_TIMER_KIND, def_warnsyms, A_CON, A_DEX, A_STR, COLNO, ROWNO, SCORR, SDOOR, CORR, ICE, IRONBARS, IS_FURNITURE, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPE, MGIVENNAME, SHOPBASE, Is_airlevel, In_sokoban, In_mines, ACCESSIBLE, AIR, DIGTYP_UNDIGGABLE, DRAWBRIDGE_UP, OBJECT_TIMER_KIND, HOLE, LANDMINE, LEVEL_TELEP, MIGR_RANDOM, P_BASIC, P_RIDING, P_TWO_WEAPON_COMBAT, P_ISRESTRICTED, P_UNSKILLED, ROLLING_BOULDER_TRAP, TELEP_TRAP, TRAPDOOR, WT_SQUEEZABLE_INV, IN_SIGHT, SHOP_DOOR_COST, PARANOID_CONFIRM, PARANOID_TRAP, TRAP_EXPLANATIONS, TRAPNUM, W_QUIVER, W_SWAPWEP, SQKY_BOARD, SLP_GAS_TRAP, RUST_TRAP, BEAR_TRAP, PIT, SPIKED_PIT, MAGIC_PORTAL, VIBRATING_SQUARE, WEB, HEADSTONE, In_endgame, is_hole, is_pit, NO_ROOM, ROOMOFFSET, SHARED, SHARED_PLUS, MAXNROFROOMS, Invocation_lev, OROOM, DELPHI, TEMPLE, COURT, MORGUE, ZOO, BARRACKS, BEEHIVE, LEPREHALL, COCKNEST, ANTHOLE, THRONE, ACH_TOWN, RLOC_NOMSG, IS_SINK, KILLED_BY_AN, LL_CONDUCT, SWAMP, GP_ALLOW_U } from './const.js';
-import { isok } from './cmd.js';
+import {
+    isok, cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection, resetOccupations, confusePromptDirection,
+    paranoidQuery,
+} from './cmd.js';
 import { heroIsPunished, placeBallAndChain, unplaceBallAndChain, beginBallAndChainMove, finishBallAndChainMove } from './ball.js';
 import { docrt, feel_newsym, newsym, under_water, updateLastSeenTerrain, feel_location, back_to_glyph, glyphAt, canSpotMonster, canSenseMonster, canSeeMonster, monsterVisible, unmap_invisible, map_object, unmapObject, map_invisible, flush_screen, TemporaryMapEffect } from './display.js';
 import { impossible } from './diagnostics.js';
@@ -22,44 +29,61 @@ import { pline, plineWithContinuation, pline_dir, set_msg_xy } from './pline.js'
 import type { MessagePublisher } from './pline.js';
 import { heroPassesWalls, heroFormSticks, heroSpecies, heroLikesLava, heroFormClings, heroHidesOnCeiling, heroIsFlying, heroHasProtectionFromShapeChangers, heroIsPolymorphed, returnHeroToHumanForm, heroIsVerySmall, heroIsAmphibious, heroMonsterForm } from './polyself.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { cmdq_clear, cmdq_peek, currentMulti, setMulti, xyToDirection } from './cmd.js';
+
 import type { RunState, TravelRunState } from './cmd.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { shopkeeperName } from './shknam.js';
 import { beginHeroLifeSaving, completeHeroLifeSaving, finishHeroDeath, identifyLifeSavingAmulet, recordHeroKillConduct } from './end.js';
 import type { DeathHandler, FinishHeroDeathOptions, KillerFormat } from './end.js';
-import { heroCanReachFloor } from './engrave.js';
-import { heroIsUnaware } from './senses.js';
-import { putHeroToSleep } from './timeout.js';
+import { heroCanReachFloor, engravingAt, wipeEngravingAt } from './engrave.js';
+
+import {
+    putHeroToSleep, objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers,
+} from './timeout.js';
 import { reset_faint, gethungry, morehungry } from './eat.js';
 import { removeWornHeroItem } from './hero_equipment.js';
-import { dropInventoryObjectAtHero, dropBoulderIntoLiquid } from './do.js';
+import { dropInventoryObjectAtHero, dropBoulderIntoLiquid, gotoLevel } from './do.js';
 import { destroyFireInventory } from './zap.js';
 import { releaseAllMonsterLeashes, checkHeroLeashes } from './apply.js';
-import { splitHeroMonsterForm } from './potion.js';
+import { splitHeroMonsterForm, clearHeroSliming, heroIsSliming } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt } from './trap.js';
-import type { HeroTrapOptions } from './trap.js';
+import {
+    waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue,
+    resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt,
+    igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt,
+    triggerBoobyTrap, selfTouchPetrifyingWeapons, drown, lava_effects, heroCanLiveUnderwater, finishLiquidDeath,
+    launchRollingBoulder, immune_to_trap, explodeLandMine, into_vs_onto,
+} from './trap.js';
+import type { HeroTrapOptions, HeroLiquidOptions, LiquidEffectResult } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
 import type { Room, RoomMap, MapLocation, Position, Trap } from './map_types.js';
-import { gotoLevel } from './do.js';
+
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { armorOffMessage, destroyWornArmor, heroHasWaterWalking, heroKnowsLavaWalking, heroKnowsWaterWalking, removeHeroArmor, stopDonning, pendingArmorAction, removeHeroAccessory, objectIsHardHelmet } from './do_wear.js';
-import { waterbodyName } from './pager.js';
-import { do_attack, prepareAppliedWeaponAttack } from './uhitm.js';
-import { heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly, relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted } from './teleport.js';
-import { moveMonsterNextToHero } from './mon.js';
+import { waterbodyName, iceDescriptionAt } from './pager.js';
+import {
+    do_attack, prepareAppliedWeaponAttack, hasDoorAppearance, stumbleOntoMimic, resolveHeroCombatExplosion,
+} from './uhitm.js';
+import {
+    heroCanTeleport, heroControlsTeleport, teleds, safe_teleds, teleportHeroAtWill, relocateObjectRandomly,
+    relocateMonsterTo, askTeleportDestination, enexto, goodPosition, heroTeleportRestricted,
+    finishTeleportArrival,
+} from './teleport.js';
+
 import type { HeroTeleportMovement } from './teleport.js';
 import { wormCrossesBetween } from './worm.js';
 import { vision_recalc, vision_reset, couldsee, cansee, vision_note_blocker_change } from './vision.js';
-import { depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel, surfaceName, ceilingName } from './dungeon.js';
-import { clearHeroSliming, heroIsSliming } from './potion.js';
+import {
+    depth, levelAtDepth, recordDiscoveredRoom, levelHasCeiling, levelIsWaterLevel as heroIsOnWaterLevel,
+    surfaceName, ceilingName, placeHeroOnLevel,
+} from './dungeon.js';
+
 import { isLavaAt, isPoolAt, isPoolOrLavaAt, isIceAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { clearLevitationMasks, hasIntrinsicProperty, hasInvokedProperty, hasWornProperty, propertyIsActive, refreshMovementProperties, refreshProperty, restoreLevitationSources, setPropertyTimeout, stashLevitationSources, propertyIsBlocked, setPropertyTerrainBlocked, levitationIsPurelyTimed, propertySourceIsActive, levitationSourceIsActive, existingPropertyRecord, hasPermanentIntrinsicProperty } from './properties.js';
-import { iceDescriptionAt } from './pager.js';
+
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -67,62 +91,57 @@ import type { PropertyState, PropertyName } from './property_types.js';
 import type { Hero } from './hero_types.js';
 import type { GameMap } from './game.js';
 import { ingSuffix, upstart } from './hacklib.js';
-import { objectTimers, stopObjectTimer, scheduleObjectTimer, stopLevelTimer, levelTimers } from './timeout.js';
-import { resetOccupations } from './cmd.js';
-import { maybe_adjust_hero_bubble } from './mkmaze.js';
+
+import { maybe_adjust_hero_bubble, applyWaterFriction } from './mkmaze.js';
 import { leaveMovementCloud, updateHeroRegions, visibleRegionAt } from './regions.js';
 import { requireShopGame } from './shop_types.js';
 import type { Shopkeeper } from './shop_types.js';
-import { finishTeleportArrival } from './teleport.js';
+
 import { CmapSymbol, GlyphOffset, cmapToGlyph } from './glyph_numbers.js';
-import { placeHeroOnLevel } from './dungeon.js';
-import { hideHeroUnder, wakeMonstersNearWithMessages, maybeUnhideAt, revealMonsterAppearance, currentMonsterLoad, monsterDeathCount, resolveMonsterLiquid, finishEnvironmentalMonsterDeath, publishMonsterWake } from './mon.js';
-import { hasDoorAppearance, stumbleOntoMimic } from './uhitm.js';
+
 import { makeMonsterFlee, heroCanOoze, monsterIsScaredAt } from './monmove.js';
 import { monsterPassesBars, monstersObserveHeroResistance, monsterLocomotion, monsterIsHelpless, monsterCorrodesBars, monsterHasColdResistance, cant_drown, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsClinger, monsterIsFlyer, monsterIsSlithy, monsterIsSwimmer, monsterPassesWalls, needspick, strongmonst, tunnels as speciesTunnels, monsterHasProperName, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsEel, monsterIsHider, monsterIsNoncorporeal, monsterIsUnsolid, monsterIsVerySmall, monsterIsWhirly, monsterThrowsRocks } from './mondata.js';
 import { AT_EXPL, AT_BOOM } from './monster_attack_types.js';
-import { confusePromptDirection } from './cmd.js';
-import { resolveHeroCombatExplosion } from './uhitm.js';
+
 import { artifactById, heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { isWeaponTool, isPick, isFlimsyObject, isBlade, objectIsOrganic, objectIsRustprone } from './object_properties.js';
-import { applyPickAxeDirection } from './dig.js';
-import { diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext, buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment } from './dig.js';
-import { objectTypeKnown } from './o_init.js';
+import {
+    applyPickAxeDirection, diggingTarget, watchDigging, ensureDiggingContext, clearDiggingContext,
+    buryFloorObjectsAt, buriedBallNear, buriedBallToPunishment,
+} from './dig.js';
+
 import { tendedShop, shopkeeperBlockingDoor, shopkeeperBlockingEntry, dopay, enterShop, leaveHeroShop, addShopDamage, payForShopDamage, addShopObjectToBill, billForObject, removeObjectAndContentsFromBill, shopResident, findObjectOwner, stolenValue, costlySpot } from './shk.js';
 import { hello } from './roles.js';
 import { doopen } from './lock.js';
-import { engravingAt, wipeEngravingAt } from './engrave.js';
+
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
-import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object } from './mkobj.js';
-import { floorObjectDescription, stack_object } from './invent.js';
-import { selfTouchPetrifyingWeapons } from './stoning.js';
+import {
+    objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object,
+} from './mkobj.js';
+import { floorObjectDescription, stack_object, freeInventoryObject, delobj } from './invent.js';
 import { heroFootName } from './body_parts.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
-import { triggerBoobyTrap } from './booby_trap.js';
 import { useUpFloorObject } from './invent.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { explodeLandMine } from './landmine_explosion.js';
+
 import { randomTeleportDepth } from './level_teleport.js';
-import { launchRollingBoulder } from './trap.js';
+
 import { autopickupAllows, autopickupAtHero } from './pickup.js';
 import { reviveCorpseImmediately } from './do.js';
-
 import { isRider } from './corpse_species.js';
 import { intemple } from './priest.js';
 import { recordAchievement } from './insight.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
-import { paranoidQuery } from './cmd.js';
+
 import { recorderLocalHour } from './calendar.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import { awardMonsterExperience, checkExperienceLevel } from './exper.js';
 import { findMonsterArmorClass } from './monworn.js';
 import { abusePet } from './dog.js';
-import { applyWaterFriction } from './mkmaze.js';
 
 import { mdamageu } from './mhitu.js';
 import { adjustHeroAlignment, currentAttribute, currentStrength, exerciseAttribute } from './attrib.js';
-import { freeInventoryObject } from './invent.js';
-import { delobj } from './invent.js';
+
 import { objectBreaksOnImpact } from './dothrow.js';
 import { setPrimaryWeapon } from './wield.js';
 import { hitIronBars, dissolveBars } from './projectile_bars.js';
@@ -130,24 +149,12 @@ import { ensureHeroSkills, useHeroSkill, weaponDescription, weaponSkillType } fr
 import { recordGameLogEvent } from './gamelog.js';
 import type { TerminalCell } from './terminal.js';
 
-
 // Door opening and teleport input live with their C owners.
 
 type RandomBelow = (limit: number) => number;
 type RollDice = (count: number, sides: number) => number;
-type Repaint = (x: number, y: number) => void | Promise<void>;
-type RecalculateVision = (mode: number) => void | Promise<void>;
-/** Liquid deaths may say whether losehp() still owes its "You die..." line. */
-type LiquidDeathHandler = (options: FinishHeroDeathOptions) => unknown;
 type EquipmentSlot = 'uamul' | 'uleft' | 'uright' | 'ublindf' | 'uarm'
     | 'uarmc' | 'uarmg' | 'uarmf' | 'uarmu' | 'uarmh' | 'uarms' | 'uwep';
-
-export interface LiquidLanding {
-    from: Position;
-    to: Position;
-    pick?: boolean;
-}
-type LandingEffect = (landing: LiquidLanding) => Promise<{ died?: boolean } | null | void>;
 
 // C hack.c:revive_nasty().
 export async function reviveNastyAt(
@@ -696,74 +703,12 @@ export async function escapeFromStickyMonster(x: number, y: number): Promise<boo
     await plineWithContinuation(`You pull free from ${name()}.`);
     return false;
 }
-type WaterFormEffect =
-    | { kind: 'split'; clone: Monster; died?: never }
-    | { kind: 'rust'; damage: number; died: boolean };
-export interface EnteredLiquid {
-    entered: true;
-    moved: boolean;
-    died: boolean;
-    left?: never;
-    from?: Position;
-    to?: Position;
-    sank?: boolean;
-    dismounted?: boolean;
-    formEffect?: WaterFormEffect | null;
-}
-export type LiquidEffectResult = EnteredLiquid | {
-    left: true; entered?: never; moved?: never; died?: never;
-};
-export interface HeroLiquidOptions {
-    state?: GameState;
-    publish?: MessagePublisher;
-    random?: RandomBelow;
-    recalculateVision?: RecalculateVision;
-    resetVision?: () => void;
-    repaint?: Repaint;
-    rollDice?: RollDice;
-    rollOne?: RandomBelow;
-    chooseTeleportDestination?: (() => Promise<Position | null>) | null;
-    applyLandingEffects?: LandingEffect;
-    die?: LiquidDeathHandler;
-    entry?: 'spot-effects' | 'turn' | 'float-down' | 'drown' | 'lava';
-}
-interface LiquidTeleportContext {
-    state: PlayingGameState;
-    repaint: Repaint;
-    resetVision: () => void;
-    recalculateVision: RecalculateVision;
-    applyLandingEffects: LandingEffect;
-}
-interface LiquidEscapeContext extends LiquidTeleportContext {
-    random: RandomBelow;
-    rollOne: RandomBelow;
-    publish: MessagePublisher;
-}
-interface LavaSurvivalContext extends LiquidEscapeContext {
-    publish: MessagePublisher;
-    die: LiquidDeathHandler;
-}
-interface LavaContext extends LavaSurvivalContext {
-    location: MapLocation;
-    rollDice: RollDice;
-}
-interface LiquidMovement extends Position { oldx: number; oldy: number }
-export interface EmergencyDisrobe { escaped: boolean; dropped: boolean; died?: boolean }
-export type LavaSinkingResult = EnteredLiquid
-    | { escaped: true; sank?: never; died?: never }
-    | { sank: boolean; died: boolean; escaped?: never };
-
-const CRAWL_DX = [-1, -1, 0, 1, 1, 1, 0, -1];
-const CRAWL_DY = [0, -1, -1, -1, 0, 1, 1, 1];
 
 const S_EYE = 5;
 const S_VORTEX = 22;
 const S_LIGHT = 25;
 const PM_GREMLIN = 40;
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
-const PM_WATER_ELEMENTAL = MONSTER_NAME.indexOf('water elemental');
-const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
-const PM_FOG_CLOUD = MONSTER_NAME.indexOf('fog cloud');
 const PM_AIR_ELEMENTAL = 154;
 const PM_IRON_GOLEM = 259;
 
@@ -923,44 +868,10 @@ export async function crawlDestinationAllowed(
         && heroTightDiagonalReason(state));
 }
 
-async function crawlDestination(
-    state: PlayingGameState, x: number, y: number,
-    random: RandomBelow, publish: MessagePublisher,
-) {
-    const directions = [0, 1, 2, 3, 4, 5, 6, 7];
-    for (let remaining = directions.length; remaining > 0; remaining--) {
-        const index = random(remaining);
-        const selected = directions[index];
-        const last = directions[remaining - 1];
-        if (selected === undefined || last === undefined)
-            throw new RangeError('Crawl direction shuffle received an invalid index.');
-        directions[index] = last;
-        directions[remaining - 1] = selected;
-    }
-
-    for (const direction of directions) {
-        const dx = CRAWL_DX[direction];
-        const dy = CRAWL_DY[direction];
-        if (dx === undefined || dy === undefined)
-            throw new RangeError('Unknown crawl direction.');
-        const candidate = { x: x + dx, y: y + dy };
-        if (await crawlDestinationAllowed(state, candidate.x, candidate.y, random, publish))
-            return candidate;
-    }
-    return null;
-}
-
 function heroStaysAboveWater(state: GameState, location: MapLocation | null) {
     const u = state.u;
     if (u.levitating || u.levitation || u.flying) return true;
     return heroHasWaterWalking(state) && location?.typ !== WATER;
-}
-
-function heroCanLiveUnderwater(state: GameState) {
-    const u = state.u;
-
-    return !!(u.amphibious || u.swimming || u.breathless || u.magicalBreathing
-        || cant_drown(heroMonsterForm(state) ?? -1));
 }
 
 export function heroResistsFire(state: GameState) {
@@ -968,248 +879,10 @@ export function heroResistsFire(state: GameState) {
     return !!(hero.fireResistance);
 }
 
-async function burnLavaBoots(
-    state: PlayingGameState, publish: MessagePublisher, protectedObject: GameObject | null,
-) {
-    const boots = state.uarmf || state.u?.uarmf;
-    if (!boots || !(boots.in_use || (!boots.oerodeproof && objectIsOrganic(boots, state))))
-        return false;
-    await publish(`${ownedObjectAction(boots, 'burst', state)} into flame!`);
-    // destroyWornArmor() runs the full Boots_off-before-consume sequence; the
-    // in_lava_effects counter raised around this whole entry suppresses the
-    // nested float_down()/spoteffects() recursion (C trap.c:6863-6867).
-    if (boots === protectedObject) {
-        await removeWornHeroItem(boots, state);
-        return true;
-    }
-    await destroyWornArmor(boots, state);
-    boots.worn = false;
-    boots.wornSlot = null;
-    boots.owornmask = 0;
-    boots.where = 'gone';
-    return true;
-}
-
 export async function burnAwayHeroSlime(state: GameState, publish: MessagePublisher) {
     if (!clearHeroSliming(state)) return false;
     await publish('The slime that covers you is burned away!');
     return true;
-}
-
-export async function reviveHeroFromLiquid(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow) {
-    if (state !== game) return false;
-    // C done() forces status with the raw HP before it records the death.
-    await bot();
-    const lifeSaving = beginHeroLifeSaving();
-    if (!lifeSaving) return false;
-    await publish('But wait...');
-    identifyLifeSavingAmulet(random);
-    await publish(`Your medallion ${heroIsBlind(state) ? 'feels warm' : 'begins to glow'}!`);
-    await publish(formatFeltMessage('much better!', state));
-    await publish('The medallion crumbles to dust!');
-    await completeHeroLifeSaving(lifeSaving);
-    return true;
-}
-
-export async function finishLiquidDeath(options: FinishHeroDeathOptions): Promise<boolean> {
-    // The liquid effect has usually announced the death already. done() still
-    // owns life saving and the wizard/explore recovery question.
-    return await finishHeroDeath({ ...options, deathLineShown: options.deathLineShown ?? true });
-}
-
-export async function teleportHeroOutOfLiquid({
-    state, random, rollOne, publish, repaint, resetVision, recalculateVision,
-    applyLandingEffects,
-}: LiquidEscapeContext): Promise<EnteredLiquid | null> {
-    // C trap.c:6936/7021 call safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT):
-    // a light hero may drag an adjacent ball, and the verbose materialize
-    // line precedes the landing effects (teleport.c:545-547).
-    const landing = await safe_teleds(state, {
-        random, rollOne, allowDrag: true,
-        finishArrival: async movement => {
-            if (state.flags?.verbose !== false) {
-                await publish(`You materialize in ${
-                    movement.oldx === movement.x && movement.oldy === movement.y
-                        ? 'the same' : 'a different'
-                } location!`);
-            }
-            return finishLiquidTeleport(movement, {
-                state, repaint, resetVision, recalculateVision, applyLandingEffects,
-            });
-        },
-    });
-    return landing ? landing.arrival : null;
-}
-
-async function finishLavaLifeSaving({
-    state, publish, random, rollOne, repaint, resetVision,
-    recalculateVision, applyLandingEffects, die,
-}: LavaSurvivalContext): Promise<EnteredLiquid> {
-    for (let attempt = 0; attempt < 2; attempt++) {
-        state.u.uhp = -1;
-        // C trap.c:6922-6934: water elementals, steam vortices, and fog
-        // clouds boil away instead of burning to a crisp.
-        const boilsAway = [PM_WATER_ELEMENTAL, PM_STEAM_VORTEX, PM_FOG_CLOUD]
-            .includes(heroSpecies(state));
-        await publish(`You ${boilsAway ? 'boil away' : 'burn to a crisp'}...`,
-            { urgent: true });
-        if (!await reviveHeroFromLiquid(state, publish, random)) {
-            await die({
-                killer: 'molten lava',
-                possessionAnswer: 'n',
-                deathVerb: 'burned',
-                deathType: BURNING,
-            });
-            if (state.program_state.gameover)
-                return { entered: true, moved: false, died: true };
-        }
-
-        if (state.program_state?.gameover)
-            return { entered: true, moved: false, died: true };
-        const escape = await teleportHeroOutOfLiquid({
-            state, random, rollOne, publish, repaint, resetVision,
-            recalculateVision, applyLandingEffects,
-        });
-        if (escape) return escape;
-        await publish("You're still burning.");
-    }
-    // C lava_effects(): two recoveries without a landing give the hero
-    // five turns to find another way out before the lava becomes fatal again.
-    if (!heroResistsFire(state)) setPropertyTimeout('fireResistance', 5, state);
-    if (!heroHasWaterWalking(state)) setPropertyTimeout('waterWalking', 5, state);
-    return { entered: true, moved: false, died: false };
-}
-
-// C lava_effects() brackets its boots- and inventory-burning stages with
-// iflags.in_lava_effects so nested Boots_off()/float_down()/spoteffects()
-// calls cannot re-enter it (do_wear.c:LEVITATION_BOOTS skips float_down()
-// while the flag is raised).  The JS owner raises the same counter around
-// the whole entry.
-async function heroLavaEffects(options: LavaContext): Promise<EnteredLiquid> {
-    const state = options.state || game;
-    const from = { x: state.u.ux, y: state.u.uy };
-    state.iflags ||= {};
-    state.iflags.in_lava_effects = (state.iflags.in_lava_effects || 0) + 1;
-    let result = null;
-    try {
-        result = await finishLavaEffects(options);
-    } finally {
-        state.iflags.in_lava_effects
-            = Math.max(0, state.iflags.in_lava_effects - 1);
-    }
-    // C trap.c:6942-6961: the life-saving rescue's safe_teleds() runs while
-    // the counter still suppresses its spoteffects; after the counter drops,
-    // a rescue that relocated the hero gets the explicit spoteffects(FALSE)
-    // landing -- full destination effects, but auto-pickup suppressed.
-    if (result?.moved && !result?.died && options.applyLandingEffects) {
-        // C trap.c:6957: rescued_from_terrain(BURNING) precedes the
-        // suppressed-pickup landing effects.
-        await announceTerrainRescue(BURNING, state, options.publish);
-        const landing = await options.applyLandingEffects({
-            from: result.from ?? from,
-            to: { x: state.u.ux, y: state.u.uy },
-            pick: false,
-        });
-        if (landing?.died) return { ...result, died: true };
-    }
-    return result;
-}
-
-async function finishLavaEffects({
-    state, location, publish, random, rollDice, rollOne,
-    repaint, resetVision, recalculateVision, applyLandingEffects, die,
-}: LavaContext): Promise<EnteredLiquid> {
-    // Ordinary death returns no value; damage handling needs the final state.
-    // These deaths come through losehp(), which prints "You die..." itself.
-    const finishDamageDeath: DeathHandler = async options => {
-        await die({ ...options, deathLineShown: false });
-        return !!state.program_state.gameover;
-    };
-    const hero = state.u;
-    const damage = rollDice(6, 6);
-    // C lava_effects() maps the liquid by touch before its first message.
-    if (state === game) await feel_newsym(hero.ux, hero.uy);
-    await burnAwayHeroSlime(state, publish);
-    if (heroLikesLava(state))
-        return { entered: true, moved: false, died: false };
-
-    const fireResistant = heroResistsFire(state);
-    const waterWalkingBeforeBootsBurn = heroHasWaterWalking(state);
-    const survives = fireResistant
-        || (waterWalkingBeforeBootsBurn && damage < (hero.uhp ?? 0));
-    const protectedObject = survives ? null : await markLavaInventoryForDestruction(state, random);
-    const bootsBurned = await burnLavaBoots(state, publish, protectedObject);
-    const waterWalking = heroHasWaterWalking(state);
-
-    if (!fireResistant) {
-        if (waterWalking) {
-            await publish(`The ${displayLiquidName('lava', state)} here burns you!`);
-            if (survives) {
-                if (await loseHeroHp(damage, 'molten lava', {
-                    state, publish, die: finishDamageDeath, deathCause: 'killed by molten lava',
-                })) return { entered: true, moved: false, died: true };
-                const items = await destroyFireInventory(damage, {
-                    state, publish, random, rollOne, die: finishDamageDeath,
-                });
-                if (items.heroDied) return { entered: true, moved: false, died: true };
-                await igniteItems(state.inventory, { state, publish, random });
-                return { entered: true, moved: false, died: false };
-            }
-        } else {
-            await publish(`You fall into the ${waterbodyName(hero.ux, hero.uy, state)}!`);
-        }
-
-        const lifeSaver = state.uamul || hero.uamul;
-        const willSurvive = lifeSaver?.otyp === AMULET_OF_LIFE_SAVING
-            || state.flags?.debug || state.flags?.explore;
-        await destroyLavaInventory({
-            state,
-            publish,
-            protectedObject,
-            showMessages: !!willSurvive,
-            previouslyAnnounced: bootsBurned ? 1 : 0,
-        });
-        if (state.program_state?.gameover) return { entered: true, moved: false, died: true };
-        const rescue = await finishLavaLifeSaving({
-            state, publish, random, rollOne, repaint, resetVision,
-            recalculateVision, applyLandingEffects, die,
-        });
-        if (rescue.died || rescue.moved) return rescue;
-        const items = await destroyFireInventory(damage, {
-            state, publish, random, rollOne, die: finishDamageDeath,
-        });
-        if (items.heroDied) return { ...rescue, died: true };
-        await igniteItems(state.inventory, { state, publish, random });
-        return rescue;
-    }
-
-    let sank = false;
-    if (!waterWalking
-        && (!hero.utrap || hero.utraptype !== TT_LAVA)) {
-        setHeroTrap(random(4) + 4 + ((random(4) + 12) << 8), TT_LAVA, state);
-        await publish(
-            `You sink into the ${waterbodyName(hero.ux, hero.uy, state)}, but it only burns slightly!`,
-        );
-        monstersObserveHeroResistance(M_SEEN_FIRE, state);
-        if (hero.uhp > 1 && await loseHeroHp(1, 'molten lava', {
-            state, publish, die: finishDamageDeath, deathCause: 'killed by molten lava',
-        })) return { entered: true, moved: false, died: true, sank: true };
-        sank = true;
-    }
-
-    const items = await destroyFireInventory(damage, {
-        state, publish, random, rollOne, die: finishDamageDeath,
-    });
-    if (items.heroDied) return { entered: true, moved: false, died: true, sank };
-    await igniteItems(state.inventory, { state, publish, random });
-    return { entered: true, moved: false, died: false, sank };
-}
-
-function heroDoesNotNeedAir(state: GameState) {
-    const u = state.u;
-
-    return !!(u.amphibious || u.breathless || u.magicalBreathing
-        || (monsterIsAmphibious(heroMonsterForm(state) ?? -1) || monsterIsBreathless(heroMonsterForm(state) ?? -1)));
 }
 
 export function heroCanSwim(state: GameState) {
@@ -1257,56 +930,9 @@ export async function dropEmergencyObject(object: GameObject, state: GameState) 
     return !state.program_state?.gameover;
 }
 
-async function wakeHeroForCrawl(state: GameState, publish: MessagePublisher) {
-    if (state.u.usleep)
-        await finishHeroHelplessness('Suddenly you wake up!', state, publish);
-    if (state.u.uhs === FAINTED) await reset_faint({ state });
-}
-
-async function applyHeroFormWaterEffect(state: PlayingGameState, publish: MessagePublisher, random: RandomBelow, rollDice: RollDice): Promise<WaterFormEffect | null> {
-    const u = state.u;
-    if (!((u.mtimedone ?? 0) > 0)) return null;
-    if (u.umonnum === PM_GREMLIN && random(3) !== 0) {
-        const clone = await splitHeroMonsterForm(state);
-        if (clone) await publish('You multiply!');
-        return clone ? { kind: 'split', clone } : null;
-    }
-    if (u.umonnum !== PM_IRON_GOLEM) return null;
-
-    await publish('You rust!');
-    let damage = rollDice(2, 6);
-    if (u.halfPhysicalDamage)
-        damage = Math.trunc((damage + 1) / 2);
-    if ((u.mhmax ?? 0) > damage) u.mhmax -= damage;
-    const died = await loseHeroHp(damage, 'rusting away', {
-        state, publish, deathCause: 'killed by rusting away',
-    });
-    return { kind: 'rust', damage, died };
-}
-
-async function finishLiquidTeleport(
-    movement: LiquidMovement,
-    {
-        state,
-        repaint,
-        resetVision,
-        recalculateVision,
-        applyLandingEffects,
-    }: LiquidTeleportContext,
-): Promise<EnteredLiquid> {
-    // spoteffects() announces surfacing before it clears the submerged view.
-    const from = { x: movement.oldx, y: movement.oldy };
-    const to = { x: movement.x, y: movement.y };
-    await repaint(movement.oldx, movement.oldy);
-    resetVision();
-    await recalculateVision(0);
-    const landing = await applyLandingEffects({ from, to });
-    return { entered: true, moved: true, died: !!landing?.died, from, to };
-}
-
 async function leaveWater({
     state, location, publish,
-}: Pick<LavaContext, 'state' | 'location' | 'publish'>) {
+}: { state: PlayingGameState; location: MapLocation; publish: MessagePublisher }) {
     const u = state.u;
     if (!u.uinwater) return false;
 
@@ -1379,7 +1005,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
     let location = state.level?.at?.(x, y);
     if (!u || !location) return null;
     if (entry === 'lava')
-        return heroLavaEffects({
+        return lava_effects({
             state, location, publish, random, rollDice, rollOne,
             repaint, resetVision, recalculateVision, applyLandingEffects, die,
         });
@@ -1414,7 +1040,7 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
         }
 
         if (isLavaAt(x, y, state)) {
-            return heroLavaEffects({
+            return lava_effects({
                 state, location, publish, random, rollDice, rollOne,
                 repaint, resetVision, recalculateVision, applyLandingEffects,
                 die,
@@ -1426,198 +1052,10 @@ export async function heroLiquidEffects(options: HeroLiquidOptions = {}): Promis
             return null;
     }
 
-    // drown() maps the water by touch before any entry message can page.
-    if (state === game) await feel_newsym(x, y);
-    const waterWall = location.typ === WATER;
-    let canLiveUnderwater = heroCanLiveUnderwater(state);
-    let stayingInPool = false;
-    // drown() uses the retained direction, including zero, after relocation.
-    if (u.uinwater && isPoolAt(x - (u.dx ?? 0), y - (u.dy ?? 0), state)
-        && canLiveUnderwater) {
-        if (random(5) !== 0)
-            return { entered: true, moved: false, died: false };
-        stayingInPool = true;
-    }
-    if (!u.uinwater) {
-        await publish(`You ${waterWall ? 'plunge' : 'fall'} into the ${waterbodyName(x, y, state)}${canLiveUnderwater ? '.' : '!'}`);
-        if (!heroCanSwim(state) && !waterWall)
-            await publish(heroIsHallucinating(state)
-                ? 'You sink like the Titanic.' : 'You sink like a rock.');
-    }
-
-    await waterDamageChain(state.inventory, [], state, { publish });
-
-    const formEffect = await applyHeroFormWaterEffect(
-        state, publish, random, rollDice,
-    );
-    if (formEffect?.died) return { entered: true, moved: false, died: true };
-    canLiveUnderwater = heroCanLiveUnderwater(state);
-    if (stayingInPool) {
-        return {
-            entered: true, moved: false, died: false, formEffect,
-        };
-    }
-
-    const leashCount = releaseAllMonsterLeashes(state);
-    if (leashCount) {
-        await publish(leashCount === 1
-            ? 'The leash slips loose.' : 'The leashes slip loose.');
-    }
-
-    if (canLiveUnderwater) {
-        if (heroDoesNotNeedAir(state)) {
-            if (state.flags.verbose) await publish("But you aren't drowning.");
-            if (!heroIsOnWaterLevel(state))
-                await publish(heroIsHallucinating(state) ? 'Your keel hits the bottom.' : 'You touch bottom.');
-        }
-        // C trap.c:5117-5120: the settling ball and chain are re-placed
-        // for the underwater position.
-        if (heroIsPunished(state)) {
-            await unplaceBallAndChain(state);
-            await placeBallAndChain(state);
-        }
-        await recalculateVision(2);
-        await setHeroInWater(true, state);
-        // drown() clears the whole map on every dive, even after surfacing
-        // has restored land outside the previous underwater viewport.
-        if (state === game) await under_water(1);
-        state.vision_full_recalc = 1;
-        return { entered: true, moved: false, died: false };
-    }
-
-    // C trap.c:5128 reads Luck, which includes a carried luckstone's bonus.
-    const luck = Luck(u);
-    if (heroCanTeleport(state) && !heroIsUnaware(state)
-        && (heroControlsTeleport(state) || random(3) < luck + 2)) {
-        await publish('You attempt a teleport spell.');
-        if (heroTeleportRestricted(state)) {
-            await publish('The attempted teleport spell fails.');
-        } else {
-            const teleport = await teleportHeroAtWill({
-                state, random, rollOne,
-                chooseDestination: chooseTeleportDestination,
-                publish,
-                finishArrival: async movement => {
-                    if (state.flags.verbose !== false)
-                        await publish(`You materialize in ${
-                            movement.oldx === movement.x && movement.oldy === movement.y
-                                ? 'the same' : 'a different'
-                        } location!`);
-                    return finishLiquidTeleport(movement, {
-                        state, repaint, resetVision, recalculateVision, applyLandingEffects,
-                    });
-                },
-            });
-            if (teleport.died) return { entered: true, moved: teleport.moved, died: true };
-            if (!isPoolAt(u.ux, u.uy, state))
-                return teleport.arrival ?? { entered: true, moved: teleport.moved, died: false };
-        }
-    }
-
-    // C drown(): a mounted hero dismounts before crawling; landing on dry
-    // ground ends the drowning.
-    if (u.usteed) {
-        const from = { x: u.ux, y: u.uy };
-        const dismount = await dismountHero(DISMOUNT_GENERIC, { state, random, announce: publish });
-        if (dismount.died || state.program_state?.gameover)
-            return { entered: true, dismounted: dismount.dismounted, moved: u.ux !== from.x || u.uy !== from.y, died: true };
-        if (!isPoolAt(u.ux, u.uy, state))
-            return {
-                entered: true, dismounted: dismount.dismounted,
-                moved: u.ux !== from.x || u.uy !== from.y, died: false,
-                from, to: { x: u.ux, y: u.uy },
-            };
-    }
-
-    await wakeHeroForCrawl(state, publish);
-    // C drown() reads u.ux/u.uy after any teleport or dismount.
-    x = u.ux;
-    y = u.uy;
-    const canMove = !((state._helplessTurns ?? 0) > 0)
-        && (!((u.mtimedone ?? 0) > 0) || (MONSTER_MOVE[u.umonnum] ?? 0) > 0);
-    const destination = canMove
-        ? await crawlDestination(state, x, y, random, publish) : null;
-    if (destination) {
-        const escape = heroIsOnWaterLevel(state)
-            ? { escaped: true, dropped: false }
-            : await emergencyDisrobe(state, random);
-        if (escape.died) return { entered: true, moved: false, died: true };
-        await publish(`You try to crawl out of the ${displayLiquidName('water', state)}.`);
-        if (escape.dropped)
-            await publish('You dump some of your gear to lose weight...');
-        if (escape.escaped) {
-            await publish('Pheew!  That was close.');
-            // C trap.c:5164 relocates through teleds(TELEDS_ALLOW_DRAG),
-            // which resets the trap/hold state and drags the ball and chain
-            // along, then runs the full destination effects below.
-            const { arrival: landing } = await teleds(destination.x, destination.y, state, {
-                allowDrag: true,
-                finishArrival: () => applyLandingEffects({
-                    from: { x, y },
-                    to: { x: u.ux, y: u.uy },
-                }),
-            });
-            return {
-                entered: true, moved: true, died: !!landing?.died,
-                from: { x, y }, to: { x: u.ux, y: u.uy },
-            };
-        }
-        await publish('But in vain.');
-    }
-
-    await setHeroInWater(true, state);
-    await publish('You drown.');
-    for (let attempt = 0; attempt < 2; attempt++) {
-        const liquid = waterbodyName(u.ux, u.uy, state);
-        const killer = liquid === 'water' ? 'deep water' : liquid;
-        const description = liquid === 'water' || liquid === 'limitless water'
-            ? killer : withIndefiniteArticle(killer);
-        if (!await reviveHeroFromLiquid(state, publish, random)) {
-            await die({
-                killer,
-                deathCause: `drowned in ${description}`,
-                deathType: DROWNING,
-                possessionAnswer: 'n',
-                deathVerb: 'drowned',
-            });
-        }
-        if (state.program_state.gameover)
-            return { entered: true, moved: false, died: true };
-
-        // C trap.c:5189 -> safe_teleds(TELEDS_ALLOW_DRAG | TELEDS_TELEPORT)
-        // -> teleds(): a light hero may drag an adjacent ball, and the
-        // rescue relocation still prints the verbose materialize line
-        // (teleport.c:545-547).
-        const escape = await safe_teleds(state, {
-            random, rollOne, allowDrag: true,
-            finishArrival: async movement => {
-                if (state.flags?.verbose !== false) {
-                    await publish(`You materialize in ${
-                        movement.oldx === movement.x && movement.oldy === movement.y
-                            ? 'the same' : 'a different'
-                    } location!`);
-                }
-                return finishLiquidTeleport(movement, {
-                    state, repaint, resetVision, recalculateVision, applyLandingEffects,
-                });
-            },
-        });
-        if (escape) {
-            if (!escape.arrival.died) {
-                await setHeroInWater(false, state);
-                state.underwater = false;
-                await announceTerrainRescue(DROWNING, state, publish);
-            }
-            return escape.arrival;
-        }
-        await publish("You're still drowning.");
-    }
-
-    await setHeroInWater(false, state);
-    state.underwater = false;
-    await announceTerrainRescue(DROWNING, state, publish);
-    // C drown() returns TRUE after rescue even when no safe landing exists.
-    return { entered: true, moved: true, died: false };
+    return drown({
+        state, location, x, y, publish, random, rollDice, rollOne, repaint, resetVision,
+        recalculateVision, applyLandingEffects, chooseTeleportDestination, die,
+    });
 }
 
 // Terrain that blocks ordinary movement. C hack.c.
@@ -1637,7 +1075,6 @@ function heroOozesUnderDoor(destination: MapLocation | null, g: GameState = game
         && !!(destination.doormask & (D_CLOSED | D_LOCKED))
         && !heroPassesWalls(g) && heroCanOoze(g);
 }
-
 
 // C test_move(TEST_MOVE): tests obstacles without performing auto-open,
 // boulder pushing, or the hero's eventual movement.
@@ -3329,9 +2766,7 @@ export async function announceRunLiquid(x: number, y: number, state: GameState):
 }
 
 // The caller first checks test_move(TEST_MOVE), without opening doors,
-// pushing boulders, or escaping the hero's current trap. C trap.c:
-// into_vs_onto(): the "into" list below, drawn fresh for a hallucinated
-// trap type.
+// pushing boulders, or escaping the hero's current trap.
 export async function confirmHeroStep(x: number, y: number, state: GameState = game): Promise<boolean> {
     requirePlayingGame(state);
     const bits = state.flags.paranoia_bits ?? 0;
@@ -3355,9 +2790,9 @@ export async function confirmHeroStep(x: number, y: number, state: GameState = g
         }
     }
     const trap = state.level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
-    if (!trap?.tseen || (!hallucinating && trapIsClearlyHarmless(trap.ttyp, state))) return true;
+    if (!trap?.tseen || (!hallucinating && immune_to_trap(trap.ttyp, state))) return true;
     const type = hallucinating ? rnd(TRAPNUM - 1) : trap.ttyp;
-    const into = [BEAR_TRAP, PIT, SPIKED_PIT, HOLE, TELEP_TRAP, LEVEL_TELEP, MAGIC_PORTAL, WEB].includes(type);
+    const into = into_vs_onto(type);
     const name = TRAP_EXPLANATIONS[type];
     if (!name) throw new Error(`Cannot name trap type ${type} for movement confirmation`);
     if (await paranoidQuery(confirm, `Really ${locomotion} ${into ? 'into' : 'onto'} that ${name}?`, bits))
@@ -3370,62 +2805,6 @@ function cancelStep(state: GameState): void {
     stopRun(state);
     endVoluntaryMultiTurn(state);
     state.context.move = 0;
-}
-
-// Hidden resistance still deserves a warning. Only native CLEARLY_IMMUNE
-// results suppress confirmation; this decision never reveals equipment.
-// C trap.c:immune_to_trap(), hero branch (its only C caller is the
-// paranoid trap confirmation at hack.c:2561): TRUE is TRAP_CLEARLY_IMMUNE
-// — a native body or inventory trait, never a revealed one.
-function trapIsClearlyHarmless(type: number, state: GameState): boolean {
-    const species = heroSpecies(state);
-    const body = { mnum: species };
-
-    switch (type) {
-        case BEAR_TRAP:
-            if ((MONSTER_SIZE[species] ?? 2) <= 1 || monsterIsAmorphous(body)
-                || monsterIsWhirly(body) || monsterIsUnsolid(body)) return true;
-            return avoidsGroundTraps(type, state);
-        case SQKY_BOARD:
-        case LANDMINE:
-        case ROLLING_BOULDER_TRAP:
-        case HOLE:
-        case TRAPDOOR:
-        case PIT:
-        case SPIKED_PIT:
-            return avoidsGroundTraps(type, state);
-        case SLP_GAS_TRAP:
-            return monsterIsBreathless(species); // breathless body
-        case LEVEL_TELEP:
-        case TELEP_TRAP:
-            // Native mon_has_amulet(&youmonst) checks its empty monster
-            // inventory, not the hero's carried Amulet.
-            return In_endgame(state.u.uz);
-        case WEB:
-            return monsterIsAmorphous(body) || monsterIsWhirly(body) || monsterIsUnsolid(body)
-                || ['cave spider', 'giant spider', 'gelatinous cube', 'fire vortex',
-                    'flaming sphere', 'fire elemental', 'salamander'].includes(MONSTER_NAME[species] ?? '');
-        case RUST_TRAP:
-            if (MONSTER_NAME[species] === 'iron golem') return false;
-            return !state.inventory.some(object => objectIsRustprone(object)
-                && !!object.owornmask && !(object.owornmask & W_QUIVER)
-                && (!(object.owornmask & W_SWAPWEP) || state.u.twoweap));
-        case VIBRATING_SQUARE:
-            return true;
-        default:
-            return false;
-    }
-}
-
-function avoidsGroundTraps(type: number, state: GameState): boolean {
-    if (state.level?.flags.sokoban_rules && (is_pit(type) || is_hole(type))) return false;
-    if (In_sokoban(state.u.uz) && type === ROLLING_BOULDER_TRAP) return true;
-    const species = heroSpecies(state);
-
-    const symbol = MONSTER_SYMBOL[species];
-    const ceiling = !In_endgame(state.u.uz) || Is_earthlevel(state.u.uz);
-    return !!(state.u.levitating || state.u.flying || monsterIsFlyer(species)
-        || symbol === 5 || symbol === 25 || (monsterIsClinger(species) && ceiling));
 }
 
 // The scheduler-facing result of one movement attempt: 'time' spent the
@@ -4411,7 +3790,6 @@ export function nomul(value: number, state: GameState = game): void {
 export function endVoluntaryMultiTurn(state: GameState = game): void {
     nomul(0, state);
 }
-
 
 function monsterHasActiveAttack(monster: Monster): boolean {
     return (MONSTER_ATTACKS[monster?.mnum] || [])

@@ -143,7 +143,7 @@ src/js/bones.ts	canMakeBones	random	"[""1 + (dungeonDepth >> 2)""]"	unproved
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""5""]"	constant
 src/js/bones.ts	dropHeroInventoryForBones	rn2	"[""8""]"	constant
 src/js/bones.ts	nearbyMonsterForDeathDrop	rn2	"[""candidateCount""]"	unproved
-src/js/booby_trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
+src/js/trap.ts	triggerBoobyTrap	rollOne	"[""5 + (difficulty < 5 ? difficulty : 2 + Math.trunc(difficulty / 2))""]"	invariant
 src/js/zap.ts	flyBoomerang	rn2	"[""20""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	d	"[""fireResistant ? 1 : 3"", ""6""]"	constant
 src/js/do.ts	dropBoulderIntoLiquid	random	"[""10""]"	constant
@@ -182,7 +182,7 @@ src/js/roles.ts	pickRandom	rn2	"[""candidates.length""]"	unproved
 src/js/roles.ts	rigid_role_checks	rn2	"[""1""]"	constant
 src/js/roles.ts	rigid_role_checks	rn2	"[""candidates.length""]"	unproved
 src/js/roles.ts	randrole_filtered	rn2	"[""candidates.length""]"	unproved
-src/js/chest_trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
+src/js/trap.ts	triggerChestTrap	random	"[""13 + luck""]"	guarded
 src/js/ambient_sounds.ts	dochat	rn2	"[""10""]"	constant
 src/js/lock.ts	doclose	rn2	"[""25""]"	constant
 src/js/hack.ts	domoveCore	rn2	"[""5""]"	constant
@@ -468,8 +468,8 @@ src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""30""]"	constant
 src/js/guardian_angel.ts	gainGuardianAngel	rnd	"[""4""]"	constant
 src/js/guardian_angel.ts	loseGuardianAngel	rn1	"[""3"", ""2""]"	constant
 src/js/hack.ts	escapeFromStickyMonster	rn2	"[""frozen ? 8 : 40""]"	constant
-src/js/hack.ts	heroLiquidEffects	random	"[""3""]"	constant
-src/js/hack.ts	heroLiquidEffects	random	"[""5""]"	constant
+src/js/trap.ts	drown	random	"[""3""]"	constant
+src/js/trap.ts	drown	random	"[""5""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""4""]"	constant
 src/js/trap.ts	sinkHeroIntoLava	rollOne	"[""9""]"	constant
 src/js/uhitm.ts	maybeUnparalyzeMeleeDefender	random	"[""10""]"	constant
@@ -1158,11 +1158,11 @@ src/js/extralev.ts	makeroguerooms	rn2	"[""7""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""(y === 2 ? 5 : 4) - dy + 1""]"	constant
 src/js/extralev.ts	makeroguerooms	rnd	"[""23 - dx + 1""]"	constant
 src/js/mklev.ts	makerooms	rn2	"[""2""]"	constant
-src/js/trap.ts	maketrap	rn1	"[""5"", ""4""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""12""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""4""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""8""]"	constant
-src/js/trap.ts	maketrap	rn2	"[""available.length""]"	guarded
+src/js/trap.ts	find_random_launch_coord	rn1	"[""5"", ""4""]"	constant
+src/js/trap.ts	choose_trapnote	rn2	"[""12""]"	constant
+src/js/trap.ts	hole_destination	rn2	"[""4""]"	constant
+src/js/trap.ts	find_random_launch_coord	rn2	"[""8""]"	constant
+src/js/trap.ts	choose_trapnote	rn2	"[""available.length""]"	guarded
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""4""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant
 src/js/mklev.ts	maybeMakeSpecialRoom	rn2	"[""5""]"	constant
@@ -1807,8 +1807,8 @@ src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""2""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions	rn2	"[""4""]"	constant
 src/js/o_init.ts	initializeObjectDescriptions/shuffle	rn2	"[""high - current + 1""]"	unproved
-src/js/trap.ts	erodeArmor	random	"[""5""]"	constant
-src/js/trap.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
+src/js/uhitm.ts	erodeArmor	random	"[""5""]"	constant
+src/js/mhitm.ts	erodeAttackingWeapon	random	"[""kind === 'burn' ? 6 : 1""]"	constant
 src/js/trap.ts	erodeObject	luckRandom	"[""4""]"	constant
 src/js/trap.ts	inventoryResists	random	"[""100""]"	constant
 src/js/trap.ts	inventoryResists	random	"[""100""]"	constant

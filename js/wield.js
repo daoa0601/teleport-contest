@@ -27,7 +27,6 @@ import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
 import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
-import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { resolveImmediatePetrification } from './trap.js';
 import { setnotworn, setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -37,7 +36,7 @@ import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
-import { monsterIsHumanoid, could_twoweap } from './mondata.js';
+import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
     if (!game.program_state.gameover)

@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { LANDMINE, LAVAPOOL, MOAT, NO_MINVENT } from '../js/const.js';
-import { beginMonsterLandMine, finishMonsterLandMine } from '../js/trap.js';
-import { explodeLandMine } from '../js/landmine_explosion.js';
+import { beginMonsterLandMine, finishMonsterLandMine, explodeLandMine } from '../js/trap.js';
+
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { vision_recalc } from '../js/vision.js';
 import { flush_screen } from '../js/display.js';

@@ -73,7 +73,7 @@ import { deleteTrap, trapAt, trapName } from './trap.js';
 import { chooseStairs } from './wizard.js';
 import { isPick } from './object_properties.js';
 import { bookDisappears } from './spell.js';
-import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip } from './hack.js';
+import { checkSpecialRoom, heroGoldAmount, monsterGoldAmount, inTown, roomForRoomno, roomsAt, roomForIndex, showGetposTip, } from './hack.js';
 const GLASS = 19;
 const BILLSZ = 200; // C include/mextra.h
 const G_UNIQ = 0x1000;

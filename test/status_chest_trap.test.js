@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { triggerChestTrap } from '../js/chest_trap.js';
 import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { CHEST } from '../js/object_data.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { requireScreenRow } from './support/screen.js';
+import { triggerChestTrap } from '../js/trap.js';
 void test('a chest gas trap displays its new impairments before returning', async () => {
     await freshObjectRoom();
     const chest = await addInventoryObject(CHEST, { otrapped: true });

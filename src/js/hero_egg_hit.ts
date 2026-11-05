@@ -16,7 +16,6 @@ import { petrifyMonsterFromContact } from './trap.js';
 import { deleteObject } from './shk.js';
 import { EGG } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
-import { touchPetrifies } from './stoning.js';
 import type { GameState } from './game_state.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
@@ -24,7 +23,7 @@ import type { MessagePublisher } from './pline.js';
 import type { FinishHeroMonsterDeath } from './hero_monster_death.js';
 import type { HeroPhysicalAttackMode } from './hero_physical_types.js';
 import type { HeroObjectContactResult } from './uhitm.js';
-import { monsterHasStoneResistance } from './mondata.js';
+import { monsterHasStoneResistance, touchPetrifies } from './mondata.js';
 
 export interface HeroEggHitOptions {
     state?: GameState;

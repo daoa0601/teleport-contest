@@ -13,8 +13,7 @@ import { petrifyMonsterFromContact } from './trap.js';
 import { deleteObject } from './shk.js';
 import { EGG } from './object_data.js';
 import { rnd, rn2 } from './rng.js';
-import { touchPetrifies } from './stoning.js';
-import { monsterHasStoneResistance } from './mondata.js';
+import { monsterHasStoneResistance, touchPetrifies } from './mondata.js';
 export async function resolveHeroEggHit(monster, egg, { state = game, mode, publish, random = rn2, rollOne = rnd, finishMonsterKill = (victim, death) => finishHeroMonsterKillOutcome(victim, victim.mx, victim.my, death), }) {
     if (egg.otyp !== EGG)
         throw new RangeError('Egg contact requires an egg');

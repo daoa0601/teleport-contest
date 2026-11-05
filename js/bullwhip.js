@@ -23,7 +23,6 @@ import { monsterName as describeMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterIsBig } from './mondata.js';
 import { rnl, rn2, rnd } from './rng.js';
-import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './dungeon.js';
 import { heroIsBlind } from './senses.js';
 import { teleds, enexto } from './teleport.js';
@@ -35,6 +34,7 @@ import { heroHasSlipperyHands } from './do_wear.js';
 import { fireDamageObject, resetUtrap } from './trap.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
+import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './apply.js';
 const PM_GRID_BUG = 116;
 const CARDINAL_DIRECTIONS = [
     { dx: -1, dy: 0 }, { dx: 0, dy: -1 },

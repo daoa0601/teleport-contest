@@ -14,16 +14,15 @@ import {
 import { objectMaterial } from './o_init.js';
 import { objectIsMetallic, objectIsOrganic, objectIsRustprone } from './object_properties.js';
 import { objectResistsDestruction } from './zap.js';
-import { fleshPetrifies } from './stoning.js';
 import type { GameState } from './game_state.js';
 import type { MonsterCallLog, RandomBelow } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import type { GameObject } from './object_types.js';
 import {
-    sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance,
-    carnivorous, herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter,
-    monsterHatesSilver, monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead,
-    monsterIsVampireShifter,
+    sameMonsterRace, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, carnivorous,
+    herbivorous, monsterHasEyes, metallivorous, acidic, poisonous, is_elf, is_shapeshifter, monsterHatesSilver,
+    monsterIsHumanoid, monsterIsNoncorporeal, monsterIsRider, monsterIsUndead, monsterIsVampireShifter,
+    fleshPetrifies,
 } from './mondata.js';
 
 export const DOGFOOD = 0;

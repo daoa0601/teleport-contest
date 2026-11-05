@@ -61,9 +61,11 @@ import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating, isEyesOfTheOverw
 import { makeHallucinated, setSlipperyHands, showInvisibilityMessage, toggleBlindness } from './potion.js';
 import { newsym, see_monsters, consumeHallucinatedMenuObjectGlyph, OBJECT_CLASS_SYMBOLS, refreshInvisibleMonsters } from './display.js';
 import { objectResistsDestruction } from './zap.js';
-import { erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification, captureLevitationState, floatHeroUp, floatHeroDown } from './trap.js';
+import {
+    erodeObject, erosionMatters, objectIsVulnerableToErosion, resolveImmediatePetrification,
+    captureLevitationState, floatHeroUp, floatHeroDown, selfTouchPetrifyingWeapons,
+} from './trap.js';
 import { stopHeroOccupation } from './occupation.js';
-import { heroResistsStoning, selfTouchPetrifyingWeapons, touchPetrifies } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { levelHasCeiling, levelIsWaterLevel, surfaceName } from './dungeon.js';
 import { removeWornHeroItem } from './hero_equipment.js';
@@ -78,8 +80,11 @@ import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
 import { grantWornProperty, hasIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, setPropertyTimeout } from './properties.js';
-import { monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious, monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid, monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed } from './mondata.js';
-
+import {
+    monstersForgetHeroResistance, seenResistanceForProperty, heroResistsLifeDrain, monsterIsAmphibious,
+    monsterIsBreathless, monsterBreaksArmor, monsterHornCount, monsterIsCentaur, monsterIsHumanoid,
+    monsterIsSlithy, monsterSlipsArmor, monsterWrappingAllowed, heroResistsStoning, touchPetrifies,
+} from './mondata.js';
 import { tryCallObjectType, dropInventoryObjectAtHero } from './do.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { experienceRankIndex } from './exper.js';
@@ -88,7 +93,6 @@ import { heroIsInDangerousRegion } from './regions.js';
 import { heroCanBeStrangled } from './polyself.js';
 import { canLetGo } from './do.js';
 import { restartMonsterShapechanging, restoreNaturalMonsterShapes } from './mon.js';
-
 import { weaponDescription } from './weapon.js';
 
 export async function doputon(): Promise<void> {
@@ -818,7 +822,6 @@ async function unremovableCurse(object: GameObject, slot: TakeoffSlot, state: Ga
 type Category = number | 'all' | 'u' | 'B' | 'C' | 'U' | 'X' | 'P';
 type BucCategory = 'B' | 'C' | 'U' | 'X';
 type SelectOff = (object: GameObject) => Promise<void>;
-
 
 // C do_wear.c:menu_remarm(): the category and object pick lists for 'A',
 // including the combination-style class prompt and the BUC category

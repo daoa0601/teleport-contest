@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory, wearEyewear } from '../js/do_wear.js';
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
-import { PIT, OBJECT_TIMER_KIND } from '../js/const.js';
+import { PIT, OBJECT_TIMER_KIND, LAVAPOOL } from '../js/const.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { setPrimaryWeapon } from '../js/wield.js';
@@ -17,7 +17,8 @@ import { recordObjectCall } from '../js/do_name.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, GLOB_OF_GREEN_SLIME, OBJECT_NAMES, POT_HEALING, POT_SPEED, RIN_PROTECTION, SCR_IDENTIFY, SPE_BOOK_OF_THE_DEAD, TALLOW_CANDLE, WAN_COLD } from '../js/object_data.js';
 import { objectTimers } from '../js/timeout.js';
 import { initRng } from '../js/rng.js';
-import { destroyLavaInventory, igniteItems } from '../js/trap.js';
+import { igniteItems } from '../js/trap.js';
+import { heroLiquidEffects } from '../js/hack.js';
 import { destroyColdInventory, destroyElectricInventory, destroyFireInventory } from '../js/zap.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
@@ -301,13 +302,17 @@ for (const sight of ['sighted', 'blind', 'hallucinating']) {
 // C trap.c lava_effects(): a surviving hero sees the Book glow with
 // hcolor("dark red"), like the fire-damage path.
 void test('the Book survives lava with a hallucinated glow', async () => {
-    await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
+    const level = await freshObjectRoom({ hero: { hallucinationTurns: 20 } });
     requireFixtureGame(game);
+    level.requireAt(10, 10).typ = LAVAPOOL;
+    const amulet = await addInventoryObject(AMULET_OF_LIFE_SAVING);
+    await wearHeroAccessory(amulet, 'uamul');
+    pushKeys(' '.repeat(30));
     const book = await addInventoryObject(SPE_BOOK_OF_THE_DEAD);
     const messages = [];
-    await destroyLavaInventory({ protectedObject: null, showMessages: true, publish: async (message) => { messages.push(message); } });
+    await heroLiquidEffects({ publish: async (message) => { messages.push(message); } });
     assert.equal(book.where, 'inventory');
-    assert.equal(messages.length, 1);
-    assert.match(messages[0] ?? '', /^The Book of the Dead glows a strange (?!dark red)[^,]+, but remains intact\.$/);
+    const glow = messages.find(message => message.startsWith('The Book of the Dead glows'));
+    assert.match(glow ?? '', /^The Book of the Dead glows a strange (?!dark red)[^,]+, but remains intact\.$/);
 });
 //# sourceMappingURL=elemental_inventory.test.js.map

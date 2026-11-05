@@ -48,10 +48,9 @@ import {
     monsterPossessive as perceivedPossessivePronoun, likes_gems, monsterHatesBlessings, monsterHatesLight,
     monsterHatesSilver, monsterIsAnimal, monsterIsBig, monsterIsGiant, monsterIsMindless, monsterIsShade,
     monsterIsSwimmer, monsterIsThickSkinned, monsterIsWooden, monsterPassesWalls, monsterSpeciesHatesSilver,
-    monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance,
+    monsterThrowsRocks, speciesHasWeaponAttack, strongmonst, monsterHasStoneResistance, touchPetrifies,
 } from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
-import { touchPetrifies } from './stoning.js';
 import { isBimanualObject, isWetTowel, type WeaponCandidate, isLauncherAmmunition } from './object_properties.js';
 import { rn2, d, rnd } from './rng.js';
 import { cansee, couldsee } from './vision.js';

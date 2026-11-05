@@ -11,13 +11,12 @@ import {
 import { MONSTER_ATTACKS } from './monster_data.js';
 import { monsterWieldedWeapon } from './weapon.js';
 import { CORPSE } from './object_data.js';
-import { touchPetrifies } from './stoning.js';
 import type { PlayingGameState } from './game_state.js';
 import type { Hero } from './hero_types.js';
 import type { AttackTuple } from './monster_action_types.js';
 import type { Monster } from './monster_types.js';
 import { isHomeElemental } from './makemon.js';
-import { monsterHasColdResistance, monsterIsShade } from './mondata.js';
+import { monsterHasColdResistance, monsterIsShade, touchPetrifies } from './mondata.js';
 
 type CombatActor = Hero | Monster;
 

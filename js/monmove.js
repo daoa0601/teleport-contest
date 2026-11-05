@@ -3,8 +3,8 @@ import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, FOOD_CLASS, POTION
 import { objectSkill, SCR_SCARE_MONSTER, SKELETON_KEY, LOCK_PICK, CREDIT_CARD, APPLE, BANANA, BULLWHIP, BOULDER, CARROT, CLOVE_OF_GARLIC, CORPSE, DWARVISH_MATTOCK, EGG, FLINT, ENORMOUS_MEATBALL, GOLD_PIECE, MEATBALL, MEAT_RING, MEAT_STICK, ARROW, BAG_OF_HOLDING, BLINDFOLD, BOOMERANG, CANDY_BAR, CRYSKNIFE, DAGGER, FEDORA, FORTUNE_COOKIE, LEMBAS_WAFER, LEATHER_JACKET, LEASH, MAGIC_MARKER, MAGIC_WHISTLE, OILSKIN_SACK, PANCAKE, SACK, SLING, STETHOSCOPE, TALLOW_CANDLE, TIN_OPENER, TIN_WHISTLE, TOWEL, WAX_CANDLE, AXE, BATTLE_AXE, DART, IRON_SHOES, PICK_AXE, ROCK, POT_GAIN_LEVEL, POT_HEALING, POT_INVISIBILITY, SLIME_MOLD, TIN, TRIPE_RATION, WAN_SPEED_MONSTER, BAG_OF_TRICKS, LUMP_OF_ROYAL_JELLY, POT_POLYMORPH, WAN_MAKE_INVISIBLE, WAN_POLYMORPH, } from './object_data.js';
 import { formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
-import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap } from './teleport.js';
-import { moveMonsterNextToHero } from './mon.js';
+import { relocateMonsterTo, randomMonsterRelocation, teleportMonsterFromTrap, enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction, } from './teleport.js';
+import { moveMonsterNextToHero, monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake, releaseHeroFromMonster, } from './mon.js';
 import { noticeMonster, disturbBuriedZombies, loseHeroHp, heroGoldAmount, inTown, roomsAt, mayDig } from './hack.js';
 import { impossible, panic } from './diagnostics.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
@@ -13,7 +13,7 @@ import { AD_RBRE, AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CURS, AD_HEAL, AD_DRIN,
 import { M_SEEN_REFL, A_LAWFUL, ALTAR, G_GENOD, M_AP_MONSTER, TRAPPED_DOOR, is_pit, Is_rogue_level, DISMOUNT_THROWN, LEVEL_TELEP, RLOC_MSG, A_CHA, A_DEX, A_STR, A_CON, ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, MMOVE_NOTHING, MMOVE_MOVED, MMOVE_DIED, MMOVE_DONE, MMOVE_NOMOVES, MON_FLOOR, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, ARROW_TRAP, BEAR_TRAP, BOLT_LIM, COLNO, CORR, DART_TRAP, DOOR, ROWNO, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, D_WARNED, FOUNTAIN, SDOOR, Is_firelevel, Is_waterlevel, IS_DOOR, IS_OBSTRUCTED, IS_ROOM, IS_STWALL, IS_TREE, IS_WALL, IRONBARS, LADDER, STAIRS, LAVAPOOL, LAVAWALL, BUSTDOOR, MAGIC_PORTAL, OPENDOOR, TELEP_TRAP, ANTI_MAGIC, FIRE_TRAP, HOLE, LANDMINE, ACCESSIBLE, DRAWBRIDGE_UP, MAGIC_TRAP, M_ATTK_AGR_DIED, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_ATTK_AGR_DONE, M_AP_FURNITURE, M_AP_NOTHING, M_AP_OBJECT, M_AP_TYPE, POLY_TRAP, RUST_TRAP, PIT, PL_NSIZ, ROCKTRAP, ROLLING_BOULDER_TRAP, ROOM, SLP_GAS_TRAP, STONE, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TRAPDOOR, NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_WEAPON, NO_WEAPON_WANTED, NOGARLIC, NOTONL, SHOPBASE, TEMPLE, TRAPNUM, STRAT_WAITFORU, STRAT_WAITMASK, STRAT_CLOSE, STRAT_ARRIVE, UNLOCKDOOR, VIBRATING_SQUARE, WATER, W_ACCESSORY, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_NONDIGGABLE, W_NONPASSWALL, Upolyd, WEB, WT_TOOMUCH_DIAGONAL } from './const.js';
 import { isok } from './cmd.js';
 import { watchDigging, digMonsterTunnel, diggingTimeToHole } from './dig.js';
-import { heroIsHallucinating, heroIsDeaf } from './senses.js';
+import { heroIsHallucinating, heroIsDeaf, heroIsUnaware } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasHalfSpellDamage } from './zap.js';
 import { MONSTER_ATTACKS, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
@@ -21,11 +21,10 @@ import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } fro
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
-import { monsterHasMagicKey, artifactEmitsLight, artifactById } from './artifacts.js';
-import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCarryObject, angerMonster, angerWatchGuards, attemptMonsterRestrap, beginMonsterHideUnder, changeMonsterForm, consumeMonsterFloorObjects, consumeMonsterObject, decideMonsterShapeChange, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, growAfterFood, hideMonsterUnder, initializeMonsterMovement, maybeUnhideAt, mcalcmove, mfndpos, monAllowFlags, monsterCanOpenDoor, monsterCanUnlockDoor, monsterDisplacementFlags, monstersInFmonOrder, naturalMonsterSpeed, pickUpMonsterFloorObject, resistConflict, respondToImmediateMagic, schedulable, wakeMonster, monsterInAir, monsterFliesOrFloats, wakeMonstersNearWithMessages, publishMonsterWake } from './mon.js';
+import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifacts.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
-import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks } from './mondata.js';
+import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks, touchPetrifies, } from './mondata.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
@@ -33,7 +32,6 @@ import { billDummyObject, costlySpot, afterShopkeeperMove, moveShopkeeper, shopk
 import { monsterAlignmentType, inHeroSanctuary, priestIsInOwnTemple, movePriest } from './priest.js';
 import { engravingAt, hasCompletedEngraving, wipeEngravingAt } from './engrave.js';
 import { ownedObjectName, simpleObjectNameWithArticle, observeDistantObjectForNaming, makePlural, verbForSubject } from './objnam.js';
-import { heroIsUnaware } from './senses.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { splitObjectStack, mksobj, placeCreatedObject, placeObjectSynchronously, isContainer } from './mkobj.js';
 import { dissolveBars } from './projectile_bars.js';
@@ -42,11 +40,10 @@ import { vision_recalc, cansee, clearPath, couldSeeFromHero, couldsee, monsterHa
 import { plineWithContinuation } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { releaseMonsterHold } from './hero_expulsion.js';
-import { releaseHeroFromMonster } from './mon.js';
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { mintrap, trapAt, maketrap } from './trap.js';
-import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth, placeHeroOnLevel } from './dungeon.js';
+import { mintrap, trapAt, maketrap, count_traps } from './trap.js';
+import { levelHasCeiling, insideWizardTower, sameDungeonLevel, canHeroRiseUp, levelAtDepth, placeHeroOnLevel, depth, } from './dungeon.js';
 import { movePet, monsterCouldReachItem, finishMonsterEating } from './dogmove.js';
 import { attackMonsterWithMonster, beginMonsterMeleeAttack, displaceMonster, fightNearbyMonster, monsterAttackStopsAggressor } from './mhitm.js';
 import { heroCanSeeInvisible, mcastSpell, movementSpellContext, movementSpellSelections } from './mcastu.js';
@@ -55,14 +52,13 @@ import { monsterWieldedWeapon, selectMonsterRangedWeapon, wieldMonsterWeapon, re
 import { swingMonsterWeapon, advanceHeroAttackSequence, mattacku, monsterAttackMessagePublisher, presentMonsterAttackEffects } from './mhitu.js';
 import { isPick, isPolearm, is_cloak, is_gloves, is_shirt, is_launcher, launcherMatchesAmmo, objectIsOrganic } from './object_properties.js';
 import { willWeld } from './wield.js';
-import { poisonAttackAttribute, poisonHeroFromMonster } from './uhitm.js';
+import { poisonAttackAttribute, poisonHeroFromMonster, applyMonsterStoningAttack, startHeroPetrificationFromMonster, } from './uhitm.js';
 import { currentAttribute } from './attrib.js';
 import { heroIsDisplaced } from './do_wear.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { monsterName as canonicalMonsterName, monsterName, visibleMonsterSubject } from './do_name.js';
 import { dist2, distmin } from './hacklib.js';
-import { depth } from './dungeon.js';
 import { shopkeeperName } from './shknam.js';
 import { heroHasEyes, monsterHandName } from './body_parts.js';
 import { heroGoldObject } from './hero_gold.js';
@@ -72,16 +68,12 @@ import { isZombieMaker, zombieForm } from './corpse_species.js';
 import { getTrack, hasTrack } from './track.js';
 import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap, removeMonsterFromMapAt, dismountHero } from './steed.js';
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
-import { retouchEquipment } from './artifacts.js';
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
-import { touchPetrifies } from './stoning.js';
-import { applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { inventoryItemDescription, delobj } from './invent.js';
-import { enexto, monsterTeleportRestricted, reportMonsterTeleportRestriction } from './teleport.js';
 import { wereChange, setHeroLycanthropy } from './were.js';
 import { stopHeroOccupation } from './occupation.js';
 import { chooseCovetousStrategy, pursueCovetousTarget, retreatCovetousMonster, publishMonsterCuss } from './wizard.js';
@@ -1618,8 +1610,6 @@ async function runCovetousHarassTactics(monster, state, random, calls) {
     await moveMonsterNextToHero(monster, state, { flags: RLOC_MSG, random });
 }
 // C monmove.c:maybe_spin_web(). Webmakers spin in place, walls permitting.
-// C trap.c:count_traps(): existingWebs is count_traps(WEB), the web count
-// that lowers the spinning probability.
 // Also C monmove.c:soko_allow_web(): inlined here.
 // Also C monmove.c:count_webbing_walls(): inlined here.
 async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, calls) {
@@ -1649,7 +1639,7 @@ async function maybeSpinMonsterWeb(monster, movement, state, random, rollDice, c
     ];
     const webbingWalls = webbingAnchors.reduce((count, [x, y]) => count + Number(holdsUpMonsterWeb(x, y, state)), 0);
     // C trap.c:count_traps(WEB).
-    const existingWebs = (state?.level?.traps || []).filter((trap) => trap.ttyp === WEB).length;
+    const existingWebs = count_traps(WEB, state);
     const probability = (monster.mnum === 96 ? 15 : 5) * (webbingWalls + 1) - 3 * existingWebs;
     const roll = recordRandom(random, calls, 1000);
     if (roll >= probability)

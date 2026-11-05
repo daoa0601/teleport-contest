@@ -30,7 +30,22 @@ import { splitMonster } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_COLOR, MONSTER_DIFFICULTY, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL, MONSTER_MOVE, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterClassSymbol, monsterTypeName, requireMonsterData } from './monster_data.js';
 import { displayLiquidName, formatMonsterName, monsterName, namelessMonsterName, setMonsterGivenName } from './do_name.js';
 import { possessiveName, dist2, ordinalSuffix, pointsOnline } from './hacklib.js';
-import { monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars, monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster, resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown, is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport, monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst, tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater, monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm, speciesEatsCorpses } from './mondata.js';
+import {
+    monsterHasFireResistance, monsterHasSeductionAttack, monsterHasStoneResistance, monsterCorrodesBars,
+    monsterPassesBars, monsterLocomotion, monsterFireDescription, monsterPolymorphsWhenStoned, nameToMonster,
+    resolveMonsterClass, monsterHasPoisonResistance, setMonsterSpecies, monsterKnowsTrap, acidic, cant_drown,
+    is_male, is_minion, is_neuter, is_orc, is_shapeshifter, lays_eggs, metallivorous, monsterCanTeleport,
+    monsterIsAnimal, monsterIsFemale, monsterIsGiant, monsterIsHider, monsterIsHumanoid, monsterIsMindless,
+    monsterIsSlithy, monsterIsSwimmer, monsterPerceives, needspick, notake, polyok, regenerates, strongmonst,
+    tunnels, monsterCanEngulf, monsterDigests, monsterGrowthFamilyMatch, monsterHasEyes, monsterHasHead,
+    monsterHasNoHands, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsBig,
+    monsterIsBreathless, monsterIsClinger, monsterIsCovetous, monsterIsDisplacer, monsterIsEel, monsterIsFloater,
+    monsterIsFlyer, monsterIsGolem, monsterIsHuman, monsterIsKop, monsterIsNoncorporeal, monsterIsNonliving,
+    monsterIsPlayerMonster, monsterIsRider, monsterIsSlimeproof, monsterIsUndead, monsterIsUnicorn,
+    monsterIsUnsolid, monsterIsVampire, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly,
+    monsterOlderForm, monsterPassesWalls, monsterSpeciesSticks, monsterThrowsRocks, monsterYoungerForm,
+    speciesEatsCorpses, heroResistsStoning, touchPetrifies, fleshPetrifies,
+} from './mondata.js';
 import { killEgg, objectsInTimerGraph, stopObjectTimer } from './timeout.js';
 import { d, rn2, rnd, rn1, rnl } from './rng.js';
 import { randomMonsterRelocation, relocateMonsterTo, reportMonsterTeleportRestriction, monsterTeleportRestricted, enexto, goodPosition } from './teleport.js';
@@ -40,7 +55,6 @@ import { setMimicAppearance, growMonster, finishMonsterGrowth, makemonAt, newMon
 import type { MonsterGrowth } from './makemon.js';
 import { objectName, observeDistantObjectForNaming, simpleObjectNameWithArticle, corpseName, makePlural } from './objnam.js';
 import { monsterHasMapPosition, monsterAtPosition, adjustRiderAfterSteedPolymorph, dismountHero, placeMonsterOnMap } from './steed.js';
-import { heroResistsStoning, touchPetrifies, fleshPetrifies } from './stoning.js';
 import { thawObject } from './pickup.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { AD_POLY, AD_COLD, AD_ELEC, AD_FIRE, AT_NONE, AD_DCAY, AD_DGST, AD_RUST, AT_BOOM, AT_ENGL, AT_GAZE } from './monster_attack_types.js';
@@ -76,7 +90,6 @@ import { deleteEngravingAt, hasCompletedEngraving } from './engrave.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { questMonsterSound } from './role_monsters.js';
 import { expelHero } from './hero_expulsion.js';
-
 import { currentDungeonLevel, migrateMonsterOffLevel } from './dog.js';
 import type { MonsterMigrationOptions, MonsterMigrationResult } from './dog.js';
 import type { DungeonLocation } from './dungeon_types.js';
@@ -87,7 +100,6 @@ import { recordAchievement } from './insight.js';
 import { SHOP_TYPES } from './shknam.js';
 import { buryObject } from './dig.js';
 import { displayMessageWindow } from './tty_topline.js';
-
 import { markQuestLeaderDead, markQuestNemesisDead } from './quest.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';
@@ -102,7 +114,6 @@ import { corpse_intrinsic, should_givit } from './eat.js';
 import type { PropertyName } from './property_types.js';
 import { monsterCanTouchArtifact } from './artifacts.js';
 import { reviveCorpseImmediately } from './do.js';
-
 import type { GameMap } from './game.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
 import { shopkeeperInOwnShop, hotPursuitShopkeeper, finishShopkeeperDeparture } from './shk.js';
@@ -110,7 +121,6 @@ import { addExperience, checkExperienceLevel, monsterExperience } from './exper.
 import { getLine } from './query.js';
 import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
-
 import { recordHeroKillConduct } from './end.js';
 import { createPhysicalMonsterExplosion } from './explosion.js';
 import { stopHeroOccupation } from './occupation.js';
@@ -331,7 +341,6 @@ function monsterLikesLava(monster: Monster): boolean {
 export function monsterLavaReaction(monster: Monster, state: GameState = game): MonsterLavaReaction | null {
     const location = state.level?.at?.(monster?.mx, monster?.my);
     if (!location || !isLavaAt(monster.mx, monster.my, state)) return null;
-
 
     const likesLava = monsterLikesLava(monster);
     if (monsterInAir(monster, state) || monsterIsClinger(monster.mnum) || likesLava)
@@ -909,7 +918,6 @@ function monsterDigCapabilities(monster: Monster, flags: number) {
     );
     return { rockOk, treeOk };
 }
-
 
 // ---------------------------------------------------------------------------
 // C mon.c:can_touch_safely(), curr_mon_load(), max_mon_load() and can_carry().
