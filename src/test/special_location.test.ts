@@ -7,7 +7,7 @@ import {mksobj, placeCreatedObject} from '../js/mkobj.js';
 import { flush_screen } from '../js/display.js';
 import { BOULDER } from '../js/object_data.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, SPACELOC, WET, get_location, get_location_coord } from '../js/special_location.js';
+import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, SPACELOC, WET, get_location, get_location_coord } from '../js/sp_lev.js';
 import { freshGame } from './support/game-state.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';

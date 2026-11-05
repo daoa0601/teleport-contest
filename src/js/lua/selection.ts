@@ -17,7 +17,7 @@ import {
 import { LuaTable, LuaUserdata, luaType } from './runtime.js';
 import { luaInteger, luaString, luaTruthy } from './arguments.js';
 import { LuaArgumentError, NethackLuaError } from './errors.js';
-import { ANY_LOC, get_location_coord } from '../special_location.js';
+import { ANY_LOC, get_location_coord } from '../sp_lev.js';
 import { game } from '../gstate.js';
 import { isRoom } from '../map_types.js';
 import type { Coordinate, SelectionBounds } from '../selvar.js';
