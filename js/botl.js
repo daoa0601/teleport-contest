@@ -243,7 +243,8 @@ export function monsterRank(monster, state = game) {
     }
     return monster.female && role.name.f || role.name.m || 'Player';
 }
-// ── botl.c:bot_via_windowport() BL_TITLE — the full rank before tty cuts it ──
+// C botl.c:bot_via_windowport(): BL_TITLE, the full rank before tty cuts it.
+// Also C botl.c:rank(): inlined here when choosing the current hero's title.
 export function statusTitle(state) {
     let name = state.plname || state.displayName || 'Hero';
     name = name.charAt(0).toUpperCase() + name.slice(1);
@@ -721,6 +722,7 @@ function compare(previous, current) {
     return previous < current ? 1 : previous > current ? -1 : 0;
 }
 function fuzzyText(text) { return text.replace(/[" _-]/g, '').toLowerCase(); }
+// C botl.c:anything_to_s(): format numeric status values as text.
 function numberValue(value, raw = value, percent = 0, text = String(value)) {
     return { value, raw, percent, text };
 }

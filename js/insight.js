@@ -73,6 +73,7 @@ export function enlightenmentRoleName() {
 // C botl.c:rank_of(): the rank title from the experience level.
 // C pray.c:u_gname(): deityName. C insight.c:enlght_line(): each row's
 // sentence assembly; C insight.c:enlght_out(): the string-array sink.
+// Also C calendar.c:midnight(): inlined here when testing the local hour.
 export function backgroundEnlightenmentLines(final = 0) {
     const { u, urole, urace } = requireInitializedGame();
     const female = Upolyd(u) ? u.mfemale : game.flags.female;

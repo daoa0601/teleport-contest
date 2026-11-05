@@ -940,6 +940,7 @@ async function extendHeroSight(output, range, xray) {
 }
 // C vision.c:vision_recalc(). Build geometric sight, apply special vision
 // and lighting, then repaint only visibility or viewing-angle changes.
+// Also C vision.c:get_unused_cs(): inlined here to choose and clear the alternate work buffer.
 export async function vision_recalc(control = 0) {
     const u = game.u, level = game.level;
     if (!u || !level)

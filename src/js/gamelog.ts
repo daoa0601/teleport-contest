@@ -20,6 +20,7 @@ export function isSpoilerGameLogEvent(
     return ((entry.flags ?? 0) & LL_SPOILER) !== 0;
 }
 
+// C pline.c:gamelog_add()
 export function recordGameLogEvent(text: string, {
     state = game, turn = state.moves || 1, flags = LL_NONE,
 }: {

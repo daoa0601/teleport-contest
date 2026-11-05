@@ -1,6 +1,8 @@
 // Per-game state. Construction allocates containers; native startup owns values.
 import { CommandBindings } from './command_bindings.js';
 import { createHeroState } from './hero_types.js';
+// C decl.c:decl_globals_init()
+// Also C decl.c:program_state_init(): inlined here; each game starts with fresh process flags.
 export function createGameState() {
     return {
         u: createHeroState(), urole: null, urace: null, initAlignment: null,

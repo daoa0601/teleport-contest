@@ -33,6 +33,8 @@ src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
 src/js/fruit.ts	objnam.c
+src/js/game_state.ts	decl.c
+src/js/gamelog.ts	pline.c
 src/js/glyph_customizations.ts	display.c
 src/js/glyph_numbers.ts	display.c
 src/js/guardian_angel.ts	minion.c
@@ -44,6 +46,7 @@ src/js/hero_multishot.ts	end.c
 src/js/hero_regeneration.ts	allmain.c
 src/js/hero_retouch.ts	artifact.c
 src/js/hero_seeing.ts	display.c
+src/js/input.ts	wintty.c
 src/js/inventory_reports.ts	shk.c
 src/js/invocation_area.ts	mklev.c
 src/js/isaac64.ts	isaac64.c
@@ -115,6 +118,7 @@ src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
 src/js/stoning.ts	mhitm.c
 src/js/teleport.ts	teleport.c
+src/js/temporary_map_effect.ts	display.c
 src/js/terrain_name.ts	dungeon.c
 src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c

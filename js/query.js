@@ -348,6 +348,8 @@ export async function tty_yn_function(query, responses, defaultAnswer = '', visi
         return number === 0n ? finish('n') : finish('#', number);
     }
 }
+// C topl.c:tty_yn_function(): numeric response entry.
+// Also C topl.c:removetopl(): inlined here when erasing digits or abandoning the count.
 async function readChoiceNumber(first, prompt, readAnswer, paint) {
     let digits = first === '#' ? '' : first;
     let value = digits ? BigInt(digits) : 0n;

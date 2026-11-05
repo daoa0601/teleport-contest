@@ -306,6 +306,12 @@ export async function showEncyclopediaInformation(name: string): Promise<void> {
 }
 
 // C pager.c:dohelp().
+// Also C pager.c:hmenu_doextversion(): inlined here.
+// Also C pager.c:hmenu_dohistory(): inlined here.
+// Also C pager.c:hmenu_dowhatis(): inlined here.
+// Also C pager.c:hmenu_dowhatdoes(): inlined here.
+// Also C pager.c:hmenu_doextlist(): inlined here.
+// Also C pager.c:dohistory(): inlined here through the history file choice.
 export async function dohelp(): Promise<void> {
     const entries = [
         { key: 'a', text: 'About NetHack (version information).' },
@@ -1070,6 +1076,7 @@ export async function identifyTrap(): Promise<void> {
 // C pager.c:dispfile_*, docontact(), domenucontrols().
 // ---------------------------------------------------------------------------
 
+// C wintty.c:tty_display_file()
 // C pager.c:dispfile_help(), dispfile_shelp(), dispfile_optionfile(),
 // dispfile_optmenu(), dispfile_license(), dispfile_debughelp(), and
 // dispfile_usagehelp(): the per-file help commands share this display port.

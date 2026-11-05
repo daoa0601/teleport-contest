@@ -29,6 +29,7 @@ const ANSI_COLOR = [
     90, // remembered room/corridor while blind (tty dark gray)
 ];
 // ── Serialize a map row with DEC line-drawing and ANSI colors ──
+// Also C wintty.c:end_glyphout(): inlined here to end color and graphics modes after the row.
 function render_map_row(y) {
     if (!game.level)
         return '';
@@ -211,11 +212,12 @@ const capacityText = [
     ['', 'Burden', 'Stress', 'Strain', 'Overtax', 'Overload'],
     ['', 'Brd', 'Strs', 'Strn', 'Ovtx', 'Ovld'],
 ];
-// wintty.c:make_things_fit() tries all condition abbreviations, then both
+// C wintty.c:make_things_fit() tries all condition abbreviations, then both
 // encumbrance abbreviations, then Dlvl -> Dl, before truncating at cols-1.
 // C wintty.c:shrink_enc().
 // C wintty.c:shrink_dlvl().
 // C wintty.c:set_condition_length().
+// Also C botl.c:stat_cap_indx(): inlined here; fields.capacity supplies the cached index.
 export function renderStatusLine2(fields, columns, capacityBlank = false, levelPrefixChanged = false) {
     const attempts = [
         [0, 0, false], [1, 0, false], [2, 0, false],

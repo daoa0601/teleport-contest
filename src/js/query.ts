@@ -355,6 +355,8 @@ export async function tty_yn_function(
     }
 }
 
+// C topl.c:tty_yn_function(): numeric response entry.
+// Also C topl.c:removetopl(): inlined here when erasing digits or abandoning the count.
 async function readChoiceNumber(
     first: string, prompt: string, readAnswer: () => Promise<string>, paint: (text: string) => void,
 ): Promise<bigint | null> {

@@ -174,6 +174,7 @@ export async function showDisclosureOverlay(lines, { marker = '--More--', restor
     return key;
 }
 // Text-backed menu windows page prose without accepting menu commands.
+// Also C wintty.c:dmore(): inlined here to paint and acknowledge each page prompt.
 async function pageDisclosureWindow(d, lines, marker, extraDismissKey = null) {
     const pageSize = d.rows - 1;
     const pageCount = Math.max(1, Math.ceil(lines.length / pageSize));

@@ -21,6 +21,7 @@ export function recorderIsLeapDay(datetime: string | null | undefined): boolean 
 // C calendar.c:getlt(): localtime(getnow()).  getnow() inherits the recording
 // clock's New York DST offset, while localtime() applies the fixed date's own offset,
 // so a time near midnight can fall on the neighboring calendar day.
+// Also C calendar.c:getyear(): inlined here with the other local date fields.
 export function recorderLocalDate(datetime: string | null | undefined):
     { year: number; month: number; day: number; weekday: number } | null {
     const epoch = recorderLocalEpochSeconds(datetime);

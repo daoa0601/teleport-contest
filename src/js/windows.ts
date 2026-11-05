@@ -285,6 +285,7 @@ export async function showDisclosureOverlay(lines: readonly TextMenuEntry[], {
 }
 
 // Text-backed menu windows page prose without accepting menu commands.
+// Also C wintty.c:dmore(): inlined here to paint and acknowledge each page prompt.
 async function pageDisclosureWindow(
     d: GameDisplay, lines: readonly TextMenuLine[], marker: string,
     extraDismissKey: number | null = null,
