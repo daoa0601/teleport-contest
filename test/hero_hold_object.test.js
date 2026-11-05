@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { holdAnotherObject } from '../js/hero_hold_object.js';
+import { holdAnotherObject } from '../js/invent.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE, OIL_LAMP } from '../js/object_data.js';
 import { objectQuantity } from '../js/mkobj.js';

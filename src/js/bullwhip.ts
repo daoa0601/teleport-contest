@@ -30,7 +30,7 @@ import { heroIsBlind } from './senses.js';
 import { teleds, enexto } from './teleport.js';
 import { isLavaAt, isPoolOrLavaAt } from './dbridge.js';
 import { vision_recalc, vision_reset } from './vision.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { propertyIsActive } from './properties.js';
 import { heroHasSlipperyHands } from './do_wear.js';
 import { fireDamageObject, resetUtrap } from './trap.js';

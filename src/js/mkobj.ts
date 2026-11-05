@@ -70,7 +70,7 @@ import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { nearCapacity } from './hack.js';
 import { encumber_msg } from './pickup.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { landObjectOnAltar } from './altar_object.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';

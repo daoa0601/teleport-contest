@@ -62,7 +62,7 @@ import { feelPetrifyingCorpse, willFeelPetrifyingCorpse, handlesPetrifyingCorpse
 import { monsterHasMapPosition, monsterOccupiesPosition, monsterSaddle, riderCannotReachMessage } from './steed.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { removeObjectFromMonsterInventory } from './monworn.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { propertyIsActive, propertyTimeout } from './properties.js';
 import { rn2, rnd, d } from './rng.js';
 import { heroHandName } from './body_parts.js';

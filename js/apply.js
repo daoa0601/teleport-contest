@@ -46,7 +46,7 @@ import { removeWornHeroItem } from './hero_equipment.js';
 import { releaseHold } from './zap.js';
 import { setHeroGrip } from './mon.js';
 import { makeDeaf, startHeroSickness, makeConfused, makeHallucinated, makeStunned, releaseDjinni, setSlipperyHands, makeBlinded } from './potion.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { cureHeroSickness, cureHeroVomiting, heroIsVomiting, startHeroVomiting } from './potion.js';
 import { freeInventoryObject, useUpInventoryStack } from './invent.js';

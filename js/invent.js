@@ -1,12 +1,12 @@
 import { RANDOM_CLASS, WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, AMULET_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, ROCK_CLASS, BALL_CLASS, CHAIN_CLASS, VENOM_CLASS, } from './objclass.js';
-import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
+import { objectClassForType, objectSkill, objectMerge, objectUsesKnown, objectUnique, CRYSKNIFE, ALCHEMY_SMOCK, ARROW as FIRST_OBJECT, BAG_OF_TRICKS, EGG, CHEST, FORTUNE_COOKIE, GOLD_PIECE, HAWAIIAN_SHIRT, LARGE_BOX, MAGIC_MARKER, HEAVY_IRON_BALL, LOCK_PICK, CREDIT_CARD, SKELETON_KEY, OBJ_NAME, oc_level, SCR_BLANK_PAPER, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_NOVEL, STATUE, TIN, TIN_OPENER, TOWEL, AMULET_OF_YENDOR, FAKE_AMULET_OF_YENDOR, BEARTRAP, BELL, BELL_OF_OPENING, BLINDFOLD, BRASS_LANTERN, BULLWHIP, CANDELABRUM_OF_INVOCATION, CAN_OF_GREASE, CORPSE, CREAM_PIE, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, DWARVISH_MATTOCK, EUCALYPTUS_LEAF, EXPENSIVE_CAMERA, FIGURINE, GRAPPLING_HOOK, HORN_OF_PLENTY, LAND_MINE, LEASH, LENSES, MAGIC_LAMP, MAGIC_WHISTLE, MEAT_RING, MIRROR, OBJECT_NAMES, OIL_LAMP, PICK_AXE, POT_OIL, SADDLE, STETHOSCOPE, TALLOW_CANDLE, TINNING_KIT, TIN_WHISTLE, UNICORN_HORN, WAX_CANDLE, WOODEN_FLUTE, MAGIC_FLUTE, TOOLED_HORN, FROST_HORN, FIRE_HORN, WOODEN_HARP, MAGIC_HARP, BUGLE, LEATHER_DRUM, ROCK, SLIME_MOLD, ARROW, LOADSTONE, LUCKSTONE, AXE, SPEAR, BOW, DART, KATANA, MACE, SCALPEL, CLUB, QUARTERSTAFF, SLING, SHORT_SWORD, LONG_SWORD, TWO_HANDED_SWORD, LANCE, YUMI, YA, BATTLE_AXE, SPLINT_MAIL, HELMET, RING_MAIL, LEATHER_ARMOR, LEATHER_JACKET, FEDORA, ROBE, SMALL_SHIELD, LEATHER_GLOVES, POT_HEALING, POT_SICKNESS, SACK, FLINT, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, APPLE, ORANGE, PEAR, MELON, BANANA, CARROT, SPRIG_OF_WOLFSBANE, CLOVE_OF_GARLIC, CANDY_BAR, PANCAKE, LEMBAS_WAFER, CRAM_RATION, FOOD_RATION, POT_EXTRA_HEALING, POT_WATER, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SPE_HEALING, SPE_FORCE_BOLT, SPE_CONFUSE_MONSTER, SPE_PROTECTION, SPE_DETECT_MONSTERS, SPE_EXTRA_HEALING, SPE_STONE_TO_FLESH, TOUCHSTONE, WAN_WISHING, WAN_SLEEP, OBJECT_SPELL_CATEGORY, AKLYS, DAGGER, ELVEN_DAGGER, ORCISH_DAGGER, ELVEN_SHORT_SWORD, ORCISH_SHORT_SWORD, DWARVISH_SHORT_SWORD } from './object_data.js';
 import { pair_of } from './object_properties.js';
 import { bypassObjectList, clearBypasses, nextUnbypassedObject } from './worn.js';
 import { game, requireGameDisplay, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
-import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
+import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, placeObject, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
 import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
@@ -28,11 +28,11 @@ import { recordLiteracy } from './literacy.js';
 import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeObject, objectMaterial, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
-import { isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
+import { isMissileObject, isBimanualObject, isGrayStone, isWeaponTool, objectUsesCharges, launcherMatchesAmmo, isBlade, isPolearm, isThrowingWeapon, isLauncherAmmunition } from './object_properties.js';
 import { isTwoWeaponObject, mergeHeroWeaponSlots, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
-import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects } from './polyself.js';
+import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed } from './polyself.js';
 import { heroFingerName, heroHandName } from './body_parts.js';
-import { discoverArtifact, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
+import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
 import { isEdibleFood } from './food_selection.js';
@@ -43,10 +43,10 @@ import { surfaceName } from './dungeon.js';
 import { stairwayDescription } from './mklev.js';
 import { deityName } from './alignment.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
-import { forceDescribeDecor } from './pickup.js';
+import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
 import { visibleRegionAt } from './regions.js';
 import { trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
-import { touchPetrifies, feelPetrifyingCorpse, willFeelPetrifyingCorpse, formCanBecomeStoneGolem } from './stoning.js';
+import { heroResistsStoning, touchPetrifies, feelPetrifyingCorpse, willFeelPetrifyingCorpse, formCanBecomeStoneGolem } from './stoning.js';
 import { iceDescriptionAt } from './pager.js';
 import { lookInsideSwallower } from './swallowed_inventory.js';
 import { impossible, panic } from './diagnostics.js';
@@ -54,17 +54,19 @@ import { armorSimpleName, armorSlotFor } from './do_wear.js';
 import { currentShopResident, shopkeeperInOwnShop, costlySpot, chargeUnpaidUsage, deleteObject, addShopObjectToBill, stolenValue, billForObject, visitBilledShopkeepers, unpaidObjectCost, reportShopFinances, pickedContainer, } from './shk.js';
 import { endObjectBurn, learnEggType, stopObjectTimer, stopObjectTimers } from './timeout.js';
 import { objectShedsLight } from './light.js';
-import { assertCreatedObject } from './do.js';
+import { hitFloorWithObject } from './dothrow.js';
+import { assertCreatedObject, dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { isReviver } from './corpse_species.js';
 import { attachCursedFigurineTimer } from './figurine_timer.js';
 import { takeQueuedInventoryChoice } from './inventory_queued_choice.js';
 import { heroGoldObject } from './hero_gold.js';
 import { hiddenGold } from './vault.js';
-import { nomul, heroGoldAmount, roomsAt } from './hack.js';
+import { nomul, heroGoldAmount, roomsAt, nearCapacity } from './hack.js';
 import { displayLiquidName } from './do_name.js';
 import { usedUpBill, showBill } from './inventory_reports.js';
 import { NO_COLOR } from './terminal.js';
 import { maybeUnhideAt, hideHeroUnder } from './mon.js';
+import { propertyIsActive } from './properties.js';
 import { rn2 } from './rng.js';
 import { objectResistsDestruction, showProbedObjectInventory } from './zap.js';
 import { monsterIsHumanoid } from './mondata.js';
@@ -574,6 +576,114 @@ export async function freeInventoryObject(object, state = game) {
     state.inventory.splice(index, 1);
     object.where = 'free';
     await finishInventoryRemoval(object, state);
+}
+// C invent.c:hold_another_object(). The argument must be free. Messages are already formatted by the caller,
+// as native callers preserve doname() before addinv() can merge the object.
+export async function holdAnotherObject(object, { state = game, dropMessage = null, holdMessage = null, publish = plineWithContinuation, } = {}) {
+    requireLiveGame(state);
+    if (object.where !== 'free')
+        throw new Error('holding requires a free object');
+    if (!heroIsBlind(state))
+        observeObject(object, state);
+    if (object.oartifact) {
+        const crysknife = object.otyp === CRYSKNIFE;
+        const proofing = object.oerodeproof;
+        const wasPolymorphed = heroIsPolymorphed(state);
+        await placeObject(object, state.u.ux, state.u.uy, state);
+        const touch = await touchArtifactByHero(object, artifactById(object.oartifact, state), { state, publish });
+        if (touch.died || state.program_state?.gameover)
+            return { object, heroDied: true };
+        if (!touch.allowed || wasPolymorphed && !heroIsPolymorphed(state)) {
+            if (touch.allowed && dropMessage)
+                await publish(dropMessage);
+            unlinkObject(object, state);
+            await dropObjectAtHero(object, { state, publish });
+            return { object, heroDied: !!state.program_state?.gameover };
+        }
+        unlinkObject(object, state);
+        if (crysknife) {
+            object.otyp = CRYSKNIFE;
+            if (proofing === undefined)
+                delete object.oerodeproof;
+            else
+                object.oerodeproof = proofing;
+        }
+    }
+    const unsafeWish = object.otyp === CORPSE && object.wishedfor
+        && !(state.uarmg || state.u.uarmg)
+        && touchPetrifies(object.corpsenm) && !heroResistsStoning(state);
+    const forcedDrop = propertyIsActive('fumbling', state) || unsafeWish;
+    if (propertyIsActive('fumbling', state))
+        object.nomerge = true;
+    else if (unsafeWish)
+        object.wishedfor = false;
+    const count = objectQuantity(object);
+    const limit = Math.max(nearCapacity(state), pickupBurden(state));
+    object = await addInventoryItem(object, null, false);
+    if (state.program_state?.gameover)
+        return { object, heroDied: true };
+    const slots = state.inventory.filter(item => item.otyp !== GOLD_PIECE && item.oclass !== COIN_CLASS).length;
+    const tooHeavy = !(object.otyp === LOADSTONE && object.cursed)
+        && nearCapacity(state) > limit;
+    if (forcedDrop || slots > 52 || tooHeavy) {
+        if (!forcedDrop && objectQuantity(object) > count) {
+            const parent = object;
+            const split = splitObjectStack(parent, count, state);
+            if (!split)
+                throw new Error(`Cannot split ${count} items from object ${parent.o_id}`);
+            object = split;
+        }
+        if (dropMessage)
+            await publish(dropMessage);
+        object.nomerge = false;
+        if (heroCanReachFloor(state, { checkPit: true }) || state.u.uswallow)
+            await dropInventoryObjectAtHero(object, { state, publish });
+        else {
+            await freeInventoryObject(object, state);
+            if (!state.program_state?.gameover)
+                await hitFloorWithObject(object, { verbose: false, state, publish });
+        }
+        return { object: null, heroDied: !!state.program_state?.gameover };
+    }
+    if (state.flags.autoquiver && !(state.uquiver || state.u.uquiver) && !object.owornmask
+        && (isMissileObject(object) || launcherMatchesAmmo(object, state.uwep)
+            || launcherMatchesAmmo(object, state.uswapwep)))
+        await setQuiverObject(object, state);
+    if (holdMessage !== null || dropMessage !== null) {
+        if (state.flags.fixinv === false)
+            reassignInventoryLetters();
+        await publish(await heldInventoryMessage(object, count, holdMessage, state));
+    }
+    await encumber_msg(state);
+    return { object, heroDied: !!state.program_state?.gameover };
+}
+// C invent.c:prinv(): name only the acquired quantity, while retaining
+// the actual inventory identity for wielded, worn, and quivered descriptions.
+async function heldInventoryMessage(object, count, prefix, state) {
+    const letter = object.invlet;
+    if (!letter)
+        throw new Error(`Held object ${object.o_id} has no inventory letter`);
+    const total = objectQuantity(object);
+    const merged = count > 0 && count < total;
+    const savedQuantity = object.quantity;
+    // C prinv() formats with doname(), whose xname() records what the hero
+    // sees (a cleric learns beatitude) before the knowledge fields are read.
+    observeObjectForNaming(object, { state });
+    let description;
+    object.quan = count || total;
+    object.quantity = object.quan;
+    try {
+        description = await inventoryItemDescription(object);
+    }
+    finally {
+        object.quan = total;
+        if (savedQuantity === undefined)
+            delete object.quantity;
+        else
+            object.quantity = savedQuantity;
+    }
+    const suffix = merged ? state.flags.verbose ? ` (${total} in total).` : '' : '.';
+    return `${prefix ? `${prefix} ` : ''}${letter} - ${description}${suffix}`;
 }
 // C invent.c useupall(): setnotworn, freeinv, then obfree.
 export async function useUpInventoryStack(object, state = game) {

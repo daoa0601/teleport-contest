@@ -153,7 +153,7 @@ import { requireGameLevel } from './gstate.js';
 import { applyHeroLocationEffects, burnAwayHeroSlime, endVoluntaryMultiTurn } from './hack.js';
 import { releaseHeroFromMonster } from './mon.js';
 import { setHeroGrip } from './mon.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { zapHeroInvisible } from './hero_invisibility.js';
 import { finishHeroLiquidMonsterDeath } from './hero_monster_death.js';
 import type { HeroLiquidMonsterDeathOutcome, HeroMonsterDeathContext } from './hero_monster_death.js';

@@ -54,7 +54,7 @@ import { releaseHeroFromMonster } from './mon.js';
 
 import { heroGrabMisses, heroSeductionCompatibility, monsterCanBeStrangled, showHeroSilverContact } from './hero_form_contact.js';
 import { setHeroGrip } from './mon.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { freeInventoryObject } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 

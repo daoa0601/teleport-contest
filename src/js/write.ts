@@ -12,7 +12,7 @@ import { plineWithContinuation as pline } from './pline.js';
 import { wipeoutText } from './engrave.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { dropInventoryObjectAtHero } from './do.js';
-import { holdAnotherObject } from './hero_hold_object.js';
+import { holdAnotherObject } from './invent.js';
 import { consumeInventoryItem } from './invent.js';
 import { chooseInventoryObject } from './invent.js';
 import { recordLiteracy } from './literacy.js';
