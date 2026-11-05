@@ -340,7 +340,7 @@ function findMapseenByStr(name: string, state: GameState): DungeonLocation | und
 
 // C dungeon.c:find_branch() with a null proto_dungeon: the live branch to
 // the named dungeon, for level teleport by name.
-function findBranchByDungeonName(name: string, state: GameState): DungeonBranch | undefined {
+function findBranch(name: string, state: GameState): DungeonBranch | undefined {
     return state.branches.find(candidate => {
         const dungeonName = state.dungeons[candidate.end2.dnum]?.dname.toLowerCase();
         return dungeonName === name || dungeonName?.replace(/^the /, '') === name;
@@ -369,9 +369,9 @@ export function levelDepthByName(input: string, state: GameState = game): number
         || (state.u.uz.dnum === state.valley_level?.dnum && level.dnum === state.medusa_level?.dnum)
         || (state.u.uz.dnum === state.medusa_level?.dnum && level.dnum === state.valley_level?.dnum);
     if (target) return inBranch(target) && visited(target) ? depth(target, state.dungeons) : 0;
-    const branch = findBranchByDungeonName(name, state)
+    const branch = findBranch(name, state)
         || (name.includes(' to ')
-            ? findBranchByDungeonName(name.slice(name.indexOf(' to ') + 4), state) : null);
+            ? findBranch(name.slice(name.indexOf(' to ') + 4), state) : null);
     if (!branch || !visited(branch.end1) || !visited(branch.end2)) return 0;
     target = branch.end1.dnum === state.u.uz.dnum ? branch.end1 : branch.end2;
     return inBranch(target) ? depth(target, state.dungeons) : 0;
