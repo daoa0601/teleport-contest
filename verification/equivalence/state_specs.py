@@ -633,7 +633,6 @@ STATE_SPECS += [
 
 OBJECT_PREDICATE_ASSUMPTIONS = (
     'objects.c:objects_globals_init and object_data.js tables retain their initial values; o_init.js:objectMaterial reads the emitted per-game material map first, so the claim relates the initial emitted OBJECT_MATERIAL entries and leaves the o_init.c:shuffle correspondence (same algorithm on both sides) outside the entry relation',
-    'the zero-material rows 1..17 (generic class markers) can occur on a struct obj only as pager.c:object_from_map temporary naming objects (OBJ_NAME is non-null for the GENERIC rows); there C is true and the port is false, but the difference is unobservable: mksobj(glyphotyp, FALSE, FALSE) copies cg.zeroobj so oeroded/oeroded2/oerodeproof are zero and rknown false (mkobj_erosions runs only under init), add_erosion_words then prints nothing, and the caller deallocates the object at once (pager.c:376); the rows are oc_nowish, so readobjnam\'s other is_damageable call cannot name one, and neither mkobj nor mksobj places them',
 )
 
 
@@ -667,10 +666,8 @@ def damageable_state(world, front, modules):
 def guarded_erosion_state(world, front, modules):
     damageable_state(world, front, modules)
     symbols = {name: value for name, (value, _) in world.c_state.items()}
-    # mkobj keeps oclass equal to objects[otyp].oc_class (the same entry
-    # invariant the weight:stack claim assumes); a candle typed as chain
-    # mail, where C's is_flammable exclusion and the port's material test
-    # disagree, is not a reachable object.
+    # readobjnam guards these tests with erosion_matters(). Relate the
+    # stored class to the type as mkobj does for initialized objects.
     classes = _objects_member(world, front, 'oc_class')
     world.pre.append(symbols['otmp.oclass']
                      == select_int(classes, symbols['otmp.otyp']))
@@ -773,7 +770,7 @@ STATE_SPECS += [
 OBJ_FILE = 'js/object_properties.js'
 
 OBJECT_MACRO_ASSUMPTIONS = OBJECT_PREDICATE_ASSUMPTIONS + (
-    'obj.h reads objects[otyp].oc_skill, oc_dir, oc_bimanual, oc_charged and oc_material; object_data.js OBJECT_SUBTYPE, OBJECT_DIR, OBJECT_BIMANUAL, OBJECT_CHARGED, OBJECT_MATERIAL and OBJECT_NAMES keep those initial columns at every otyp in 0..NUM_OBJECTS-1 (checked concretely over the whole table), and OBJECT_NAMES names only RUBBER_HOSE "rubber hose"',
+    'obj.h reads objects[otyp].oc_skill, oc_dir, oc_bimanual, oc_charged and oc_material; the native and emitted initializers execute independently over every otyp in 0..NUM_OBJECTS-1, and these columns retain their initial values',
 )
 
 CLASS_INVARIANT_ASSUMPTION = (
@@ -972,7 +969,7 @@ STATE_SPECS += [
     Spec('is_flimsy:tables', 'verification_is_flimsy', 'isFlimsyObject', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
          assumptions=OBJECT_MACRO_ASSUMPTIONS + (
-            'obj.h:is_flimsy reads oc_material and otyp only, so the free oclass is never read; the zero-material generic rows agree with the port (0 <= LEATHER on both sides), unlike is_damageable whose port test is material > WOOD-with-LIQUID-exception',
+            'obj.h:is_flimsy reads oc_material and otyp only, so oclass is unread; zero-material generic rows are included and agree because 0 <= LEATHER on both sides',
             'the claim calls the port with the default game state, whose objectMaterials map holds the initial emitted OBJECT_MATERIAL entries (the same relation the material claims assume)',
          ),
          require_counterexamples=True, configure=plain_object_state('obj'),

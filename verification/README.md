@@ -244,7 +244,7 @@ the display.h decoders (`glyph_to_mon/obj/swallow/warning/explosion/trap`)
 and glyphs.c's real `glyph_to_cmap` over the terrain span, the fifteen
 object-field claims of fv-equivalence-batch-10 (all fourteen initial objects[]
 columns read by the shared `object_data.js` owners over every otyp, and the
-port-only zero class outside the valid int32 table range), and the twenty-two
+port-only zero class outside the valid int32 table range), and the twenty-six
 claims of fv-equivalence-batch-12: thirteen remaining obj.h predicates,
 eleven initial fields (oc_level, oc_nutrition, oc_color, oc_prob, oc_nowish,
 oc_hitbon, oc_wsdam, oc_wldam, oc_armcat, a_ac, a_can), and OBJ_NAME/OBJ_DESCR index mapping.

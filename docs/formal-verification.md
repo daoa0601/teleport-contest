@@ -123,7 +123,7 @@ split `rnl` row use this batch's complete runs.
 | `mon_hates_blessings:state` | `mondata.c:mon_hates_blessings` ↔ `mondata.js:monsterHatesBlessings` | Valid species and shifter species cham 0..NUMMONS-1; mons[] pointer; native/emitted tables | 2×2 | 2.6 s |
 | `mon_resistancebits:state` | `monst.h:mon_resistancebits` ↔ `mondata.js:monsterResistanceBits` | Valid species; ushort extrinsic/intrinsic masks 0..65535; native/emitted resists table | 1×1 | 1.3 s |
 | `erosion_matters:tables` | `objnam.c:erosion_matters` ↔ `objnam.js:erosionMatters` | Every otyp 0..NUM_OBJECTS-1 and any oclass; native/emitted class and skill columns | 1×1 | 1.8 s |
-| `is_damageable:tables` | `objclass.h:is_damageable` ↔ `objnam.js:objectIsDamageable` | Every otyp with a real material (>= LIQUID); objects[]/OBJECT_MATERIAL initial values | 1×1 | 11.0 s |
+| `is_damageable:tables` | `objclass.h:is_damageable` ↔ `object_properties.js:is_damageable` | Every initial otyp 0..480, including generic rows; any stored oclass | 1×1 | 11.66 s total |
 | `primary_erosion:tables` | `objnam.c:readobjnam` primary test ↔ `objnam.js:objectAcceptsPrimaryErosion` | Erosion-mattering objects with matching oclass; material >= LIQUID | 1×1 | 4.8 s |
 | `secondary_erosion:tables` | `objnam.c:readobjnam` secondary test ↔ `objnam.js:objectAcceptsSecondaryErosion` | Same guarded domain | 1×1 | 3.1 s |
 | `weapon_type:tables` | `weapon.c:weapon_type` ↔ `skills.js:weaponSkillType` | Null or held object; any oclass; every otyp 0..NUM_OBJECTS-1 | 1×1 | 0.2 s |
@@ -288,25 +288,35 @@ split `rnl` row use this batch's complete runs.
 | `is_ndemon:tables` (slow) | `mondata.h:is_ndemon` ↔ `mondata.js:is_ndemon` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×3 | 2.60 s total |
 | `is_dlord:tables` (slow) | `mondata.h:is_dlord` ↔ `mondata.js:is_dlord` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
 | `is_dprince:tables` (slow) | `mondata.h:is_dprince` ↔ `mondata.js:is_dprince` | All species 0..NUMMONS-1 (383); native pointer `&mons[species]`; initial tables | 2×2 | 2.50 s total |
-| `is_launcher:tables` (slow) | `obj.h:is_launcher` ↔ `object_properties.js:is_launcher` | Held object, free oclass, otyp 0..NUM_OBJECTS-1; initial skill column | 1×1 | 5.46 s total |
-| `is_spear:tables` (slow) | `obj.h:is_spear` ↔ `object_properties.js:is_spear` | Same relation | 1×1 | 5.81 s total |
-| `is_shield:tables` | `obj.h:is_shield` ↔ `object_properties.js:is_shield` | Held object with the class relation; initial oc_armcat column | 1×1 | 2.41 s total |
-| `is_helmet:tables` | `obj.h:is_helmet` ↔ `object_properties.js:is_helmet` | Same relation | 1×1 | 2.37 s total |
-| `is_boots:tables` | `obj.h:is_boots` ↔ `object_properties.js:is_boots` | Same relation | 1×1 | 2.45 s total |
-| `is_gloves:tables` | `obj.h:is_gloves` ↔ `object_properties.js:is_gloves` | Same relation | 1×1 | 2.42 s total |
-| `is_cloak:tables` | `obj.h:is_cloak` ↔ `object_properties.js:is_cloak` | Same relation | 1×1 | 2.49 s total |
-| `is_shirt:tables` | `obj.h:is_shirt` ↔ `object_properties.js:is_shirt` | Same relation | 1×1 | 2.38 s total |
-| `is_suit:tables` | `obj.h:is_suit` ↔ `object_properties.js:is_suit` | Same relation | 1×1 | 2.52 s total |
-| `is_elven_armor:tables` | `obj.h:is_elven_armor` ↔ `object_properties.js:is_elven_armor` | Any short otyp; five constants, no table read | 2×5 | 2.36 s total |
-| `is_elven_weapon:tables` | `obj.h:is_elven_weapon` ↔ `object_properties.js:is_elven_weapon` | Any short otyp; six constants, no table read | 2×6 | 2.46 s total |
-| `pair_of:tables` | `obj.h:pair_of` ↔ `object_properties.js:pair_of` | Held object with the class relation; LENSES plus both macros | 1×1 | 2.80 s total |
-| `object_level:tables` (slow) | `objects.h:oc_level` ↔ `object_data.js:oc_level` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.16 s total |
-| `object_nutrition:tables` (slow) | `objects.h:oc_nutrition` ↔ `object_data.js:oc_nutrition` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.80 s total |
-| `object_color:tables` (slow) | `objects.h:oc_color` ↔ `object_data.js:objectBaseColor` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.18 s total |
-| `object_prob:tables` (slow) | `objects.h:oc_prob` ↔ `object_data.js:objectBaseProb` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 2.00 s total |
-| `object_nowish:tables` (slow) | `objects.h:oc_nowish` ↔ `object_data.js:oc_nowish` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.91 s total |
-| `object_hitbon:tables` (slow) | `objects.h:oc_hitbon` ↔ `object_data.js:oc_hitbon` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows); the a_ac alias reads the same column | 1×1 | 1.52 s total |
-| `object_wldam:tables` (slow) | `objects.h:oc_wldam` ↔ `object_data.js:oc_wldam` | Every initial otyp 0..NUM_OBJECTS-1 (481 rows) | 1×1 | 1.88 s total |
+
+
+
+| `is_launcher:tables` (slow) | `obj.h:is_launcher` ↔ `object_properties.js:is_launcher` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.44 s total |
+| `is_spear:tables` (slow) | `obj.h:is_spear` ↔ `object_properties.js:is_spear` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.30 s total |
+| `is_shield:tables` (slow) | `obj.h:is_shield` ↔ `object_properties.js:is_shield` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.41 s total |
+| `is_helmet:tables` (slow) | `obj.h:is_helmet` ↔ `object_properties.js:is_helmet` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.35 s total |
+| `is_boots:tables` (slow) | `obj.h:is_boots` ↔ `object_properties.js:is_boots` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.33 s total |
+| `is_gloves:tables` (slow) | `obj.h:is_gloves` ↔ `object_properties.js:is_gloves` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.28 s total |
+| `is_cloak:tables` (slow) | `obj.h:is_cloak` ↔ `object_properties.js:is_cloak` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.31 s total |
+| `is_shirt:tables` (slow) | `obj.h:is_shirt` ↔ `object_properties.js:is_shirt` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.27 s total |
+| `is_suit:tables` (slow) | `obj.h:is_suit` ↔ `object_properties.js:is_suit` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.28 s total |
+| `is_elven_armor:tables` (slow) | `obj.h:is_elven_armor` ↔ `object_properties.js:is_elven_armor` | Every object type 0..480; fixed type sets, oclass unread | 2×5 | 2.59 s total |
+| `is_elven_weapon:tables` (slow) | `obj.h:is_elven_weapon` ↔ `object_properties.js:is_elven_weapon` | Every object type 0..480; fixed type sets, oclass unread | 2×6 | 2.80 s total |
+| `pair_of:tables` (slow) | `obj.h:pair_of` ↔ `object_properties.js:pair_of` | Every object type 0..480; any signed-char stored oclass; initial columns | 1×1 | 2.74 s total |
+| `matching_launcher:tables` (slow) | `obj.h:matching_launcher` ↔ `object_properties.js:matching_launcher` | Every ammo/launcher type pair in 0..480; non-null ammo, nullable launcher | 1×1 | 2.54 s total |
+| `object_armcat:tables` (slow) | `objclass.h:oc_armcat` ↔ `object_data.js:oc_armcat` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.80 s total |
+| `object_armor_ac:tables` (slow) | `objclass.h:a_ac` ↔ `object_data.js:a_ac` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.85 s total |
+| `object_armor_can:tables` (slow) | `objclass.h:a_can` ↔ `object_data.js:a_can` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.81 s total |
+| `object_level:tables` (slow) | `objclass.h:oc_level` ↔ `object_data.js:oc_level` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.82 s total |
+| `object_nutrition:tables` (slow) | `objclass.h:oc_nutrition` ↔ `object_data.js:oc_nutrition` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.80 s total |
+| `object_color:tables` (slow) | `objclass.h:oc_color` ↔ `object_data.js:oc_color` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.87 s total |
+| `object_prob:tables` (slow) | `objclass.h:oc_prob` ↔ `object_data.js:oc_prob` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.91 s total |
+| `object_nowish:tables` (slow) | `objclass.h:oc_nowish` ↔ `object_data.js:oc_nowish` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.96 s total |
+| `object_hitbon:tables` (slow) | `objclass.h:oc_hitbon` ↔ `object_data.js:oc_hitbon` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.78 s total |
+| `object_wsdam:tables` (slow) | `objclass.h:oc_wsdam` ↔ `object_data.js:oc_wsdam` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.91 s total |
+| `object_wldam:tables` (slow) | `objclass.h:oc_wldam` ↔ `object_data.js:oc_wldam` | Every initial object type 0..480, including generic rows; independent initializers | 1×1 | 1.91 s total |
+| `OBJ_NAME:indices` (slow) | `objclass.h:OBJ_NAME` ↔ `object_data.js:OBJ_NAME` | Initial index = otyp, 0..480, before description shuffling; nullable contents | 1×2 | 9.04 s total |
+| `OBJ_DESCR:indices` (slow) | `objclass.h:OBJ_DESCR` ↔ `o_init.js:OBJ_DESCR` | Initial index = otyp, 0..480, before description shuffling; nullable contents | 1×2 | 10.42 s total |
 
 **Flag-owner batch.** The 50 added claims execute the real `mondata.h`
 macros and the canonical `mondata.js` owners over every species index
@@ -946,9 +956,32 @@ string contents and null separately; pointer identity and preservation by
 later shuffling remain outside the claims. The live OBJ_DESCR reader uses
 the game's description array, covered separately by behavior tests.
 
-All new claims are slow to preserve the fast CI budget. Each has a pinned
-negative probe and mutant, requiring a concrete counterexample. Local totals
-and final gate results are recorded after the complete ledger-writing run.
+All 26 new claims are slow, preserving the fast CI job's claim count. Their
+local totals include proofs, probes and mutants: **71.52 s** combined,
+with one pinned probe and one killed mutant per claim. The complete run
+passed **249 claims, 257 probes and 268 mutant checks** and wrote the
+249-row ledger after success. The table above records each new local total.
+The CI-style fast check passed all **142 fast claims**, explicitly skipped
+107 slow proofs, and validated every ledger row. The **36 ledger CLI tests**
+also pass.
+
+The stored-class regression is covered by three failing-first tests:
+weapon-tools, ammunition and bimanual weapons reject oclass 0 instead of
+inferring a class from otyp. The existing capacity claim also needed its
+redraw-state relation made explicit: disp.botl and game.context.botl are true
+at entry. A modeled assignment must prove it preserves its entry value;
+changed values and unmodeled writes remain rejected. Six executor tests cover
+nullable string returns and this read-only state contract.
+
+The behavior suite passed **17,407 tests, with 0 failures and 2 existing
+TODOs**. All **344 before/after session pairs are identical**: public remains
+43/44 with the existing seed2200 screen difference at step 158; all public
+RNG calls match. Deep is 300/300, matching 5,275,312 RNG calls and 58,002
+screens. Compilation, strict checks, 549 focused tests, 120 verifier tests,
+683 native differential cases, 37 differential harness tests and the static
+owner/message/edge ledgers pass. The RNG callsite ledger has zero regressions.
+
+**Earlier proof runs.**
 
 The complete 71-claim run exited 0 in **985.15 s** (the ledger-writing run
 that followed took 1037.68 s), including **77 domain probes** and **83
