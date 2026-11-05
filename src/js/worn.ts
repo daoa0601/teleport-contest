@@ -23,23 +23,20 @@ import {
 } from './object_data.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
 import { canSeeMonster, newsym } from './display.js';
-import {
-    grantWornProperty, hasCarriedProperty, refreshProperty, removeWornProperty,
-} from './properties.js';
+import { grantWornProperty, hasCarriedProperty, refreshProperty, removeWornProperty } from './properties.js';
 import {
     seenResistanceForProperty, monstersForgetHeroResistance, monsterObjectPronoun, monsterPossessive,
-    monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal,
-    monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly,
-    monsterSlipsArmor, monsterWrappingAllowed, touchPetrifies,
+    monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur,
+    monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor,
+    monsterWrappingAllowed, touchPetrifies,
 } from './mondata.js';
 import { armorBonus, armorSimpleName, armorSlotFor, cancelSlotTakeoff } from './do_wear.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { artifactEmitsLight, setWieldedArtifactProperties, setWornArtifactProperties } from './artifact.js';
 import { isBimanualObject, isWeaponTool } from './object_properties.js';
 import {
-    I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU,
-    W_BALL, W_CHAIN, W_QUIVER, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP,
-    AC_MAX, DISMOUNT_FELL,
+    I_SPECIAL, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMOR, W_ARMS, W_ARMU, W_BALL, W_CHAIN, W_QUIVER,
+    W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, AC_MAX, DISMOUNT_FELL,
 } from './const.js';
 import { objectMaterial, learnObjectType } from './o_init.js';
 import { publishHeardMessage } from './hero_speech.js';

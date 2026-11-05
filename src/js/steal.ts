@@ -52,9 +52,7 @@ import { releaseObjectLeash } from './apply.js';
 import { assertCreatedObject } from './do.js';
 import { forgetObjectKnowledge, linkCreatedObjectToMonsterInventory, linkObjectToMonsterInventory, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import type { MonsterPickupOptions } from './mkobj.js';
-import {
-    removeObjectFromMonsterInventory, updateMonsterEquipment,
-} from './worn.js';
+import { removeObjectFromMonsterInventory, updateMonsterEquipment } from './worn.js';
 import { landFloorObject } from './floor_effects.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';

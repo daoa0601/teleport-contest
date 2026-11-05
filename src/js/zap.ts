@@ -97,9 +97,16 @@ import type { GameObject } from './object_types.js';
 import type { Monster, SavedMonsterTraits } from './monster_types.js';
 import type { Trap } from './map_types.js';
 import type { PropertyName } from './property_types.js';
-import { changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance, checkMonsterGearNextTurn } from './mon.js';
+import {
+    changeMonsterForm, copyPetData, normalizeMonsterShape, wakeMonster, maybeUnhideAt, revealMonsterAppearance,
+    checkMonsterGearNextTurn,
+} from './mon.js';
 import type { MonsterDeathOptions, MonsterFormChange, MonsterFormChangeOptions, MonsterSelfTouchResult } from './mon.js';
-import { setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed, monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass, removeObjectFromMonsterInventory } from './worn.js';
+import {
+    setMonsterPermanentInvisibility, bypassObjectList, nextUnbypassedObject, bypassObject, adjustMonsterSpeed,
+    monsterSpeedMessage, destroyObjectFromMonsterInventory, findMonsterArmorClass,
+    removeObjectFromMonsterInventory,
+} from './worn.js';
 import { redrawMonsterWormSegments } from './worm.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { finishHeroMonsterKill, finishHeroLiquidMonsterDeath } from './mon.js';

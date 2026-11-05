@@ -13,7 +13,7 @@ import { MONSTER_EXPERIENCE_META, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, mo
 import { naturalMonsterSpeed } from './mon.js';
 import { objectDelay, objectPropertyName, ALCHEMY_SMOCK, AMULET_OF_GUARDING, AMULET_OF_LIFE_SAVING, AMULET_OF_REFLECTION, CORNUTHAUM, DUNCE_CAP, ELVEN_MITHRIL_COAT, HELM_OF_OPPOSITE_ALIGNMENT, MUMMY_WRAPPING, SADDLE, } from './object_data.js';
 import { canSeeMonster, newsym } from './display.js';
-import { grantWornProperty, hasCarriedProperty, refreshProperty, removeWornProperty, } from './properties.js';
+import { grantWornProperty, hasCarriedProperty, refreshProperty, removeWornProperty } from './properties.js';
 import { seenResistanceForProperty, monstersForgetHeroResistance, monsterObjectPronoun, monsterPossessive, monsterBreaksArmor, monsterHasHead, monsterHasNoHands, monsterHornCount, monsterIsAnimal, monsterIsCentaur, monsterIsMindless, monsterIsSlithy, monsterIsVerySmall, monsterIsWhirly, monsterSlipsArmor, monsterWrappingAllowed, touchPetrifies, } from './mondata.js';
 import { armorBonus, armorSimpleName, armorSlotFor, cancelSlotTakeoff } from './do_wear.js';
 import { setTwoWeaponCombat } from './wield.js';

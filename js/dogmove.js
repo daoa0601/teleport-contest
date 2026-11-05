@@ -4,7 +4,7 @@ import { ROCK_CLASS, BALL_CLASS, CHAIN_CLASS } from './objclass.js';
 import { questMonsterSound } from './role_monsters.js';
 import { performMonsterHeroAttack, mattacku, presentMonsterAttackEffects } from './mhitu.js';
 import { inventoryItemDescription } from './invent.js';
-import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict, checkMonsterGearNextTurn } from './mon.js';
+import { monsterFliesOrFloats, mfndpos, monAllowFlags, monsterCanCarryObject, monsterCarryAmount, resistConflict, checkMonsterGearNextTurn, } from './mon.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { monsterName, visibleMonsterSubject } from './do_name.js';
 import { observeDistantObjectForNaming, verbForSubject, withIndefiniteArticle } from './objnam.js';
