@@ -5,7 +5,7 @@
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
-import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER } from './const.js';
+import { CLOUD, ICE, IS_AIR, IS_ROOM, IS_WALL, In_quest, Is_earthlevel, Is_firelevel, LAVAPOOL, LAVAWALL, MAX_TYPE, MOAT, POOL, SDOOR, DRAWBRIDGE_UP, VAULT, WATER, FOOT } from './const.js';
 import { ALTAR, AM_MASK, Amask2align, BUFSZ, CORR, COLNO, D_ALIGN_CHAOTIC, D_ALIGN_LAWFUL, D_ALIGN_MASK, D_ALIGN_NEUTRAL, ESCAPED, FOUNTAIN, GRAVE, HELLISH, In_endgame, Is_airlevel, Is_knox_level, Is_waterlevel, LR_DOWNTELE, LR_UPTELE, MAGIC_PORTAL, MAZELIKE, ROGUELIKE, ROOM, ROOMOFFSET, ROWNO, SHOPBASE, SINK, THRONE, In_sokoban, TOWN, TREE, UNCONNECTED, TEMPLE, Is_astralevel, M_AP_TYPE, M_AP_FURNITURE, DELPHI, DOOR, DBWALL, DRAWBRIDGE_DOWN, Invocation_lev, VIBRATING_SQUARE, MENU_ITEMFLAGS_SKIPMENUCOLORS, NHW_MENU, PICK_NONE, PICK_ONE, Upolyd } from './const.js';
 import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
@@ -25,7 +25,7 @@ import { CmapSymbol } from './glyph_numbers.js';
 import { drawbridgeUnderlyingType, findDrawbridgeAt, isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import type { GameState } from './game_state.js';
-import { heroFootName } from './body_parts.js';
+
 import { MONSTER_NAME } from './monster_data.js';
 import { plineWithContinuation } from './pline.js';
 import { roomForIndex, roomsAt, switchHeroTerrain } from './hack.js';
@@ -40,6 +40,7 @@ import { monsterDigests, monsterEnfolds, monsterIsAnimal } from './mondata.js';
 import type { ArrivalRegion, Position, Stairway } from './map_types.js';
 import type { gotoLevel as gotoLevelImplementation } from './do.js';
 import { finishHeroDeath } from './end.js';
+import { body_part } from './polyself.js';
 
 // C do.c:goto_level()'s port signature (do.ts).
 type StairGotoLevel = typeof gotoLevelImplementation;
@@ -1635,7 +1636,7 @@ export async function senseBuriedObjects(state: GameState = game): Promise<void>
     if (level.buriedObjects?.some(object =>
         object.ox === hero.ux && object.oy === hero.uy)) {
         await plineWithContinuation(
-            `You sense something below your ${makePlural(heroFootName(state))}.`,
+            `You sense something below your ${makePlural(body_part(FOOT, state))}.`,
         );
     }
 }

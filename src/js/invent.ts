@@ -54,18 +54,7 @@ import { nhgetch } from './input.js';
 import { readchar, commandResultCancelled, commandResultFailed, cmdq_add_int, cmdq_add_key, cmdq_clear, cmdq_pop, getCount, GC_SAVEHIST, GC_ECHOFIRST, GC_CONDHIST, ynSingleKey, yn_function } from './cmd.js';
 import { ingSuffix, possessiveName } from './hacklib.js';
 import { NATIVE_COMMAND_CONSTANTS } from './command_data.js';
-import {
-    CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST,
-    GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE,
-    Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, PICK_NONE,
-    PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL,
-    ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR,
-    DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE,
-    PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT,
-    SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC,
-    W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM,
-    MGIVENNAME,
-} from './const.js';
+import { CMDQ_INT, CMDQ_KEY, CMDQ_USER_INPUT, CQ_CANNED, CQ_REPEAT, ALTAR, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, ICE, Is_airlevel, Is_waterlevel, MENU_TRADITIONAL, MENU_FULL, MENU_PARTIAL, MSGTYP_MASK_REP_SHOW, PICK_NONE, PICK_ONE, W_ACCESSORY, W_AMUL, W_ARMOR, W_RING, W_TOOL, W_SADDLE, OBJECT_TIMER_KIND, ACH_AMUL, ACH_BELL, ACH_BOOK, ACH_CNDL, ACH_MINE_PRIZE, ACH_SOKO_PRIZE, AM_SANCTUM, Amask2align, A_NONE, DBWALL, DOOR, DRAWBRIDGE_DOWN, DRAWBRIDGE_UP, D_BROKEN, D_ISOPEN, D_NODOOR, FOUNTAIN, GRAVE, IRONBARS, SINK, THRONE, TREE, PLNMSG_ONE_ITEM_HERE, LOST_NONE, LOST_THROWN, is_pit, SORTLOOT_PACK, SORTLOOT_INVLET, SORTLOOT_LOOT, SORTLOOT_INUSE, SORTLOOT_PETRIFY, P_BOW, P_CROSSBOW, P_SPEAR, P_DAGGER, P_KNIFE, W_WEAPONS, W_ARM, W_ARMC, W_ARMH, W_ARMS, W_ARMG, W_ARMF, W_ARMU, W_WEP, W_SWAPWEP, W_QUIVER, W_RINGL, W_RINGR, CONTAINED_SYM, MGIVENNAME, HAND, FINGER, STOMACH } from './const.js';
 import type { GameFlags } from './flags.js';
 import { MONSTER_NAME } from './monster_data.js';
 import type { SpellCategory } from './data_types.js';
@@ -76,8 +65,7 @@ import { learnObjectType, recordObjectEncounter, recordObjectKnowledge, observeO
 import { recorderSort } from './recorder_sort.js';
 import { getLine, promptYesNoAllQuit } from './query.js';
 import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
-import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed } from './polyself.js';
-import { heroFingerName, heroHandName, monsterStomachName } from './body_parts.js';
+import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifact.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
@@ -1606,7 +1594,7 @@ async function reportSubset(items: readonly GameObject[] | null, inuse = true, a
             }
             const text = object ? await inventoryItemDescription(object, {
                 primaryHandDetail: inventoryPrimaryHandDetail(object),
-            }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))} (no weapon)`;
+            }) : `${game.uarmg ? 'gloved' : 'bare'} ${makePlural(body_part(HAND, game))} (no weapon)`;
             const item = { key: object?.invlet ?? '-', text };
             const last = sections.at(-1);
             if (last?.heading === row.heading) sections[sections.length - 1] = { ...last, items: [...last.items, item] };
@@ -1934,7 +1922,7 @@ export async function lookHere(
     const blind = heroIsBlind();
     if (game.u.uswallow && game.u.ustuck) {
         const monster = game.u.ustuck;
-        const location = `${possessiveName(monsterName(monster))} ${monsterStomachName(monster.mnum)}`;
+        const location = `${possessiveName(monsterName(monster))} ${mbodypart(monster.mnum, STOMACH)}`;
         await plineWithContinuation(`You ${blind ? 'try' : 'look around'} to ${blind ? 'feel' : 'see'} what is lying in ${location}.`);
         const objects = monster.minvent ?? monster.inventory ?? [];
         if (!objects.length) {
@@ -2032,7 +2020,7 @@ export async function feelPetrifyingCorpse(object: GameObject, {
         return { touched: false, died: false };
     const corpse = corpseName(object, { definite: true });
     if (formCanBecomeStoneGolem(state.u.umonnum, state))
-        await publish(`You touched ${corpse} with your bare ${makePlural(heroHandName(state))}.`);
+        await publish(`You touched ${corpse} with your bare ${makePlural(body_part(HAND, state))}.`);
     else
         await publish(`Touching ${corpse} is a fatal mistake...`);
     const result = await resolveImmediatePetrification({
@@ -3141,7 +3129,7 @@ function itemActionEntries(item: GameObject, state: GameState, repairGold: boole
         } else if (item.otyp === TIN_OPENER) {
             entries.push({ key: 'w', text: 'Wield the tin opener to easily open tins' });
         } else if (!alreadyWorn) {
-            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(heroHandName(state))}` });
+            entries.push({ key: 'w', text: `Wield this ${stack ? 'stack' : 'item'} in your ${makePlural(body_part(HAND, state))}` });
         }
     }
     if (!alreadyWorn && item.oclass === ARMOR_CLASS) {
@@ -3221,7 +3209,7 @@ export function objectTypeCallable(object: GameObject, state: GameState = game):
 function accessoryActionText(item: GameObject, state: GameState): string | null {
     if (item.oclass === AMULET_CLASS) return state.uamul ? '[already wearing an amulet]' : 'Put this amulet on';
     if (item.oclass === RING_CLASS || item.otyp === MEAT_RING)
-        return state.uleft && state.uright ? `[both ring ${makePlural(heroFingerName(state))} in use]` : 'Put this ring on';
+        return state.uleft && state.uright ? `[both ring ${makePlural(body_part(FINGER, state))} in use]` : 'Put this ring on';
     if ([BLINDFOLD, TOWEL, LENSES].includes(item.otyp)) {
         if (state.ublindf) return '[already wearing eyewear]';
         return item.otyp === LENSES ? 'Put these lenses on' : `Put this on${item.otyp === TOWEL ? ' to blindfold yourself' : ''}`;

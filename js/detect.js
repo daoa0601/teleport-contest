@@ -12,7 +12,7 @@ import { exerciseWisdom } from './attrib.js';
 import { canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible, flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
-import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
+import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok } from './cmd.js';
 import { observeObject, objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, makePlural } from './objnam.js';
@@ -27,7 +27,6 @@ import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './region.js';
 import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
-import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
 import { propertyIsActive } from './properties.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
 import { C_ATR_INVERSE, terminalAttrFromCAttr } from './color_attr.js';
@@ -37,6 +36,7 @@ import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
 import { expelHero } from './mhitu.js';
+import { body_part } from './polyself.js';
 // C ref: detect.c premap_detect().  Sokoban's Lua `premapped` flag maps the
 // finalized background, boulders, and traps before deferred room filling.
 // C detect.c:skip_premap_detect().
@@ -603,7 +603,7 @@ export async function detectTraps(source, { state = game } = {}) {
             return await displayTrapMap(cursed, state);
         found = true;
     }
-    const toes = makePlural(heroToeName(state));
+    const toes = makePlural(body_part(TOE, state));
     if (found) {
         await pline(`Your ${toes} itch.`);
         return { result: 0, known: false, strangeFeeling: false };
@@ -760,7 +760,7 @@ export async function detectGold(source, { state = game } = {}) {
     if (!remote) {
         if (stale)
             await docrt();
-        await plineWithContinuation(`You notice some gold between your ${makePlural(heroFootName(state))}.`);
+        await plineWithContinuation(`You notice some gold between your ${makePlural(body_part(FOOT, state))}.`);
         return effectResult(0, known);
     }
     await clearDetectionMap(state);
@@ -823,7 +823,7 @@ export async function detectFood(source, { state = game } = {}) {
         }
         else if (source) {
             const starts = source.blessed && !state.u.uedibility;
-            await strangeFeelingMessage(`Your ${heroNoseName(state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
+            await strangeFeelingMessage(`Your ${body_part(NOSE, state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
             if (starts)
                 state.u.uedibility = 1;
         }
@@ -844,11 +844,11 @@ export async function detectFood(source, { state = game } = {}) {
         if (!source)
             await plineWithContinuation(`You sense ${what}.`);
         else if (source.blessed) {
-            await plineWithContinuation(`Your ${heroNoseName(state)} ${state.u.uedibility ? 'continues' : 'starts'} to tingle and you smell ${what}.`);
+            await plineWithContinuation(`Your ${body_part(NOSE, state)} ${state.u.uedibility ? 'continues' : 'starts'} to tingle and you smell ${what}.`);
             state.u.uedibility = 1;
         }
         else
-            await plineWithContinuation(`Your ${heroNoseName(state)} tingles and you smell ${what}.`);
+            await plineWithContinuation(`Your ${body_part(NOSE, state)} tingles and you smell ${what}.`);
         exerciseWisdom(true, state);
         await browseDetectionMap(mode, 'food', { state });
     }
@@ -1034,7 +1034,7 @@ async function grantEdibility(source, state) {
     if (!source?.blessed)
         return;
     if (!state.u.uedibility)
-        await plineWithContinuation(`Your ${heroNoseName(state)} starts to tingle.`);
+        await plineWithContinuation(`Your ${body_part(NOSE, state)} starts to tingle.`);
     state.u.uedibility = 1;
 }
 function alignSteed(state) {

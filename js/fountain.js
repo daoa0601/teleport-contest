@@ -5,10 +5,9 @@
 import { RING_CLASS, POTION_CLASS, COIN_CLASS } from './objclass.js';
 import { distmin } from './hacklib.js';
 import { fingersOrGloves } from './do_wear.js';
-import { heroArmName, heroFaceName, heroHandName, monsterArmName, monsterHeadName } from './body_parts.js';
 import { artifactByName, discoverArtifact, nameArtifact, setWieldedArtifactProperties } from './artifact.js';
 import { ATTRIBUTE_DISPLAY_ORDER, adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHeroStrengthAndHp } from './attrib.js';
-import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING } from './const.js';
+import { A_CON, A_DEX, A_MAX, A_STR, A_WIS, DOOR, F_LOOTED, FOUNTAIN, F_WARNED, G_GONE, MM_NOMSG, M_SEEN_FIRE, MON_FLOOR, POOL, POLY_NOFLAGS, ROOM, SDOOR, SINK, S_LRING, ARM, HAND, FACE, HEAD } from './const.js';
 import { monsterHasMapPosition } from './steed.js';
 import { canSpotMonster, glyphAt, newsym } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -45,7 +44,7 @@ import { addExperience, checkExperienceLevel } from './exper.js';
 import { consumeInventoryItem } from './invent.js';
 import { tryCallObjectType, polymorphSink } from './do.js';
 import { OBJ_DESCR, observeObject } from './o_init.js';
-import { heroIsUnchanging, polymorphHero } from './polyself.js';
+import { heroIsUnchanging, polymorphHero, body_part, mbodypart } from './polyself.js';
 import { createPoisonGasCloud } from './region.js';
 import { updateUnpaidObjectPrice, deleteObject } from './shk.js';
 import { setTwoWeaponCombat, dropCursedSecondaryWeapon } from './wield.js';
@@ -102,8 +101,8 @@ async function warnAboutFountain(state, publish) {
     const name = monsterName(watch, { article: 'a', capitalized: true, state });
     if (heroIsDeaf(state)) {
         const limbless = monsterHasNoLimbs(watch.mnum);
-        const part = limbless ? monsterHeadName(watch.mnum)
-            : makePlural(monsterArmName(watch.mnum));
+        const part = limbless ? mbodypart(watch.mnum, HEAD)
+            : makePlural(mbodypart(watch.mnum, ARM));
         await publish(`${name} earnestly ${limbless ? 'shakes' : 'waves'} ${monsterPossessive(watch, { state })} ${part}!`);
     }
     else {
@@ -476,7 +475,7 @@ export async function dipFountain(object, loc) {
     }
     const sensationEffect = resolveDippedSensationFate({
         fate,
-        armName: () => heroArmName(game),
+        armName: () => body_part(ARM, game),
     });
     const currentDungeon = game.dungeons?.[game.u?.uz?.dnum ?? 0];
     const coinEffect = await applyDippedCoinFate({
@@ -543,7 +542,7 @@ export async function dipFountain(object, loc) {
 }
 export async function washHands() {
     const glib = (game.u.glibTurns ?? 0) > 0;
-    await pline(`You wash your ${game.uarmg ? 'gloved ' : ''}${makePlural(heroHandName())} in the ${displayLiquidName('water')}.`);
+    await pline(`You wash your ${game.uarmg ? 'gloved ' : ''}${makePlural(body_part(HAND))} in the ${displayLiquidName('water')}.`);
     if (glib) {
         setPropertyTimeout('glib', 0);
         game.context.botl = true;
@@ -1043,7 +1042,7 @@ export async function sinkBacksUp(x = game.u.ux, y = game.u.uy) {
     requirePlayingGame(game);
     const sight = heroIsBlind(), deaf = heroIsDeaf();
     const message = !sight ? 'Muddy waste pops up from the drain'
-        : !deaf ? 'You hear a sloshing sound' : `Something splashes you in the ${heroFaceName()}`;
+        : !deaf ? 'You hear a sloshing sound' : `Something splashes you in the ${body_part(FACE)}`;
     await pline(`${deaf ? '' : 'Flupp!  '}${message}.`);
     const location = game.level.requireAt(x, y);
     if ((location.looted ?? 0) & S_LRING)

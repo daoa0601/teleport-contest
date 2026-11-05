@@ -7,9 +7,9 @@ import { WEAPON_CLASS, RING_CLASS, TOOL_CLASS, WAND_CLASS } from './objclass.js'
 import { OBJ_DESCR } from './o_init.js';
 import { OBJ_NAME, objectClassForType, objectSkill, objectUnique, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, ACID_VENOM, ARROW, BLINDING_VENOM, CRYSTAL_BALL, FAKE_AMULET_OF_YENDOR, getObjectClassBounds, SPE_CONE_OF_COLD, SPE_FIREBALL, BELL_OF_OPENING, LEASH, } from './object_data.js';
 import { ARTIFACT_DATA } from './artifact_data.js';
-import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP } from './const.js';
+import { P_BASIC, P_SKILLED, Upolyd, W_ARM, DOOR, D_TRAPPED, W_WEP, A_WIS, A_CON, DISMOUNT_THROWN, IS_ALTAR, KILLED_BY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, I_SPECIAL, In_endgame, In_hell, In_quest, P_EXPERT, TIMEOUT, W_ART, W_ARTI, W_BALL, W_QUIVER, W_SWAPWEP, NECK } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
-import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm } from './polyself.js';
+import { dragonFormForArmor, heroHatesSilver, heroSpecies, heroIsUnchanging, returnHeroToHumanForm, mbodypart } from './polyself.js';
 import { heroHasDrainResistance, removeEyewear } from './do_wear.js';
 import { game, requirePlayingGame, requireLiveGame } from './gstate.js';
 import { LL_ARTIFACT, recordGameLogEvent } from './gamelog.js';
@@ -31,7 +31,6 @@ import { heroIsBlind, heroIsHallucinating, heroIsBlinded, permanentBlind } from 
 import { getRumor } from './mklev.js';
 import { exerciseAttribute } from './attrib.js';
 import { finishHeroDeath } from './end.js';
-import { monsterNeckName } from './body_parts.js';
 import { loseHeroExperience } from './exper.js';
 import { burnAwayHeroSlime, applyHeroLocationEffects, loseHeroHp, heroIsOnStairs, isInvocationPosition, nomul } from './hack.js';
 import { formatFeltMessage } from './hero_speech.js';
@@ -1395,7 +1394,7 @@ async function applyBeheading(artifact, object, defender, damage, { state, attac
             return { damage: 0, specialMessage: true };
         }
         if (monsterIsNoncorporeal(species) || monsterIsAmorphous(species)) {
-            await publish(`Vorpal Blade slices through your ${monsterNeckName(species.mnum)}.`);
+            await publish(`Vorpal Blade slices through your ${mbodypart(species.mnum, NECK)}.`);
             return { damage, specialMessage: true };
         }
         await publish(`Vorpal Blade ${random(2) === 0 ? 'beheads' : 'decapitates'} you!`);
@@ -1445,7 +1444,7 @@ async function applyBeheading(artifact, object, defender, damage, { state, attac
         return { damage: 0, specialMessage: !attacker || visible, attackStopped: true };
     }
     if (monsterIsNoncorporeal(monster) || monsterIsAmorphous(monster)) {
-        await publish(`Vorpal Blade slices through ${possessiveTarget(describeTarget())} ${monsterNeckName(monster.mnum)}.`);
+        await publish(`Vorpal Blade slices through ${possessiveTarget(describeTarget())} ${mbodypart(monster.mnum, NECK)}.`);
         return { damage, specialMessage: true };
     }
     const verb = random(2) === 0 ? 'beheads' : 'decapitates';

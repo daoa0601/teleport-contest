@@ -1,7 +1,7 @@
 import { trapName, resolveImmediatePetrification, mintrap, floatHeroDown } from './trap.js';
 import { OBJ_DESCR } from './o_init.js';
 import { encumber_msg } from './pickup.js';
-import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE } from './const.js';
+import { BOTH_SIDES, RLOC_ERR, RLOC_NOMSG, D_CLOSED, D_LOCKED, DISMOUNT_BONES, DISMOUNT_BYCHOICE, DISMOUNT_ENGULFED, DISMOUNT_FELL, DISMOUNT_KNOCKED, DISMOUNT_POLY, DISMOUNT_THROWN, DOOR, IRONBARS, IS_OBSTRUCTED, LAVAWALL, MGIVENNAME, M_AP_FURNITURE, M_AP_OBJECT, M_AP_TYPMASK, MON_FLOOR, NO_KILLER_PREFIX, NON_PM, P_RIDING, A_CHA, A_DEX, A_WIS, P_BASIC, P_SKILLED, P_EXPERT, TT_BEARTRAP, TT_PIT, TT_WEB, Upolyd, VIBRATING_SQUARE, W_SADDLE, LEG, HAND } from './const.js';
 import { isok, commandResultCancelled, promptDirection } from './cmd.js';
 import { impossible } from './diagnostics.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -22,10 +22,9 @@ import { displayLiquidName, monsterName, monsterReflexiveAction } from './do_nam
 import { monsterSubjectPronoun, monsterPassesBars, monsterIsHelpless, is_domestic, monsterIsClinger, monsterIsFlyer, monsterIsHumanoid, monsterIsSlithy, monsterIsSwimmer, monsterThrowsRocks, needspick, tunnels, cant_drown, monsterIsAmorphous, monsterIsUnsolid, touchPetrifies, } from './mondata.js';
 import { shopkeeperName } from './shknam.js';
 import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroHandName, heroLegName } from './body_parts.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isPolearm, objectIsMetallic } from './object_properties.js';
-import { heroPassesWalls, heroSpecies } from './polyself.js';
+import { heroPassesWalls, heroSpecies, body_part } from './polyself.js';
 import { wormCrossesBetween } from './worm.js';
 import { shopkeeperBlockingDoor, shopkeeperBlockingEntry } from './shk.js';
 import { heroKnowsLavaWalking, heroKnowsWaterWalking } from './do_wear.js';
@@ -233,8 +232,8 @@ async function mountSteed(steed, force, [dx, dy]) {
     }
     if ((hero._woundedLegTurns ?? 0) > 0) {
         const both = hero._woundedLegSide === 'both';
-        const leg = both ? makePlural(heroLegName())
-            : `${hero._woundedLegSide} ${heroLegName()}`;
+        const leg = both ? makePlural(body_part(LEG))
+            : `${hero._woundedLegSide} ${body_part(LEG)}`;
         await pline(`Your ${leg} ${both ? 'are' : 'is'} in no shape for riding.`);
         // mount_steed() tests HWounded_legs (the timeout), not the side
         // flags in EWounded_legs, when choosing this prompt's suffix.
@@ -271,7 +270,7 @@ async function mountSteed(steed, force, [dx, dy]) {
     if (hero.uswallow || hero.ustuck || hero.utrap || punished
         || !await ridingStepIsClear(game, steed.mx, steed.my)) {
         await pline(punished || !(hero.uswallow || hero.ustuck || hero.utrap)
-            ? `You are unable to swing your ${heroLegName()} over.`
+            ? `You are unable to swing your ${body_part(LEG)} over.`
             : 'You are stuck here for now.');
         return false;
     }
@@ -402,7 +401,7 @@ export async function useSaddle(saddle) {
     requirePlayingGame(game);
     const hero = game.u;
     if (!heroHasFreeHand(game)) {
-        await plineWithContinuation(`You have no free ${heroHandName(game)}.`);
+        await plineWithContinuation(`You have no free ${body_part(HAND, game)}.`);
         return false;
     }
     // steed.c:use_saddle() folds swallowed, underwater, and a refused

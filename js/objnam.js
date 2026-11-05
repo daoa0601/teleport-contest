@@ -14,9 +14,8 @@ import { displayColorName, lookupNovelTitle, monsterName } from './do_name.js';
 import { currency } from './invent.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { garmentInscription, candyWrapperText, hawaiianMotif } from './read.js';
-import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, Luck, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND } from './const.js';
+import { CORPSTAT_GENDER, MV_KNOWS_EGG, P_BOW, W_AMUL, W_ARMOR, W_BALL, W_CHAIN, W_QUIVER, W_RING, W_RINGL, W_RINGR, W_SADDLE, W_SWAPWEP, W_TOOL, W_WEP, A_CHAOTIC, A_LAWFUL, A_NEUTRAL, A_NONE, Align2amask, ALTAR, BEAR_TRAP, BUFSZ, CLOUD, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_NEUTER, CORPSTAT_RANDOM, CORR, DB_FLOOR, DB_ICE, DB_LAVA, DB_MOAT, DB_UNDER, DBWALL, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, DOOR, DRAWBRIDGE_UP, F_LOOTED, FOUNTAIN, G_GENOD, G_NOCORPSE, GRAVE, HWALL, ICE, ICED_MOAT, ICED_POOL, IRONBARS, IS_DRAWBRIDGE, IS_FURNITURE, IS_WALL, is_hole, Is_rogue_level, LANDMINE, LAVAPOOL, LAVAWALL, Luck, M_AP_OBJECT, M_AP_TYPE, MAGIC_PORTAL, MOAT, P_HAMMER, P_POLEARMS, PL_PSIZ, POOL, QBUFSZ, ROCKTRAP, ROOM, ROWNO, SCORR, SDOOR, SINK, SPE_LIM, S_LDWASHER, S_LPUDDING, S_LRING, THRONE, T_LOOTED, TRAPNUM, TREE, TREE_LOOTED, TREE_SWARM, TT_LAVA, VWALL, WATER, WM_MASK, W_NONDIGGABLE, W_NONPASSWALL, WT_IRON_BALL_INCR, OBJECT_TIMER_KIND, LEVEL_TIMER_KIND, HAND } from './const.js';
 import { mkobj, mksobj, set_corpsenm, unlinkObject, objectWeight, objectIsFlammable, objectIsRottable, isContainer, placeCreatedObject, } from './mkobj.js';
-import { heroHandName } from './body_parts.js';
 import { plineWithContinuation } from './pline.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_NAME, MONSTER_SOUND, monsterClassSymbol, monsterTypeName } from './monster_data.js';
 import { possessiveName } from './hacklib.js';
@@ -42,6 +41,7 @@ import { propertyIsActive } from './properties.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
 import { startMeltIceTimer, getObjectLocation } from './zap.js';
 import * as objects from './object_data.js';
+import { body_part } from './polyself.js';
 const STRANGE_OBJECT = 0;
 const SCROLL_OF_MAIL = OBJECT_NAMES.indexOf('mail');
 // C objnam.c:Japanese_items. Naming and wish lookup use the same vocabulary.
@@ -1037,7 +1037,7 @@ export async function readObjectName(text, { wizardWish = false } = {}) {
     if (deniedArtifact && !wizardWish) {
         uncreateArtifact(object);
         await deleteObject(object);
-        await plineWithContinuation(`For a moment, you feel something in your ${makePlural(heroHandName())}, but it disappears!`);
+        await plineWithContinuation(`For a moment, you feel something in your ${makePlural(body_part(HAND))}, but it disappears!`);
         return { noWish: true, parsed };
     }
     object.quantity = object.quan;
@@ -2846,8 +2846,8 @@ export function heldObjectDescription(item, { state = game, primaryHandDetail = 
     let description = '';
     if (mask & W_WEP) {
         if (usesPrimaryHandPhrase(item, state)) {
-            const hand = isBimanualObject(item) ? makePlural(heroHandName(state))
-                : `${state.u.rightHanded === false ? 'left' : 'right'} ${heroHandName(state)}`;
+            const hand = isBimanualObject(item) ? makePlural(body_part(HAND, state))
+                : `${state.u.rightHanded === false ? 'left' : 'right'} ${body_part(HAND, state)}`;
             const action = item.otyp === AKLYS ? 'tethered to'
                 : isTwoWeaponPrimary(item, state) ? 'wielded in' : 'weapon in';
             const detail = primaryHandDetail ? `, ${primaryHandDetail}` : '';
@@ -2859,7 +2859,7 @@ export function heldObjectDescription(item, { state = game, primaryHandDetail = 
     }
     if (mask & W_SWAPWEP) {
         description += state.u.twoweap
-            ? ` (wielded in ${state.u.rightHanded === false ? 'right' : 'left'} ${heroHandName(state)})`
+            ? ` (wielded in ${state.u.rightHanded === false ? 'right' : 'left'} ${body_part(HAND, state)})`
             : ` (alternate weapon${item.quan === 1 ? '' : 's'}; not wielded)`;
     }
     if (mask & W_QUIVER)
@@ -2903,7 +2903,7 @@ function wornRingDescription(mask, state) {
         description += ' (on right ';
     if (mask & W_RINGL)
         description += ' (on left ';
-    return `${description}${heroHandName(state)})`;
+    return `${description}${body_part(HAND, state)})`;
 }
 function usesPrimaryHandPhrase(item, state) {
     if (isTwoWeaponPrimary(item, state))

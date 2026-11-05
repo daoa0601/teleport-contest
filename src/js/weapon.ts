@@ -18,20 +18,12 @@ import { OBJ_NAME, oc_wldam, oc_wsdam,
     oc_hitbon,
 } from './object_data.js';
 import { bypassObject } from './worn.js';
-import {
-    NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON,
-    NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX,
-    P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL,
-    MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL,
-    P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT,
-    P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18,
-} from './const.js';
+import { NEED_AXE, NEED_HTH_WEAPON, NEED_PICK_AXE, NEED_PICK_OR_AXE, NEED_RANGED_WEAPON, NEED_WEAPON, NO_WEAPON_WANTED, P_BOW, P_CROSSBOW, P_SLING, W_ARMG, W_ARMS, W_WEP, AKLYS_LIM, A_STR, A_DEX, P_AXE, P_PICK_AXE, Upolyd, WT_IRON_BALL_INCR, P_FLAIL, MAXULEV, MENU_ITEMFLAGS_SKIPMENUCOLORS, PICK_NONE, PICK_ONE, P_BASIC, P_EXPERT, P_FIRST_SPELL, P_ISRESTRICTED, P_LAST_SPELL, P_LAST_WEAPON, P_NONE, P_SKILLED, P_SKILL_LIMIT, P_BARE_HANDED_COMBAT, P_RIDING, P_TWO_WEAPON_COMBAT, P_UNSKILLED, TIP_ENHANCE, STR18, HAND } from './const.js';
 import {
     definiteObjectAction, objectName, objectNameIsPlural, observeObjectForNaming,
     observeDistantObjectForNaming, ownedObjectName, makePlural, makeSingular,
 } from './objnam.js';
 import { artifactById, artifactEmitsLight, monsterCanTouchArtifact, artifactDamageBonus, artifactStrikesShade, artifactToHitBonus } from './artifact.js';
-import { monsterHandName } from './body_parts.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import { applyFloorEffects } from './floor_effects.js';
@@ -64,7 +56,7 @@ import { ATR_INVERSE } from './terminal.js';
 import { objectMaterial } from './o_init.js';
 import { isPoolAt } from './dbridge.js';
 import { currentAttribute } from './attrib.js';
-import { heroSpecies } from './polyself.js';
+import { heroSpecies, mbodypart } from './polyself.js';
 import { roleMaximums } from './u_init.js';
 import { identifySpellbooks } from './spell.js';
 import type { MessagePublisher } from './pline.js';
@@ -726,7 +718,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
     if (artifactEmitsLight(weapon) && !weapon.lamplit) {
         beginObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
-            const hand = monsterHandName(monster.mnum);
+            const hand = mbodypart(monster.mnum, HAND);
             const brightness = equipmentLightDescription(weapon, state);
             await publish(`${definiteObjectAction(weapon, null, state)} shines ${brightness} in ${monsterPossessive(monster, state)} ${hand}!`);
         } else if (cansee(monster.mx, monster.my)) {
@@ -743,7 +735,7 @@ export async function wieldMonsterWeapon(monster: Monster, state: GameState = ga
 // C mon_wield_item() checks bimanual() at both the welded message (866) and
 // the welds-itself message (910): the monster's hand name, pluralized.
 function wieldingHand(monster: Monster, weapon: GameObject): string {
-    const hand = monsterHandName(monster.mnum);
+    const hand = mbodypart(monster.mnum, HAND);
     return isBimanualObject(weapon) ? makePlural(hand) : hand;
 }
 
@@ -774,7 +766,7 @@ export async function unwieldMonsterWeapon(monster: Monster, state: GameState = 
     if (weapon.lamplit && artifactEmitsLight(weapon)) {
         endObjectBurn(weapon, state);
         if (canSeeMonster(monster)) {
-            const hand = monsterHandName(monster.mnum);
+            const hand = mbodypart(monster.mnum, HAND);
             await publish(`${definiteObjectAction(weapon, null, state)} in ${monsterPossessive(monster, state)} ${hand} ${objectNameIsPlural(weapon, state) ? 'stop' : 'stops'} shining.`);
         }
     }

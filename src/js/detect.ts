@@ -30,12 +30,7 @@ import {
 } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
-import {
-    BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED,
-    D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR,
-    W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON,
-    TER_OBJ, TER_TRP,
-} from './const.js';
+import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, TOE, FOOT, NOSE } from './const.js';
 import { isok } from './cmd.js';
 import { observeObject, objectMaterial } from './o_init.js';
 import { withIndefiniteArticle, makePlural } from './objnam.js';
@@ -50,7 +45,7 @@ import { monsterName } from './do_name.js';
 import { NO_COLOR } from './terminal.js';
 import { visibleRegionAt } from './region.js';
 import { openFallingTrap, openHoldingTrap, trapName, triggerBoobyTrap, activateStatueTrapAt } from './trap.js';
-import { heroFootName, heroNoseName, heroToeName } from './body_parts.js';
+
 import type { Hero } from './hero_types.js';
 import { propertyIsActive } from './properties.js';
 import { selectMapPosition, showGetposInstructions } from './getpos.js';
@@ -61,6 +56,7 @@ import { getObjectLocation } from './zap.js';
 import { isQuantumBox } from './quantum_cat.js';
 import { monsterDigests, monsterHidesUnder, monsterIsHider } from './mondata.js';
 import { expelHero } from './mhitu.js';
+import { body_part } from './polyself.js';
 
 type DetectionTrap = Pick<Trap, 'ttyp' | 'tx' | 'ty'>;
 export type AutomaticSearchResult = boolean | { statueTrap: Position };
@@ -639,7 +635,7 @@ export async function detectTraps(source: Pick<GameObject, 'cursed'> | null | un
         if (!atHero(x, y, state)) return await displayTrapMap(cursed, state);
         found = true;
     }
-    const toes = makePlural(heroToeName(state));
+    const toes = makePlural(body_part(TOE, state));
     if (found) {
         await pline(`Your ${toes} itch.`);
         return { result: 0, known: false, strangeFeeling: false };
@@ -802,7 +798,7 @@ export async function detectGold(source: GameObject | null, { state = game }: De
     }
     if (!remote) {
         if (stale) await docrt();
-        await plineWithContinuation(`You notice some gold between your ${makePlural(heroFootName(state))}.`);
+        await plineWithContinuation(`You notice some gold between your ${makePlural(body_part(FOOT, state))}.`);
         return effectResult(0, known);
     }
     await clearDetectionMap(state);
@@ -857,7 +853,7 @@ export async function detectFood(source: GameObject | null, { state = game }: De
             await grantEdibility(source, state);
         } else if (source) {
             const starts = source.blessed && !state.u.uedibility;
-            await strangeFeelingMessage(`Your ${heroNoseName(state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
+            await strangeFeelingMessage(`Your ${body_part(NOSE, state)} twitches${starts ? ' then starts to tingle' : ''}.`, state, starts);
             if (starts) state.u.uedibility = 1;
         }
         return effectResult(stale ? 0 : 1, stale && !confused, !stale && !!source);
@@ -875,9 +871,9 @@ export async function detectFood(source: GameObject | null, { state = game }: De
         const mode = await showHeroUnlessCovered(shown, state);
         if (!source) await plineWithContinuation(`You sense ${what}.`);
         else if (source.blessed) {
-            await plineWithContinuation(`Your ${heroNoseName(state)} ${state.u.uedibility ? 'continues' : 'starts'} to tingle and you smell ${what}.`);
+            await plineWithContinuation(`Your ${body_part(NOSE, state)} ${state.u.uedibility ? 'continues' : 'starts'} to tingle and you smell ${what}.`);
             state.u.uedibility = 1;
-        } else await plineWithContinuation(`Your ${heroNoseName(state)} tingles and you smell ${what}.`);
+        } else await plineWithContinuation(`Your ${body_part(NOSE, state)} tingles and you smell ${what}.`);
         exerciseWisdom(true, state);
         await browseDetectionMap(mode, 'food', { state });
     } finally { await redisplayDetectionMap(constraints, state); }
@@ -1031,7 +1027,7 @@ function effectResult(result: 0 | 1, known: boolean, strangeFeeling = false): De
 
 async function grantEdibility(source: GameObject | null, state: GameState) {
     if (!source?.blessed) return;
-    if (!state.u.uedibility) await plineWithContinuation(`Your ${heroNoseName(state)} starts to tingle.`);
+    if (!state.u.uedibility) await plineWithContinuation(`Your ${body_part(NOSE, state)} starts to tingle.`);
     state.u.uedibility = 1;
 }
 

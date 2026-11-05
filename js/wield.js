@@ -7,10 +7,9 @@ import { objectClassForType, objectSkill, LENSES, LOADSTONE, AKLYS, CRYSKNIFE, E
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { commandResultCancelled, commandResultFailed, setMulti } from './cmd.js';
-import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, } from './const.js';
+import { A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE, P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP, HAND } from './const.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
-import { heroHandName } from './body_parts.js';
+import { heroSpecies, heroHasNoHands, heroIsVerySmall, body_part } from './polyself.js';
 import { makePlural, minimalObjectName, objectNameIsPlural, observeObjectForNaming, objectHasPersonalName, objectName, ownedObjectAction, corpseName, killerObjectName, objectCombatName, verbForSubject, ownedObjectName, withIndefiniteArticle } from './objnam.js';
 import { clearSplitObjects, rejoinObjectStack, splitObjectStack, uncurseObjectState, objectWeight } from './mkobj.js';
 import { learnObjectType } from './o_init.js';
@@ -96,7 +95,7 @@ export async function dowield() {
     const selection = await getobj('wield', object => object.oclass === COIN_CLASS ? GETOBJ_EXCLUDE
         : object.oclass === WEAPON_CLASS || isWeaponTool(object) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
         forcePrompt: true, allowCount: true, hands: GETOBJ_SUGGEST,
-        handsText: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(heroHandName(game))}${game.uwep ? '' : ' (wielded)'}`,
+        handsText: `your ${game.uarmg ? 'gloved' : 'bare'} ${makePlural(body_part(HAND, game))}${game.uwep ? '' : ' (wielded)'}`,
     });
     if (selection.cancelled) {
         commandResultCancelled(); // wield.c:dowield() getobj ECMD_CANCEL.
@@ -259,7 +258,7 @@ export async function doquiverCore(verb) {
     const selection = await getobj(verb, item => readySuggestion(item, game) ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY, {
         forcePrompt: true, allowCount: true, hands: game.uquiver ? GETOBJ_SUGGEST : GETOBJ_DOWNPLAY,
         handsText: verb === 'ready' ? `empty quiver${game.uquiver ? '' : ' (nothing readied)'}`
-            : `your ${makePlural(heroHandName(game))}`,
+            : `your ${makePlural(body_part(HAND, game))}`,
     });
     if (selection.cancelled) {
         commandResultCancelled(); // doquiver_core() getobj ECMD_CANCEL.
@@ -439,7 +438,7 @@ export async function refuseWeldedPrimary(state = game) {
     if (!weapon || !willWeld(weapon))
         return false;
     weapon.bknown = true;
-    const hand = heroHandName(state);
+    const hand = body_part(HAND, state);
     const hands = isBimanualObject(weapon) ? makePlural(hand) : hand;
     await plineWithContinuation(`${ownedObjectAction(weapon, 'are', state)} welded to your ${hands}!`);
     return true;
@@ -451,7 +450,7 @@ export async function announceWeaponWeld(object, state = game) {
     const article = proper && !noun.includes(' of ') ? '' : 'The ';
     const subject = quantity === 1 ? noun : `${quantity} ${makePlural(noun)}`;
     const side = state.u.rightHanded === false ? 'left' : 'right';
-    const hand = heroHandName(state);
+    const hand = body_part(HAND, state);
     const hands = isBimanualObject(object)
         ? makePlural(hand) : `dominant ${side} ${hand}`;
     await plineWithContinuation(`${article}${subject} ${quantity === 1 ? 'welds itself' : 'weld themselves'} to your ${hands}!`);
@@ -500,7 +499,7 @@ async function readySelectedWeapon(weapon, state) {
     }
     if (weapon.otyp === CORPSE && touchPetrifies(weapon.corpsenm)
         && !(state.uarmg || state.u.uarmg) && !heroResistsStoning(state)) {
-        await plineWithContinuation(`You wield ${corpseName(weapon, { definite: true })} in your bare ${makePlural(heroHandName(state))}.`);
+        await plineWithContinuation(`You wield ${corpseName(weapon, { definite: true })} in your bare ${makePlural(body_part(HAND, state))}.`);
         await resolveImmediatePetrification({
             state, killer: `wielding ${killerObjectName(weapon, state)} bare-handed`,
         });
@@ -673,7 +672,7 @@ export async function canBeginTwoWeaponCombat(state) {
         return false;
     }
     if (!primary || !secondary) {
-        const hand = heroHandName(state);
+        const hand = body_part(HAND, state);
         const hands = !primary && !secondary ? makePlural(hand) : hand;
         const side = primary ? 'left ' : secondary ? 'right ' : '';
         await plineWithContinuation(`Your ${side}${hands} ${verbForSubject(hands, 'are')} empty.`);
@@ -719,7 +718,7 @@ export async function dropSecondaryWeapon(state = game) {
     const object = state.uswapwep || state.u.uswapwep;
     if (!object)
         throw new Error('Dropping the secondary weapon requires an equipped object.');
-    const hand = `left ${heroHandName(state)}`;
+    const hand = `left ${body_part(HAND, state)}`;
     if (!object.cursed) {
         await plineWithContinuation(`${ownedObjectAction(object, 'slip', state)} from your ${hand}!`);
     }
@@ -743,7 +742,7 @@ export async function stopTwoWeaponCombat(state = game) {
 // C wield.c:drop_uswapwep() and do.c:dropx(): announce before extraction,
 // then handle shipping and altar contact before placing the dropped weapon.
 export async function dropCursedAlternateWeapon(object, state) {
-    await plineWithContinuation(`Your left ${heroHandName(state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
+    await plineWithContinuation(`Your left ${body_part(HAND, state)} spasms and drops ${ownedObjectName(object, state, { capitalized: false, includeQuantity: true })}!`);
     await freeInventoryObject(object, state);
     if (!state.u.uswallow) {
         const initialized = requireInitializedGame(state);
@@ -821,7 +820,7 @@ export async function chwepon(scroll, amount, state) {
     if (heroWieldsMagicbane(state) && objectEnchantment(uwep) >= 0) {
         const sting = amount > 1 && objectEnchantment(uwep) > 1
             ? 'flin' : 'it';
-        await pline(`Your right ${heroHandName(state)} ${sting}ches!`);
+        await pline(`Your right ${body_part(HAND, state)} ${sting}ches!`);
     }
     /* Elven weapons vibrate warningly when enchanted beyond a limit. */
     if (objectEnchantment(uwep) > 5
@@ -887,12 +886,12 @@ async function strangeFeelingOn(scroll, amount, state) {
         }
         else {
             /* the cursed tin opener is wielded in the right hand */
-            text = `Your right ${heroHandName(state)} tingles.`;
+            text = `Your right ${body_part(HAND, state)} tingles.`;
         }
         uncurseObjectState(uwep);
     }
     else {
-        text = `Your ${makePlural(heroHandName(state))} `
+        text = `Your ${makePlural(body_part(HAND, state))} `
             + `${amount >= 0 ? 'twitch' : 'itch'}.`;
     }
     await strangeFeeling(scroll, text, { state });
@@ -949,7 +948,7 @@ async function explainWeldedPrimary(primary, verb, name, plural, state) {
         await pline("You can't do that.");
         return;
     }
-    const noun = heroHandName(state);
+    const noun = body_part(HAND, state);
     const hand = isTwoHanded(primary) ? makePlural(noun) : noun;
     const demonstrative = plural && !/pair of /i.test(name) ? 'those' : 'that';
     await pline(`Since your weapon is welded to your ${hand}, `

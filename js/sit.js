@@ -4,10 +4,9 @@ import { eggTypeFromParent } from './mon.js';
 // #sit and the immediate consequences of sitting down.
 // C ref: sit.c dosit() and lay_an_egg().
 import { objectMaterial, observeObject } from './o_init.js';
-import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB } from './const.js';
+import { A_STR, A_WIS, ALTAR, DRAWBRIDGE_DOWN, FOUNTAIN, GRAVE, Is_waterlevel, is_hole, is_pit, LADDER, SINK, SPIKED_PIT, STAIRS, THRONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, FOOT } from './const.js';
 import { exerciseAttribute } from './attrib.js';
 import { plineWithContinuation as pline } from './pline.js';
-import { heroFootName } from './body_parts.js';
 import { game, requireInitializedGame } from './gstate.js';
 import { waterDamageObject, dotrap } from './trap.js';
 import { throneSitEffect } from './throne.js';
@@ -25,7 +24,7 @@ import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterPossessive, lays_eggs, monsterIsAmorphous, monsterIsHumanoid, monsterIsSlithy, eggs_in_water, } from './mondata.js';
 import { surfaceName } from './dungeon.js';
 import { isIceAt, isLavaAt, isPoolAt } from './dbridge.js';
-import { heroFormHidesWithoutCover, heroMonsterForm, heroFormSticks } from './polyself.js';
+import { heroFormHidesWithoutCover, heroMonsterForm, heroFormSticks, body_part } from './polyself.js';
 import { altarWrath } from './pray.js';
 import { d, rnd, rn2 } from './rng.js';
 import { splitSittingGremlin } from './fountain.js';
@@ -127,7 +126,7 @@ async function sitWhileTrapped(trap) {
         throw new Error('Sitting while trapped requires an active trap duration.');
     await exerciseAttribute(A_WIS, false);
     if (u.utraptype === TT_BEARTRAP) {
-        await pline(`You can't sit down with your ${heroFootName()} in the bear trap.`);
+        await pline(`You can't sit down with your ${body_part(FOOT)} in the bear trap.`);
         u.utrap++;
     }
     else if (u.utraptype === TT_PIT) {

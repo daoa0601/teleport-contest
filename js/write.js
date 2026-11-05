@@ -4,9 +4,8 @@ import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { OBJ_NAME, oc_level } from './object_data.js';
 import { OBJ_DESCR } from './o_init.js';
 import { exerciseWisdom } from './attrib.js';
-import { heroFingerName } from './body_parts.js';
 import { commandResultCancelled } from './cmd.js';
-import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV } from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, MAXULEV, FINGER } from './const.js';
 import { impossible } from './diagnostics.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { wipeoutText } from './engrave.js';
@@ -21,7 +20,7 @@ import { getObjectClassBounds, OBJECT_NAMES, SCR_BLANK_PAPER, SPE_BLANK_PAPER, S
 import { makePlural } from './objnam.js';
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { objectCombatName, objectNameIsPlural, simpleObjectName } from './objnam.js';
-import { heroHasNoHands } from './polyself.js';
+import { heroHasNoHands, body_part } from './polyself.js';
 import { getLine } from './query.js';
 import { rn1, rn2, rnl } from './rng.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -37,7 +36,7 @@ export async function useMagicMarker(pen) {
         return false;
     }
     if (game.u.glib || (game.u.glibTurns ?? 0) > 0) {
-        await pline(`The ${objectCombatName(pen)} ${objectNameIsPlural(pen) ? 'slip' : 'slips'} from your ${makePlural(heroFingerName(game))}.`);
+        await pline(`The ${objectCombatName(pen)} ${objectNameIsPlural(pen) ? 'slip' : 'slips'} from your ${makePlural(body_part(FINGER, game))}.`);
         await dropInventoryObjectAtHero(pen);
         return true;
     }

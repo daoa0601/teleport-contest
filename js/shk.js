@@ -16,7 +16,7 @@ import { hasShopBill, hasShopkeeperData, requireShopGame } from './shop_types.js
 import { SHOP_TYPES, saleable, shopkeeperName, shopStocksObject } from './shknam.js';
 import { hello } from './role.js';
 import { MONSTER_GENO, MONSTER_LEVEL, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SOUND, MONSTER_SYMBOL } from './monster_data.js';
-import { heroSpecies, heroPolyGender, heroPassesWalls } from './polyself.js';
+import { heroSpecies, heroPolyGender, heroPassesWalls, body_part, mbodypart } from './polyself.js';
 import { monsterName } from './do_name.js';
 import { possessiveName, distmin, dist2, pointsOnline, upstart } from './hacklib.js';
 import { depth } from './dungeon.js';
@@ -32,7 +32,7 @@ import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attr
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { propertyIsActive } from './properties.js';
 import { angerWatchGuards, removeMonsterFromGame, mnearto, resistConflict, moveMonsterNextToHero } from './mon.js';
-import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER, ACH_SHOP, } from './const.js';
+import { A_CHA, A_WIS, M_AP_NOTHING, M_AP_MONSTER, M_AP_TYPE, MMOVE_NOTHING, PL_NSIZ, ROOMOFFSET, SHOPBASE, Upolyd, MGIVENNAME, LL_ACHIEVE, G_GONE, MM_NOMSG, LOW_PM, DOOR, D_BROKEN, HUNGRY, QBUFSZ, MENU_FULL, MENU_TRADITIONAL, MIGR_APPROX_XY, IS_DOOR, SVALL, SDOOR, IS_STWALL, IS_TREE, IS_ROOM, BOLT_LIM, RLOC_NOMSG, RLOC_MSG, D_CLOSED, ZAP_POS, LANDMINE, BEAR_TRAP, HOLE, PIT, SPIKED_PIT, IS_WALL, TT_PIT, W_SWAPWEP, W_QUIVER, ACH_SHOP, ARM, HEAD, HAND } from './const.js';
 import { isok, commandResultCancelled, setMulti } from './cmd.js';
 import { moveSpecial, specialMoverSeesHero } from './priest.js';
 import { dropObjectAtHero } from './do.js';
@@ -44,7 +44,6 @@ import { closedDoor, performMonsterTurn } from './monmove.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { mattacku } from './mhitu.js';
 import { heroIsDisplaced } from './do_wear.js';
-import { monsterHandName, heroArmName, monsterHeadName } from './body_parts.js';
 import { diggingTimeToHole } from './dig.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { dropHeroInventoryForBones } from './bones.js';
@@ -2556,7 +2555,7 @@ async function inheritHeroInventory(keeper, count, options) {
     if (count > 1) {
         if (cansee(keeper.mx, keeper.my) && croaked && !silent) {
             const shake = monsterHasHead(keeper) && !random(2)
-                ? `, shakes ${monsterPossessive(keeper, { noIt: true, random })} ${monsterHeadName(keeper.mnum)},`
+                ? `, shakes ${monsterPossessive(keeper, { noIt: true, random })} ${mbodypart(keeper.mnum, HEAD)},`
                 : '';
             await publish(`${shopkeeperName(keeper, { capitalized: true })} ${monsterIsHelpless(keeper) ? 'wakes up, ' : ''}looks at your corpse${shake} and ${shopkeeperInOwnShop(keeper) ? 'sighs' : 'disappears'}.`);
         }
@@ -2769,7 +2768,7 @@ export async function chatWithShopkeeper(monster, state = game) {
             return;
         }
         message = speaking ? `"${hello(monster, state)} ${state.plname}!  Didn't you forget to pay?"`
-            : `${name()} taps you on the ${heroArmName(state)}.`;
+            : `${name()} taps you on the ${body_part(ARM, state)}.`;
     }
     else if (shop.billct) {
         const total = addUpBill(monster) + (shop.debit ?? 0);
@@ -4436,7 +4435,7 @@ export async function moveShopkeeper(monster, state, random, rollDice, rollOne, 
                     await plineWithContinuation(`"${hello(monster, state)}, ${state.plname}!  Didn't you forget to pay?"`);
                 }
                 else {
-                    await plineWithContinuation(`${shopkeeperName(monster, { state, capitalized: true })} holds out ${monsterPossessive(monster, { state, random, noIt: true })} upturned ${monsterHandName(monster.mnum)}.`);
+                    await plineWithContinuation(`${shopkeeperName(monster, { state, capitalized: true })} holds out ${monsterPossessive(monster, { state, random, noIt: true })} upturned ${mbodypart(monster.mnum, HAND)}.`);
                 }
                 state._shopFollowMessageTurn = state.moves;
                 if (!recordRandom(random, calls, 9)) {

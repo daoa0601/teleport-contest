@@ -3,15 +3,14 @@
 // create_gas_cloud_selection().
 import { formatFeltMessage, formatSeenMessage } from './hero_speech.js';
 import { isPoolAt } from './dbridge.js';
-import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd } from './const.js';
+import { M_SEEN_POISON, PLNMSG_ENVELOPED_IN_GAS, Upolyd, EYE, LUNG } from './const.js';
 import { isok } from './cmd.js';
 import { canSeeMonster, newsym } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requireGameLevel } from './gstate.js';
 import { impossible } from './diagnostics.js';
 import { monsterAtPosition } from './steed.js';
-import { heroIsBreathless } from './polyself.js';
-import { heroEyeName, heroLungName } from './body_parts.js';
+import { heroIsBreathless, body_part } from './polyself.js';
 import { makePlural } from './objnam.js';
 import { refreshProperty } from './properties.js';
 import { safe_teleds } from './teleport.js';
@@ -326,7 +325,7 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, die })
     if (tolerance === GAS_OK)
         return null;
     if (!heroIsBlind(state)) {
-        await publish(`Your ${makePlural(heroEyeName(state))} sting.`);
+        await publish(`Your ${makePlural(body_part(EYE, state))} sting.`);
         await makeBlinded(1, { state, talk: false, publish });
     }
     if (tolerance === GAS_MINOR) {
@@ -335,7 +334,7 @@ async function affectHeroWithGas(region, state, { publish, rollOne, wake, die })
         monstersObserveHeroResistance(M_SEEN_POISON, state);
         return { kind: 'hero-gas', resisted: true, damage: 0 };
     }
-    await publish(`Something is burning your ${makePlural(heroLungName(state))}!`);
+    await publish(`Something is burning your ${makePlural(body_part(LUNG, state))}!`);
     await publish('You cough and spit blood!');
     await wakeNearGas(state.u.ux, state.u.uy, state, publish, wake);
     const damage = halfHeroGasDamage(rollOne(region.damage) + 5, state);

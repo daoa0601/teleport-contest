@@ -3,9 +3,8 @@ import { displayMessageWindow } from './tty_topline.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { commandResultFailed } from './cmd.js';
 import { game, requirePlayingGame } from './gstate.js';
-import { heroLegName } from './body_parts.js';
-import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB } from './const.js';
-import { heroPassesWalls, heroSpecies } from './polyself.js';
+import { IS_DOOR, IS_OBSTRUCTED, Is_airlevel, TT_BEARTRAP, TT_PIT, TT_WEB, LEG } from './const.js';
+import { heroPassesWalls, heroSpecies, body_part } from './polyself.js';
 import { MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { BOULDER } from './object_data.js';
@@ -38,7 +37,7 @@ export async function admitHeroKick() {
     }
     else if ((hero._woundedLegTurns ?? 0) > 0) {
         const side = hero._woundedLegSide;
-        const leg = heroLegName();
+        const leg = body_part(LEG);
         refusal = `Your ${side === 'both' ? makePlural(leg)
             : `${side || 'right'} ${leg}`} ${side === 'both' ? 'are' : 'is'} in no shape for kicking.`;
     }
@@ -57,7 +56,7 @@ export async function admitHeroKick() {
         if (hero.utraptype === TT_PIT)
             refusal = "There's not enough room to kick down here.";
         else if (hero.utraptype === TT_WEB || hero.utraptype === TT_BEARTRAP)
-            refusal = `You can't move your ${heroLegName()}!`;
+            refusal = `You can't move your ${body_part(LEG)}!`;
         // Other restraints silently prevent the command as well.
         if (refusal)
             await pline(refusal);
@@ -83,7 +82,7 @@ export async function kickCanReachTarget() {
     if (hero.uswallow) {
         const outcome = rn2(3);
         if (outcome === 0)
-            await pline(`You can't move your ${heroLegName()}!`);
+            await pline(`You can't move your ${body_part(LEG)}!`);
         else if (outcome === 1 && monsterDigests(hero.ustuck)) {
             if (!hero.ustuck)
                 throw new Error('A swallowed kick requires its engulfer.');

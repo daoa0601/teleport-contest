@@ -3,14 +3,8 @@
 
 import { SCROLL_CLASS, SPBOOK_CLASS } from './objclass.js';
 import { currentAttribute } from './attrib.js';
-import {
-    A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY,
-    MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS,
-    MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU,
-    MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG,
-    ROWNO, STRAT_ARRIVE, STRAT_WAITFORU,
-} from './const.js';
-import { heroEyeName, heroHasEyes } from './body_parts.js';
+import { A_CHA, DISMOUNT_THROWN, W_ARMS, COLNO, In_endgame, LARGEST_INT, MAGIC_PORTAL, MAX_NUM_WORMS, MIGR_APPROX_XY, MIGR_EXACT_XY, MIGR_LADDER_DOWN, MIGR_LADDER_UP, MIGR_LEFTOVERS, MIGR_PORTAL, MIGR_RANDOM, MIGR_SSTAIRS, MIGR_STAIRS_DOWN, MIGR_STAIRS_UP, MIGR_WITH_HERO, MON_ARRIVE_AFTER_YOU, MON_ARRIVE_BEFORE_YOU, MON_ARRIVE_WITH_YOU, MON_FLOOR, MON_LIMBO, MON_MIGRATING, MON_STILL_ARRIVING, NEED_HTH_WEAPON, RLOC_NOMSG, ROWNO, STRAT_ARRIVE, STRAT_WAITFORU, EYE } from './const.js';
+
 import { canSpotMonster, newsym, canSeeMonster } from './display.js';
 import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -46,7 +40,7 @@ import {
 } from './mondata.js';
 import { wakeMonstersNearWithMessages, releaseHeroFromMonster, detachMonsterFromLevel, healMonster, restoreMonsterShape, sendMonsterToLimbo } from './mon.js';
 import { questMonsterFlags3 } from './role_monsters.js';
-import { heroFormSticks, heroSpecies } from './polyself.js';
+import { heroFormSticks, heroSpecies, body_part } from './polyself.js';
 
 import { wieldMonsterWeapon } from './weapon.js';
 import { beginPetEating, finishPetEating } from './pet_eating.js';
@@ -236,11 +230,11 @@ export async function makePetWary(
             && random((dog.abuse ?? 0) + 1) === 0) {
             monster.mpeaceful = 1;
         }
-        if (!wasDead && cansee(monster.mx, monster.my) && heroHasEyes(state)) {
+        if (!wasDead && cansee(monster.mx, monster.my) && monsterHasEyes(heroSpecies(state))) {
             const subject = monsterName(monster, { state, capitalized: true });
             const hasEyes = monsterHasEyes(monster.mnum);
             await publish(hasEyes
-                ? `${subject} ${monster.mpeaceful ? 'seems unable' : 'refuses'} to look you in the ${heroEyeName(state)}.`
+                ? `${subject} ${monster.mpeaceful ? 'seems unable' : 'refuses'} to look you in the ${body_part(EYE, state)}.`
                 : `${subject} avoids your gaze.`);
         }
     } else {

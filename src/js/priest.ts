@@ -14,7 +14,7 @@ import type { DungeonLocation } from './dungeon_types.js';
 import type { Monster, PriestData, MinionData } from './monster_types.js';
 import type { Room } from './map_types.js';
 import { deityName, hallucinatedDeityName } from './pray.js';
-import { heroSpineName } from './body_parts.js';
+
 import { nomul, checkSpecialRoom, roomForRoomno, roomsAt } from './hack.js';
 import { recordAchievement } from './insight.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
@@ -27,11 +27,7 @@ import { AT_MAGC, AD_ELEC } from './monster_attack_types.js';
 import { couldSeeFromHero, couldsee } from './vision.js';
 import { d, rn2 } from './rng.js';
 import { recordRandom } from './monster_action_types.js';
-import {
-    A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL,
-    ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL,
-    In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER,
-} from './const.js';
+import { A_NONE, A_WIS, ALLOW_M, ALLOW_ROCK, AM_SHRINE, MM_EPRI, MMOVE_DIED, MMOVE_MOVED, MMOVE_NOTHING, NOTONL, ROOMOFFSET, SPACE_POS, Amask2align, BOLT_LIM, D_CLOSED, D_LOCKED, IS_ROOM, RLOC_NOMSG, STONE, ACH_TMPL, In_endgame, IS_ALTAR, IS_DOOR, IS_OBSTRUCTED, Is_astralevel, LAVAWALL, MM_NOMSG, TEMPLE, WATER, SPINE } from './const.js';
 import { dist2, pointsOnline } from './hacklib.js';
 import { angerMonster, mfndpos, monAllowFlags, removeMonsterFromGame, resistConflict, wakeMonster } from './mon.js';
 import { breakMonsterBoulder, moveMonsterAggress } from './monmove.js';
@@ -54,6 +50,7 @@ import { randomMonsterRelocation } from './teleport.js';
 import { AMULET_OF_YENDOR, BOULDER, CLOAK_OF_MAGIC_RESISTANCE, CLOAK_OF_PROTECTION, ROBE } from './object_data.js';
 import { xdir, ydir } from './mklev.js';
 import { is_minion, monsterPerceives } from './mondata.js';
+import { body_part } from './polyself.js';
 
 const PM_DEATH = 311, PM_PESTILENCE = 312, PM_FAMINE = 313;
 const PM_ALIGNED_CLERIC = 275, PM_HIGH_CLERIC = 276;
@@ -362,7 +359,7 @@ export async function intemple(roomno: number, state: GameState = game): Promise
         else if (eerie === 1)
             await plineWithContinuation(formatFeltMessage('like you are being watched.', state));
         else if (eerie === 2)
-            await plineWithContinuation(`A shiver runs down your ${heroSpineName(state)}.`);
+            await plineWithContinuation(`A shiver runs down your ${body_part(SPINE, state)}.`);
         if (!rn2(5)) {
             const ghost = await makemonAt(287, state.u.ux, state.u.uy, MM_NOMSG);
             if (ghost) {

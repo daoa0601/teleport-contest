@@ -6,7 +6,7 @@ import { cmdq_clear, currentMulti, heroHasInvoluntaryDelay, setMulti, continueCo
 import { recorderLocalDate, recorderLocalEpochSeconds } from './calendar.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { heroLegName } from './body_parts.js';
+
 import { doStorms } from './timeout.js';
 import { rewindEngravingsForSave, engravingAt, wipeEngravingAt, readEngravingAt, wipeHeroEngraving } from './engrave.js';
 import { angerMonster, finishEnvironmentalMonsterDeath, finishMonsterHideUnder, finishMonsterKilled, finishMonsterLiquidDeath, mcalcmove, purgeDeadMonsters, restoreMonsterShape, seeNearbyMonsters, allocateMonsterMovement, monsterDistressEvents, monstersInFmonOrder, moveMonsters, resolveMonsterLiquid, monsterCanCarryObject, monsterFliesOrFloats, wakeMonstersNearWithMessages,

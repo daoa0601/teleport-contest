@@ -20,11 +20,11 @@ import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroS
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
-import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
+
 import { heroIsPunished } from './ball.js';
 import { monsterResistsEffect, reviveCorpseForHero } from './zap.js';
 import { reviveCorpseImmediately } from './do.js';
-import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK } from './const.js';
+import { ACH_TUNE, A_CON, A_NONE, A_STR, A_WIS, ALTAR, AM_SANCTUM, AM_SHRINE, Align2amask, Amask2align, BOLT_LIM, DISSOLVED, EXT_ENCUMBER, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HUNGRY, HVY_ENCUMBER, IS_OBSTRUCTED, Is_astralevel, LUCKMAX, LUCKMIN, Luck, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_REFL, MAXULEV, MM_NOMSG, P_BROAD_SWORD, P_LONG_SWORD, PARANOID_CONFIRM, PARANOID_PRAY, PLNMSG_OBJ_GLOWS, ROOM, SCORR, SDOOR, STRAT_APPEARMSG, TT_BURIEDBALL, TT_LAVA, Upolyd, W_SADDLE, WEAK, STOMACH, EYE, FOOT } from './const.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { encumber_msg } from './pickup.js';
 import { finishHeroDeath, finishLivingGame } from './end.js';
@@ -50,11 +50,7 @@ import { makemonNear } from './mklev.js';
 import { mkobj, mksobj, blessObjectState, curseObject, uncurseObjectState, objectQuantity, placeCreatedObject} from './mkobj.js';
 import { MONSTER_ALIGNMENT, MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_DIFFICULTY, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { displayColorName, monsterName } from './do_name.js';
-import {
-    monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
-    monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
-    monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies,
-} from './mondata.js';
+import { monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance, monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, heroResistsStoning, touchPetrifies, eyecount } from './mondata.js';
 import { wakeMonstersNearWithMessages, finishHeroMonsterKill, isRider } from './mon.js';
 import type { HeroMonsterKillOptions } from './mon.js';
 import { makeMonsterFlee } from './monmove.js';
@@ -64,7 +60,7 @@ import { makePlural, withIndefiniteArticle, rndClass, objectName, observeObjectF
 import { isWeaponTool, isBimanualObject } from './object_properties.js';
 import { learnObjectType, observeObject, recordObjectEncounter } from './o_init.js';
 import { deleteObject } from './shk.js';
-import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm } from './polyself.js';
+import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHeroToHumanForm, body_part, mbodypart, heroSpecies } from './polyself.js';
 import type { PropertyName } from './property_types.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty, wornObjectGrantsProperty } from './properties.js';
 import { punishHero, unpunishHero } from './read.js';
@@ -777,7 +773,7 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         return;
     case Trouble.STARVING:
     case Trouble.HUNGRY:
-        await pline(`Your ${heroStomachName(state)} feels content.`);
+        await pline(`Your ${body_part(STOMACH, state)} feels content.`);
         await init_uhunger(state, pline);
         state.context.botl = true;
         return;
@@ -863,8 +859,8 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
         // when reporting that the eyes recover alongside cured deafness.
         if (heroIsBlinded(state)) {
             state.context.botl = true;
-            const singleEye = heroEyeCount(state) === 1;
-            const eyes = singleEye ? heroEyeName(state) : makePlural(heroEyeName(state));
+            const singleEye = eyecount(heroSpecies(state)) === 1;
+            const eyes = singleEye ? body_part(EYE, state) : makePlural(body_part(EYE, state));
             message = `Your ${eyes} feel${singleEye ? 's' : ''} better`;
             hero.ucreamed = 0;
             await makeBlinded(0, { state, talk: false });
@@ -1320,10 +1316,10 @@ export async function announceDivineGift(description: string): Promise<void> {
         if (!monster) throw new Error('A swallowed hero must have a swallowing monster');
         const name = monsterName(monster);
         const owner = /s$/.test(name) ? `${name}'` : `${name}'s`;
-        const stomach = monsterStomachName(monster.mnum);
+        const stomach = mbodypart(monster.mnum, STOMACH);
         await pline(`${description} drops into ${owner} ${stomach}.`);
     } else {
-        await pline(`${description} ${heroIsBlind(game) ? 'lands' : 'appears'} ${game.u.levitating ? 'beneath' : 'at'} your ${makePlural(heroFootName())}!`);
+        await pline(`${description} ${heroIsBlind(game) ? 'lands' : 'appears'} ${game.u.levitating ? 'beneath' : 'at'} your ${makePlural(body_part(FOOT))}!`);
     }
 }
 
@@ -1837,9 +1833,9 @@ async function rewardOffering(value: number): Promise<void> {
         changeHeroLuck(increase);
         hero.uluck = Math.max(0, hero.uluck ?? 0);
         if (hero.uluck !== previous) {
-            const feet = makePlural(heroFootName());
+            const feet = makePlural(body_part(FOOT));
             await pline(heroIsBlind(game)
-                ? `You think something brushed your ${heroFootName()}.`
+                ? `You think something brushed your ${body_part(FOOT)}.`
                 : hallucinating ? `You see crabgrass at your ${feet}.  A funny thing in a dungeon.`
                     : `You glimpse a four-leaf clover at your ${feet}.`);
         }

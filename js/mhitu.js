@@ -7,7 +7,7 @@ import { formatFeltMessage, formatHeardMessage } from './hero_speech.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { recordRandom } from './monster_action_types.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DISN, AD_DISE, AD_DGST, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SPC1, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPEL, AD_SPC2, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP } from './monster_attack_types.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS, DISMOUNT_ENGULFED, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, IS_WATERWALL, KILLED_BY, KILLED_BY_AN, LARGEST_INT, M_AP_NOTHING, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_FIRE, M_SEEN_MAGR, NEED_HTH_WEAPON, NEED_WEAPON, PIT, QBUFSZ, RLOC_MSG, RLOC_NOMSG, SICK_NONVOMITABLE, SPIKED_PIT, STONING, BOLT_LIM, TT_WEB, Upolyd, W_ARMH, WATER, W_ACCESSORY, W_AMUL, W_ARMOR, W_WEP, AKLYS_LIM, P_AXE, P_DAGGER, P_LANCE, P_PICK_AXE, P_POLEARMS, P_SABER, P_SHORT_SWORD, P_WHIP, M_AP_OBJECT, is_pit, HAND, HAIR } from './const.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { canSpotMonster, canSeeMonster, flush_screen, map_invisible, monsterVisible, newsym, senseWithTelepathy, shieldeff, swallowed } from './display.js';
@@ -35,7 +35,7 @@ import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
 import { adjustAttribute, adjustHeroAlignment, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByElement } from './zap.js';
-import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls } from './polyself.js';
+import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls, body_part } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';
 import { completeMonsterOffensiveAction, completeMovedMonsterAction, presentMonsterPostMove, requirePerceivedHero, setMonsterApparentHeroPosition } from './monmove.js';
 import { attackHeroWithRangedWeapon, resolveMonsterBreathAtHero, resolveMonsterSpitAtHero } from './mthrowu.js';
@@ -61,7 +61,6 @@ import { heroHasConflict } from './hero_conflict.js';
 import { woundHeroLegs } from './do.js';
 import { staggerVerb } from './dothrow.js';
 import { unplaceBallAndChain, moveSwallowedBallAndChain, placeBallAndChain } from './ball.js';
-import { heroHairName, heroHandName } from './body_parts.js';
 import { currency } from './invent.js';
 import { gainExperienceLevel, loseHeroExperience } from './exper.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay, mon_reflects } from './muse.js';
@@ -80,7 +79,6 @@ import { ceilingName } from './dungeon.js';
 import { carriedObjectOwner } from './shk.js';
 import { endObjectBurn } from './timeout.js';
 import { releaseAllMonsterLeashes } from './apply.js';
-import { heroHasEyes } from './body_parts.js';
 import { dismountHero } from './steed.js';
 import { encumber_msg } from './pickup.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, propertyTimeout, removeIntrinsicProperty, setPropertyTimeout } from './properties.js';
@@ -2411,7 +2409,7 @@ async function snuffEngulfedLights(state, publish) {
 }
 // C mondata.c:can_blnd(AT_ENGL). Cancellation and light resistance do not help.
 function engulfCanBlindHero(state) {
-    return heroHasEyes(state) && !blindfolded(state)
+    return monsterHasEyes(heroSpecies(state)) && !blindfolded(state)
         && !heroIsUnaware(state) && !state.u.ucreamed;
 }
 // C mhitu.c:gulpmu(): the monster swallows the hero, or damages one it has
@@ -3111,7 +3109,7 @@ async function exchangeAdornmentRings(context) {
                 return triedGloves;
         }
         else {
-            await publish(`${who} puts the ${objectName(ring, state)} on your ${slot === 'uright' ? 'right' : 'left'} ${heroHandName(state)}.`);
+            await publish(`${who} puts the ${objectName(ring, state)} on your ${slot === 'uright' ? 'right' : 'left'} ${body_part(HAND, state)}.`);
         }
         await wearHeroAccessory(ring, slot, state);
         await publish(`${ring.invlet || '?'} - ${await inventoryItemDescription(ring)}.`);
@@ -3188,7 +3186,7 @@ async function mayberem(context, armor, name) {
                 : armor === state.uarmf ? 'let me rub your feet'
                     : armor === state.uarmg ? "they're too clumsy"
                         : armor === state.uarmu ? 'let me massage you'
-                            : `let me run my fingers through your ${heroHairName(state)}`;
+                            : `let me run my fingers through your ${body_part(HAIR, state)}`;
         await publish(`"Take off your ${name}; ${explanation}."`);
     }
     await removeWornHeroItem(armor, state);

@@ -3,9 +3,8 @@ import { objectBaseWeight, objectDelay, objectBaseDirection, objectSkill, BELL_O
 import { requirePlayingGame, game, requireLiveGame } from './gstate.js';
 import { commandResultFailed, isok, promptDirection, cmdq_add_key, cmdq_pop, yn_function } from './cmd.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir } from './const.js';
+import { ACH_INVK, ACH_NOVL, A_INT, A_STR, A_WIS, CLOUD, CMDQ_KEY, CQ_REPEAT, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, DRAWBRIDGE_UP, EXPL_FIERY, EXPL_FROSTY, IS_STWALL, IS_TREE, Is_waterlevel, LAVAPOOL, MENU_TRADITIONAL, MOAT, NHW_MENU, NO_MINVENT, PICK_NONE, PICK_ONE, P_ATTACK_SPELL, P_BASIC, P_CLERIC_SPELL, P_DIVINATION_SPELL, P_ENCHANTMENT_SPELL, P_ESCAPE_SPELL, P_EXPERT, P_HEALING_SPELL, P_ISRESTRICTED, P_MATTER_SPELL, P_SKILLED, P_UNSKILLED, POOL, SPACE_POS, ZAP_POS, xdir, ydir, FACE, SPINE, EYE, HEAD } from './const.js';
 import { exerciseWisdom, currentAttribute, exerciseAttribute, poisonHeroStrengthAndHp } from './attrib.js';
-import { heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroSpineName } from './body_parts.js';
 import { impossible } from './diagnostics.js';
 import { makeFamiliar } from './familiar.js';
 import { zapHeroWithObject, paintRayCell, turnCarriedObjects, adjustSpellDamage, applyWandEffect, hitMonsterWithRay } from './zap.js';
@@ -24,7 +23,7 @@ import { healHero, heroIsSick, makeBlinded, makeConfused, makeStunned, applyPoti
 import { formatFeltMessage, heroCanChant, publishHeardMessage } from './hero_speech.js';
 import { morehungry } from './eat.js';
 import { wakeMonster, monstersInFmonOrder, finishHeroMonsterKillOutcome, } from './mon.js';
-import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly } from './mondata.js';
+import { monsterHasShockResistance, monsterEnfolds, monsterIsAnimal, monsterIsUndead, monsterIsVampireShifter, monsterIsWhirly, eyecount } from './mondata.js';
 import { MONSTER_ALIGNMENT, MONSTER_NAME, requireMonsterData } from './monster_data.js';
 import { definiteObjectAction, makePlural, withIndefiniteArticle } from './objnam.js';
 import { objectIsMetallic } from './object_properties.js';
@@ -60,6 +59,7 @@ import { showInventoryWindow } from './windows.js';
 import { heroHasFreeHand } from './engrave.js';
 import { applyScrollEffects } from './read.js';
 import { loseHeroHp, nomul, heroIsOnStairs, isInvocationPosition, shouldShowGetposTip, showGetposTip, exceedsActionCapacity, } from './hack.js';
+import { body_part, heroSpecies } from './polyself.js';
 export function knownSpell(otyp, state = game) {
     const spell = (state.spells || []).find(spell => spell.otyp === otyp);
     if (!spell)
@@ -158,7 +158,7 @@ export async function cursedBook(book, { state = game } = {}) {
                 await pline('The book radiates explosive energy, but you are unharmed!');
             }
             else {
-                await pline(`As you read the book, it radiates explosive energy in your ${heroFaceName(state)}!`);
+                await pline(`As you read the book, it radiates explosive energy in your ${body_part(FACE, state)}!`);
                 const damage = 2 * rnd(10) + 5;
                 await loseHeroHp(state.u.halfPhysicalDamage ? Math.ceil(damage / 2) : damage, 'exploding rune', { state });
             }
@@ -224,7 +224,7 @@ async function invokeBook(book, state) {
         return;
     }
     if (!state.u.uhave.bell || !state.u.uhave.menorah) {
-        await pline(`A chill runs down your ${heroSpineName(state)}.`);
+        await pline(`A chill runs down your ${body_part(SPINE, state)}.`);
         if (!state.u.uhave.bell)
             await publishHeardMessage('a faint chime...', pline, state);
         if (!state.u.uhave.menorah)
@@ -394,7 +394,7 @@ export async function studyBook(book, { state = game } = {}) {
         if (study.delay && study.book === book)
             drowsiness -= rnd(level);
         if (drowsiness > 0) {
-            const eyes = heroEyeCount(state) > 1 ? makePlural(heroEyeName(state)) : heroEyeName(state);
+            const eyes = eyecount(heroSpecies(state)) > 1 ? makePlural(body_part(EYE, state)) : body_part(EYE, state);
             await pline(`This book is so dull that you can't keep your ${eyes} open.`);
             await putHeroToSleep(drowsiness + rnd(2 * level), { state });
             return outcome(true, state);
@@ -624,7 +624,7 @@ async function applySpellEffect(source, skill, atSelf, state) {
             break;
         case SPE_CLAIRVOYANCE:
             if (state.uarmh?.otyp === CORNUTHAUM && state.urole.key !== 'wizard')
-                await plineWithContinuation(`You sense a pointy hat on top of your ${heroHeadName(state)}.`);
+                await plineWithContinuation(`You sense a pointy hat on top of your ${body_part(HEAD, state)}.`);
             else {
                 source.blessed = skilled;
                 await mapVicinity(source, { state });

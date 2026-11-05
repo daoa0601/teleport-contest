@@ -11,7 +11,7 @@ import { adjustMonsterSpeed, monsterSpeedMessage, setMonsterPermanentInvisibilit
 import { DISCARDED_CALL_LOG } from './monster_action_types.js';
 import { isAccessibleAt, canMonsterHideUnderObjectAt, interruptOccupationForMonster, makeMonsterFlee, monsterCanBreakBoulder, monsterHasKey, monsterIsScaredAt, monsterSightingBeforeAction, monsterCanFog, requirePerceivedHero, presentMonsterAction, runMonsterAction, runMonsterEveryturnEffects, monsterWantsFloorObject, setMonsterApparentHeroPosition } from './monmove.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
-import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, } from './const.js';
+import { ALLOW_ALL, ALLOW_BARS, ALLOW_DIG, ALLOW_M, ALLOW_MDISP, ALLOW_ROCK, ALLOW_SANCT, ALLOW_SSM, ALLOW_TM, ALLOW_TRAPS, ALLOW_U, ALLOW_WALL, A_CHA, BUSTDOOR, COLNO, D_BROKEN, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_STWALL, IS_TREE, LAVAWALL, NOGARLIC, NOTONL, NO_WEAPON_WANTED, OPENDOOR, RLOC_MSG, RLOC_NOMSG, ROWNO, SHOPBASE, TELEP_TRAP, TEMPLE, TRAPNUM, UNLOCKDOOR, W_ARMS, W_NONDIGGABLE, W_NONPASSWALL, WT_TOOMUCH_DIAGONAL, FOUNTAIN, G_GENOD, MON_FLOOR, MSLOW, STRAT_WAITFORU, WATER, COULD_SEE, IN_SIGHT, M_AP_MONSTER, M_AP_NOTHING, MGIVENNAME, M_AP_TYPE, MIGR_APPROX_XY, MIGR_RANDOM, MON_LIMBO, PLNMSG_HIDE_UNDER, M_AP_FURNITURE, M_AP_OBJECT, IS_WALL, SDOOR, TREE, LARGEST_INT, MAX_CARR_CAP, WT_HUMAN, ROOM, STRAT_WAITMASK, Is_rogue_level, is_pit, NORMAL_SPEED, ACH_MEDU, BOLT_LIM, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_INIT, CORPSTAT_MALE, DISMOUNT_GENERIC, DOOR, G_NOCORPSE, GPCOORDS_MAP, GPCOORDS_NONE, In_endgame, MFAST, MON_DETACH, NON_PM, W_ARM, W_ARMC, W_ARMG, W_ARMU, engulfing_u, ismnum, thats_enough_tries, MON_OFFMAP, STOMACH } from './const.js';
 import { isok } from './cmd.js';
 import { dryFountainAt } from './fountain.js';
 import { canSeeMonster, canSpotMonster, newsym, canSenseMonster, unmap_invisible, swallowed, see_monsters } from './display.js';
@@ -41,7 +41,7 @@ import { beginMonsterMealMimicry, finishMonsterEating, monsterCouldReachItem } f
 import { splitObjectStack, mkcorpstat, mkgold, mksobj, mkobj, discardMonsterInventory, unlinkMonsterObject, unlinkObject, addObjectToContainer, objectWeight, placeObject, placeCreatedObject, meldNearbyFloorGlobs } from './mkobj.js';
 import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass, body_part } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
 import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
@@ -71,7 +71,6 @@ import { displayMessageWindow } from './tty_topline.js';
 import { markQuestLeaderDead, markQuestNemesisDead, isQuestLeader } from './quest.js';
 import { aggravateMonsters, monsterCarriesSpecialObject, pickNastyShape, wizardDeadOrGone } from './wizard.js';
 import { veganCorpse } from './food_traits.js';
-import { heroStomachName } from './body_parts.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
@@ -2375,7 +2374,7 @@ export async function resolveMonsterDeathExplosion(monster, x, y, explosion, { s
         });
     }
     if ('kind' in swallower) {
-        await publish(`There is an explosion in your ${heroStomachName(state)}!`);
+        await publish(`There is an explosion in your ${body_part(STOMACH, state)}!`);
         const physicalDamage = state.u.halfPhysicalDamage
             ? Math.trunc((damage + 1) / 2) : damage;
         const killer = `${possessiveName(monsterTypeName(monster.mnum, !!monster.female))} explosion`;

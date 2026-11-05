@@ -25,21 +25,13 @@ import type { MessagePublisher } from './pline.js';
 import { MONSTER_ATTACKS, MONSTER_NAME, MONSTER_MOVE } from './monster_data.js';
 import { monsterHasMapPosition, monsterAtPosition, dismountHero, stuckSteed } from './steed.js';
 import { AD_POLY } from './monster_attack_types.js';
-import {
-    A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR,
-    IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM,
-    SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK,
-    THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley,
-    Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED,
-    UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT,
-    VIBRATING_SQUARE, STAIRS,
-} from './const.js';
+import { A_DEX, DB_FLOOR, DB_UNDER, DRAWBRIDGE_UP, ECMD_FAIL, ECMD_OK, ECMD_TIME, GETOBJ_SUGGEST, HOLE, IS_ALTAR, IS_SINK, LOST_DROPPED, MENU_COMBINATION, MENU_FULL, MENU_TRADITIONAL, PARANOID_AUTOALL, RLOC_NOMSG, ROOM, SORTLOOT_INVLET, TRAPDOOR, WATER, ALTAR, AM_NONE, COLNO, Align2amask, FOUNTAIN, Is_waterlevel, ROWNO, SINK, THRONE, W_ARMOR, W_ACCESSORY, W_SADDLE, DISMOUNT_FELL, MAGIC_PORTAL, In_endgame, In_quest, In_hell, Is_valley, Is_airlevel, Is_astralevel, ACH_ENDG, ACH_ASTR, Is_rogue_level, Is_knox_level, UTOTYPE_DEFERRED, UTOTYPE_ATSTAIRS, UTOTYPE_FALLING, UTOTYPE_PORTAL, UTOTYPE_RMPORTAL, TT_BURIEDBALL, PIT, SPIKED_PIT, TT_PIT, VIBRATING_SQUARE, STAIRS, HAND, FACE, LEG, STOMACH } from './const.js';
 import { paranoidQuery, commandResultCancelled, commandResultFailed, resetOccupations } from './cmd.js';
 import { makeBlinded } from './potion.js';
 import { gulp_blnd_check,
     holdingMonsterName,
 } from './mhitu.js';
-import { heroFaceName, heroHandName, heroLegName, monsterStomachName } from './body_parts.js';
+
 import type { GameObject } from './object_types.js';
 import { BOULDER, CORPSE, CRYSKNIFE, EGG, ENORMOUS_MEATBALL, GLOB_OF_GREEN_SLIME, LEASH, LOADSTONE, MEATBALL, MEAT_RING, MEAT_STICK, TIN, WORM_TOOTH } from './object_data.js';
 import { makePlural, withIndefiniteArticle, ownedObjectName, verbForSubject, objectCombatName, objectDescription, objectQuestion, observeObjectForNaming, simpleObjectNameWithArticle, objectMonsterName, ownedObjectAction, definiteObjectAction } from './objnam.js';
@@ -66,7 +58,7 @@ import {
     isRider, zombieForm,
 } from './mon.js';
 import { formatHeardMessage, publishHeardMessage } from './hero_speech.js';
-import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from './polyself.js';
+import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed, body_part, mbodypart } from './polyself.js';
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
@@ -610,7 +602,7 @@ export async function canLetGo(object: GameObject, verb = '', state: GameState =
     if (isWeldedPrimary(object, state)) {
         object.bknown = true;
         if (verb) {
-            let hand = heroHandName(state);
+            let hand = body_part(HAND, state);
             if (isBimanualObject(object)) hand = makePlural(hand);
             await plineWithContinuation(
                 `You cannot ${verb} something welded to your ${hand}.`, { noRepeat: true },
@@ -630,7 +622,7 @@ export async function canLetGo(object: GameObject, verb = '', state: GameState =
         return false;
     }
     if (object.otyp === LEASH && object.leashmon) {
-        if (verb) await plineWithContinuation(`The leash is tied around your ${heroHandName(state)}.`);
+        if (verb) await plineWithContinuation(`The leash is tied around your ${body_part(HAND, state)}.`);
         return false;
     }
     if ((object.owornmask ?? 0) & W_SADDLE) {
@@ -672,7 +664,7 @@ export async function dropHeroObject(
             const swallowerName = holdingMonsterName(hero.ustuck, state);
             const into = monsterDigests(hero.ustuck)
                 ? `${possessiveName(swallowerName)} ${
-                    monsterStomachName(hero.ustuck.mnum)}`
+                    mbodypart(hero.ustuck.mnum, STOMACH)}`
                 : swallowerName;
             // C drop() uses yobjnam() for unpaid objects and doname() otherwise.
             observeObjectForNaming(object, { state });
@@ -921,7 +913,7 @@ async function betterNotTryToDropThat(object: GameObject, state: GameState): Pro
     // C paranoid_ynq(TRUE, buf, FALSE) != 'y'; the source prompt is
     // "Drop the %s corpse without %s protection on?" with body_part(HAND)
     const confirmed = await paranoidQuery(true,
-        `Drop the ${species} corpse without ${heroHandName(state)} protection on?`);
+        `Drop the ${species} corpse without ${body_part(HAND, state)} protection on?`);
     return !confirmed;
 }
 
@@ -2274,7 +2266,7 @@ export async function continueWipingFace(occupation: WipeFaceOccupation, state: 
         }
         state._occupation = null;
     } else if ((state.u?.ucreamed ?? 0) === 0) {
-        await pline(`Your ${heroFaceName(state)} feels clean now.`);
+        await pline(`Your ${body_part(FACE, state)} feels clean now.`);
         state._occupation = null;
     } else if (occupation.remaining <= 0) {
         occupation.remaining = 1;
@@ -2290,12 +2282,12 @@ export async function dowipe(state: GameState = game): Promise<void> {
         state._occupation = {
             key: 'wipe-face',
             remaining: 1,
-            text: `wiping off your ${heroFaceName(state)}`,
+            text: `wiping off your ${body_part(FACE, state)}`,
         };
         state.context.move = 1;
         return;
     }
-    await pline(`Your ${heroFaceName(state)} is already clean.`);
+    await pline(`Your ${body_part(FACE, state)} is already clean.`);
     state.context.move = 1;
 }
 
@@ -2323,7 +2315,7 @@ export async function healHeroLegs(state = game, {
 
     if (!hero.usteed && cause !== 'petrification') {
         const both = hero._woundedLegSide === 'both';
-        const leg = heroLegName(state);
+        const leg = body_part(LEG, state);
         await publish(`Your ${both ? makePlural(leg) : leg} ${both ? 'feel' : 'feels'} better.`);
     }
     hero._woundedLegTurns = 0;

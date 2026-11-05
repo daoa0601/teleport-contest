@@ -22,19 +22,9 @@ import {
 import { getmattk } from './attack_selection.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
-import { heroHandName, heroLegName, heroStomachName, monsterLegName } from './body_parts.js';
+
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import {
-    A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR,
-    DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED,
-    IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE,
-    M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD,
-    M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED,
-    MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE,
-    P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG,
-    SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG,
-    W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, W_ARMS,
-} from './const.js';
+import { A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, W_ARMS, HAND, LEG, STOMACH } from './const.js';
 import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
 import type { MonsterAttack } from './data_types.js';
@@ -137,7 +127,7 @@ import { petFoodNutrition } from './pet_eating.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import type { HeroPoisonOptions } from './attrib.js';
-import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm } from './polyself.js';
+import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm, body_part, mbodypart } from './polyself.js';
 import {
     cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused,
     makeStunned, setHeroSlimingTimeout, splitMonster,
@@ -664,7 +654,7 @@ export async function do_attack(monster: Monster, x: number, y: number, {
                 } else if (!monsterHasNoHands(heroSpecies(game)) && !monsterIsVerySmall(heroSpecies(game))) {
                     const action = game.urole?.key === 'monk' ? 'striking' : 'bashing';
                     const covered = game.uarmg || game.u.uarmg ? 'gloved' : 'bare';
-                    await pline(`You begin ${action} monsters with your ${covered} ${makePlural(heroHandName(game))}.`);
+                    await pline(`You begin ${action} monsters with your ${covered} ${makePlural(body_part(HAND, game))}.`);
                 }
             }
         }
@@ -2678,7 +2668,7 @@ export async function mhitmAdLegs(call: MhitmAdLegsCall): Promise<MhitmAdStatusR
         /* mhitu: a xan pricks the hero's leg */
         const { state, attacker, publish, random, rollOne, calls } = call.context;
         const side = recordRandom(random, calls, 2) ? 'right' : 'left';
-        const leg = heroLegName(state);
+        const leg = body_part(LEG, state);
         const subject = monsterName(attacker, { capitalized: true });
         let damage = call.context.damage;
         // This case is too obvious to ignore, but Nethack is not in
@@ -3740,7 +3730,7 @@ async function wrapMonster(monster: Monster, context: HeroNaturalEffectContext):
     if (state.flags.verbose) {
         const name = monsterName(monster, { state });
         const targetName = coils && !tailMiss ? name
-            : `${possessiveName(name)} ${tailMiss ? 'tail' : monsterLegName(monster.mnum)}`;
+            : `${possessiveName(name)} ${tailMiss ? 'tail' : mbodypart(monster.mnum, LEG)}`;
         await publish(`You brush against ${targetName}.`);
     }
     return 0;
@@ -3800,7 +3790,7 @@ export async function resolveMonsterWrapping(
     if (hero.ustuck !== monster) {
         attack.damage = 0;
         if (state.flags.verbose) {
-            await publish(`${monsterName(monster, { state, capitalized: true })} brushes against ${coils ? 'you' : `your ${heroLegName(state)}`}.`);
+            await publish(`${monsterName(monster, { state, capitalized: true })} brushes against ${coils ? 'you' : `your ${body_part(LEG, state)}`}.`);
         }
         return;
     }
@@ -5012,7 +5002,7 @@ async function digestDefender(defender: Monster, species: number, state: Playing
         const death = await finishHeroMonsterKillOutcome(defender, defender.mx, defender.my, { noCorpse: true, publish });
         if (death.heroDied) return { nativeResult: M_ATTK_DEF_DIED, heroDied: true };
         if (!death.killed) {
-            await publish(`You hurriedly regurgitate the sizzling in your ${heroStomachName(state)}.`);
+            await publish(`You hurriedly regurgitate the sizzling in your ${body_part(STOMACH, state)}.`);
             return { nativeResult: M_ATTK_DEF_DIED, heroDied: false };
         }
         const [weight, nutrition] = requireMonsterData(MONSTER_BODY_META, species);
@@ -6617,7 +6607,7 @@ export async function stumbleOntoMimic(
 export async function confuseTouchedMonster(monster: Monster, { state = game }: { state?: GameState } = {}) {
     requirePlayingGame(state);
     if (!state.u.umconf || monster.mconf) return;
-    const hands = makePlural(heroHandName(state));
+    const hands = makePlural(body_part(HAND, state));
     const unseen = heroIsBlind(state)
         || heroIsInvisible(state) && !propertyIsActive('seeInvisible', state);
     let message;

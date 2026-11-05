@@ -11,11 +11,10 @@ import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeE
 import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
-import { heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterHandName, monsterStomachName, } from './body_parts.js';
 import { bot } from './botl.js';
 import { dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel, objectNoLongerHeld, } from './do.js';
 import { commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti, isok, paranoidQuery, confusePromptDirection, promptDirection, readDirectionKey, } from './cmd.js';
-import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL, HAND, FACE, FINGER, LEG, FOOT, HEAD, STOMACH, NOSE } from './const.js';
 import { use_container, pickupFloorObject } from './pickup.js';
 import { useCrystalBall } from './crystal_ball.js';
 import { convertSecretDoor, findit, openit } from './detect.js';
@@ -44,7 +43,7 @@ import { heroIsInvisible } from './hero_invisibility.js';
 import { stumbleOntoMimic } from './uhitm.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import { heroIsUnaware, blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, setHeroBlindnessTimeout, } from './senses.js';
-import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands } from './polyself.js';
+import { heroCanBlow, heroIsBreathless, heroPassesWalls, heroPolyGender, heroSpecies, heroHasNoHands, body_part, mbodypart } from './polyself.js';
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import { dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification, resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject, } from './trap.js';
@@ -120,7 +119,7 @@ export async function useCamera(object, { state = game } = {}) {
         const holder = state.u.ustuck;
         if (!holder)
             throw new Error('Swallowed camera use requires a holder');
-        await pline(`You take a picture of ${possessiveName(monsterName(holder))} ${monsterStomachName(holder.mnum)}.`);
+        await pline(`You take a picture of ${possessiveName(monsterName(holder))} ${mbodypart(holder.mnum, STOMACH)}.`);
     }
     else if (direction.dz) {
         await pline(`You take a picture of the ${direction.dz > 0
@@ -136,10 +135,10 @@ export async function useCamera(object, { state = game } = {}) {
 export async function useTowel(object, { state = game } = {}) {
     requireLiveGame(state);
     const result = { spentTime: false, heroDied: false, object };
-    const hands = makePlural(heroHandName(state));
+    const hands = makePlural(body_part(HAND, state));
     const eyewear = state.ublindf || state.u.ublindf;
     if (!heroHasFreeHand(state)) {
-        await pline(`You have no free ${heroHandName(state)}!`);
+        await pline(`You have no free ${body_part(HAND, state)}!`);
         return result;
     }
     if (object === eyewear) {
@@ -157,7 +156,7 @@ export async function useTowel(object, { state = game } = {}) {
             if (!eyewear) {
                 const old = state.u.ucreamed || 0;
                 state.u.ucreamed = old + rn1(10, 3);
-                await pline(`Yecch!  Your ${heroFaceName(state)} ${old ? 'has more' : 'now has'} gunk on it!`);
+                await pline(`Yecch!  Your ${body_part(FACE, state)} ${old ? 'has more' : 'now has'} gunk on it!`);
                 await makeBlinded((state.u.blindTurns || 0) + state.u.ucreamed - old, { state });
             }
             else {
@@ -197,10 +196,10 @@ export async function useTowel(object, { state = game } = {}) {
             }
         }
         else
-            await pline(`Your ${heroFaceName(state)} feels clean now.`);
+            await pline(`Your ${body_part(FACE, state)} feels clean now.`);
     }
     else {
-        await pline(`Your ${heroFaceName(state)} and ${hands} are already clean.`);
+        await pline(`Your ${body_part(FACE, state)} and ${hands} are already clean.`);
         return result;
     }
     result.spentTime = true;
@@ -224,7 +223,7 @@ export async function useStethoscope(object) {
         return false;
     }
     if (!heroHasFreeHand(game)) {
-        await pline(`You have no free ${heroHandName(game)}.`);
+        await pline(`You have no free ${body_part(HAND, game)}.`);
         return false;
     }
     const direction = await promptDirection();
@@ -443,7 +442,7 @@ async function blowOrdinaryWhistle(object, state) {
         return;
     }
     await plineWithContinuation(heroIsDeaf(state)
-        ? formatFeltMessage(`rushing air tickle your ${heroNoseName(state)}.`, state)
+        ? formatFeltMessage(`rushing air tickle your ${body_part(NOSE, state)}.`, state)
         : `You produce a ${object.cursed ? 'shrill' : 'high'} whistling sound.`);
     await callNearbyPets(state);
     if (object.cursed)
@@ -837,7 +836,7 @@ export async function useMirror(object, { state = game } = {}) {
         if (canSeeMirror) {
             if (!hero.ustuck)
                 throw new Error('A swallowed hero has no engulfer.');
-            await pline(`You reflect ${possessiveName(monsterName(hero.ustuck))} ${monsterStomachName(hero.ustuck.mnum)}.`);
+            await pline(`You reflect ${possessiveName(monsterName(hero.ustuck))} ${mbodypart(hero.ustuck.mnum, STOMACH)}.`);
         }
         return result;
     }
@@ -888,7 +887,7 @@ async function seeOwnReflection(mirror, visible, state) {
     const species = heroSpecies(state);
     const hallucinating = heroIsHallucinating(state);
     if (!visible) {
-        await pline(`You can't see your ${heroBeautyDescription(state)} ${heroFaceName(state)}.`);
+        await pline(`You can't see your ${heroBeautyDescription(state)} ${body_part(FACE, state)}.`);
     }
     else if (species === FLOATING_EYE) {
         if (heroHasFreeAction(state)) {
@@ -1205,7 +1204,7 @@ export async function useLamp(object, { state = game } = {}) {
     if (object.cursed && rn2(2) === 0) {
         if ([OIL_LAMP, MAGIC_LAMP].includes(object.otyp) && rn2(3) === 0) {
             const gloves = state.uarmg || state.u.uarmg;
-            const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state));
+            const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(body_part(FINGER, state));
             await plineWithContinuation(`The lamp spills and covers your ${fingers} with oil.`);
             setSlipperyHands((state.u.glibTurns ?? 0) + d(2, 10), state);
         }
@@ -1551,8 +1550,8 @@ async function jumpAdmission(magic, state) {
         if (hero.usteed)
             return { message: `${monsterName(hero.usteed, { capitalized: true })} is in no shape for jumping.` };
         const both = hero._woundedLegSide === 'both';
-        const leg = both ? makePlural(heroLegName(state))
-            : `${hero._woundedLegSide} ${heroLegName(state)}`;
+        const leg = both ? makePlural(body_part(LEG, state))
+            : `${hero._woundedLegSide} ${body_part(LEG, state)}`;
         return { message: `Your ${leg} ${both ? 'are' : 'is'} in no shape for jumping.` };
     }
     if (hero.usteed && hero.utrap)
@@ -1593,7 +1592,7 @@ async function escapeJumpTrap(target, state) {
             break;
         case TT_BURIEDBALL:
         case TT_INFLOOR:
-            await plineWithContinuation(`You strain your ${makePlural(heroLegName(state))}, but you're still ${hero.utraptype === TT_INFLOOR ? 'stuck in the floor' : 'attached to the buried ball'}.`);
+            await plineWithContinuation(`You strain your ${makePlural(body_part(LEG, state))}, but you're still ${hero.utraptype === TT_INFLOOR ? 'stuck in the floor' : 'attached to the buried ball'}.`);
             await woundHeroLegs('left', rn1(10, 11), state);
             await woundHeroLegs('right', rn1(10, 11), state);
             return false;
@@ -2057,7 +2056,7 @@ function coveringEquipment(object) {
 }
 function fingers(simple) {
     const gloves = game.uarmg;
-    return simple && gloves ? armorSimpleName(gloves, game) : makePlural(heroFingerName(game));
+    return simple && gloves ? armorSimpleName(gloves, game) : makePlural(body_part(FINGER, game));
 }
 async function dropGrease(can) {
     await pline(`${definiteObjectAction(can, 'slip')} from your ${fingers(false)}.`);
@@ -2444,7 +2443,7 @@ export async function useWhip(whip, { state = game } = {}) {
         damage = Math.max(1, damage);
         if (hero.halfPhysicalDamage)
             damage = Math.trunc((damage + 1) / 2);
-        await pline(`You hit your ${heroFootName(state)} with your bullwhip.`);
+        await pline(`You hit your ${body_part(FOOT, state)} with your bullwhip.`);
         const female = !!state.flags.female;
         const reflexive = female ? 'herself' : 'himself';
         const possessivePronoun = female ? 'her' : 'his';
@@ -2453,7 +2452,7 @@ export async function useWhip(whip, { state = game } = {}) {
     }
     else if ((propertyIsActive('fumbling', state) || heroHasSlipperyHands(state))
         && rn2(5) === 0) {
-        await pline(`The bullwhip slips out of your ${heroHandName(state)}.`);
+        await pline(`The bullwhip slips out of your ${body_part(HAND, state)}.`);
         await dropInventoryObjectAtHero(whip, { state });
     }
     else if (hero.utrap && hero.utraptype === TT_PIT) {
@@ -2552,7 +2551,7 @@ export async function useWhip(whip, { state = game } = {}) {
             // C apply.c:3156: a fumbling hero keeps hold only on !rn2(10).
             let gotWeapon = proficiency > 0
                 && (!propertyIsActive('fumbling', state) || rn2(10) === 0);
-            const hand = monsterHandName(monster.mnum);
+            const hand = mbodypart(monster.mnum, HAND);
             const hands = isBimanualObject(weapon) ? makePlural(hand) : hand;
             // C apply.c:3158: onambuf = cxname(otmp), captured before any
             // message can change the weapon's knowledge flags.
@@ -3027,18 +3026,18 @@ export async function useCreamPie(stack) {
         observeObjectForNaming(pie);
         const name = definiteName(objectName(pie));
         const target = several ? `one of ${makePlural(name)}` : name;
-        await syncPline(`You immerse your ${heroFaceName()} in ${target}.`);
+        await syncPline(`You immerse your ${body_part(FACE)} in ${target}.`);
     }
-    if (heroHasEyes(game) && !blindfolded(game)) {
+    if (monsterHasEyes(heroSpecies(game)) && !blindfolded(game)) {
         const blindIncrement = rnd(25);
         game.u.ucreamed = (game.u.ucreamed ?? 0) + blindIncrement;
         await makeBlinded((game.u.blindTurns ?? 0) + blindIncrement, { talk: false });
         const blind = heroIsBlind(game);
         if (!blind || wasBlind) {
-            await plineWithContinuation(`There's ${wasCreamed ? 'more ' : ''}sticky goop all over your ${heroFaceName()}.`);
+            await plineWithContinuation(`There's ${wasCreamed ? 'more ' : ''}sticky goop all over your ${body_part(FACE)}.`);
         }
         else {
-            await plineWithContinuation(`You can't see through all the sticky goop on your ${heroFaceName()}.`);
+            await plineWithContinuation(`You can't see through all the sticky goop on your ${body_part(FACE)}.`);
         }
     }
     await deletePie(pie);
@@ -3357,7 +3356,7 @@ export async function breakWand(wand, { state = game } = {}) {
         return { spentTime: false, heroDied: false };
     }
     if (!heroHasFreeHand(state)) {
-        await pline(`Your ${makePlural(heroHandName(state))} are occupied!`);
+        await pline(`Your ${makePlural(body_part(HAND, state))} are occupied!`);
         return { spentTime: false, heroDied: false };
     }
     // Native names the wand in the weakness denial or confirmation.
@@ -3371,7 +3370,7 @@ export async function breakWand(wand, { state = game } = {}) {
     const paranoid = !!((state.flags.paranoia_bits ?? 0) & PARANOID_BREAKWAND);
     if (!await paranoidQuery(paranoid, `Are you really sure you want to break ${name}?`))
         return { spentTime: false, heroDied: false };
-    await pline(`Raising ${name} high above your ${heroHeadName(state)}, you ${fragile ? 'snap' : 'break'} it in two!`);
+    await pline(`Raising ${name} high above your ${body_part(HEAD, state)}, you ${fragile ? 'snap' : 'break'} it in two!`);
     if (wand.unpaid) {
         await chargeUnpaidUsage(wand, { state });
         await chargeAlteredUnpaidObject(wand, 'destroy', state);
@@ -3877,7 +3876,7 @@ export async function flipCoin(coin, { state = game } = {}) {
         if ((state.u.glibTurns ?? 0) > 0 || state.u.fumbling
             || propertyIsActive('fumbling', state)
             || (dexterity < 10 && rn2(dexterity) === 0)) {
-            await plineWithContinuation(`It slips between your ${makePlural(heroFingerName(state))}.`);
+            await plineWithContinuation(`It slips between your ${makePlural(body_part(FINGER, state))}.`);
             lost = true;
         }
     }

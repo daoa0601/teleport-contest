@@ -29,17 +29,9 @@ import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js';
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
 import { artifactById } from './artifact.js';
-import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
+import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm, body_part } from './polyself.js';
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
-import {
-    GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM,
-    W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER,
-    M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel,
-    Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA,
-    TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE,
-    P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR,
-    W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG,
-} from './const.js';
+import { GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM, W_ARMC, W_ARMU, IS_SOFT, IS_ALTAR, CQ_CANNED, HOLE, PIT, SPIKED_PIT, TRAPDOOR, MM_NOMSG, M_AP_MONSTER, M_AP_TYPE, D_CLOSED, D_ISOPEN, D_LOCKED, DOOR, FIRE_TRAP, IRONBARS, IS_OBSTRUCTED, IS_STWALL, Is_airlevel, Is_waterlevel, KILLED_BY, LOST_THROWN, MAGIC_PORTAL, STONING, TREE, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_WEB, Upolyd, VIBRATING_SQUARE, W_NONPASSWALL, WT_TO_DMG, ZAP_POS, is_hole, is_pit, SHOPBASE, P_CROSSBOW, P_DAGGER, P_DART, P_EXPERT, P_KNIFE, P_SHURIKEN, P_SKILLED, P_SLING, P_SPEAR, W_QUIVER, W_WEP, W_SWAPWEP, AKLYS_LIM, RLOC_MSG, HAND, EYE, HEAD, FACE, FOOT, ARM } from './const.js';
 import {
     weaponHitValue, dryTowel, rollPhysicalWeaponDamageAgainstHero, ensureHeroSkills, skillName, weaponDescription,
 } from './weapon.js';
@@ -57,7 +49,6 @@ import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult, FinishHeroMonsterDeath, HeroMonsterKillOptions, HeroMonsterKillOutcome, HeroLiquidMonsterDeathOutcome } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { heroHandName, heroEyeCount, heroEyeName , heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';
 import type { RoleKey, RaceName } from './role.js';
 import { isQuestArtifact } from './quest.js';
 import { encumber_msg } from './pickup.js';
@@ -115,12 +106,7 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { walkPathCells } from './path_walk.js';
-import {
-    monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous,
-    monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls,
-    monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
-    formCanBecomeStoneGolem,
-} from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, eyecount } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';
@@ -607,7 +593,7 @@ async function throwCommand(
 
     if (!(game.uarmg || game.u.uarmg) && item.otyp === CORPSE
         && touchPetrifies(item.corpsenm) && !heroResistsStoning(game)) {
-        await plineWithContinuation(`You throw ${corpseName(item, { definite: true })} with your bare ${makePlural(heroHandName(game))}.`);
+        await plineWithContinuation(`You throw ${corpseName(item, { definite: true })} with your bare ${makePlural(body_part(HAND, game))}.`);
         const result = await resolveImmediatePetrification({
             state: game,
             killer: `throwing ${killerObjectName(item, game)} bare-handed`,
@@ -1436,8 +1422,8 @@ async function applyPotionBreakEffect(
         else if (profile.hasEyes) {
             // C dothrow.c breakobj(): the eye name follows the current form's
             // anatomy, pluralized by eyecount() and tensed by vtense().
-            const eye = heroEyeName(state);
-            const eyes = heroEyeCount(state) === 1 ? eye : makePlural(eye);
+            const eye = body_part(EYE, state);
+            const eyes = eyecount(heroSpecies(state)) === 1 ? eye : makePlural(eye);
             await publish(`Your ${eyes} ${verbForSubject(eyes, 'water')}.`);
         }
     }
@@ -2206,7 +2192,7 @@ export async function tossObjectUp(object: GameObject, {
     }
 
     const action = !hasCeiling ? 'flies up into' : hitsRoof ? 'hits' : 'almost hits';
-    await publish(`${await fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${heroHeadName(state)}.`);
+    await publish(`${await fallingObjectSubject(object, state)} ${action} the ${ceiling}, then falls back on top of your ${body_part(HEAD, state)}.`);
 
     if (object.oclass === POTION_CLASS) {
         await hitHeroWithThrownPotion(object, { state, publish, random, rollOne });
@@ -2222,7 +2208,7 @@ export async function tossObjectUp(object: GameObject, {
         if (object.otyp === EGG && petrifier && !heroResistsStoning(state)
             && await petrifyFromFallingObject(remaining, helmet, state, publish)) return remaining;
         if (object.otyp === EGG || object.otyp === CREAM_PIE || object.otyp === BLINDING_VENOM) {
-            await publish(`You've got it all over your ${heroFaceName(state)}!`);
+            await publish(`You've got it all over your ${body_part(FACE, state)}!`);
             if (blindIncrement) {
                 if (object.otyp === BLINDING_VENOM && !heroIsBlind(state))
                     await publish('It blinds you!');
@@ -2376,13 +2362,13 @@ export async function finishReturningThrow({
     let damage = rn2(2);
     if (damage === 0) {
         const position = propertyIsActive('levitation', state) ? 'beneath' : 'at';
-        const feet = makePlural(heroFootName(state));
+        const feet = makePlural(body_part(FOOT, state));
         await plineWithContinuation(heroIsBlind(state)
             ? `Something lands ${position} your ${feet}.`
             : `${definiteObjectAction(object, 'return', state)} back to you, landing ${position} your ${feet}.`);
     } else {
         damage += rnd(3);
-        const arm = heroArmName(state);
+        const arm = body_part(ARM, state);
         await plineWithContinuation(heroIsBlind(state)
             ? `${definiteObjectAction(object, 'hit', state)} your ${arm}!`
             : `${definiteObjectAction(object, 'fly', state)} back toward you, hitting your ${arm}!`);
@@ -2909,7 +2895,7 @@ export async function throwOrdinaryObject({
             const skill = Math.abs(objectSkill(thrown.otyp));
             await plineWithContinuation(`You aren't wielding ${
                 withIndefiniteArticle(skillName(skill, state))}, so you throw your ${
-                weaponDescription(thrown)} by ${heroHandName(state)}.`);
+                weaponDescription(thrown)} by ${body_part(HAND, state)}.`);
         }
         const range = state.underwater || state.u.uinwater ? 1
             : tethered ? Math.min(trajectory.range, AKLYS_LIM) : trajectory.range;
@@ -3144,7 +3130,7 @@ export async function resolveDirectGoldThrow({
             && !(state.underwater || state.u?.uinwater)
             && !Is_waterlevel(state.u?.uz)) {
             await pline(`The gold hits the ${
-                ceilingName(state.u.ux, state.u.uy, state)}, then falls back on top of your ${heroHeadName(state)}.`);
+                ceilingName(state.u.ux, state.u.uy, state)}, then falls back on top of your ${body_part(HEAD, state)}.`);
             const helmet = state.uarmh ?? state.u?.uarmh ?? null;
             if (helmet) {
                 await pline(`Fortunately, you are wearing ${

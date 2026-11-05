@@ -18,10 +18,9 @@ import { commandResultCancelled, cmdq_clear, setMulti, paranoidQuery } from './c
 import { nomul, applyHeroLocationEffects, heroCanSwim, applyHeroLiquidEffects } from './hack.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { MONSTER_NAME, MONSTER_SIZE } from './monster_data.js';
-import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET } from './const.js';
+import { CQ_CANNED, GETOBJ_SUGGEST, PARANOID_REMOVE, W_ACCESSORY, W_ARMOR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, A_CHA, A_DEX, A_INT, A_WIS, LUCKMIN, LUCKMAX, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, A_CON, A_STR, Is_airlevel, Upolyd, W_AMUL, W_RING, W_RINGL, W_RINGR, W_TOOL, W_WEAPONS, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, P_LONG_SWORD, P_SHORT_SWORD, P_BROAD_SWORD, P_SABER, P_TWO_HANDED_SWORD, MENU_COMBINATION, MENU_FULL, MENU_ITEMFLAGS_SKIPINVERT, MENU_TRADITIONAL, SORTLOOT_INVLET, FINGER, HAND, FOOT, LEG, NECK, HEAD } from './const.js';
 import { is_suit, is_shield, is_helmet, is_boots, is_gloves, is_cloak, is_shirt, isBimanualObject, isSword, isFlimsyObject, is_elven_armor, objectIsMetallic, objectIsCrackable, objectIsRustprone, objectIsCorrodeable } from './object_properties.js';
-import { heroFingerName, heroHandName, heroNeckName, heroHeadName, heroFootName, heroLegName } from './body_parts.js';
-import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm } from './polyself.js';
+import { heroHasNoHead, heroSpecies, changeHeroSex, heroIsBreathless, heroPolyGender, heroHasNoHands, heroHasNoLimbs, heroIsVerySmall, heroFormClings, heroIsUnchanging, heroMonsterForm, body_part } from './polyself.js';
 import { retouchHeroObject } from './artifact.js';
 import { learnObjectType, observeObject, objectTypeKnown, OBJ_DESCR } from './o_init.js';
 import { observeObjectForNaming, objectName, ownedObjectName, corpseName, killerObjectName, objectNameIsPlural, simpleObjectName, makePlural, withIndefiniteArticle, makeSingular, objectDescription, objectHasPersonalName, objectMonsterName } from './objnam.js';
@@ -68,7 +67,7 @@ import { weaponDescription } from './weapon.js';
 export async function doputon() {
     if (wearingFullEquipment()) {
         const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
-        await pline(`Your ${prefix}${makePlural(heroFingerName(game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
+        await pline(`Your ${prefix}${makePlural(body_part(FINGER, game))} are full, and you're already wearing an amulet and ${game.ublindf?.otyp === LENSES ? 'some lenses' : 'a blindfold'}.`);
         game.context.move = 0;
         return;
     }
@@ -129,7 +128,7 @@ async function putOnAccessoryObject(object) {
     }
     if (game.uleft && game.uright) {
         const prefix = monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : '';
-        await pline(`There are no more ${prefix}${makePlural(heroFingerName(game))} to fill.`);
+        await pline(`There are no more ${prefix}${makePlural(body_part(FINGER, game))} to fill.`);
         game.context.move = 0;
         return;
     }
@@ -140,7 +139,7 @@ async function putOnAccessoryObject(object) {
         // replaced by the NUL default; a live question keeps asking until
         // 'r', 'l', or a quit key answers it, and only that final answer
         // is recorded into CQ_REPEAT for the next do-again.
-        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${heroFingerName(game)}, Right or Left?`, 'rl', '', true, { menuable: true });
+        const { answer } = await yn_function(`Which ${monsterIsHumanoid(heroSpecies(game)) ? 'ring-' : ''}${body_part(FINGER, game)}, Right or Left?`, 'rl', '', true, { menuable: true });
         if (answer !== 'r' && answer !== 'l') {
             game.context.move = 0;
             return;
@@ -169,7 +168,7 @@ async function putOnAccessoryObject(object) {
     const discoveredWeld = !!weapon && !weapon.bknown;
     if (weapon && (ringSlot === primary || isBimanualObject(weapon))
         && isWeldedPrimary(weapon)) {
-        const handName = isBimanualObject(weapon) ? makePlural(heroHandName(game)) : heroHandName(game);
+        const handName = isBimanualObject(weapon) ? makePlural(body_part(HAND, game)) : body_part(HAND, game);
         await pline(`You cannot free your weapon ${handName} to put on the ring.`);
         game.context.move = discoveredWeld ? 1 : 0;
         return;
@@ -365,11 +364,11 @@ export function armorWearDecision(object, state = game) {
             if (!state.u.utrap)
                 break;
             if (state.u.utraptype === TT_BEARTRAP)
-                return refuse(`Your ${heroFootName(state)} is trapped!`);
+                return refuse(`Your ${body_part(FOOT, state)} is trapped!`);
             if (state.u.utraptype === TT_INFLOOR || state.u.utraptype === TT_LAVA)
-                return refuse(`Your ${makePlural(heroFootName(state))} are stuck in the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
+                return refuse(`Your ${makePlural(body_part(FOOT, state))} are stuck in the ${surfaceName(state.u.ux, state.u.uy, state)}!`);
             if (state.u.utraptype === TT_BURIEDBALL)
-                return refuse(`Your ${heroLegName(state)} is attached to the buried ball!`);
+                return refuse(`Your ${body_part(LEG, state)} is attached to the buried ball!`);
             break;
         case 'uarmg':
             if (isWeldedPrimary(weapon, state)) {
@@ -377,7 +376,7 @@ export function armorWearDecision(object, state = game) {
                 return refuse(`You cannot wear gloves over your ${weapon && isSword(weapon) ? 'sword' : 'weapon'}.`);
             }
             if (state.u.glib || (state.u.glibTurns ?? 0) > 0)
-                return refuse(`Your ${makePlural(heroFingerName(state))} are too slippery to pull on ${armorSimpleName(object, state)}.`);
+                return refuse(`Your ${makePlural(body_part(FINGER, state))} are too slippery to pull on ${armorSimpleName(object, state)}.`);
             break;
         case 'uarmu':
             if (state.uarm || state.uarmc)
@@ -675,7 +674,7 @@ export async function canSelectOff(object, slot) {
         const welded = checkWeldedWeapon(weapon);
         const primary = game.u.rightHanded === false ? 'uleft' : 'uright';
         if (welded && (slot === primary || isBimanualObject(weapon))) {
-            await plineWithContinuation(`You cannot free a weapon ${heroHandName(game)} to remove the ring.`);
+            await plineWithContinuation(`You cannot free a weapon ${body_part(HAND, game)} to remove the ring.`);
             return false;
         }
         if (gloves && (gloves.cursed || slippery)) {
@@ -699,11 +698,11 @@ export async function canSelectOff(object, slot) {
     }
     if (slot === 'uarmf' && game.u.utrap) {
         if (game.u.utraptype === TT_BEARTRAP) {
-            await plineWithContinuation(`The bear trap prevents you from pulling your ${heroFootName(game)} out.`);
+            await plineWithContinuation(`The bear trap prevents you from pulling your ${body_part(FOOT, game)} out.`);
             return false;
         }
         if (game.u.utraptype === TT_INFLOOR) {
-            await plineWithContinuation(`You are stuck in the ${surfaceName(game.u.ux, game.u.uy)}, and cannot pull your ${makePlural(heroFootName(game))} out.`);
+            await plineWithContinuation(`You are stuck in the ${surfaceName(game.u.ux, game.u.uy)}, and cannot pull your ${makePlural(body_part(FOOT, game))} out.`);
             return false;
         }
     }
@@ -760,7 +759,7 @@ async function unremovableCurse(object, slot, state) {
     const slippery = !!state.u.glib || (state.u.glibTurns ?? 0) > 0;
     const gloves = takeoffSlotObject('uarmg', state);
     if (slippery && object.bknown && (gloves ? slot === 'uwep' : ['uwep', 'uleft', 'uright'].includes(slot))) {
-        const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(heroFingerName(state));
+        const fingers = gloves ? armorSimpleName(gloves, state) : makePlural(body_part(FINGER, state));
         await plineWithContinuation(`Despite your slippery ${fingers}, you can't.`);
     }
     else {
@@ -1359,7 +1358,7 @@ async function losePetrificationProtection(armor, state, voluntary) {
             || heroResistsStoning(state))
             continue;
         await plineWithContinuation(`You ${armorSlot === 'uarmg' ? 'now wield' : 'are wielding'} ${corpseName(weapon, { includeArticle: true })} `
-            + `in your bare ${makePlural(heroHandName(state))}.`);
+            + `in your bare ${makePlural(body_part(HAND, state))}.`);
         const protectionName = armorSlot === 'uarmg' ? simpleArmorName(armor, armorSlot, state)
             : simpleObjectName(armor, state).replace('set of ', '');
         const killer = `${voluntary ? 'removing' : 'losing'} ${protectionName} `
@@ -2105,7 +2104,7 @@ export function armorSimpleName(object, state = game) {
 }
 // C do_wear.c:fingers_or_gloves().
 export function fingersOrGloves() {
-    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(heroFingerName());
+    return game.uarmg ? armorSimpleName(game.uarmg) : makePlural(body_part(FINGER));
 }
 export async function armorOffMessage(object, state = game) {
     if (state.flags?.verbose === false)
@@ -2448,7 +2447,7 @@ async function removeAmulet(object, state) {
         await see_monsters();
     else if (object.otyp === AMULET_OF_STRANGULATION && strangled) {
         await plineWithContinuation(heroIsBreathless(state)
-            ? `Your ${heroNeckName(state)} is no longer constricted!` : 'You can breathe more easily!');
+            ? `Your ${body_part(NECK, state)} is no longer constricted!` : 'You can breathe more easily!');
         learnObjectType(object.otyp, state);
     }
     else if (object.otyp === AMULET_OF_MAGICAL_BREATHING) {
@@ -2710,7 +2709,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
     let slipped = 0;
     if (!state.uarmg && (leftFalls || rightFalls) && !heroHasNoLimbs(state)) {
         const both = leftFalls && rightFalls;
-        await publish(`Your ${both ? 'rings slip' : 'ring slips'} off your ${both ? makePlural(heroFingerName(state)) : heroFingerName(state)}.`);
+        await publish(`Your ${both ? 'rings slip' : 'ring slips'} off your ${both ? makePlural(body_part(FINGER, state)) : body_part(FINGER, state)}.`);
         slipped++;
         for (const ring of [leftFalls ? left : null, rightFalls ? right : null]) {
             if (!ring)
@@ -2728,7 +2727,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
         otherWeapon = isSword(secondary) ? 'sword' : weaponDescription(secondary);
         if (quantity > 1)
             otherWeapon = makePlural(otherWeapon);
-        await publish(`Your ${otherWeapon} ${slipped ? 'also ' : ''}${slipVerb(quantity > 1)} from your ${rightHanded ? 'left ' : 'right '}${heroHandName(state)}.`);
+        await publish(`Your ${otherWeapon} ${slipped ? 'also ' : ''}${slipVerb(quantity > 1)} from your ${rightHanded ? 'left ' : 'right '}${body_part(HAND, state)}.`);
         slipped++;
         wasTwoWeapon = true;
         await setSecondaryWeapon(null, state);
@@ -2750,7 +2749,7 @@ export async function slipFromSlipperyHands(state, publish = plineWithContinuati
         else
             kind = makePlural(kind);
     }
-    let hand = heroHandName(state);
+    let hand = body_part(HAND, state);
     let which = '';
     if (isBimanualObject(primary))
         hand = makePlural(hand);
@@ -2774,7 +2773,7 @@ export async function objectWearMessage(object, state = game) {
         return `${object.invlet} - ${await objectDescription(object, { state })}.`;
     const noun = objectName(object, state);
     const name = objectHasPersonalName(object, state) ? `the ${noun}` : withIndefiniteArticle(noun);
-    const how = object.otyp === TOWEL ? ` around your ${heroHeadName(state)}` : '';
+    const how = object.otyp === TOWEL ? ` around your ${body_part(HEAD, state)}` : '';
     return `You are now wearing ${name}${how}.`;
 }
 //# sourceMappingURL=do_wear.js.map

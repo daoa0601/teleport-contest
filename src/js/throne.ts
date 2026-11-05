@@ -7,9 +7,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { makeConfused, makeBlinded, cureHeroSickness, setSlipperyHands } from './potion.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { heroHasHalfSpellDamage, makeWish } from './zap.js';
-import {
-    A_CON, A_MAX, A_STR, Luck, ROOM,
-} from './const.js';
+import { A_CON, A_MAX, A_STR, Luck, ROOM, EYE, HEAD } from './const.js';
 import {
     adjustAttribute, attributeChangeMessage, changeHeroLuck, exerciseAttribute,
 } from './attrib.js';
@@ -29,7 +27,7 @@ import type { HeroHurtleOptions } from './dothrow.js';
 import type { MessagePublisher } from './pline.js';
 import type { GameObject } from './object_types.js';
 import { dropCursedSecondaryWeapon } from './wield.js';
-import { heroEyeCount, heroEyeName, heroHeadName } from './body_parts.js';
+
 import { makePlural, verbForSubject, definiteName, objectCombatName, objectNameIsPlural, ownedObjectAction } from './objnam.js';
 import { adjustObjectLightAfterBlessing, objectLightRadius } from './light.js';
 import { healHeroLegs } from './do.js';
@@ -47,9 +45,7 @@ import {
 } from './properties.js';
 import { syncHeroInvisibility } from './hero_invisibility.js';
 
-import {
-    heroIsPolymorphed, polymorphHero,
-} from './polyself.js';
+import { heroIsPolymorphed, polymorphHero, body_part, heroSpecies } from './polyself.js';
 import { getLine, promptYesNo } from './query.js';
 import { applyRemoveCurseSpell, doGenocide, GENOCIDE_ON_THRONE } from './read.js';
 import { rnd, rn1, rn2 } from './rng.js';
@@ -58,7 +54,7 @@ import { teleportHero } from './teleport.js';
 import { cansee } from './vision.js';
 import { aggravateMonsters } from './wizard.js';
 import { loseHeroHp } from './hack.js';
-import { is_prince } from './mondata.js';
+import { is_prince, eyecount } from './mondata.js';
 
 export type ThroneOptions = Pick<HeroHurtleOptions, 'gotoLevel' | 'chooseTeleportDestination'>;
 
@@ -149,12 +145,12 @@ async function grantSeeInvisible() {
     if (!heroIsBlind()) {
         await plineWithContinuation('Your vision becomes clear.');
     } else {
-        const count = heroEyeCount();
+        const count = eyecount(heroSpecies());
         if (count) {
-            const eyes = count === 1 ? heroEyeName() : makePlural(heroEyeName());
+            const eyes = count === 1 ? body_part(EYE) : makePlural(body_part(EYE));
             await plineWithContinuation(`Your ${eyes} ${verbForSubject(eyes, 'tingle')}...`);
         } else {
-            await plineWithContinuation(`You have a very strange feeling in your ${heroHeadName()}.`);
+            await plineWithContinuation(`You have a very strange feeling in your ${body_part(HEAD)}.`);
         }
     }
     grantIntrinsicProperty('seeInvisible', 'outside', game);
