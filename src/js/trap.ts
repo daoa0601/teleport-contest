@@ -133,7 +133,7 @@ import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './h
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { adjustHeroAlignment } from './alignment.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, poisonHero } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,
@@ -2906,7 +2906,7 @@ async function reduceHeroMaximumHitPoints(
     publish: MessagePublisher,
 ) {
     const oldMaximum = hero.uhpmax ?? 1;
-    const minimum = Math.max(hero.ulevel ?? 1, 1);
+    const minimum = minHeroMaxHitPoints(1, game);
     if (hero.uhpmax > minimum) {
         const range = Math.min(hero.uhpmax, damage + 1);
         hero.uhpmax -= rn2(range);
@@ -3088,7 +3088,8 @@ export async function finishMonsterFireTrap(
 // C trap.c:dofiretrap(): the flame effect shared by floor fire traps and
 // trapped containers — steam under water, the tower of flame, resistance,
 // and the burning of the hero, possessions, floor objects, and ice; the
-// maximum-HP burn is C trap.c:minuhpmax() (reduceHeroMaximumHitPoints).
+// maximum-HP burn calls C attrib.c:minuhpmax()/setuhpmax()
+// (reduceHeroMaximumHitPoints).
 export async function triggerHeroFireTrap(
     box: GameObject | null = null,
     { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},

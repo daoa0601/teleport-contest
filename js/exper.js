@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { adjustLevelAbilities, currentAttribute, newHeroHitPoints } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
@@ -171,7 +171,7 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
     const hpLoss = hero.uhpinc?.[level] || 0;
     const energyLoss = hero.ueninc?.[level] || 0;
     const oldHpMax = hero.uhpmax;
-    const minimumHpMax = Math.max(level, 10);
+    const minimumHpMax = minHeroMaxHitPoints(10, state);
     hero.uhpmax -= hpLoss;
     // C's setuhpmax() clamps current HP when restoring either maximum.
     // That happens before the separate loss of this level's current HP.

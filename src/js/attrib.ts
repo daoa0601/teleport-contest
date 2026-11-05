@@ -267,7 +267,7 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
     requirePlayingGame(state);
     const hero = state.u;
     const minimumStrength = state.urace.attrmin[A_STR];
-    const minimumHp = Math.max(hero.ulevel, 1);
+    const minimumHp = minHeroMaxHitPoints(1, state);
     const wasPolymorphed = Upolyd(hero);
     let remainingLoss = amount;
     let reducedStrength = hero.acurr.a[A_STR] - amount;
@@ -285,11 +285,9 @@ export async function loseHeroStrength(amount: number, killer: string | null | u
         if (await loseHeroHp(damage, killer, { state, publish, ...(die ? { die } : {}), deathCause }))
             return true;
         if (Upolyd(hero)) {
-            hero.mhmax = Math.max(hero.mhmax - damage, 1);
-            hero.mh = Math.min(hero.mh, hero.mhmax);
+            setHeroMaxHitPoints(Math.max(hero.mhmax - damage, 1), false, state);
         } else if (!wasPolymorphed && hero.uhpmax > minimumHp) {
-            hero.uhpmax = Math.max(hero.uhpmax - damage, minimumHp);
-            hero.uhp = Math.min(hero.uhp, hero.uhpmax);
+            setHeroMaxHitPoints(Math.max(hero.uhpmax - damage, minimumHp), false, state);
         }
         state.context.botl = true;
     }
@@ -444,12 +442,9 @@ export async function poisonHero({
             await line('The poison was deadly...');
         } else {
             const oldHp = hero.uhp;
-            const maximum = Math.max(
-                hero.uhpmax - Math.trunc(damage / 2), hero.ulevel, 3,
-            );
-            hero.uhppeak = Math.max(hero.uhppeak ?? hero.uhpmax, maximum);
-            hero.uhpmax = maximum;
-            hero.uhp = Math.min(hero.uhp, maximum);
+            setHeroMaxHitPoints(Math.max(
+                hero.uhpmax - Math.trunc(damage / 2), minHeroMaxHitPoints(3, state),
+            ), true, state);
             damage = adjustedDamageAfterMaxHpLoss(damage, oldHp, state);
             if (await loseHeroHp(damage, killer, { state, publish: line, die, deathCause: hpDeathCause }))
                 return { damage, died: true, pagerOwned };
@@ -1023,6 +1018,42 @@ function newHeroConstitutionBonus(constitution: number) {
     if (constitution === 17) return 2;
     if (constitution === 18) return 3;
     return 4;
+}
+
+// C attrib.c:minuhpmax(). Minimum value for uhpmax is ulevel, but for
+// life-saving it is always at least 10 (the altmin argument).
+export function minHeroMaxHitPoints(altmin: number, state: GameState = game): number {
+    const floor = altmin < 1 ? 1 : altmin;
+    return Math.max(state.u.ulevel ?? 1, floor);
+}
+
+// C attrib.c:setuhpmax(). Update u.uhpmax (or u.mhmax while polymorphed
+// unless evenWhenPolyd) together with the current and peak values that
+// depend on whichever maximum is relevant.
+export function setHeroMaxHitPoints(
+    newMax: number, evenWhenPolyd: boolean, state: PlayingGameState,
+): void {
+    const hero = state.u;
+    if (!Upolyd(hero) || evenWhenPolyd) {
+        if (newMax !== hero.uhpmax) {
+            hero.uhpmax = newMax;
+            if (hero.uhpmax > hero.uhppeak) hero.uhppeak = hero.uhpmax;
+            state.context.botl = true;
+        }
+        if (hero.uhp > hero.uhpmax) {
+            hero.uhp = hero.uhpmax;
+            state.context.botl = true;
+        }
+    } else {
+        if (newMax !== hero.mhmax) {
+            hero.mhmax = newMax;
+            state.context.botl = true;
+        }
+        if (hero.mh > hero.mhmax) {
+            hero.mh = hero.mhmax;
+            state.context.botl = true;
+        }
+    }
 }
 
 const EXERCISE_EXPLANATIONS: Partial<Record<AttributeIndex, readonly [string, string]>> = {

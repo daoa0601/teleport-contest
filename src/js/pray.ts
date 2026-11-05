@@ -17,7 +17,7 @@ import { OBJ_NAME } from './object_data.js';
 import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
-import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
@@ -552,7 +552,6 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
 }
 
 // C pray.c:fix_worst_trouble().
-// Also C attrib.c:setuhpmax(): maximum HP, peak HP, and clamping are inlined here
 export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -595,12 +594,12 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     case Trouble.HIT:
         await pline(formatFeltMessage('much better.', state));
         if (Upolyd(hero)) {
-            hero.mhmax = Math.max(6, hero.mhmax + rnd(5));
+            setHeroMaxHitPoints(Math.max(hero.mhmax + rnd(5), 6), false, state);
             hero.mh = hero.mhmax;
         }
-        if (hero.uhpmax < hero.ulevel * 5 + 11) hero.uhpmax += rnd(5);
-        hero.uhpmax = Math.max(6, hero.uhpmax);
-        hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
+        let maximum = hero.uhpmax;
+        if (maximum < hero.ulevel * 5 + 11) maximum += rnd(5);
+        setHeroMaxHitPoints(Math.max(maximum, 6), true, state);
         hero.uhp = hero.uhpmax;
         state.context.botl = true;
         return;
