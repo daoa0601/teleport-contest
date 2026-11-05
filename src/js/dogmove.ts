@@ -59,11 +59,10 @@ import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
 import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';
-import { touchPetrifies } from './stoning.js';
 import {
     maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes,
     monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks,
-    tunnels, speciesHasWeaponAttack,
+    tunnels, speciesHasWeaponAttack, touchPetrifies,
 } from './mondata.js';
 import { monsterReflectsRay } from './muse.js';
 import { heroIsDeaf, heroIsHallucinating } from './senses.js';

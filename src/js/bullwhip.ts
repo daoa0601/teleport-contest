@@ -24,7 +24,6 @@ import { monsterName as describeMonsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { monsterPossessive, monsterIsBig } from './mondata.js';
 import { rnl, rn2, rnd } from './rng.js';
-import { snatchPetrifyingCorpse as snatchCorpseBareHanded } from './stoning.js';
 import { ceilingName, surfaceName } from './dungeon.js';
 import { heroIsBlind } from './senses.js';
 import { teleds, enexto } from './teleport.js';
@@ -41,6 +40,9 @@ import type { Position } from './map_types.js';
 import type { DirectionSelection } from './cmd.js';
 import { wakeAttackedMonster } from './mon.js';
 import { loseHeroHp, finishDestinationSpotEffects } from './hack.js';
+import {
+    snatchPetrifyingCorpse as snatchCorpseBareHanded,
+} from './apply.js';
 
 type WhipDirection = Pick<DirectionSelection, 'dx' | 'dy' | 'dz'>;
 type WhipAttack = (monster: Monster, x: number, y: number) => boolean | Promise<boolean>;

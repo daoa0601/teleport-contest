@@ -55,7 +55,6 @@ import { hitMonsterWithKickedObject } from './hero_ranged_attack.js';
 import { breakFloorObject, hurtleHero } from './dothrow.js';
 import { inventoryItemDescription, delobj, currency, stack_object } from './invent.js';
 import { costlyAdjacent, costlySpot, addShopObjectToBill, removeObjectAndContentsFromBill, findObjectOwner, stolenValue, costlyGold, donateGold, objectIsUnpaid, pickedContainer, hotPursuitShopkeeper, deleteObject, insideShopRoomAt, makeAngryShopkeeper, containedGold, makeShopkeeperHappy, addShopDamage, payForShopDamage, shopDig } from './shk.js';
-import { touchPetrifies, heroResistsStoning } from './stoning.js';
 import { scatterFloorObjects } from './scatter.js';
 import { objectMaterial } from './o_init.js';
 import { publishHeardMessage, formatHeardMessage } from './hero_speech.js';
@@ -69,7 +68,7 @@ import { ceilingName, dungeonDepth, surfaceName } from './dungeon.js';
 import { eggHasMonsterSpecies } from './egg_impact.js';
 import { shopkeeperName } from './shknam.js';
 import { objectResistsDestruction } from './zap.js';
-import { is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy, monsterIsThickSkinned, } from './mondata.js';
+import { is_mercenary, likes_gold, monsterCanTeleport, monsterHasEyes, monsterHasNoHands, monsterHasNoLimbs, monsterIsBig, monsterIsClinger, monsterIsFlyer, monsterIsGiant, monsterIsHider, monsterIsSlithy, monsterIsThickSkinned, touchPetrifies, heroResistsStoning, } from './mondata.js';
 // C dokick.c:kick_ouch().
 async function kickOuch(x, y, objectName = '') {
     await plineWithContinuation('Ouch!  That hurts!');

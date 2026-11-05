@@ -3,7 +3,7 @@
 // fightm() applies to attacked monsters and dogmove.c grants to pet targets;
 // mhitm.c noises(), pre_mm_attack(), missmm(), failed_grab(), hitmm(),
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
-// xdrainenergym() are folded in below in native order.
+// xdrainenergym() and attk_protection() are folded in below.
 import { setHeroGrip } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -12,9 +12,9 @@ import { canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invis
 import { plineWithContinuation } from './pline.js';
 import { artifactById } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
-import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, } from './const.js';
+import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH, } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives } from './mondata.js';
+import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
@@ -39,7 +39,6 @@ import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCom
 import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
 import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult, } from './uhitm.js';
 import { mon_reflects } from './muse.js';
-import { contactIsProtected, touchPetrifies } from './stoning.js';
 import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { updateMonsterRegions } from './regions.js';
@@ -1264,5 +1263,20 @@ export async function putMonsterToSleep(monster, turns) {
         monster.msleeping = 1;
     }
     return true;
+}
+// C mhitm.c:attk_protection(). Bites cannot be insulated by worn armor.
+export function contactIsProtected(attackType, wornMask, usedWeapon = false) {
+    if ([AT_NONE, AT_SPIT, AT_EXPL, AT_BOOM, AT_GAZE, AT_BREA, AT_MAGC]
+        .includes(attackType))
+        return true;
+    if ([AT_CLAW, AT_TUCH, AT_WEAP].includes(attackType))
+        return usedWeapon || !!(wornMask & W_ARMG);
+    if (attackType === AT_KICK)
+        return !!(wornMask & W_ARMF);
+    if (attackType === AT_BUTT)
+        return !!(wornMask & W_ARMH);
+    if (attackType === AT_HUGS)
+        return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
+    return false;
 }
 //# sourceMappingURL=mhitm.js.map

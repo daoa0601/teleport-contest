@@ -16,7 +16,6 @@ import {
     A_DEX, ALTAR, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_SUGGEST, Upolyd, W_ACCESSORY, W_ARMOR, W_SADDLE,
     P_SABER, P_SHORT_SWORD, W_QUIVER, W_SWAPWEP, W_WEP,
 } from './const.js';
-
 import { currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroSpecies, heroHasNoHands, heroIsVerySmall } from './polyself.js';
 import { heroHandName } from './body_parts.js';
@@ -38,7 +37,6 @@ import { lightWieldedArtifact, equipmentLightMessage } from './light.js';
 import { endObjectBurn } from './timeout.js';
 import { shopkeeperName } from './shknam.js';
 import { statusConditionEnabled } from './botl.js';
-import { heroResistsStoning, touchPetrifies } from './stoning.js';
 import { resolveImmediatePetrification } from './trap.js';
 import { setnotworn, setworn } from './worn.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
@@ -46,11 +44,9 @@ import { strangeFeeling } from './potion.js';
 import { displayColorName } from './do_name.js';
 import { dropInventoryObjectAtHero, dropObjectAtHero } from './do.js';
 import { shipObject } from './dokick.js';
-
 import { landObjectOnAltar } from './altar_object.js';
 import { encumber_msg } from './pickup.js';
-import { monsterIsHumanoid, could_twoweap } from './mondata.js';
-
+import { monsterIsHumanoid, could_twoweap, heroResistsStoning, touchPetrifies } from './mondata.js';
 
 export async function dotwoweapon() {
     const spentTime = await toggleTwoWeaponCombat();
@@ -970,7 +966,6 @@ function heroWieldsMagicbane(state: GameState) {
         (state.uwep || state.u?.uwep)?.oartifact,
     )?.name === 'Magicbane';
 }
-
 
 // Only the tooth/crysknife transformations use simpleonames here. C omits
 // individual names and call names from that transformation message.

@@ -8,7 +8,7 @@ import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE
 import { isok, promptDirection, heroHasInvoluntaryDelay, setMulti } from './cmd.js';
 import { armorSimpleName, heroHasWaterWalking, heroHasDrainResistance, objectIsHardHelmet, heroHasFreeAction } from './do_wear.js';
 import { delobj, consumeObjectCharge, useUpInventoryStack, chooseInventoryObject, inventoryItemDescription, currency } from './invent.js';
-import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction } from './objnam.js';
+import { objectDescription as fullObjectDescription, verbForSubject, objectNameIsPlural, definiteName, objectCombatName, objectName, observeObjectForNaming, ownedObjectAction, ownedObjectName, simpleObjectName, corpseName, withIndefiniteArticle, objectDescription, makePlural, objectQuestion, simpleObjectNameWithArticle, bareArtifactOrPlainName, killerObjectName, definiteObjectAction, objectMonsterName } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { cansee, couldsee, vision_recalc, vision_note_blocker_change, vision_reset } from './vision.js';
 import { endObjectBurn, beginObjectBurn, stopLevelTimer, putHeroToSleep } from './timeout.js';
@@ -34,11 +34,10 @@ import { plineWithContinuation, pline, set_msg_xy } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor } from './monworn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, } from './mondata.js';
 import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, } from './teleport.js';
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName } from './do_name.js';
-import { touchPetrifies, selfTouchPetrifyingWeapons, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM } from './stoning.js';
 import { munstone } from './muse.js';
 import { adjustMonsterSpeed, monsterSpeedMessage } from './worn.js';
 import { recordHeroKillConduct, finishHeroDeath } from './end.js';
@@ -65,7 +64,7 @@ import { checkHeroLeashes, bringLeashedFollowers } from './apply.js';
 import { isDoorMimic, isObjectOrFurnitureMimic, revealMimic, applyMonsterPassiveToObject } from './uhitm.js';
 import { setMonsterMalign, makemon, makemonAt } from './makemon.js';
 import { promptYesNoQuit } from './query.js';
-import { isWeldedPrimary } from './wield.js';
+import { isWeldedPrimary, uswapwepgone, uwepgone } from './wield.js';
 import { hitHeroWithObject } from './hero_object_hit.js';
 import { splitHeroMonsterForm, heroIsSliming, makeBlinded, makeDeaf, showInvisibilityMessage, splitMonster, makeHallucinated, makeStunned } from './potion.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome } from './hero_monster_death.js';
@@ -7066,5 +7065,38 @@ export async function meltIceTrap(x, y) {
     else if (trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE) {
         deleteTrap(trap);
     }
+}
+// C trap.c:selftouch(). Check both wielded corpse slots after resistance is lost.
+export async function selfTouchPetrifyingWeapons({ messageStart = 'No longer petrify-resistant, you', state = game, publish = pline, die = finishHeroDeath, } = {}) {
+    if (heroResistsStoning(state))
+        return { touched: false, died: false };
+    let touched = false;
+    for (let slot = 0; slot < 2; slot++) {
+        const weapon = slot === 0
+            ? state.uwep || state.u?.uwep
+            : state.u?.twoweap
+                ? state.uswapwep || state.u?.uswapwep : null;
+        if (weapon?.otyp !== CORPSE || !touchPetrifies(weapon.corpsenm))
+            continue;
+        touched = true;
+        // C trap.c:selftouch() names the species with obj_pmname(), not
+        // corpse_xname(), so unique and personal species stay unadorned.
+        const species = objectMonsterName(weapon);
+        await publish(`${messageStart} touch the ${species} corpse.`);
+        const result = await resolveImmediatePetrification({
+            killer: `${withIndefiniteArticle(species)} corpse`,
+            state, publish, die,
+        });
+        if (result.died)
+            return { touched: true, died: true };
+        if (!(state.uarmg || state.u?.uarmg) && !heroResistsStoning(state)) {
+            // C trap.c:selftouch() unwields through the gone() family.
+            if (slot === 0)
+                await uwepgone(state);
+            else
+                await uswapwepgone(state);
+        }
+    }
+    return { touched, died: false };
 }
 //# sourceMappingURL=trap.js.map

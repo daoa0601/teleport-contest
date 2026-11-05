@@ -29,7 +29,6 @@ import { captureThrownObjectFlight, detachThrownUnit, finishHeroThrownObjectLand
 import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster, finishEnvironmentalMonsterDeath, monsterWearsTorsoArmor, resolveMonsterLiquid, wakeMonster as awakenMonster, angerMonster } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName, heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';
 import { isQuestArtifact } from './quest.js';
 import { encumber_msg } from './pickup.js';
@@ -77,7 +76,7 @@ import { hitHeroWithThrownPotion } from './hero_potion_hit.js';
 import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './dungeon.js';
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { walkPathCells } from './path_walk.js';
-import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, } from './mondata.js';
+import { monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies, formCanBecomeStoneGolem, } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { requireShopGame } from './shop_types.js';

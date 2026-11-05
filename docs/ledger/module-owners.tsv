@@ -102,7 +102,6 @@ src/js/special_location.ts	sp_lev.c
 src/js/spell.ts	spell.c
 src/js/steal.ts	steal.c
 src/js/steed.ts	steed.c
-src/js/stoning.ts	mhitm.c
 src/js/teleport.ts	teleport.c
 src/js/terrain_view.ts	detect.c
 src/js/throne.ts	sit.c

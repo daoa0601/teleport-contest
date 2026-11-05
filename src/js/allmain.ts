@@ -50,7 +50,6 @@ import { monsterAtPosition } from './steed.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, waitForCurrentMonsterMore, finishHeroDeath, finishInUseInventory } from './end.js';
 import type { MonsterAttackDeathOptions, FinishHeroDeathOptions } from './end.js';
 import { releaseObjectLeash, checkHeroLeashes, heroNextToLeashedFollowers } from './apply.js';
-import { touchPetrifies } from './stoning.js';
 import { ACID_VENOM, BOULDER, CORPSE, LEASH, GOLD_PIECE, } from './object_data.js';
 import { heroIsUnaware } from './senses.js';
 import { heroSpecies, setHeroSpecies, feelingAfterSelfGenocide, heroHasBeenGenocided, heroHasOlfaction, heroIsUnchanging, polymorphHero, returnHeroToHumanForm } from './polyself.js';

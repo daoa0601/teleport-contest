@@ -16,14 +16,15 @@ import {
     heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTeleport, poisonous, acidic,
     your_race, carnivorous, herbivorous, is_dwarf, is_elf, is_orc, is_shapeshifter, metallivorous,
     monsterHasProperName, monsterIsGiant, monsterIsHumanoid, monsterIsMindless, monsterIsNoncorporeal,
-    monsterIsRider, monsterIsUndead, monsterPerceives,
+    monsterIsRider, monsterIsUndead, monsterPerceives, fleshPetrifies, formCanBecomeStoneGolem,
+    heroResistsStoning, heroWouldPetrifyFromFlesh,
 } from './mondata.js';
 import {
     setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused,
     makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages,
     cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting,
 } from './potion.js';
-import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
+import { eatPetrifyingEgg, heroIsPetrifying } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifacts.js';
@@ -104,7 +105,7 @@ import { flushPendingTopline } from './tty_topline.js';
 import { vaultGdWatching } from './vault.js';
 import { catchLycanthropyFromCorpse, purifyHeroLycanthropy, wereBeastForSpecies } from './were.js';
 import { isWeldedPrimary, uqwepgone, uswapwepgone, uwepgone, wieldTool } from './wield.js';
-import { captureLevitationState, floatHeroUp, triggerBoobyTrap } from './trap.js';
+import { captureLevitationState, floatHeroUp, triggerBoobyTrap, selfTouchPetrifyingWeapons } from './trap.js';
 
 // Context for the monster-against-monster eat_brains branch.
 export interface BrainMealContext {

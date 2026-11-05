@@ -66,6 +66,7 @@ import {
     monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince,
     monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving,
     monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks,
+    touchPetrifies,
 } from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { delobj } from './invent.js';
@@ -86,7 +87,7 @@ import { capitalizedDefiniteName } from './objnam.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
 import { d, rn2, rnd } from './rng.js';
 import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
-import { hitByPetrifyingEgg, touchPetrifies } from './stoning.js';
+import { hitByPetrifyingEgg } from './stoning.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import { snuffThrownCandle } from './thrown_object.js';
 import { plineWithContinuation, set_msg_xy } from './pline.js';

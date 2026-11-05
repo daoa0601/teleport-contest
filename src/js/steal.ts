@@ -67,10 +67,9 @@ import { heroHasInvoluntaryDelay } from './cmd.js';
 import { nomul, heroGoldAmount, roomsAt } from './hack.js';
 import { stopHeroOccupation } from './occupation.js';
 import { encumber_msg } from './pickup.js';
-import { touchPetrifies } from './stoning.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
 import { makeMonsterFlee } from './monmove.js';
-import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks } from './mondata.js';
+import { monsterCanEngulf, monsterCanTeleport, monsterIsAnimal, monsterIsSlithy, monsterThrowsRocks, touchPetrifies } from './mondata.js';
 
 // C Some_Monnam(): unseen thieves are "Someone" or "Something".
 function wornItemRemover(monster: Monster, state: GameState): string {
@@ -98,7 +97,6 @@ function heroEquipmentSlots() {
         'uleft', 'uright', 'uamul', 'ublindf',
     ] as const;
 }
-
 
 // C steal.c:steal().  Inventory stacks are candidates as objects rather than
 // by quantity.  Worn armor and accessories receive five tickets; weapons

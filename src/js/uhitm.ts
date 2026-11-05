@@ -79,7 +79,7 @@ import { snuffMonsterInventoryLights } from './light.js';
 import { cloneMonster } from './makemon.js';
 import type { MapLocation, Position } from './map_types.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit } from './mhitm.js';
+import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
@@ -103,7 +103,7 @@ import {
     monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade,
     monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
-    monsterSpeciesSticks, monsterHasNoAttacks,
+    monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -151,10 +151,7 @@ import { carriedObjectOwner, deleteObject, dopay, tendedShop } from './shk.js';
 import { loseHeroSpellMemory } from './spell.js';
 import { addObjectToMonsterInventory, stealFromHero, stealHeroGold, stealHeroQuestObject } from './steal.js';
 import { dismountHero, monsterAtPosition } from './steed.js';
-import {
-    contactIsProtected, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, startHeroPetrification,
-    touchPetrifies,
-} from './stoning.js';
+import { heroIsPetrifying, startHeroPetrification } from './stoning.js';
 import { askTeleportDestination, goodPosition, heroControlsTeleport, randomMonsterRelocation, reportMonsterTeleportRestriction, teleportHero, teleportMonsterByHero } from './teleport.js';
 import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
@@ -221,7 +218,6 @@ export interface MhitmAdFireResult {
 function continueResult(damage: number): MhitmAdFireResult {
     return { damage, nativeResult: M_ATTK_MISS, done: false, heroDied: false };
 }
-
 
 // ─── C uhitm.c:attack_checks() (from hero_attack_preflight.ts) ───
 
@@ -427,7 +423,6 @@ export async function prepareAppliedWeaponAttack(
 
 // C ref: uhitm.c check_caitiff().
 
-
 // C uhitm.c:first_weapon_hit(). Player-given names are omitted from the
 // conduct log; a recognized artifact keeps its native artifact name.
 export function recordFirstHeroWeaponHit(weapon: GameObject, state: GameState = game): void {
@@ -465,7 +460,6 @@ export async function applyCaitiffPenalty(monster: Monster, state: GameState = g
 // ─── C uhitm.c:find_roll_to_hit()/mon_maybe_unparalyze()/missum() (from hero_attack_accuracy.ts) ───
 
 // Native uhitm.c:find_roll_to_hit(), mon_maybe_unparalyze(), and missum().
-
 
 export async function findHeroMeleeHitThreshold(
     monster: Monster, method: AttackMethod, weapon: GameObject | null,
@@ -4407,7 +4401,6 @@ interface PassiveContext {
     die: DeathHandler | undefined;
 }
 
-
 // ─── C uhitm.c:mhitm_adtyping(), monster arm (from mhitm.ts) ───
 
 // C uhitm.c:mhitm_adtyping(), the monster-versus-monster arm; native
@@ -5131,7 +5124,6 @@ async function endHeroEngulfDisplay(display: EngulfDisplay, state: PlayingGameSt
 // ─── C uhitm.c:steal_it()/theft_petrifies()/AD_SGLD/SEDU/SITM/SSEX hero arms (from hero_natural_theft.ts) ───
 
 // Dispatch hero gold and item theft to their native effects.
-
 
 export async function applyHeroNaturalTheft(
     monster: Monster, context: HeroNaturalEffectContext,
@@ -6323,7 +6315,6 @@ async function polymorphHeroOnContact(
     // the body change. hitmu() still attempts knockback, then returns.
     attack.contactDone = true;
 }
-
 
 // ─── C uhitm.c:do_stone_u() (from stoning.ts) ───
 

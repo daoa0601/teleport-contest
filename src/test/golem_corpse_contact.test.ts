@@ -1,7 +1,6 @@
 import { feelPetrifyingCorpse } from '../js/invent.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
-
 import { rhack } from '../js/cmd.js';
 import { W_WEP } from '../js/const.js';
 import { putIntoContainer, takeFromContainer } from '../js/pickup.js';
@@ -13,12 +12,12 @@ import { BULLWHIP, CORPSE, SACK } from '../js/object_data.js';
 import { addCreatedObjectToContainer } from '../js/mkobj.js';
 import { polymonHero } from '../js/polyself.js';
 import { initRng } from '../js/rng.js';
-import { selfTouchPetrifyingWeapons } from '../js/stoning.js';
 import { applyInventoryObject } from './support/commands.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';
+import { selfTouchPetrifyingWeapons } from '../js/trap.js';
 
 const cockatrice = MONSTER_NAME.indexOf('cockatrice');
 const stoneGolem = MONSTER_NAME.indexOf('stone golem');

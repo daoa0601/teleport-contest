@@ -40,7 +40,7 @@ import { splitHeroMonsterForm } from './potion.js';
 import { MONSTER_ATTACKS, MONSTER_BODY_META, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SYMBOL, requireMonsterData } from './monster_data.js';
 import { ownedObjectAction, simpleObjectNameWithArticle, observeObjectForNaming, makePlural, withIndefiniteArticle, objectCombatName, objectNameIsPlural, definiteObjectAction } from './objnam.js';
 import { d, rn1, rn2, rnd } from './rng.js';
-import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap } from './trap.js';
+import { destroyLavaInventory, markLavaInventoryForDestruction, waterDamageChain, deleteTrap, feelTrap, seeTrap, trapName, mintrap, emergencyDisrobe, announceTerrainRescue, resetUtrap, floatHeroUp, floatHeroDown, setHeroTrap, climbOutOfPit, reduceHeroTrapDuration, dotrapAt, igniteItems, captureLevitationState, backOnGroundMessage, sokobanGuilt, fillPitWithBoulderAt, triggerBoobyTrap, selfTouchPetrifyingWeapons } from './trap.js';
 import type { HeroTrapOptions } from './trap.js';
 import { dismountHero, steedIsGrounded, moveSteedWithHero, ridingPreventsMovement, monsterAtPosition, monsterHasMapPosition, monsterOccupiesPosition } from './steed.js';
 import { isRoom } from './map_types.js';
@@ -93,9 +93,10 @@ import { hello } from './roles.js';
 import { doopen } from './lock.js';
 import { engravingAt, wipeEngravingAt } from './engrave.js';
 import { heroGoldObject, heroGoldQuantity } from './hero_gold.js';
-import { objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object } from './mkobj.js';
+import {
+    objectWeight, quantity, splitObjectStack, placeObject, updateIceObjectTimersAt, remove_object,
+} from './mkobj.js';
 import { floorObjectDescription, stack_object } from './invent.js';
-import { selfTouchPetrifyingWeapons } from './stoning.js';
 import { heroFootName } from './body_parts.js';
 import { insideRoom, searchSpecial } from './mkroom.js';
 import { useUpFloorObject } from './invent.js';

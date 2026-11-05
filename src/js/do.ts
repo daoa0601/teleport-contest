@@ -66,7 +66,10 @@ import { heroSpecies, heroFormSticks, heroHasOlfaction, heroIsPolymorphed } from
 import { hitMonsterWithSettlingBoulder } from './hero_ranged_attack.js';
 import { rollPhysicalWeaponDamage } from './weapon.js';
 import { useUpFloorObject, stack_object } from './invent.js';
-import { deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt } from './trap.js';
+import {
+    deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt,
+    selfTouchPetrifyingWeapons,
+} from './trap.js';
 import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
 import { impossible } from './diagnostics.js';
 import { waterbodyName } from './pager.js';
@@ -84,7 +87,6 @@ import { isWeldedPrimary, setPrimaryWeapon, setQuiverObject, setSecondaryWeapon 
 import { showMultiSelectWindow } from './windows.js';
 import type { MultiSelectSection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
-import { touchPetrifies, heroResistsStoning, selfTouchPetrifyingWeapons } from './stoning.js';
 import { holdingMonsterName } from './hero_expulsion.js';
 import { possessiveName } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave, restoreEngravings } from './engrave.js';
@@ -111,7 +113,7 @@ import {
     specialPrototypeAt, u_on_rndspot, insideWizardTower, levelIsWizardTower, wizardTowerLevelAt,
     ledgerNo, surfaceName, next_level, prev_level,
 } from './dungeon.js';
-import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks } from './mondata.js';
+import { is_shapeshifter, monsterDigests, monsterIsNonliving, monsterIsVampireShifter, monsterPassesWalls, monsterThrowsRocks, touchPetrifies, heroResistsStoning } from './mondata.js';
 import { resetTrapSetting, bringLeashedFollowers } from './apply.js';
 import { maybeResetPick } from './lock.js';
 import { addExperience, checkExperienceLevel } from './exper.js';
@@ -592,7 +594,6 @@ export async function dropRingIntoSink(
         await consumeInventoryItem(object, state);
     }
 }
-
 
 // C do.c:canletgo(). A silent check still discovers curses.
 export async function canLetGo(object: GameObject, verb = '', state: GameState = game) {
@@ -2180,7 +2181,6 @@ function cloneHeroTrack(track: readonly Position[] | undefined = game._heroTrack
     return (track || []).map(point => ({ x: point.x, y: point.y }));
 }
 
-
 // C do.c:danger_uprops(): petrifying, sliming, strangling, or sick —
 // waiting or searching through one is refused.
 function dangerousHeroProperties() {
@@ -2245,8 +2245,6 @@ export async function donull(force = false, multi = false) {
     });
     return !prevented;
 }
-
-
 
 // C do.c:wipeoff(): one occupation turn of wiping; the first turn can
 // clear the blinding cream, and a following turn handles the remaining

@@ -57,7 +57,6 @@ import { wakeMonstersNearWithMessages, angerAttackedMonster, wakeAttackedMonster
 import type { MonsterDeathOptions, MonsterDeathResult, MonsterLiquidDeathContext, MonsterLiquidDeathResult } from './mon.js';
 import { canLetGo, dropObjectAtHero } from './do.js';
 import { wipeHeroEngraving } from './engrave.js';
-import { heroResistsStoning, touchPetrifies , formCanBecomeStoneGolem } from './stoning.js';
 import { heroHandName, heroEyeCount, heroEyeName , heroFaceName, heroHeadName, heroArmName, heroFootName } from './body_parts.js';
 import type { RoleKey, RaceName } from './roles.js';
 import { isQuestArtifact } from './quest.js';
@@ -119,10 +118,10 @@ import { levelHasCeiling, placeHeroOnLevel, surfaceName, ceilingName } from './d
 import { beginBallAndChainMove, finishBallAndChainMove, heroIsPunished } from './ball.js';
 import { walkPathCells } from './path_walk.js';
 import {
-    monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings,
-    monsterIsAmorphous, monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned,
-    monsterIsWhirly, monsterPassesWalls, monsterThrowsRocks, passes_rocks,
-    monsterIsAnimal, monsterIsUnicorn,
+    monsterObjectPronoun, monsterDigests, monsterHasNoLimbs, monsterHatesBlessings, monsterIsAmorphous,
+    monsterIsBig, monsterIsFlyer, monsterIsSlithy, monsterIsThickSkinned, monsterIsWhirly, monsterPassesWalls,
+    monsterThrowsRocks, passes_rocks, monsterIsAnimal, monsterIsUnicorn, heroResistsStoning, touchPetrifies,
+    formCanBecomeStoneGolem,
 } from './mondata.js';
 import { detachHeroGold, heroGoldObject } from './hero_gold.js';
 import { addObjectToMonsterInventory } from './steal.js';
@@ -381,7 +380,6 @@ export async function dofire(): Promise<void> {
         return;
     }
 }
-
 
 // C dothrow.c:endmultishot(): if a volley is in flight, the current
 // projectile finishes and becomes the last one.  C keeps gm.m_shot in
@@ -788,7 +786,6 @@ export interface MapPotionThrowOptions {
 
 type PotionThrowAdmission = Pick<MapPotionThrowOptions,
     'item' | 'objectClass' | 'selectedQuantity' | 'dx' | 'dy'> & { state: GameState };
-
 
 function canResolveMapPotionThrow({
     state, item, objectClass, selectedQuantity, dx, dy,

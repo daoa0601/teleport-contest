@@ -46,7 +46,7 @@ import { monsterCanTouchObject, currentMonsterLoad, maxMonsterLoad, monsterCanCa
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
 import { ACCFOOD, MANFOOD, dogFood } from './pet_food.js';
-import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses , monsterHasNoAttacks } from './mondata.js';
+import { canTrack, monsterCorrodesBars, speciesHasWeaponAttack, monsterLocomotion, seenResistanceForDamage, monsterHasFireResistance, monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterPossessive, monsterIsHelpless, monsterResistsSleep, is_mercenary, is_minion, is_wanderer, likes_gems, likes_gold, likes_magic, likes_objs, metallivorous, monsterIsClinger, monsterPassesWalls, needspick, tunnels, monsterCanTeleport, monsterHasNoLimbs, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsCovetous, monsterIsEel, monsterIsHider, monsterIsMindFlayer, monsterIsMindless, monsterIsNoncorporeal, monsterIsRider, monsterIsSlithy, monsterIsTelepathic, monsterIsThickSkinned, monsterIsUndead, monsterIsUnicorn, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPerceives, monsterThrowsRocks, speciesEatsCorpses, monsterHasNoAttacks, touchPetrifies } from './mondata.js';
 import { questMonsterSound } from './role_monsters.js';
 import { fractureRock } from './zap.js';
 import { drawbridgeUnderlyingType, isLavaAt, isPoolAt } from './dbridge.js';
@@ -65,7 +65,6 @@ import type { MessagePublisher } from './pline.js';
 import { heroSpecies, heroFormSticks, dragonFormForArmor, heroHasProtectionFromShapeChangers } from './polyself.js';
 import { releaseMonsterHold } from './hero_expulsion.js';
 import { releaseHeroFromMonster } from './mon.js';
-
 import { checkQuestMonsterStatus, talkQuestCharacter, performQuestExpulsion } from './quest.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { mintrap, trapAt, maketrap } from './trap.js';
@@ -98,9 +97,7 @@ import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMons
 import { retouchEquipment } from './artifacts.js';
 import { moveVaultGuard } from './vault.js';
 import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
-import { touchPetrifies } from './stoning.js';
 import { applyMonsterStoningAttack, startHeroPetrificationFromMonster } from './uhitm.js';
-
 import { talkToDemon } from './demon_talk.js';
 import { stashLeprechaunGold } from './leprechaun_stash.js';
 import { isQuantumBox } from './quantum_cat.js';
@@ -163,7 +160,6 @@ export function requireDochugContext(action: MonsterMovementAction): DochugConte
         throw new Error('A deferred monster movement needs its original turn context');
     return action.dochugContext;
 }
-
 
 const THREAT_DISTANCE = (BOLT_LIM + 1) * (BOLT_LIM + 1);
 const S_VAMPIRE = 48;

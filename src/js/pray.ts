@@ -53,7 +53,7 @@ import { displayColorName, monsterName } from './do_name.js';
 import {
     monstersForgetHeroResistance, monstersObserveHeroResistance, monsterHasDisintegrationResistance,
     monsterHasShockResistance, your_race, monsterIsDemon, monsterIsHuman, monsterIsUndead, monsterIsUnicorn,
-    monsterThrowsRocks,
+    monsterThrowsRocks, heroResistsStoning, touchPetrifies,
 } from './mondata.js';
 import { wakeMonstersNearWithMessages } from './mon.js';
 import type { GameObject } from './object_types.js';
@@ -72,7 +72,7 @@ import { d, rn1, rn2, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';
 import { castSpell, forceLearnSpell, knownSpell } from './spell.js';
-import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
+import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { attrcurse, rndcurse } from './throne.js';
 import { safe_teleds } from './teleport.js';

@@ -9,9 +9,7 @@
 
 import { castMonsterSpellRay } from './breath_ray.js';
 import { runClaimedCorpseRevivalTimer } from './do.js';
-
 import type { CorpseRevivalTimerEvent } from './do.js';
-
 import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardMessage } from './hero_speech.js';
 import {
     clearHeroSliming, cureHeroSickness, cureHeroVomiting, heroIsSick, heroIsSliming,
@@ -56,7 +54,7 @@ import { confersLuck } from './invent.js';
 import { AD_ELEC, AT_MAGC } from './monster_attack_types.js';
 import { isWereMonster, revertHeroWereForm } from './were.js';
 import { heroFootName, heroHandName, heroNeckName } from './body_parts.js';
-import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
+import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
 import { displayColorName, monsterName, randomDisplayMonsterName } from './do_name.js';
 import { dismountHero } from './steed.js';
 import { adjustAttribute, currentAttribute, exerciseAttribute } from './attrib.js';
@@ -68,7 +66,6 @@ import { hurtleHero } from './dothrow.js';
 import { finishTeleportArrival } from './teleport.js';
 import { gotoLevel } from './do.js';
 import { finishHeroMonsterKill } from './hero_monster_death.js';
-
 import { syncHeroInvisibility } from './hero_invisibility.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeath } from './end.js';
@@ -87,7 +84,6 @@ import {
 import { runClaimedEggHatchTimer, finishEggHatchTimer } from './egg.js';
 import { runClaimedFigurineTimer, finishFigurineTimer } from './figurine.js';
 import { meltIce } from './zap.js';
-
 import { runClaimedObjectRotTimer, finishBuriedZombieTimer } from './mklev.js';
 import {objectWeight, runClaimedGlobTimer, finishGlobTimer} from './mkobj.js';
 import { useUpInventoryStack } from './invent.js';
@@ -100,7 +96,7 @@ import { heroIsSurroundedByRock } from './pray.js';
 import { heroIsInDangerousRegion, visibleRegionLines } from './regions.js';
 import { showDisclosureOverlay } from './windows.js';
 import { surfaceName } from './dungeon.js';
-import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm } from './mondata.js';
+import { heroCannotVomit, nameToMonster, monsterHasProperName, monsterOlderForm, heroResistsStoning, touchPetrifies } from './mondata.js';
 import { encumber_msg } from './pickup.js';
 
 interface PetrificationAdvanceResult {
@@ -156,7 +152,6 @@ export async function petrificationDialogue({
     }
     await exerciseAttribute(A_DEX, false, state);
 }
-
 
 // C timeout.c:vomiting_dialogue().
 export async function vomitingDialogue({
@@ -409,7 +404,6 @@ export async function slimeDialogue({
         if (message) await publish(message, { urgent: true });
     }
 
-
     if (stage === 3) {
         removeHeroSpeed(state);
         if (!Popeye('slimed', state)) await stopHeroOccupation(state, publish);
@@ -555,7 +549,6 @@ export async function breathingDialogue(state = game): Promise<void> {
     if (danger) await plineWithContinuation(turns === 5
         ? 'You seem to have some trouble breathing.' : 'The air here seems foul.');
 }
-
 
 // C timeout.c:sleep_dialogue().
 async function sleepDialogue(state: GameState): Promise<void> {
@@ -714,8 +707,6 @@ export async function advanceHeroStrangulation({
     }
     return { died };
 }
-
-
 
 // C timeout.c:nh_timeout() (timeout.c:588-948): luck drifts back toward its
 // calendar baseline, the fatal-condition dialogues, one countdown pass over
@@ -1514,7 +1505,6 @@ export function restoreSavedTimers(state: GameState = game): void {
     restoreLevelTimers(state);
 }
 
-
 // C timeout.c:slip_or_trip().  Fumbling arrival message, ice slides, and
 // the pet-loss dismount, all after the fumbling source's timeout fires.
 
@@ -1603,7 +1593,6 @@ export interface BurnTimerResult {
     overdue: boolean;
     destroyed?: boolean;
 }
-
 
 // C timeout.c:see_lamp_flicker().  Print a lamp flicker message with
 // tailer.  Only called if seen.
@@ -1767,8 +1756,6 @@ function extinguishTimedLight(object: GameObject, state: GameState) {
     stopObjectTimer(object, OBJECT_TIMER_KIND.BURN_OBJECT);
     state.vision_full_recalc = 1;
 }
-
-
 
 // C timeout.c:begin_burn() stores only the fuel remaining after the next warning
 // breakpoint; the timer owns the intervening turns.  Keeping both fields is

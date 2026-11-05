@@ -21,7 +21,6 @@ import { dropObjectAtHero } from './do.js';
 import { observeObjectForNaming } from './objnam.js';
 import { propertyIsActive } from './properties.js';
 import { promptYesNoQuit } from './query.js';
-
 import { isLavaAt, isPoolAt } from './dbridge.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import type { GameObject } from './object_types.js';

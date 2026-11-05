@@ -1,11 +1,8 @@
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { wearHeroAccessory } from '../js/do_wear.js';
-
 import { wearHeroArmor } from '../js/do_wear.js';
-
 import { artifactByName, nameArtifact } from '../js/artifacts.js';
 import { rhack } from '../js/cmd.js';
 import { LAVAPOOL } from '../js/const.js';
@@ -19,12 +16,14 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, CORPSE, LEATHER_GLOVES } from '../js/object_data.js';
 import { autopickupAtHero } from '../js/pickup.js';
 import { heroCannotTake, polymonHero } from '../js/polyself.js';
-import { heroResistsStoning } from '../js/stoning.js';
 import { applyHeroContactPassive } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
+import {
+    heroResistsStoning,
+} from '../js/mondata.js';
 
 const finds = () => gameLogEvents().filter(event => event.text.startsWith('found '));
 
@@ -153,7 +152,6 @@ void test('fatal tactile contact stops the no-pickup-form feedback tail', async 
     assert.doesNotMatch(game._pending_message, /physically incapable/);
 });
 
-
 for (const levitating of [false, true] as const) {
     void test(`controlled teleport ${levitating ? 'cannot reach' : 'feels'} a corpse below the hero`, async () => {
         await freshObjectRoom({ flags: { debug: true, pickup: false } });
@@ -177,7 +175,6 @@ for (const levitating of [false, true] as const) {
             'nutrition is charged only after surviving destination effects');
     });
 }
-
 
 void test('a fatal stone-golem conversion reports the lava death, not survival', async () => {
     await freshObjectRoom();

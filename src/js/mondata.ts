@@ -1,8 +1,7 @@
 // Species predicates and monster data queries.
-// C mondata.h and mondata.c.
+// C mondata.h and mondata.c, including petrifying species and poly_when_stoned().
 
 import { levelHasCeiling } from './dungeon.js';
-
 import {
     MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_GROWTH_TARGET, MONSTER_LEVEL,
     MONSTER_MOVE, MONSTER_NAME, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, SPECIAL_PM, monsterTypeName,
@@ -16,11 +15,11 @@ import {
     AT_WEAP, AD_SEDU, AD_SSEX, AD_DGST, AD_STCK, AD_WRAP,
 } from './monster_attack_types.js';
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
-import { dragonFormForArmor, heroMonsterForm, heroSpecies } from './polyself.js';
+import { dragonFormForArmor, heroMonsterForm, heroSpecies, heroIsPolymorphed } from './polyself.js';
 import { artifactById } from './artifacts.js';
 import {
-    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING, M_SEEN_POISON,
-    M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP,
+    M_SEEN_ACID, M_SEEN_COLD, M_SEEN_DISINT, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_NOTHING,
+    M_SEEN_POISON, M_SEEN_REFL, M_SEEN_SLEEP, W_ARM, W_WEP, G_GENOD,
 } from './const.js';
 import { game, requireLiveGame } from './gstate.js';
 import { speciesWasGenocided } from './mon.js';
@@ -710,13 +709,8 @@ export function levelFollower(monster: Monster, state: GameState): boolean {
         && (!monster.mflee || !!state.u.uhave?.amulet);
 }
 
-// C mondata.c:poly_when_stoned(). Callers use this before fatal prose.
-const PM_STONE_GOLEM_POLY = 257;
-
 export function monsterPolymorphsWhenStoned(monster: Pick<Monster, 'mnum'>): boolean {
-    return monsterIsGolem(monster.mnum)
-        && monster.mnum !== PM_STONE_GOLEM_POLY
-        && !speciesWasGenocided(PM_STONE_GOLEM_POLY, game);
+    return formCanBecomeStoneGolem(monster.mnum, game);
 }
 
 interface PronounOptions {
@@ -1788,4 +1782,39 @@ export function could_twoweap(mnum: number): boolean {
 // C mondata.h:eggs_in_water()
 export function eggs_in_water(mnum: number): boolean {
     return lays_eggs(mnum) && MONSTER_SYMBOL[mnum] === S_EEL && monsterIsSwimmer(mnum);
+}
+
+const PM_CHICKATRICE = 9;
+
+const PM_COCKATRICE = 10;
+
+const PM_MEDUSA = 284;
+
+export const PM_STONE_GOLEM = 257;
+
+export function touchPetrifies(mnum: number | undefined): mnum is typeof PM_CHICKATRICE | typeof PM_COCKATRICE {
+    return mnum === PM_CHICKATRICE || mnum === PM_COCKATRICE;
+}
+
+export function fleshPetrifies(mnum: number | undefined): mnum is typeof PM_CHICKATRICE | typeof PM_COCKATRICE | typeof PM_MEDUSA {
+    return touchPetrifies(mnum) || mnum === PM_MEDUSA;
+}
+
+export function heroResistsStoning(state: GameState = game): boolean {
+    return !!state.u?.stoneResistance;
+}
+
+// C mondata.c:poly_when_stoned(). Non-stone golems may change unless stone golems are genocided.
+export function formCanBecomeStoneGolem(mnum: number | undefined, state: GameState = game): boolean {
+    const stoneGolemGenocided = !!(
+        (state.mvitals?.[PM_STONE_GOLEM]?.mvflags ?? 0) & G_GENOD
+    );
+    return mnum !== undefined && monsterIsGolem(mnum) && mnum !== PM_STONE_GOLEM
+        && !stoneGolemGenocided;
+}
+
+export function heroWouldPetrifyFromFlesh(mnum: number | undefined, state: GameState = game): boolean {
+    return fleshPetrifies(mnum)
+        && !heroResistsStoning(state)
+        && !(heroIsPolymorphed(state) && formCanBecomeStoneGolem(state.u?.umonnum, state));
 }
