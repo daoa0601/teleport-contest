@@ -2494,7 +2494,13 @@ export async function presentMonsterPostMove(action, game) {
     if (movement?.moved || movement?.postMoveOldSquarePainted) {
         if (!movement.postMoveOldSquarePainted)
             await newsym(movement.oldx, movement.oldy);
-        if (!movement.postMoveDestinationPainted)
+        // C postmov() repaints the moved actor only while it still has a
+        // map position: after a trap that carried it elsewhere, the redraw
+        // is `if (mtmp->mx) newsym(mtmp->mx, mtmp->my); return MMOVE_DIED;`
+        // (monmove.c:1510-1513).  A trap that migrated it off the level
+        // zeroes mx (dog.c migrate_to_level "mx==0 implies migrating"), so
+        // neither square is repainted for it here.
+        if (!movement.postMoveDestinationPainted && action.monster.mx)
             await newsym(movement.x, movement.y);
     }
     return !!game.program_state.gameover || !!movement.heroDied;
