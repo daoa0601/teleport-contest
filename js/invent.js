@@ -7,7 +7,7 @@ import { hideUnhideMessageTypes } from './message_types.js';
 import { encyclopediaEntries } from './encyclopedia.js';
 import { objectBlessingDescription, objectDescription, primaryHandDescriptionDetail, makePlural, withIndefiniteArticle, corpseName, ownedObjectName, distantObjectName, wishedObjectPresentation, definiteName, objectCombatName, objectLooksUnique, objectName, objectNameIsPlural, observeObjectForNaming, simpleObjectName, singularObjectName } from './objnam.js';
 import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, unlinkObject, absorbGlob, objectWeight, isContainer, announceGlobMerge, } from './mkobj.js';
-import { ATTRIBUTE_DISPLAY_ORDER } from './attrib.js';
+import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
 import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu, renderKeyPrompt } from './tty_topline.js';
@@ -625,7 +625,8 @@ export async function finishInventoryAddition(object, state = game) {
 // C addinv_core2(): the object is already linked, including after a merge.
 // Sight recovery reuses these effects without adding the object again.
 export async function reactToSeenInventoryObject(object, state = game) {
-    updateCarriedLuck(object, state);
+    if (confersLuck(object, state))
+        setMoreLuck(state);
     if (state.urole?.key !== 'archeologist' || object.oclass !== SCROLL_CLASS
         || object.otyp === SCR_BLANK_PAPER || heroIsBlind(state)
         || objectTypeKnown(object, state))
@@ -671,7 +672,7 @@ export async function finishInventoryRemoval(object, state = game) {
         curseObjectState(object);
     }
     else if (confersLuck(object, state)) {
-        updateCarriedLuck(object, state);
+        setMoreLuck(state);
     }
     else if (object.otyp === FIGURINE && object.timed) {
         stopObjectTimer(object, OBJECT_TIMER_KIND.FIG_TRANSFORM);
@@ -687,16 +688,6 @@ function updateCarriedFlags(object, carried, state) {
 }
 function carriedPossessionFlag(object, state) {
     return CARRIED_FLAGS.get(object.otyp) ?? (isQuestArtifact(object, state) ? 'questart' : undefined);
-}
-// C attrib.c:set_moreluck()
-// Also C attrib.c:stone_luck(): inventory quantity sum is inlined here
-export function updateCarriedLuck(object, state = game) {
-    if (confersLuck(object, state)) {
-        const lucky = state.inventory.filter(item => confersLuck(item, state));
-        const luck = lucky.reduce((sum, item) => sum + (item.cursed ? -1 : 1) * item.quan, 0);
-        state.u.moreluck = !luck && !lucky.some(item => item.otyp === LUCKSTONE)
-            ? 0 : luck < 0 ? -3 : 3;
-    }
 }
 export function confersLuck(object, state = game) {
     return object.otyp === LUCKSTONE

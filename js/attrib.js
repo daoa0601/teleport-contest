@@ -13,11 +13,12 @@ import { definiteName, ownedSimpleObjectName, withIndefiniteArticle } from './ob
 import { d, rn2, rnd } from './rng.js';
 import { hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, propertyTimeout, } from './properties.js';
 import { formMaximumStrength } from './polyself.js';
-import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, MUMMY_WRAPPING, } from './object_data.js';
+import { CORNUTHAUM, DUNCE_CAP, GAUNTLETS_OF_POWER, LUCKSTONE, MUMMY_WRAPPING, } from './object_data.js';
+import { confersLuck } from './invent.js';
 import { heroFaceName } from './body_parts.js';
 import { blindnessBlocked, blindfolded, heroIsHallucinating, isEyesOfTheOverworld } from './senses.js';
 import { RACE_LEVEL_ABILITIES, ROLE_LEVEL_ABILITIES } from './innate_abilities.js';
-import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKMAX, LUCKMIN, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
+import { A_CHA, A_CON, A_DEX, A_INT, A_MAX, A_STR, A_WIS, DIED, EXT_ENCUMBER, FROMEXPER, FROMFORM, FROMOUTSIDE, FROMRACE, HVY_ENCUMBER, I_SPECIAL, INTRINSIC, LUCKADD, LUCKMAX, LUCKMIN, MOD_ENCUMBER, POISONING, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMS, W_ARMU, W_ART, W_ARTI, W_QUIVER, W_RINGL, W_RINGR, W_SWAPWEP, W_TOOL, W_WEP, } from './const.js';
 import { loseHeroHp, nearCapacity } from './hack.js';
 const ATTRIBUTE_INDICES = [0, 1, 2, 3, 4, 5];
 const STR25 = 125;
@@ -43,6 +44,31 @@ export function changeHeroLuck(amount, state = game) {
 }
 function wornObject(state, slot) {
     return state?.[slot] || state?.u?.[slot] || null;
+}
+// C attrib.c:stone_luck(). Sign of the luckstone balance: blessed and
+// (optionally) uncursed luck-conferring stones count against cursed ones.
+export function stoneLuck(includeUncursed, state = game) {
+    let bonchance = 0;
+    for (const item of state.inventory) {
+        if (!confersLuck(item, state))
+            continue;
+        if (item.cursed)
+            bonchance -= item.quan;
+        else if (item.blessed || includeUncursed)
+            bonchance += item.quan;
+    }
+    return Math.sign(bonchance);
+}
+// C attrib.c:set_moreluck(). An inventory change affecting a luck-granting
+// item; callers guard it with confers_luck().
+export function setMoreLuck(state = game) {
+    const luckbon = stoneLuck(true, state);
+    if (!luckbon && !state.inventory.some(item => item.otyp === LUCKSTONE))
+        state.u.moreluck = 0;
+    else if (luckbon >= 0)
+        state.u.moreluck = LUCKADD;
+    else
+        state.u.moreluck = -LUCKADD;
 }
 // Equipment changes the effective value without overwriting the base value.
 export function currentAttribute(attribute, state = game) {

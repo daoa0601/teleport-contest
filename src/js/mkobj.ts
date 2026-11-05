@@ -63,7 +63,8 @@ import { nameObjectFromTopten } from './topten.js';
 import { makePlural, objectName, objectTypeName, observeObjectForNaming, ownedObjectName, rndClass } from './objnam.js';
 import { attachEggHatchTimer } from './timeout.js';
 import { assignCandyWrapper } from './read.js';
-import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, updateCarriedLuck } from './invent.js';
+import { consumeObjectCharge, inventoryItemDescription, mergable, mergeCreatedObjectStacks, mergeObjectStacks, confersLuck } from './invent.js';
+import { setMoreLuck } from './attrib.js';
 import { assertCreatedObject, createdObjectNoLongerHeld, dropObjectAtHero, objectNoLongerHeld, objectNoLongerHeldSynchronously } from './do.js';
 import { addShopObjectToBill, costlyAdjacent, costlySpot, deleteObject, findObjectOwner, objectPriceAdjustment, reconcileObjectDeletionBill, settleGlobAbsorptionBilling, splitObjectBill } from './shk.js';
 import { formatHeardMessage, formatSeenMessage } from './hero_speech.js';
@@ -92,7 +93,7 @@ const PM_DEATH = 311;
 const PM_FAMINE = 313;
 
 function updateBlessingEffects(object: GameObject | null | undefined, state: GameState): void {
-    if (object && state.inventory.includes(object)) updateCarriedLuck(object, state);
+    if (object && state.inventory.includes(object) && confersLuck(object, state)) setMoreLuck(state);
     if (object?.otyp === BAG_OF_HOLDING) object.owt = objectWeight(object);
 }
 
