@@ -2889,10 +2889,7 @@ function monsterGlyphName(name: string, mnum: number): string {
 // ---------------------------------------------------------------------------
 // Wall mode and wall angle.  C ref: display.c check_pos(), more_than_one(),
 // set_twall(), set_wall(), set_corn(), set_crosswall(), xy_set_wall_state(),
-// set_wall_state() and wall_angle().  t_warn(), their diagnostic, is not
-// ported: its impossible() reports fire only for seen vectors that
-// back_to_glyph()'s `seenv ? wall_angle() : S_stone` guard keeps unreachable.
-// ---------------------------------------------------------------------------
+// set_wall_state() and wall_angle().
 
 // C display.c:check_pos(). Return 'which' if position implies an unfinished
 // exterior (outer area is rock or a corridor); zero otherwise.  The low
@@ -3218,6 +3215,9 @@ function projectedCrossWallType(loc: MapLocation): number {
 // terrainSymbolIndex() resolves exactly as C's cmap_to_glyph(idx) does.
 // The T-wall and crosswall arms keep their pattern-match blocks in the
 // helpers above, as C keeps them behind the do_twall/do_crwall labels.
+// C's t_warn() diagnostic is not ported: its impossible() reports fire only
+// for seen vectors back_to_glyph()'s `seenv ? wall_angle() : S_stone` guard
+// keeps unreachable.
 function wall_angle(loc: MapLocation): number {
     switch (loc.typ) {
     case TDWALL:
