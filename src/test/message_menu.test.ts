@@ -4,7 +4,7 @@ import { PICK_NONE, PICK_ONE } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { showMessageMenu } from '../js/tty_topline.js';
+import { showMessageMenu } from '../js/wintty.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 
 import { resetInputState } from '../js/input.js';

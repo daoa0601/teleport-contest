@@ -10,7 +10,8 @@ import { rejoinObjectStack, splitObjectStack, objectQuantity, curseObjectState, 
 import { ATTRIBUTE_DISPLAY_ORDER, setMoreLuck } from './attrib.js';
 import { consumeHallucinatedMenuObjectGlyph, flush_screen, newsym, OBJECT_CLASS_SYMBOLS } from './display.js';
 import { formatStrength } from './botl.js';
-import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, showMessageMenu, renderKeyPrompt } from './tty_topline.js';
+import { clearMessageWindow, displayMessageWindow, flushPendingTopline, putMessageHistory, renderKeyPrompt } from './tty_topline.js';
+import { showMessageMenu } from './wintty.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { showChoiceWindow, showDisclosureOverlay, showInventoryWindow, showMultiSelectWindow, showTextMenuOverlay } from './windows.js';
 import { snapshotMenuUnderlay, restoreMenuUnderlay } from './wintty.js';

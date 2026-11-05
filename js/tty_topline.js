@@ -260,28 +260,6 @@ export async function moreUntilDismissed(message, { urgent = false } = {}) {
     await setTopline(message);
     return pageTopline(message, { urgent });
 }
-// C win/tty/wintty.c:tty_message_menu(): the preceding prompt has already been answered.
-// A selectable singleton uses bare tty output, without pline's status update.
-export async function showMessageMenu(letter, pickMode, message) {
-    if (pickMode === PICK_NONE) {
-        await plineWithContinuation(message);
-        return 0;
-    }
-    // dismiss_more is set first, so the letter also acknowledges older prose.
-    const menuLetter = letter.charCodeAt(0);
-    let key = await updateTopline(message, { dismissKey: menuLetter });
-    // Wrapped text has already paged. A stopped window may have kept older
-    // visible prose, but update_topl() never draws the suppressed choice.
-    if (game._pending_message) {
-        key = await pageTopline(game._pending_message, {
-            dismissKey: key === 27 ? 1 : menuLetter,
-        });
-        clearMessageWindow();
-    }
-    // tty_message_menu() treats Escape as cancelling this selection only.
-    game._suppressMessagesUntilInput = false;
-    return key === menuLetter || key === 27 ? key : 0;
-}
 // C win/tty/topl.c:more() acknowledges existing output. A window-only display does not
 // call bot(), so it must retain status even if game state changed meanwhile.
 export async function pageTopline(message, { urgent = false, dismissKey, rawGlyphs = false } = {}) {

@@ -17,7 +17,8 @@
 //   process_text_window() -> the paging drivers in windows.ts plus
 //                            paintMenuPage's putstr-rows branch below
 import { game } from './gstate.js';
-import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline } from './tty_topline.js';
+import { clipToplineToColumn, clearMessageWindow, decodeMixedTopline, flushPendingTopline, pageTopline, updateTopline } from './tty_topline.js';
+import { plineWithContinuation } from './pline.js';
 import { BUFSZ, COLNO, ROWNO, NHW_MENU, PICK_NONE, PICK_ONE, PICK_ANY,
     MENU_ITEMFLAGS_SELECTED, MENU_ITEMFLAGS_SKIPMENUCOLORS, HI_ZAP, BL_LEVELDESC, BL_GOLD, BL_HP, BL_HPMAX, BL_ENE, BL_ENEMAX, BL_AC,
     BL_XP, BL_HD, BL_EXP, BL_TIME, BL_HUNGER, BL_CAP, BL_CONDITION, BL_VERS,
@@ -694,6 +695,32 @@ export async function tty_select_menu<T>(window: TtyMenuWindow<T>, how: MenuPick
     } finally {
         restoreStatusUpdates();
     }
+}
+
+// C wintty.c:tty_message_menu(): the preceding prompt has already been answered.
+// A selectable singleton uses bare tty output, without pline's status update.
+export async function showMessageMenu(
+    letter: string, pickMode: typeof PICK_NONE | typeof PICK_ONE, message: string,
+): Promise<number> {
+    if (pickMode === PICK_NONE) {
+        await plineWithContinuation(message);
+        return 0;
+    }
+
+    // dismiss_more is set first, so the letter also acknowledges older prose.
+    const menuLetter = letter.charCodeAt(0);
+    let key = await updateTopline(message, { dismissKey: menuLetter });
+    // Wrapped text has already paged. A stopped window may have kept older
+    // visible prose, but update_topl() never draws the suppressed choice.
+    if (game._pending_message) {
+        key = await pageTopline(game._pending_message, {
+            dismissKey: key === 27 ? 1 : menuLetter,
+        });
+        clearMessageWindow();
+    }
+    // tty_message_menu() treats Escape as cancelling this selection only.
+    game._suppressMessagesUntilInput = false;
+    return key === menuLetter || key === 27 ? key : 0;
 }
 
 export function snapshotMenuUnderlay(): MenuUnderlay | null {
