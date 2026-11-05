@@ -6,8 +6,8 @@ import { WEAPON_CLASS, COIN_CLASS } from './objclass.js';
 import { is_launcher } from './object_properties.js';
 import { objectClassForType } from './object_data.js';
 import { isLauncherAmmunition, launcherMatchesAmmo, } from './object_properties.js';
-// obj.h's oclass read with the type-table fallback; shared by
-// dothrow.c:autoquiver() and wield.c:ready_ok().
+// The obj.h oclass read with the type-table fallback; autoquiver()
+// (dothrow.ts) and ready_ok() below share it.
 export function quiverObjectClass(item) {
     return item.oclass || objectClassForType(item.otyp);
 }

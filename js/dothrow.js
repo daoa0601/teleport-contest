@@ -374,6 +374,8 @@ async function finishOrdinarySwallowedConsumedKill(monster, kind, death = {}) {
 async function finishOrdinaryMapPotionKill(monster, death = {}) {
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
+// C dothrow.c:dothrow().  Prior to 3.6.0 the count prefix meant one throw
+// per turn; ok_to_throw() now sets the shot limit for the whole volley.
 export async function dothrow(selectedItem = null) {
     await throwCommand(selectedItem);
 }
@@ -947,6 +949,9 @@ async function applyHurtleTrap(monster, options, stage) {
         },
     });
 }
+// C dothrow.c:mhurtle().  A monster moves through the air for a few
+// squares; mhurtle_step() walks the path and mintrap()/minliquid() settle
+// the landing.
 export async function hurtleMonster(monster, dx, dy, distance, options = {}) {
     const { monsterMoving = false, state = game, announce = plineWithContinuation, nameMonster = monsterSentenceSubject, random = rn2, } = options;
     requirePlayingGame(state);
@@ -1138,6 +1143,9 @@ const BREAKABLE_TYPES = new Set([
     ACID_VENOM,
     BLINDING_VENOM,
 ]);
+// C dothrow.c:breaktest().  Checks whether obj (which has just hit
+// something hard) is going to break, without breaking it; glass armor
+// resists with a 90% chance where other objects use 1%.
 export function objectBreaksOnImpact(object, random = rn2) {
     const glassArmor = object.oclass === ARMOR_CLASS
         && objectMaterial(object.otyp) === GLASS;
@@ -1244,6 +1252,8 @@ export async function breakFloorObject(object, { x = object.ox, y = object.oy, f
         summonMonster,
     });
 }
+// C dothrow.c:breakobj().  Breakable armor goes through erosion steps;
+// other items break unconditionally.
 export async function breakObjectAtLocation(object, { x = object.ox, y = object.oy, fromInventory = false, inView = null, state = game, heroCaused = true, showBreakMessage = true, publish = plineWithContinuation, random = rn2, luckRandom = rnl, rollDice = d, summonMonster = makemonAt, } = {}) {
     requireLiveGame(state);
     const visible = !heroIsBlind(state)
@@ -1435,7 +1445,8 @@ function obstacleReason(location, openDoorFrame) {
         return 'bumping into a closed door';
     return 'bumping into a wall';
 }
-// C dothrow.c:hurtle_step() losehp(..., why, KILLED_BY): "killed by bumping into a wall".
+// hurtle_step()'s losehp(..., why, KILLED_BY) (dothrow.c:836): "killed by
+// bumping into a wall".
 async function loseImpactHitPoints(amount, killer) {
     if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
@@ -1631,6 +1642,8 @@ async function settleLiquid(options, remaining) {
     });
     return true;
 }
+// C dothrow.c:hurtle_step().  A single step for the hero flying through
+// the air from jumping, flying, etc.; the range pointer stops the walk.
 async function moveOneSquare(x, y, options, remaining) {
     requirePlayingGame(game);
     if (!isok(x, y)) {
@@ -1688,8 +1701,9 @@ async function moveOneSquare(x, y, options, remaining) {
         await game.animationFrame?.();
     return true;
 }
-// C hurtle_jump() walks an irregular jump with the same collisions as hurtle.
-// The caller owns trap escape, the final landing, and the one-turn delay.
+// C dothrow.c:hurtle_jump() walks an irregular jump with the same
+// collisions as hurtle().  The caller owns trap escape, the final landing,
+// and the one-turn delay.
 export async function hurtleJumpTo(x, y, options = {}) {
     requirePlayingGame(game);
     const path = walkPathCells(game.u.ux, game.u.uy, x, y);
@@ -1704,6 +1718,8 @@ export async function hurtleJumpTo(x, y, options = {}) {
     // square on failure, even if a portal or liquid moved the actor.
     return reached;
 }
+// C dothrow.c:hurtle().  The hero moves through the air for a few squares
+// as a result of throwing or kicking something; also hurtle_step() below.
 export async function hurtleHero(dx, dy, range, { verbose = false, finishTeleport = null, gotoLevel = null, chooseTeleportDestination = null, finishMonsterDeath = null, volley, } = {}) {
     requirePlayingGame(game);
     const ball = game.uball || game.u.uball;

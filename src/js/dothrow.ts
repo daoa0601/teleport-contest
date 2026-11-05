@@ -445,6 +445,8 @@ async function finishOrdinaryMapPotionKill(monster: Monster, death: HeroMonsterK
     return finishHeroMonsterKillOutcome(monster, monster.mx, monster.my, death);
 }
 
+// C dothrow.c:dothrow().  Prior to 3.6.0 the count prefix meant one throw
+// per turn; ok_to_throw() now sets the shot limit for the whole volley.
 export async function dothrow(selectedItem: GameObject | null = null): Promise<void> {
     await throwCommand(selectedItem);
 }
@@ -1133,6 +1135,9 @@ async function applyHurtleTrap(monster: Monster, options: Pick<ActiveHurtleOptio
     });
 }
 
+// C dothrow.c:mhurtle().  A monster moves through the air for a few
+// squares; mhurtle_step() walks the path and mintrap()/minliquid() settle
+// the landing.
 export async function hurtleMonster(monster: Monster, dx: number, dy: number, distance: number, options: MonsterHurtleOptions = {}): Promise<MonsterHurtleOutcome> {
     const {
         monsterMoving = false, state = game, announce = plineWithContinuation,
@@ -1365,6 +1370,9 @@ const BREAKABLE_TYPES = new Set([
     ACID_VENOM,
     BLINDING_VENOM,
 ]);
+// C dothrow.c:breaktest().  Checks whether obj (which has just hit
+// something hard) is going to break, without breaking it; glass armor
+// resists with a 90% chance where other objects use 1%.
 export function objectBreaksOnImpact(object: GameObject, random = rn2) {
     const glassArmor = object.oclass === ARMOR_CLASS
         && objectMaterial(object.otyp) === GLASS;
@@ -1489,6 +1497,9 @@ export async function breakFloorObject(object: GameObject, {
         summonMonster,
     });
 }
+
+// C dothrow.c:breakobj().  Breakable armor goes through erosion steps;
+// other items break unconditionally.
 export async function breakObjectAtLocation(object: GameObject, {
     x = object.ox,
     y = object.oy,
@@ -1761,7 +1772,8 @@ function obstacleReason(location: MapLocation, openDoorFrame: boolean): string {
     return 'bumping into a wall';
 }
 
-// C dothrow.c:hurtle_step() losehp(..., why, KILLED_BY): "killed by bumping into a wall".
+// hurtle_step()'s losehp(..., why, KILLED_BY) (dothrow.c:836): "killed by
+// bumping into a wall".
 async function loseImpactHitPoints(amount: number, killer: string) {
     if (game.u.halfPhysicalDamage)
         amount = Math.trunc((amount + 1) / 2);
@@ -1961,6 +1973,8 @@ async function settleLiquid(options: HeroHurtleOptions, remaining: HurtleDistanc
     });
     return true;
 }
+// C dothrow.c:hurtle_step().  A single step for the hero flying through
+// the air from jumping, flying, etc.; the range pointer stops the walk.
 
 async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, remaining: HurtleDistance): Promise<boolean> {
     requirePlayingGame(game);
@@ -2024,8 +2038,9 @@ async function moveOneSquare(x: number, y: number, options: HeroHurtleOptions, r
     return true;
 }
 
-// C hurtle_jump() walks an irregular jump with the same collisions as hurtle.
-// The caller owns trap escape, the final landing, and the one-turn delay.
+// C dothrow.c:hurtle_jump() walks an irregular jump with the same
+// collisions as hurtle().  The caller owns trap escape, the final landing,
+// and the one-turn delay.
 export async function hurtleJumpTo(x: number, y: number, options: HeroHurtleOptions = {}): Promise<Position> {
     requirePlayingGame(game);
     const path = walkPathCells(game.u.ux, game.u.uy, x, y);
@@ -2040,6 +2055,9 @@ export async function hurtleJumpTo(x: number, y: number, options: HeroHurtleOpti
     // square on failure, even if a portal or liquid moved the actor.
     return reached;
 }
+
+// C dothrow.c:hurtle().  The hero moves through the air for a few squares
+// as a result of throwing or kicking something; also hurtle_step() below.
 
 export async function hurtleHero(dx: number, dy: number, range: number, {
     verbose = false,
@@ -2154,8 +2172,8 @@ export function shouldMulchMissile(object: GameObject | null | undefined, { mons
 }
 
 // ---------------------------------------------------------------------------
-// C dothrow.c:toss_up(). Ceiling contact precedes the fall onto the hero;
-// floor effects precede damage from an intact falling object.
+// toss_up() (dothrow.c:1256): ceiling contact precedes the fall onto the
+// hero; floor effects precede damage from an intact falling object.
 // ---------------------------------------------------------------------------
 interface TossUpOptions {
     state?: GameState;
