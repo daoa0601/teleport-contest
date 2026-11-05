@@ -7,7 +7,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { nameToMonster } from '../js/mondata.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const role of ['wizard', 'knight']) {
     void test(`farlook identifies the ${role} on the hero's square`, async () => {

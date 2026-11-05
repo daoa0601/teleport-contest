@@ -6,7 +6,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import type { AlignmentValue } from '../js/roles.js';
+import type { AlignmentValue } from '../js/role.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { installPagerInput } from './support/pager-input.js';

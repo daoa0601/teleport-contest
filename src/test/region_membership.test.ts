@@ -5,7 +5,7 @@ import { rhack } from '../js/cmd.js';
 import { initializePet } from '../js/dog.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { relocateMonsterTo } from '../js/teleport.js';
 import { displaceMonster } from '../js/mhitm.js';
 import { finishMonsterKilled } from '../js/mon.js';

@@ -1,7 +1,7 @@
 import type {
     Advancement, Alignment, AlignmentName, AlignmentValue, AttributeValues,
     GenderedName, Race, Role, Spellcasting,
-} from './roles.js';
+} from './role.js';
 import type { GameFlags } from './flags.js';
 import type { HeroAlignment } from './hero_types.js';
 import { ismnum } from './const.js';

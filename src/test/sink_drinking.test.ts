@@ -18,7 +18,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { AMULET_OF_LIFE_SAVING, AMULET_OF_UNCHANGING, POT_FRUIT_JUICE, POT_HEALING, POT_OIL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { createPoisonGasCloud } from '../js/regions.js';
+import { createPoisonGasCloud } from '../js/region.js';
 import { initRng } from '../js/rng.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { drinkSink } from '../js/fountain.js';

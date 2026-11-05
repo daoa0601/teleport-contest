@@ -3,7 +3,7 @@ import { COLNO, COULD_SEE, IN_SIGHT, MAXULEV, ROWNO } from '../../js/const.js';
 import { GameMap } from '../../js/game.js';
 import { resetGame, requirePlayingGame } from '../../js/gstate.js';
 import { resetInputState } from '../../js/input.js';
-import { races, roles } from '../../js/roles.js';
+import { races, roles } from '../../js/role.js';
 import { initializeHeroSpecies } from '../../js/u_init.js';
 import { initializeMonsterVitals } from '../../js/allmain.js';
 import { initializeFruitRegistry } from '../../js/options.js';

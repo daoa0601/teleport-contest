@@ -1,4 +1,4 @@
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';

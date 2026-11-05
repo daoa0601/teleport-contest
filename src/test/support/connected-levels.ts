@@ -1,5 +1,5 @@
 import type { GameMap } from '../../js/game.js';
-import type { RoleKey } from '../../js/roles.js';
+import type { RoleKey } from '../../js/role.js';
 import { LADDER, LA_DOWN, LA_UP, STAIRS } from '../../js/const.js';
 import { game } from '../../js/gstate.js';
 import { createRoomLevel, freshGameplayRoom } from './playable-room.js';

@@ -10,7 +10,7 @@ import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './pray.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { questLeaderName } from './quest_pager.js';
+import { questLeaderName } from './questpgr.js';
 import { ATR_INVERSE, addMenuHeading } from './windows.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu } from './wintty.js';
 import { map_location, see_nearby_objects, updateLastSeenTerrain } from './display.js';

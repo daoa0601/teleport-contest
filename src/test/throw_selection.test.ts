@@ -3,7 +3,7 @@ import test from 'node:test';
 
 import { rhack } from '../js/cmd.js';
 import { STR19 } from '../js/const.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER, GOLD_PIECE } from '../js/object_data.js';

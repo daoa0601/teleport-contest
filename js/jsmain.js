@@ -10,7 +10,7 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { initializeFruitRegistry, parseNethackOptions, parseNethackrc } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { rawPrint } from './pline.js';
-import { genl_player_selection, plnamesuffix } from './roles.js';
+import { genl_player_selection, plnamesuffix } from './role.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';

@@ -5,13 +5,16 @@
 // capitalization, pronoun, plural, or possessive form). %r/%R read botl.c
 // rank_of from botl.ts; %d/%D/%G read pray.c align_gname/align_gtitle from
 // pray.ts.
+
 import { A_LAWFUL, G_GENOD, MIN_QUEST_LEVEL } from './const.js';
 import { mkclass } from './makemon.js';
 import { game } from './gstate.js';
+import type { GameState } from './game_state.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { possessiveName, upstart } from './hacklib.js';
 import { makePlural, makeSingular, withIndefiniteArticle } from './objnam.js';
 import { heroIsBlind } from './senses.js';
+import type { AlignmentName } from './role.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { rn2 } from './rng.js';
 import { QUEST_LUA_SOURCE } from './quest_data.js';
@@ -22,40 +25,41 @@ import { showTextWindow, showTextMenuOverlay } from './windows.js';
 import { deityName, godTitleOf } from './pray.js';
 import { rankOf, roleSwitch } from './botl.js';
 import { monsterHasProperName } from './mondata.js';
+
+export interface QuestText {
+    lines: readonly string[];
+    raw: string;
+    output: 'pline' | 'text' | 'menu';
+    synopsis: string | null;
+}
+
 // C questpgr.c:com_pager_core()
 // Also C questpgr.c:skip_pager(): wizard-kit suppression is inlined here
 // Each attempted section opens its own Lua state,
 // including nhlib's alignment shuffle, before resolving a fallback or choice.
-async function prepareSection(section, messageId, state) {
-    if (state.program_state.wizkit_wishing)
-        return null;
+async function prepareSection(section: string, messageId: string, state: GameState): Promise<QuestText | null> {
+    if (state.program_state.wizkit_wishing) return null;
     const lua = currentLuaLifecycle().createSpecialState(state);
     try {
         lua.execute(QUEST_LUA_SOURCE, 'quest.lua');
         const quest = lua.getGlobal('questtext');
-        if (!(quest instanceof LuaTable))
-            throw new Error('quest.lua has no questtext table');
+        if (!(quest instanceof LuaTable)) throw new Error('quest.lua has no questtext table');
         const messages = quest.get(section);
-        if (!(messages instanceof LuaTable))
-            return null;
+        if (!(messages instanceof LuaTable)) return null;
         let entry = messages.get(messageId);
         if (!(entry instanceof LuaTable)) {
             const fallbacks = quest.get('msg_fallbacks');
             const fallback = fallbacks instanceof LuaTable ? fallbacks.get(messageId) : null;
-            if (typeof fallback === 'string')
-                entry = messages.get(fallback);
+            if (typeof fallback === 'string') entry = messages.get(fallback);
         }
-        if (!(entry instanceof LuaTable))
-            return null;
+        if (!(entry instanceof LuaTable)) return null;
         let text = entry.get('text');
         if (typeof text !== 'string') {
             const count = entry.length();
-            if (count < 2)
-                throw new Error(`Quest message ${section}.${messageId} has no text or choices`);
+            if (count < 2) throw new Error(`Quest message ${section}.${messageId} has no text or choices`);
             text = entry.get(rn2(count) + 1);
         }
-        if (typeof text !== 'string')
-            throw new Error(`Quest message ${section}.${messageId} is not text`);
+        if (typeof text !== 'string') throw new Error(`Quest message ${section}.${messageId} is not text`);
         const how = entry.get('output');
         const output = how === 'menu' ? 'menu'
             : how === 'text' || how === 'window' ? 'text'
@@ -66,120 +70,126 @@ async function prepareSection(section, messageId, state) {
             : output === 'text' && (how === null || how === 'default')
                 ? `[${text.slice(0, 253).replaceAll('\n', ' ')}]` : null;
         const lines = text.split('\n');
-        if (text.endsWith('\n'))
-            lines.pop();
+        if (text.endsWith('\n')) lines.pop();
         return {
             lines: lines.map(line => convertQuestLine(line, state)), output, raw: text,
             synopsis: synopsis === null ? null : convertQuestLine(synopsis, state),
         };
-    }
-    finally {
+    } finally {
         await lua.destroy();
     }
 }
-export async function prepareQuestText(messageId, state = game, common = false) {
-    if (common)
-        return prepareSection('common', messageId, state);
+
+export async function prepareQuestText(messageId: string, state: GameState = game, common = false): Promise<QuestText | null> {
+    if (common) return prepareSection('common', messageId, state);
     return await prepareSection(state.urole?.filecode ?? '', messageId, state)
         ?? await prepareSection('common', messageId, state);
 }
+
 // Also C questpgr.c:deliver_by_pline(): inlined here after prepareSection converts lines
 // Also C questpgr.c:deliver_by_window(): inlined here after prepareSection converts lines
-export async function displayQuestText(text, state = game) {
-    if (!text)
-        return false;
+export async function displayQuestText(text: QuestText | null, state: GameState = game): Promise<boolean> {
+    if (!text) return false;
     if (text.output === 'pline') {
-        for (const line of text.lines)
-            await plineWithContinuation(line);
-    }
-    else {
+        for (const line of text.lines) await plineWithContinuation(line);
+    } else {
         if (state._pending_message && !state._pending_message.endsWith('--More--'))
             await flushPendingTopline();
         state._pending_message = '';
         state._retained_message = '';
         // C questpgr.c:451 deliver_by_window() fills the window with
         // putstr() even for menu-style output.
-        if (text.output === 'menu')
-            await showTextMenuOverlay(text.lines, { viaPutstr: true });
-        else
-            await showTextWindow(text.lines);
+        if (text.output === 'menu') await showTextMenuOverlay(text.lines, { viaPutstr: true });
+        else await showTextWindow(text.lines);
         state._pending_message = '';
         state._retained_message = '';
     }
     // C questpgr.c: putmsghistory(out_line, FALSE) remembers the synopsis
     // without displaying it.
-    if (text.synopsis)
-        putMessageHistory(text.synopsis);
+    if (text.synopsis) putMessageHistory(text.synopsis);
     return true;
 }
-export async function qtPager(messageId, state = game) {
+
+export async function qtPager(messageId: string, state: GameState = game): Promise<boolean> {
     return displayQuestText(await prepareQuestText(messageId, state), state);
 }
-export async function comPager(messageId, state = game) {
+
+export async function comPager(messageId: string, state: GameState = game): Promise<boolean> {
     return displayQuestText(await prepareQuestText(messageId, state, true), state);
 }
+
 // C questpgr.c:com_pager_core(). Each insult opens a fresh quest.lua state,
 // so nhlib's initialization precedes selection and message delivery.
-export async function deliverCommonQuestInsult(messageId, state = game) {
+export async function deliverCommonQuestInsult(
+    messageId: 'angel_cuss' | 'demon_cuss', state: GameState = game,
+): Promise<void> {
     await comPager(messageId, state);
 }
+
 // C questpgr.c:ldrname()/neminame() use the role's named species directly
 // when its name is a proper name, and with a "the" prefix otherwise.
-function roleMonsterName(mnum) {
-    if (mnum === undefined || !Number.isInteger(mnum))
-        return '';
+function roleMonsterName(mnum: number | undefined): string {
+    if (mnum === undefined || !Number.isInteger(mnum)) return '';
     const name = MONSTER_NAME[mnum];
-    if (name === undefined)
-        return '';
+    if (name === undefined) return '';
     return monsterHasProperName(mnum) ? name : `the ${name}`;
 }
-export function questLeaderName(g = game) {
+
+export function questLeaderName(g: GameState = game): string {
     return roleMonsterName(g.urole?.ldrnum);
 }
-export function questNemesisName(g = game) {
+
+export function questNemesisName(g: GameState = game): string {
     return roleMonsterName(g.urole?.neminum);
 }
+
 // C questpgr.c:guardname() returns the species name without an article.
-export function questGuardianName(g = game) {
+export function questGuardianName(g: GameState = game): string {
     const mnum = g.urole?.guardnum;
-    if (mnum === undefined || !Number.isInteger(mnum))
-        return '';
+    if (mnum === undefined || !Number.isInteger(mnum)) return '';
     return MONSTER_NAME[mnum] ?? '';
 }
+
 // C questpgr.c:homebase().
-export function questHomebase(g = game) {
+export function questHomebase(g: GameState = game): string {
     return g.urole?.homebase ?? '';
 }
+
 // C questpgr.c:intermed().
-export function questIntermed(g = game) {
+export function questIntermed(g: GameState = game): string {
     return g.urole?.intermediate ?? '';
 }
-function alignmentName(alignment) {
-    if (alignment === undefined)
-        return 'neutral';
+
+function alignmentName(alignment: number | undefined): AlignmentName {
+    if (alignment === undefined) return 'neutral';
     return alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
 }
+
 // C hacklib.c:s_suffix(); %S/%s name formatting uses the shared
 // possessiveName port in hacklib.ts.
+
+
 // The original alignment recorded at game start drives %a, %d, and %G.
-function originalAlignment(g) {
+function originalAlignment(g: GameState): number {
     return g.u?.ualignbase?.[1] ?? g.u?.ualign?.type ?? 0;
 }
+
 // C questpgr.c:qtext_pronoun(). The leader, nemesis, and deity read the
 // gender recorded in quest_status; artifacts are read as plural or neuter.
-function questPronoun(who, which, artifactName, g) {
+function questPronoun(
+    who: string, which: string, artifactName: string, g: GameState,
+): string {
     const kind = which.toLowerCase();
-    let pronoun;
+    let pronoun: string;
     if (who === 'o' && (artifactName.includes('Eyes ')
         || artifactName.toLowerCase()
             !== makeSingular(artifactName)?.toLowerCase())) {
         pronoun = kind === 'h' ? 'they' : kind === 'i' ? 'them' : 'their';
-    }
-    else {
+    } else {
         const status = g.quest_status;
         const gender = who === 'd' ? status?.godgend
             : who === 'l' ? status?.ldrgend
-                : who === 'n' ? status?.nemgend : 2;
+            : who === 'n' ? status?.nemgend : 2;
         pronoun = gender === 0
             ? (kind === 'h' ? 'he' : kind === 'i' ? 'him' : 'his')
             : gender === 1
@@ -188,50 +198,51 @@ function questPronoun(who, which, artifactName, g) {
     }
     return which !== kind ? upstart(pronoun) : pronoun;
 }
+
 // C questpgr.c:convert_arg().
-function questTextArgument(code, g) {
+function questTextArgument(code: string, g: GameState): string {
     switch (code) {
-        case 'p': return g.plname;
-        case 'c': return g.flags?.female && g.urole?.name.f
-            ? g.urole.name.f : (g.urole?.name.m ?? '');
-        case 'r': return rankOf(g.u?.ulevel ?? 1, roleSwitch(g), !!g.flags?.female, g);
-        case 'R': return rankOf(MIN_QUEST_LEVEL, roleSwitch(g), !!g.flags?.female, g);
-        case 's': return g.flags?.female ? 'sister' : 'brother';
-        case 'S': return g.flags?.female ? 'daughter' : 'son';
-        case 'l': return questLeaderName(g);
-        case 'i': return questIntermed(g);
-        case 'O': {
-            const name = g.urole?.artifactName ?? '';
-            const cut = name.indexOf(' of ');
-            return cut >= 0 ? name.slice(0, cut) : name;
-        }
-        case 'o': return g.urole?.artifactName ?? '';
-        case 'n': return questNemesisName(g);
-        case 'g': return questGuardianName(g);
-        case 'G': return godTitleOf(alignmentName(originalAlignment(g)), g);
-        case 'H': return questHomebase(g);
-        case 'a': return alignmentName(originalAlignment(g));
-        case 'A': return alignmentName(g.u?.ualign?.type);
-        case 'd': return deityName(originalAlignment(g), g);
-        case 'D': return deityName(A_LAWFUL, g);
-        case 'C': return 'chaotic';
-        case 'N': return 'neutral';
-        case 'L': return 'lawful';
-        case 'x': return heroIsBlind(g) ? 'sense' : 'see';
-        case 'Z': return g.dungeons?.[0]?.dname ?? '';
-        case '%': return '%';
-        default: return '';
+    case 'p': return g.plname;
+    case 'c': return g.flags?.female && g.urole?.name.f
+        ? g.urole.name.f : (g.urole?.name.m ?? '');
+    case 'r': return rankOf(g.u?.ulevel ?? 1, roleSwitch(g), !!g.flags?.female, g);
+    case 'R': return rankOf(MIN_QUEST_LEVEL, roleSwitch(g), !!g.flags?.female, g);
+    case 's': return g.flags?.female ? 'sister' : 'brother';
+    case 'S': return g.flags?.female ? 'daughter' : 'son';
+    case 'l': return questLeaderName(g);
+    case 'i': return questIntermed(g);
+    case 'O': {
+        const name = g.urole?.artifactName ?? '';
+        const cut = name.indexOf(' of ');
+        return cut >= 0 ? name.slice(0, cut) : name;
+    }
+    case 'o': return g.urole?.artifactName ?? '';
+    case 'n': return questNemesisName(g);
+    case 'g': return questGuardianName(g);
+    case 'G': return godTitleOf(alignmentName(originalAlignment(g)), g);
+    case 'H': return questHomebase(g);
+    case 'a': return alignmentName(originalAlignment(g));
+    case 'A': return alignmentName(g.u?.ualign?.type);
+    case 'd': return deityName(originalAlignment(g), g);
+    case 'D': return deityName(A_LAWFUL, g);
+    case 'C': return 'chaotic';
+    case 'N': return 'neutral';
+    case 'L': return 'lawful';
+    case 'x': return heroIsBlind(g) ? 'sense' : 'see';
+    case 'Z': return g.dungeons?.[0]?.dname ?? '';
+    case '%': return '%';
+    default: return '';
     }
 }
+
 // C questpgr.c:convert_line(). Expands each % code and consumes the letter
 // after it when that letter selects an article, capitalization, pronoun,
 // plural, or possessive form of the expanded value.
-export function convertQuestLine(line, g = game) {
+export function convertQuestLine(line: string, g: GameState = game): string {
     let out = '';
     for (let i = 0; i < line.length; i++) {
         const ch = line[i] ?? '';
-        if (ch === '\r' || ch === '\n')
-            return out;
+        if (ch === '\r' || ch === '\n') return out;
         if (ch !== '%' || i + 1 >= line.length) {
             out += ch;
             continue;
@@ -240,72 +251,66 @@ export function convertQuestLine(line, g = game) {
         let value = questTextArgument(code, g);
         const modifier = i + 1 < line.length ? line[i + 1] ?? '' : '';
         switch (modifier) {
-            case 'A':
-                out += upstart(withIndefiniteArticle(value));
+        case 'A':
+            out += upstart(withIndefiniteArticle(value));
+            i++;
+            continue;
+        case 'a':
+            out += withIndefiniteArticle(value);
+            i++;
+            continue;
+        case 'C':
+            value = upstart(value);
+            i++;
+            break;
+        case 'h': case 'H': case 'i': case 'I': case 'j': case 'J':
+            if ('dlno'.includes(code.toLowerCase())) {
+                value = questPronoun(code, modifier, value, g);
                 i++;
+                break;
+            }
+            out += value;
+            continue;
+        case 'P':
+            value = upstart(makePlural(value));
+            i++;
+            break;
+        case 'p':
+            value = makePlural(value);
+            i++;
+            break;
+        case 'S':
+            value = upstart(possessiveName(value));
+            i++;
+            break;
+        case 's':
+            value = possessiveName(value);
+            i++;
+            break;
+        case 't':
+            i++;
+            if (value.toLowerCase().startsWith('the ')) {
+                out += value.slice(4);
                 continue;
-            case 'a':
-                out += withIndefiniteArticle(value);
-                i++;
-                continue;
-            case 'C':
-                value = upstart(value);
-                i++;
-                break;
-            case 'h':
-            case 'H':
-            case 'i':
-            case 'I':
-            case 'j':
-            case 'J':
-                if ('dlno'.includes(code.toLowerCase())) {
-                    value = questPronoun(code, modifier, value, g);
-                    i++;
-                    break;
-                }
-                out += value;
-                continue;
-            case 'P':
-                value = upstart(makePlural(value));
-                i++;
-                break;
-            case 'p':
-                value = makePlural(value);
-                i++;
-                break;
-            case 'S':
-                value = upstart(possessiveName(value));
-                i++;
-                break;
-            case 's':
-                value = possessiveName(value);
-                i++;
-                break;
-            case 't':
-                i++;
-                if (value.toLowerCase().startsWith('the ')) {
-                    out += value.slice(4);
-                    continue;
-                }
-                break;
-            default:
-                out += value;
-                continue;
+            }
+            break;
+        default:
+            out += value;
+            continue;
         }
         out += value;
     }
     return out;
 }
+
 // C questpgr.c:qt_montype(). The chosen role supplies both species and
 // fallback classes; a genocided preferred species still spends rn2(5).
-export function questMonsterType() {
+export function questMonsterType(): number | null {
     const role = game.urole;
-    if (!role)
-        throw new Error('Quest monsters require an initialized role');
+    if (!role) throw new Error('Quest monsters require an initialized role');
     const first = rn2(5) !== 0;
     const species = first ? role.enemy1num : role.enemy2num;
     if (species !== null && rn2(5) && !((game.mvitals?.[species]?.mvflags ?? 0) & G_GENOD))
         return species;
     return mkclass(first ? role.enemy1sym : role.enemy2sym, 0);
 }
-//# sourceMappingURL=quest_pager.js.map

@@ -8,8 +8,8 @@ import {
     artifactToHitBonus,
     initializeArtifacts,
     nameArtifact,
-} from '../js/artifacts.js';
-import { touchArtifactByHero } from '../js/artifacts.js';
+} from '../js/artifact.js';
+import { touchArtifactByHero } from '../js/artifact.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

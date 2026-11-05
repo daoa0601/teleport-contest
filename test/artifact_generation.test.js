@@ -1,7 +1,7 @@
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, artifactExistCount, createRandomArtifact, initializeArtifacts, nameArtifact, uncreateArtifact, } from '../js/artifacts.js';
+import { artifactByName, artifactExistCount, createRandomArtifact, initializeArtifacts, nameArtifact, uncreateArtifact, } from '../js/artifact.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { mksobj, placeCreatedObject } from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';

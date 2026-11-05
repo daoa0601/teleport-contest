@@ -4,7 +4,7 @@ import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { hurtleHero } from '../js/dothrow.js';
 import { pushKeys } from '../js/input.js';
-import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { createMonsterAt } from './support/monsters.js';
 import { memoryStorage } from './support/memory-storage.js';

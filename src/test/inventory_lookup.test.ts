@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { rhack } from '../js/cmd.js';
-import { discoverArtifact } from '../js/artifacts.js';
+import { discoverArtifact } from '../js/artifact.js';
 import { game, requireGameDisplay } from '../js/gstate.js';
 import { docrt, flush_screen } from '../js/display.js';
 import { resetInputState } from '../js/input.js';

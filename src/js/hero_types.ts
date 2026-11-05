@@ -3,7 +3,7 @@ import type { Monster } from './monster_types.js';
 import type { MapLocation } from './map_types.js';
 import type { GameObject } from './object_types.js';
 import type { HeroPropertyState } from './property_types.js';
-import type { AlignmentValue, AttributeValues } from './roles.js';
+import type { AlignmentValue, AttributeValues } from './role.js';
 
 export interface HeroCoordinates {
     ux: number;

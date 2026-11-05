@@ -75,7 +75,7 @@ import { unpunishHero } from './read.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { heroSpecies, heroFormSticks, heroIsAmphibious, dragonFormForArmor, heroHasOlfaction, heroMonsterForm, pickFormFromClass } from './polyself.js';
 import { cansee, couldsee, hasLightSources, monsterHasLineOfSightToHero, vision_recalc, monsterEmitsLight, vision_note_blocker_change } from './vision.js';
-import { monsterSentenceSubject, publishMonsterGrowl } from './ambient_sounds.js';
+import { monsterSentenceSubject, publishMonsterGrowl } from './sounds.js';
 import { adjustHeroAlignment, changeHeroLuck, currentAttribute } from './attrib.js';
 import { heroHasConflict } from './hero_conflict.js';
 import { insideWizardTower, sameDungeonLevel, level_difficulty, levelIsWaterLevel, levelHasCeiling, surfaceName } from './dungeon.js';
@@ -83,7 +83,7 @@ import { monsterWieldedWeapon, unwieldMonsterWeapon, updateMonsterWeaponAfterPol
 import { wormCrossesBetween, clearMonsterWormFromMap, initializeMonsterWormBody, redrawMonsterWormSegments, removeMonsterWormBody } from './worm.js';
 import { heroIsInvisible } from './hero_invisibility.js';
 import { heroIsDisplaced } from './do_wear.js';
-import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './regions.js';
+import { GAS_OK, monsterGasTolerance, visibleRegionAt, createPoisonGasCloud } from './region.js';
 import { hasTrack } from './track.js';
 import { inHeroSanctuary, ghodHitsu, priestIsCoaligned, templeRoomAt } from './priest.js';
 import { impossible } from './diagnostics.js';
@@ -115,7 +115,7 @@ import { objectResistsDestruction } from './zap.js';
 import { endObjectBurn } from './timeout.js';
 import { corpse_intrinsic, should_givit } from './eat.js';
 import type { PropertyName } from './property_types.js';
-import { monsterCanTouchArtifact, uncreateArtifact } from './artifacts.js';
+import { monsterCanTouchArtifact, uncreateArtifact } from './artifact.js';
 import { reviveCorpseImmediately } from './do.js';
 import type { GameMap } from './game.js';
 import { inventoryItemDescription, delobj, stack_object } from './invent.js';
@@ -125,7 +125,7 @@ import { getLine } from './query.js';
 import { coordinateDescription } from './pager.js';
 import { toptenMonsterForm } from './topten.js';
 import { recordHeroKillConduct } from './end.js';
-import { createPhysicalMonsterExplosion } from './explosion.js';
+import { createPhysicalMonsterExplosion } from './explode.js';
 import { stopHeroOccupation } from './occupation.js';
 import { resolveMonsterGaze,
     expelHero,

@@ -10,7 +10,7 @@ import { MONSTER_SOUND } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { monsterPossessive, monsterHasEyes, monsterIsHumanoid, monsterPerceives, monsterIsHelpless } from './mondata.js';
 import { monsterAtPosition } from './steed.js';
-import { publishMonsterNoise } from './ambient_sounds.js';
+import { publishMonsterNoise } from './sounds.js';
 import { STATUE } from './object_data.js';
 import { propertyIsActive } from './properties.js';
 import { rn1, rn2 } from './rng.js';

@@ -54,7 +54,7 @@ import {
 import { isok } from './cmd.js';
 import { MONSTER_BODY_META, MONSTER_GENO, MONSTER_LEVEL, MONSTER_SYMBOL, MONSTER_SIZE, MONSTER_NAME, SPECIAL_PM, requireMonsterData } from './monster_data.js';
 import { forgetTempleEntry } from './priest.js';
-import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifacts.js';
+import { artifactExistCount, createRandomArtifact, uncreateArtifact } from './artifact.js';
 import { objectTimers, scheduleObjectTimer, stopAllObjectTimers, stopObjectTimer, stopObjectTimers, objectsInTimerGraph, copyObjectTimers } from './timeout.js';
 import { isMultiGeneratedWeapon, isPoisonableObject, isBimanualObject } from './object_properties.js';
 import { rndmonstAdj } from './makemon.js';

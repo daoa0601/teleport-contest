@@ -54,7 +54,7 @@ import { gotoLevel, scheduleLevelChange, woundHeroLegs, dropBoulderIntoLiquid } 
 import { hasCarriedProperty, hasWornProperty, refreshMovementProperties, existingPropertyRecord, propertySourceIsActive, propertyIsBlocked, propertyIsActive, clearLevitationMasks, levitationAtWill, grantIntrinsicProperty, hasIntrinsicProperty, hasInvokedProperty, removeIntrinsicProperty, setPropertyTimeout, } from './properties.js';
 import { ordinalSuffix, possessiveName, dist2, distmin } from './hacklib.js';
 import { applyFloorEffects } from './floor_effects.js';
-import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { heroHasArtifactDefense, artifactById, heroHasMagicKey, heroHasCarriedArtifactFlag } from './artifact.js';
 import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadRock, roomsAt, finishDestinationSpotEffects, EXT_ENCUMBER, HVY_ENCUMBER, calcCapacity, inventoryWeight, nearCapacity, applyHeroLiquidEffects, endVoluntaryMultiTurn, heroLocomotion, applyHeroLocationEffects, heroCanSwim, moveObject, dropEmergencyObject, pickEmergencyDrop, heroResistsFire as heroResistsFireWithoutArtifactDefense, UNENCUMBERED, SLT_ENCUMBER, nomul, setHeroInWater, crawlDestinationAllowed, spotChecks, } from './hack.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName, heroSpineName, monsterArmName, monsterHeadName, } from './body_parts.js';
@@ -87,7 +87,7 @@ import { projectileHitsIronBars } from './mthrowu.js';
 import { scatterFloorObjects } from './scatter.js';
 import { rangedTargetHitBonus, staggerVerb } from './dothrow.js';
 import { bot, rankOf, roleSwitch } from './botl.js';
-import { createPoisonGasCloud } from './regions.js';
+import { createPoisonGasCloud } from './region.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { reset_faint } from './eat.js';
 import { holdingMonsterName, holdingMonsterSubject } from './mhitu.js';

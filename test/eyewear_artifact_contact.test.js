@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

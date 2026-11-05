@@ -1,5 +1,5 @@
 import { capturedScreen } from './support/screen.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { StorageBackend } from '../js/storage.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';

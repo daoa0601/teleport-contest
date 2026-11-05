@@ -16,7 +16,7 @@ import { addInventoryObject, uninitializedObject } from './support/game-objects.
 import { addTrap, floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 const PM_JACKAL = 12;
 function freshKickArena(role = 'tourist') {
     const level = freshPlayableRoom({

@@ -10,7 +10,7 @@ import { OBJ_NAME, objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_
 import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { heroIsPunished, placeBallAndChain, setBallAndChainFelt } from './ball.js';
 import { heroHandName, heroHeadName, heroLegName, monsterStomachName } from './body_parts.js';
 import { A_CON, A_STR, A_WIS, ACCESSIBLE, COLNO, D_CLOSED, D_LOCKED, DOOR, EXPL_FIERY, G_EXTINCT, G_GENOD, G_NOCORPSE, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, In_endgame, In_quest, IS_AIR, IS_OBSTRUCTED, Is_earthlevel, Is_rogue_level, Luck, M_SEEN_FIRE, MM_EDOG, MM_FEMALE, MM_MALE, MM_MINVIS, MM_NOEXCLAM, MM_NOMSG, NO_MINVENT, PLNMSG_TOWER_OF_FLAME, POLY_REVERT, ROWNO, SDOOR, SPE_LIM, TT_BURIEDBALL, Upolyd, W_ARMH, W_ART, W_ARTI, W_BALL, W_CHAIN, WT_IRON_BALL_INCR, } from './const.js';
@@ -50,7 +50,7 @@ import { prepareMapPositionHighlights, selectMapPosition, showGetposInstructions
 import { finishHeroDeath as defaultHeroDeath, finishHeroDeath as finishNativeHeroDeath } from './end.js';
 import { listGenocided } from './insight.js';
 import { propertyIsActive } from './properties.js';
-import { createPoisonGasCloud } from './regions.js';
+import { createPoisonGasCloud } from './region.js';
 import { burnAwayHeroSlime, endObjectBurn } from './timeout.js';
 import { loseHeroSpellMemory, studyBook } from './spell.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -1274,7 +1274,7 @@ function sourceTypeKnown(source, state) {
 }
 // C read.c:valid_cloud_pos(). Can a stinking cloud physically exist at a
 // position? NOT the same thing as canCenterCloud; region.c's cloud growth
-// (regions.ts) shares the test through this export.
+// (region.ts) shares the test through this export.
 export function validCloudPosition(state, x, y) {
     if (!isok(x, y))
         return false;

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { touchArtifactByHero } from '../js/artifacts.js';
+import { touchArtifactByHero } from '../js/artifact.js';
 import { DIED } from '../js/const.js';
 import { killerDeathCause } from '../js/end.js';
 import { artifactObject } from './support/game-objects.js';

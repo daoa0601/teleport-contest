@@ -11,7 +11,7 @@ import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { putHeroToSleep } from '../js/timeout.js';
 import { digMonsterTunnel } from '../js/dig.js';
-import type { AlignmentValue } from '../js/roles.js';
+import type { AlignmentValue } from '../js/role.js';
 import {
     AMULET_OF_LIFE_SAVING, APPLE, BOULDER, ROCK,
 } from '../js/object_data.js';

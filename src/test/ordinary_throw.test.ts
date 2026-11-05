@@ -20,8 +20,8 @@ import {
 import { initRng } from '../js/rng.js';
 import { resetInputState } from '../js/input.js';
 import type { GameObject } from '../js/object_types.js';
-import { races } from '../js/roles.js';
-import type { RaceName, RoleKey } from '../js/roles.js';
+import { races } from '../js/role.js';
+import type { RaceName, RoleKey } from '../js/role.js';
 import { throwInventoryObject } from './support/commands.js';
 import {
     addInventoryObject, addInventoryWeapon,

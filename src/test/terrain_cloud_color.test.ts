@@ -3,7 +3,7 @@ import test from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { CLR_GRAY } from '../js/terminal.js';
 import { resetInputState } from '../js/input.js';
 import { createMonsterAt } from './support/monsters.js';

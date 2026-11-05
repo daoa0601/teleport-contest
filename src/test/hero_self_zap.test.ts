@@ -7,7 +7,7 @@ import { wearHeroAccessory } from '../js/do_wear.js';
 
 import { wearHeroArmor } from '../js/do_wear.js';
 
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import {
     A_STR, BEAR_TRAP, M_AP_F_DKNOWN, M_AP_OBJECT, M_SEEN_COLD, M_SEEN_FIRE,
     M_SEEN_MAGR, TIMEOUT, TT_BEARTRAP, Upolyd,
@@ -29,7 +29,7 @@ import {
     WAN_SPEED_MONSTER, WAN_STRIKING,
 } from '../js/object_data.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty, propertyTimeout, setPropertyTimeout } from '../js/properties.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { heroIsBlind } from '../js/senses.js';
 import { makeBlinded } from '../js/potion.js';
 import { setPrimaryWeapon } from '../js/wield.js';

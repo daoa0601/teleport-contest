@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { Upolyd } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { freshRoomWithPolymorphedHero } from './support/hero-state.js';
 
 void test('lethal gas damage ends a vulnerable polymorph without killing the hero', async () => {

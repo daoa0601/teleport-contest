@@ -44,8 +44,8 @@ import { counterWereSpecies, heroCanSummonWerePack, isWereMonster, summonWerePac
 import type { HeroWereChangeOptions } from './were.js';
 import { AD_BLND, AD_COLD, AD_CONF, AD_DRST, AD_ELEC, AD_FIRE, AD_HALU, AD_MAGM, AD_RBRE, AT_BREA, AT_ENGL, AT_EXPL, AT_GAZE, AT_SPIT } from './monster_attack_types.js';
 import type { DamageType } from './monster_attack_types.js';
-import { character_race, races } from './roles.js';
-import type { RoleKey } from './roles.js';
+import { character_race, races } from './role.js';
+import type { RoleKey } from './role.js';
 import { reassessStatusFields } from './botl.js';
 import { heroIsUnaware, heroIsBlind, heroIsHallucinating, setHeroBlindnessTimeout, syncBlindness } from './senses.js';
 import { heroHasInvoluntaryDelay, promptDirection, yn_function } from './cmd.js';
@@ -100,7 +100,7 @@ import {
 } from './mondata.js';
 import { getLine, promptYesNo } from './query.js';
 import { clearHeroPetrification, heroIsPetrifying } from './stoning.js';
-import { retouchEquipment } from './artifacts.js';
+import { retouchEquipment } from './artifact.js';
 import { removeWornHeroItem } from './hero_equipment.js';
 import { dropInventoryObjectAtHero } from './do.js';
 import { heroIsPunished } from './ball.js';
@@ -1183,7 +1183,7 @@ function canDropPolymorphWeapon(object: GameObject) {
     return !(object.otyp === LEASH && object.leashmon);
 }
 
-// roles.js currently stores the pre-consumed initial energy die separately
+// role.js currently stores the pre-consumed initial energy die separately
 // during startup.  These are the corresponding role.c enadv.inrnd values
 // needed when newman() rolls an entirely new level-zero power increment.
 const INITIAL_ENERGY_RANDOM: Partial<Record<RoleKey, number>> = {

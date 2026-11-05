@@ -5,7 +5,7 @@ import { FAINTED, TIMEOUT } from './const.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { heroIsUnconscious } from './trap.js';
 import { LENSES } from './object_data.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { hasIntrinsicProperty, propertyIsActive } from './properties.js';
 // C youprop.h:Unaware — gm.multi < 0 && (unconscious() || is_fainted()),
 // using the current involuntary-delay representation.

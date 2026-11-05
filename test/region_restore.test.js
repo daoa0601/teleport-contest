@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { gotoLevel } from '../js/do.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
-import { createGasCloudSelection } from '../js/regions.js';
+import { createGasCloudSelection } from '../js/region.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { freshConnectedLevels } from './support/connected-levels.js';
 import { memoryStorage } from './support/memory-storage.js';

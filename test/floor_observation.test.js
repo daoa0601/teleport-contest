@@ -2,7 +2,7 @@ import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { addObjectToContainer } from '../js/mkobj.js';
 import { putIntoContainer, takeFromContainer } from '../js/pickup.js';
 import { fullyIdentifyObject } from '../js/invent.js';

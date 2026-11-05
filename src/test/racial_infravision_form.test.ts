@@ -6,7 +6,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { uInitInventoryAttrs, uInitMisc } from '../js/u_init.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { vision_recalc } from '../js/vision.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { createMonsterAt } from './support/monsters.js';

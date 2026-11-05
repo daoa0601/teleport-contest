@@ -17,7 +17,7 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { artifactEmitsLight } from './artifacts.js';
+import { artifactEmitsLight } from './artifact.js';
 import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
 import {

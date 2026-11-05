@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { finishMonsterKilled } from '../js/mon.js';
 import { AD_DRST } from '../js/monster_attack_types.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { initRng } from '../js/rng.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshPlayableRoom } from './support/playable-room.js';

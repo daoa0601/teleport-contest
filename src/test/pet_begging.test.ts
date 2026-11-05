@@ -7,7 +7,7 @@ import { initializePet } from '../js/dog.js';
 import { game } from '../js/gstate.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { changeMonsterForm } from '../js/mon.js';
-import { begForFood, publishMonsterNoise } from '../js/ambient_sounds.js';
+import { begForFood, publishMonsterNoise } from '../js/sounds.js';
 import { makeBlinded } from '../js/potion.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { createMonsterAt } from './support/monsters.js';

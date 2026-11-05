@@ -1,7 +1,7 @@
 import { setHeroGrip, releaseHeroFromMonster, maybeUnhideAt, monsterInAir, sendMonsterToLimbo, isRider, } from './mon.js';
 import { formatFeltMessage } from './hero_speech.js';
 import { monsterHasMapPosition, monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
-import { updateHeroRegions, updateMonsterRegions } from './regions.js';
+import { updateHeroRegions, updateMonsterRegions } from './region.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
 import { game, requireLiveGame, requireGameLevel, requirePlayingGame } from './gstate.js';
 import { impossible } from './diagnostics.js';
@@ -45,7 +45,7 @@ import { depth, placeHeroOnLevel } from './dungeon.js';
 import { makeStunned, makeConfused } from './potion.js';
 import { learnObjectType } from './o_init.js';
 import { hasShopkeeperData } from './shop_types.js';
-import { publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterYelp } from './sounds.js';
 import { migrateMonsterOffLevel } from './dog.js';
 import { isHomeElemental } from './makemon.js';
 import { reviveCorpseImmediately } from './do.js';

@@ -2,7 +2,7 @@ import { ensureQuestStatus } from '../js/quest.js';
 import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, discoverArtifact } from '../js/artifacts.js';
+import { artifactByName, discoverArtifact } from '../js/artifact.js';
 import { game } from '../js/gstate.js';
 import { heroHasConflict } from '../js/hero_conflict.js';
 import { pushKeys, resetInputState } from '../js/input.js';

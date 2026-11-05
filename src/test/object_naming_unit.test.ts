@@ -15,7 +15,7 @@ import { recordObjectCall } from '../js/do_name.js';
 
 import { readObjectName, simpleObjectNameWithArticle } from '../js/objnam.js';
 import { initRng } from '../js/rng.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import type { KnownObjectOverrides } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

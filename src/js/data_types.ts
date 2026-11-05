@@ -1,5 +1,5 @@
 import type { AttackMethod, DamageType } from './monster_attack_types.js';
-import type { RaceName, RoleKey } from './roles.js';
+import type { RaceName, RoleKey } from './role.js';
 
 /** Native struct attack fields, in the order used by mons[].mattk. */
 export type MonsterAttack = readonly [

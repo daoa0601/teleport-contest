@@ -18,7 +18,7 @@ import { installHeroWeaponSkills, installPolymorphedHero } from './support/hero-
 import { createMonsterAt, equipMonsterObject, requireMonsterVital } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { createStaffedShop } from './support/shop.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { HeroPhysicalAttackMode } from '../js/hero_physical_types.js';
 
 async function contactRoom(role: RoleKey = 'tourist', species = 'hill giant') {

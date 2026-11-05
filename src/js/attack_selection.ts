@@ -1,6 +1,6 @@
 // C mhitu.c:getmattk(). Select one live attack slot and apply its contextual
 // replacement before any hit rolls. The pinned sysconf leaves SEDUCE enabled.
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { M_ATTK_MISS } from './const.js';
 import { requireLiveGame } from './gstate.js';
 import { heroSpecies } from './polyself.js';

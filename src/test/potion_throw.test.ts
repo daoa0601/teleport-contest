@@ -2,7 +2,7 @@ import { monsterAtPosition } from '../js/steed.js';
 import type { GameObject } from '../js/object_types.js';
 import type { Monster } from '../js/monster_types.js';
 import { setMonsterGivenName } from '../js/do_name.js';
-import type { AttributeValues } from '../js/roles.js';
+import type { AttributeValues } from '../js/role.js';
 import type { KeyInput } from '../js/input.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

@@ -1,6 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
-import { goodbye } from './roles.js';
+import { goodbye } from './role.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
@@ -30,7 +30,7 @@ import { shopkeeperKillerName, finishShopkeeperRepossession, settleShopkeepersOn
 import { plineWithContinuation } from './pline.js';
 import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInventory, lootSortMode, sortObjects, currency, stack_object } from './invent.js';
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';

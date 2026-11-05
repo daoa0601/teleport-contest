@@ -32,7 +32,7 @@ import { freshObjectRoom } from './support/object-room.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { installPagerInput } from './support/pager-input.js';
 import { angerMonster } from '../js/mon.js';
-import { publishMonsterYelp, publishMonsterGrowl } from '../js/ambient_sounds.js';
+import { publishMonsterYelp, publishMonsterGrowl } from '../js/sounds.js';
 import { startRun } from '../js/cmd.js';
 
 async function topline() {

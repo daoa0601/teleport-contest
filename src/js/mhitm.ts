@@ -28,7 +28,7 @@ import {
     canSeeMonster, canSenseMonster, canSpotMonster, flush_screen, map_invisible, newsym,
 } from './display.js';
 import { plineWithContinuation } from './pline.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import {
     M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED,
@@ -48,7 +48,7 @@ import { findMonsterArmorClass } from './monworn.js';
 import { revealMonsterAppearance } from './mon.js';
 import { cloneMonster, finishMonsterGrowth, growMonster } from './makemon.js';
 import { splitMonster } from './potion.js';
-import { createElementalMonsterExplosion } from './explosion.js';
+import { createElementalMonsterExplosion } from './explode.js';
 import { cansee } from './vision.js';
 import {
     applyMonsterGolemEffects, changeMonsterForm, finishEnvironmentalMonsterDeath, finishMonsterKilled,
@@ -83,7 +83,7 @@ import {
 import { mon_reflects } from './muse.js';
 import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateMonsterRegions } from './region.js';
 import { recordHeroKillConduct } from './end.js';
 import { objectMaterial } from './o_init.js';
 import { makePlural, verbForSubject } from './objnam.js';

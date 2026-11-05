@@ -3,7 +3,7 @@ import { RANDOM_CLASS, ROCK_CLASS } from './objclass.js';
 import { formatSeenMessage } from './hero_speech.js';
 import { A_INT, COLNO, IS_FURNITURE, M_AP_FURNITURE, M_AP_TYPE, ROWNO, TER_DETECT, TER_MAP, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
 import { currentAttribute } from './attrib.js';
-import { artifactByName } from './artifacts.js';
+import { artifactByName } from './artifact.js';
 import { heroResistsBlindingLight } from './blinding_attack.js';
 import { nomul } from './hack.js';
 import { canSpotMonster, currentBoulderSymbol, glyphAt, magic_map_background, map_invisible, } from './display.js';

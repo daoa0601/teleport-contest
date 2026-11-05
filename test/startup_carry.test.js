@@ -11,7 +11,7 @@ import { goldInsightLines } from '../js/insight.js';
 import { runSegment } from '../js/jsmain.js';
 import { A_CHA, A_CON, A_DEX, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { BAG_OF_HOLDING, GOLD_PIECE, SACK, SPLINT_MAIL, } from '../js/object_data.js';
-import { races, roles } from '../js/roles.js';
+import { races, roles } from '../js/role.js';
 import { uInitCarryAttrBoost, uInitInventoryAttrs, } from '../js/u_init.js';
 import { freshGame } from './support/game-state.js';
 import { prepareHeroStartup } from './support/startup.js';

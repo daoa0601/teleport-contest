@@ -4,7 +4,7 @@ import test from 'node:test';
 import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { createPoisonGasCloud, runLevelRegions, updateMonsterRegions } from '../js/regions.js';
+import { createPoisonGasCloud, runLevelRegions, updateMonsterRegions } from '../js/region.js';
 import { game } from '../js/gstate.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { installSwallowedHero } from './support/hero-state.js';

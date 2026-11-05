@@ -17,7 +17,7 @@ import assert from 'node:assert/strict';
 // "You can move again." — four blank columns after the knockback text,
 // with no --More-- anywhere in the sequence.
 
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { stopHeroOccupation } from '../js/occupation.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_CLAW } from '../js/monster_attack_types.js';

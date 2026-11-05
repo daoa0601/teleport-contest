@@ -11,7 +11,7 @@ import { getLine } from './query.js';
 import { SHOP_TYPES } from './shknam.js';
 import { deityName } from './pray.js';
 import { makePlural, withIndefiniteArticle } from './objnam.js';
-import { questLeaderName } from './quest_pager.js';
+import { questLeaderName } from './questpgr.js';
 import { ATR_INVERSE, addMenuHeading } from './windows.js';
 import type { TextMenuEntry } from './windows.js';
 import type { TextMenuLine } from './wintty.js';

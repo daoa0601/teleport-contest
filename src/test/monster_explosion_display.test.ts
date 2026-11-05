@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createElementalMonsterExplosion } from '../js/explosion.js';
+import { createElementalMonsterExplosion } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_ACID, AD_DRST } from '../js/monster_attack_types.js';

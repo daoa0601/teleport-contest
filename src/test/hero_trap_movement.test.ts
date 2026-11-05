@@ -4,7 +4,7 @@ import { requireFixtureGame } from './support/game-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { moveloop_core } from '../js/allmain.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 

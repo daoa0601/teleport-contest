@@ -2,7 +2,7 @@
 // C minion.c:demon_talk()/bribe() and monmove.c:dochug().
 
 import { formatFeltMessage } from './hero_speech.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
 import { endVoluntaryMultiTurn, heroGoldAmount } from './hack.js';

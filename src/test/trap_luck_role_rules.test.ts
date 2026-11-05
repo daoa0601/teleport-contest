@@ -5,7 +5,7 @@ import { createEarthquake } from '../js/earthquake.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { CHEST, LUCKSTONE } from '../js/object_data.js';
 import { initRng } from '../js/rng.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { addTrap } from './support/level-state.js';
 import { freshObjectRoom } from './support/object-room.js';

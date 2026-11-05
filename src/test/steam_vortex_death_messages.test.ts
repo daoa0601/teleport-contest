@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
-import { createPoisonGasCloud } from '../js/regions.js';
+import { createPoisonGasCloud } from '../js/region.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 

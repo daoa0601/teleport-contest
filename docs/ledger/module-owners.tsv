@@ -1,6 +1,6 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
 src/js/apply.ts	apply.c
-src/js/artifacts.ts	artifact.c
+src/js/artifact.ts	artifact.c
 src/js/attrib.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
@@ -23,7 +23,7 @@ src/js/earthquake.ts	music.c
 src/js/eat.ts	eat.c
 src/js/engrave.ts	engrave.c
 src/js/exper.ts	exper.c
-src/js/explosion.ts	explode.c
+src/js/explode.ts	explode.c
 src/js/extralev.ts	extralev.c
 src/js/extversion.ts	version.c
 src/js/familiar.ts	dog.c
@@ -78,14 +78,14 @@ src/js/potion.ts	potion.c
 src/js/pray.ts	pray.c
 src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
-src/js/quest_pager.ts	questpgr.c
+src/js/questpgr.ts	questpgr.c
 src/js/quiver.ts	wield.c
 src/js/read.ts	read.c
 src/js/rect.ts	rect.c
-src/js/regions.ts	region.c
+src/js/region.ts	region.c
 src/js/rng.ts	rnd.c
-src/js/roles.ts	role.c
-src/js/rumor.ts	rumors.c
+src/js/role.ts	role.c
+src/js/rumors.ts	rumors.c
 src/js/scatter.ts	explode.c
 src/js/score_records.ts	topten.c
 src/js/shk.ts	shk.c

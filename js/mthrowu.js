@@ -8,7 +8,7 @@ import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS, ARMOR_C
 import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CORPSE, CREAM_PIE, CREDIT_CARD, EGG, ELVEN_ARROW, ELVEN_BOW, ENORMOUS_MEATBALL, HEAVY_IRON_BALL, LENSES, LOCK_PICK, MAGIC_WHISTLE, MEAT_STICK, OBJECT_NAMES, POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, WAN_STRIKING, } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
-import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
+import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
@@ -45,7 +45,7 @@ import { MONSTER_NAME, MONSTER_SIZE, requireMonsterData } from './monster_data.j
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
 import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks, touchPetrifies, } from './mondata.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { dropObjectAtHero } from './do.js';

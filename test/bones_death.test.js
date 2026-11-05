@@ -14,7 +14,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { init_objects } from '../js/o_init.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import { races, roles } from '../js/roles.js';
+import { races, roles } from '../js/role.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { answerPrompts } from './support/input-boundaries.js';
 import { floorObjectsAt } from './support/level-state.js';

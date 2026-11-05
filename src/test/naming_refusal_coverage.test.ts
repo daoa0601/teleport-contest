@@ -4,7 +4,7 @@ import test, { type TestContext } from 'node:test';
 import { rhack } from '../js/cmd.js';
 import { MM_EPRI } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import type { AttributeValues } from '../js/roles.js';
+import type { AttributeValues } from '../js/role.js';
 import { ELVEN_DAGGER, SCR_IDENTIFY } from '../js/object_data.js';
 import { resetInputState } from '../js/input.js';
 import { queueCannedKeys } from './support/canned-input.js';

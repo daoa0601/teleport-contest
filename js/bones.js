@@ -29,7 +29,7 @@ import { hideMonsterUnder, monsterCanCarryObject, purgeDeadMonsters, removeMonst
 import { restoreLevelChains } from './level_restore.js';
 import { hideMonsterOnRestore, restoreLevelPetHistory, restoreMonsterWormHeads, validMonsterWormBodies } from './save.js';
 import { endObjectBurn, restoreLevelTimers } from './timeout.js';
-import { restoreLevelRegions } from './regions.js';
+import { restoreLevelRegions } from './region.js';
 import { fixShopDamage, pacifyShopkeeper, setShopResidency } from './shk.js';
 import { forgetEngravings, makeEngravingAt, restoreEngravings, sanitizeEngravings } from './engrave.js';
 import { deleteTrap } from './trap.js';
@@ -41,7 +41,7 @@ import { CORPSE, ICE_BOX, MUMMY_WRAPPING, SLIME_MOLD, STATUE } from './object_da
 import { clearBypasses } from './worn.js';
 import { isok, paranoidQuery } from './cmd.js';
 import { dismountHero, monsterHasMapPosition } from './steed.js';
-import { artifactEmitsLight } from './artifacts.js';
+import { artifactEmitsLight } from './artifact.js';
 import { setTwoWeaponCombat } from './wield.js';
 import { makemonAt, peaceMinded, propagateMonsterSpecies, setMonsterMalign } from './makemon.js';
 import { initializeMonsterArmor } from './monworn.js';
@@ -53,7 +53,7 @@ import { unpunishHero } from './read.js';
 import { depth, ledgerNo, maxLedgerNo } from './dungeon.js';
 import { isRoom } from './map_types.js';
 import { hasPermanentIntrinsicProperty } from './properties.js';
-import { races, roles } from './roles.js';
+import { races, roles } from './role.js';
 import { relocateMonsterTo, enexto } from './teleport.js';
 import { hasShopkeeperData } from './shop_types.js';
 import { roomForRoomno } from './hack.js';

@@ -78,7 +78,7 @@ import { getLine, promptYesNoAllQuit } from './query.js';
 import { isTwoWeaponObject, isWeldedPrimary, setQuiverObject, heroCanUseTwoWeapons } from './wield.js';
 import { heroHasNoHands, heroIsVerySmall, heroSpecies, heroFormHidesUnderObjects, heroIsPolymorphed } from './polyself.js';
 import { heroFingerName, heroHandName, monsterStomachName } from './body_parts.js';
-import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifacts.js';
+import { discoverArtifact, touchArtifactByHero, artifactById, deactivateArtifactProperty, setCarriedArtifactProperties } from './artifact.js';
 import { isQuestArtifact, touchQuestArtifact } from './quest.js';
 import { recordAchievement } from './insight.js';
 import { isEdibleFood } from './food_selection.js';
@@ -90,7 +90,7 @@ import { stairwayDescription } from './mklev.js';
 import { deityName } from './pray.js';
 import { isIceAt, isLavaAt, isPoolAt, findDrawbridgeAt, drawbridgeUnderlyingType } from './dbridge.js';
 import { forceDescribeDecor, pickupBurden, encumber_msg } from './pickup.js';
-import { visibleRegionAt } from './regions.js';
+import { visibleRegionAt } from './region.js';
 import { resolveImmediatePetrification, trapName, objectIsVulnerableToErosion, erosionMatters } from './trap.js';
 import {
     heroResistsStoning, monsterIsHumanoid, monsterDigests, touchPetrifies, formCanBecomeStoneGolem,

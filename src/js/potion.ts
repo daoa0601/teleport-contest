@@ -26,7 +26,7 @@ import {
     POT_WATER, SPE_DETECT_MONSTERS, SPE_DETECT_TREASURE, SPE_HASTE_SELF, SPE_INVISIBILITY,
     SPE_LEVITATION, SPE_RESTORE_ABILITY, TOWEL, UNICORN_HORN,
 } from './object_data.js';
-import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWarns } from './artifacts.js';
+import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWarns } from './artifact.js';
 import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
@@ -52,7 +52,7 @@ import { tameMonster } from './dog.js';
 import { canHeroRiseUp, ceilingName, levelAtDepth, levelHasCeiling, surfaceName } from './dungeon.js';
 import { encumber_msg, pickupBurden } from './pickup.js';
 import { addExperience, gainExperienceLevel, randomExperience } from './exper.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { fireDamageObject, waterDamageObject, erodeObject, objectIsVulnerableToErosion, captureLevitationState, floatHeroUp } from './trap.js';
 import { explodeLitOilPotion } from './fire_explosion.js';
 import { heroCanReachFloor } from './engrave.js';

@@ -10,7 +10,7 @@ import { withIndefiniteArticle } from '../js/objnam.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { DAGGER } from '../js/object_data.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { floorObject } from './support/game-objects.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { planInput } from './support/planned-input.js';

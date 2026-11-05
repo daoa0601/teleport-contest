@@ -3,7 +3,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { plineWithContinuation } from './pline.js';
 import { finishEnvironmentalMonsterDeath } from './mon.js';
 import { monsterName } from './do_name.js';
-import { begForFood } from './ambient_sounds.js';
+import { begForFood } from './sounds.js';
 import { stopHeroOccupation } from './occupation.js';
 import { heroIsHallucinating } from './senses.js';
 import { cansee, couldsee } from './vision.js';

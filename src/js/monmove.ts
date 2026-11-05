@@ -54,7 +54,7 @@ import { canSenseMonster, swallowed, canSeeMonster, canSpotMonster, newsym } fro
 import { d, rn2, rnd, rnl } from './rng.js';
 import { game, requireInitializedGame, requireLiveGame, requireGameLevel } from './gstate.js';
 import { searches_for_item, find_offensive, use_offensive, find_defensive, use_defensive, find_misc, use_misc } from './muse.js';
-import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifacts.js';
+import { monsterHasMagicKey, artifactEmitsLight, artifactById, retouchEquipment } from './artifact.js';
 
 import type { MonsterConsumptionOptions, MonsterDeathResult } from './mon.js';
 import { isLevelPrize } from './level_prize.js';
@@ -124,7 +124,7 @@ import { monsterAt, monsterAtPosition, monsterHasMapPosition, placeMonsterOnMap,
 import { advanceMonsterWormBody, redrawMonsterWormSegments, shrinkStationaryMonsterWorm, wormCrossesBetween } from './worm.js';
 
 import { moveVaultGuard } from './vault.js';
-import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './regions.js';
+import { createPoisonGasCloud, leaveMovementCloud, GAS_OK, monsterGasTolerance, visibleRegionAt, updateMonsterRegions } from './region.js';
 
 import { talkToDemon } from './demon_talk.js';
 import { isQuantumBox } from './quantum_cat.js';

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, discoverArtifact } from '../js/artifacts.js';
+import { artifactByName, discoverArtifact } from '../js/artifact.js';
 import { game } from '../js/gstate.js';
 import { hitHeroWithObject } from '../js/hero_object_hit.js';
 import { CLUB, POT_FRUIT_JUICE, ROCK } from '../js/object_data.js';

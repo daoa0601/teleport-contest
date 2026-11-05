@@ -40,7 +40,7 @@ import type { GameState } from './game_state.js';
 import { createHeroState } from './hero_types.js';
 import type { GameObject } from './object_types.js';
 import type { Monster } from './monster_types.js';
-import type { Advancement, AttributeValues, RoleKey } from './roles.js';
+import type { Advancement, AttributeValues, RoleKey } from './role.js';
 import { isGrayStone } from './object_properties.js';
 import { useUpInventoryStack, addCreatedInventoryItem } from './invent.js';
 import { useStartingItem } from './starting_equipment.js';

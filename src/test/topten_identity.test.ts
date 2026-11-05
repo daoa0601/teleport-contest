@@ -1,6 +1,6 @@
 import { floorObjectsAt } from './support/level-state.js';
 import type { StorageBackend } from '../js/storage.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';

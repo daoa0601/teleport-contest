@@ -4,7 +4,7 @@ import { MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game } from '../js/gstate.js';
 import { BOULDER } from '../js/object_data.js';
-import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { cansee, vision_note_blocker_change, vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';
 import { createMonsterAt } from './support/monsters.js';

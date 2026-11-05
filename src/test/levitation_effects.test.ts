@@ -7,12 +7,12 @@ import { resetInputState } from '../js/input.js';
 import { gotoLevel } from '../js/do.js';
 import { initRng } from '../js/rng.js';
 import { grantIntrinsicProperty, hasIntrinsicProperty } from '../js/properties.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import {
     artifactInvokeIsActive,
     deactivateArtifactProperty,
     invokeArtifactPower,
-} from '../js/artifacts.js';
+} from '../js/artifact.js';
 import { applyLevitationPotion } from '../js/potion.js';
 import { wearHeroArmor } from '../js/do_wear.js';
 

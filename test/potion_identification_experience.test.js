@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_HEALING } from '../js/object_data.js';

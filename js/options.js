@@ -4,8 +4,8 @@
 // option and registry live here, beside the rest of the option handlers.
 import { ILLOBJ_CLASS, COIN_CLASS, FOOD_CLASS } from './objclass.js';
 import { game } from './gstate.js';
-import { clearrolefilter, createCharacterFilters, setrolefilter } from './roles.js';
-import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './roles.js';
+import { clearrolefilter, createCharacterFilters, setrolefilter } from './role.js';
+import { randomCharacterOption, str2align, str2gend, str2race, str2role } from './role.js';
 import { NATIVE_COMMANDS } from './command_data.js';
 import { changeCommandAutocompletions, countCommandAutocompletions, resetCommandAutocomplete, setCommandAutocomplete } from './cmd.js';
 import { addMessageTypeRule } from './message_types.js';

@@ -11,7 +11,7 @@ import { MONSTER_NAME } from '../js/monster_data.js';
 import { setMonsterGivenName } from '../js/do_name.js';
 import { distantMonsterName } from '../js/do_name.js';
 import { KELP_FROND, STATUE } from '../js/object_data.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { setHeroBlindnessTurns } from '../js/senses.js';
 import { cansee, vision_recalc } from '../js/vision.js';
 import { floorObject } from './support/game-objects.js';

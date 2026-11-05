@@ -7,7 +7,7 @@ import { game, requireLiveGame } from './gstate.js';
 import { set_corpsenm } from './mkobj.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { setMonsterGivenName } from './do_name.js';
-import { roles } from './roles.js';
+import { roles } from './role.js';
 import { rn2, rnd } from './rng.js';
 import { loadScoreRecords } from './score_records.js';
 import { objectWeight } from './mkobj.js';
@@ -67,7 +67,7 @@ export async function nameObjectFromTopten(object, { state = game, rollOne = rnd
 // form.
 async function roleMonster(code, state) {
     const role = roles.find(candidate => code.slice(0, 3) === candidate.filecode);
-    // roles.js stores player-monster offsets rather than absolute species.
+    // role.js stores player-monster offsets rather than absolute species.
     if (role)
         return role.mnum < 0 ? MONSTER_NAME.indexOf('human') : FIRST_PLAYER_MONSTER + role.mnum;
     if (code === 'E')

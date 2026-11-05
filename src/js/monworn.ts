@@ -15,7 +15,7 @@ import { plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { inventoryItemDescription } from './invent.js';
 import { learnWand } from './zap.js';
-import { artifactEmitsLight } from './artifacts.js';
+import { artifactEmitsLight } from './artifact.js';
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription } from './light.js';
 import { cansee, vision_recalc } from './vision.js';

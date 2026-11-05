@@ -7,7 +7,7 @@ import { isPoolAt } from './dbridge.js';
 import { plineWithContinuation } from './pline.js';
 import { glyphAt } from './display.js';
 import { hasIntrinsicProperty, hasInvokedProperty, hasRawLevitationSource, propertyIsBlocked } from './properties.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { rnz } from './rng.js';
 import { heroIsBlind } from './senses.js';
 import { surfaceName } from './dungeon.js';

@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { M_SEEN_POISON } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { createGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 for (const resistant of [false, true]) {

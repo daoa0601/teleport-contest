@@ -4,7 +4,7 @@ import test from 'node:test';
 import { EXPL_DARK, EXPL_FIERY, MAGIC_TRAP, NO_MINVENT } from '../js/const.js';
 import { digHole } from '../js/dig.js';
 import { glyphAt } from '../js/display.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { GlyphOffset } from '../js/glyph_numbers.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';

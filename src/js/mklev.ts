@@ -62,7 +62,7 @@ import { PM_SOLDIER, antholeMonsterType, markRandomSpecialRoom, mkshop, occupied
 import { bound_digging, generateAstralLevel, generateBigRoom, generateDungeonMazeFile, generateElementalPlane, generateFakeWizardLevel, generateKnoxLevel, generateLuaQuestLevel, generateMedusaLevel, generateMinesEnd, generateMinetown, generateOracleLevel, generateRandomMaze, generateSokobanLevel, generateSpecialAndFixup, generateVladsTowerLevel, generateWizardLevel, isLuaQuestPrototype, mazeFloorPoint, mkportal, place_lregion, setLevelTerrainType, wallification } from './mkmaze.js';
 import { getbones, levelAllowsBones, restoreBonesMonsters } from './bones.js';
 import { makeroguerooms, makerogueghost } from './extralev.js';
-import { restoreLevelRegions } from './regions.js';
+import { restoreLevelRegions } from './region.js';
 import { beginObjectBurn } from './timeout.js';
 import { vision_note_blocker_change, vision_reset_new_level } from './vision.js';
 import { goodPosition, enexto, enexto_gpflags } from './teleport.js';

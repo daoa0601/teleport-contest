@@ -1,5 +1,5 @@
 import { answerPrompts } from './support/input-boundaries.js';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import type { InitializedHero } from '../js/hero_types.js';
 import { requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import test from 'node:test';

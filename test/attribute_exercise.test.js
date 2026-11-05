@@ -7,7 +7,7 @@ import { A_CHA, A_CON, A_INT, A_STR, A_WIS } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { DUNCE_CAP, OBJECT_NAMES, ROCK } from '../js/object_data.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { initRng } from '../js/rng.js';
 import { freshPlayableRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';

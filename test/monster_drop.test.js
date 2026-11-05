@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { LAVAPOOL, MFAST, NO_MINVENT, W_ARMF, W_WEP } from '../js/const.js';
 import { initializePet } from '../js/dog.js';
 import { setTopline } from '../js/pline.js';

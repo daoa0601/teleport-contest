@@ -3,7 +3,7 @@ import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
 import { game } from '../js/gstate.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 for (const turns of [5, 3, 1]) {

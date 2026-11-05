@@ -13,7 +13,7 @@ import {
     POT_ACID, SKELETON_KEY, STATUE, TALLOW_CANDLE, TIN_WHISTLE, WAR_HAMMER, WAX_CANDLE, WAN_STRIKING,
 } from './object_data.js';
 import { currentAttribute, currentStrength, poisonHero } from './attrib.js';
-import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
+import { artifactToHitBonus, applyArtifactHit } from './artifact.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import {
     applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness,
@@ -72,7 +72,7 @@ import {
     monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks,
     touchPetrifies,
 } from './mondata.js';
-import { monsterSentenceSubject } from './ambient_sounds.js';
+import { monsterSentenceSubject } from './sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { dropObjectAtHero } from './do.js';

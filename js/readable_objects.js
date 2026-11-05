@@ -2,7 +2,7 @@
 // tshirt_text(), apron_text(), hawaiian_design(), and candy_wrapper_text().
 import { SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS } from './objclass.js';
 import { armorSimpleName } from './do_wear.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { plineWithContinuation as pline } from './pline.js';
 import { game, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { consumeInventoryItem } from './invent.js';
@@ -12,7 +12,7 @@ import { makePlural } from './objnam.js';
 import { candyWrapperText, garmentInscription, hawaiianDesign } from './read.js';
 import { ALCHEMY_SMOCK, CANDY_BAR, CAN_OF_GREASE, CORNUTHAUM, CREDIT_CARD, DUNCE_CAP, FORTUNE_COOKIE, HAWAIIAN_SHIRT, MAGIC_MARKER, OBJECT_NAMES, } from './object_data.js';
 import { minimalObjectName, objectName } from './objnam.js';
-import { readCookieFortune } from './rumor.js';
+import { readCookieFortune } from './rumors.js';
 import { heroIsBlind } from './senses.js';
 import { carriedObjectOwner } from './shk.js';
 import { CARD_MESSAGES } from './readable_object_text.js';

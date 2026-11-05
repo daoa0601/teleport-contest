@@ -588,7 +588,7 @@ INT_MAX: ToInt32 wraps the stored word but preserves the tested low bits.
 entry relation adds the wielded weapon to the species relation: the
 native `uwep` pointer is null exactly when both `game.uwep` and
 `game.u.uwep` are null (wield.c keeps one wielded slot), the weapon
-artifact index is a symbolic obj.h `char`, and `artifacts.js:artifactById`
+artifact index is a symbolic obj.h `char`, and `artifact.js:artifactById`
 executes for real against the emitted `ARTIFACT_DATA` identity/name map
 that `initializeArtifacts` copies — the same runtime-map relation the
 `acurr:all` family assumes. `haseyes(ptr)` and `monsterHasEyes(mnum)`
@@ -1364,7 +1364,7 @@ restoration and later table mutations are not proved to preserve them.
   are included.
   `otyp` is a native `short`; `oartifact` is a signed `char` (`obj.h`). The
   artifact runtime map has the IDs and names from emitted `ARTIFACT_DATA`, as
-  copied by `artifacts.js:initializeArtifacts`. The claim executes the real
+  copied by `artifact.js:initializeArtifacts`. The claim executes the real
   `artifactById` Map lookup and native `artifact.c:is_art`.
 - `gy.youmonst.data` points to `mons[u.umonnum]`, as installed by
   `polyself.c:set_uasmon`; the species index is in `0..NUMMONS-1`. The table

@@ -6,7 +6,7 @@ import type {
     CarriedPropertySource, HeroPropertyState, IntrinsicOrigin, InvokedPropertySource,
     PropertyName, PropertySources, WornPropertySource,
 } from './property_types.js';
-import type { AlignmentValue } from './roles.js';
+import type { AlignmentValue } from './role.js';
 import type { Fields, SavedEntityContext } from './saved_validation.js';
 import {
     arrayOf, boolean, closedFieldsMatch, integer, nullable, oneOf, optional, string,

@@ -11,7 +11,7 @@ import { pushKeys, resetInputState } from '../js/input.js';
 import { beginObjectBurn } from '../js/timeout.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { OIL_LAMP, POT_OIL } from '../js/object_data.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { cansee, couldsee, vision_recalc, vision_reset_new_level } from '../js/vision.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';

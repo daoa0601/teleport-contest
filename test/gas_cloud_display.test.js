@@ -4,7 +4,7 @@ import { flush_screen, newsym } from '../js/display.js';
 import { IRONBARS, PLNMSG_ENVELOPED_IN_GAS } from '../js/const.js';
 import { makeBlinded } from '../js/potion.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
-import { createGasCloudSelection, createHarmlessGasCloudSelection, createPoisonGasCloud, runLevelRegions } from '../js/regions.js';
+import { createGasCloudSelection, createHarmlessGasCloudSelection, createPoisonGasCloud, runLevelRegions } from '../js/region.js';
 import { pushKeys } from '../js/input.js';
 import { CLR_BRIGHT_GREEN, CLR_CYAN, CLR_GRAY } from '../js/terminal.js';
 import { cansee } from '../js/vision.js';

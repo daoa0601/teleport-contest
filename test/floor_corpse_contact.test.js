@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { wearHeroArmor } from '../js/do_wear.js';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { LAVAPOOL } from '../js/const.js';
 import { gameLogEvents } from '../js/gamelog.js';

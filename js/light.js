@@ -10,7 +10,7 @@ import { plineWithContinuation } from './pline.js';
 import { beginObjectBurn, endObjectBurn, lightObjectIsGlobal, objectsInTimerGraph } from './timeout.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
-import { artifactEmitsLight } from './artifacts.js';
+import { artifactEmitsLight } from './artifact.js';
 import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
 import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE, } from './object_data.js';

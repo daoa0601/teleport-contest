@@ -35,7 +35,7 @@ STATE_C_FILES = ('artifact.c', 'monst.c', 'makemon.c', 'mon.c', 'worn.c',
                  'mondata.c', 'polyself.c', 'dungeon.c', 'mkobj.c', 'objnam.c',
                  'dothrow.c', 'display.c', 'glyphs.c')
 STATE_JS_FILES = (
-    'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifacts.js',
+    'js/monster_data.js', 'js/monster_attack_types.js', 'js/artifact.js',
     'js/artifact_data.js', 'js/makemon.js', 'js/polyself.js', 'js/dungeon.js',
     'js/mon.js', 'js/monmove.js', 'js/hack.js', 'js/mkobj.js',
     'js/properties.js', 'js/property_types.js', 'js/do_wear.js', 'js/muse.js',
@@ -52,7 +52,7 @@ def full_attributes(s):
 HERO_ASSUMPTIONS = (
     'polyself.c:set_uasmon: hero data points to mons[u.umonnum], 0 <= u.umonnum < NUMMONS',
     'monst.c:monst_globals_init: fields read retain mons_init values; emitted table fields retain initial values',
-    'artifacts.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
+    'artifact.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
     'do_wear.c:Ring_on/Ring_gone: ring attribute effects correspond through the declared u.abon arrays',
 )
 EXPERIENCE_ASSUMPTIONS = (
@@ -778,7 +778,7 @@ CLASS_INVARIANT_ASSUMPTION = (
 )
 
 ARTIFACT_OBJECT_ASSUMPTIONS = (
-    'obj.h oartifact is the artifact index (obj.h char); artifact.c:is_art compares it with ART_GRIMTOOTH/ART_SNICKERSNEE, and artifacts.js:artifactById reads the emitted ARTIFACT_DATA runtime map (initializeArtifacts copies identity/name/invokePower) in which only id ART_GRIMTOOTH carries invokePower "fling-poison" and only id ART_SNICKERSNEE is named "Snickersnee" (checked concretely)',
+    'obj.h oartifact is the artifact index (obj.h char); artifact.c:is_art compares it with ART_GRIMTOOTH/ART_SNICKERSNEE, and artifact.js:artifactById reads the emitted ARTIFACT_DATA runtime map (initializeArtifacts copies identity/name/invokePower) in which only id ART_GRIMTOOTH carries invokePower "fling-poison" and only id ART_SNICKERSNEE is named "Snickersnee" (checked concretely)',
 )
 
 
@@ -945,7 +945,7 @@ STATE_SPECS += [
                    '|| false;')]),
     Spec('permapoisoned:tables', 'permapoisoned', 'isPermanentlyPoisonedObject',
          [('native_object_present', INT)],
-         js_file='js/artifacts.js', state=[('otmp.oartifact', SCHAR, 'otmp.oartifact')],
+         js_file='js/artifact.js', state=[('otmp.oartifact', SCHAR, 'otmp.oartifact')],
          assumptions=OBJECT_PREDICATE_ASSUMPTIONS[:1] + ARTIFACT_OBJECT_ASSUMPTIONS + (
             'artifact.c:permapoisoned accepts a null object and so does the port guard; otyp/oclass are unread on both sides',
          ),
@@ -955,7 +955,7 @@ STATE_SPECS += [
          probes=[('oartifact correspondence omitted (pinned Grimtooth)',
                   unrelated(lambda s: [s['native_object_present'] == 1,
                                        s['otmp.oartifact'] == 5], 'otmp.oartifact'))],
-         mutants=[('js/artifacts.js', "return artifactById(object.oartifact)?.invokePower === 'fling-poison';",
+         mutants=[('js/artifact.js', "return artifactById(object.oartifact)?.invokePower === 'fling-poison';",
                    "return artifactById(object.oartifact)?.invokePower === 'snowstorm';")]),
     Spec('is_blunt_weapon:tables', 'verification_is_blunt_weapon', 'isBluntWeapon', [],
          js_file=OBJ_FILE, state=OBJECT_STATE,
@@ -1393,7 +1393,7 @@ CAN_TRACK_ASSUMPTIONS = (
     'mondata.c:can_track: the permonst pointer argument is &mons[species]; emitted mnum equals species',
     'monst.c:monst_globals_init: fields read retain mons_init values; emitted table fields retain initial values',
     'wield.c:uwep is the one wielded weapon or NULL; game.uwep and game.u.uwep alias the same slot, so both are null exactly when the native uwep is NULL, and uwep.oartifact is the weapon artifact index (obj.h char)',
-    'artifacts.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
+    'artifact.js:initializeArtifacts: runtime map retains artifact_data identity/name pairs',
     'obj.h:u_wield_art expands to artifact.c:is_art(uwep, ART_EXCALIBUR), which the claim executes for real',
 )
 

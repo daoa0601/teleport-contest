@@ -1,7 +1,7 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
 
-import { goodbye } from './roles.js';
+import { goodbye } from './role.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import {
@@ -41,7 +41,7 @@ import { consumeInventoryItem, identifyObjectForDisclosure, showIdentifiedInvent
 import { showDisclosureOverlay, showTextPages, showTextWindow } from './windows.js';
 import type { TextPage } from './windows.js';
 import type { TextMenuLine } from './wintty.js';
-import { artifactById } from './artifacts.js';
+import { artifactById } from './artifact.js';
 import { MONSTER_GENO, MONSTER_NAME, monsterTypeName } from './monster_data.js';
 import { ATR_BOLD, NO_COLOR } from './terminal.js';
 import { d, rn2 } from './rng.js';

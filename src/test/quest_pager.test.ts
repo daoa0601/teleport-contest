@@ -4,8 +4,8 @@ import assert from 'node:assert/strict';
 import { game } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { freshObjectRoom } from './support/object-room.js';
-import { convertQuestLine } from '../js/quest_pager.js';
-import type { AlignmentValue, RoleKey } from '../js/roles.js';
+import { convertQuestLine } from '../js/questpgr.js';
+import type { AlignmentValue, RoleKey } from '../js/role.js';
 
 function dungeonNamed(dname: string) {
     return {

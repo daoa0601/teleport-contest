@@ -7,7 +7,7 @@ import { A_NONE, ALTAR, Align2amask, LAVAPOOL, PARANOID_PRAY, ROOM, STONE, TT_LA
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { findArmorClass, wearHeroArmor } from '../js/do_wear.js';
-import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
+import { artifactById, artifactByName, initializeArtifacts, nameArtifact } from '../js/artifact.js';
 import { grantPrayerFavor } from '../js/pray.js';
 import { magic_negation } from '../js/mhitu.js';
 import { game, requireGameDisplay, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
@@ -16,7 +16,7 @@ import { AMULET_OF_LIFE_SAVING, BLINDFOLD, BOULDER, CORPSE, DAGGER, FIGURINE, GA
 import { initRng } from '../js/rng.js';
 import { startHeroPetrification } from '../js/stoning.js';
 import { grantIntrinsicProperty, setPropertyTimeout } from '../js/properties.js';
-import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/regions.js';
+import { createHarmlessGasCloudSelection, runLevelRegions } from '../js/region.js';
 import { runExtendedCommand } from './support/commands.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, artifactDamageBonus, artifactDoublesWeaponDamage, artifactToHitBonus, initializeArtifacts, nameArtifact, } from '../js/artifacts.js';
-import { touchArtifactByHero } from '../js/artifacts.js';
+import { artifactByName, artifactDamageBonus, artifactDoublesWeaponDamage, artifactToHitBonus, initializeArtifacts, nameArtifact, } from '../js/artifact.js';
+import { touchArtifactByHero } from '../js/artifact.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';

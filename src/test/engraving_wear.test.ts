@@ -6,7 +6,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { rhack } from '../js/cmd.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 
-import { discoverArtifact } from '../js/artifacts.js';
+import { discoverArtifact } from '../js/artifact.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
 import { BURN, DUST, ENGRAVE, ENGR_BLOOD, HEADSTONE, ICE, NO_MINVENT, PIT, STONE } from '../js/const.js';

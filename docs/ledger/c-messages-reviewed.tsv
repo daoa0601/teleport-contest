@@ -4,8 +4,8 @@
 apply.c	do_break_wand	self by breaking a wand	composed	src/js/apply.ts:breakWand; Selects himself or herself before " by breaking a wand"; the killer reaches the tombstone through loseHeroHp.
 apply.c	flip_through_book	ink in this spellbook is	composed	src/js/apply.ts:flipThroughBook; Selects magical ink or ink and the study-count fading description.
 apply.c	use_leash	from inside.	composed	src/js/apply.ts:useLeash; Selects leash or unleash and appends the engulfer name plus from inside; both native literals share this key.
-artifact.c	artifact_hit	blade drains your	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
-artifact.c	artifact_hit	blade draws the	composed	src/js/artifacts.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+artifact.c	artifact_hit	blade drains your	composed	src/js/artifact.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
+artifact.c	artifact_hit	blade draws the	composed	src/js/artifact.ts:applyLifeDrain; Stormbringer selects the displayed black blade and life or animating force for hero and monster defenders.
 cfgfiles.c	config_erradd	config_error_add:	dead	The prefix needs !config_error_ready and !window_inited together. Recorder startup parses files and NETHACKOPTIONS inside config_error_init() frames; interactive option errors run after window initialization.
 cfgfiles.c	do_write_config_file	All manual customization and comments are removed from the file!	dead	#saveoptions is NOFUZZERCMD; rhack() rejects it before do_write_config_file() in recorded debug_fuzzer games. Non-recorder use overwrites the host rc file.
 cfgfiles.c	do_write_config_file	An error occurred, wrote only partial data (	out-of-scope	Reports a short fwrite() when overwriting the host configuration file; native filesystem partial writes are outside the browser runtime, and recorded games also reject #saveoptions as NOFUZZERCMD.
@@ -127,7 +127,7 @@ engrave.c	save_engravings	engraving-engr_alloc	diagnostic	Native save-stream fie
 engrave.c	save_engravings	engraving-pristine_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
 engrave.c	save_engravings	engraving-remembered_text	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in engrave.c:save_engravings(); serialized metadata, not displayed text. The port validates its own storage format.
 exper.c	losexp	u.ulevel >= 0 && u.ulevel < MAXULEV	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-explode.c	engulfer_explosion_msg	gets slightly	composed	src/js/explosion.ts:engulferMessage; A nondigesting engulfer inserts slightly and selects the native damage-type adjective.
+explode.c	engulfer_explosion_msg	gets slightly	composed	src/js/explode.ts:engulferMessage; A nondigesting engulfer inserts slightly and selects the native damage-type adjective.
 files.c	commit_bonesfile	couldn't rename	out-of-scope	Requires the host rename() or link()/unlink() of a temporary bones file to fail; the browser bones store does not use native file renames.
 files.c	livelog_add	Cannot open live log file!	out-of-scope	Reports fopen_datafile(LIVELOGFILE) failure after acquiring a native logfile lock; host livelog files and locking are outside the browser runtime.
 files.c	read_tribute	too overwhelmed to continue!	out-of-scope	Only dlb_fopen(TRIBUTEFILE) failure prints this line; the pinned tribute passages are bundled resources, and missing host data files are outside the browser runtime.
@@ -408,18 +408,18 @@ region.c	save_regions	region-tmstamp	diagnostic	Native save-stream field label p
 region.c	save_regions	region-visible	diagnostic	Native save-stream field label passed to sfo_*/sfi_* in region.c:save_regions(); serialized metadata, not displayed text. The port validates its own storage format.
 rip.c	rip_txt	_________)/\\\\_//(\\/(/\\)/\\//\\/|_)_______	composed	src/js/end.ts:deathSummaryLines; The bottom art row is spelled with a replace() that restores the native character sequence exactly.
 rip.c	rip_txt	|       1001       |	composed	src/js/end.ts:deathSummaryLines; The 1001 placeholder row is built as `|       ${year}       |` with the same column padding.
-role.c	build_plselection_prompt	Shall I pick a character for you? [ynaq]	composed	src/js/roles.ts:build_plselection_prompt; Composes `Shall I pick ${owner} ${description} for you? [ynaq]` including the a/your and pick character rewrites.
-role.c	build_plselection_prompt	priest/priestess'	composed	src/js/roles.ts:build_plselection_prompt; The combined male/female role name and the bare-apostrophe exception are built by the same prompt builder (strstri call and literal share this key).
-role.c	genl_player_setup	Incompatible alignment!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-role.c	genl_player_setup	Incompatible gender!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
-role.c	genl_player_setup	Incompatible race!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
-role.c	genl_player_setup	Incompatible role!	composed	src/js/roles.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
+role.c	build_plselection_prompt	Shall I pick a character for you? [ynaq]	composed	src/js/role.ts:build_plselection_prompt; Composes `Shall I pick ${owner} ${description} for you? [ynaq]` including the a/your and pick character rewrites.
+role.c	build_plselection_prompt	priest/priestess'	composed	src/js/role.ts:build_plselection_prompt; The combined male/female role name and the bare-apostrophe exception are built by the same prompt builder (strstri call and literal share this key).
+role.c	genl_player_setup	Incompatible alignment!	composed	src/js/role.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible gender!	composed	src/js/role.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits.
+role.c	genl_player_setup	Incompatible race!	composed	src/js/role.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrace().
+role.c	genl_player_setup	Incompatible role!	composed	src/js/role.ts:choose; The random pick prints Incompatible followed by the facet name when no candidate fits, then falls back like randrole().
 role.c	role_selection_prolog	IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	not yet specified	dead	role_selection_prolog() has no callers in the pinned tree (only the extern.h declaration); tty player selection builds its own menus.
 role.c	role_selection_prolog	which == RS_RACE || c == ROLE_NONE || c == ROLE_RANDOM || IndexOkT(c, races)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 role.c	role_selection_prolog	which == RS_ROLE || r == ROLE_NONE || r == ROLE_RANDOM || IndexOkT(r, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
-role.c	roles	_Amaterasu Omikami	composed	src/js/roles.ts:nativeRoleAt; Returns the samurai role with lawful deity Amaterasu Omikami; align_gname() removes the native leading underscore before display.
+role.c	roles	_Amaterasu Omikami	composed	src/js/role.ts:nativeRoleAt; Returns the samurai role with lawful deity Amaterasu Omikami; align_gname() removes the native leading underscore before display.
 role.c	root_plselection_prompt	IndexOkT(rolenum, roles)	diagnostic	NHASSERT assertion condition text; assertion failure output is a developer diagnostic.
 rumors.c	getrumor	Error reading "	out-of-scope	dlb read failure on the rumors data file; data-file seek errors are outside the port (docs/c-js-semantics.md Operating-system features).
 rumors.c	others_check	(no second entry)	diagnostic	#wizrumorcheck data-file audit display of the epitaph/engraving files; wizard-mode verification output.

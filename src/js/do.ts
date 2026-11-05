@@ -74,7 +74,7 @@ import {
     deleteFloorTrap, resetUtrap, petrifyMonsterImmediately, seeTrap, deleteTrap, climbOutOfPit, dotrapAt,
     selfTouchPetrifyingWeapons,
 } from './trap.js';
-import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifacts.js';
+import { heroHasArtifactDefense, heroHasCarriedArtifactFlag } from './artifact.js';
 import { impossible } from './diagnostics.js';
 import { waterbodyName } from './pager.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -93,7 +93,7 @@ import type { MultiSelectSection } from './windows.js';
 import { isBimanualObject, isPick } from './object_properties.js';
 import { possessiveName } from './hacklib.js';
 import { heroCanReachFloor, engravingAt, make_grave, rewindEngravingsForSave, restoreEngravings } from './engrave.js';
-import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './artifacts.js';
+import { beginLevitatingArtifactDrop, finishLevitatingArtifactDrop } from './artifact.js';
 import { hitFloorWithObject } from './dothrow.js';
 import { shipObject, containerImpactDamage, deliverMigratingObjects, impactDrop } from './dokick.js';
 import { landObjectOnAltar } from './altar_object.js';
@@ -132,7 +132,7 @@ import { restoreLevelLightSources } from './light.js';
 import { finishLivingGame } from './end.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import { bot, checkGoldSymbol } from './botl.js';
-import { restoreLevelRegions, updateHeroRegions } from './regions.js';
+import { restoreLevelRegions, updateHeroRegions } from './region.js';
 import { fumaroles, movebubbles, restore_waterlevel } from './mkmaze.js';
 import { recordGameLogEvent } from './gamelog.js';
 import { recordAchievement, recordDungeonEntryAchievements } from './insight.js';

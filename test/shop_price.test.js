@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { A_CHA, HUNGRY, WEAK } from '../js/const.js';
 import { game } from '../js/gstate.js';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { shopObjectUnitCost } from '../js/shk.js';
 import { splitObjectStack } from '../js/mkobj.js';
 import { saveGame, restoreGame } from '../js/save.js';

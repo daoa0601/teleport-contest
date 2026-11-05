@@ -18,7 +18,7 @@ import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import { heroWarnsOfMonster } from './polyself.js';
-import { artifactWarningFeedback } from './artifacts.js';
+import { artifactWarningFeedback } from './artifact.js';
 import { cansee, couldsee, mimicBlocksLight, set_seenv, vision_note_blocker_change, vision_recalc } from './vision.js';
 import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';

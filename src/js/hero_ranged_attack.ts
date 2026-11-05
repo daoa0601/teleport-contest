@@ -7,7 +7,7 @@ import {
     GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, YUMI,
 } from './object_data.js';
 import { currentAttribute, exerciseAttribute } from './attrib.js';
-import { artifactToHitBonus } from './artifacts.js';
+import { artifactToHitBonus } from './artifact.js';
 import { A_DEX, A_STR, Luck, P_BOW, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
 import { game, requirePlayingGame } from './gstate.js';

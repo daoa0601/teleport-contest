@@ -15,7 +15,7 @@ import { placeMonsterAt } from '../js/steed.js';
 import { AMULET_OF_YENDOR, DAGGER, FOOD_RATION } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
 import { initRng } from '../js/rng.js';
-import type { AlignmentValue } from '../js/roles.js';
+import type { AlignmentValue } from '../js/role.js';
 import { floorObject, knownObject } from './support/game-objects.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { createMonsterAt } from './support/monsters.js';

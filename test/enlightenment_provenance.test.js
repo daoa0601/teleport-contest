@@ -17,7 +17,7 @@ import { addInventoryItem } from '../js/invent.js';
 import { setPrimaryWeapon } from '../js/wield.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { A_INT, A_STR, ENL_GAMEOVERDEAD, POOL, W_TOOL } from '../js/const.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { freshGameplayRoom } from './support/playable-room.js';
 import { createSaddledSteed } from './support/monsters.js';
 async function enlightenmentText(basic = false, final = false, magic = true) {

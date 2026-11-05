@@ -11,7 +11,7 @@ import {
 } from '../js/const.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { plineWithContinuation } from '../js/pline.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { requireGameLevel, game } from '../js/gstate.js';
 import { gulpmu } from '../js/mhitu.js';
 import { resetInputState } from '../js/input.js';

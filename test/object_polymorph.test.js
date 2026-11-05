@@ -25,7 +25,7 @@ import { addInventoryObject, corpseObject, floorObject, knownObject } from './su
 import { freshObjectRoom } from './support/object-room.js';
 import { createMonsterAt, requireMonsterVital } from './support/monsters.js';
 import { createStaffedShop } from './support/shop.js';
-import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/regions.js';
+import { createPoisonGasCloud, heroIsInDangerousRegion } from '../js/region.js';
 import { startHeroSliming, heroIsSliming } from '../js/potion.js';
 import { heroPolyGender, setHeroSpecies } from '../js/polyself.js';
 import { objectWeight } from '../js/mkobj.js';

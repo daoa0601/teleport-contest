@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { dosounds } from '../js/ambient_sounds.js';
+import { dosounds } from '../js/sounds.js';
 import { FOUNTAIN } from '../js/const.js';
 import { init_dungeons } from '../js/dungeon.js';
 import { flush_screen } from '../js/display.js';

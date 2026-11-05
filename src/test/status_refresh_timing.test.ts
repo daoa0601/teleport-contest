@@ -5,7 +5,7 @@ import { NOT_HUNGRY, SATIATED } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { game } from '../js/gstate.js';
 import { LEMBAS_WAFER } from '../js/object_data.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { freshTurnRoom } from './support/playable-room.js';
 import { requireScreenRow } from './support/screen.js';

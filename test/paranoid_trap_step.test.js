@@ -8,7 +8,7 @@ import { resetInputState } from '../js/input.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { parseNethackrc } from '../js/options.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { createHarmlessGasCloudSelection } from '../js/regions.js';
+import { createHarmlessGasCloudSelection } from '../js/region.js';
 import { initRng } from '../js/rng.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';

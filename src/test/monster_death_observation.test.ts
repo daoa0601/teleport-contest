@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import type { RoleKey } from '../js/roles.js';
+import type { RoleKey } from '../js/role.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { doGenocide } from '../js/read.js';
 import { pushKeys } from '../js/input.js';

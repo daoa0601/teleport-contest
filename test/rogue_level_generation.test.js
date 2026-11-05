@@ -6,7 +6,7 @@ import { init_dungeons } from '../js/dungeon.js';
 import { mklev } from '../js/mklev.js';
 import { init_objects } from '../js/o_init.js';
 import { initRng } from '../js/rng.js';
-import { initializeArtifacts } from '../js/artifacts.js';
+import { initializeArtifacts } from '../js/artifact.js';
 import { ARROW, BOW, FAKE_AMULET_OF_YENDOR, FOOD_RATION, MACE, OBJECT_NAMES, RING_MAIL, TWO_HANDED_SWORD, } from '../js/object_data.js';
 import { isRoom } from '../js/map_types.js';
 import { freshPlayableRoom } from './support/playable-room.js';

@@ -9,7 +9,7 @@ import {
     initializeArtifacts,
     nameArtifact,
     uncreateArtifact,
-} from '../js/artifacts.js';
+} from '../js/artifact.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import {mksobj, placeCreatedObject} from '../js/mkobj.js';
 import { initRng } from '../js/rng.js';

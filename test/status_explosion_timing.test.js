@@ -3,7 +3,7 @@ import test from 'node:test';
 import { EXPL_NOXIOUS, MON_EXPLODE, PHYS_EXPL_TYPE } from '../js/const.js';
 import { bot } from '../js/botl.js';
 import { flush_screen } from '../js/display.js';
-import { explode } from '../js/explosion.js';
+import { explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 import { freshObjectRoom } from './support/object-room.js';

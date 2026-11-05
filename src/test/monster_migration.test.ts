@@ -9,7 +9,7 @@ import {
 } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { initializePet, collectLevelFollowers, deliverMigratingMonsters, migrateMonsterOffLevel } from '../js/dog.js';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { addObjectToMonsterInventory } from '../js/steal.js';
 import { AMULET_OF_YENDOR } from '../js/object_data.js';
 import { knownObject } from './support/game-objects.js';

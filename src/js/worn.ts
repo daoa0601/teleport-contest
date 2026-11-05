@@ -8,8 +8,8 @@ import { objectPropertyName } from './object_data.js';
 import type { GameState } from './game_state.js';
 import type { Monster } from './monster_types.js';
 import { naturalMonsterSpeed } from './mon.js';
-import { artifactById } from './artifacts.js';
-import type { Artifact } from './artifacts.js';
+import { artifactById } from './artifact.js';
+import type { Artifact } from './artifact.js';
 import type { ArtifactDefense, ArtifactFlag } from './data_types.js';
 import type { GameObject } from './object_types.js';
 import type { PropertyName, WornPropertySlot } from './property_types.js';
@@ -21,7 +21,7 @@ import {
 import { seenResistanceForProperty, monstersForgetHeroResistance } from './mondata.js';
 import { cancelSlotTakeoff } from './do_wear.js';
 import { setTwoWeaponCombat } from './wield.js';
-import { setWieldedArtifactProperties, setWornArtifactProperties } from './artifacts.js';
+import { setWieldedArtifactProperties, setWornArtifactProperties } from './artifact.js';
 import { CORNUTHAUM, MUMMY_WRAPPING } from './object_data.js';
 import { isWeaponTool } from './object_properties.js';
 import {

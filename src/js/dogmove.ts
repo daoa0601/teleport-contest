@@ -41,7 +41,7 @@ import {
     BOULDER, SCR_MAIL, TRIPE_RATION, } from './object_data.js';
 import { loseGuardianAngel } from './guardian_angel.js';
 import { heroHasConflict } from './hero_conflict.js';
-import { updateMonsterRegions } from './regions.js';
+import { updateMonsterRegions } from './region.js';
 import { goodPosition } from './teleport.js';
 import {
     ALLOW_M, ALLOW_TRAPS, ALLOW_U, COLNO, D_CLOSED, D_LOCKED, DISMOUNT_THROWN, IS_DOOR, IS_OBSTRUCTED, IS_ROOM,
@@ -58,7 +58,7 @@ import { checkMonsterGearNextTurn } from './monworn.js';
 import { releaseMonsterLeash } from './apply.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { displayMessageWindow } from './tty_topline.js';
-import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './ambient_sounds.js';
+import { monsterSentenceSubject, publishMonsterNoise, publishMonsterWhimper } from './sounds.js';
 import {
     maxPassiveMonsterDamage, monsterHasStoneResistance, monsterLocomotion, is_neuter, monsterHasEyes,
     monsterIsSwimmer, monsterIsVampireShifter, monsterPassesWalls, monsterPerceives, monsterThrowsRocks, tunnels,

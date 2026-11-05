@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { moveloop_core } from '../js/allmain.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { rhack } from '../js/cmd.js';
 import { G_EXTINCT, W_ARMH } from '../js/const.js';
 import { game } from '../js/gstate.js';

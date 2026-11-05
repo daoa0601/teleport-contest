@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { rhack } from '../js/cmd.js';
-import { discoverArtifact } from '../js/artifacts.js';
+import { discoverArtifact } from '../js/artifact.js';
 import {
     ALTAR, Align2amask, BEAR_TRAP, FOUNTAIN, LANDMINE, PIT, TELEP_TRAP,
     THRONE, TT_BEARTRAP, TT_PIT, TT_WEB, WEB,

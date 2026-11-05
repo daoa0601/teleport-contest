@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { W_WEP } from '../js/const.js';
-import { artifactByName } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { objectLightRadius } from '../js/light.js';

@@ -34,7 +34,7 @@ import { releaseMonsterInventory } from './steal.js';
 import { monsterAtPosition, placeMonsterOnMap, removeMonsterFromMapAt } from './steed.js';
 import { randomMonsterRelocation, teleportHero, askTeleportDestination } from './teleport.js';
 import { deleteTrap } from './trap.js';
-import { publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterYelp } from './sounds.js';
 import { impossible } from './diagnostics.js';
 import { heroFormSticks } from './polyself.js';
 import { linkObjectToMonsterInventory, unlinkObject, placeObject, remove_object } from './mkobj.js';

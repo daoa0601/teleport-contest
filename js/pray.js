@@ -8,7 +8,7 @@ import { objectSkill, AMULET_OF_STRANGULATION, AMULET_OF_UNCHANGING, AMULET_OF_Y
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
-import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
+import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifact.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
@@ -51,9 +51,9 @@ import { heroHasNoHands, heroIsUnchanging, heroFormHidesUnderObjects, returnHero
 import { grantIntrinsicProperty, hasIntrinsicProperty, hasPermanentIntrinsicProperty, propertyIsActive, refreshProperty, wornObjectGrantsProperty } from './properties.js';
 import { punishHero, unpunishHero } from './read.js';
 import { promptYesNo, promptYesNoQuit } from './query.js';
-import { heroIsInDangerousRegion, rescueHeroFromRegion } from './regions.js';
+import { heroIsInDangerousRegion, rescueHeroFromRegion } from './region.js';
 import { discoverHeroReflectionSource, ureflects, heroReflectsRay } from './muse.js';
-import { nativeRoleAt, roles } from './roles.js';
+import { nativeRoleAt, roles } from './role.js';
 import { d, rn1, rn2, rn2Display, rnl, rnd, rnz } from './rng.js';
 import { blindfolded, heroIsBlind, heroIsBlinded, heroIsDeaf, heroIsHallucinating, permanentBlind, setHeroBlindnessTurns, syncDeafness } from './senses.js';
 import { addHeroWeaponSkillSlots, ensureHeroSkills, SKILL_NAMES, unrestrictHeroSkill } from './weapon.js';

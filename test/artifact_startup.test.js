@@ -1,9 +1,9 @@
 import { freshObjectRoom } from './support/object-room.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, artifactExistCount, initializeArtifacts, nameArtifact, } from '../js/artifacts.js';
+import { artifactByName, artifactExistCount, initializeArtifacts, nameArtifact, } from '../js/artifact.js';
 import { game } from '../js/gstate.js';
-import { roles } from '../js/roles.js';
+import { roles } from '../js/role.js';
 import { freshGame } from './support/game-state.js';
 import { uninitializedObject } from './support/game-objects.js';
 void test('the disabled Palantir cannot be named as an artifact', () => {

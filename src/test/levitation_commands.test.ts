@@ -11,8 +11,8 @@ import {
 } from '../js/properties.js';
 import { descendFromLevitation } from '../js/levitation_commands.js';
 import { applyLevitationPotion } from '../js/potion.js';
-import { artifactByName } from '../js/artifacts.js';
-import { invokeArtifactPower } from '../js/artifacts.js';
+import { artifactByName } from '../js/artifact.js';
+import { invokeArtifactPower } from '../js/artifact.js';
 import { POT_LEVITATION } from '../js/object_data.js';
 import {
     addInventoryObject, knownObject,

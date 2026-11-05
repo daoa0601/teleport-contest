@@ -5,7 +5,7 @@ import { A_STR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { POT_GAIN_ABILITY } from '../js/object_data.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -13,7 +13,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { pushKeys } from '../js/input.js';
 import { BOULDER, DIAMOND, RIN_TELEPORT_CONTROL } from '../js/object_data.js';
 import { grantIntrinsicProperty } from '../js/properties.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { teleds, teleportHero } from '../js/teleport.js';
 import { addInventoryObject, floorObject } from './support/game-objects.js';
 import { installHeroChainedToBuriedBall, installPolymorphedHero, } from './support/hero-state.js';

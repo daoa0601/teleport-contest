@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { moveloop_core } from '../js/allmain.js';
 import { NO_MINVENT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-import { artifactByName, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, nameArtifact } from '../js/artifact.js';
 import { fullyIdentifyObject } from '../js/invent.js';
 import { pushKeys } from '../js/input.js';
 import { IRON_SHOES } from '../js/object_data.js';

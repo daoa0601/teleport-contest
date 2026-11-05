@@ -76,7 +76,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { NO_COLOR } from './terminal.js';
 import { symsetMenuValue } from './options.js';
 
-import { rumorCheck } from './rumor.js';
+import { rumorCheck } from './rumors.js';
 import { resetUtrap } from './trap.js';
 import type { PropertyName } from './property_types.js';
 import { monsterIsNonliving } from './mondata.js';

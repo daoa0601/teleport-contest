@@ -1,7 +1,7 @@
 import { changeMonsterForm, mfndpos, monsterCanOpenDoor, monsterCanUnlockDoor } from '../js/mon.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifacts.js';
+import { artifactByName, initializeArtifacts, nameArtifact } from '../js/artifact.js';
 import { DOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, G_GENOD, IRONBARS, NO_MINVENT, ROOM, W_AMUL, W_NONDIGGABLE, } from '../js/const.js';
 import { canSeeMonster, canSpotMonster, flush_screen } from '../js/display.js';
 import { plineWithContinuation } from '../js/pline.js';

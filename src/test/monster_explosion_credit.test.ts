@@ -2,7 +2,7 @@ import { SCROLL_CLASS } from '../js/objclass.js';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { EXPL_FIERY, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
-import { createElementalMonsterExplosion, explode } from '../js/explosion.js';
+import { createElementalMonsterExplosion, explode } from '../js/explode.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
 import { AD_COLD } from '../js/monster_attack_types.js';

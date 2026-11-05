@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { dosounds } from '../js/ambient_sounds.js';
+import { dosounds } from '../js/sounds.js';
 import { ALTAR, AM_SHRINE, Align2amask, ANY_SHOP, BARRACKS, BEEHIVE, COURT, MON_MIGRATING, MORGUE, ROOMOFFSET, SWAMP, TEMPLE, VAULT, ZOO } from '../js/const.js';
 import { flush_screen } from '../js/display.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

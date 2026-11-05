@@ -5,7 +5,7 @@ import { COLNO, LAVAPOOL, ROOM, ROWNO } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { pushKeys } from '../js/input.js';
 
-import { runLevelRegions } from '../js/regions.js';
+import { runLevelRegions } from '../js/region.js';
 import { teleds } from '../js/teleport.js';
 import { freshObjectRoom } from './support/object-room.js';
 

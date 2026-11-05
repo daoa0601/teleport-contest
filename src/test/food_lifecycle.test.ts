@@ -1,5 +1,5 @@
-import { races } from '../js/roles.js';
-import type { RaceName } from '../js/roles.js';
+import { races } from '../js/role.js';
+import type { RaceName } from '../js/role.js';
 import { installPagerInput } from './support/pager-input.js';
 import { floorObjectsAt } from './support/level-state.js';
 import { requireFixtureGame } from './support/game-state.js';

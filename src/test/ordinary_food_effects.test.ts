@@ -5,7 +5,7 @@ import { moveloop_core } from '../js/allmain.js';
 import { doeat, fprefx, fpostfx, rottenfood } from '../js/eat.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
 import { addInventoryItem } from '../js/invent.js';
-import { races } from '../js/roles.js';
+import { races } from '../js/role.js';
 import { game, requirePlayingGame, requireGameDisplay } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
 import { pushKeys, resetInputState } from '../js/input.js';

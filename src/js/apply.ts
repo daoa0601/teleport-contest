@@ -21,12 +21,12 @@ import {
     WAN_SECRET_DOOR_DETECTION, WAN_STASIS, WAN_STRIKING, WAN_TELEPORTATION, WAN_UNDEAD_TURNING, WAN_WISHING,
     WAX_CANDLE,
 } from './object_data.js';
-import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
+import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './sounds.js';
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
 import {
     armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands,
 } from './do_wear.js';
-import { artifactById, speakArtifact, retouchHeroObject } from './artifacts.js';
+import { artifactById, speakArtifact, retouchHeroObject } from './artifact.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
 import {
@@ -69,7 +69,7 @@ import {
 } from './timeout.js';
 import { heroHasFreeHand, wipeHeroEngraving, heroCanReachFloor } from './engrave.js';
 import { gulp_blnd_check } from './mhitu.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { makeFamiliar } from './familiar.js';
 import { figurinePlacementFailure } from './figurine.js';
 import {

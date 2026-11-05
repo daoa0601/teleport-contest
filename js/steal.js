@@ -38,7 +38,7 @@ import { removeObjectFromMonsterInventory, updateMonsterEquipment, } from './mon
 import { landFloorObject } from './floor_effects.js';
 import { cansee } from './vision.js';
 import { petDroppableObject } from './dog.js';
-import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifacts.js';
+import { artifactById, artifactByName, monsterCanTouchArtifact } from './artifact.js';
 import { objectResistsDestruction } from './zap.js';
 import { costlySpot, removeObjectAndContentsFromBill, currentShopResident, deleteObject } from './shk.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';

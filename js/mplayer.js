@@ -2,7 +2,7 @@
 import { RANDOM_CLASS } from './objclass.js';
 import { is_spear } from './object_properties.js';
 import { objectSkill, objectMerge, BATTLE_AXE, BLACK_DRAGON_SCALE_MAIL, BULLWHIP, CHAIN_MAIL, CLOAK_OF_DISPLACEMENT, CLOAK_OF_MAGIC_RESISTANCE, CLUB, DILITHIUM_CRYSTAL, ELVEN_DAGGER, ELVEN_LEATHER_HELM, ELVEN_SHIELD, FAKE_AMULET_OF_YENDOR, GAUNTLETS_OF_POWER, GRAY_DRAGON_SCALE_MAIL, JADE, KATANA, LEATHER_GLOVES, LEVITATION_BOOTS, LOADSTONE, LONG_SWORD, LUCKSTONE, MACE, OBJECT_NAMES, ORCISH_DAGGER, QUARTERSTAFF, ROBE, SCALPEL, SHIELD_OF_REFLECTION, SHORT_SWORD, SILVER_DRAGON_SCALE_MAIL, SPEAR, TWO_HANDED_SWORD, UNICORN_HORN, WAR_HAMMER, YELLOW_DRAGON_SCALE_MAIL, } from './object_data.js';
-import { artifactById, createRandomArtifact } from './artifacts.js';
+import { artifactById, createRandomArtifact } from './artifact.js';
 import { COLNO, ROWNO, In_endgame, MM_NOMSG, RLOC_ERR, RLOC_NOMSG } from './const.js';
 import { game, requireGameLevel } from './gstate.js';
 import { makemonAt, giveMonsterStartingGold, giveMonsterStartingObject, setMonsterMalign } from './makemon.js';

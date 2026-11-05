@@ -1,7 +1,7 @@
 // A save becomes live state only after every persisted field has a checked
 // domain shape. The graph decoder keeps entity identity; these checks never
 // replace heroes, objects, monsters, or their ownership references.
-import type { Artifact } from './artifacts.js';
+import type { Artifact } from './artifact.js';
 import type { ArtifactTarget } from './data_types.js';
 import type { GameMap } from './game.js';
 import type {

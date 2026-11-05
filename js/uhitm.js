@@ -6,9 +6,9 @@ import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN
 import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI, } from './object_data.js';
 import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { OBJ_DESCR } from './o_init.js';
-import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
+import { monsterSentenceSubject, sessionIsNight } from './sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
-import { applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense, } from './artifacts.js';
+import { applyArtifactHit, artifactById, artifactEmitsLight, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense, } from './artifact.js';
 import { getmattk } from './attack_selection.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
@@ -28,7 +28,7 @@ import { eat_brains, eating_conducts, morehungry, newuhs } from './eat.js';
 import { finishHeroDeath, finishMonsterAttackDeath } from './end.js';
 import { wipeHeroEngraving } from './engrave.js';
 import { loseHeroExperience } from './exper.js';
-import { explode } from './explosion.js';
+import { explode } from './explode.js';
 import { floorObjectDescription } from './invent.js';
 import { LL_CONDUCT, recordGameLogEvent } from './gamelog.js';
 import { game, requireGameLevel, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -42,7 +42,7 @@ import { setHeroGrip } from './mon.js';
 import { holdAnotherObject } from './invent.js';
 import { freeInventoryObject } from './invent.js';
 import { heroIsInvisible } from './hero_invisibility.js';
-import { retouchEquipment } from './artifacts.js';
+import { retouchEquipment } from './artifact.js';
 import { formatFeltMessage, formatHeardMessage, publishHeardMessage } from './hero_speech.js';
 import { requireInitializedHero } from './hero_types.js';
 import { consumeInventoryItem, inventoryItemDescription, mergable } from './invent.js';
@@ -102,7 +102,7 @@ import { displayMessageWindow } from './tty_topline.js';
 import { lightHitsGremlin } from './light.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { WAN_LIGHT } from './object_data.js';
-import { visibleRegionAt } from './regions.js';
+import { visibleRegionAt } from './region.js';
 import { angerMonster } from './mon.js';
 // C obj.h/permonst: completelyburns() — bodies that fire destroys outright.
 function completelyBurns(monster) {
