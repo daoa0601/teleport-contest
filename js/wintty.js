@@ -705,7 +705,14 @@ export function restoreMenuUnderlay(snapshot) {
             d.setCell(col, row, cell.ch, cell.color, cell.attr);
         }
     }
-    d.clearRow(0);
+    // docorner() cl_end()s row 0 only from the window's left edge, and the
+    // clipping caller owns that erase. When the topline state is empty and
+    // its seen text lives only in the grid (tty_display_nhwindow(WIN_MESSAGE)
+    // demoted it without erasing), the restored row must survive for the
+    // preserve cache. A pending/retained/prompt line is repainted from
+    // state, so the stale snapshot must not bleed through it.
+    if (game._pending_message || game._retained_message || game._promptOwnsTopline)
+        d.clearRow(0);
 }
 // C wintty.c:docorner()
 async function docorner(d, left, bottom) {

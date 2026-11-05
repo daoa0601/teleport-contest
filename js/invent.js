@@ -3343,11 +3343,13 @@ export async function showFloorPile(objects, pickedSome = false, featureDescript
     // C invent.c:look_here(): "display_nhwindow(WIN_MESSAGE, FALSE);"
     // acknowledges prose here. Arrival's pickup.c:check_here() owns
     // "flush_screen(1);" before "(void) look_here(ct, lhflags);".
+    // wintty.c:tty_display_nhwindow() erases the row only for a pending
+    // (TOPLINE_NEED_MORE) line; a seen line just becomes TOPLINE_EMPTY and
+    // stays visible, and tty_clear_nhwindow(WIN_MESSAGE) — the corner
+    // window below and the next command's parse() both call it — then
+    // no-ops, so the seen autodescribe text survives until a later pline.
     // Explicit inspection leaves pending map glyphs buffered.
-    const unreadMessage = !!game._pending_message;
-    await flushPendingTopline();
-    if (unreadMessage)
-        clearMessageWindow();
+    await displayMessageWindow();
     const display = requireGameDisplay();
     const pileLocation = heroIsBlind() ? 'you feel here' : 'are here';
     const descriptions = [];
