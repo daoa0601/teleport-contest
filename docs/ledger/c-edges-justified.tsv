@@ -135,7 +135,7 @@ really_done	paygd	inlined	settleGameExit calls payVaultGuardOnExit (end.ts, vaul
 rehumanize	polyman	inlined	becomeHuman keeps the pit rn1(6,2) (polyself.ts)
 reverse_loot	courtmon	inlined	courtMonsterType (pickup.ts)
 rndmonst	rndmonst_adj	inlined	rndmonstAdj with no bounds is rndmonst (makemon.ts)
-role_init	randrole	inlined	priest pantheon rn2(13) loop (startup.ts)
+role_init	randrole	inlined	priest pantheon rn2(13) loop (roles.ts roleInitPriestPantheon)
 role_init	randrole_filtered	n/a	character selection resolves a valid role before role_init
 role_init	randrace	n/a	character selection resolves a valid race before role_init
 role_init	randalign	n/a	character selection resolves a valid alignment before role_init
@@ -727,7 +727,7 @@ rloc_to_core	set_msg_xy	inlined	message position set on the arrival square (tele
 rob_shop	addupbill	inlined	bill total plus debit (shk.ts)
 rob_shop	sgn	inlined	adjustHeroAlignment(Math.sign(...)) (shk.ts)
 role_init	align_gtitle	inlined	godgend set from the role's goddess alignments (allmain.ts)
-role_init	plnamesuffix	inlined	name-suffix overrides parsed in character_name.ts
+role_init	plnamesuffix	inlined	name-suffix overrides parsed before selection starts (roles.ts plnamesuffix)
 role_init	str2role	inlined	role name resolution in roles.ts
 role_init	validalign	inlined	alignment validity checked against the role table (roles.ts)
 role_init	validgend	inlined	gender validity checked against the role table (roles.ts)
@@ -791,7 +791,7 @@ topten	writexlentry	n/a	record file I/O
 topten	yyyymmdd	inlined	birth/death dates as UTC yyyymmdd (end.ts)
 trapname	rank_of	inlined	experienceRankIndex picks the role title (trap.ts)
 tt_oname	classmon	inlined	role species for the score record (topten.ts)
-u_entered_shop	Hello	inlined	shopGreeting word per role (shk.ts)
+u_entered_shop	Hello	inlined	hello() word per role (roles.ts, called from shk.ts)
 u_entered_shop	carrying	inlined	inventory filter for pick-axes and mattocks (shk.ts)
 u_entered_shop	deserted_shop	inlined	describeUntendedShop (shk.ts)
 u_entered_shop	discover_object	inlined	learnObjectType(DWARVISH_MATTOCK) (shk.ts)
@@ -1102,7 +1102,7 @@ bind_key	alloc	n/a	memory allocation
 bind_key	cmdbind_add	inlined	CommandBindings set/define entries (command_bindings.ts)
 bind_key	cmdbind_get	inlined	CommandBindings lookup (command_bindings.ts)
 bind_key	cmdbind_remove	inlined	CommandBindings delete (command_bindings.ts)
-check_special_room	Hello	inlined	shopGreeting(oracle) in the Delphi welcome (shk.ts)
+check_special_room	Hello	inlined	hello(oracle) in the Delphi welcome (roles.ts, called from hack.ts)
 check_special_room	midnight	inlined	recorderLocalHour(...) === 0 for the morgue message (shk.ts)
 check_special_room	monstinroom	inlined	soldier/oracle room membership scan (shk.ts)
 check_special_room	move_update	inlined	updateHeroRoomMembership plus shop leave (shk.ts checkSpecialRoom)
@@ -1536,9 +1536,9 @@ process_text_window	tty_curs	inlined	setCursor while paging (prevmsg.ts)
 reverse_loot	dist2	inlined	squared distance in royalCoffers nearest-chest pick (pickup.ts)
 reverse_loot	g_at	inlined	objects[x][y] gold pile check after dropping (pickup.ts)
 reverse_loot	inv_cnt	inlined	inventory length for the 1/(n+1) pass (pickup.ts)
-root_plselection_prompt	race_alignmentcount	inlined	RACE_SELECTION_RULES aligns length (character_choices.ts)
-root_plselection_prompt	role_gendercount	inlined	ROLE_SELECTION_RULES genders length (character_choices.ts)
-root_plselection_prompt	validrole	inlined	role presence replaces the index check (character_choices.ts)
+root_plselection_prompt	race_alignmentcount	inlined	now a direct race_alignmentcount() call (roles.ts), kept listed while the checker maps the new port
+root_plselection_prompt	role_gendercount	inlined	now a direct role_gendercount() call (roles.ts), kept listed while the checker maps the new port
+root_plselection_prompt	validrole	inlined	role presence replaces the index check (roles.ts role_gendercount)
 show_overview	ledger_to_dlev	inlined	menu identifier carries {dnum, dlevel} directly (cmd.ts doDungeonOverview)
 show_overview	ledger_to_dnum	inlined	menu identifier carries {dnum, dlevel} directly (cmd.ts doDungeonOverview)
 show_overview	traverse_mapseenchn	inlined	visitedDungeonLevels loop with endgame-first ordering (cmd.ts)
@@ -2022,14 +2022,14 @@ eval_notify_windowport_field	percentage	inlined	the fraction rides FieldValue.pe
 eval_notify_windowport_field	exp_percentage	inlined	experience percentage comes from experiencePercentage() through fieldValues (botl.ts)
 look_all	encglyph	inlined	the encoded-glyph prefix is composed in screenDescription (pager.ts ENCODED_LOOK_PREFIX_LENGTH)
 status_hilite_add_threshold	alloc	n/a	the threshold list is a JS array (botl.ts replayStatusHiliteOperations)
-genl_player_selection	nh_terminate	n/a	cancel returns null and the startup boundary exits (character_selection.ts)
-genl_player_setup	plnamesuffix	inlined	the dash-suffix name tokens are parsed before the loop (character_name.ts parseCharacterName)
-genl_player_setup	validrace	inlined	table membership in validCharacterRace (character_choices.ts)
-genl_player_setup	validgend	inlined	table membership in validCharacterGender (character_choices.ts)
-genl_player_setup	validalign	inlined	table membership in validCharacterAlignment (character_choices.ts)
-genl_player_setup	yn_function	n/a	tty menu selection replaces the y/n/a/q prompt (character_selection.ts)
-reset_role_filtering	gotrolefilter	inlined	hasCharacterFilters gates the reset flow (character_filters.ts)
-randrole	rn2_on_display_rng	n/a	display RNG plumbing (character_selection.ts)
+genl_player_selection	nh_terminate	n/a	cancel returns null and the startup boundary exits (roles.ts genl_player_selection)
+genl_player_setup	plnamesuffix	inlined	the dash-suffix name tokens are parsed before the loop (roles.ts plnamesuffix)
+genl_player_setup	validrace	inlined	now a direct validrace() call in validCurrentFacet (roles.ts), kept listed while the checker maps the new port
+genl_player_setup	validgend	inlined	now a direct validgend() call in validCurrentFacet (roles.ts), kept listed while the checker maps the new port
+genl_player_setup	validalign	inlined	now a direct validalign() call in validCurrentFacet (roles.ts), kept listed while the checker maps the new port
+genl_player_setup	yn_function	n/a	tty menu selection replaces the y/n/a/q prompt (roles.ts readSetupAnswer)
+reset_role_filtering	gotrolefilter	inlined	now a direct gotrolefilter() call (roles.ts), kept listed while the checker maps the new port
+randrole	rn2_on_display_rng	n/a	display RNG plumbing (roles.ts pickRandom)
 prscore	alloc	n/a	command-line score browser memory (end.ts)
 prscore	free_dungeons	n/a	command-line score browser teardown (end.ts)
 prscore	free_ttlist	n/a	linked-list free; JS array (score_records.ts)

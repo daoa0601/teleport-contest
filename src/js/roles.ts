@@ -993,7 +993,8 @@ function race_alignmentcount(race: RaceChoice): number {
 // cavewoman>" from the aspects already decided and record which facets
 // the prompt must still ask for (C's gr.role_pa[] bits).  ok_align() and
 // ok_race() consult the filter masks; the count guards use
-// role_gendercount() and race_alignmentcount().
+// role_gendercount() and race_alignmentcount(), and validrole()'s bounds
+// guard is the role record itself.
 function root_plselection_prompt(
     choices: CharacterChoices, random: ReadonlySet<CharacterFacet>, filters?: CharacterFilters,
 ): { description: string[]; missing: Set<CharacterFacet> } {
@@ -1197,10 +1198,9 @@ const TITLES: Record<Facet, string> = {
 };
 const EMPTY_CHOICES: Choices = { role: null, race: null, gender: null, alignment: null };
 
-// C role.c:genl_player_setup(): the selection loop's guts — the
-// pick-for-you question, the facet menus, and the confirmation. C keeps
-// the state in flags.initrole/initrace/initgend/initalign and gr.rfilter;
-// this class holds it for one selection run.
+// C ref: role.c genl_player_setup()'s state: C keeps it in
+// flags.initrole/initrace/initgend/initalign and gr.rfilter; this class
+// holds it for one selection run.
 class CharacterSelection {
     private choices: Choices;
     private readonly random = new Set<Facet>();
@@ -1223,6 +1223,8 @@ class CharacterSelection {
         }
     }
 
+    // C role.c:genl_player_setup(): the selection loop's guts — the
+    // pick-for-you question, the facet menus, and the confirmation.
     async choose(): Promise<SelectedCharacter | null> {
         const pickSomething = FACETS.some(facet => !this.choices[facet] && !this.random.has(facet));
         if (FACETS.some(facet => !this.choices[facet])) game._characterPickerUsed = true;
