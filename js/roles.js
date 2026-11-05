@@ -13,6 +13,10 @@ import { NO_COLOR } from './terminal.js';
 import { withIndefiniteArticle } from './objnam.js';
 import { rawPrint } from './pline.js';
 import { tty_add_menu, tty_create_nhwindow, tty_destroy_nhwindow, tty_end_menu, tty_select_menu, tty_start_menu, } from './tty_menu.js';
+import { ensureQuestStatus } from './quest.js';
+import { is_male, is_neuter, monsterIsFemale } from './mondata.js';
+import { MONSTER_NAME } from './monster_data.js';
+import { SPE_LIGHT } from './object_data.js';
 const roleRecords = [
     { key: 'archeologist', filecode: 'Arc', name: { m: 'Archeologist', f: 'Archeologist' }, mnum: 0,
         title: [
@@ -910,6 +914,95 @@ export function build_plselection_prompt(choices, random, filters) {
         prompt += facet;
     }
     return `${prompt} for you? [ynaq]`;
+}
+export function plnamesuffix(raw) {
+    const [name = '', ...tokens] = raw.split('-');
+    const result = {
+        name: name.replaceAll(',', ' '),
+        role: null, race: null, gender: null, align: null,
+    };
+    for (const token of tokens) {
+        // Native tries roles first, so '*' requests a random role.
+        if (str2role(token) || randomCharacterOption(token))
+            result.role = token;
+        else if (str2race(token))
+            result.race = token;
+        else if (str2gend(token))
+            result.gender = token;
+        else if (str2align(token))
+            result.align = token;
+    }
+    return result;
+}
+// C role.c:role_init(): the per-game setup beyond the character tables —
+// the quest-figure gender rolls here, the Priest pantheon draw, and the
+// Cleric light school below. The rest of role_init (validrole(),
+// str2role(), randrace(), randalign(), and the mons[] quest fixups in
+// role_monsters.ts) runs earlier, at character selection and monster
+// data access.
+export function initializeRoleQuestGenders() {
+    const role = game.urole;
+    if (!role)
+        throw new Error('Quest gender initialization requires a selected role');
+    rollQuestFigureGenders(role, ensureQuestStatus());
+}
+// The rolls role_init makes whenever the quest figure's own species has
+// no fixed gender. On restore they run inside restgamestate() before the
+// hero is even read, and the saved quest_status then overwrites the values.
+export function rollQuestFigureGenders(role, quest) {
+    quest.ldrgend = questMonsterGender(role.ldrnum);
+    if (role.neminum !== undefined)
+        quest.nemgend = questMonsterGender(role.neminum);
+}
+// role_init's is_neuter(pm)/is_female(pm)/is_male(pm) chain, with the
+// rn2(100) < 50 draw when the species has no fixed gender.
+function questMonsterGender(species) {
+    if (is_neuter(species))
+        return 2;
+    if (monsterIsFemale(species))
+        return 1;
+    if (is_male(species))
+        return 0;
+    return rn2(100) < 50 ? 1 : 0;
+}
+// role_init at role.c:2064-2078: Priests borrow a pantheon from a random
+// non-Priest role. C draws randrole() until the role has gods (max 99
+// tries), then falls back to the first role with gods; priest is index 6.
+export function roleInitPriestPantheon(state) {
+    if (state.urole?.key !== 'priest')
+        return;
+    let pantheon = 6;
+    let attempts = 0;
+    while (pantheon === 6 && ++attempts < 100)
+        pantheon = rn2(13);
+    // C falls back to the first role with gods after 99 failed draws.
+    state._priestPantheonIndex = pantheon === 6 ? 0 : pantheon;
+}
+// role_init at role.c:2087 gives a Cleric's light spell the clerical
+// school: objects[SPE_LIGHT].oc_skill = P_CLERIC_SPELL for
+// Role_if(PM_CLERIC). The generated object table stays immutable so a
+// later non-Priest keeps divination, so the override is applied where
+// the school is read.
+export function roleInitClericLightSchool(otyp, state) {
+    return otyp === SPE_LIGHT && state.urole?.key === 'priest';
+}
+// C role.c:Hello(): the role's greeting word, with the shopkeeper
+// special case for a Samurai. The base words live in the role records
+// (greeting); the MAIL_STRUCTURES "Hallo" branch for a valkyrie mail
+// daemon is not ported (no mail daemon greets in the corpus).
+export function hello(monster, state = game) {
+    if (state.urole?.key === 'samurai' && MONSTER_NAME[monster?.mnum] === 'shopkeeper')
+        return 'Irasshaimase';
+    return state.urole?.greeting ?? 'Hello';
+}
+// C role.c:Goodbye(): the role's farewell word (in the role records).
+export function goodbye(state = game) {
+    return state.urole?.goodbye || 'Goodbye';
+}
+// C role.c:character_race(): the races[] entry for any player-race
+// species, or undefined for a monster that is not a player race.
+export function character_race(pmindex) {
+    return races.find(candidate => candidate.mnum === pmindex);
 }
 // C role.c:genl_player_selection(): run the selection once and quit the
 // game when the player cancels it; genl_player_setup() is the

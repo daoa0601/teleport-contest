@@ -21,7 +21,7 @@ import type { SavedGame } from './persistent_state_validation.js';
 import { cmdq_clear, isok } from './cmd.js';
 import { endVoluntaryMultiTurn } from './hack.js';
 import { copyPersistentState, restorePersistentState, SAVE_VERSION } from './state_schema.js';
-import { rollQuestFigureGenders } from './startup.js';
+import { rollQuestFigureGenders } from './roles.js';
 import type { PersistentState } from './state_schema.js';
 import type { StorageBackend } from './storage.js';
 import { resolveDungeonIdentities } from './dungeon.js';

@@ -10,7 +10,7 @@ import { bindPlayStep, newgame, restoregamePreamble, runMoveloopCore } from './a
 import { parseNethackOptions, parseNethackrc } from './options.js';
 import { displayConfigurationErrors } from './config_errors.js';
 import { rawPrint } from './pline.js';
-import { parseCharacterName } from './character_name.js';
+import { plnamesuffix } from './roles.js';
 import { GameDisplay } from './game_display.js';
 import { DEC_TO_UNICODE, KEY_BINDINGS, NO_COLOR } from './terminal.js';
 import { askAboutPanicSave, dismissUnhealthyRestore, hasErrorSave, restoreGame, restoreRefusedAsUnhealthy } from './save.js';
@@ -273,7 +273,7 @@ export class Engine {
         this.showStartupNotice();
         // The `-D`/playmode:debug startup path uses the traditional fixed
         // player name "wizard", regardless of OPTIONS=name.
-        let configuredName = parseCharacterName(opts.flags.debug ? 'wizard' : opts.name);
+        let configuredName = plnamesuffix(opts.flags.debug ? 'wizard' : opts.name);
         for (;;) {
             if (configuredName === null)
                 return false;
@@ -437,7 +437,7 @@ export class Engine {
                 // tty_curs() steps past the line to echo the accepted return.
                 display.setCursor(0, row + 1);
                 game.iflags.renameallowed = true;
-                return parseCharacterName(name);
+                return plnamesuffix(name);
             }
         }
     }

@@ -1,5 +1,6 @@
 // end.js — End-of-game disclosure and terminal presentation.
 // C refs: end.c disclose()/really_done(), insight.c, dungeon.c.
+import { goodbye } from './roles.js';
 import { AMULET_CLASS, GEM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectClassForType, objectBaseCost, AMULET_OF_LIFE_SAVING, BAG_OF_TRICKS, BELL_OF_OPENING, CANDELABRUM_OF_INVOCATION, FAKE_AMULET_OF_YENDOR, JADE, OBJECT_NAMES, SPE_BOOK_OF_THE_DEAD, STATUE, } from './object_data.js';
@@ -374,10 +375,6 @@ function deathSummaryLines(killer, { gold, score, moves }, endtime, { deathVerb 
 function plur(count) {
     return count === 1 ? '' : 's';
 }
-// C role.c:Goodbye().
-function roleGoodbye() {
-    return game.urole?.goodbye || 'Goodbye';
-}
 function roleName() {
     return game.flags?.female && game.urole?.name?.f
         ? game.urole.name.f : game.urole?.name?.m || 'Adventurer';
@@ -386,7 +383,7 @@ function renderQuitSummaryPage({ gold, score, moves }) {
     const display = game.nhDisplay;
     display?.clearScreen();
     game._preserveLeadingStyledBlanks = false;
-    terminalLine(0, 0, `${roleGoodbye()} ${game.plname || 'player'} the ${roleName()}...`);
+    terminalLine(0, 0, `${goodbye()} ${game.plname || 'player'} the ${roleName()}...`);
     terminalLine(2, 0, finalLocationLine('quit', score));
     terminalLine(3, 0, `and ${gold} piece${plur(gold)} of gold, after ${moves} move${plur(moves)}.`);
     terminalLine(4, 0, `You were level ${game.u?.ulevel || 1} with a maximum of ${game.u?.uhpmax || 1} hit point${plur(game.u?.uhpmax || 1)} when you quit.`);
@@ -1081,7 +1078,7 @@ export async function finishLivingGame(outcome) {
     if (showSummary) {
         const title = outcome === 'ascended'
             ? (game.flags.female ? 'Demigoddess' : 'Demigod') : roleName();
-        const lines = [`${roleGoodbye()} ${game.plname || 'player'} the ${title}...`, ''];
+        const lines = [`${goodbye()} ${game.plname || 'player'} the ${title}...`, ''];
         const company = ['You', ...names].join(' and ');
         if (names.length)
             lines.push(company);

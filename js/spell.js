@@ -53,7 +53,7 @@ import { makemonAt, setMonsterMalign } from './makemon.js';
 import { makeUndeadNear } from './mkroom.js';
 import { poisonHeroStrengthAndHp } from './poison.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
-import { roleInitClericLightSchool } from './startup.js';
+import { roleInitClericLightSchool } from './roles.js';
 import { monsterAtPosition } from './steed.js';
 import { TemporaryMapEffect } from './temporary_map_effect.js';
 import { tty_create_nhwindow, tty_start_menu, tty_add_menu, tty_end_menu, tty_select_menu, tty_destroy_nhwindow, } from './tty_menu.js';
@@ -1442,7 +1442,7 @@ export async function applyPotionSpell(source, { state = game } = {}) {
 }
 // ── spell.c:spell_skilltype() and spelltypemnemonic() ──
 // C spell.c:spell_skilltype(). The Priest light-school override is
-// role.c:role_init() (role.c:2088), carried by startup.ts.
+// role_init's, at role.c:2088, carried by roles.ts.
 export function spellSkillType(otyp, state = game) {
     if (roleInitClericLightSchool(otyp, state))
         return P_CLERIC_SPELL;

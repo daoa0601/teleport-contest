@@ -4,7 +4,7 @@ import { game, resetGame } from '../js/gstate.js';
 import { ensureQuestStatus } from '../js/quest.js';
 import { convertQuestLine } from '../js/quest_pager.js';
 import { initRng, rn2 } from '../js/rng.js';
-import { rollQuestFigureGenders } from '../js/startup.js';
+import { rollQuestFigureGenders } from '../js/roles.js';
 import { restoreGame, saveGame } from '../js/save.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
