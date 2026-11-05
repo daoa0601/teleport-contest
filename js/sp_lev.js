@@ -2,8 +2,9 @@
 // C ref: sp_lev.c — map placement and terrain selections, room / object /
 // monster / trap construction from des operations, live level flipping,
 // fill_special_room, check_room, create_room, create_subroom,
-// dig_corridor, wallify_map, and themed-room map placement.  The des.*
-// binding table and the Lua level/themeroom sessions live in sp_lev_lua.ts.
+// dig_corridor, wallify_map, location picking, map cleanup and boundary
+// symbols, the Lua level coder and special-level loader, and themed-room
+// map placement.  The des.* binding table lives in lua/des.ts.
 import { stack_object } from './invent.js';
 import { RANDOM_CLASS, GEM_CLASS } from './objclass.js';
 import { objectMerge, EGG, TIN, FIGURINE, CORPSE, SPE_NOVEL, BOULDER, STATUE, PICK_AXE, DWARVISH_MATTOCK, SADDLE, } from './object_data.js';
@@ -17,7 +18,7 @@ import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './m
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
 import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
-import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GONE, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
+import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { impossible } from './diagnostics.js';
@@ -29,7 +30,6 @@ import { initializeMonsterArmor } from './monworn.js';
 import { make_grave } from './engrave.js';
 import { createGasCloudSelection, createPoisonGasCloud } from './regions.js';
 import { mineralize } from './mklev.js';
-import { map_cleanup, remove_boundary_syms } from './special_level_cleanup.js';
 import { countLevelFeatures } from './mklev.js';
 import { wallification } from './mkmaze.js';
 import { unwrapSelection } from './lua/selection.js';
@@ -43,8 +43,9 @@ import { create_maze, walkfrom } from './mkmaze.js';
 import { ANY_LOC, DRY, HOT, NO_LOC_WARN, SOLID, WET, get_location, get_location_coord, getPackedLocationCoord } from './special_location.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { back_to_glyph, set_wall_state } from './display.js';
-import { deleteEngravingAt } from './engrave.js';
+import { deleteEngravingAt, engravingAt, deleteEngraving } from './engrave.js';
 import { createPlayerMonster } from './mplayer.js';
+import { deleteObject } from './shk.js';
 import { artifactByName, nameArtifact } from './artifacts.js';
 import { addObjectToMonsterInventory } from './steal.js';
 import { somexy, fillBarracksRoom, fillBeehiveRoom, fillCourtRoom, fillMorgueRoom, fillZooRoom, insideRoom } from './mkroom.js';
@@ -893,6 +894,20 @@ function shared_with_room(x, y, room, roomNumber) {
         || (isok(x + 1, y) && x + 1 >= room.lx && level.at(x + 1, y)?.roomno === roomNumber)
         || (isok(x, y - 1) && y - 1 <= room.hy && level.at(x, y - 1)?.roomno === roomNumber)
         || (isok(x, y + 1) && y + 1 >= room.ly && level.at(x, y + 1)?.roomno === roomNumber);
+}
+// C sp_lev.c:remove_boundary_syms(). Mapped crosswalls delimit rooms during
+// construction, then become floor before ordinary wall shaping can alter them.
+export function remove_boundary_syms(mappedCells, state = game) {
+    const level = requireGameLevel(state);
+    const mazeXMax = (COLNO - 1) & ~1;
+    const mazeYMax = (ROWNO - 1) & ~1;
+    for (let x = 0; x < mazeXMax; x++) {
+        for (let y = 0; y < mazeYMax; y++) {
+            const location = level.requireAt(x, y);
+            if (location.typ === CROSSWALL && mappedCells.has(x, y))
+                location.typ = ROOM;
+        }
+    }
 }
 // C sp_lev.c:set_door_orientation(). Horizontal unless the side walls say
 // otherwise.
@@ -2300,6 +2315,30 @@ export function solidify_map(mappedCells) {
             const location = level.at(x, y);
             if (location && IS_STWALL(location.typ) && !mappedCells.has(x, y))
                 location.wall_info |= W_NONDIGGABLE | W_NONPASSWALL;
+        }
+    }
+}
+// C sp_lev.c:map_cleanup(): boulders, most traps and engravings on liquid
+// are removed without settling, messages or destruction rolls.
+export async function map_cleanup(state = game) {
+    const level = requireGameLevel(state);
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) {
+            const terrain = level.requireAt(x, y).typ;
+            if (!IS_LAVA(terrain) && !IS_POOL(terrain))
+                continue;
+            // This is construction cleanup, so boulders are freed without
+            // settling, changing terrain, messages, or destruction rolls.
+            for (const object of [...(level.objects[x]?.[y] ?? [])]) {
+                if (object.otyp === BOULDER)
+                    await deleteObject(object, state);
+            }
+            const trap = level.traps.find(candidate => candidate.tx === x && candidate.ty === y);
+            if (trap && trap.ttyp !== MAGIC_PORTAL && trap.ttyp !== VIBRATING_SQUARE)
+                deleteTrap(trap, state);
+            const engraving = engravingAt(x, y, level);
+            if (engraving)
+                deleteEngraving(engraving, level);
         }
     }
 }
