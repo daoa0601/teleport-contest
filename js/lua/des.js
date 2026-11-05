@@ -1,7 +1,6 @@
 import { RANDOM_CLASS, ILLOBJ_CLASS, WEAPON_CLASS, RING_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, } from '../objclass.js';
 import { objectClassForType, CORPSE, EGG, FIGURINE, OBJECT_DESCRIPTIONS, OBJECT_NAMES, STATUE, TIN, } from '../object_data.js';
 import { ANTI_MAGIC, ARROW_TRAP, BEAR_TRAP, COLNO, CORPSTAT_FEMALE, CORPSTAT_HISTORIC, CORPSTAT_MALE, DART_TRAP, FIRE_TRAP, HOLE, LANDMINE, LEVEL_TELEP, MAGIC_PORTAL, MAGIC_TRAP, PIT, POLY_TRAP, ROCKTRAP, ROLLING_BOULDER_TRAP, ROWNO, RUST_TRAP, SLP_GAS_TRAP, SPIKED_PIT, SQKY_BOARD, STATUE_TRAP, TELEP_TRAP, TRAPDOOR, VIBRATING_SQUARE, WEB, } from '../const.js';
-import { MONSTER_NAME, monsterTypeName } from '../monster_data.js';
 import { game } from '../gstate.js';
 import { LuaTable, luaValueToJs } from './runtime.js';
 import { unwrapSelection } from './selection.js';
@@ -143,13 +142,6 @@ export function get_coord(value, y = null) {
         return { x: value.x, y: value.y };
     return null;
 }
-// C sp_lev.c:get_table_xy_or_coord(): the x/y fields, or the coord table
-// when both axes are absent.
-export function get_table_xy_or_coord(options) {
-    const x = options.x ?? -1;
-    const y = options.y ?? -1;
-    return x === -1 && y === -1 ? get_coord(options.coord) : { x, y };
-}
 export function objectClassForSymbol(symbol) {
     const objectClass = OBJECT_CLASS_SYMBOLS.indexOf(symbol);
     if (objectClass < ILLOBJ_CLASS)
@@ -191,23 +183,6 @@ export function find_objtype(name, classSymbol = null, state = game) {
             return type;
     }
     throw new Error(`unknown Lua object ${name}`);
-}
-// C sp_lev.c:find_montype(): resolve a monster name, including its male and
-// female spellings, with the gender it implies.
-export function find_montype(name) {
-    const target = String(name).toLowerCase();
-    for (let type = 0; type < MONSTER_NAME.length; type++) {
-        const neutral = MONSTER_NAME[type]?.toLowerCase();
-        if (neutral === target)
-            return { type, female: null };
-        const male = monsterTypeName(type, false)?.toLowerCase();
-        const female = monsterTypeName(type, true)?.toLowerCase();
-        if (male !== neutral && male === target)
-            return { type, female: false };
-        if (female !== neutral && female === target)
-            return { type, female: true };
-    }
-    throw new Error(`unknown Lua monster ${name}`);
 }
 // C sp_lev.c:l_register_des(). Register the native des entrypoints and their Lua return contracts.
 export function l_register_des(operations, wrapSelection) {

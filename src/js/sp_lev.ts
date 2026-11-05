@@ -25,13 +25,13 @@ import { makemon, mkclass, propagateMonsterSpecies, setMonsterMalign } from './m
 
 import { ensureMinionData } from './minion.js';
 import { monsterAtPosition, putSaddleOnMonster } from './steed.js';
-import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL } from './monster_data.js';
+import { MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_RESISTS, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import { ismnum, GRAVE, CORPSTAT_HISTORIC, CORPSTAT_MALE, CORPSTAT_FEMALE, COLNO, ROWNO, STONE, ROOM, CORR, DOOR, STAIRS, LADDER, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, D_NODOOR, D_BROKEN, D_CLOSED, D_ISOPEN, D_LOCKED, D_TRAPPED, OROOM, VAULT, COURT, SWAMP, BEEHIVE, MORGUE, BARRACKS, ZOO, TEMPLE, LEPREHALL, COCKNEST, ANTHOLE, DELPHI, THEMEROOM, SHOPBASE, ROOMOFFSET, MAXNROFROOMS, SDOOR, SCORR, IRONBARS, FOUNTAIN, SINK, ALTAR, THRONE, ENGRAVE, BURN, MARK, DUST, ENGR_BLOOD, ACCESSIBLE, IS_WALL, IS_STWALL, IS_DOOR, IS_ROOM, IS_OBSTRUCTED, IS_FURNITURE, IS_LAVA, IS_POOL, In_endgame, Is_waterlevel, SPACE_POS, W_NONDIGGABLE, W_NONPASSWALL, FILL_NONE, FILL_NORMAL, ICE, MOAT, POOL, WATER, LAVAPOOL, LAVAWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, DB_NORTH, DB_SOUTH, DB_EAST, DB_WEST, DB_DIR, TREE, AIR, CLOUD, A_NONE, A_CHAOTIC, A_NEUTRAL, A_LAWFUL, AM_NONE, AM_LAWFUL, AM_SHRINE, AM_SANCTUM, Align2amask, Amask2align, M_AP_NOTHING, M_AP_FURNITURE, M_AP_OBJECT, M_AP_MONSTER, MM_NOGRP, MM_EMIN, MM_NOTAIL, MM_IGNOREWATER, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, G_EXTINCT, G_GENOD, G_GONE, LEVEL_TIMER_KIND, STRAT_WAITFORU, F_LOOTED, F_WARNED, S_LDWASHER, S_LPUDDING, S_LRING, T_LOOTED, TREE_LOOTED, TREE_SWARM } from './const.js';
 import { isok } from './cmd.js';
 import { changeMonsterForm, removeMonsterFromGame, shapechangerGender } from './mon.js';
 import { impossible } from './diagnostics.js';
-import { l_register_des, get_table_xy_or_coord, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, find_montype, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
-import type { DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, DesOperations, MonsterAppearance, LuaRegion } from './lua/des.js';
+import { l_register_des, tableOptions, get_coord, luaArgument, find_objtype, objectClassForSymbol, MONSTER_CLASS_SYMBOLS, TRAP_TYPES } from './lua/des.js';
+import type { DesOptions, DesObjectOptions, DesMonsterOptions, DesSelectionOptions, DesOperations, MonsterAppearance, LuaPoint, LuaRegion } from './lua/des.js';
 import { LuaTable, objectToLuaTable, luaTableToArray, luaCheckString, luaCheckInteger, luaType } from './lua/runtime.js';
 import { currentLuaLifecycle } from './lua/lifecycle.js';
 import type { LuaBindings, LuaGameState } from './lua/lifecycle.js';
@@ -2053,6 +2053,31 @@ async function create_object(
         if (options.buried && (await buryObject(object)).outcome === 'absorbed') object = null;
     }
     return object;
+}
+
+// C sp_lev.c:find_montype(): resolve a monster name, including its male and
+// female spellings, with the gender it implies.
+export function find_montype(name: string) {
+    const target = String(name).toLowerCase();
+    for (let type = 0; type < MONSTER_NAME.length; type++) {
+        const neutral = MONSTER_NAME[type]?.toLowerCase();
+        if (neutral === target) return { type, female: null };
+        const male = monsterTypeName(type, false)?.toLowerCase();
+        const female = monsterTypeName(type, true)?.toLowerCase();
+        if (male !== neutral && male === target)
+            return { type, female: false };
+        if (female !== neutral && female === target)
+            return { type, female: true };
+    }
+    throw new Error(`unknown Lua monster ${name}`);
+}
+
+// C sp_lev.c:get_table_xy_or_coord(): the x/y fields, or the coord table
+// when both axes are absent.
+export function get_table_xy_or_coord(options: DesOptions): LuaPoint | null {
+    const x = options.x ?? -1;
+    const y = options.y ?? -1;
+    return x === -1 && y === -1 ? get_coord(options.coord) : { x, y };
 }
 
 // C sp_lev.c:lspo_monster(). Parse the request, create the monster, then run its custom inventory.
