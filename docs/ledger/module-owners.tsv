@@ -62,6 +62,7 @@ src/js/mon.ts	mon.c
 src/js/mondata.ts	mondata.c
 src/js/monmove.ts	monmove.c
 src/js/monster_data.ts	mon.c
+src/js/monworn.ts	worn.c
 src/js/mplayer.ts	mplayer.c
 src/js/mthrowu.ts	mthrowu.c
 src/js/muse.ts	muse.c
