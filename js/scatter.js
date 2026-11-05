@@ -1,7 +1,7 @@
 import { stack_object } from './invent.js';
-import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 // Floor objects thrown outward by an explosion or collapsing structure.
 // C ref: explode.c:scatter() and mthrowu.c:ohitmon().
+import { RING_CLASS, POTION_CLASS, VENOM_CLASS } from './objclass.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { currency, delobj } from './invent.js';
 import { deleteTrap, petrifyMonsterFromContact } from './trap.js';

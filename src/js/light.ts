@@ -1,3 +1,5 @@
+// Object light and burn timers.
+
 import { SCROLL_CLASS } from './objclass.js';
 import { monsterHasMapPosition } from './steed.js';
 import { wakeMonstersNearWithMessages, finishMonsterKilled } from './mon.js';
@@ -20,7 +22,10 @@ import { possessiveName } from './hacklib.js';
 import { artifactEmitsLight } from './artifacts.js';
 import { CORR, Is_rogue_level, Is_waterlevel, PLNMSG_OBJ_GLOWS } from './const.js';
 import { canSeeMonster, canSpotMonster, map_invisible } from './display.js';
-import { BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP, POT_OIL, TALLOW_CANDLE, WAX_CANDLE } from './object_data.js';
+import {
+    BRASS_LANTERN, CANDELABRUM_OF_INVOCATION, GOLD_DRAGON_SCALE_MAIL, GOLD_DRAGON_SCALES, MAGIC_LAMP, OIL_LAMP,
+    POT_OIL, TALLOW_CANDLE, WAX_CANDLE,
+} from './object_data.js';
 import { rnd } from './rng.js';
 import { impactArtifactLight } from './potion.js';
 import { cansee, clearAreaCells, vision_recalc } from './vision.js';
