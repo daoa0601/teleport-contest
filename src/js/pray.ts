@@ -14,10 +14,10 @@ import {
 } from './object_data.js';
 import { recordAchievement } from './insight.js';
 import { OBJ_NAME } from './object_data.js';
-import { adjustHeroAlignment, convertHeroAlignment, deityName } from './alignment.js';
+import { deityName } from './alignment.js';
 import { ringRemovalObstacle, disintegrateWornArmor, simpleArmorName, clearHeroStrangulation, heroIsStrangled } from './do_wear.js';
 import { artifactById, artifactByName, artifactExistCount, createArtifactGift, discoverArtifact, findArtifact, nameArtifact, setArtifactOrigin } from './artifacts.js';
-import { adjustAttribute, attributeChangeMessage, exerciseAttribute } from './attrib.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroAlignment, changeHeroLuck, exerciseAttribute, setHeroMaxHitPoints } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { heroFootName, heroEyeCount, heroEyeName, heroStomachName, monsterStomachName } from './body_parts.js';
 import { heroIsPunished } from './ball.js';
@@ -552,7 +552,6 @@ export async function uncursePrayerObject(object: GameObject, label: string | nu
 }
 
 // C pray.c:fix_worst_trouble().
-// Also C attrib.c:setuhpmax(): maximum HP, peak HP, and clamping are inlined here
 export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState = game) {
     requirePlayingGame(state);
     const hero = state.u;
@@ -595,12 +594,12 @@ export async function fixPrayerTrouble(trouble: PrayerTrouble, state: GameState 
     case Trouble.HIT:
         await pline(formatFeltMessage('much better.', state));
         if (Upolyd(hero)) {
-            hero.mhmax = Math.max(6, hero.mhmax + rnd(5));
+            setHeroMaxHitPoints(Math.max(hero.mhmax + rnd(5), 6), false, state);
             hero.mh = hero.mhmax;
         }
-        if (hero.uhpmax < hero.ulevel * 5 + 11) hero.uhpmax += rnd(5);
-        hero.uhpmax = Math.max(6, hero.uhpmax);
-        hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
+        let maximum = hero.uhpmax;
+        if (maximum < hero.ulevel * 5 + 11) maximum += rnd(5);
+        setHeroMaxHitPoints(Math.max(maximum, 6), true, state);
         hero.uhp = hero.uhpmax;
         state.context.botl = true;
         return;
@@ -1500,16 +1499,16 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
             await pline(`${deityName(alignment)} accepts your allegiance.`);
             if (alignment !== -1 && alignment !== 0 && alignment !== 1)
                 throw new Error(`Cannot convert to altar alignment ${alignment}`);
-            await convertHeroAlignment(alignment);
+            await changeHeroAlignment(alignment, 'convert');
             if (game.program_state.gameover) return;
-            changeLuck(-3);
+            changeHeroLuck(-3);
             hero.ublesscnt = (hero.ublesscnt || 0) + 300;
         } else {
             hero.ugangr = (hero.ugangr || 0) + 3;
             adjustHeroAlignment(-5);
             await pline(`${deityName(alignment)} rejects your sacrifice!`);
             await godVoice(alignment, 'Suffer, infidel!');
-            changeLuck(-5);
+            changeHeroLuck(-5);
             adjustAttribute(A_WIS, -2);
             if (!inHell()) await angryGods(hero.ualign.type);
         }
@@ -1520,7 +1519,7 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
     if (rn2(8 + hero.ulevel) > 5) {
         await pline(formatFeltMessage(`the power of ${deityName(hero.ualign.type)} increase.`));
         await exerciseAttribute(A_WIS, true);
-        changeLuck(1);
+        changeHeroLuck(1);
         const altar = game.level.requireAt(hero.ux, hero.uy);
         altar.flags = Align2amask(hero.ualign.type) | (altar.flags & AM_SHRINE);
         await newsym(hero.ux, hero.uy);
@@ -1534,7 +1533,7 @@ async function offerToAnotherGod(corpse: CorpseOffering, alignment: number): Pro
         await angerTemplePriest(game, true);
     } else {
         await pline(`Unluckily, you feel the power of ${deityName(hero.ualign.type)} decrease.`);
-        changeLuck(-1);
+        changeHeroLuck(-1);
         await exerciseAttribute(A_WIS, false);
         if (rnl(hero.ulevel) > 6 && hero.ualign.record > 0
             && rnd(hero.ualign.record) > Math.trunc(7 * alignmentLimit() / 8))
@@ -1574,7 +1573,7 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
             failure = 'The cloud dissipates.';
         } else {
             await pline('The blood covers the altar!');
-            changeLuck(alignment === A_NONE ? -2 : 2);
+            changeHeroLuck(alignment === A_NONE ? -2 : 2);
             failure = 'The blood coagulates.';
         }
         const type = demonLord(alignment);
@@ -1596,7 +1595,7 @@ async function offerOwnRace(corpse: CorpseOffering, highAltar: boolean, alignmen
         adjustAttribute(A_WIS, -1);
         if (!inHell()) await angryGods(hero.ualign.type);
         if (game.program_state.gameover) return;
-        changeLuck(-5);
+        changeHeroLuck(-5);
     } else adjustHeroAlignment(5);
     await useOffering(corpse);
 }
@@ -1615,7 +1614,7 @@ async function rewardOffering(value: number): Promise<void> {
                 : (hallucinating ? 'cosmic (not a new fact)' : 'mollified');
             await pline(`${deityName(hero.ualign.type)} seems ${mood}.`);
             if ((hero.uluck ?? 0) < 0) {
-                if (hero.ugangr) changeLuck(1);
+                if (hero.ugangr) changeHeroLuck(1);
                 else hero.uluck = 0;
             }
         }
@@ -1630,7 +1629,7 @@ async function rewardOffering(value: number): Promise<void> {
                 ? (hallucinating ? 'You realize that the gods are not like you and I.' : 'You have a hopeful feeling.')
                 : (hallucinating ? 'Overall, there is a smell of fried onions.' : 'You have a feeling of reconciliation.'));
             if ((hero.uluck ?? 0) < 0) {
-                if (hero.ublesscnt) changeLuck(1);
+                if (hero.ublesscnt) changeHeroLuck(1);
                 else hero.uluck = 0;
             }
         }
@@ -1638,7 +1637,7 @@ async function rewardOffering(value: number): Promise<void> {
         if (await bestowArtifact(value)) return;
         const previous = hero.uluck || 0;
         const increase = Math.min(Math.trunc(value * LUCKMAX / (MAX_VALUE * 2)), Math.max(0, value - previous));
-        changeLuck(increase);
+        changeHeroLuck(increase);
         hero.uluck = Math.max(0, hero.uluck ?? 0);
         if (hero.uluck !== previous) {
             const feet = makePlural(heroFootName());
@@ -1710,10 +1709,10 @@ async function offerFakeAmulet(amulet: GameObject, highAltar: boolean, alignment
     if (!amulet.known) {
         await pline(`You realize you have made a ${heroIsHallucinating(game) ? 'boo-boo' : 'mistake'}.`);
         amulet.known = true;
-        changeLuck(-1);
+        changeHeroLuck(-1);
     } else {
         if (heroIsDeaf(game)) await pline('Oh, no.');
-        changeLuck(-3);
+        changeHeroLuck(-3);
         adjustHeroAlignment(-1);
         game.u.ugangr = (game.u.ugangr || 0) + 3;
         await rejectOffering(highAltar, alignment);
@@ -1762,7 +1761,4 @@ function alignmentLimit() {
     return 10 + Math.trunc(game.moves / 200);
 }
 
-function changeLuck(amount: number): void {
-    game.u.uluck = Math.max(LUCKMIN, Math.min(LUCKMAX, (game.u.uluck || 0) + amount));
-}
 

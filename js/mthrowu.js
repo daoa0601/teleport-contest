@@ -6,7 +6,7 @@
 import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
 import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, WAN_STRIKING, } from './object_data.js';
-import { currentAttribute } from './attrib.js';
+import { currentAttribute, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
 import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness, } from './blinding_attack.js';
@@ -54,7 +54,6 @@ import { makePlural, withIndefiniteArticle, verbForSubject, definiteName, defini
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { stopHeroOccupation } from './occupation.js';
-import { poisonHero } from './poison.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType, castNativeRay } from './zap.js';

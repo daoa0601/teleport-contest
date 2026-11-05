@@ -10,7 +10,6 @@
 // list_vanquished()/num_gone()/list_genocided()/doborn(), youhiding(),
 // mstatusline(), ustatusline().
 
-import { fromWhat, heroHasNoEyes, intrinsicPropertyMask, extrinsicPropertyMask, veryFast } from './attribute_provenance.js';
 import { OBJ_NAME, objectPropertyName } from './object_data.js';
 import { levitationAtWill, propertyTimeout, hasPermanentIntrinsicProperty, propertyIsActive, propertyIsBlocked } from './properties.js';
 import { isLavaAt, isPoolAt } from './dbridge.js';
@@ -72,7 +71,7 @@ import { magic_negation } from './mhitu.js';
 import { confersLuck, currency } from './invent.js';
 import { temp_resist } from './eat.js';
 import { itemResistanceCause } from './zap.js';
-import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, maximumAttribute } from './attrib.js';
+import { ATTRIBUTE_DISPLAY_ORDER, currentAttribute, extrinsicPropertyMask, fromWhat, heroHasNoEyes, intrinsicPropertyMask, maximumAttribute, veryFast } from './attrib.js';
 import type { AttributeIndex } from './attrib.js';
 import { artifactById } from './artifacts.js';
 import { recorderLocalHour } from './calendar.js';

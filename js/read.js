@@ -7,7 +7,7 @@
 // halves. Effects own their exceptions to scroll disposal.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, TOOL_CLASS, SCROLL_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS, GEM_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { OBJ_NAME, objectMerge, objectMagic, objectCharged, BAG_OF_TRICKS, BELL_OF_OPENING, BLACK_DRAGON_SCALE_MAIL, BLACK_DRAGON_SCALES, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CORNUTHAUM, CRYSTAL_BALL, DRUM_OF_EARTHQUAKE, ELVEN_BOOTS, ELVEN_CLOAK, ELVEN_LEATHER_HELM, ELVEN_MITHRIL_COAT, ELVEN_SHIELD, EXPENSIVE_CAMERA, FIRE_HORN, FROST_HORN, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, HEAVY_IRON_BALL, HORN_OF_PLENTY, LEASH, LOADSTONE, MAGIC_FLUTE, MAGIC_HARP, MAGIC_LAMP, MAGIC_MARKER, OBJECT_NAMES, OIL_LAMP, POT_WATER, ROCK, ALCHEMY_SMOCK, CANDY_BAR, HAWAIIAN_SHIRT, SCR_AMNESIA, SCR_BLANK_PAPER, SCR_CREATE_MONSTER, SCR_DESTROY_ARMOR, SCR_EARTH, SCR_ENCHANT_ARMOR, SCR_ENCHANT_WEAPON, SCR_FIRE, SCR_GENOCIDE, SCR_IDENTIFY, SCR_LIGHT, SCR_MAGIC_MAPPING, SCR_PUNISHMENT, SCR_REMOVE_CURSE, SCR_SCARE_MONSTER, SCR_STINKING_CLOUD, SCR_TELEPORTATION, SHIELD_OF_REFLECTION, SILVER_DRAGON_SCALE_MAIL, SILVER_DRAGON_SCALES, SLING, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_CAUSE_FEAR, SPE_CHARM_MONSTER, SPE_CONFUSE_MONSTER, SPE_CREATE_MONSTER, SPE_DETECT_FOOD, SPE_IDENTIFY, SPE_MAGIC_MAPPING, SPE_NOVEL, SPE_REMOVE_CURSE, TINNING_KIT, WAN_CANCELLATION, WAN_COLD, WAN_DEATH, WAN_FIRE, WAN_LIGHTNING, WAN_MAGIC_MISSILE, WAN_POLYMORPH, WAN_UNDEAD_TURNING, WAN_WISHING, YELLOW_DRAGON_SCALES, objectDirection, } from './object_data.js';
-import { exerciseAttribute, exerciseWisdom } from './attrib.js';
+import { adjustHeroAlignment, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { is_shield } from './object_properties.js';
 import { adjustArmorAttributeBonus, armorSlotFor, destroyWornArmor, disintegrateWornArmor, erodeWornArmor, objectIsHardHelmet, removeHeroAccessory, some_armor, wearHeroAccessory, wearHeroArmor, wornArmorInDestroyOrder } from './do_wear.js';
 import { explode } from './explosion.js';
@@ -66,7 +66,6 @@ import { angerMonster, changeMonsterForm, finishEnvironmentalMonsterDeath, killG
 import { monsterResistsEffect } from './zap.js';
 import { initializePet, tameMonster } from './dog.js';
 import { freeHeroFromBuriedBall } from './dig.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { LL_CONDUCT, LL_GENOCIDE, recordGameLogEvent } from './gamelog.js';
 import { landFloorObject } from './floor_effects.js';
 import { possessiveName, upstart } from './hacklib.js';

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
-import { adjustHeroAlignment } from '../js/alignment.js';
+import { adjustHeroAlignment } from '../js/attrib.js';
 import { MAGIC_PORTAL, NO_MINVENT, WATER } from '../js/const.js';
 import { monsterExperience } from '../js/exper.js';
 import { game, requirePlayingGame } from '../js/gstate.js';

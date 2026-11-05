@@ -34,7 +34,7 @@ import {
 } from './mondata.js';
 
 import { shopkeeperName } from './shknam.js';
-import { currentAttribute, exerciseAttribute } from './attrib.js';
+import { adjustHeroAlignment, currentAttribute, exerciseAttribute } from './attrib.js';
 import { heroHandName, heroLegName } from './body_parts.js';
 import { heroHasFreeHand } from './engrave.js';
 import { isPolearm, objectIsMetallic } from './object_properties.js';
@@ -51,7 +51,6 @@ import { healHeroLegs, woundHeroLegs } from './do.js';
 import { touchPetrifies } from './stoning.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { blocksDiagonalDoor, heroBadRock, heroCanPassWallAt, heroTightDiagonalReason, applyHeroLocationEffects, heroLocomotion, loseHeroHp, nearCapacity, SLT_ENCUMBER, heroCouldMoveOntoBoulder, finishDestinationSpotEffects } from './hack.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { levelHasCeiling } from './dungeon.js';
 import { isAccessibleAt, heroCanOoze } from './monmove.js';
 import { isLavaAt, isPoolAt, isWaterwallAt } from './dbridge.js';

@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { adjustHeroAlignment } from '../js/alignment.js';
+import { adjustHeroAlignment } from '../js/attrib.js';
 import { A_CHAOTIC, G_GENOD } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { mkclassAligned } from '../js/makemon.js';

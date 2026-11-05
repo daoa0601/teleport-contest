@@ -18,7 +18,7 @@ import { artifactWarningFeedback, isPermanentlyPoisonedObject, wieldedArtifactWa
 import { OBJ_DESCR } from './o_init.js';
 import { armorSlotFor, heroHasFreeAction, objectIsHardHelmet, coveringEquipment, reportCoveredEquipment, fingersOrGloves, heroIsStrangled } from './do_wear.js';
 import { setBallAndChainFelt } from './ball.js';
-import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, requireAttributeIndex } from './attrib.js';
+import { adjustAttribute, attributeChangeMessage, currentAttribute, exerciseAttribute, poisonAttributeMessage, requireAttributeIndex } from './attrib.js';
 import { heroEyeCount, heroEyeName, heroFaceName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName } from './body_parts.js';
 import { commandResultCancelled, commandResultFailed, setMulti, travelStairs, cmdq_peek } from './cmd.js';
 import { applyHeroLocationEffects, loseHeroHp, nearCapacity, nomul } from './hack.js';
@@ -70,7 +70,6 @@ import { objectDescription, makePlural, verbForSubject, withIndefiniteArticle, d
 import { learnObjectType, observeObject, recordObjectEncounter, recordObjectKnowledge, objectTypeKnown } from './o_init.js';
 import { isLauncherAmmunition, isPoisonableObject, isWeaponTool } from './object_properties.js';
 import { plineWithContinuation, plineWithContinuation as pline } from './pline.js';
-import { poisonAttributeMessage } from './poison.js';
 import { grantIntrinsicProperty, grantWornProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshMovementProperties, refreshProperty, removeWornProperty, revokeIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { promptYesNo } from './query.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';

@@ -59,7 +59,7 @@ import { levelHasCeiling } from './dungeon.js';
 import { heroHidingStatus } from './insight.js';
 import { game, requireInitializedGame, requirePlayingGame } from './gstate.js';
 import { d, rnd, rn1, rn2 } from './rng.js';
-import { adjustLevelAbilities, experienceRankIndex, randomExperience } from './exper.js';
+import { experienceRankIndex, randomExperience } from './exper.js';
 import { LL_CONDUCT, LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { dist2, possessiveName } from './hacklib.js';
 import { heroCanSeeInvisible } from './mcastu.js';
@@ -70,7 +70,7 @@ import { hurtleHero, breakFloorObject, breakObjectAtLocation, objectBreaksOnImpa
 import { mksobj, placeCreatedObject, stack_object} from './mkobj.js';
 import { deleteTrap, feelTrap, dotrap, igniteItems, resetUtrap, maketrap } from './trap.js';
 import { buryFloorObjectsAt, freeHeroFromBuriedBall } from './dig.js';
-import { currentAttribute, maximumAttribute, exerciseAttribute } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, exerciseAttribute, maximumAttribute, newHeroHitPoints, redistributeActiveAttributes } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import {
     FLAMING_SPECIES, MONSTER_ATTACKS, MONSTER_EXPERIENCE_META, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_LEVEL,
@@ -1183,66 +1183,7 @@ function canDropPolymorphWeapon(object: GameObject) {
     return !(object.otyp === LEASH && object.leashmon);
 }
 
-function humanAttributeArrays() {
-    requirePlayingGame(game);
-    const u = game.u;
-    // This follows the source ordering deliberately.  While Upolyd,
-    // redist_attr() changes the active monster copy; polyman() subsequently
-    // restores macurr/mamax and discards those temporary changes.
-    return { base: u.acurr.a, max: u.amax.a };
-}
 
-// C attrib.c:redist_attr().
-function redistributeActiveAttributes() {
-    requirePlayingGame(game);
-    const { base, max } = humanAttributeArrays();
-    for (const index of [A_STR, A_DEX, A_CON, A_CHA] as const) {
-        const oldMax = max[index] || 1;
-        const raceMin = game.urace?.attrmin?.[index] ?? 3;
-        const raceMax = maximumAttribute(index);
-        max[index] = Math.max(
-            raceMin,
-            Math.min(raceMax, oldMax + rn2(5) - 2),
-        );
-        base[index] = Math.max(
-            raceMin,
-            Math.trunc((base[index] || raceMin) * max[index] / oldMax),
-        );
-    }
-}
-
-function constitutionHpBonus(constitution: number) {
-    if (constitution <= 3) return -2;
-    if (constitution <= 6) return -1;
-    if (constitution <= 14) return 0;
-    if (constitution <= 16) return 1;
-    if (constitution === 17) return 2;
-    if (constitution === 18) return 3;
-    return 4;
-}
-
-function newmanHpIncrement(level: number) {
-    requirePlayingGame(game);
-    const role = game.urole.hpadv;
-    const race = game.urace.hpadv;
-    let hp;
-    if (level === 0) {
-        hp = (role.infix || 0) + (race.infix || 0);
-        if ((role.inrnd || 0) > 0) hp += rnd(role.inrnd);
-        if ((race.inrnd || 0) > 0) hp += rnd(race.inrnd);
-    } else {
-        const lower = level < (game.urole?.xlev ?? 10);
-        const fixedKey = lower ? 'lofix' : 'hifix';
-        const randomKey = lower ? 'lornd' : 'hirnd';
-        hp = (role[fixedKey] || 0) + (race[fixedKey] || 0);
-        if ((role[randomKey] || 0) > 0) hp += rnd(role[randomKey]);
-        if ((race[randomKey] || 0) > 0) hp += rnd(race[randomKey]);
-        hp += constitutionHpBonus(currentAttribute(A_CON));
-    }
-    hp = Math.max(1, hp);
-    if (level < MAXULEV) game.u.uhpinc[level] = hp;
-    return hp;
-}
 
 // roles.js currently stores the pre-consumed initial energy die separately
 // during startup.  These are the corresponding role.c enadv.inrnd values
@@ -1300,6 +1241,7 @@ function newHumanFormName() {
 // Both random polymorph and a selected human form can reach this operation.
 async function renewHumanForm(sexChangeAllowed = true) {
     requirePlayingGame(game);
+    const state: PlayingGameState = game;
     const u = game.u;
     const oldLevel = u.ulevel ?? 1;
     let newLevel = oldLevel + rn2(5) - 2;
@@ -1324,7 +1266,7 @@ async function renewHumanForm(sexChangeAllowed = true) {
     hpMaximum = roundDiv(hpMaximum * (rn2(4) + 8), 10);
     for (let i = 0; i < newLevel; i++) {
         u.ulevel = i;
-        hpMaximum += newmanHpIncrement(i);
+        hpMaximum += newHeroHitPoints(state);
     }
     u.ulevel = newLevel;
     hpMaximum = Math.max(hpMaximum, newLevel);

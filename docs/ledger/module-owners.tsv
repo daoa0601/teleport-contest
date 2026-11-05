@@ -1,8 +1,8 @@
 # module	C file — port modules whose mapped C functions all come from one C file (static-gaps.mjs owners)
+src/js/alignment.ts	pray.c
 src/js/apply.ts	apply.c
 src/js/artifacts.ts	artifact.c
 src/js/attrib.ts	attrib.c
-src/js/attribute_provenance.ts	attrib.c
 src/js/bag_of_tricks.ts	makemon.c
 src/js/ball.ts	ball.c
 src/js/body_parts.ts	polyself.c
@@ -84,8 +84,8 @@ src/js/pickup.ts	pickup.c
 src/js/pickup_location.ts	hack.c
 src/js/pline.ts	pline.c
 src/js/pline_text.ts	pline.c
-src/js/poison.ts	attrib.c
 src/js/potion.ts	potion.c
+src/js/pray.ts	pray.c
 src/js/prevmsg.ts	topl.c
 src/js/priest.ts	priest.c
 src/js/projectile_bars.ts	monmove.c

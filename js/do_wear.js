@@ -51,8 +51,7 @@ import { artifactEmitsLight, heroHasArtifactDefense, setWornArtifactProperties }
 import { beginObjectBurn, endObjectBurn } from './timeout.js';
 import { equipmentLightDescription, equipmentLightMessage } from './light.js';
 import { rn2, rnd } from './rng.js';
-import { changeHeroAlignmentFromHelmet } from './alignment.js';
-import { currentAttribute, attributeIsAtLimit } from './attrib.js';
+import { changeHeroAlignment, currentAttribute, attributeIsAtLimit } from './attrib.js';
 import { encumber_msg } from './pickup.js';
 import { curseObjectState, objectIsFlammable, objectIsRottable } from './mkobj.js';
 import { displayColorName, displayLiquidName, monsterName } from './do_name.js';
@@ -1272,7 +1271,7 @@ export async function removeHeroArmor(object, state = game, options = {}) {
         const alignment = state.u.ualignbase?.[0];
         if (alignment === undefined)
             throw new Error('Helmet removal requires the hero base alignment');
-        await changeHeroAlignmentFromHelmet(alignment, false, state);
+        await changeHeroAlignment(alignment, 'helmOff', state);
         if (state.program_state.gameover)
             return false;
     }
@@ -1723,7 +1722,7 @@ async function applyHelmetOnEffects(object, state) {
                 throw new Error('An opposite-alignment helm requires initialized alignment and object identity');
             object.known = true;
             const opposite = alignment === 1 ? -1 : alignment === -1 ? 1 : object.o_id % 2 ? -1 : 1;
-            await changeHeroAlignmentFromHelmet(opposite, true, state);
+            await changeHeroAlignment(opposite, 'helmOn', state);
             if (state.program_state.gameover)
                 return;
         }

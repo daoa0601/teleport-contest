@@ -3,13 +3,12 @@
 // Message publishers await tty input at the point where C prints a line.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
 import { objectSkill, ACID_VENOM, AMULET_OF_LIFE_SAVING, BLINDING_VENOM, BOOMERANG, BOULDER, CLOVE_OF_GARLIC, CORPSE, CREAM_PIE, DUNCE_CAP, EGG, ELVEN_ARROW, ELVEN_BOW, EXPENSIVE_CAMERA, GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR, OBJECT_NAMES, TOWEL, YA, YUMI, } from './object_data.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense } from './artifacts.js';
 import { getmattk } from './attack_selection.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroHandName, heroLegName, heroStomachName, monsterLegName } from './body_parts.js';
@@ -72,7 +71,6 @@ import { stopHeroOccupation } from './occupation.js';
 import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import { pline, plineWithContinuation } from './pline.js';
-import { poisonHero } from './poison.js';
 import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm } from './polyself.js';
 import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroPetrificationTimeout, setHeroSlimingTimeout, splitMonster } from './potion.js';
 import { ghodHitsu } from './priest.js';

@@ -1,7 +1,5 @@
 file	function	callee	arguments	class
 src/js/do_wear.ts	applyAmuletOnEffects	rnd	"[""98""]"	constant
-src/js/alignment.ts	changeHeroAlignmentFromHelmet	rn1	"[""2"", ""3""]"	constant
-src/js/alignment.ts	changeHeroAlignmentFromHelmet	rn2	"[""50""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""9""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""HALLUCINATED_GODS.length""]"	constant
 src/js/alignment.ts	hallucinatedDeityName	rn2Display	"[""roles.length""]"	unproved
@@ -98,12 +96,26 @@ src/js/artifacts.ts	rollHeroArtifactBlast	rnd	"[""10""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""19""]"	constant
 src/js/attrib.ts	accumulateAttributeExercise	rn2	"[""2""]"	constant
 src/js/attrib.ts	adjustAttribute	rn2	"[""excess + 1""]"	unproved
+src/js/attrib.ts	changeHeroAlignment	rn1	"[""2"", ""3""]"	constant
+src/js/attrib.ts	changeHeroAlignment	rn2	"[""50""]"	constant
 src/js/attrib.ts	checkAttributeExercise	rn2	"[""200""]"	constant
 src/js/attrib.ts	checkAttributeExercise	rn2	"[""MAX_EXERCISE""]"	constant
 src/js/attrib.ts	gainHeroStrength	rn2	"[""4""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""10""]"	constant
 src/js/attrib.ts	gainHeroStrength	rnd	"[""6""]"	constant
 src/js/attrib.ts	loseHeroStrength	random	"[""4""]"	constant
+src/js/attrib.ts	poisonHero	random	"[""10""]"	constant
+src/js/attrib.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unproved
+src/js/attrib.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
+src/js/attrib.ts	poisonHero	rollDice	"[""4"", ""6""]"	constant
+src/js/attrib.ts	poisonHero	rollOne	"[""6""]"	constant
+src/js/attrib.ts	newHeroHitPoints	rnd	"[""race.inrnd""]"	unproved
+src/js/attrib.ts	newHeroHitPoints	rnd	"[""race[random]""]"	unproved
+src/js/attrib.ts	newHeroHitPoints	rnd	"[""role.inrnd""]"	unproved
+src/js/attrib.ts	newHeroHitPoints	rnd	"[""role[random]""]"	unproved
+src/js/attrib.ts	redistributeActiveAttributes	rn2	"[""5""]"	constant
+src/js/attrib.ts	varyInitAttr	rn2	"[""20""]"	constant
+src/js/attrib.ts	varyInitAttr	rn2	"[""7""]"	constant
 src/js/potion.ts	restoreHeroBaseAttributes	rn2	"[""A_MAX""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rn2	"[""23""]"	constant
 src/js/bag_of_tricks.ts	useBagOfTricks	rnd	"[""7""]"	constant
@@ -363,8 +375,6 @@ src/js/engrave.ts	doengrave	rnd	"[""50""]"	constant
 src/js/engrave.ts	doengrave	rnd	"[""94""]"	constant
 src/js/mhitu.ts	gulp_blnd_check	d	"[""attack[2]"", ""attack[3]""]"	unproved
 src/js/exper.ts	levelEnergyIncrease	rn2	"[""range""]"	unproved
-src/js/exper.ts	levelHpIncrease	rnd	"[""race[random]""]"	unproved
-src/js/exper.ts	levelHpIncrease	rnd	"[""role[random]""]"	unproved
 src/js/exper.ts	randomExperience	rn2	"[""range""]"	unproved
 src/js/extversion.ts	doextversion	rn2	"[""2""]"	constant
 src/js/extversion.ts	doextversion	rn2	"[""3""]"	constant
@@ -1875,11 +1885,6 @@ src/js/dig.ts	attackWithTool	rnd	"[""6""]"	constant
 src/js/dig.ts	strikeUndiggable	d	"[""2"", ""2""]"	constant
 src/js/dig.ts	strikeUndiggable	rn2	"[""3""]"	constant
 src/js/do.ts	applyBoulderPitEffects	rnd	"[""15""]"	constant
-src/js/poison.ts	poisonHero	random	"[""10""]"	constant
-src/js/poison.ts	poisonHero	random	"[""fatal + (thrownWeapon ? 20 : 0)""]"	unproved
-src/js/poison.ts	poisonHero	rollDice	"[""2"", ""2""]"	constant
-src/js/poison.ts	poisonHero	rollDice	"[""4"", ""6""]"	constant
-src/js/poison.ts	poisonHero	rollOne	"[""6""]"	constant
 src/js/polyself.ts	applyFieryGaze	random	"[""20""]"	constant
 src/js/polyself.ts	applyFieryGaze	rollDice	"[""2"", ""6""]"	constant
 src/js/polyself.ts	beginMonsterForm	d	"[""monsterLevel"", ""4""]"	invariant
@@ -1901,17 +1906,12 @@ src/js/polyself.ts	floatingEyeFreezeDuration	random	"[""4""]"	constant
 src/js/polyself.ts	floatingEyeFreezeDuration	rollDice	"[""(monster.m_lev ?? 0) + 1"", ""attack[3] ?? 1""]"	unproved
 src/js/polyself.ts	mindBlastSense	random	"[""10""]"	constant
 src/js/polyself.ts	mindBlastSense	random	"[""2""]"	constant
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""race.inrnd""]"	unproved
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""race[randomKey]""]"	unproved
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""role.inrnd""]"	unproved
-src/js/polyself.ts	newmanHpIncrement	rnd	"[""role[randomKey]""]"	unproved
 src/js/polyself.ts	newmanPowerIncrement	rn2	"[""range""]"	unproved
 src/js/polyself.ts	newmanPowerIncrement	rnd	"[""race.inrnd""]"	unproved
 src/js/polyself.ts	newmanPowerIncrement	rnd	"[""roleRange""]"	guarded
 src/js/polyself.ts	pickFormFromClass	rn2	"[""9""]"	constant
 src/js/polyself.ts	pickFormFromClass	rnd	"[""total""]"	guarded
 src/js/polyself.ts	polymonHero	rn1	"[""6"", ""2""]"	constant
-src/js/polyself.ts	redistributeActiveAttributes	rn2	"[""5""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""10""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
 src/js/polyself.ts	renewHumanForm	rn2	"[""4""]"	constant
@@ -2343,8 +2343,6 @@ src/js/wield.ts	toggleTwoWeaponCombat	rnd	"[""20""]"	constant
 src/js/u_init.ts	adjustStartingItem	rn2	"[""4""]"	constant
 src/js/u_init.ts	adjustStartingItem	rne	"[""3""]"	constant
 src/js/teleport.ts	collect_coords	random	"[""n""]"	guarded
-src/js/u_init.ts	initAttributes	rn2	"[""20""]"	constant
-src/js/u_init.ts	initAttributes	rn2	"[""7""]"	constant
 src/js/u_init.ts	initialRoll	rnd	"[""adv.inrnd""]"	guarded
 src/js/u_init.ts	makedog	rn2	"[""16 + Math.max(-15, record)""]"	constant
 src/js/u_init.ts	makedog	rn2	"[""2""]"	constant

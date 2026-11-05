@@ -2,7 +2,7 @@ import { mintrap } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { adjustHeroAlignment } from '../js/alignment.js';
+import { adjustHeroAlignment } from '../js/attrib.js';
 import { SQKY_BOARD } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 

@@ -12,14 +12,13 @@ import {
     GAUNTLETS_OF_POWER, HEAVY_IRON_BALL, IRON_CHAIN, IRON_SHOES, KATANA, LOADSTONE, MIRROR,
     OBJECT_NAMES, TOWEL, YA, YUMI,
 } from './object_data.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom, poisonHero } from './attrib.js';
 import { OBJ_DESCR } from './o_init.js';
 import { monsterSentenceSubject, sessionIsNight } from './ambient_sounds.js';
 import { monsterHasMagicResistance } from './trap.js';
 import { applyArtifactHit, artifactById, artifactDamageBonus, artifactEmitsLight, artifactStrikesShade, findArtifact, isPermanentlyPoisonedObject, monsterHasArtifactDefense } from './artifacts.js';
 import type { ArtifactDefender } from './artifacts.js';
 import { getmattk } from './attack_selection.js';
-import { adjustAttribute, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, exerciseWisdom } from './attrib.js';
 import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroHandName, heroLegName, heroStomachName, monsterLegName } from './body_parts.js';
@@ -101,8 +100,7 @@ import { objectAtMonsterDescription } from './pager.js';
 import { petFoodNutrition } from './pet_eating.js';
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
-import { poisonHero } from './poison.js';
-import type { HeroPoisonOptions } from './poison.js';
+import type { HeroPoisonOptions } from './attrib.js';
 import { applyHeroGolemEffects, heroFormSticks, heroHasNoHands, heroHasProtectionFromShapeChangers, heroHatesSilver, heroIsFlaming, heroIsPolymorphed, heroIsUnchanging, heroIsVerySmall, heroMonsterForm, heroPassesWalls, heroSpecies, polymonHero, polymorphHero, releaseHeroGrip, returnHeroToHumanForm } from './polyself.js';
 import { cureHeroSickness, heroIsSick, heroIsSliming, hitMonsterWithSupportedPotion, makeBlinded, makeConfused, makeStunned, setHeroPetrificationTimeout, setHeroSlimingTimeout, splitMonster } from './potion.js';
 import { ghodHitsu } from './priest.js';

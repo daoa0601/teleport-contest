@@ -4,17 +4,13 @@ import { formatFeltMessage } from './hero_speech.js';
 import { game, requireLiveGame, requirePlayingGame, requireInitializedGame } from './gstate.js';
 import { finishHeroDeath } from './end.js';
 import { returnHeroToHumanForm } from './polyself.js';
-import { currentAttribute } from './attrib.js';
+import { adjustLevelAbilities, currentAttribute, minHeroMaxHitPoints, newHeroHitPoints } from './attrib.js';
 import { LL_MINORAC, recordGameLogEvent } from './gamelog.js';
 import { rnd, rn2 } from './rng.js';
 import { A_CON, A_WIS, KILLED_BY, MAXULEV, Upolyd } from './const.js';
 import { plineWithContinuation } from './pline.js';
-import { see_monsters } from './display.js';
 import { rankAchievement, recordAchievement } from './insight.js';
 import { MONSTER_EXPERIENCE_META, MONSTER_LEVEL, MONSTER_MOVE, PM_MAIL_DAEMON, } from './monster_data.js';
-import { grantIntrinsicProperty, hasPermanentIntrinsicProperty, revokeIntrinsicProperty, } from './properties.js';
-import { addHeroWeaponSkillSlots, loseHeroWeaponSkillSlots } from './weapon.js';
-import { ROLE_LEVEL_ABILITIES, RACE_LEVEL_ABILITIES } from './innate_abilities.js';
 import { heroResistsLifeDrain } from './mondata.js';
 import { monsterHitPointsPerLevel } from './makemon.js';
 const NORMAL_SPEED = 12;
@@ -66,36 +62,6 @@ export async function checkExperienceLevel({ publish = plineWithContinuation } =
 export function experienceRankIndex(level) {
     return level <= 2 ? 0 : level <= 30 ? Math.trunc((level + 2) / 4) : 8;
 }
-function constitutionHpBonus(constitution) {
-    if (constitution <= 3)
-        return -2;
-    if (constitution <= 6)
-        return -1;
-    if (constitution <= 14)
-        return 0;
-    if (constitution <= 16)
-        return 1;
-    if (constitution === 17)
-        return 2;
-    if (constitution === 18)
-        return 3;
-    return 4;
-}
-function levelHpIncrease(state) {
-    const u = state.u;
-    const role = state.urole.hpadv;
-    const race = state.urace.hpadv;
-    const lower = u.ulevel < state.urole.xlev;
-    const fixed = lower ? 'lofix' : 'hifix';
-    const random = lower ? 'lornd' : 'hirnd';
-    let hp = (role[fixed] || 0) + (race[fixed] || 0);
-    if ((role[random] || 0) > 0)
-        hp += rnd(role[random]);
-    if ((race[random] || 0) > 0)
-        hp += rnd(race[random]);
-    const constitution = currentAttribute(A_CON);
-    return Math.max(1, hp + constitutionHpBonus(constitution));
-}
 // C exper.c:enermod().
 function energyModifier(energy, role) {
     if (['priest', 'wizard'].includes(role))
@@ -129,14 +95,7 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
         hero.mh = Math.min(hero.mhmax, hero.mh + formGain);
     }
     const oldLevel = hero.ulevel;
-    let hp = levelHpIncrease(state);
-    if (oldLevel < MAXULEV) {
-        hero.uhpinc ||= Array(MAXULEV).fill(0);
-        hero.uhpinc[oldLevel] = hp;
-    }
-    else {
-        hp = Math.min(hp, Math.max(5 - Math.trunc(hero.uhpmax / 300), 1));
-    }
+    const hp = newHeroHitPoints(state);
     hero.uhpmax += hp;
     hero.uhp = Math.min(hero.uhpmax, hero.uhp + hp);
     hero.uhppeak = Math.max(hero.uhppeak || 0, hero.uhpmax);
@@ -178,50 +137,6 @@ export async function gainExperienceLevel({ incremental = false, state = game, p
     hero.ulevelpeak = Math.max(hero.ulevelpeak, hero.ulevel);
     state.context.botl = true;
 }
-// C attrib.c:adjabil()
-// Also C attrib.c:postadjabil(): visibility refresh is inlined here
-async function adjustAbilities(abilities, origin, oldLevel, newLevel, publish) {
-    for (const [level, property, gainMessage, lossMessage] of abilities) {
-        let changed = false;
-        if (oldLevel < level && newLevel >= level) {
-            const alreadyIntrinsic = hasPermanentIntrinsicProperty(property, game);
-            grantIntrinsicProperty(property, origin, game);
-            if (level === 1)
-                grantIntrinsicProperty(property, 'outside', game);
-            changed = true;
-            if (!alreadyIntrinsic && gainMessage)
-                await publish(formatFeltMessage(`${gainMessage}!`));
-        }
-        else if (oldLevel >= level && newLevel < level) {
-            changed = revokeIntrinsicProperty(property, origin, game);
-            // C announces crossing the level threshold even if a curse
-            // already removed this ability; other intrinsic sources suppress it.
-            if (!hasPermanentIntrinsicProperty(property, game)) {
-                const message = lossMessage || (gainMessage
-                    ? `less ${gainMessage}` : '');
-                if (message)
-                    await publish(formatFeltMessage(`${message}!`));
-            }
-        }
-        if (changed && (property === 'warning' || property === 'seeInvisible'))
-            await see_monsters();
-    }
-}
-// C attrib.c:adjabil()
-// Also C attrib.c:role_abil(): role table lookup is inlined here
-// Level changes can grant or revoke role and race
-// abilities, and each changed level adds or removes one weapon-skill slot.
-export async function adjustLevelAbilities(oldLevel, newLevel, publish = plineWithContinuation) {
-    const state = requireInitializedGame();
-    state.urole.rank = state.urole.title[experienceRankIndex(newLevel)] || state.urole.name;
-    await adjustAbilities(ROLE_LEVEL_ABILITIES[state.urole.key] || [], 'experience', oldLevel, newLevel, publish);
-    await adjustAbilities(state.urace.name === 'elf' || state.urace.name === 'orc'
-        ? RACE_LEVEL_ABILITIES[state.urace.name] || [] : [], 'race', oldLevel, newLevel, publish);
-    if (newLevel > oldLevel)
-        await addHeroWeaponSkillSlots(newLevel - oldLevel, game);
-    else if (newLevel < oldLevel)
-        await loseHeroWeaponSkillSlots(oldLevel - newLevel, game);
-}
 // C exper.c:losexp(). A null drainer loses experience without killing a
 // level-one hero; named drain can end the game before HP/power loss.
 export async function loseHeroExperience(drainer = null, { state = game, publish = plineWithContinuation, die = finishHeroDeath, } = {}) {
@@ -256,7 +171,7 @@ export async function loseHeroExperience(drainer = null, { state = game, publish
     const hpLoss = hero.uhpinc?.[level] || 0;
     const energyLoss = hero.ueninc?.[level] || 0;
     const oldHpMax = hero.uhpmax;
-    const minimumHpMax = Math.max(level, 10);
+    const minimumHpMax = minHeroMaxHitPoints(10, state);
     hero.uhpmax -= hpLoss;
     // C's setuhpmax() clamps current HP when restoring either maximum.
     // That happens before the separate loss of this level's current HP.

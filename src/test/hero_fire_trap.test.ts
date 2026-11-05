@@ -9,7 +9,7 @@ import { triggerChestTrap } from '../js/chest_trap.js';
 import { FIRE_TRAP, ICE, ICED_POOL, M_SEEN_COLD, M_SEEN_FIRE, POOL } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { triggerHeroFireTrap } from '../js/trap.js';
-import { adjustLevelAbilities } from '../js/exper.js';
+import { adjustLevelAbilities } from '../js/attrib.js';
 import { game } from '../js/gstate.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, CHEST, OBJECT_NAMES, SCR_IDENTIFY } from '../js/object_data.js';

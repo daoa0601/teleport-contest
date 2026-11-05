@@ -33,8 +33,7 @@ import { withIndefiniteArticle, objectDescription, observeObjectForNaming, objec
 import { learnObjectType, observeObject, objectTypeKnown } from './o_init.js';
 import { stopHeroOccupation } from './occupation.js';
 import { finishHeroDeathAfterMonsterMessage, finishMonsterAttackDeath, finishHeroDeath } from './end.js';
-import { adjustAttribute, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { adjustAttribute, adjustHeroAlignment, currentAttribute, exerciseAttribute, loseHeroStrength } from './attrib.js';
 import { heroHasHalfSpellDamage, drainObjectEnchantment, destroyInventoryByElement } from './zap.js';
 import { applyHeroGolemEffects, polymonHero, returnHeroToHumanForm, heroFormSticks, heroSpecies, heroIsBreathless, heroPassesWalls } from './polyself.js';
 import { d, rn2, rnd } from './rng.js';

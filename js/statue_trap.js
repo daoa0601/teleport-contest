@@ -4,7 +4,7 @@ import { formatFeltMessage } from './hero_speech.js';
 import { heroIsHallucinating, heroIsBlind } from './senses.js';
 import { deleteTrap } from './trap.js';
 import { monsterName, randomDisplayMonsterName, setMonsterGivenName } from './do_name.js';
-import { adjustHeroAlignment } from './alignment.js';
+import { adjustHeroAlignment } from './attrib.js';
 import { CORPSTAT_HISTORIC, MM_ADJACENTOK, MM_NOCOUNTBIRTH, MM_NOMSG, MM_NOTAIL, MM_NOWAIT, NO_MINVENT, STATUE_TRAP, } from './const.js';
 import { canSpotMonster, feel_newsym, map_invisible, newsym } from './display.js';
 import { plineWithContinuation as pline } from './pline.js';

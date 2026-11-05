@@ -6,8 +6,7 @@ import {
     objectBimanual, BOULDER, FIGURINE,
 } from './object_data.js';
 import { formatFeltMessage, publishHeardMessage } from './hero_speech.js';
-import { adjustHeroAlignment } from './alignment.js';
-import { changeHeroLuck } from './attrib.js';
+import { adjustHeroAlignment, changeHeroLuck } from './attrib.js';
 import { uncreateArtifact } from './artifacts.js';
 import { A_CHAOTIC, A_NONE, G_NOCORPSE, MGIVENNAME, is_pit } from './const.js';
 import { monsterName } from './do_name.js';

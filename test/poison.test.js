@@ -6,7 +6,7 @@ import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState, pushKeys } from '../js/input.js';
 import { AMULET_OF_LIFE_SAVING, LONG_SWORD } from '../js/object_data.js';
 import { requireScreenRow } from './support/screen.js';
-import { poisonHero } from '../js/poison.js';
+import { poisonHero } from '../js/attrib.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { installPolymorphedHero } from './support/hero-state.js';
 import { freshObjectRoom } from './support/object-room.js';

@@ -132,8 +132,7 @@ import { burnAwayHeroSlime, loseHeroHp, blocksDiagonalDoor, blocksMove, heroBadR
 import type { EmergencyDisrobe, HeroLiquidOptions, LavaSinkingResult } from './hack.js';
 import { surfaceName, ceilingName } from './terrain_name.js';
 import { triggerBoobyTrap } from './booby_trap.js';
-import { adjustHeroAlignment } from './alignment.js';
-import { currentAttribute, exerciseAttribute, changeHeroLuck, adjustAttribute, attributeChangeMessage } from './attrib.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, changeHeroLuck, currentAttribute, exerciseAttribute, minHeroMaxHitPoints, poisonHero } from './attrib.js';
 import { triggerChestTrap } from './chest_trap.js';
 import {
     heroArmName, heroFingerName, heroHandName, heroFootName, heroHeadName, heroLegName, monsterFootName,
@@ -159,7 +158,6 @@ import { searchSpecial, somexyspace } from './mkroom.js';
 import { impactDrop, shipObject } from './dokick.js';
 import { setTrack } from './track.js';
 import { activateStatueTrapAt } from './statue_trap.js';
-import { poisonHero } from './poison.js';
 import { putMonsterToSleep } from './mhitm.js';
 import { woundHeroLegs } from './do.js';
 import type { LevitationState, PropertyState } from './property_types.js';
@@ -2907,7 +2905,7 @@ async function reduceHeroMaximumHitPoints(
     publish: MessagePublisher,
 ) {
     const oldMaximum = hero.uhpmax ?? 1;
-    const minimum = Math.max(hero.ulevel ?? 1, 1);
+    const minimum = minHeroMaxHitPoints(1, game);
     if (hero.uhpmax > minimum) {
         const range = Math.min(hero.uhpmax, damage + 1);
         hero.uhpmax -= rn2(range);
@@ -3089,7 +3087,8 @@ export async function finishMonsterFireTrap(
 // C trap.c:dofiretrap(): the flame effect shared by floor fire traps and
 // trapped containers — steam under water, the tower of flame, resistance,
 // and the burning of the hero, possessions, floor objects, and ice; the
-// maximum-HP burn is C trap.c:minuhpmax() (reduceHeroMaximumHitPoints).
+// maximum-HP burn calls C attrib.c:minuhpmax()/setuhpmax()
+// (reduceHeroMaximumHitPoints).
 export async function triggerHeroFireTrap(
     box: GameObject | null = null,
     { publish = plineWithContinuation }: { publish?: MessagePublisher } = {},

@@ -8,7 +8,7 @@ import { putHeroToSleep } from '../js/timeout.js';
 import { pushKeys } from '../js/input.js';
 import { mhitm_knockback } from '../js/uhitm.js';
 import { AD_PHYS, AT_WEAP } from '../js/monster_attack_types.js';
-import { poisonHero } from '../js/poison.js';
+import { poisonHero } from '../js/attrib.js';
 import { applyMonsterStoningAttack } from '../js/uhitm.js';
 import { createMonsterAt } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';

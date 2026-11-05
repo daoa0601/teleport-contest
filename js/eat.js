@@ -5,11 +5,9 @@ import { heroCannotVomit, sameMonsterRace, monsterCanTeleport, monsterControlsTe
 import { setHeroPetrificationTimeout, makeDeaf, startHeroSickness, showInvisibilityMessage, makeConfused, makeHallucinated, makeStunned, drinkPotion, makeBlinded, setSlipperyHands, cureHeroSicknessWithMessages, cureHeroVomiting, heroIsSick, heroIsSliming, startHeroSliming, startHeroVomiting, } from './potion.js';
 import { eatPetrifyingEgg, fleshPetrifies, formCanBecomeStoneGolem, heroIsPetrifying, heroResistsStoning, heroWouldPetrifyFromFlesh, selfTouchPetrifyingWeapons } from './stoning.js';
 import { removeHeroAccessory, armorSimpleName } from './do_wear.js';
-import { adjustHeroAlignment } from './alignment.js';
 import { finishHeroHelplessness } from './allmain.js';
 import { artifactById, artifactByName, touchArtifactByHero } from './artifacts.js';
-import { adjustAttribute, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, gainHeroStrength } from './attrib.js';
-import { extrinsicPropertyMask, intrinsicPropertyMask } from './attribute_provenance.js';
+import { adjustAttribute, adjustHeroAlignment, attributeChangeMessage, currentAttribute, currentStrength, exerciseAttribute, exerciseWisdom, extrinsicPropertyMask, gainHeroStrength, intrinsicPropertyMask, poisonHeroStrengthAndHp } from './attrib.js';
 import { heroFingerName, heroLightHeadedFeeling, heroNoseName, heroStomachName } from './body_parts.js';
 import { triggerBoobyTrap } from './booby_trap.js';
 import { bot } from './botl.js';
@@ -57,7 +55,6 @@ import { learnObjectType, objectMaterial, observeObject, recordObjectKnowledge }
 import { corpseName, definiteName, killerObjectName, makePlural, objectHasPersonalName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, pluralizeObjectNoun, withIndefiniteArticle } from './objnam.js';
 import { stopHeroOccupation } from './occupation.js';
 import { pline as immediatePline, pline1, plineWithContinuation as pline, plineWithContinuation } from './pline.js';
-import { poisonHeroStrengthAndHp } from './poison.js';
 import { altarWrath } from './pray.js';
 import { grantIntrinsicProperty, hasCarriedProperty, hasIntrinsicProperty, hasInvokedProperty, hasPermanentIntrinsicProperty, hasTimedProperty, hasWornProperty, propertyIsActive, propertyIsBlocked, propertyTimeout, refreshProperty, removePermanentIntrinsicProperty, setPropertyTimeout } from './properties.js';
 import { unpunishHero } from './read.js';
