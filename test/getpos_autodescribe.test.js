@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { flush_screen, newsym, terrain_glyph } from '../js/display.js';
+import { flush_screen, newsym, back_to_glyph } from '../js/display.js';
 import { pline } from '../js/pline.js';
 import { paintGetposCursor, selectMapPosition } from '../js/getpos.js';
 import { game } from '../js/gstate.js';
@@ -51,7 +51,7 @@ void test('travel descriptions reject unseen stone even when the hero passes thr
     const level = await freshObjectRoom({ hero: { passesWalls: true }, iflags: { getloc_travelmode: true } });
     const stone = level.requireAt(17, 10);
     stone.seenv = 0;
-    stone.remembered_glyph = terrain_glyph(stone, 17, 10);
+    stone.remembered_glyph = back_to_glyph(stone, 17, 10);
     await newsym(17, 10);
     const input = resetInputState();
     input.feed('l');

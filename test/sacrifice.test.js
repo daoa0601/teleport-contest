@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 import { artifactById, initializeArtifacts } from '../js/artifacts.js';
 import { wearHeroAccessory } from '../js/do_wear.js';
 import { ALTAR, AM_SANCTUM, Align2amask, Amask2align } from '../js/const.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import { SCORE_RECORD_STORAGE_KEY } from '../js/end.js';
 import { game } from '../js/gstate.js';
 import { gameLogEvents } from '../js/gamelog.js';
@@ -210,7 +210,7 @@ void test('a chaotic human sacrifice changes a neutral altar without changing th
     const corpse = await addInventoryItem(await corpseObject(MONSTER_NAME.indexOf('human')));
     await runExtendedCommand('offer', `${corpse.invlet}\x1b`);
     assert.equal(Amask2align(altar.flags), -1);
-    assert.equal(mapFeatureDescription(game.u.ux, game.u.uy, terrain_glyph(altar, game.u.ux, game.u.uy)), 'chaotic altar');
+    assert.equal(mapFeatureDescription(game.u.ux, game.u.uy, back_to_glyph(altar, game.u.ux, game.u.uy)), 'chaotic altar');
     assert.equal(game.u.ualign.type, -1);
     assert.equal(corpse.where, 'gone');
 });

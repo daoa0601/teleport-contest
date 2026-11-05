@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { ARROW_TRAP, BEAR_TRAP, CORR, HOLE, LAVAWALL, PIT, ROOM, SPIKED_PIT, STONE, TT_LAVA, TT_PIT, VWALL, WEB } from '../js/const.js';
 import { rhack } from '../js/cmd.js';
 import { flushPendingTopline } from '../js/tty_topline.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import { CLR_BLUE, NO_COLOR } from '../js/terminal.js';
 import { digActualHole } from '../js/dig.js';
 import { gameLogEvents } from '../js/gamelog.js';
@@ -240,13 +240,13 @@ void test('solving Sokoban keeps its DEC wall color without coloring other branc
     game.symset = 'DECgraphics';
     const wall = level.requireAt(12, 9);
     wall.typ = VWALL;
-    assert.equal(terrain_glyph(wall, 12, 9).color, CLR_BLUE);
+    assert.equal(back_to_glyph(wall, 12, 9).color, CLR_BLUE);
 
     await fillWithBoulder(await createTrap(12, 10, PIT));
 
-    assert.equal(terrain_glyph(wall, 12, 9).color, CLR_BLUE);
+    assert.equal(back_to_glyph(wall, 12, 9).color, CLR_BLUE);
     game.u.uz.dnum = 0;
-    assert.equal(terrain_glyph(wall, 12, 9).color, NO_COLOR);
+    assert.equal(back_to_glyph(wall, 12, 9).color, NO_COLOR);
 });
 
 void test('solved Sokoban still excludes the maze-statue mimic disguise', async () => {

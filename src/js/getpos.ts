@@ -7,7 +7,7 @@ import {
     TER_DETECT, TER_MAP, TER_MON, TER_OBJ,
 } from './const.js';
 import { clearMessageWindow, resetToplineClip, showUnrememberedTopline } from './tty_topline.js';
-import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, terrain_glyph } from './display.js';
+import { flush_screen, glyphAt, lastDirtyMapCursor, newsym_force, back_to_glyph } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
 import { game } from './gstate.js';
 import { cmdq_add_key, cmdq_clear, cmdq_pop, readcharPoskey, takeQueuedAdjacentPosition } from './cmd.js';
@@ -240,7 +240,7 @@ function getposFeatureMatches(
     if (key === '~' && knownVibratingSquareAt(x, y, state))
         return true;
     if (loc.seenv) {
-        const background = glyphToCmapSymbol(terrain_glyph(loc, x, y).glyph);
+        const background = glyphToCmapSymbol(back_to_glyph(loc, x, y).glyph);
         if (background !== null && matching.has(background)) return true;
     }
     return false;
@@ -507,7 +507,7 @@ function getposArea(state: GameState): ReadonlySet<number> {
     const classify = (tx: number, ty: number): number | null => {
         const location = state.level?.at(tx, ty);
         if (!location || tx < 1 || tx >= COLNO || ty < 0 || ty >= ROWNO) return null;
-        const symbol = glyphToCmapSymbol(terrain_glyph(location, tx, ty).glyph);
+        const symbol = glyphToCmapSymbol(back_to_glyph(location, tx, ty).glyph);
         if (symbol === null) return 0;
         if (symbol >= CmapSymbol.room && symbol <= CmapSymbol.darkroom
             || symbol >= CmapSymbol.upstair && symbol <= CmapSymbol.fountain) return 1;

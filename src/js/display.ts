@@ -24,6 +24,7 @@ import { redrawMonsterWormSegments } from './worm.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import { CmapSymbol, GlyphOffset, altarToGlyph, cmapToGlyph, detectedMonnumToGlyph, explosionToGlyph, glyphIsCmapA, glyphIsCmapAltar, glyphIsCmapB, glyphIsCmapMain, glyphIsCmapSokoban, glyphIsExplosion, glyphIsMonster, glyphIsNormalMaleMonster, monnumToGlyph, objnumToGlyph, petnumToGlyph, riddenMonnumToGlyph, warningToGlyph, zapdirToGlyph } from './glyph_numbers.js';
 import { cmapToRogueColor } from './glyph_customizations.js';
+import { isok } from './cmd.js';
 import { cmapToType } from './mkroom.js';
 import { heroDetectsMonsters, heroIsBlind, heroIsHallucinating } from './senses.js';
 import { drawbridgeUnderlyingType, isIceAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
@@ -32,7 +33,7 @@ import { artifactWarningFeedback } from './artifacts.js';
 import { cansee, couldsee, set_seenv, vision_recalc } from './vision.js';
 import { describeMapLocation } from './pager.js';
 import { glyphToCmapSymbol } from './getpos.js';
-import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
+import { ACCESSIBLE, BC_BALL, BC_CHAIN, COLNO, ROWNO, STONE, ROOM, CORR, SCORR, SDOOR, DOOR, STAIRS, FOUNTAIN, THRONE, SINK, GRAVE, ALTAR, ICE, HWALL, VWALL, TLCORNER, TRCORNER, BLCORNER, BRCORNER, CROSSWALL, TUWALL, TDWALL, TLWALL, TRWALL, HI_ZAP, TREE, IRONBARS, POOL, MOAT, WATER, LAVAPOOL, LAVAWALL, AIR, CLOUD, IS_POOL, IS_OBSTRUCTED, IS_ROOM, IS_WALL, IS_STWALL, LADDER, LA_DOWN, DBWALL, DRAWBRIDGE_UP, DRAWBRIDGE_DOWN, D_ISOPEN, D_CLOSED, D_LOCKED, D_BROKEN, SV0, SV1, SV2, SV3, SV4, SV5, SV6, SV7, WM_MASK, WM_X_TL, WM_X_TR, WM_X_BL, WM_X_BR, WM_X_TLBR, WM_X_BLTR, BEAR_TRAP, WEB, VIBRATING_SQUARE, CORPSTAT_GENDER, CORPSTAT_FEMALE, ENGRAVE, BURN, HEADSTONE, EXPL_FROSTY, EXPL_MAGICAL, EXPL_WET, EXPL_MUDDY, EXPL_NOXIOUS, EXPL_FIERY, is_pit, M_AP_NOTHING, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, def_warnsyms, MON_STILL_ARRIVING, Is_rogue_level, Is_waterlevel, Is_knox_level, In_sokoban, FEMALE, MALE, MONSEEN_NORMAL, MONSEEN_SEEINVIS, MONSEEN_INFRAVIS, MONSEEN_TELEPAT, MONSEEN_XRAYVIS, MONSEEN_DETECT, MONSEEN_WARNMON, Upolyd, ismnum } from './const.js';
 import { NO_COLOR, ATR_INVERSE, CLR_BLACK, CLR_RED, CLR_GREEN, CLR_GRAY, CLR_BROWN, CLR_MAGENTA, CLR_CYAN, CLR_WHITE, CLR_YELLOW, CLR_BLUE, CLR_ORANGE, CLR_BRIGHT_GREEN, CLR_BRIGHT_BLUE, CLR_BRIGHT_MAGENTA } from './terminal.js';
 import { MONSTER_COLOR, MONSTER_FLAGS2, MONSTER_NAME, MONSTER_SYMBOL } from './monster_data.js';
 import { rn2Display } from './rng.js';
@@ -571,189 +572,6 @@ function stairSymbol(loc: MapLocation, x: number, y: number) {
     return symbol;
 }
 
-// C ref: display.c wall_angle(), straight-wall and corner cases.  A room's
-// unfinished exterior face is stored in the low three wall_info bits.  Seen
-// vectors which only approach from that rock side project unexplored stone,
-// not the nominal line-drawing wall.
-function simpleWallVisible(loc: MapLocation) {
-    const seenv = (loc.seenv || 0) & 0xff;
-    const mode = (loc.wall_info || 0) & 0x07;
-    if (!seenv) return false;
-    switch (loc.typ) {
-    case SDOOR:
-        if (!loc.horizontal) {
-            if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3 | SV4 | SV5));
-            if (mode === 2) return !!(seenv & (SV0 | SV1 | SV5 | SV6 | SV7));
-        } else {
-            if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5 | SV6 | SV7));
-            if (mode === 2) return !!(seenv & (SV0 | SV1 | SV2 | SV3 | SV7));
-        }
-        return true;
-    case VWALL:
-        if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3 | SV4 | SV5));
-        if (mode === 2) return !!(seenv & (SV0 | SV1 | SV5 | SV6 | SV7));
-        return true;
-    case HWALL:
-        if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5 | SV6 | SV7));
-        if (mode === 2) return !!(seenv & (SV0 | SV1 | SV2 | SV3 | SV7));
-        return true;
-    case TLCORNER:
-        if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5));
-        if (mode === 2) return !!(seenv & ~SV4);
-        return true;
-    case TRCORNER:
-        if (mode === 1) return !!(seenv & (SV5 | SV6 | SV7));
-        if (mode === 2) return !!(seenv & ~SV6);
-        return true;
-    case BLCORNER:
-        if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3));
-        if (mode === 2) return !!(seenv & ~SV2);
-        return true;
-    case BRCORNER:
-        if (mode === 1) return !!(seenv & (SV7 | SV0 | SV1));
-        if (mode === 2) return !!(seenv & ~SV0);
-        return true;
-    default:
-        return true;
-    }
-}
-
-// C ref: display.c wall_angle(), T-wall arm.  T walls retain their topology
-// type while their visible glyph changes with the accumulated seen vector.
-// This matters when opening a nearby door reveals a previously hidden arm:
-// the same TUWALL can project as a corner, straight wall, or full tee.
-function projectedTWallType(loc: MapLocation): number {
-    let seenv = (loc.seenv || 0) & 0xff;
-    let row: readonly [number, number, number, number, number];
-    switch (loc.typ) {
-    case TDWALL:
-        row = [STONE, TLCORNER, TRCORNER, HWALL, TDWALL];
-        break;
-    case TLWALL:
-        row = [STONE, TRCORNER, BRCORNER, VWALL, TLWALL];
-        seenv = ((seenv >> 2) | (seenv << 6)) & 0xff;
-        break;
-    case TUWALL:
-        row = [STONE, BRCORNER, BLCORNER, HWALL, TUWALL];
-        seenv = ((seenv >> 4) | (seenv << 4)) & 0xff;
-        break;
-    case TRWALL:
-        row = [STONE, BLCORNER, TLCORNER, VWALL, TRWALL];
-        seenv = ((seenv >> 6) | (seenv << 2)) & 0xff;
-        break;
-    default:
-        return loc.typ;
-    }
-
-    const only = (bits: number) => !!(seenv & bits) && !(seenv & ~bits);
-    const mode = (loc.wall_info || 0) & 0x07;
-    let column: 0 | 1 | 2 | 3 | 4 = 0;
-    if (mode === 0) {
-        if (seenv === SV4) column = 1;
-        else if (seenv === SV6) column = 2;
-        else if (seenv & (SV3 | SV5 | SV7)
-            || ((seenv & SV4) && (seenv & SV6))) column = 4;
-        else if (seenv & (SV0 | SV1 | SV2))
-            column = seenv & (SV4 | SV6) ? 4 : 3;
-    } else if (mode === 1) {
-        if ((seenv & (SV3 | SV4)) && !(seenv & (SV5 | SV6 | SV7)))
-            column = 1;
-        else if ((seenv & (SV6 | SV7)) && !(seenv & (SV3 | SV4 | SV5)))
-            column = 2;
-        else if ((seenv & SV5)
-            || ((seenv & (SV3 | SV4)) && (seenv & (SV6 | SV7))))
-            column = 4;
-    } else if (mode === 2) {
-        if (only(SV4 | SV5)) column = 1;
-        else if ((seenv & (SV0 | SV1 | SV2 | SV7))
-            && !(seenv & (SV3 | SV4 | SV5))) column = 3;
-        else if (!only(SV6)) column = 4;
-    } else if (mode === 3) {
-        if (only(SV5 | SV6)) column = 2;
-        else if ((seenv & (SV0 | SV1 | SV2 | SV3))
-            && !(seenv & (SV5 | SV6 | SV7))) column = 3;
-        else if (!only(SV4)) column = 4;
-    }
-    return row[column];
-}
-
-// C display.c:wall_angle() CROSSWALL case.  Cross-wall topology is stable,
-// but its visible glyph is the subset of arms approached by the hero.  The
-// wall mode additionally records which quadrant(s) remain unfinished rock.
-function projectedCrossWallType(loc: MapLocation): number {
-    let seenv = (loc.seenv || 0) & 0xff;
-    const mode = (loc.wall_info || 0) & 0x07;
-    const only = (bits: number) => !(seenv & ~bits);
-
-    if (mode === 0) {
-        if (seenv === SV0) return BRCORNER;
-        if (seenv === SV2) return BLCORNER;
-        if (seenv === SV4) return TLCORNER;
-        if (seenv === SV6) return TRCORNER;
-        if (!(seenv & ~(SV0 | SV1 | SV2))
-            && ((seenv & SV1) || seenv === (SV0 | SV2))) return TUWALL;
-        if (!(seenv & ~(SV2 | SV3 | SV4))
-            && ((seenv & SV3) || seenv === (SV2 | SV4))) return TRWALL;
-        if (!(seenv & ~(SV4 | SV5 | SV6))
-            && ((seenv & SV5) || seenv === (SV4 | SV6))) return TDWALL;
-        if (!(seenv & ~(SV0 | SV6 | SV7))
-            && ((seenv & SV7) || seenv === (SV0 | SV6))) return TLWALL;
-        return CROSSWALL;
-    }
-
-    const rows = {
-        bl: [BRCORNER, BLCORNER, TLCORNER, TUWALL, TRWALL, CROSSWALL],
-        tl: [BLCORNER, TLCORNER, TRCORNER, TRWALL, TDWALL, CROSSWALL],
-        tr: [TLCORNER, TRCORNER, BRCORNER, TDWALL, TLWALL, CROSSWALL],
-        br: [TRCORNER, BRCORNER, BLCORNER, TLWALL, TUWALL, CROSSWALL],
-    } as const;
-    let row;
-    if (mode === WM_X_TL) {
-        row = rows.tl;
-        seenv = ((seenv >> 4) | (seenv << 4)) & 0xff;
-    } else if (mode === WM_X_TR) {
-        row = rows.tr;
-        seenv = ((seenv >> 6) | (seenv << 2)) & 0xff;
-    } else if (mode === WM_X_BL) {
-        row = rows.bl;
-        seenv = ((seenv >> 2) | (seenv << 6)) & 0xff;
-    } else if (mode === WM_X_BR) {
-        row = rows.br;
-    }
-
-    if (row) {
-        if (seenv === SV4) return STONE;
-        seenv &= ~SV4;
-        let column: 0 | 1 | 2 | 3 | 4 | 5;
-        if (seenv === SV0) column = 1;
-        else if (seenv & (SV2 | SV3)) {
-            if (seenv & (SV5 | SV6 | SV7)) column = 5;
-            else if (seenv & (SV0 | SV1)) column = 4;
-            else column = 2;
-        } else if (seenv & (SV5 | SV6)) {
-            if (seenv & (SV1 | SV2 | SV3)) column = 5;
-            else if (seenv & (SV0 | SV7)) column = 3;
-            else column = 0;
-        } else if (seenv & SV1) column = seenv & SV7 ? 5 : 4;
-        else if (seenv & SV7) column = seenv & SV1 ? 5 : 3;
-        else column = 5;
-        return row[column];
-    }
-
-    if (mode === WM_X_TLBR) {
-        if (only(SV1 | SV2 | SV3)) return BLCORNER;
-        if (only(SV5 | SV6 | SV7)) return TRCORNER;
-        if (only(SV0 | SV4)) return STONE;
-        return CROSSWALL;
-    }
-    if (mode === WM_X_BLTR) {
-        if (only(SV0 | SV1 | SV7)) return BRCORNER;
-        if (only(SV3 | SV4 | SV5)) return TLCORNER;
-        if (only(SV2 | SV6)) return STONE;
-        return CROSSWALL;
-    }
-    return STONE;
-}
 
 // ── Terrain to display character + color + DEC flag ──
 const TERRAIN_NAMES = new Map([
@@ -783,8 +601,12 @@ function terrainGlyphName(loc: MapLocation, x: number, y: number, glyph: GlyphAp
             ? 'lit corridor' : 'corridor';
     return TERRAIN_NAMES.get(projectedTerrainType(loc)) || 'stone';
 }
-
-export function terrain_glyph(loc: MapLocation, x: number, y: number): TerrainGlyph {
+// C display.c:back_to_glyph(): the background glyph of a square.  C's bare
+// glyph number arrives with the appearance map_glyphinfo() resolves for it
+// — character, color and terrain name — because the port paints glyphs
+// directly.  The wall branch is projectedTerrainType() + wall_angle()
+// below; the altar bypass is altar_to_glyph().
+export function back_to_glyph(loc: MapLocation, x: number, y: number): TerrainGlyph {
     const appearance = terrainGlyphAppearance(loc, x, y);
     const typ = projectedTerrainType(loc);
     const symbol = terrainSymbolIndex(loc, x, y, typ, appearance);
@@ -848,10 +670,11 @@ function projectedTerrainType(loc: MapLocation) {
         return surface === STONE ? ROOM : surface;
     }
     if (isArborealBackground(loc)) return TREE;
-    if ((IS_WALL(loc.typ) && loc.typ !== DBWALL || loc.typ === SDOOR)
-        && !loc.seenv) return STONE;
-    if (loc.typ === CROSSWALL) return projectedCrossWallType(loc);
-    return projectedTWallType(loc);
+    // Also C display.c:back_to_glyph(): its wall branch reads
+    // `ptr->seenv ? wall_angle(ptr) : S_stone` for every wall type.
+    if (IS_WALL(loc.typ) && loc.typ !== DBWALL || loc.typ === SDOOR)
+        return (loc.seenv || 0) ? wall_angle(loc) : STONE;
+    return loc.typ;
 }
 
 function terrainGlyphAppearance(loc: MapLocation, x: number, y: number): GlyphAppearance & { dec: boolean } {
@@ -992,8 +815,9 @@ function terrainGlyphChars(loc: MapLocation, x: number, y: number): GlyphAppeara
     }
 }
 
-// C back_to_glyph(): forest rock and forest secret doors share the tree
-// projection, including its terrain name for touch and obstacle messages.
+// Also C display.c:back_to_glyph(): forest rock and forest secret doors
+// share the tree projection, including its terrain name for touch and
+// obstacle messages.
 function isArborealBackground(loc: MapLocation): boolean {
     return ((loc.typ === STONE || loc.typ === SCORR) && !!game.level?.flags.arboreal)
         || (loc.typ === SDOOR && !!loc.arboreal_sdoor);
@@ -1539,7 +1363,7 @@ function apparentObjectGlyph(monster: MimicAppearance) {
 export async function map_background(x: number, y: number, show = true) {
     const loc = game.level?.at(x, y);
     if (!loc) return;
-    const glyph = terrain_glyph(loc, x, y);
+    const glyph = back_to_glyph(loc, x, y);
     if (game.level?.flags?.hero_memory)
         loc.remembered_glyph = {
             ...glyph, decgfx: glyph.dec,
@@ -1557,7 +1381,7 @@ function requireDisplayLocation(x: number, y: number): MapLocation {
 // remembered objects and invisible markers and corrects never-seen lighting.
 export async function magic_map_background(x: number, y: number, show = true) {
     const location = requireDisplayLocation(x, y);
-    let glyph: GlyphAppearance & { dec: boolean } & GlyphMetadata = terrain_glyph(location, x, y);
+    let glyph: GlyphAppearance & { dec: boolean } & GlyphMetadata = back_to_glyph(location, x, y);
     if (!cansee(x, y) && !location.waslit) {
         if (location.typ === ROOM) {
             if ((game.flags.dark_room ?? true) && game.flags.color !== false) {
@@ -1632,7 +1456,7 @@ export async function flashGlyphAt(x: number, y: number, glyph: TransientGlyph, 
     const previous: DisplayGlyph = requireGameLevel().flags.hero_memory
         ? location.remembered_glyph || { ch: ' ', color: NO_COLOR, decgfx: false,
             kind: 'nothing', glyph: GlyphOffset.nothing }
-        : terrain_glyph(location, x, y);
+        : back_to_glyph(location, x, y);
     for (let frame = 0; frame < repeats * 2; frame++) {
         const shown = frame % 2 ? previous : glyph;
         await show_glyph_cell(x, y, shown.ch, shown.color,
@@ -2685,6 +2509,363 @@ export async function cls() {
     }
     game.context.botl = true;
 }
+
+// ---------------------------------------------------------------------------
+// Wall mode and wall angle.  C ref: display.c check_pos(), more_than_one(),
+// set_twall(), set_wall(), set_corn(), set_crosswall(), xy_set_wall_state(),
+// set_wall_state() and wall_angle().  t_warn(), their diagnostic, is not
+// ported: its impossible() reports fire only for seen vectors that
+// back_to_glyph()'s `seenv ? wall_angle() : S_stone` guard keeps unreachable.
+// ---------------------------------------------------------------------------
+
+// C display.c:check_pos(). Return 'which' if position implies an unfinished
+// exterior (outer area is rock or a corridor); zero otherwise.  The low
+// wall_info bits later combine with `seenv` in wall_angle() so a hero beside
+// a doorway does not see the outside face of the room wall.
+function check_pos(x: number, y: number, which: number): number {
+    if (!isok(x, y)) return which;
+    const typ = requireGameLevel().at(x, y)?.typ ?? STONE;
+    return IS_STWALL(typ) || typ === CORR || typ === SCORR || typ === SDOOR
+        ? which : 0;
+}
+
+// C display.c:more_than_one(). Return TRUE if more than one is non-zero.
+function more_than_one(...values: number[]): boolean {
+    return values.filter(Boolean).length > 1;
+}
+
+// C display.c:set_twall(): wall mode for a T wall from its three arms.
+function set_twall(points: readonly (readonly [number, number])[]): number {
+    const modes = points.map(([x, y], index) =>
+        check_pos(x, y, index + 1));
+    return more_than_one(...modes) ? 0 : modes.reduce((sum, value) => sum + value, 0);
+}
+
+// C display.c:set_wall(): wall mode for a straight horizontal or vertical
+// wall from its two faces.
+function set_wall(x: number, y: number, horizontal: boolean): number {
+    const first = horizontal
+        ? check_pos(x, y - 1, 1) : check_pos(x - 1, y, 1);
+    const second = horizontal
+        ? check_pos(x, y + 1, 2) : check_pos(x + 1, y, 2);
+    return more_than_one(first, second) ? 0 : first + second;
+}
+
+// C display.c:set_corn(): corner wall mode; the inner position decides
+// between inner and outer, three finished outer faces mean finished.
+function set_corn(points: readonly (readonly [number, number])[],
+    inner: readonly [number, number]): number {
+    const outside = points.map(([x, y]) => check_pos(x, y, 1));
+    if (check_pos(inner[0], inner[1], 1)) return 2;
+    return outside.every(Boolean) ? 1 : 0;
+}
+
+// C display.c:set_crosswall(): crosswall mode from the four quadrants.
+function set_crosswall(x: number, y: number): number {
+    const quadrants = [
+        check_pos(x - 1, y - 1, 1),
+        check_pos(x + 1, y - 1, 1),
+        check_pos(x + 1, y + 1, 1),
+        check_pos(x - 1, y + 1, 1),
+    ];
+    const present = quadrants.filter(Boolean);
+    if (present.length <= 1) {
+        if (quadrants[0]) return WM_X_TL;
+        if (quadrants[1]) return WM_X_TR;
+        if (quadrants[2]) return WM_X_BR;
+        if (quadrants[3]) return WM_X_BL;
+        return 0;
+    }
+    if (quadrants[0] && quadrants[2] && !quadrants[1] && !quadrants[3])
+        return WM_X_TLBR;
+    if (quadrants[1] && quadrants[3] && !quadrants[0] && !quadrants[2])
+        return WM_X_BLTR;
+    return 0;
+}
+
+// C display.c:xy_set_wall_state(). Called for every <x,y> by
+// set_wall_state() and for specific <x,y> during vault wall repair.
+export function xy_set_wall_state(x: number, y: number): void {
+    const loc = requireGameLevel().at(x, y);
+    if (!loc) return;
+    let mode = -1;
+    switch (loc.typ) {
+    case SDOOR:
+        mode = set_wall(x, y, !!loc.horizontal);
+        break;
+    case VWALL:
+        mode = set_wall(x, y, false);
+        break;
+    case HWALL:
+        mode = set_wall(x, y, true);
+        break;
+    case TDWALL:
+        mode = set_twall([[x, y - 1], [x - 1, y + 1], [x + 1, y + 1]]);
+        break;
+    case TUWALL:
+        mode = set_twall([[x, y + 1], [x + 1, y - 1], [x - 1, y - 1]]);
+        break;
+    case TLWALL:
+        mode = set_twall([[x + 1, y], [x - 1, y - 1], [x - 1, y + 1]]);
+        break;
+    case TRWALL:
+        mode = set_twall([[x - 1, y], [x + 1, y + 1], [x + 1, y - 1]]);
+        break;
+    case TLCORNER:
+        mode = set_corn(
+            [[x - 1, y - 1], [x, y - 1], [x - 1, y]], [x + 1, y + 1],
+        );
+        break;
+    case TRCORNER:
+        mode = set_corn(
+            [[x, y - 1], [x + 1, y - 1], [x + 1, y]], [x - 1, y + 1],
+        );
+        break;
+    case BLCORNER:
+        mode = set_corn(
+            [[x, y + 1], [x - 1, y + 1], [x - 1, y]], [x + 1, y - 1],
+        );
+        break;
+    case BRCORNER:
+        mode = set_corn(
+            [[x + 1, y], [x + 1, y + 1], [x, y + 1]], [x - 1, y - 1],
+        );
+        break;
+    case CROSSWALL:
+        mode = set_crosswall(x, y);
+        break;
+    default:
+        break;
+    }
+    if (mode >= 0) loc.wall_info = ((loc.wall_info || 0) & ~WM_MASK) | mode;
+}
+
+// C display.c:set_wall_state(). Called from mklev.  Scan the level and set
+// the wall modes.
+export function set_wall_state(): void {
+    if (!game.level) return;
+    for (let x = 0; x < COLNO; x++) {
+        for (let y = 0; y < ROWNO; y++) xy_set_wall_state(x, y);
+    }
+}
+
+// The SDOOR, straight-wall and corner cases of wall_angle() below: a room's
+// unfinished exterior face is stored in the low three wall_info bits.  Seen
+// vectors which only approach from that rock side project unexplored stone,
+// not the nominal line-drawing wall.
+function simpleWallVisible(loc: MapLocation) {
+    const seenv = (loc.seenv || 0) & 0xff;
+    const mode = (loc.wall_info || 0) & 0x07;
+    if (!seenv) return false;
+    switch (loc.typ) {
+    case SDOOR:
+        if (!loc.horizontal) {
+            if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3 | SV4 | SV5));
+            if (mode === 2) return !!(seenv & (SV0 | SV1 | SV5 | SV6 | SV7));
+        } else {
+            if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5 | SV6 | SV7));
+            if (mode === 2) return !!(seenv & (SV0 | SV1 | SV2 | SV3 | SV7));
+        }
+        return true;
+    case VWALL:
+        if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3 | SV4 | SV5));
+        if (mode === 2) return !!(seenv & (SV0 | SV1 | SV5 | SV6 | SV7));
+        return true;
+    case HWALL:
+        if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5 | SV6 | SV7));
+        if (mode === 2) return !!(seenv & (SV0 | SV1 | SV2 | SV3 | SV7));
+        return true;
+    case TLCORNER:
+        if (mode === 1) return !!(seenv & (SV3 | SV4 | SV5));
+        if (mode === 2) return !!(seenv & ~SV4);
+        return true;
+    case TRCORNER:
+        if (mode === 1) return !!(seenv & (SV5 | SV6 | SV7));
+        if (mode === 2) return !!(seenv & ~SV6);
+        return true;
+    case BLCORNER:
+        if (mode === 1) return !!(seenv & (SV1 | SV2 | SV3));
+        if (mode === 2) return !!(seenv & ~SV2);
+        return true;
+    case BRCORNER:
+        if (mode === 1) return !!(seenv & (SV7 | SV0 | SV1));
+        if (mode === 2) return !!(seenv & ~SV0);
+        return true;
+    default:
+        return true;
+    }
+}
+
+// The do_twall block of wall_angle() below: T walls retain their topology
+// type while their visible glyph changes with the accumulated seen vector.
+// This matters when opening a nearby door reveals a previously hidden arm:
+// the same TUWALL can project as a corner, straight wall, or full tee.
+// Rows are C's wall_matrix[][], columns its T_stone..T_tdwall results.
+function projectedTWallType(loc: MapLocation): number {
+    let seenv = (loc.seenv || 0) & 0xff;
+    let row: readonly [number, number, number, number, number];
+    switch (loc.typ) {
+    case TDWALL:
+        row = [STONE, TLCORNER, TRCORNER, HWALL, TDWALL];
+        break;
+    case TLWALL:
+        row = [STONE, TRCORNER, BRCORNER, VWALL, TLWALL];
+        seenv = ((seenv >> 2) | (seenv << 6)) & 0xff;
+        break;
+    case TUWALL:
+        row = [STONE, BRCORNER, BLCORNER, HWALL, TUWALL];
+        seenv = ((seenv >> 4) | (seenv << 4)) & 0xff;
+        break;
+    case TRWALL:
+        row = [STONE, BLCORNER, TLCORNER, VWALL, TRWALL];
+        seenv = ((seenv >> 6) | (seenv << 2)) & 0xff;
+        break;
+    default:
+        return loc.typ;
+    }
+
+    const only = (bits: number) => !!(seenv & bits) && !(seenv & ~bits);
+    const mode = (loc.wall_info || 0) & 0x07;
+    let column: 0 | 1 | 2 | 3 | 4 = 0;
+    if (mode === 0) {
+        if (seenv === SV4) column = 1;
+        else if (seenv === SV6) column = 2;
+        else if (seenv & (SV3 | SV5 | SV7)
+            || ((seenv & SV4) && (seenv & SV6))) column = 4;
+        else if (seenv & (SV0 | SV1 | SV2))
+            column = seenv & (SV4 | SV6) ? 4 : 3;
+    } else if (mode === 1) {
+        if ((seenv & (SV3 | SV4)) && !(seenv & (SV5 | SV6 | SV7)))
+            column = 1;
+        else if ((seenv & (SV6 | SV7)) && !(seenv & (SV3 | SV4 | SV5)))
+            column = 2;
+        else if ((seenv & SV5)
+            || ((seenv & (SV3 | SV4)) && (seenv & (SV6 | SV7))))
+            column = 4;
+    } else if (mode === 2) {
+        if (only(SV4 | SV5)) column = 1;
+        else if ((seenv & (SV0 | SV1 | SV2 | SV7))
+            && !(seenv & (SV3 | SV4 | SV5))) column = 3;
+        else if (!only(SV6)) column = 4;
+    } else if (mode === 3) {
+        if (only(SV5 | SV6)) column = 2;
+        else if ((seenv & (SV0 | SV1 | SV2 | SV3))
+            && !(seenv & (SV5 | SV6 | SV7))) column = 3;
+        else if (!only(SV4)) column = 4;
+    }
+    return row[column];
+}
+
+// The CROSSWALL case of wall_angle() below.  Cross-wall topology is stable,
+// but its visible glyph is the subset of arms approached by the hero.  The
+// wall mode additionally records which quadrant(s) remain unfinished rock.
+// Rows are C's cross_matrix[][]; all single-solid quarters rotate to the
+// bottom right before the pattern match.
+function projectedCrossWallType(loc: MapLocation): number {
+    let seenv = (loc.seenv || 0) & 0xff;
+    const mode = (loc.wall_info || 0) & 0x07;
+    const only = (bits: number) => !(seenv & ~bits);
+
+    if (mode === 0) {
+        if (seenv === SV0) return BRCORNER;
+        if (seenv === SV2) return BLCORNER;
+        if (seenv === SV4) return TLCORNER;
+        if (seenv === SV6) return TRCORNER;
+        if (!(seenv & ~(SV0 | SV1 | SV2))
+            && ((seenv & SV1) || seenv === (SV0 | SV2))) return TUWALL;
+        if (!(seenv & ~(SV2 | SV3 | SV4))
+            && ((seenv & SV3) || seenv === (SV2 | SV4))) return TRWALL;
+        if (!(seenv & ~(SV4 | SV5 | SV6))
+            && ((seenv & SV5) || seenv === (SV4 | SV6))) return TDWALL;
+        if (!(seenv & ~(SV0 | SV6 | SV7))
+            && ((seenv & SV7) || seenv === (SV0 | SV6))) return TLWALL;
+        return CROSSWALL;
+    }
+
+    const rows = {
+        bl: [BRCORNER, BLCORNER, TLCORNER, TUWALL, TRWALL, CROSSWALL],
+        tl: [BLCORNER, TLCORNER, TRCORNER, TRWALL, TDWALL, CROSSWALL],
+        tr: [TLCORNER, TRCORNER, BRCORNER, TDWALL, TLWALL, CROSSWALL],
+        br: [TRCORNER, BRCORNER, BLCORNER, TLWALL, TUWALL, CROSSWALL],
+    } as const;
+    let row;
+    if (mode === WM_X_TL) {
+        row = rows.tl;
+        seenv = ((seenv >> 4) | (seenv << 4)) & 0xff;
+    } else if (mode === WM_X_TR) {
+        row = rows.tr;
+        seenv = ((seenv >> 6) | (seenv << 2)) & 0xff;
+    } else if (mode === WM_X_BL) {
+        row = rows.bl;
+        seenv = ((seenv >> 2) | (seenv << 6)) & 0xff;
+    } else if (mode === WM_X_BR) {
+        row = rows.br;
+    }
+
+    if (row) {
+        if (seenv === SV4) return STONE;
+        seenv &= ~SV4;
+        let column: 0 | 1 | 2 | 3 | 4 | 5;
+        if (seenv === SV0) column = 1;
+        else if (seenv & (SV2 | SV3)) {
+            if (seenv & (SV5 | SV6 | SV7)) column = 5;
+            else if (seenv & (SV0 | SV1)) column = 4;
+            else column = 2;
+        } else if (seenv & (SV5 | SV6)) {
+            if (seenv & (SV1 | SV2 | SV3)) column = 5;
+            else if (seenv & (SV0 | SV7)) column = 3;
+            else column = 0;
+        } else if (seenv & SV1) column = seenv & SV7 ? 5 : 4;
+        else if (seenv & SV7) column = seenv & SV1 ? 5 : 3;
+        else column = 5;
+        return row[column];
+    }
+
+    if (mode === WM_X_TLBR) {
+        if (only(SV1 | SV2 | SV3)) return BLCORNER;
+        if (only(SV5 | SV6 | SV7)) return TRCORNER;
+        if (only(SV0 | SV4)) return STONE;
+        return CROSSWALL;
+    }
+    if (mode === WM_X_BLTR) {
+        if (only(SV0 | SV1 | SV7)) return BRCORNER;
+        if (only(SV3 | SV4 | SV5)) return TLCORNER;
+        if (only(SV2 | SV6)) return STONE;
+        return CROSSWALL;
+    }
+    return STONE;
+}
+
+// C display.c:wall_angle(): the correct graphics character index using wall
+// type, wall mode, and the seen vector.  C returns the cmap symbol index;
+// this port returns the projected terrain type, whose symbol
+// terrainSymbolIndex() resolves exactly as C's cmap_to_glyph(idx) does.
+// The T-wall and crosswall arms keep their pattern-match blocks in the
+// helpers above, as C keeps them behind the do_twall/do_crwall labels.
+function wall_angle(loc: MapLocation): number {
+    switch (loc.typ) {
+    case TDWALL:
+    case TLWALL:
+    case TUWALL:
+    case TRWALL:
+        return projectedTWallType(loc);
+    case SDOOR:
+    case VWALL:
+    case HWALL:
+    case TLCORNER:
+    case TRCORNER:
+    case BLCORNER:
+    case BRCORNER:
+        // C's set_corner macro and the vwall/hwall mode switches decide
+        // between the wall and unseen stone.
+        return simpleWallVisible(loc) ? loc.typ : STONE;
+    case CROSSWALL:
+        return projectedCrossWallType(loc);
+    default:
+        return loc.typ;
+    }
+}
+
 
 // ---------------------------------------------------------------------------
 // Object class symbols. C ref: drawing.c def_oc_syms[].

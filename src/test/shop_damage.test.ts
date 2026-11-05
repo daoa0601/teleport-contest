@@ -12,7 +12,7 @@ import {
     W_ARM, W_QUIVER, W_SWAPWEP,
 } from '../js/const.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
-import { canSpotMonster, terrain_glyph } from '../js/display.js';
+import { canSpotMonster, back_to_glyph } from '../js/display.js';
 import { MONSTER_NAME } from '../js/monster_data.js';
 import { setHeroGoldAmount } from '../js/hero_gold.js';
 import { bindInputGate, InputGate, resetInputState } from '../js/input.js';
@@ -272,7 +272,7 @@ void test('an unseen corner repair restores the corner\'s wall mode', async () =
     corner.typ = TRCORNER;
     corner.wall_info = WM_C_OUTER;
     corner.seenv = SV0;
-    const before = terrain_glyph(corner, 8, 10).ch;
+    const before = back_to_glyph(corner, 8, 10).ch;
     game.u.blindTurns = 20;
     syncBlindness(game);
     await vision_recalc(0);
@@ -286,7 +286,7 @@ void test('an unseen corner repair restores the corner\'s wall mode', async () =
 
     assert.equal(corner.typ, TRCORNER);
     assert.equal(before, ' ', 'an outer corner seen only from inside shows as stone');
-    assert.equal(terrain_glyph(corner, 8, 10).ch, before);
+    assert.equal(back_to_glyph(corner, 8, 10).ch, before);
 });
 
 void test('repair is postponed within the repair delay', async () => {

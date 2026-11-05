@@ -9,7 +9,7 @@ import { heroIsBlind, heroIsDeaf, heroIsHallucinating } from './senses.js';
 import { endVoluntaryMultiTurn, showGetposTip } from './hack.js';
 import { artifactById } from './artifacts.js';
 import { exerciseWisdom } from './attrib.js';
-import { canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible, flashGlyphAt, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, } from './display.js';
+import { canSpotMonster, canSenseMonster, currentBoulderSymbol, monsterHasWarningProjection, feel_location, flush_screen, glyphAt, magic_map_background, map_background, map_engraving, map_invisible, map_object, map_trap, newsym, see_monsters, show_glyph_cell, under_ground, under_water, unmapObject, unmap_invisible, flashGlyphAt, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, cls, displaySelf, docrt, feel_newsym, OBJECT_CLASS_NAMES, OBJECT_CLASS_SYMBOLS, terrainCoversObjectsAt, } from './display.js';
 import { displayMessageWindow, flushPendingTopline } from './tty_topline.js';
 import { pline, plineWithContinuation, set_msg_xy } from './pline.js';
 import { BOLT_LIM, COLNO, ROWNO, ROOMOFFSET, STONE, SDOOR, SCORR, DOOR, CORR, D_CLOSED, D_ISOPEN, D_LOCKED, D_NODOOR, D_TRAPPED, IN_SIGHT, M_AP_OBJECT, M_AP_TYPE, STATUE_TRAP, TER_MAP, TRAPPED_CHEST, TRAPPED_DOOR, W_NONDIGGABLE, W_NONPASSWALL, WM_MASK, Is_airlevel, Is_waterlevel, IS_FURNITURE, TER_DETECT, TER_MON, TER_OBJ, TER_TRP, } from './const.js';
@@ -440,14 +440,14 @@ export async function findit() {
         const occupant = monsterAtPosition(game.level, x, y);
         const monster = occupant && !occupant.dead && occupant.mhp > 0 ? occupant : null;
         if (loc.typ === SDOOR) {
-            await flashGlyphAt(x, y, terrain_glyph({ ...loc, typ: DOOR, doormask: D_CLOSED }, x, y), 6);
+            await flashGlyphAt(x, y, back_to_glyph({ ...loc, typ: DOOR, doormask: D_CLOSED }, x, y), 6);
             revealSecretDoor(x, y);
             await magic_map_background(x, y, false);
-            await showFoundFeature(x, y, terrain_glyph(loc, x, y));
+            await showFoundFeature(x, y, back_to_glyph(loc, x, y));
             found.doors++;
         }
         else if (loc.typ === SCORR) {
-            const glyph = terrain_glyph({ ...loc, typ: CORR }, x, y);
+            const glyph = back_to_glyph({ ...loc, typ: CORR }, x, y);
             await flashGlyphAt(x, y, glyph, 6);
             revealSecretCorridor(x, y);
             await magic_map_background(x, y, false);

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { ALTAR, AM_SHRINE, Amask2align, OROOM } from '../js/const.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import { game, requireGameLevel, requirePlayingGame } from '../js/gstate.js';
 import { isRoom } from '../js/map_types.js';
 import { mklev } from '../js/mklev.js';
@@ -38,7 +38,7 @@ void test('ordinary altars retain their generated alignment when placed on Lua-i
                     const alignment = Amask2align(location.flags);
                     const name = alignment > 0 ? 'lawful' : alignment < 0 ? 'chaotic' : 'neutral';
                     assert.equal(location.flags & AM_SHRINE, 0, 'an ordinary altar is not a shrine');
-                    assert.equal(mapFeatureDescription(x, y, terrain_glyph(location, x, y)), `${name} altar`, `the visible altar must describe its generated alignment (seed ${seed})`);
+                    assert.equal(mapFeatureDescription(x, y, back_to_glyph(location, x, y)), `${name} altar`, `the visible altar must describe its generated alignment (seed ${seed})`);
                 }
             }
         }
@@ -69,7 +69,7 @@ void test('Lua temple shrines describe their alignment on initialized floor', as
             if (location.typ !== ALTAR)
                 continue;
             assert.ok(location.flags & AM_SHRINE, 'a temple shrine keeps its shrine flag');
-            assert.equal(mapFeatureDescription(x, y, terrain_glyph(location, x, y)), 'lawful altar');
+            assert.equal(mapFeatureDescription(x, y, back_to_glyph(location, x, y)), 'lawful altar');
         }
     }
 });

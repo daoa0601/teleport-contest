@@ -4,7 +4,7 @@ import { wearHeroArmor } from '../js/do_wear.js';
 import { continueRun } from '../js/hack.js';
 import { rhack } from '../js/cmd.js';
 import { D_CLOSED, DOOR, IRONBARS, LAVAPOOL, POOL, ROOM, STONE, VIBRATING_SQUARE } from '../js/const.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import { CmapSymbol, cmapToGlyph, GlyphOffset } from '../js/glyph_numbers.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
@@ -140,7 +140,7 @@ for (const rememberedGlyph of [false, true]) {
         await vision_recalc(0);
         level.requireAt(12, 10).seenv = 0;
         level.requireAt(12, 10).remembered_glyph = rememberedGlyph
-            ? terrain_glyph(level.requireAt(12, 10), 12, 10) : null;
+            ? back_to_glyph(level.requireAt(12, 10), 12, 10) : null;
         game._travelTarget = { x: 14, y: 10 };
         await rhack(31);
         assert.equal((await continueRun()).tookTime, true);

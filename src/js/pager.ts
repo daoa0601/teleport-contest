@@ -13,7 +13,7 @@ import {
 } from './const.js';
 import {
     canSpotHeroSelf, cmapSymbolAppearance, glyphAt, howMonsterSeen, monsterClassSymbol, objectClassSymbol,
-    swallowSymbolAppearance, terrain_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange,
+    swallowSymbolAppearance, back_to_glyph, transientMonsterGlyph, transientTrapGlyph, unblindTelepathyRange,
     OBJECT_CLASS_EXPLAIN, OBJECT_CLASS_SYMBOLS,
 } from './display.js';
 import { pline, plineWithContinuation } from './pline.js';
@@ -598,7 +598,7 @@ export function lookGlyphAt(x: number, y: number): GlyphMetadata | null {
         || glyph.kind === 'object' && !(mode & TER_OBJ);
     if (!omitted) return glyph;
     const location = game.level?.at(x, y);
-    return location ? terrain_glyph(location, x, y) : null;
+    return location ? back_to_glyph(location, x, y) : null;
 }
 
 // C do_screen_description() uses alternate wording while clairvoyance's

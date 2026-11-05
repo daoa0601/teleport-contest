@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { AIR, ROOM, STAIRS, TT_BEARTRAP, TT_INFLOOR } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { terrain_glyph } from '../js/display.js';
+import { back_to_glyph } from '../js/display.js';
 import {
     grantIntrinsicProperty, grantWornProperty, hasIntrinsicProperty,
     hasInvokedProperty, hasWornProperty, refreshProperty,
@@ -147,7 +147,7 @@ void test('a blind levitating hero names the stair surface even when its glyph i
     const location = game.level.requireAt(game.u.ux, game.u.uy);
     assert.equal(location.typ, STAIRS);
 
-    location.remembered_glyph = terrain_glyph(location, game.u.ux, game.u.uy);
+    location.remembered_glyph = back_to_glyph(location, game.u.ux, game.u.uy);
     let log = collector();
     let result = await descendFromLevitation(game, { publish: log.publish });
     assert.deepEqual(result, { handled: true, spentTurn: false });
