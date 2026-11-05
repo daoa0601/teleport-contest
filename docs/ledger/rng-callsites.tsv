@@ -2062,7 +2062,7 @@ src/js/zap.ts	rayTargetAt	random	"[""3""]"	constant
 src/js/zap.ts	traceRay	context.rollDice	"[""12"", ""6""]"	constant
 src/js/zap.ts	traceRay	random	"[""7""]"	constant
 src/js/zap.ts	zapRayWithObject	rn2	"[""6""]"	constant
-src/js/ray_name.ts	displayRayName	random	"[""hallucinationBlasts.length""]"	constant
+src/js/mthrowu.ts	rndHallublast	random	"[""hallucinationBlasts.length""]"	constant
 src/js/read.ts	explodeWand	d	"[""Math.max(2, wand.spe + (extraCharges || 2))"", ""sides""]"	unproved
 src/js/read.ts	rechargeRing	random	"[""7""]"	constant
 src/js/read.ts	rechargeRing	rollOne	"[""2""]"	constant

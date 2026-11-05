@@ -14,7 +14,7 @@ import { MONSTER_GENO, MONSTER_SYMBOL } from './monster_data.js';
 import { monsterName } from './do_name.js';
 import { possessiveName } from './hacklib.js';
 import { revealMonsterAppearance, releaseHeroFromMonster } from './mon.js';
-import { displayRayName } from './ray_name.js';
+import { displayRayName } from './zap.js';
 import { AD_COLD, AD_FIRE } from './monster_attack_types.js';
 import { monsterResistsSleep, is_mercenary, monsterIsMindless } from './mondata.js';
 import { putMonsterToSleep } from './mhitm.js';

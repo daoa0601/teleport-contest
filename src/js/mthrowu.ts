@@ -1,44 +1,30 @@
-// mthrowu.js — the mthrowu.c owner: missiles and rays a monster launches at
-// the hero or at another monster. thitu(), drop_throw(), monmulti(),
-// monshoot(), ohitmon(), ucatchgem(), u_catch_thrown_obj(), m_throw(),
-// return_from_mtoss(), thrwmm(), spitmm()/spitmu(), breamm(), thrwmu(),
-// breamu(), blocking_terrain(), linedup() and m_lined_up().
-
 import { WEAPON_CLASS, RING_CLASS, POTION_CLASS, GEM_CLASS, VENOM_CLASS } from './objclass.js';
 import { OBJ_NAME } from './object_data.js';
-import {
-    objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW,
-    OBJECT_NAMES, WAN_STRIKING,
-} from './object_data.js';
+import { objectSkill, ACID_VENOM, BLINDING_VENOM, BOULDER, CREAM_PIE, EGG, ELVEN_ARROW, ELVEN_BOW, OBJECT_NAMES, WAN_STRIKING } from './object_data.js';
 import { currentAttribute, poisonHero } from './attrib.js';
 import { artifactToHitBonus, applyArtifactHit } from './artifacts.js';
 import { heroArmName, monsterFootName, monsterHandName } from './body_parts.js';
-import {
-    applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness,
-} from './blinding_attack.js';
+import { applyMonsterBlindness, monsterCanBeBlindedByObject, prepareHeroThrownBlindness, finishHeroThrownBlindness } from './blinding_attack.js';
 import { breatheFromMonster, breathWeaponName } from './breath_ray.js';
 import { endVoluntaryMultiTurn, calcCapacity } from './hack.js';
 import { isPolearm, isLauncherAmmunition, launcherMatchesAmmo, isPoisonableObject } from './object_properties.js';
-import {
-    returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero,
-    monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon,
-} from './weapon.js';
+import { returningWeaponRangeSquared, rollPhysicalWeaponDamage, rollPhysicalWeaponDamageAgainstHero, monsterWieldedWeapon, selectMonsterRangedWeapon, unwieldMonsterWeapon, wieldMonsterWeapon } from './weapon.js';
 import { willWeld } from './wield.js';
 import { heroHasFreeHand } from './engrave.js';
 import { mswings_verb } from './mhitu.js';
 import { rangedTargetHitBonus, shouldMulchMissile } from './dothrow.js';
 import { couldsee, cansee, clearPath } from './vision.js';
-import { clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject, objectIsFlammable, splitObjectStack, objectWeight, placeObject } from './mkobj.js';
+import {
+    clearDescriptionKnowledge, linkObjectToMonsterInventory, unlinkMonsterObject, mksobj, unlinkObject,
+    objectIsFlammable, splitObjectStack, objectWeight, placeObject,
+} from './mkobj.js';
 import { destroyObjectFromMonsterInventory, findMonsterArmorClass } from './monworn.js';
 import type { GameObject } from './object_types.js';
 import type { GameState, PlayingGameState } from './game_state.js';
 import { A_DEX, A_STR, BOLT_LIM, COULD_SEE, D_CLOSED, D_LOCKED, IRONBARS, IS_DOOR, IS_OBSTRUCTED, IS_WATERWALL, LAVAWALL, M_AP_MONSTER, M_AP_NOTHING, M_AP_TYPE, M_ATTK_HIT, M_ATTK_MISS, MGIVENNAME, M_SEEN_REFL, NEED_RANGED_WEAPON, NEED_WEAPON, NON_PM, P_BOW, P_DAGGER, P_DART, P_SHURIKEN, P_SLING, P_SPEAR, SINK, SLT_ENCUMBER, Upolyd, W_WEP } from './const.js';
 import { isok } from './cmd.js';
 import { impossible } from './diagnostics.js';
-import {
-    canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor,
-    transientObjectGlyph, TemporaryMapEffect,
-} from './display.js';
+import { canSeeMonster, canSpotMonster, newsym, flush_screen, lastDirtyMapCursor, transientObjectGlyph, TemporaryMapEffect } from './display.js';
 import { applyFloorEffects, landFloorObject } from './floor_effects.js';
 import { game, requireInitializedGame, requireLiveGame, requirePlayingGame } from './gstate.js';
 import { dist2, distmin, possessiveName } from './hacklib.js';
@@ -58,28 +44,19 @@ import { petrifyMonsterFromContact } from './trap.js';
 import { MONSTER_NAME } from './monster_data.js';
 import { displayLiquidName, monsterName } from './do_name.js';
 import { monsterAtPosition } from './steed.js';
-import {
-    monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance,
-    monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc,
-    is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal,
-    monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter,
-    monsterThrowsRocks, passes_rocks,
-} from './mondata.js';
+import { monsterObjectPronoun, monsterPossessive, seenResistanceForDamage, monsterHasAcidResistance, monsterHasPoisonResistance, monsterHasStoneResistance, is_elf, is_gnome, is_lord, is_orc, is_prince, monsterHatesSilver, monsterIsAmorphous, monsterIsBig, monsterIsNoncorporeal, monsterIsNonliving, monsterIsPlayerMonster, monsterIsUnicorn, monsterIsVampireShifter, monsterThrowsRocks, passes_rocks } from './mondata.js';
 import { monsterSentenceSubject } from './ambient_sounds.js';
 import { delobj } from './invent.js';
 import { deleteObject } from './shk.js';
 import { dropObjectAtHero } from './do.js';
-import {
-    makePlural, withIndefiniteArticle, verbForSubject, definiteName, definiteObjectAction, killerObjectName,
-    objectCombatName, objectHasPersonalName, observeObjectForNaming, simpleObjectName,
-} from './objnam.js';
+import { makePlural, withIndefiniteArticle, verbForSubject, definiteName, definiteObjectAction, killerObjectName, objectCombatName, objectHasPersonalName, observeObjectForNaming, simpleObjectName } from './objnam.js';
 import { learnObjectType, observeObject, objectMaterial } from './o_init.js';
 import { shipObject } from './dokick.js';
 import { stopHeroOccupation } from './occupation.js';
 import { hitMonsterWithSupportedPotion } from './potion.js';
 import { projectileHitsIronBars } from './projectile_bars.js';
 import { rayDamageType, castNativeRay } from './zap.js';
-import { displayRayName } from './ray_name.js';
+import { displayRayName } from './zap.js';
 import { capitalizedDefiniteName } from './objnam.js';
 import { rayHitMessage, rayMissMessage } from './zap.js';
 import { d, rn2, rnd } from './rng.js';
@@ -92,12 +69,9 @@ import type { Monster } from './monster_types.js';
 import type { Position } from './map_types.js';
 import type { MessagePublisher } from './pline.js';
 import type { AttackTuple, MonsterCallLog, PublishMonsterMessage, RandomBelow, RollOne } from './monster_action_types.js';
-import type {
-    HeroMonsterWeaponVolley, MonsterProjectileShot, MonsterWeaponWield, TargetMonsterWeaponVolley,
-} from './monster_projectile_types.js';
+import type { HeroMonsterWeaponVolley, MonsterProjectileShot, MonsterWeaponWield, TargetMonsterWeaponVolley } from './monster_projectile_types.js';
 import type { HeroProjectileVolley } from './hero_physical_types.js';
 import { requirePerceivedHero } from './monmove.js';
-
 function isFiniteNumber(value: unknown): value is number {
     return typeof value === 'number' && Number.isFinite(value);
 }
@@ -1300,3 +1274,111 @@ export async function consumeMonsterItem(monster: Monster, object: GameObject, s
         throw new Error('A used monster item must belong to its monster.');
     }
 }
+
+
+const hallucinationBlasts = [
+    "asteroids",
+    "beads",
+    "bubbles",
+    "butterflies",
+    "champagne",
+    "chaos",
+    "coins",
+    "cotton candy",
+    "crumbs",
+    "dark matter",
+    "darkness",
+    "data",
+    "dust specks",
+    "emoticons",
+    "emotions",
+    "entropy",
+    "flowers",
+    "foam",
+    "fog",
+    "gamma rays",
+    "gelatin",
+    "gemstones",
+    "ghosts",
+    "glass shards",
+    "glitter",
+    "good vibes",
+    "gravel",
+    "gravity",
+    "gravy",
+    "grawlixes",
+    "holy light",
+    "hornets",
+    "hot air",
+    "hyphens",
+    "hypnosis",
+    "infrared",
+    "insects",
+    "jargon",
+    "laser beams",
+    "leaves",
+    "lightening",
+    "logic gates",
+    "magma",
+    "marbles",
+    "mathematics",
+    "megabytes",
+    "metal shavings",
+    "metapatterns",
+    "meteors",
+    "mist",
+    "mud",
+    "music",
+    "nanites",
+    "needles",
+    "noise",
+    "nostalgia",
+    "oil",
+    "paint",
+    "photons",
+    "pixels",
+    "plasma",
+    "polarity",
+    "powder",
+    "powerups",
+    "prismatic light",
+    "pure logic",
+    "purple",
+    "radio waves",
+    "rainbows",
+    "rock music",
+    "rocket fuel",
+    "rope",
+    "sadness",
+    "salt",
+    "sand",
+    "scrolls",
+    "sludge",
+    "smileys",
+    "snowflakes",
+    "sparkles",
+    "specularity",
+    "spores",
+    "stars",
+    "steam",
+    "tetrahedrons",
+    "text",
+    "the past",
+    "tornadoes",
+    "toxic waste",
+    "ultraviolet light",
+    "viruses",
+    "water",
+    "waveforms",
+    "wind",
+    "X-rays",
+    "zorkmids"
+];
+
+// C mthrowu.c:rnd_hallublast().
+export function rndHallublast(random: typeof rn2 = rn2): string {
+    const blast = hallucinationBlasts[random(hallucinationBlasts.length)];
+    if (blast === undefined) throw new RangeError('Hallucinated blast selection was outside its range.');
+    return blast;
+}
+

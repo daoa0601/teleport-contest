@@ -127,7 +127,6 @@ import { clearHeroSliming, healHero, makeBlinded, makeStunned, speedUpHero } fro
 import { propertyIsActive } from './properties.js';
 import { getLine } from './query.js';
 import { capitalizedDefiniteName } from './objnam.js';
-import { displayRayName, realRayName } from './ray_name.js';
 import { liveSpellSkill } from './spell.js';
 import { activateStatueTrapAt } from './statue_trap.js';
 import { clearHeroPetrification, heroIsPetrifying, heroResistsStoning, touchPetrifies } from './stoning.js';
@@ -163,6 +162,7 @@ import { visionCellBlocksLight } from './vision.js';
 import { placeObjectSynchronously } from './mkobj.js';
 import { breakFloorObject } from './dothrow.js';
 import { verbForSubject } from './objnam.js';
+import { rndHallublast } from './mthrowu.js';
 const NODIR = 1, IMMEDIATE = 2;
 const MAX_ITEMS_DESTROYED = 20;
 const RAY_FIRE = 'fire';
@@ -5128,5 +5128,26 @@ export function rayMissMessage(effect, monster, { x, y, state = game }) {
 // C zap.c:exclam().
 export function exclam(force) {
     return force < 0 ? '?' : force <= 4 ? '.' : '!';
+}
+const names = {
+    wand: ['magic missile', 'bolt of fire', 'bolt of cold', 'sleep ray',
+        'death ray', 'bolt of lightning', '', '', '', ''],
+    spell: ['magic missile', 'fireball', 'cone of cold', 'sleep ray',
+        'finger of death', 'bolt of lightning', '', '', '', ''],
+    breath: ['blast of missiles', 'blast of fire', 'blast of frost',
+        'blast of sleep gas', 'blast of disintegration', 'blast of lightning',
+        'blast of poison gas', 'blast of acid', '', ''],
+};
+export function realRayName(damageType, kind) {
+    const name = names[kind][damageType - 1];
+    if (name === undefined)
+        throw new RangeError(`Invalid ${kind} damage type ${damageType}`);
+    return name;
+}
+// C zap.c:flash_str().
+export function displayRayName(damageType, kind, { state = game, random = rn2 } = {}) {
+    if (!heroIsHallucinating(state))
+        return realRayName(damageType, kind);
+    return `blast of ${rndHallublast(random)}`;
 }
 //# sourceMappingURL=zap.js.map

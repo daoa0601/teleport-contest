@@ -12,7 +12,7 @@ import { withIndefiniteArticle, makePlural, makeSingular, verbForSubject } from 
 import { canSeeMonster, canSpotMonster, map_invisible, newsym, shieldeff, howMonsterSeen } from './display.js';
 import { game, requirePlayingGame } from './gstate.js';
 import { castMonsterSpellRay } from './breath_ray.js';
-import { displayRayName } from './ray_name.js';
+import { displayRayName } from './zap.js';
 import { monsterLinedUpWithPerceivedHero } from './mthrowu.js';
 import { currentAttribute, loseHeroStrength } from './attrib.js';
 import { clearHeroSliming, makeBlinded } from './potion.js';
