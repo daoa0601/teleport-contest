@@ -214,7 +214,10 @@ export async function snuffLitObject(object, state = game, publish = plineWithCo
     endObjectBurn(object, state);
     return true;
 }
-// C apply.c:snuff_lit(), for the inventory enclosed by an engulfing actor.
+// The engulf loops at mhitm.c:868 and uhitm.c:4985 inline this pass: every
+// light a swallowed actor carries is snuffed with apply.c:snuff_lit()
+// semantics (snuffLitObject above is its port), the carrier's square
+// deciding visibility.
 export async function snuffMonsterInventoryLights(defender, state, publish) {
     for (const object of defender.minvent || defender.inventory || []) {
         if (!object.lamplit)

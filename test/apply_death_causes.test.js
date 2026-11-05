@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { useBullwhip } from '../js/bullwhip.js';
 import { TT_BEARTRAP, W_WEP } from '../js/const.js';
 import { game, requireGameDisplay, requirePlayingGame } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { jumpHero } from '../js/apply.js';
 import { BULLWHIP, WAN_STRIKING } from '../js/object_data.js';
 import { loadScoreRecords } from '../js/score_records.js';
-import { breakWand } from '../js/apply.js';
+import { breakWand, useWhip, jumpHero } from '../js/apply.js';
 import { addInventoryObject } from './support/game-objects.js';
 import { memoryStorage } from './support/memory-storage.js';
 import { freshObjectRoom } from './support/object-room.js';
@@ -50,10 +48,11 @@ for (const { female, reflexive, possessive } of [
     { female: true, reflexive: 'herself', possessive: 'her' },
 ]) {
     void test(`a hero fatally whipping ${reflexive} keeps the native epitaph and score cause`, async () => {
-        const { pages } = await deathRoom(female);
+        const { input, pages } = await deathRoom(female);
         const whip = await addInventoryObject(BULLWHIP, { wielded: true, owornmask: W_WEP });
         game.uwep = game.u.uwep = whip;
-        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 });
+        input.feed('>');
+        await useWhip(whip);
         assertDeathCause(pages, `killed ${reflexive} with ${possessive} bullwhip`);
     });
     void test(`a hero fatally breaking a wand uses ${reflexive} in the epitaph and score cause`, async () => {

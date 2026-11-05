@@ -1,8 +1,8 @@
 // apply.js — Apply/use-tool command and the apply.c tool ports.
 // C ref: apply.c doapply(), dorub(), dojump(), do_break_wand(), use_trap(),
-// and the use_*() tool functions this file owns. use_whip() stays in
-// bullwhip.ts; the candle snuff/splash/catch helpers stay in light.ts with
-// the burning-object owners.
+// use_whip(), and the use_*() tool functions this file owns. The candle
+// snuff/splash/catch helpers stay in light.ts with the burning-object
+// owners: importing them here would cycle apply.ts <-> light.ts.
 
 import {
     WEAPON_CLASS, RING_CLASS, TOOL_CLASS, FOOD_CLASS, POTION_CLASS, SPBOOK_CLASS, WAND_CLASS, COIN_CLASS,
@@ -23,21 +23,34 @@ import {
 } from './object_data.js';
 import { publishMonsterGrowl, publishMonsterWhimper, publishMonsterYelp } from './ambient_sounds.js';
 import { OBJ_DESCR, objectTypeColor, learnObjectType, objectMaterial, objectTypeKnown } from './o_init.js';
-import { armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear } from './do_wear.js';
+import {
+    armorSimpleName, armorSlotFor, heroHasFreeAction, applyEyewear, removeEyewear, heroHasSlipperyHands,
+} from './do_wear.js';
 import { artifactById, speakArtifact, retouchHeroObject } from './artifacts.js';
 import { currentAttribute } from './attrib.js';
 import { useBagOfTricks } from './bag_of_tricks.js';
-import { heroFaceName, heroFingerName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterStomachName } from './body_parts.js';
+import { heroFaceName, heroFingerName, heroFootName, heroHandName, heroHasEyes, heroHeadName, heroLegName, heroNoseName, monsterHandName, monsterStomachName } from './body_parts.js';
 import { bot } from './botl.js';
 import {
     dropBoulderIntoLiquid, dropInventoryObjectAtHero, woundHeroLegs, reviveCorpseImmediately, gotoLevel,
+    objectNoLongerHeld,
 } from './do.js';
-import { useBullwhip } from './bullwhip.js';
 import {
     commandResultCancelled, commandResultFailed, commandResultSpentTime, cmdq_add_ec, cmdq_add_key, setMulti,
     isok, paranoidQuery, confusePromptDirection, promptDirection, readDirectionKey,
 } from './cmd.js';
-import { A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED, D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT, GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR, IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE, LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG, MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC, P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM, ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL, TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir } from './const.js';
+import {
+    A_CHA, A_CON, A_DEX, A_NONE, A_STR, ACCESSIBLE, AIR, BEAR_TRAP, CLOUD, COLNO, CORR, CQ_CANNED, D_CLOSED,
+    D_ISOPEN, D_LOCKED, DIGCHECK_FAIL_BOULDER, DIGCHECK_FAILED, DOOR, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL,
+    G_GONE, GETOBJ_DOWNPLAY, GETOBJ_EXCLUDE, GETOBJ_EXCLUDE_INACCESS, GETOBJ_EXCLUDE_NONINVENT,
+    GETOBJ_EXCLUDE_SELECTABLE, GETOBJ_SUGGEST, HOLE, HOMEMADE_TIN, ICE, IS_AIR, Is_airlevel, IS_DOOR,
+    IS_FURNITURE, IS_OBSTRUCTED, Is_stronghold, IS_STWALL, IS_WALL, Is_waterlevel, KILLED_BY, LANDMINE,
+    LEVEL_TIMER_KIND, LUCKMIN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, MAXULEV, MM_NOMSG,
+    MONSEEN_INFRAVIS, MONSEEN_NORMAL, MONSEEN_SEEINVIS, NO_KILLER_PREFIX, NO_MINVENT, OBJECT_TIMER_KIND, P_BASIC,
+    P_RIDING, P_SKILLED, P_TWO_WEAPON_COMBAT, PARANOID_BREAKWAND, PIT, PLNMSG_enum, RLOC_MSG, RLOC_NONE, ROOM,
+    ROWNO, SCORR, SDOOR, SHOPBASE, SICK_ALL, SICK_NONVOMITABLE, STATUE_TRAP, STONE, TT_BEARTRAP, TT_BURIEDBALL,
+    TT_INFLOOR, TT_LAVA, TT_PIT, TT_WEB, Upolyd, WEAK, xdir, ydir, IS_WATERWALL, LAVAWALL,
+} from './const.js';
 import { use_container, pickupFloorObject } from './pickup.js';
 import { isRider } from './corpse_species.js';
 import { useCrystalBall } from './crystal_ball.js';
@@ -83,6 +96,7 @@ import {
 } from './potion.js';
 import { hurtleHero, hurtleJumpTo } from './dothrow.js';
 import { heroIsInvisible } from './hero_invisibility.js';
+import { stumbleOntoMimic } from './uhitm.js';
 import { finishHeroMonsterKill, finishHeroMonsterKillOutcome, finishHurtleMonsterDeath } from './hero_monster_death.js';
 import { hitMonsterWithAppliedWeapon } from './hero_ranged_attack.js';
 import {
@@ -94,10 +108,11 @@ import { formatFeltMessage, formatHeardMessage, formatSeenMessage, publishHeardM
 import { heroStatusLine, monsterStatusLine } from './insight.js';
 import {
     dotrap, fillPitWithBoulderAt, deleteTrap, feelTrap, trapName, mintrap, resolveImmediatePetrification,
-    resetUtrap, maketrap, activateStatueTrapAt,
+    resetUtrap, maketrap, activateStatueTrapAt, fireDamageObject,
 } from './trap.js';
 import { requireInitializedHero } from './hero_types.js';
 import { morehungry, vomit, set_tin_variety, use_tin_opener } from './eat.js';
+import { stack_object } from './invent.js';
 import type { InventoryClassification } from './invent.js';
 import { lightRoom, transformMagicLampToOilLamp } from './light.js';
 import {
@@ -109,7 +124,10 @@ import { makemonAt, mkclassAligned } from './makemon.js';
 import { MAP_SYMBOLS } from './map_symbols.js';
 import type { MapLocation, Position } from './map_types.js';
 import { canDigDown } from './mklev.js';
-import { mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight, isContainer, useHornOfPlenty } from './mkobj.js';
+import {
+    mksobj, objectQuantity, rejoinObjectStack, splitObjectStack, unblessObjectState, unlinkObject, objectWeight,
+    isContainer, useHornOfPlenty, unlinkMonsterObject, placeObject, remove_object,
+} from './mkobj.js';
 import {
     is_male, is_neuter, monsterIsClinger, monsterIsFemale, monsterIsSlithy, monsterPossessive,
     monsterSubjectPronoun, monsterHasHead, monsterHasNoLimbs, monsterIsUnsolid, strongmonst, monsterDigests,
@@ -117,15 +135,18 @@ import {
     monsterIsUnicorn, monsterIsVampire, monsterIsVampireShifter, monsterIsWhirly, monsterPerceives,
     monsterThrowsRocks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
 } from './mondata.js';
+import { wakeAttackedMonster } from './mon.js';
 import { makeMonsterFlee, isAccessibleAt } from './monmove.js';
 import type { RandomBelow } from './monster_action_types.js';
 import { AD_BLND, AT_ENGL } from './monster_attack_types.js';
 import { MONSTER_ATTACKS, MONSTER_FLAGS1, MONSTER_FLAGS2, MONSTER_GENO, MONSTER_NAME, MONSTER_NUTRITION, MONSTER_SIZE, MONSTER_SOUND, MONSTER_SYMBOL, monsterTypeName } from './monster_data.js';
 import type { Monster } from './monster_types.js';
 import { PLAYABLE_INSTRUMENTS, playInstrument } from './music.js';
-import { isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel } from './object_properties.js';
+import {
+    isAxe, isFlimsyObject, isGrayStone, isPick, isPolearm, isWetTowel, isBimanualObject,
+} from './object_properties.js';
 import type { GameObject } from './object_types.js';
-import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, withIndefiniteArticle } from './objnam.js';
+import { corpseName, definiteName, definiteObjectAction, makePlural, minimalObjectName, objectCombatName, objectMonsterName, objectName, objectNameIsPlural, observeObjectForNaming, ownedObjectName, simpleObjectTypeName, singularObjectName, withIndefiniteArticle } from './objnam.js';
 import { walkPathCells } from './path_walk.js';
 import { pline as syncPline, plineWithContinuation, plineWithContinuation as pline } from './pline.js';
 import type { MessagePublisher } from './pline.js';
@@ -135,17 +156,20 @@ import { promptChoice, promptYesNo } from './query.js';
 import { mon_reflects } from './muse.js';
 import { d, rn1, rn2, rnd, rnl } from './rng.js';
 import { addShopDamage, billDummyObject, carriedObjectOwner, chargeAlteredUnpaidObject, chargeUnpaidUsage, costlySpot, deleteObject, dopay, findObjectOwner, objectOwnershipPrefix, payForShopDamage, shopkeeperIsMuted } from './shk.js';
-import { ensureHeroSkills, uwepSkillType, dryTowel } from './weapon.js';
+import {
+    ensureHeroSkills, uwepSkillType, dryTowel, heroStrengthDamageBonus, monsterWieldedWeapon,
+    unwieldMonsterWeapon,
+} from './weapon.js';
 import { castSpell, knownSpell } from './spell.js';
 import { addObjectToMonsterInventory } from './steal.js';
-import { monsterAtPosition, stuckSteed, useSaddle } from './steed.js';
+import { monsterAtPosition, stuckSteed, useSaddle, strikeSteed } from './steed.js';
 import { handlesPetrifyingCorpseBareHanded, petrifyFromCorpseContact } from './stoning.js';
 import { ceilingName, surfaceName } from './dungeon.js';
-import { isLavaAt, isPoolAt } from './dbridge.js';
+import { isLavaAt, isPoolAt, isPoolOrLavaAt } from './dbridge.js';
 import type { DirectionSelection } from './cmd.js';
 import { summonUndead } from './undead_summoning.js';
 import { summonVaultGuardSoon } from './vault.js';
-import { cansee, couldsee, vision_note_blocker_change } from './vision.js';
+import { cansee, couldsee, vision_note_blocker_change, vision_recalc, vision_reset } from './vision.js';
 import { wieldTool, doswapweapon } from './wield.js';
 import type { WieldToolResult } from './wield.js';
 import { setnotworn, adjustMonsterSpeed } from './worn.js';
@@ -2310,6 +2334,385 @@ function trapSettingRefusal(): string | null {
     return null;
 }
 
+// C apply.c:use_whip().
+export async function useWhip(
+    whip: GameObject, { state = game }: { state?: GameState } = {},
+): Promise<{ spentTime: boolean }> {
+    const hero = state.u;
+    // C apply.c:2964-2971: wield_tool() installs the whip first and queues
+    // dorub-style continuation: doapply plus the whip's inventory letter.
+    const wielded = await wieldTool(
+        whip,
+        'lash',
+        { swapWeapons: doswapweapon },
+        state,
+    );
+    if (!wielded.ready) return { spentTime: false };
+    if (wielded.newlyWielded) {
+        cmdq_add_ec(CQ_CANNED, 'doapply');
+        cmdq_add_key(CQ_CANNED, inventoryCommandLetter(whip).charCodeAt(0));
+        return { spentTime: true };
+    }
+    // C apply.c:2972: getdir(); a refusal reports ECMD_CANCEL and the
+    // rhack seam clears both command queues for it.
+    const direction = await promptDirection();
+    if (!direction) {
+        commandResultCancelled();
+        return { spentTime: false };
+    }
+    game._pending_message = '';
+    hero.dx = direction.dx;
+    hero.dy = direction.dy;
+    hero.dz = direction.dz;
+
+    let targetX: number;
+    let targetY: number;
+    let monster: Monster | null;
+    if (hero.uswallow && hero.ustuck) {
+        monster = hero.ustuck;
+        targetX = monster.mx;
+        targetY = monster.my;
+    } else {
+        // C apply.c:2980: confdir(FALSE) — cmd.ts confusePromptDirection()
+        // is its port; getdir() already ran one confdir for a non-vertical
+        // answer, and use_whip() applies a second one here.
+        confusePromptDirection(hero);
+        targetX = hero.ux + hero.dx;
+        targetY = hero.uy + hero.dy;
+        if (!isok(targetX, targetY)) {
+            await pline('You miss.');
+            return { spentTime: false };
+        }
+        monster = monsterAt(targetX, targetY, state);
+    }
+
+    // C apply.c:2990-3003: fake some proficiency checks.
+    let proficiency = state.urole?.key === 'archeologist' ? 1 : 0;
+    const dexterity = currentAttribute(A_DEX, state);
+    if (dexterity < 6) proficiency--;
+    else if (dexterity >= 14) proficiency += dexterity - 14;
+    if (propertyIsActive('fumbling', state)) proficiency--;
+    if (proficiency > 3) proficiency = 3;
+    if (proficiency < 0) proficiency = 0;
+
+    // C apply.c:3127's whipattack label: the pit branch reaches it by goto
+    // when it has no anchor but a monster to strike; the flag carries that
+    // monster so the strike block stays narrowed.
+    let whipAttack: Monster | null = null;
+    const targetLocation = state.level?.at(targetX, targetY);
+    if (hero.uswallow) {
+        await pline('There is not enough room to flick your bullwhip.');
+    } else if (state.underwater || hero.uinwater) {
+        await pline('There is too much resistance to flick your bullwhip.');
+    } else if (hero.dz < 0) {
+        await pline(`You flick a bug off of the ${
+            ceilingName(state.u.ux, state.u.uy, state)
+        }.`);
+    } else if (!hero.dz && targetLocation && (IS_WATERWALL(targetLocation.typ)
+        || targetLocation.typ === LAVAWALL)) {
+        await pline('You cause a small splash.');
+        if (targetLocation.typ === LAVAWALL)
+            await fireDamageObject(whip, {
+                state, x: targetX, y: targetY, publish: pline,
+            });
+        return { spentTime: true };
+    } else if ((!hero.dx && !hero.dy) || hero.dz > 0) {
+        // C apply.c:3023-3028: sometimes you hit your steed by mistake.
+        if (hero.usteed && rn2(proficiency + 2) === 0) {
+            await pline(`You whip ${monsterName(hero.usteed, { state })}!`);
+            await strikeSteed({ state, announce: pline });
+            return { spentTime: true };
+        }
+        if (isPoolOrLavaAt(hero.ux, hero.uy, state)
+            || (targetLocation && (IS_WATERWALL(targetLocation.typ)
+                || targetLocation.typ === LAVAWALL))) {
+            await pline('You cause a small splash.');
+            if (isLavaAt(hero.ux, hero.uy, state)) {
+                await fireDamageObject(whip, {
+                    state, x: hero.ux, y: hero.uy, publish: pline,
+                });
+            }
+            return { spentTime: true };
+        }
+        // C apply.c:3037-3056: a flyer can reach the floor, so have a shot
+        // at snaring something there (Levitation || u.usteed || Flying).
+        if (!!(hero.levitating || hero.levitation || state.levitating
+            || hero.flying || state.flying) || hero.usteed) {
+            const pile = state.level?.objects?.[hero.ux]?.[hero.uy] || [];
+            const floorObject = pile[0];
+            // C apply.c:3042-3048: PM_HORSE plus its little_to_big (warhorse)
+            // and big_to_little (pony) neighbors.
+            if (floorObject?.otyp === CORPSE) {
+                if (floorObject.corpsenm === undefined)
+                    throw new Error('A corpse requires a monster species.');
+                const species = monsterTypeName(floorObject.corpsenm).toLowerCase();
+                if (species === 'pony' || species === 'horse' || species === 'warhorse') {
+                    await pline('Why beat a dead horse?');
+                    return { spentTime: true };
+                }
+            }
+            if (floorObject && proficiency) {
+                observeObjectForNaming(floorObject, { state });
+                // C apply.c:3050 wraps an(singular(otmp, xname)): one item
+                // from a stack, "a +0 dagger", never the stack count.
+                await pline(
+                    `You wrap your bullwhip around ${
+                        withIndefiniteArticle(singularObjectName(floorObject, state))} on the ${
+                        surfaceName(hero.ux, hero.uy, state)}.`,
+                );
+                if (rnl(6) !== 0
+                    || !await pickupFloorObject(floorObject, 1, true))
+                    await pline('The bullwhip slips free.');
+                return { spentTime: true };
+            }
+        }
+        // C apply.c:3057-3063: hit your own foot.
+        let damage = rnd(2)
+            + heroStrengthDamageBonus(state)
+            + (whip.spe ?? whip.enchantment ?? 0);
+        damage = Math.max(1, damage);
+        if (hero.halfPhysicalDamage)
+            damage = Math.trunc((damage + 1) / 2);
+        await pline(`You hit your ${heroFootName(state)} with your bullwhip.`);
+        const female = !!state.flags.female;
+        const reflexive = female ? 'herself' : 'himself';
+        const possessivePronoun = female ? 'her' : 'his';
+        await loseHeroHp(damage,
+            `killed ${reflexive} with ${possessivePronoun} bullwhip`,
+            { state, publish: pline, killerFormat: NO_KILLER_PREFIX });
+        return { spentTime: true };
+    } else if ((propertyIsActive('fumbling', state) || heroHasSlipperyHands(state))
+        && rn2(5) === 0) {
+        await pline(`The bullwhip slips out of your ${heroHandName(state)}.`);
+        await dropInventoryObjectAtHero(whip, { state });
+    } else if (hero.utrap && hero.utraptype === TT_PIT) {
+        // C apply.c:3089-3091: boulder beats furniture because it sits on
+        // top of it.
+        const pile = state.level?.objects?.[targetX]?.[targetY] || [];
+        let anchor = pile.some(object => object.otyp === BOULDER)
+            ? 'a boulder'
+            : targetLocation && IS_FURNITURE(targetLocation.typ)
+                ? 'something' : null;
+        if (monster && monsterIsBig(monster.mnum)
+            && canSpotMonster(monster)) anchor = monsterName(monster, { state });
+        if (monster && !anchor) {
+            whipAttack = monster; // C apply.c:3101-3102: goto whipattack.
+        } else if (anchor) {
+            await pline(`You wrap your bullwhip around ${anchor}.`);
+            if (proficiency > 0 && rn2(proficiency + 2) !== 0) {
+                // C apply.c:3111: enexto() only runs when a monster holds
+                // the anchor square; failure leaves nothing to yank to.
+                const destination = monster
+                    ? enexto(heroSpecies(state), targetX, targetY, { state })
+                    : { x: targetX, y: targetY };
+                if (destination) {
+                    await pline('You yank yourself out of the pit!');
+                    // C apply.c:3113-3115: reset_utrap(TRUE) runs before
+                    // teleds() in case it has no alternative other than to
+                    // put the hero in another trap.
+                    await resetUtrap(true, state);
+                    const { arrival } = await teleds(
+                        destination.x, destination.y, state, {
+                            allowDrag: true,
+                            finishArrival: async movement => {
+                                await newsym(movement.oldx, movement.oldy);
+                                vision_reset();
+                                await vision_recalc(0);
+                                return finishDestinationSpotEffects({
+                                    oldx: movement.oldx, oldy: movement.oldy,
+                                    newx: movement.x, newy: movement.y,
+                                });
+                            },
+                        },
+                    );
+                    if (!arrival.died) state.vision_full_recalc = 1;
+                }
+            } else {
+                await pline('The bullwhip slips free.');
+            }
+            if (monster) await wakeAttackedMonster(monster);
+        } else {
+            await pline('Snap!');
+        }
+    } else if (monster) {
+        whipAttack = monster;
+    } else if (Is_airlevel(hero.uz) || Is_waterlevel(hero.uz)) {
+        // it must be air -- water checked above
+        await pline('You snap your whip through thin air.');
+    } else {
+        await pline('Snap!');
+    }
+
+    if (whipAttack) {
+        const monster = whipAttack;
+        // C apply.c:3129: if the monster is unseen, can't attempt to disarm.
+        let weapon: GameObject | null = null;
+        const spottedBefore = canSpotMonster(monster);
+        if (!spottedBefore) {
+            // bring non-mimic hider out of hiding, then check visibility
+            // again in case being brought out of hiding has exposed it.
+            monster.mundetected = 0;
+            const spottedNow = canSpotMonster(monster);
+            const alreadyMarked = state.level?.at?.(targetX, targetY)
+                ?.remembered_glyph?.kind === 'invisible';
+            if (spottedNow || alreadyMarked) {
+                // C apply.c:3139 names a now-spotted target with Amonnam():
+                // the capitalized form of a_monnam(), so "An acid blob".
+                const name = spottedNow
+                    ? monsterName(monster, { article: 'a', capitalized: true, state })
+                    : 'A monster';
+                await pline(`${name} is there that you ${
+                    heroIsBlind(state) ? "hadn't noticed" : "couldn't see"}.`);
+                if (spottedNow) await newsym(targetX, targetY);
+                else await map_invisible(targetX, targetY);
+            }
+        } else {
+            weapon = monsterWieldedWeapon(monster) ?? null;
+        }
+
+        if (weapon) {
+            // C apply.c:3156: a fumbling hero keeps hold only on !rn2(10).
+            let gotWeapon = proficiency > 0
+                && (!propertyIsActive('fumbling', state) || rn2(10) === 0);
+            const hand = monsterHandName(monster.mnum);
+            const hands = isBimanualObject(weapon) ? makePlural(hand) : hand;
+            // C apply.c:3158: onambuf = cxname(otmp), captured before any
+            // message can change the weapon's knowledge flags.
+            const weaponName = objectCombatName(weapon, { state });
+            // C apply.c:3166: yname(otmp) — shk_your() prefixes the
+            // carrier's name and cxname() carries no beatitude or
+            // enchantment.
+            await pline(`You wrap your bullwhip around ${
+                ownedObjectName(weapon, state, { capitalized: false })}.`);
+
+            if (gotWeapon && weapon.cursed) {
+                const wasKnown = !!weapon.bknown;
+                weapon.bknown = true;
+                const subject = objectQuantity(weapon) === 1 ? 'It is' : 'They are';
+                // C apply.c:3168-3170: mhis(mtmp) is the monster's pronoun,
+                // not its name with a possessive suffix.
+                await pline(`${subject} welded to ${
+                    monsterPossessive(monster, { state })} ${hands}${
+                    wasKnown ? '.' : '!'}`);
+                gotWeapon = false; // can't pull it free
+            }
+            if (gotWeapon) {
+                // C apply.c:3175-3177: obj_extract_self() +
+                // possibly_unwield() + setmnotwielded() — a raw unlink
+                // plus wield-slot clearing, NOT the worn-item unwear owner
+                // (no trap/saddle/extrinsic work, and no crysknife
+                // release: the monster's held blade is extracted exactly
+                // as it is).  possibly_unwield()'s not-in-inventory branch
+                // collapses into the same wield-slot clear because the
+                // extraction just ran.
+                unlinkMonsterObject(monster, weapon);
+                await unwieldMonsterWeapon(monster, state, { weapon, publish: pline });
+                switch (rn2(proficiency + 1)) {
+                case 2:
+                    // to floor near you; C apply.c:3182: yname() again; the
+                    // extracted weapon is free, so shk_your() reduces to
+                    // "the" and cxname() still shows no BUC.
+                    await pline(`You yank ${
+                        ownedObjectName(weapon, state, { capitalized: false })} to the ${
+                        surfaceName(hero.ux, hero.uy, state)}!`);
+                    await placeObject(weapon, hero.ux, hero.uy);
+                    await stack_object(weapon, state);
+                    break;
+                case 3: {
+                    // right into your inventory; C apply.c:3209: yname()
+                    // for the snatch message as well.
+                    await pline(`You snatch ${
+                        ownedObjectName(weapon, state, { capitalized: false })}!`);
+                    // C apply.c:3210-3229: a snatched corpse is named by
+                    // cxname() before it moves, and that name is also the
+                    // death reason; a life-saved hero frees the corpse
+                    // again from the floor it was placed on for death
+                    // cleanup.
+                    if (handlesPetrifyingCorpseBareHanded(weapon)) {
+                        const name = corpseName(weapon);
+                        const corpse = objectQuantity(weapon) === 1
+                            ? withIndefiniteArticle(name) : name;
+                        const petrification = await petrifyFromCorpseContact(
+                            `Snatching ${corpse} is a fatal mistake.`, corpse,
+                            async () => {
+                                await placeObject(weapon, hero.ux, hero.uy);
+                            },
+                        );
+                        if (petrification) {
+                            if (petrification.died) return { spentTime: true };
+                            remove_object(weapon);
+                        }
+                    }
+                    // C apply.c:3230: hold_another_object() owns fumbling,
+                    // slot, and capacity refusal, dropping the weapon at
+                    // the hero's feet.  A fatal artifact blast ends the
+                    // game there (artifact.c:958), before use_whip()'s
+                    // trailing wakeup().
+                    if ((await holdAnotherObject(weapon, {
+                        state,
+                        dropMessage: `You drop ${await inventoryItemDescription(weapon)}!`,
+                    })).heroDied) return { spentTime: true };
+                    break;
+                }
+                default:
+                    // to floor beneath mon; C apply.c:3235-3236: the
+                    // (onambuf) + s_suffix(mon_nam(mtmp)).
+                    await pline(`You yank ${definiteName(weaponName, state)} from ${
+                        possessiveName(monsterName(monster, { state }))} ${hands}!`);
+                    // C apply.c:3237-3238: obj_no_longer_held() runs before
+                    // place_object(); the release repeats inside the
+                    // placement owner by design — a fixed crysknife can
+                    // survive the first release and revert on the second.
+                    // Do not deduplicate this source-owned repetition.
+                    await objectNoLongerHeld(weapon, state);
+                    await placeObject(weapon, monster.mx, monster.my);
+                    await stack_object(weapon, state);
+                    break;
+                }
+            } else {
+                await pline('The bullwhip slips free.');
+            }
+        } else {
+            // mtmp isn't wielding a weapon; attack it.  C apply.c:3248:
+            // use_whip() stumbles onto an unsensed mimic instead of
+            // clearing its disguise silently; sensed mimics just get
+            // flicked.
+            let snap = true;
+            if (monster.m_ap_type
+                && !state.u?.protectionFromShapeChangers
+                && !state.protectionFromShapeChangers
+                && !canSenseMonster(monster)) {
+                await stumbleOntoMimic(monster, state);
+                snap = false;
+            } else {
+                await pline(`You flick your bullwhip towards ${monsterName(monster, { state })}.`);
+            }
+            // C apply.c:3255 reaches do_attack() through uhitm.c
+            // force_attack(): anything that is not a pet is struck with
+            // forcefight forced on, while a pet keeps do_attack()'s
+            // safepet displacement block.  force_attack() answers C's
+            // boolean: a declined attack stopped the monster, so the whip
+            // does not snap.
+            if (proficiency > 0) {
+                const safeMonster = !!monster.mtame && !game.context.forcefight
+                    && heroMayDisplaceMonster(monster);
+                const savedForcefight = game.context.forcefight ?? false;
+                if (!monster.mtame) game.context.forcefight = true;
+                try {
+                    if ((await do_attack(monster, targetX, targetY, { safeMonster })) !== false)
+                        return { spentTime: true };
+                } finally {
+                    game.context.forcefight = savedForcefight;
+                }
+            }
+            if (snap) await pline('Snap!');
+        }
+        // C apply.c:3261: regardless of mtmp's weapon or hero's proficiency.
+        await wakeAttackedMonster(monster);
+    }
+    return { spentTime: true };
+}
+
 export type PolearmResult =
     | { heroDied: true }
     | {
@@ -3396,52 +3799,7 @@ export async function applyTool(
         return item;
     }
     if (item.otyp === BULLWHIP) {
-        const wielded = await wieldTool(
-            item,
-            'lash',
-            { swapWeapons: doswapweapon },
-            game,
-        );
-        if (!wielded.ready) {
-            game.context.move = 0;
-            return item;
-        }
-        if (wielded.newlyWielded) {
-            // C apply.c:2965-2967 queues doapply plus the whip's letter;
-            // the next turn's apply pops the letter from CQ_CANNED.
-            cmdq_add_ec(CQ_CANNED, 'doapply');
-            cmdq_add_key(CQ_CANNED, inventoryCommandLetter(item).charCodeAt(0));
-            game.context.move = 1;
-            return item;
-        }
-        const direction = await promptDirection();
-        if (!direction) {
-            // use_whip() reports ECMD_CANCEL when getdir() is refused;
-            // the rhack seam clears both command queues for that.
-            commandResultCancelled();
-            game.context.move = 0;
-            return item;
-        }
-        game._pending_message = '';
-        const result = await useBullwhip(item, direction, {
-            // C apply.c:use_whip() reaches do_attack() through
-            // uhitm.c:force_attack(): anything that is not a pet is
-            // struck with forcefight forced on, while a pet keeps
-            // do_attack()'s safepet displacement block.
-            attackMonster: async (monster, x, y) => {
-                const safeMonster = !!monster.mtame && !game.context.forcefight
-                    && heroMayDisplaceMonster(monster);
-                const savedForcefight = game.context.forcefight ?? false;
-                if (!monster.mtame) game.context.forcefight = true;
-                try {
-                    // force_attack() answers C's boolean: a declined
-                    // attack stopped the monster, so the whip does not snap.
-                    return (await do_attack(monster, x, y, { safeMonster })) !== false;
-                } finally {
-                    game.context.forcefight = savedForcefight;
-                }
-            },
-        });
+        const result = await useWhip(item);
         game.context.move = result.spentTime ? 1 : 0;
         return item;
     }
@@ -3631,15 +3989,4 @@ export async function flipCoin(coin: GameObject, { state = game }: { state?: Gam
         await plineWithContinuation(`It comes up ${rn2(2) ? 'heads' : 'tails'}.`);
     }
     return { spentTime: true, heroDied: !!state.program_state.gameover };
-}
-
-// C apply.c:use_whip(): a snatched corpse is named by cxname() before it
-// moves, and that name is also the death reason.
-export async function snatchPetrifyingCorpse(object: GameObject | null | undefined, {
-    beforeDeath = null,
-}: { beforeDeath?: (() => unknown) | null } = {}): Promise<{ died: boolean } | null> {
-    if (!handlesPetrifyingCorpseBareHanded(object)) return null;
-    const name = corpseName(object);
-    const corpse = objectQuantity(object) === 1 ? withIndefiniteArticle(name) : name;
-    return await petrifyFromCorpseContact(`Snatching ${corpse} is a fatal mistake.`, corpse, beforeDeath);
 }

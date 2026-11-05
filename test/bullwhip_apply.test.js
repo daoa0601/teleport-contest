@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { useBullwhip } from '../js/bullwhip.js';
+import { useWhip } from '../js/apply.js';
 import { pushKeys, resetInputState } from '../js/input.js';
 import { rhack } from '../js/cmd.js';
 import { M_AP_OBJECT, TT_PIT, W_WEP } from '../js/const.js';
@@ -136,8 +136,8 @@ void test('a whip cannot acquire a floor stack when the hero is overloaded', asy
     const clubs = await floorObject(CLUB, 10, 10, { quantity: 3 });
     for (let seed = 1n; seed <= 30n; seed++) {
         initRng(seed);
-        pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 });
+        pushKeys('>' + ' '.repeat(8));
+        await useWhip(whip);
         assert.equal(clubs.quan, 3);
         assert.equal(game.inventory.some(object => object.otyp === CLUB), false);
     }
@@ -156,8 +156,8 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
     input.beforeRead = () => { messages.push(game._pending_message); };
     for (let seed = 1n; seed <= 30n && floorObjectsAt(level, 10, 10).includes(corpse); seed++) {
         initRng(seed);
-        pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 0, dy: 0, dz: 1 });
+        pushKeys('>' + ' '.repeat(8));
+        await useWhip(whip);
     }
     assert.equal(game.inventory.includes(corpse), false);
     assert.equal(floorObjectsAt(level, 10, 10).includes(corpse), false);
@@ -166,7 +166,7 @@ void test('a whip revives a Rider corpse with remote acquisition feedback', asyn
 });
 // C apply.c:3230 hands a snatched weapon to invent.c:hold_another_object(),
 // whose fumbling, slot, and burden refusals drop it at the hero's feet.
-async function snatchClubFromBugbear(prepare, makeWeapon = async () => await knownObject(CLUB, {}), peaceful = false) {
+async function snatchClubFromBugbear(prepare, makeWeapon = async () => await knownObject(CLUB, {}), peaceful = false, keys = 'l' + ' '.repeat(8)) {
     for (let seed = 1n; seed <= 200n; seed++) {
         const level = freshPlayableRoom({
             role: 'archeologist',
@@ -186,8 +186,8 @@ async function snatchClubFromBugbear(prepare, makeWeapon = async () => await kno
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message); };
         initRng(seed);
-        pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        pushKeys(keys);
+        await useWhip(whip);
         messages.push(game._pending_message);
         const text = messages.join('\n');
         if (/You snatch/u.test(text))
@@ -245,8 +245,8 @@ void test('a fumbling hero rarely keeps a disarmed weapon in the bullwhip', asyn
         const input = resetInputState();
         input.beforeRead = () => { messages.push(game._pending_message); };
         initRng(seed);
-        pushKeys(' '.repeat(8));
-        await useBullwhip(whip, { dx: 1, dy: 0, dz: 0 });
+        pushKeys('l' + ' '.repeat(8));
+        await useWhip(whip);
         messages.push(game._pending_message);
         const text = messages.join('\n');
         if (/You wrap your bullwhip/u.test(text))
@@ -281,7 +281,10 @@ void test('a fatal artifact snatch does not go on to anger the disarmed monster'
 // C apply.c:3213-3231: a golem hero becomes a stone golem before any fatal
 // message, so the snatched corpse stays free and goes into the inventory.
 void test('a flesh golem snatching a cockatrice corpse turns to stone golem and holds it', async () => {
-    const result = await snatchClubFromBugbear(async () => { await polymonHero(MONSTER_NAME.indexOf('flesh golem')); }, async () => await corpseObject(MONSTER_NAME.indexOf('cockatrice'), {}));
+    const result = await snatchClubFromBugbear(async () => { await polymonHero(MONSTER_NAME.indexOf('flesh golem')); }, async () => await corpseObject(MONSTER_NAME.indexOf('cockatrice'), {}), false, 
+    // The transformation's --More-- needs one key before the direction
+    // question, as in native play.
+    ' l' + ' '.repeat(8));
     assert.equal(game.u.umonnum, MONSTER_NAME.indexOf('stone golem'));
     assert.ok(!game.program_state.gameover);
     assert.doesNotMatch(result.text, /fatal mistake/u);
