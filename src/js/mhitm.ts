@@ -3,7 +3,7 @@
 // fightm() applies to attacked monsters and dogmove.c grants to pet targets;
 // mhitm.c noises(), pre_mm_attack(), missmm(), failed_grab(), hitmm(),
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
-// xdrainenergym() and attk_protection() are folded in below.
+// xdrainenergym(), attk_protection(), and rustm() are folded in below.
 
 import { setHeroGrip } from './mon.js';
 import type { Monster } from './monster_types.js';
@@ -36,7 +36,7 @@ import {
     ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH,
 } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies } from './mondata.js';
+import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies, isHeroDefender } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
@@ -68,13 +68,13 @@ import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWe
 import { weaponHitValue } from './weapon.js';
 import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
-import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
+import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
 import {
-    applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect,
-    applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli,
-    mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage,
-    petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact,
-    mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult,
+    applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect,
+    applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect,
+    mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage,
+    petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys,
+    mhitm_knockback, applyMonsterCombatEffect, effectResult, erodeArmor,
 } from './uhitm.js';
 import { mon_reflects } from './muse.js';
 import { finishMonsterEating } from './dogmove.js';
@@ -99,6 +99,13 @@ import {
 } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
+import {
+    heroSpecies,
+} from './polyself.js';
+import type {
+    Hero,
+} from './hero_types.js';
+import type { ErosionOptions } from './trap.js';
 
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const G_UNIQ = 0x1000;
@@ -1512,4 +1519,23 @@ export function contactIsProtected(attackType: number, wornMask: number, usedWea
     if (attackType === AT_HUGS)
         return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
     return false;
+}
+
+const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
+
+// C mhitm.c:rustm()
+export async function erodeAttackingWeapon(defender: Hero | Monster, weapon: GameObject | null | undefined, {
+    state = game, random = rn2, ...options
+}: ErosionOptions = {}) {
+    if (!weapon) return;
+    const species = isHeroDefender(defender, state) ? heroSpecies(state) : defender.mnum;
+    const attacks = MONSTER_ATTACKS[species];
+    if (!attacks) throw new RangeError(`Unknown monster species: ${species}`);
+    const hasDamage = (type: number) => attacks.some(attack => attack[1] === type);
+    const kind = hasDamage(AD_CORR) ? 'corrosion'
+        : hasDamage(AD_RUST) ? 'rust'
+            : hasDamage(AD_FIRE) && species !== PM_STEAM_VORTEX ? 'burn' : null;
+    if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
+        await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
+    }
 }

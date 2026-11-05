@@ -56,7 +56,7 @@ import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import { canMakeBones, createBonesFromDeath } from './bones.js';
-import { restoreLaunchedObjectForBones } from './trap.js';
+import { force_launch_placement, launch_in_progress } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
@@ -134,7 +134,6 @@ interface FinalPossessions {
 }
 
 export { SCORE_RECORD_STORAGE_KEY } from './score_records.js';
-
 
 // C end.c:done() records the fatal event before "But wait...". The caller
 // identifies the amulet after that message returns, then consumes it and
@@ -1028,7 +1027,7 @@ async function startGameExit(outcome: ShopExitOutcome, deathType = DIED): Promis
     }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
-    if (game._canMakeBones) restoreLaunchedObjectForBones(game);
+    if (game._canMakeBones && launch_in_progress(game)) force_launch_placement(game);
     return endtime;
 }
 

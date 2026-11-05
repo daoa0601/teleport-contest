@@ -1,4 +1,4 @@
-// Species predicates and monster data queries.
+// Species and actor predicates, and monster data queries.
 // C mondata.h and mondata.c, including petrifying species and poly_when_stoned().
 
 import { levelHasCeiling } from './dungeon.js';
@@ -41,6 +41,9 @@ import { questMonsterFlags2, questMonsterFlags3, questMonsterSound } from './rol
 import { monsterCarriesAmulet } from './wizard.js';
 import type { Trap } from './map_types.js';
 import { dist2 } from './hacklib.js';
+import type {
+    Hero,
+} from './hero_types.js';
 
 type SpeciesReference = Pick<Monster, 'mnum'>;
 type ShifterReference = SpeciesReference & Partial<Pick<Monster, 'cham'>>;
@@ -1817,4 +1820,8 @@ export function heroWouldPetrifyFromFlesh(mnum: number | undefined, state: GameS
     return fleshPetrifies(mnum)
         && !heroResistsStoning(state)
         && !(heroIsPolymorphed(state) && formCanBecomeStoneGolem(state.u?.umonnum, state));
+}
+
+export function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
+    return defender === state.u;
 }

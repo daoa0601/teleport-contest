@@ -4,12 +4,9 @@ import {
 } from '../js/trap.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { LANDMINE, PIT } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
-
 import { placeMonsterAt } from '../js/steed.js';
-
 import { ROCK } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';
 import { floorObject } from './support/game-objects.js';

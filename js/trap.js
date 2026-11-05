@@ -1,7 +1,9 @@
 // Trap construction, triggers, damage, petrification, and terrain effects.
 // C trap.c: maketrap(), dotrap(), mintrap(), animate_statue(), activate_statue_trap(),
 // chest_trap(), b_trapped(), selftouch(), float_up(), float_down(), drown(),
-// lava_effects(), fall_through(), count_traps(), immune_to_trap(), and their native helpers.
+// lava_effects(), lava_damage(), blow_up_landmine(), fall_through(), count_traps(),
+// immune_to_trap(), launch_drop_spot(), launch_in_progress(), force_launch_placement(),
+// and their native helpers.
 import { stack_object } from './invent.js';
 import { WEAPON_CLASS, ARMOR_CLASS, TOOL_CLASS, POTION_CLASS, SCROLL_CLASS, SPBOOK_CLASS, COIN_CLASS, BALL_CLASS, CHAIN_CLASS, } from './objclass.js';
 import { objectClassForType, objectSkill, BAG_OF_TRICKS, BOULDER, BRASS_LANTERN, CAN_OF_GREASE, CANDELABRUM_OF_INVOCATION, CHEST, ICE_BOX, FIRE_HORN, LARGE_BOX, OBJECT_MATERIAL_NAMES, OILSKIN_SACK, MAGIC_LAMP, OIL_LAMP, POT_ACID, POT_OIL, POT_WATER, RED_DRAGON_SCALE_MAIL, RED_DRAGON_SCALES, RIN_FIRE_RESISTANCE, SCR_BLANK_PAPER, SCR_FIRE, SPE_BLANK_PAPER, SPE_BOOK_OF_THE_DEAD, SPE_FIREBALL, SPE_NOVEL, TALLOW_CANDLE, TOWEL, WAN_FIRE, WAX_CANDLE, DWARVISH_CLOAK, CORPSE, DART, STATUE, ARROW, BEARTRAP, LAND_MINE, ROCK, SADDLE, CLOAK_OF_MAGIC_RESISTANCE, GRAY_DRAGON_SCALE_MAIL, GRAY_DRAGON_SCALES, IRON_SHOES, KICKING_BOOTS, objectPropertyName, AMULET_OF_LIFE_SAVING, } from './object_data.js';
@@ -36,7 +38,7 @@ import { plineWithContinuation, pline, set_msg_xy } from './pline.js';
 import { requireInitializedHero } from './hero_types.js';
 import { AD_PHYS, AD_CORR, AD_FIRE, AD_RUST, AD_MAGM, AD_RBRE, AT_BREA, AT_MAGC } from './monster_attack_types.js';
 import { removeObjectFromMonsterInventory, destroyObjectFromMonsterInventory, findMonsterArmorClass, wornInSlot, applyMonsterEquipmentProperties, initializeMonsterArmor } from './monworn.js';
-import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, } from './mondata.js';
+import { monsterKnowsTrap, monsterLearnsTrap, monstersSeeTrap, monsterResistsSleep, monsterHasFireResistance, monsterHasStoneResistance, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterIsHelpless, monsterPassesWalls, acidic, extra_nasty, is_neuter, likes_gems, metallivorous, monsterDigests, monsterHasNoLimbs, monsterIsAmorphous, monsterIsAnimal, monsterIsBig, monsterIsBreathless, monsterIsClinger, monsterIsFloater, monsterIsFlyer, monsterIsHider, monsterIsHumanoid, monsterIsMindless, monsterIsNonliving, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterThrowsRocks, strongmonst, monsterObjectPronoun, grounded, passes_rocks, monsterIsGolem, touchPetrifies, heroResistsStoning, formCanBecomeStoneGolem, PM_STONE_GOLEM, cant_drown, monsterIsAmphibious, isHeroDefender, } from './mondata.js';
 import { teleportMonsterFromTrap, mlevel_tele_trap, clearFixedTeleportDestination, heroTeleportDestinationOk, heroTeleportTrapBlock, teleds, teleportHero, activateMagicPortal, askTeleportDestination, triggerLevelTeleportTrap, relocateObjectRandomly, heroCanTeleport, heroControlsTeleport, safe_teleds, teleportHeroAtWill, heroTeleportRestricted, finishTeleportArrival, } from './teleport.js';
 import { canFallThrough, countLevelFeatures, makemonNear } from './mklev.js';
 import { displayColorName, displayLiquidName, monsterName, monsterName as canonicalMonsterName, monsterName as perceivedMonsterName, randomDisplayMonsterName, setMonsterGivenName, randomColorName } from './do_name.js';
@@ -935,6 +937,69 @@ export function monsterWearsIronShoes(monster) {
     const boots = wornInSlot(monster, W_ARMF);
     return !!boots && objectMaterial(boots) === IRON;
 }
+// C trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
+// candidate info; dog_move() then applies its separate hero-seen 1/40 rule.
+export function monsterTrapIsHarmless(monster, trap, state) {
+    const symbol = MONSTER_SYMBOL[monster.mnum];
+    const airborne = monsterIsFlyer(monster.mnum) || symbol === S_EYE || symbol === S_LIGHT;
+    const sokoban = state.level.flags.sokoban_rules;
+    const floorTriggered = trapTriggeredByFloor(trap);
+    if (!sokoban && floorTriggered && airborne)
+        return true;
+    const whirly = symbol === S_VORTEX || monster.mnum === PM_AIR_ELEMENTAL;
+    switch (trap.ttyp) {
+        case BEAR_TRAP:
+            return ((MONSTER_SIZE[monster.mnum] ?? 2) <= 1 ||
+                (monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
+                whirly);
+        case WEB:
+            return ((monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
+                [94, 96].includes(monster.mnum) ||
+                whirly);
+        case SLP_GAS_TRAP:
+            return monsterResistsSleep(monster);
+        case RUST_TRAP:
+            return monster.mnum !== PM_IRON_GOLEM;
+        case FIRE_TRAP:
+            return monsterHasFireResistance(monster);
+        case PIT:
+        case SPIKED_PIT:
+        case HOLE:
+        case TRAPDOOR:
+            return monsterIsClinger(monster.mnum) && !sokoban;
+        case ANTI_MAGIC:
+            return monsterHasMagicResistance(monster);
+        case STATUE_TRAP:
+        case MAGIC_TRAP:
+        case VIBRATING_SQUARE:
+            return true;
+        default:
+            return false;
+    }
+}
+function monsterInventory(monster) {
+    return monster?.minvent || monster?.inventory || [];
+}
+function monsterWeapon(monster) {
+    return (monster?.mw ||
+        monsterInventory(monster).find((object) => object?.wielded || (object?.owornmask ?? 0) & W_WEP));
+}
+export function monsterHasMagicResistance(monster) {
+    if (monster?.mnum === PM_BABY_GRAY_DRAGON ||
+        (MONSTER_ATTACKS[monster?.mnum] || []).some(([, damageType]) => damageType === AD_MAGM || damageType === AD_RBRE)) {
+        return true;
+    }
+    const weapon = monsterWeapon(monster);
+    if (artifactById(weapon?.oartifact)?.defense === 'magic')
+        return true;
+    return monsterInventory(monster).some((object) => {
+        const artifact = artifactById(object?.oartifact);
+        if (artifact?.carriedDefense === 'magic')
+            return true;
+        return (MAGIC_RESISTANCE_ARMOR.has(object?.otyp) &&
+            !!((object?.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_WEP)));
+    });
+}
 // C trap.c:trapeffect_arrow_trap(): the monster branch — the missile's
 // to-hit and material message against the trapped monster.
 // C trap.c:trapeffect_dart_trap(): the same flow with a 1-in-6 poisoned
@@ -1115,9 +1180,6 @@ async function trapeffectRocktrap(mtmp, trap, { state = game, movement, random =
     event.rock = await placeRock(event.rock, event.trap, state);
     event.finished = true;
     return event;
-}
-function isHeroDefender(defender, state) {
-    return defender === state.u;
 }
 async function placeRock(rock, trap, state) {
     if (state === game)
@@ -2075,29 +2137,6 @@ export async function applyMonsterAntiMagicTrap(monster, { rollDice = d, rollOne
         killed: monster.mhp <= 0,
     };
 }
-function monsterInventory(monster) {
-    return monster?.minvent || monster?.inventory || [];
-}
-function monsterWeapon(monster) {
-    return (monster?.mw ||
-        monsterInventory(monster).find((object) => object?.wielded || (object?.owornmask ?? 0) & W_WEP));
-}
-export function monsterHasMagicResistance(monster) {
-    if (monster?.mnum === PM_BABY_GRAY_DRAGON ||
-        (MONSTER_ATTACKS[monster?.mnum] || []).some(([, damageType]) => damageType === AD_MAGM || damageType === AD_RBRE)) {
-        return true;
-    }
-    const weapon = monsterWeapon(monster);
-    if (artifactById(weapon?.oartifact)?.defense === 'magic')
-        return true;
-    return monsterInventory(monster).some((object) => {
-        const artifact = artifactById(object?.oartifact);
-        if (artifact?.carriedDefense === 'magic')
-            return true;
-        return (MAGIC_RESISTANCE_ARMOR.has(object?.otyp) &&
-            !!((object?.owornmask ?? 0) & (W_ARMOR | W_ACCESSORY | W_WEP)));
-    });
-}
 export function monsterWornIronShoes(monster) {
     return monsterInventory(monster).find((object) => objectMaterial(object?.otyp) === IRON && !!((object?.owornmask ?? 0) & W_ARMF));
 }
@@ -2964,6 +3003,27 @@ export async function explodeLandMine(trap, state = game, { publish = plineWithC
     return survivingTrap && state.level?.traps?.includes(survivingTrap)
         ? survivingTrap : null;
 }
+// C trap.c:launch_drop_spot(). Retain or clear the object temporarily absent from floor chains.
+function launch_drop_spot(object, origin, state) {
+    if (object)
+        activeLaunches.set(state, { object, origin: { ...origin } });
+    else
+        activeLaunches.delete(state);
+}
+const activeLaunches = new WeakMap();
+// C trap.c:launch_in_progress(). Test for a launched object retained across end-of-game input.
+export function launch_in_progress(state) {
+    return activeLaunches.has(state);
+}
+// C trap.c:force_launch_placement(). Return a retained object to its launch square for bones.
+export function force_launch_placement(state) {
+    const launch = activeLaunches.get(state);
+    if (!launch)
+        return;
+    unlinkObject(launch.object, state);
+    launch.object.otrapped = false;
+    placeObjectSynchronously(launch.object, launch.origin.x, launch.origin.y, state);
+}
 // C trap.c:launch_obj(): roll an object (the boulder) from one square to
 // another, resolving each square's occupants, traps and floor effects
 // before the final placement; sobj_at(): boulderAt finds the
@@ -3013,7 +3073,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     let transient = null;
     let usedUp = false;
     const glyph = transientObjectGlyph(boulder);
-    activeLaunches.set(state, { object: boulder, origin: { ...source } });
+    launch_drop_spot(boulder, source, state);
     try {
         while (remaining-- > 0 && !usedUp && !state.program_state.gameover) {
             transient = await animateRollingBoulderCell(boulder, glyph, position.x, position.y, transient);
@@ -3164,7 +3224,7 @@ export async function launchRollingBoulder(start, endpoint, { state = requireIni
     finally {
         if (transient)
             await newsym(transient.x, transient.y);
-        activeLaunches.delete(state);
+        launch_drop_spot(null, source, state);
     }
     if (!usedUp && !state.program_state.gameover) {
         boulder.otrapped = false;
@@ -5182,6 +5242,50 @@ export async function fireDamageObject(object, { carrier = null, force = false, 
         destroy: true, position: { x, y },
     });
     return erosion === 'destroyed';
+}
+const PM_IRON_GOLEM = 259;
+const DRAGON_HIDE = 10;
+const FIRE_RESISTANT_OBJECTS = new Set([
+    RED_DRAGON_SCALE_MAIL,
+    RED_DRAGON_SCALES,
+    RIN_FIRE_RESISTANCE,
+]);
+const S_EYE = 5;
+const S_LIGHT = 25;
+const S_VORTEX = 22;
+const PM_AIR_ELEMENTAL = 154;
+// C trap.c:lava_damage(). Damage one object thrown or dropped into lava.
+export async function lava_damage(object, { state = game, publish = async () => { }, random = rn2, visible = false, x, y, } = {}) {
+    // lava_damage() screens every object before checking its material.
+    // A destroyed object also passes through delobj() independently.
+    if (objectResistsDestruction(object, 0, 0, random)
+        && object.otyp !== SPE_BOOK_OF_THE_DEAD)
+        return false;
+    const burnDirectly = objectMaterial(object, state) < DRAGON_HIDE
+        && object.oclass !== SCROLL_CLASS && object.oclass !== SPBOOK_CLASS
+        && objectPropertyName(object.otyp) !== 'fireResistance'
+        && object.otyp !== WAN_FIRE && object.otyp !== FIRE_HORN
+        && !object.oerodeproof && !object.contents?.length;
+    const landingX = x ?? object.ox;
+    const landingY = y ?? object.oy;
+    if (burnDirectly) {
+        if (visible) {
+            if (object === state._thrownObject || object === state._kickedObject) {
+                await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
+            }
+            else {
+                observeObjectForNaming(object, { state });
+                await publish(formatSeenMessage(`${await fullObjectDescription(object, { state })} hit lava and burn up!`, state));
+            }
+        }
+        await delobj(object, state, random);
+    }
+    else if (!await fireDamageObject(object, {
+        force: true, state, publish, random, x: landingX, y: landingY,
+    })) {
+        return false;
+    }
+    return true;
 }
 export async function damageObjectWithAcid(object, { state = game, publish = plineWithContinuation, random = rn2, ...options } = {}) {
     if (!object)
@@ -7562,98 +7666,6 @@ export async function meltIceTrap(x, y) {
         deleteTrap(trap);
     }
 }
-const PM_IRON_GOLEM = 259;
-const DRAGON_HIDE = 10;
-const FIRE_RESISTANT_OBJECTS = new Set([
-    RED_DRAGON_SCALE_MAIL,
-    RED_DRAGON_SCALES,
-    RIN_FIRE_RESISTANCE,
-]);
-const S_EYE = 5;
-const S_LIGHT = 25;
-const S_VORTEX = 22;
-const PM_AIR_ELEMENTAL = 154;
-export async function destroyLavaFloorObjects(objects, { state = game, publish = async () => { }, random = rn2, visible = false, x, y, } = {}) {
-    if (!objects)
-        return 0;
-    let destroyed = 0;
-    for (const object of [...objects]) {
-        // lava_damage() screens every object before checking its material.
-        // A destroyed object also passes through delobj() independently.
-        if (objectResistsDestruction(object, 0, 0, random)
-            && object.otyp !== SPE_BOOK_OF_THE_DEAD)
-            continue;
-        const burnDirectly = objectMaterial(object, state) < DRAGON_HIDE
-            && object.oclass !== SCROLL_CLASS && object.oclass !== SPBOOK_CLASS
-            && objectPropertyName(object.otyp) !== 'fireResistance'
-            && object.otyp !== WAN_FIRE && object.otyp !== FIRE_HORN
-            && !object.oerodeproof && !object.contents?.length;
-        const landingX = x ?? object.ox;
-        const landingY = y ?? object.oy;
-        if (burnDirectly) {
-            if (visible) {
-                if (object === state._thrownObject || object === state._kickedObject) {
-                    await publish(object.quan === 1 ? 'It burns up!' : 'They burn up!');
-                }
-                else {
-                    observeObjectForNaming(object, { state });
-                    await publish(formatSeenMessage(`${await fullObjectDescription(object, { state })} hit lava and burn up!`, state));
-                }
-            }
-            await delobj(object, state, random);
-        }
-        else if (!await fireDamageObject(object, {
-            force: true, state, publish, random, x: landingX, y: landingY,
-        })) {
-            continue;
-        }
-        const index = objects.indexOf(object);
-        if (index >= 0)
-            objects.splice(index, 1);
-        destroyed++;
-    }
-    return destroyed;
-}
-// C ref: trap.c:m_harmless_trap().  mfndpos() marks only harmful traps in
-// candidate info; dog_move() then applies its separate hero-seen 1/40 rule.
-export function monsterTrapIsHarmless(monster, trap, state) {
-    const symbol = MONSTER_SYMBOL[monster.mnum];
-    const airborne = monsterIsFlyer(monster.mnum) || symbol === S_EYE || symbol === S_LIGHT;
-    const sokoban = state.level.flags.sokoban_rules;
-    const floorTriggered = trapTriggeredByFloor(trap);
-    if (!sokoban && floorTriggered && airborne)
-        return true;
-    const whirly = symbol === S_VORTEX || monster.mnum === PM_AIR_ELEMENTAL;
-    switch (trap.ttyp) {
-        case BEAR_TRAP:
-            return ((MONSTER_SIZE[monster.mnum] ?? 2) <= 1 ||
-                (monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
-                whirly);
-        case WEB:
-            return ((monsterIsAmorphous({ mnum: monster.mnum }) || monsterIsUnsolid({ mnum: monster.mnum })) ||
-                [94, 96].includes(monster.mnum) ||
-                whirly);
-        case SLP_GAS_TRAP:
-            return monsterResistsSleep(monster);
-        case RUST_TRAP:
-            return monster.mnum !== PM_IRON_GOLEM;
-        case FIRE_TRAP:
-            return monsterHasFireResistance(monster);
-        case PIT:
-        case SPIKED_PIT:
-        case HOLE:
-        case TRAPDOOR:
-            return monsterIsClinger(monster.mnum) && !sokoban;
-        case ANTI_MAGIC:
-            return monsterHasMagicResistance(monster);
-        case STATUE_TRAP:
-        case MAGIC_TRAP:
-        case VIBRATING_SQUARE:
-            return true;
-        default:
-            return false;
-    }
-}
 export async function petrifyMonsterFromContact(monster, { creditHero = false, finishDeath, publish = plineWithContinuation, rollOne = rnd, state = game, } = {}) {
     const cure = await munstone(monster, {
         byHero: creditHero, publish, rollOne, state,
@@ -7680,46 +7692,6 @@ const EROSION = {
     corrosion: { field: 'oeroded2', verb: 'corrode', past: 'corroded', cause: 'corrosion' },
     crack: { field: 'oeroded', verb: 'crack', past: 'cracked', cause: 'impact' },
 };
-// C mhitm.c:rustm()
-export async function erodeAttackingWeapon(defender, weapon, { state = game, random = rn2, ...options } = {}) {
-    if (!weapon)
-        return;
-    const species = isHeroDefender(defender, state) ? heroSpecies(state) : defender.mnum;
-    const attacks = MONSTER_ATTACKS[species];
-    if (!attacks)
-        throw new RangeError(`Unknown monster species: ${species}`);
-    const hasDamage = (type) => attacks.some(attack => attack[1] === type);
-    const kind = hasDamage(AD_CORR) ? 'corrosion'
-        : hasDamage(AD_RUST) ? 'rust'
-            : hasDamage(AD_FIRE) && species !== PM_STEAM_VORTEX ? 'burn' : null;
-    if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
-        await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
-    }
-}
-export async function erodeArmor(defender, kind, { state = game, random = rn2, ...options } = {}) {
-    const layers = [
-        [W_ARMH], [W_ARMC, W_ARM, W_ARMU], [W_ARMS], [W_ARMG], [W_ARMF],
-    ];
-    const inventory = isHeroDefender(defender, state) ? state.inventory : (defender.minvent ?? []);
-    for (;;) {
-        const slot = random(5);
-        const masks = layers[slot];
-        if (!masks)
-            throw new RangeError(`Invalid armor erosion slot: ${slot}`);
-        let object;
-        for (const mask of masks) {
-            object = inventory.find(item => (item.owornmask ?? 0) & mask);
-            if (object)
-                break;
-        }
-        const result = object
-            ? await erodeObject(object, kind, {
-                ...options, state, random, verbose: slot === 1,
-            }) : 'nothing';
-        if (slot === 1 || result !== 'nothing')
-            return result;
-    }
-}
 export function connectPits(first, second) {
     const direction = pitDirection(first, second);
     if (direction < 0)
@@ -7730,21 +7702,6 @@ export function connectPits(first, second) {
     first.conjoined = (first.conjoined || 0) | (1 << direction);
     second.conjoined = (second.conjoined || 0) | (1 << opposite);
     return changed;
-}
-function trapAtHero() {
-    const hero = game.u;
-    return game.level?.traps?.find(trap => trap.tx === hero.ux && trap.ty === hero.uy) || null;
-}
-const activeLaunches = new WeakMap();
-// C launch_in_progress()/force_launch_placement(): bones retain the
-// in-flight object at its original launch square so the trap can fire again.
-export function restoreLaunchedObjectForBones(state) {
-    const launch = activeLaunches.get(state);
-    if (!launch)
-        return;
-    unlinkObject(launch.object, state);
-    launch.object.otrapped = false;
-    placeObjectSynchronously(launch.object, launch.origin.x, launch.origin.y, state);
 }
 export async function finishLiquidDeath(options) {
     // The liquid effect has usually announced the death already. done() still

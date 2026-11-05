@@ -3,7 +3,6 @@ import test from 'node:test';
 import { LANDMINE, MM_ANGRY, MM_NOGRP, NO_MINVENT } from '../js/const.js';
 import { game } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-
 import { finishEnvironmentalMonsterDeath } from '../js/mon.js';
 import { DAGGER } from '../js/object_data.js';
 import { scatterFloorObjects } from '../js/scatter.js';

@@ -37,7 +37,7 @@ import { armorSimpleName, armorSlotFor, heroHasDrainResistance, heroIsDisplaced,
 import { monsterWieldedWeapon, wieldMonsterWeapon, weaponHitValue } from './weapon.js';
 import { isPolearm, isMissileObject, isWeaponTool } from './object_properties.js';
 import type { WeaponView } from './object_properties.js';
-import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage } from './uhitm.js';
+import { mhitmAdBlnd, mhitmAdCold, mhitmAdDrli, mhitmAdEnch, mhitmAdElec, mhitmAdFire, mhitmAdLegs, mhitm_ad_sedu, mhitmAdStun, mhitm_mgc_atk_negated, nurseContactMode, poisonAttackAttribute, poisonHeroFromMonster, resolveMonsterContactEffect, mhitm_ad_phys, mhitm_knockback, applyMonsterStoningAttack, startHeroPetrificationFromMonster, passiveDamage, erodeArmor } from './uhitm.js';
 import { isWeldedPrimary } from './wield.js';
 import { applyArtifactHit, artifactById, isPermanentlyPoisonedObject, monsterWieldsOrWearsDefense } from './artifacts.js';
 import type { ArtifactDefenseQuery } from './artifacts.js';
@@ -64,7 +64,7 @@ import { addObjectToMonsterInventory } from './steal.js';
 import { heroIsFlaming, heroIsGreenSlime, heroIsNoncorporeal } from './polyself.js';
 import { heroIsSliming, startHeroSliming } from './potion.js';
 import { bot } from './botl.js';
-import { burnArmorByFire, trapAt, erodeArmor, erodeAttackingWeapon, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
+import { burnArmorByFire, trapAt, igniteItems, damageObjectWithAcid, drainHeroEnergy, petrifyMonsterImmediately, resetUtrap } from './trap.js';
 import { getmattk } from './attack_selection.js';
 import { heroHasInvoluntaryDelay, setMulti, resetOccupations } from './cmd.js';
 import { endVoluntaryMultiTurn, burnAwayHeroSlime, stopRun, loseHeroHp, heroGoldAmount } from './hack.js';

@@ -1,4 +1,5 @@
 // NetHack uhitm.c combat, including each attacker/defender direction of
+// Also owns uhitm.c erode_armor(), shared by hero and monster attacks.
 // the physical, seduction, brain-drain, elemental and status effects below.
 // Message publishers await tty input at the point where C prints a line.
 import { WEAPON_CLASS, ARMOR_CLASS, RING_CLASS, POTION_CLASS, SPBOOK_CLASS, COIN_CLASS, GEM_CLASS, } from './objclass.js';
@@ -13,7 +14,7 @@ import { heroIsPunished } from './ball.js';
 import { applyMonsterBlindness, heroBlindingObjectHitMessage, heroCanBeBlindedByContact, monsterCanBeBlindedByObject, monsterResistsBlindingLight } from './blinding_attack.js';
 import { heroHandName, heroLegName, heroStomachName, monsterLegName } from './body_parts.js';
 import { heroHasInvoluntaryDelay } from './cmd.js';
-import { A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, } from './const.js';
+import { A_CON, A_DEX, A_INT, A_LAWFUL, A_STR, A_WIS, D_CLOSED, D_LOCKED, DIED, DISMOUNT_KNOCKED, DISMOUNT_POLY, DOOR, DROWNING, EXPL_FIERY, EXPL_FROSTY, EXPL_MAGICAL, FAINTED, G_NOCORPSE, IRONBARS, Is_airlevel, IS_OBSTRUCTED, IS_TREE, Is_waterlevel, KILLED_BY, KILLED_BY_AN, M_AP_FURNITURE, M_AP_MONSTER, M_AP_OBJECT, M_AP_TYPE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, M_SEEN_ACID, M_SEEN_COLD, M_SEEN_ELEC, M_SEEN_FIRE, M_SEEN_MAGR, M_SEEN_SLEEP, MGIVENNAME, MM_IGNORELAVA, MM_IGNOREWATER, MMOVE_DIED, MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE, P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG, SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG, W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, W_ARMS, } from './const.js';
 import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
 import { isZombieMaker } from './corpse_species.js';
@@ -50,13 +51,13 @@ import { consumeInventoryItem, inventoryItemDescription, mergable } from './inve
 import { snuffMonsterInventoryLights } from './light.js';
 import { cloneMonster } from './makemon.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected } from './mhitm.js';
+import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected, erodeAttackingWeapon } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
 import { deallocateObject, linkObjectToMonsterInventory, mksobj, objectQuantity, objectWeight, set_corpsenm, splitObjectStack, unlinkMonsterObject, unlinkObject } from './mkobj.js';
 import { angerAttackedMonster, angerWatchGuards, applyMonsterGolemEffects, changeMonsterForm, finishMonsterKilled, finishMonsterPetrification, grantMonsterIntrinsic, healMonster, isWatch, monsterSubject, paralyzeMonster, removeMonsterFromGame, resolveMonsterCorpseChance, revealMonsterAppearance, turnGolemToStone, wakeAttackedMonster, wakeMonster, wakeMonstersNearWithMessages, } from './mon.js';
-import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, } from './mondata.js';
+import { is_neuter, monsterCombatDefense, monsterFireDescription, monsterHasAcidResistance, monsterHasColdResistance, monsterHasDrainResistance, monsterHasFireResistance, monsterHasPoisonResistance, monsterHasShockResistance, monsterHasStoneResistance, monsterIsHelpless, monsterPossessive, monsterResistsSleep, monstersForgetHeroResistance, monstersObserveHeroResistance, monsterSubjectPronoun, cant_drown, carnivorous, herbivorous, is_elf, is_orc, is_shapeshifter, metallivorous, monsterIsAmphibious, monsterIsBreathless, monsterIsHumanoid, monsterCanTeleport, monsterDigests, monsterEnfolds, monsterHasEyes, monsterHasHead, monsterHasNoHands, monsterHasProperName, monsterHatesBlessings, monsterHatesLight, monsterHatesSilver, monsterHidesUnder, monsterIsAmorphous, monsterIsAnimal, monsterIsDemon, monsterIsEel, monsterIsFlyer, monsterIsMindless, monsterIsNoncorporeal, monsterIsNonliving, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid, monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver, monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies, isHeroDefender, } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
 import { recordRandom } from './monster_action_types.js';
@@ -89,7 +90,7 @@ import { heroIsPetrifying, startHeroPetrification } from './stoning.js';
 import { askTeleportDestination, goodPosition, heroControlsTeleport, randomMonsterRelocation, reportMonsterTeleportRestriction, teleportHero, teleportMonsterByHero } from './teleport.js';
 import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
-import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
+import { damageObjectWithAcid, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
@@ -5295,9 +5296,6 @@ function passiveParalysisReason(monster, state, gaze) {
     });
     return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
 }
-function isHeroDefender(defender, state) {
-    return defender === state.u;
-}
 // passive_obj() also applies to the hero's current body after a missile hits.
 // The caller still owns the object's eventual inventory or floor location.
 export async function applyMonsterPassiveToObject(defender, object, { carried = object.where === 'inventory', attackType = null, state = game, publish = plineWithContinuation, random = rn2, } = {}) {
@@ -5946,5 +5944,30 @@ export async function flashHitsMonster(monster, object, { state = game, onHead =
     if (notified && !state.level.requireAt(monster.mx, monster.my).lit)
         await displayMessageWindow();
     return result;
+}
+// C uhitm.c:erode_armor(). Retry uncovered extremities; the torso always ends the search.
+export async function erodeArmor(defender, kind, { state = game, random = rn2, ...options } = {}) {
+    const layers = [
+        [W_ARMH], [W_ARMC, W_ARM, W_ARMU], [W_ARMS], [W_ARMG], [W_ARMF],
+    ];
+    const inventory = isHeroDefender(defender, state) ? state.inventory : (defender.minvent ?? []);
+    for (;;) {
+        const slot = random(5);
+        const masks = layers[slot];
+        if (!masks)
+            throw new RangeError(`Invalid armor erosion slot: ${slot}`);
+        let object;
+        for (const mask of masks) {
+            object = inventory.find(item => (item.owornmask ?? 0) & mask);
+            if (object)
+                break;
+        }
+        const result = object
+            ? await erodeObject(object, kind, {
+                ...options, state, random, verbose: slot === 1,
+            }) : 'nothing';
+        if (slot === 1 || result !== 'nothing')
+            return result;
+    }
 }
 //# sourceMappingURL=uhitm.js.map

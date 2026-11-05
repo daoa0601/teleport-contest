@@ -13,7 +13,7 @@ import { BOULDER, POT_OIL } from './object_data.js';
 import { definiteName, definiteObjectAction, objectCombatName, objectNameIsPlural } from './objnam.js';
 import { shipObject } from './dokick.js';
 import { objectResistsDestruction } from './zap.js';
-import { destroyLavaFloorObjects, waterDamageObject } from './trap.js';
+import { waterDamageObject, lava_damage } from './trap.js';
 import { rnl, rn2 } from './rng.js';
 import { publishHeardMessage } from './hero_speech.js';
 import { heroIsBlind, heroIsDeaf } from './senses.js';
@@ -107,14 +107,13 @@ export async function applyFloorEffects(object, x, y, { state = game, publish = 
         return applyBoulderPitEffects(object, trap, x, y, { state, publish, verb });
     }
     if (isLavaAt(x, y, state)) {
-        const landed = [object];
-        await destroyLavaFloorObjects(landed, {
+        const destroyed = await lava_damage(object, {
             state, x, y,
             publish,
             random,
             visible: squareIsVisible(state, x, y),
         });
-        if (!landed.includes(object))
+        if (destroyed)
             return { finished: true, object: null };
         return { finished: false, object };
     }

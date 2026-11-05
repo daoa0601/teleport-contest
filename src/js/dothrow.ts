@@ -16,7 +16,6 @@ import {
 } from './object_data.js';
 import { game, requirePlayingGame, requireLiveGame, requireGameLevel, requireInitializedGame } from './gstate.js';
 import { isWeaponTool, isMissileObject, isLauncherAmmunition, isPolearm, isThrowingWeapon, isWetTowel, launcherMatchesAmmo, objectIsCrackable } from './object_properties.js';
-
 import { pline, plineWithContinuation } from './pline.js';
 import type { MessagePublisher } from './pline.js';
 import { beginCommandResult, commandResultCancelled, cmdq_add_ec, cmdq_add_key, setMulti, isok, promptDirection } from './cmd.js';
@@ -30,7 +29,6 @@ import { currentAttribute, changeHeroLuck, exerciseAttribute } from './attrib.js
 import { MONSTER_MOVE, MONSTER_SIZE, MONSTER_SYMBOL, MONSTER_NAME, monsterTypeName, MONSTER_ALIGNMENT } from './monster_data.js';
 import { artifactById } from './artifacts.js';
 import { heroCannotTake, heroHasNoHands, heroHatesSilver, heroSpecies, polymonHero, heroMonsterForm } from './polyself.js';
-
 import { isWeldedPrimary, setQuiverObject, setPrimaryWeapon, setSecondaryWeapon, setTwoWeaponCombat, doquiverCore } from './wield.js';
 import {
     GETOBJ_DOWNPLAY, GETOBJ_SUGGEST, A_DEX, A_STR, STR19, IS_WATERWALL, MM_IGNORELAVA, MM_IGNOREWATER, W_ARM,

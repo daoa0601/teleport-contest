@@ -1,18 +1,20 @@
 import { floorObjectsAt } from './support/level-state.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { NO_MINVENT, W_ARMC } from '../js/const.js';
 import { pline } from '../js/pline.js';
 import { fireDamageChain } from '../js/trap.js';
 import { game, requireGameLevel } from '../js/gstate.js';
 import { resetInputState } from '../js/input.js';
-import { erodeAttackingWeapon, erodeObject } from '../js/trap.js';
+import { erodeObject } from '../js/trap.js';
 import { CLUB, DAGGER, OBJECT_NAMES } from '../js/object_data.js';
 import { addInventoryObject, floorObject, knownObject } from './support/game-objects.js';
 import { createMonsterAt, equipMonsterObject } from './support/monsters.js';
 import { freshObjectRoom } from './support/object-room.js';
 import { setMonsterGivenName } from '../js/do_name.js';
+import {
+    erodeAttackingWeapon,
+} from '../js/mhitm.js';
 
 const quiet = { publish: async () => {} };
 
@@ -121,7 +123,6 @@ void test('contact with a fire attacker burns a weapon, but steam does not', asy
     assert.equal(club.oeroded, 1);
     assert.equal(otherClub.oeroded ?? 0, 0);
 });
-
 
 void test('corrosion describes covered hands as gloves without exposing the armor type', async () => {
     const gloves = await addInventoryObject(OBJECT_NAMES.indexOf('gauntlets of power'));

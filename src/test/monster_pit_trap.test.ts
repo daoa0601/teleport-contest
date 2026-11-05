@@ -4,13 +4,10 @@ import {
 import { monsterAtPosition } from '../js/steed.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-
 import { PIT, SPIKED_PIT, W_AMUL, W_WEP } from '../js/const.js';
 import { game, requirePlayingGame } from '../js/gstate.js';
 import { newsym } from '../js/display.js';
-
 import { pushKeys } from '../js/input.js';
-
 import {
     AMULET_OF_LIFE_SAVING, CORPSE, STATUE,
 } from '../js/object_data.js';

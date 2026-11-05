@@ -1,4 +1,5 @@
 // NetHack uhitm.c combat, including each attacker/defender direction of
+// Also owns uhitm.c erode_armor(), shared by hero and monster attacks.
 // the physical, seduction, brain-drain, elemental and status effects below.
 // Message publishers await tty input at the point where C prints a line.
 
@@ -32,7 +33,7 @@ import {
     MON_EXPLODE, MSLOW, Luck, NEW_MOON, NON_PM, P_BARE_HANDED_COMBAT, P_BASIC, P_ISRESTRICTED, P_KNIFE, P_LANCE,
     P_NONE, P_SKILLED, P_TWO_WEAPON_COMBAT, P_UNSKILLED, P_WHIP, PARANOID_HIT, POOL, RLOC_MSG, RLOC_NOMSG,
     SHOPBASE, STONING, STRAT_WAITFORU, STRAT_WAITMASK, TT_PIT, Upolyd, W_AMUL, W_ARM, W_ARMC, W_ARMF, W_ARMG,
-    W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER,
+    W_ARMH, W_ARMU, W_RINGL, W_RINGR, W_SADDLE, W_WEP, WATER, W_ARMS,
 } from './const.js';
 import { isok } from './cmd.js';
 import { specialContactDamage } from './contact_damage.js';
@@ -79,7 +80,7 @@ import { snuffMonsterInventoryLights } from './light.js';
 import { cloneMonster } from './makemon.js';
 import type { MapLocation, Position } from './map_types.js';
 import { touchHeroWithDeath } from './mcastu.js';
-import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected } from './mhitm.js';
+import { drainMonsterEnergy, putMonsterToSleep, showMonsterArtifactFallbackHit, contactIsProtected, erodeAttackingWeapon } from './mhitm.js';
 import { mdamageu, heroHasRemovableSpeed, u_slip_free, diseasemu, magic_negation, mpoisons_subj, presentMonsterAttackEffects, doseduce, u_slow_down } from './mhitu.js';
 import { normalDemon } from './minion.js';
 import { cloneHeroMonsterForm, makemonNear } from './mklev.js';
@@ -104,6 +105,7 @@ import {
     monsterIsSlimeproof, monsterIsSlithy, monsterIsThickSkinned, monsterIsUndead, monsterIsUnsolid,
     monsterIsVampireShifter, monsterIsVerySmall, monsterIsWhirly, monsterPassesWalls, monsterSpeciesHatesSilver,
     monsterSpeciesSticks, monsterHasNoAttacks, formCanBecomeStoneGolem, heroResistsStoning, touchPetrifies,
+    isHeroDefender,
 } from './mondata.js';
 import { wornMonsterLifeSaver } from './mon.js';
 import { beginMonsterMove, makeMonsterFlee, presentMonsterMoveMessage, presentMonsterPostMove, setMonsterApparentHeroPosition } from './monmove.js';
@@ -155,8 +157,8 @@ import { heroIsPetrifying, startHeroPetrification } from './stoning.js';
 import { askTeleportDestination, goodPosition, heroControlsTeleport, randomMonsterRelocation, reportMonsterTeleportRestriction, teleportHero, teleportMonsterByHero } from './teleport.js';
 import { attrcurse } from './throne.js';
 import { burnAwayHeroSlime, putHeroToSleep } from './timeout.js';
-import { damageObjectWithAcid, erodeArmor, erodeAttackingWeapon, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
-import type { ErosionKind } from './trap.js';
+import { damageObjectWithAcid, erodeObject, mintrap, heroIsUnconscious, igniteItems, monsterSelfTouch, petrifyMonsterFromContact, resolveImmediatePetrification } from './trap.js';
+import type { ErosionKind, ErosionResult, ErosionOptions } from './trap.js';
 import { canBeginTwoWeaponCombat, dropSecondaryWeapon, stopTwoWeaponCombat } from './wield.js';
 import { addInventoryItem } from './invent.js';
 import { cansee, monsterHasLineOfSightToHero } from './vision.js';
@@ -6032,10 +6034,6 @@ function passiveParalysisReason(monster: Monster, state: GameState, gaze: boolea
     return { monsterId: monster.m_id, text: `frozen by ${gaze ? `${possessiveName(species)} gaze` : species}` };
 }
 
-function isHeroDefender(defender: Hero | Monster, state: GameState): defender is Hero {
-    return defender === state.u;
-}
-
 // passive_obj() also applies to the hero's current body after a missile hits.
 // The caller still owns the object's eventual inventory or floor location.
 export async function applyMonsterPassiveToObject(
@@ -6722,3 +6720,28 @@ export async function flashHitsMonster(monster: Monster, object: GameObject, { s
     return result;
 }
 
+
+// C uhitm.c:erode_armor(). Retry uncovered extremities; the torso always ends the search.
+export async function erodeArmor(defender: Hero | Monster, kind: ErosionKind, {
+    state = game, random = rn2, ...options
+}: ErosionOptions = {}): Promise<ErosionResult> {
+    const layers = [
+        [W_ARMH], [W_ARMC, W_ARM, W_ARMU], [W_ARMS], [W_ARMG], [W_ARMF],
+    ];
+    const inventory = isHeroDefender(defender, state) ? state.inventory : (defender.minvent ?? []);
+    for (;;) {
+        const slot = random(5);
+        const masks = layers[slot];
+        if (!masks) throw new RangeError(`Invalid armor erosion slot: ${slot}`);
+        let object: GameObject | undefined;
+        for (const mask of masks) {
+            object = inventory.find(item => (item.owornmask ?? 0) & mask);
+            if (object) break;
+        }
+        const result = object
+            ? await erodeObject(object, kind, {
+                ...options, state, random, verbose: slot === 1,
+            }) : 'nothing';
+        if (slot === 1 || result !== 'nothing') return result;
+    }
+}

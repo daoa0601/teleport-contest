@@ -3,7 +3,7 @@
 // fightm() applies to attacked monsters and dogmove.c grants to pet targets;
 // mhitm.c noises(), pre_mm_attack(), missmm(), failed_grab(), hitmm(),
 // gazemm(), engulf_target(), gulpmm(), explmm(), mdamagem(), passivemm() and
-// xdrainenergym() and attk_protection() are folded in below.
+// xdrainenergym(), attk_protection(), and rustm() are folded in below.
 import { setHeroGrip } from './mon.js';
 import { d, rn2, rnd } from './rng.js';
 import { game, requireGameLevel, requireLiveGame, requirePlayingGame } from './gstate.js';
@@ -14,7 +14,7 @@ import { artifactById } from './artifacts.js';
 import { monsterResistsBlindingLight } from './blinding_attack.js';
 import { M_AP_TYPE, PLNMSG_HIDE_UNDER, DOOR, D_CLOSED, D_LOCKED, IRONBARS, IS_OBSTRUCTED, IS_TREE, M_ATTK_AGR_DIED, M_ATTK_AGR_DONE, M_ATTK_DEF_DIED, M_ATTK_HIT, M_ATTK_MISS, MM_IGNOREWATER, NEED_HTH_WEAPON, NEED_WEAPON, ismnum, M_AP_MONSTER, STRAT_WAITMASK, W_ARMG, NORMAL_SPEED, PIT, SPIKED_PIT, W_ARMC, W_ARMF, W_ARMH, } from './const.js';
 import { isZombieMaker, zombieForm } from './corpse_species.js';
-import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies } from './mondata.js';
+import { monsterIsHelpless, is_elf, is_orc, monsterHasEyes, monsterDigests, monsterEnfolds, monsterHatesSilver, monsterIsAmorphous, monsterIsNoncorporeal, monsterIsRider, monsterIsShade, monsterIsSlimeproof, monsterIsUnsolid, monsterIsVampireShifter, monsterIsWhirly, monsterPassesWalls, monsterPerceives, touchPetrifies, isHeroDefender } from './mondata.js';
 import { heroIsUnaware } from './senses.js';
 import { formatHeardMessage } from './hero_speech.js';
 import { heroIsDeaf } from './senses.js';
@@ -36,8 +36,8 @@ import { monsterWieldedWeapon, updateMonsterWeaponAfterPolymorph, wieldMonsterWe
 import { weaponHitValue } from './weapon.js';
 import { getmattk } from './attack_selection.js';
 import { resolveMonsterCombatBreath, resolveMonsterCombatSpit, resolveMonsterCombatThrow } from './mthrowu.js';
-import { trapAt, mintrap, damageObjectWithAcid, erodeArmor } from './trap.js';
-import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult, } from './uhitm.js';
+import { trapAt, mintrap, damageObjectWithAcid, erodeObject } from './trap.js';
+import { applyMonsterCombatBlindness, applyMonsterDigestionEffect, applyMonsterDrainEffect, applyMonsterElementEffect, applyMonsterStatusEffect, applyMonsterTheftEffect, applyMonsterTransformEffect, mhitmAdBlnd, mhitmAdDrli, mhitmAdEnch, mhitmAdLegs, mhitmAdStun, passiveAttack, passiveDamage, petrifyMonsterDefender, poisonMonsterFromAttack, rejectMonsterShadeContact, mhitm_ad_phys, mhitm_knockback, applyMonsterCombatEffect, effectResult, erodeArmor, } from './uhitm.js';
 import { mon_reflects } from './muse.js';
 import { finishMonsterEating } from './dogmove.js';
 import { clearMonsterWormFromMap, placeMonsterWormTailRandomly } from './worm.js';
@@ -54,6 +54,7 @@ import { could_seduce } from './seduction_compatibility.js';
 import { AD_ACID, AD_BLND, AD_CLRC, AD_COLD, AD_CONF, AD_CORR, AD_CURS, AD_DCAY, AD_DETH, AD_DGST, AD_DISE, AD_DISN, AD_DRCO, AD_DREN, AD_DRIN, AD_DRLI, AD_DRST, AD_DRDX, AD_ELEC, AD_ENCH, AD_FAMN, AD_FIRE, AD_HALU, AD_HEAL, AD_LEGS, AD_MAGM, AD_PEST, AD_PHYS, AD_PLYS, AD_POLY, AD_RBRE, AD_RUST, AD_SAMU, AD_SEDU, AD_SGLD, AD_SITM, AD_SLEE, AD_SLIM, AD_SLOW, AD_SPC1, AD_SPC2, AD_SPEL, AD_SSEX, AD_STCK, AD_STON, AD_STUN, AD_TLPT, AD_WERE, AD_WRAP, AT_BITE, AT_BOOM, AT_BREA, AT_BUTT, AT_CLAW, AT_ENGL, AT_EXPL, AT_GAZE, AT_HUGS, AT_KICK, AT_MAGC, AT_NONE, AT_SPIT, AT_STNG, AT_TENT, AT_TUCH, AT_WEAP, } from './monster_attack_types.js';
 import { DISCARDED_CALL_LOG, recordRandom } from './monster_action_types.js';
 import { goodPosition } from './teleport.js';
+import { heroSpecies, } from './polyself.js';
 const PM_GRID_BUG = MONSTER_NAME.indexOf('grid bug');
 const G_UNIQ = 0x1000;
 const MZ_HUGE = 4;
@@ -1278,5 +1279,22 @@ export function contactIsProtected(attackType, wornMask, usedWeapon = false) {
     if (attackType === AT_HUGS)
         return (wornMask & (W_ARMC | W_ARMG)) === (W_ARMC | W_ARMG);
     return false;
+}
+const PM_STEAM_VORTEX = MONSTER_NAME.indexOf('steam vortex');
+// C mhitm.c:rustm()
+export async function erodeAttackingWeapon(defender, weapon, { state = game, random = rn2, ...options } = {}) {
+    if (!weapon)
+        return;
+    const species = isHeroDefender(defender, state) ? heroSpecies(state) : defender.mnum;
+    const attacks = MONSTER_ATTACKS[species];
+    if (!attacks)
+        throw new RangeError(`Unknown monster species: ${species}`);
+    const hasDamage = (type) => attacks.some(attack => attack[1] === type);
+    const kind = hasDamage(AD_CORR) ? 'corrosion'
+        : hasDamage(AD_RUST) ? 'rust'
+            : hasDamage(AD_FIRE) && species !== PM_STEAM_VORTEX ? 'burn' : null;
+    if (kind && random(kind === 'burn' ? 6 : 1) === 0) {
+        await erodeObject(weapon, kind, { ...options, state, random, verbose: true });
+    }
 }
 //# sourceMappingURL=mhitm.js.map

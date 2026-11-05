@@ -110,6 +110,7 @@ src/js/tip_hat.ts	sounds.c
 src/js/topten.ts	topten.c
 src/js/track.ts	track.c
 src/js/transient_light.ts	light.c
+src/js/trap.ts	trap.c
 src/js/uhitm.ts	uhitm.c
 src/js/vault.ts	vault.c
 src/js/warning_symbols.ts	cfgfiles.c

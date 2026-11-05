@@ -45,7 +45,7 @@ import { hiddenGold, payVaultGuardOnExit } from './vault.js';
 import { init_uhunger } from './eat.js';
 import { dungeonOverviewDisclosure } from './dungeon.js';
 import { canMakeBones, createBonesFromDeath } from './bones.js';
-import { restoreLaunchedObjectForBones } from './trap.js';
+import { force_launch_placement, launch_in_progress } from './trap.js';
 import { heroIsBlind, heroIsHallucinating } from './senses.js';
 import { clearNonlocalPriestsOnExit } from './priest.js';
 import { promptChoice, promptYesNo } from './query.js';
@@ -901,8 +901,8 @@ async function startGameExit(outcome, deathType = DIED) {
     }
     game._canMakeBones = outcome === 'died' && deathType < GENOCIDED
         && canMakeBones();
-    if (game._canMakeBones)
-        restoreLaunchedObjectForBones(game);
+    if (game._canMakeBones && launch_in_progress(game))
+        force_launch_placement(game);
     return endtime;
 }
 async function settleGameExit(outcome) {
